@@ -930,7 +930,7 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 <body>
 
 <!-- LOGIN SCREEN -->
-<div id="login-screen" style="position:fixed;inset:0;z-index:1000;background:var(--c-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px">
+<div id="login-screen" style="position:fixed;inset:0;z-index:1000;background:var(--c-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;overflow-y:auto;min-height:100vh;min-height:100dvh">
   <div id="login-logo" style="font-size:56px;margin-bottom:8px">🏠</div>
   <div style="font-size:26px;font-weight:900;color:var(--c-text);font-family:var(--font-display);margin-bottom:4px">FamilieApp</div>
   <div style="font-size:13px;color:var(--c-text2);margin-bottom:32px">Jouw gezins-app</div>
@@ -1013,6 +1013,9 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 </div>
 
 
+
+<!-- APP WRAPPER — hidden until logged in -->
+<div id="app-wrapper" style="display:none">
 
 <!-- HEADER -->
 <div class="app-header">
@@ -1776,6 +1779,8 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
   </div>
 </div>
 
+
+</div><!-- end app-wrapper -->
 
 <script>
 'use strict';
@@ -8789,7 +8794,9 @@ function onLoggedIn(){
 
 function hideLoginScreen(){
   var ls=document.getElementById('login-screen');
+  var app=document.getElementById('app-wrapper');
   if(ls){ls.style.animation='fadeOut .3s ease forwards';setTimeout(function(){ls.style.display='none';},300);}
+  if(app){app.style.display='block';}
   renderNav(); renderHome();
 }
 
@@ -8906,13 +8913,13 @@ if(typeof firebase !== 'undefined') {
           var ls=document.getElementById('login-screen');
           if(ls) ls.style.display='flex';
         });
+      } else {
+        // Not logged in — make sure login screen is visible
+        var ls=document.getElementById('login-screen');
+        if(ls) ls.style.display='flex';
       }
     });
   }
-}
-if(!savedFbConfig){
-  var w=document.getElementById('fb-config-warning');
-  if(w) w.style.display='block';
 }
 
 
