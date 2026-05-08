@@ -1,16 +1,24 @@
-# FamilieApp 🏠
+# SquadUp.gg v0.20
 
-Persoonlijke gezinsapp voor Shane & Esra.
+Visual-first rebuild.
 
-**Live:** https://cverhoog-tech.github.io/VerhoogFamily/
+Deze versie probeert de 10 layouts uit de afbeelding veel dichter te benaderen:
+1. Neon Command
+2. Steam Deck
+3. Cyber Arcade
+4. Cozy Quest
+5. LAN Party
+6. Minimal Pro
+7. Grid Command
+8. Carousel Focus
+9. Side Nav Command
+10. Full Immersion
 
-## Features
-- ✅ Taken & vaste taken
-- 🛒 Boodschappenlijst
-- 📸 Feed met foto's & reacties
-- 📅 Agenda met ICS sync
-- 💰 Financiën & sparen
-- 🍳 Recepten
-- 🏆 Achievements & gamification
-- 🎵 YouTube Music
-- 🔥 Live sync via Firebase
+Let op: dit is bewust opnieuw opgezet als visuele layout prototype. Sommige oude features zijn versimpeld om eerst de juiste look & feel te krijgen.
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
