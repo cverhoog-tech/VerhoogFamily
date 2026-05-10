@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<defs><radialGradient id="g" cx="50%" cy="35%"><stop offset="0" stop-color="#56f58b"/><stop offset="1" stop-color="#05070d"/></radialGradient><filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<rect width="200" height="200" rx="38" fill="#05070d"/><circle cx="100" cy="100" r="88" fill="url(#g)" opacity=".34"/>
+<circle cx="100" cy="102" r="70" fill="#0b1020" stroke="#56f58b" stroke-width="5" filter="url(#glow)"/><path d="M50 88 Q100 24 150 88 L142 108 Q100 82 58 108 Z" fill="#111827" stroke="#56f58b" stroke-width="4"/>
+<circle cx="100" cy="98" r="42" fill="#20283a" stroke="#ffffff22" stroke-width="3"/>
+<path d="M70 98 Q100 130 130 98" fill="#121826" opacity=".8"/><circle cx="84" cy="92" r="5" fill="#56f58b"/><circle cx="116" cy="92" r="5" fill="#56f58b"/>
+<text x="100" y="145" text-anchor="middle" font-size="28" font-family="Arial Black" fill="#fff">M</text>
+<circle cx="100" cy="100" r="92" fill="none" stroke="#56f58b" stroke-width="4" stroke-dasharray="0"/>
+</svg>
