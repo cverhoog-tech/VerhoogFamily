@@ -1,19 +1,107 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=./familyapp-asset-pack-update.html">
-  <title>FamilieApp</title>
-  <style>
-    html,body{margin:0;height:100%;background:#060b18;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;text-align:center}
-    a{color:#a855f7}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FamilieApp">
+<title>FamilieApp</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020713;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+#app-frame{position:fixed;inset:0;width:100%;height:100%;border:0;background:#020713}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 70% 0%,rgba(94,68,255,.24),transparent 36%),linear-gradient(180deg,#0a122d,#020713);color:#fff;z-index:2;font-weight:800;letter-spacing:.2px}
+</style>
 </head>
 <body>
-  <main>
-    <h1>FamilieApp wordt geladen...</h1>
-    <p><a href="./familyapp-asset-pack-update.html">Klik hier als je niet automatisch wordt doorgestuurd.</a></p>
-  </main>
+<div id="boot">FamilieApp wordt geladen...</div>
+<iframe id="app-frame" src="./familyapp-asset-pack-update.html"></iframe>
+<script>
+(function(){
+  var frame=document.getElementById('app-frame');
+  var boot=document.getElementById('boot');
+  var injected=false;
+  frame.addEventListener('load',function(){
+    if(injected) return;
+    injected=true;
+    setTimeout(function(){boot.style.display='none';},350);
+    patchQuestHome();
+  });
+
+  function patchQuestHome(){
+    var w=frame.contentWindow;
+    var d=frame.contentDocument;
+    if(!w||!d) return;
+
+    var css=d.createElement('style');
+    css.id='quest-home-live-css';
+    css.textContent=`
+      body[data-current-screen="home"]{background:#020713!important;max-width:480px!important;margin:0 auto!important}
+      body[data-current-screen="home"] .app-header{display:none!important}
+      #screen-home.quest-home{background:radial-gradient(circle at 70% 0%,rgba(94,68,255,.28),transparent 36%),radial-gradient(circle at 12% 18%,rgba(24,184,255,.16),transparent 32%),linear-gradient(180deg,#0a122d 0%,#061020 45%,#020713 100%)!important;color:#fff!important;overflow-y:auto!important;min-height:100vh!important;padding:18px 0 104px!important}
+      #screen-home.quest-home #home-bg{display:none!important}
+      .qh-wrap{padding:0 18px;position:relative;z-index:1}.qh-top{height:34px;display:flex;align-items:center;justify-content:space-between;color:#fff;font-weight:800;font-size:14px;opacity:.96}.qh-status{font-size:13px;letter-spacing:1px;opacity:.9}.qh-hero{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;padding:22px 0 28px}.qh-title{font-size:34px;line-height:1.05;font-weight:950;letter-spacing:-1px;margin:0 0 22px;text-shadow:0 4px 18px rgba(255,255,255,.12)}.qh-sub{font-size:20px;line-height:1.45;font-weight:800;color:rgba(255,255,255,.82);text-shadow:0 2px 12px rgba(0,0,0,.35)}.qh-actions{display:flex;flex-direction:column;align-items:flex-end;gap:18px}.qh-bell{width:45px;height:45px;border:0;background:transparent;color:#fff;font-size:31px;filter:drop-shadow(0 4px 12px rgba(255,255,255,.14))}.qh-avatars{display:flex;padding-right:4px}.qh-avatar,.qh-mini-avatar{width:54px;height:54px;border-radius:50%;margin-left:-11px;border:3px solid rgba(255,255,255,.72);background:linear-gradient(135deg,#24365b,#a855f7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;box-shadow:0 8px 22px rgba(0,0,0,.32)}.qh-avatar:first-child{margin-left:0}.qh-avatar.partner{background:linear-gradient(135deg,#c0547a,#ec4899)}.qh-avatar.child{background:linear-gradient(135deg,#0ea5e9,#6366f1);font-size:10px}.qh-level{border:0;border-radius:18px;padding:9px 13px 9px 18px;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(98,54,184,.72),#9b4dff);box-shadow:inset 0 0 20px rgba(255,255,255,.12),0 10px 28px rgba(115,64,255,.32);color:#fff;font-size:17px;font-weight:950}.qh-level-star{width:36px;height:28px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:23px;filter:drop-shadow(0 0 9px rgba(255,255,255,.72))}.qh-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px}.qh-stat{border:1px solid rgba(255,255,255,.06);background:linear-gradient(135deg,rgba(31,42,82,.72),rgba(30,22,53,.72));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 15px 40px rgba(0,0,0,.22);border-radius:22px;padding:20px 17px;display:grid;grid-template-columns:58px 1fr;gap:14px;align-items:center;text-align:left;color:#fff}.qh-stat-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:900;box-shadow:inset 0 0 0 4px rgba(0,0,0,.15),0 10px 24px rgba(0,0,0,.25)}.qh-green{background:#22c876}.qh-gold{background:#f5a400}.qh-stat-label{display:block;font-size:17px;font-weight:900;color:rgba(255,255,255,.78);margin-bottom:9px}.qh-stat-value{display:block;font-size:25px;line-height:1;font-weight:950;letter-spacing:.3px}.qh-stat-sub{display:block;font-size:14px;font-weight:900;margin-top:8px}.qh-stat-sub.green{color:#33d884}.qh-stat-sub.gold{color:#ffb72d}.qh-section{margin-top:22px}.qh-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.qh-section-title{text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.9);font-size:17px;font-weight:950}.qh-view{border:0;border-radius:18px;padding:8px 13px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.86);font-size:14px;font-weight:900}.qh-list{display:flex;flex-direction:column;gap:11px}.qh-card{width:100%;border:1px solid rgba(255,255,255,.06);border-radius:21px;padding:15px;display:grid;grid-template-columns:66px 1fr auto;gap:14px;align-items:center;background:linear-gradient(135deg,rgba(34,45,82,.86),rgba(23,25,56,.88));box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 26px rgba(0,0,0,.24);color:#fff;text-align:left}.qh-task-icon{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.16),0 8px 18px rgba(0,0,0,.28)}.qh-blue{background:linear-gradient(135deg,#38bdf8,#0ea5e9)}.qh-pink{background:linear-gradient(135deg,#f472b6,#d946ef)}.qh-orange{background:linear-gradient(135deg,#fbbf24,#f59e0b)}.qh-task-title{display:block;font-size:17px;font-weight:950;line-height:1.2;margin-bottom:14px}.qh-progress,.qh-group-progress{display:block;height:13px;border-radius:999px;background:rgba(10,16,36,.72);box-shadow:inset 0 0 0 2px rgba(255,255,255,.06);overflow:hidden}.qh-progress-fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#76f3a8,#a855f7)}.qh-xp{display:block;color:#7be8a2;font-size:15px;font-weight:950;text-align:right;margin-bottom:9px}.qh-count{display:block;color:rgba(255,255,255,.78);background:rgba(255,255,255,.06);border-radius:12px;padding:5px 9px;font-size:15px;font-weight:950}.qh-group-card{width:100%;border:1px solid rgba(154,92,255,.22);border-radius:22px;padding:18px;display:grid;grid-template-columns:74px 1fr auto;gap:15px;align-items:center;text-align:left;color:#fff;background:linear-gradient(135deg,rgba(106,38,214,.88),rgba(30,26,83,.96));box-shadow:0 15px 34px rgba(71,33,183,.25)}.qh-group-icon{width:60px;height:60px;border-radius:17px;background:linear-gradient(135deg,#a855f7,#6d28d9);display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.13)}.qh-group-title{display:block;font-size:22px;font-weight:950;margin-bottom:5px}.qh-group-sub{display:block;font-size:17px;font-weight:850;color:rgba(255,255,255,.76);margin-bottom:16px}.qh-group-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.qh-group-fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#f9e46b,#fb923c)}.qh-group-xp{font-size:16px;font-weight:950;color:#ffdf75}.qh-group-avatars{display:flex;align-self:start;margin-top:4px}.qh-mini-avatar{width:34px;height:34px;font-size:10px;border-width:2px;margin-left:-8px}.qh-feed-card{width:100%;border:1px solid rgba(255,255,255,.06);border-radius:21px;padding:16px;display:grid;grid-template-columns:78px 1fr auto;gap:12px;align-items:center;text-align:left;color:#fff;background:linear-gradient(135deg,rgba(31,42,82,.84),rgba(15,25,55,.92));box-shadow:0 10px 28px rgba(0,0,0,.22)}.qh-feed-points{display:block;color:#b8ff87;font-weight:950;margin-bottom:8px}.qh-feed-avatars{display:flex}.qh-feed-text{display:block;font-size:16px;line-height:1.35;font-weight:850;color:rgba(255,255,255,.9)}.qh-feed-time{display:block;color:rgba(255,255,255,.58);font-size:14px;font-weight:800;margin-top:5px}.qh-feed-xp{font-size:16px;font-weight:950;color:#ffd45e}.qh-empty{padding:18px;border-radius:18px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.72);font-weight:800}.bottom-nav{background:rgba(5,10,25,.9)!important;border-top:1px solid rgba(255,255,255,.08)!important;box-shadow:0 -14px 35px rgba(0,0,0,.38)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}body[data-current-screen="home"] .bottom-nav{height:78px!important}.nav-btn{color:rgba(255,255,255,.48)!important}.nav-btn.active{color:#a855f7!important;text-shadow:0 0 14px rgba(168,85,247,.7)}.nav-center-inner{background:linear-gradient(135deg,#a855f7,#d946ef)!important;border-radius:18px!important;box-shadow:0 0 32px rgba(168,85,247,.7)!important}.nav-label{font-size:12px!important;font-weight:900!important}.nav-icon{font-size:24px!important}@media(max-width:380px){.qh-wrap{padding:0 14px}.qh-title{font-size:29px}.qh-sub{font-size:18px}.qh-stat{padding:16px 14px}.qh-stat-value{font-size:21px}.qh-card{grid-template-columns:58px 1fr auto}.qh-task-icon{width:48px;height:48px}.qh-task-title{font-size:15px}.qh-group-card{grid-template-columns:58px 1fr}.qh-feed-card{grid-template-columns:68px 1fr auto}}
+    `;
+    d.head.appendChild(css);
+
+    w.escapeHtmlQuest=function(str){return String(str||'').replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});};
+    w.initialsQuest=function(name){return (name||'F').split(/\s+/).filter(Boolean).slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();};
+    w.formatXpQuest=function(n){n=Math.round(n||0);return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');};
+    w.taskIconQuest=function(t,i){var text=(t&&t.title||'').toLowerCase();if(text.indexOf('was')>-1)return{icon:'▣',cls:'qh-pink'};if(text.indexOf('boodschap')>-1||text.indexOf('winkel')>-1)return{icon:'🛒',cls:'qh-orange'};if(text.indexOf('woon')>-1||text.indexOf('schoon')>-1||text.indexOf('stof')>-1)return{icon:'🏠',cls:'qh-blue'};var opts=[{icon:'🏠',cls:'qh-blue'},{icon:'▣',cls:'qh-pink'},{icon:'🛒',cls:'qh-orange'}];return opts[i%opts.length];};
+    w.xpQuest=function(t,i){if(t&&t.prio==='high')return 15;if(t&&t.prio==='med')return 10+i*2;return 8;};
+
+    w.installQuestHome=function(){
+      var home=d.getElementById('screen-home'); if(!home) return;
+      home.classList.add('quest-home');
+      if(!d.getElementById('home-quests')){
+        home.innerHTML='<div id="home-bg" aria-hidden="true"></div><div class="qh-wrap"><div class="qh-top"><div class="qh-time" id="qh-time">9:41</div><div class="qh-status">▮▮▮ ᯤ 🔋</div></div><section class="qh-hero"><div><h1 class="qh-title">👋 Hey Familie!</h1><div class="qh-sub">Samen maken we er<br>een geweldige dag van.</div></div><div class="qh-actions"><button class="qh-bell" onclick="showScreen(\'notif\')">♧</button><div class="qh-avatars"><div class="qh-avatar" id="qh-avatar-me">SH</div><div class="qh-avatar partner" id="qh-avatar-partner">ES</div><div class="qh-avatar child">FAM</div></div><button class="qh-level" onclick="showScreen(\'achievements\')"><span id="home-xp-level">Level 1</span><span class="qh-level-star">✦</span></button></div></section><section class="qh-stat-grid"><button class="qh-stat" onclick="showScreen(\'achievements\')"><span class="qh-stat-icon qh-green">✦</span><span><span class="qh-stat-label">Family XP</span><span class="qh-stat-value" id="qh-family-xp">0</span><span class="qh-stat-sub green" id="qh-xp-today">+0 today</span></span></button><button class="qh-stat" onclick="showDailyBonus&&showDailyBonus()"><span class="qh-stat-icon qh-gold">✦</span><span><span class="qh-stat-label">Rested XP</span><span class="qh-stat-value">2.000</span><span class="qh-stat-sub gold">Ready to claim</span></span></button></section><section class="qh-section"><div class="qh-section-head"><div class="qh-section-title">Today\'s quests</div><button class="qh-view" onclick="showScreen(\'tasks\')">View all</button></div><div class="qh-list" id="home-quests"></div></section><section class="qh-section"><div class="qh-section-head"><div class="qh-section-title">Group quest</div><button class="qh-view" onclick="showScreen(\'tasks\')">View all</button></div><div id="home-group-quest"></div></section><section class="qh-section"><div class="qh-section-head"><div class="qh-section-title">Activity feed</div><button class="qh-view" onclick="showScreen(\'feed\')">View all</button></div><div id="activity-list"></div></section></div>';
+      }
+    };
+
+    w.renderHomeQuestsQuest=function(){
+      var el=d.getElementById('home-quests'); if(!el) return;
+      var data=w.taskData||[];
+      var quests=data.filter(function(t){return !t.done;}).slice(0,3);
+      if(!quests.length){el.innerHTML='<div class="qh-empty">Geen open quests. Tijd om iets nieuws te plannen ✨</div>';return;}
+      el.innerHTML=quests.map(function(t,i){var ico=w.taskIconQuest(t,i),xp=w.xpQuest(t,i);return '<button class="qh-card" onclick="showScreen(\'tasks\')"><span class="qh-task-icon '+ico.cls+'">'+ico.icon+'</span><span><span class="qh-task-title">'+w.escapeHtmlQuest(t.title)+'</span><span class="qh-progress"><span class="qh-progress-fill" style="width:'+(t.done?100:0)+'%"></span></span></span><span><span class="qh-xp">'+xp+' XP</span><span class="qh-count">'+(t.done?'1':'0')+'/1</span></span></button>';}).join('');
+    };
+    w.renderHomeGroupQuestQuest=function(){
+      var el=d.getElementById('home-group-quest'); if(!el) return;
+      var data=w.taskData||[], open=data.filter(function(t){return !t.done;}).length, total=Math.max(data.length,1), done=Math.max(0,total-open), pct=Math.min(100,Math.round(done/total*100));
+      el.innerHTML='<button class="qh-group-card" onclick="showScreen(\'tasks\')"><span class="qh-group-icon">⛺</span><span><span class="qh-group-title">Weekend BBQ</span><span class="qh-group-sub">Nog '+Math.min(open,3)+' taken te gaan</span><span class="qh-group-row"><span class="qh-group-progress"><span class="qh-group-fill" style="width:'+Math.max(22,pct)+'%"></span></span><span class="qh-group-xp">+75 XP</span></span></span><span class="qh-group-avatars"><span class="qh-mini-avatar">'+w.initialsQuest(w.myName)+'</span><span class="qh-mini-avatar">'+w.initialsQuest(w.partnerName)+'</span><span class="qh-mini-avatar">F</span><span class="qh-mini-avatar">★</span></span></button>';
+    };
+    w.renderActivityList=function(){
+      var el=d.getElementById('activity-list'); if(!el) return;
+      var latest=(w.activityData||[])[0];
+      if(!latest){el.innerHTML='<div class="qh-empty">Nog geen activiteit.</div>';return;}
+      el.innerHTML='<button class="qh-feed-card" onclick="showScreen(\'feed\')"><span><span class="qh-feed-points">'+(latest.icon||'✨')+' 15</span><span class="qh-feed-avatars"><span class="qh-mini-avatar">'+w.initialsQuest(w.myName)+'</span><span class="qh-mini-avatar">'+w.initialsQuest(w.partnerName)+'</span></span></span><span><span class="qh-feed-text">'+w.escapeHtmlQuest(latest.text||'Nieuwe activiteit')+'</span><span class="qh-feed-time">'+w.escapeHtmlQuest(latest.time||'Zojuist')+'</span></span><span class="qh-feed-xp">+15 XP</span></button>';
+    };
+
+    var oldRenderHome=w.renderHome;
+    w.renderHome=function(){
+      d.body.setAttribute('data-current-screen','home');
+      w.installQuestHome();
+      if(typeof w.updateHomeXP==='function') w.updateHomeXP();
+      var t=d.getElementById('qh-time'); if(t) t.textContent=new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+      var me=d.getElementById('qh-avatar-me'); if(me) me.textContent=w.initialsQuest(w.myName);
+      var pa=d.getElementById('qh-avatar-partner'); if(pa) pa.textContent=w.initialsQuest(w.partnerName);
+      var xp=d.getElementById('qh-family-xp'); if(xp) xp.textContent=w.formatXpQuest((w.myXP||0)+(w.partnerXPStore||0));
+      var xt=d.getElementById('qh-xp-today'); if(xt) xt.textContent='+'+Math.max(0,Math.round((w.myXP||0)/8))+' today';
+      if(typeof w.updateStats==='function') w.updateStats();
+      w.renderHomeQuestsQuest();
+      w.renderHomeGroupQuestQuest();
+      w.renderActivityList();
+    };
+    var oldShow=w.showScreen;
+    if(typeof oldShow==='function'){
+      w.showScreen=function(id){
+        if(id==='home') d.body.setAttribute('data-current-screen','home'); else d.body.removeAttribute('data-current-screen');
+        return oldShow.apply(this,arguments);
+      };
+    }
+    try{w.renderHome();}catch(e){if(oldRenderHome) oldRenderHome();}
+  }
+})();
+</script>
 </body>
 </html>
