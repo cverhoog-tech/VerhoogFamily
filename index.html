@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FamilieApp Home</title>
+    <style>
+        :root {
+            --tasks-color: #4caf50;
+            --groceries-color: #ff9800;
+            --posts-color: #2196f3;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.4;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 1rem;
+        }
+        .hero-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .hero-card {
+            flex: 1 1 calc(33.333% - 1rem);
+            position: relative;
+            height: 180px;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .hero-card:hover {
+            transform: translateY(-4px);
+        }
+        .hero-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(70%);
+        }
+        .hero-card .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .carousel {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+            border-radius: 16px;
+        }
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease;
+            width: 300%;
+            height: 100%;
+        }
+        .slide {
+            flex: 1 0 100%;
+            position: relative;
+        }
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(65%);
+        }
+        .slide .slide-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        .carousel-nav button {
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: all;
+            transition: background 0.3s ease;
+        }
+        .carousel-nav button:hover {
+            background: rgba(0,0,0,0.7);
+        }
+        .carousel-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+        }
+        .carousel-dots button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        .carousel-dots button.active {
+            background: rgba(255,255,255,0.9);
+        }
+        @media (max-width: 768px) {
+            .hero-card {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="hero-cards">
+            <a class="hero-card" href="#taken" style="background-color: var(--tasks-color);">
+                <img src="familieapp_white_assets/tasks_background.png" alt="Taken achtergrond">
+                <div class="overlay">Taken</div>
+            </a>
+            <a class="hero-card" href="#boodschappen" style="background-color: var(--groceries-color);">
+                <img src="familieapp_white_assets/groceries_background.png" alt="Boodschappen achtergrond">
+                <div class="overlay">Boodschappen</div>
+            </a>
+            <a class="hero-card" href="#feed" style="background-color: var(--posts-color);">
+                <img src="familieapp_white_assets/posts_background.png" alt="Feed achtergrond">
+                <div class="overlay">Posts</div>
+            </a>
+        </section>
+        <section class="carousel" id="feature-carousel">
+            <div class="carousel-track" id="carousel-track">
+                <a class="slide" href="#recepten">
+                    <img src="familieapp_white_assets/recipes_background.png" alt="Recepten achtergrond">
+                    <div class="slide-content">Ontdek Recepten</div>
+                </a>
+                <a class="slide" href="#agenda">
+                    <img src="familieapp_white_assets/agenda_background.png" alt="Agenda achtergrond">
+                    <div class="slide-content">Bekijk Agenda</div>
+                </a>
+                <a class="slide" href="#maaltijden">
+                    <img src="familieapp_white_assets/meals_background.png" alt="Maaltijden achtergrond">
+                    <div class="slide-content">Plan Maaltijden</div>
+                </a>
+            </div>
+            <div class="carousel-nav">
+                <button id="prevBtn" aria-label="Vorige">‹</button>
+                <button id="nextBtn" aria-label="Volgende">›</button>
+            </div>
+            <div class="carousel-dots" id="carousel-dots">
+                <button data-slide="0" class="active"></button>
+                <button data-slide="1"></button>
+                <button data-slide="2"></button>
+            </div>
+        </section>
+    </div>
+    <script>
+        (function() {
+            const track = document.getElementById('carousel-track');
+            const dots = Array.from(document.querySelectorAll('#carousel-dots button'));
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            let current = 0;
+
+            function updateCarousel(index) {
+                const slideWidth = track.clientWidth / track.children.length;
+                track.style.transform = `translateX(-${index * slideWidth}px)`;
+                dots.forEach(dot => dot.classList.remove('active'));
+                dots[index].classList.add('active');
+                current = index;
+            }
+
+            prevBtn.addEventListener('click', () => {
+                const newIndex = (current - 1 + dots.length) % dots.length;
+                updateCarousel(newIndex);
+            });
+            nextBtn.addEventListener('click', () => {
+                const newIndex = (current + 1) % dots.length;
+                updateCarousel(newIndex);
+            });
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const index = parseInt(dot.getAttribute('data-slide'), 10);
+                    updateCarousel(index);
+                });
+            });
+            // Ensure correct width on resize
+            window.addEventListener('resize', () => updateCarousel(current));
+        })();
+    </script>
+</body>
+</html>
