@@ -1,0 +1,1 @@
+console.log('FamilyApp 2.0 loaded');
