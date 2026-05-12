@@ -1,10 +1,10 @@
 module.exports = async function handler(req, res) {
   const upstreamUrl = 'https://raw.githubusercontent.com/cverhoog-tech/VerhoogFamily/main/index.html';
-  const upstream = await fetch(upstreamUrl, { headers: { 'User-Agent': 'FamilieApp-v038-fixed-asset-paths' } });
+  const upstream = await fetch(upstreamUrl, { headers: { 'User-Agent': 'FamilieApp-v039-raw-hero-assets' } });
   let html = await upstream.text();
 
   const css = String.raw`
-<style id="v038-hero-background-css">
+<style id="v039-hero-background-css">
   .home-epic-cards .epic-card,
   .home-pills .home-pill,
   .home-card,
@@ -75,15 +75,15 @@ module.exports = async function handler(req, res) {
 </style>`;
 
   const js = String.raw`
-<script id="v038-hero-background-js">
+<script id="v039-hero-background-js">
 (function(){
-  if (window.__v038FixedHeroAssetPaths) return;
-  window.__v038FixedHeroAssetPaths = true;
+  if (window.__v039RawHeroAssets) return;
+  window.__v039RawHeroAssets = true;
 
   var photos = {
-    tasks: '/assets/hero/taken_hero.webp',
-    shop: '/assets/hero/boodschappen_hero.webp',
-    feed: '/assets/hero/posts_hero.webp',
+    tasks: 'https://raw.githubusercontent.com/cverhoog-tech/VerhoogFamily/main/public/assets/hero/taken_hero.webp',
+    shop: 'https://raw.githubusercontent.com/cverhoog-tech/VerhoogFamily/main/public/assets/hero/boodschappen_hero.webp',
+    feed: 'https://raw.githubusercontent.com/cverhoog-tech/VerhoogFamily/main/public/assets/hero/posts_hero.webp',
     recipes: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=95&fm=webp',
     agenda: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1600&q=95&fm=webp',
     meals: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=1600&q=95&fm=webp'
