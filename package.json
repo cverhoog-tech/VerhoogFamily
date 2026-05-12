@@ -1,0 +1,8 @@
+{
+  "name": "familieapp-v035",
+  "version": "0.35.0",
+  "private": true,
+  "scripts": {
+    "build": "echo Static app - no build required"
+  }
+}
