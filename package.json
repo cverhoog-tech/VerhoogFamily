@@ -1,8 +1,1 @@
-{
-  "name": "familieapp-v035",
-  "version": "0.35.0",
-  "private": true,
-  "scripts": {
-    "build": "echo Static app - no build required"
-  }
-}
+{"name":"familieapp-v036-static","version":"0.36.0","private":true,"scripts":{"build":"echo Static build ready"}}

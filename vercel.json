@@ -1,12 +1,1 @@
-{
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/api/app"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
-  ]
-}
+{"version":2,"routes":[{"src":"/(.*)","dest":"/index.html"}]}
