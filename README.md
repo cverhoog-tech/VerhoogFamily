@@ -1,1 +1,0 @@
-# FamilieApp v0.36\n\nSchone static deploy voor Vercel met premium HQ hero backgrounds en food carousel backgrounds.\n
