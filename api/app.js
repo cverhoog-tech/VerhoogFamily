@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
-    box-shadow: 0 14px 34px rgba(17,24,39,.16) !important;
+    box-shadow: 0 16px 38px rgba(17,24,39,.18) !important;
   }
   .home-epic-cards .epic-card::after,
   .home-pills .home-pill::after,
@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.28) 45%, rgba(0,0,0,.66) 100%) !important;
+    background: linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.26) 45%, rgba(0,0,0,.68) 100%) !important;
   }
   .home-epic-cards .epic-card > *,
   .home-pills .home-pill > *,
@@ -77,7 +77,7 @@ module.exports = async function handler(req, res) {
   .home-carousel .home-slide img,
   .home-slide img {
     opacity: 1 !important;
-    filter: brightness(72%) saturate(1.12) contrast(1.04) !important;
+    filter: brightness(74%) saturate(1.18) contrast(1.08) !important;
     object-fit: cover !important;
   }
 </style>`;
@@ -89,12 +89,12 @@ module.exports = async function handler(req, res) {
   window.__v036HeroBackgroundPatch = true;
 
   var photos = {
-    tasks: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1200&q=90&fm=webp',
-    shop: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=90&fm=webp',
-    feed: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=90&fm=webp',
-    recipes: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=90&fm=webp',
-    agenda: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1600&q=90&fm=webp',
-    meals: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=1600&q=90&fm=webp'
+    tasks: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=95&fm=webp',
+    shop: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=95&fm=webp',
+    feed: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=95&fm=webp',
+    recipes: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=95&fm=webp',
+    agenda: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1600&q=95&fm=webp',
+    meals: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=1600&q=95&fm=webp'
   };
 
   Object.keys(photos).forEach(function(k){ var img = new Image(); img.src = photos[k]; });
@@ -111,7 +111,7 @@ module.exports = async function handler(req, res) {
       img.loading = 'lazy';
       img.decoding = 'async';
       img.style.setProperty('opacity', '1', 'important');
-      img.style.setProperty('filter', 'brightness(72%) saturate(1.12) contrast(1.04)', 'important');
+      img.style.setProperty('filter', 'brightness(74%) saturate(1.18) contrast(1.08)', 'important');
     }
   }
 
