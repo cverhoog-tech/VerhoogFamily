@@ -1,10 +1,10 @@
 module.exports = async function handler(req, res) {
   const upstreamUrl = 'https://raw.githubusercontent.com/cverhoog-tech/VerhoogFamily/main/index.html';
-  const upstream = await fetch(upstreamUrl, { headers: { 'User-Agent': 'FamilieApp-v036' } });
+  const upstream = await fetch(upstreamUrl, { headers: { 'User-Agent': 'FamilieApp-v038-fixed-asset-paths' } });
   let html = await upstream.text();
 
   const css = String.raw`
-<style id="v036-hero-background-css">
+<style id="v038-hero-background-css">
   .home-epic-cards .epic-card,
   .home-pills .home-pill,
   .home-card,
@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
-    box-shadow: 0 16px 38px rgba(17,24,39,.18) !important;
+    box-shadow: 0 18px 42px rgba(17,24,39,.22) !important;
   }
   .home-epic-cards .epic-card::after,
   .home-pills .home-pill::after,
@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: linear-gradient(180deg, rgba(0,0,0,.08) 0%, rgba(0,0,0,.26) 45%, rgba(0,0,0,.68) 100%) !important;
+    background: linear-gradient(180deg, rgba(0,0,0,.06) 0%, rgba(0,0,0,.24) 46%, rgba(0,0,0,.72) 100%) !important;
   }
   .home-epic-cards .epic-card > *,
   .home-pills .home-pill > *,
@@ -72,26 +72,18 @@ module.exports = async function handler(req, res) {
     position: relative !important;
     z-index: 1 !important;
   }
-  .home-epic-cards .epic-card img,
-  .home-pills .home-pill img,
-  .home-carousel .home-slide img,
-  .home-slide img {
-    opacity: 1 !important;
-    filter: brightness(74%) saturate(1.18) contrast(1.08) !important;
-    object-fit: cover !important;
-  }
 </style>`;
 
   const js = String.raw`
-<script id="v036-hero-background-js">
+<script id="v038-hero-background-js">
 (function(){
-  if (window.__v036HeroBackgroundPatch) return;
-  window.__v036HeroBackgroundPatch = true;
+  if (window.__v038FixedHeroAssetPaths) return;
+  window.__v038FixedHeroAssetPaths = true;
 
   var photos = {
-    tasks: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=95&fm=webp',
-    shop: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=95&fm=webp',
-    feed: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=95&fm=webp',
+    tasks: '/assets/hero/taken_hero.webp',
+    shop: '/assets/hero/boodschappen_hero.webp',
+    feed: '/assets/hero/posts_hero.webp',
     recipes: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=95&fm=webp',
     agenda: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1600&q=95&fm=webp',
     meals: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=1600&q=95&fm=webp'
@@ -150,7 +142,7 @@ module.exports = async function handler(req, res) {
 })();
 </script>`;
 
-  html = html.replace('</head>', '<link rel="preconnect" href="https://images.unsplash.com">\n' + css + '\n</head>');
+  html = html.replace('</head>', css + '\n</head>');
   html = html.replace('</body>', js + '\n</body>');
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
