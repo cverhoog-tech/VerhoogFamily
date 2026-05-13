@@ -17,7 +17,6 @@ module.exports = async function handler(req, res) {
 <link rel="stylesheet" href="/src/app/homePremiumPolish.css?v=5">
 <script src="/src/app/disableLegacyQuestRouteHotfix.js" defer></script>
 <script src="/src/app/homePremiumPolish.js?v=5" defer></script>
-<script src="/src/app/taskCreateSubmitGuard.js?v=1" defer></script>
 
 <script type="module" id="modern-bridge-loader">
   import { mountLegacyFeedBridge } from '/src/app/legacy-feed-bridge.js';
