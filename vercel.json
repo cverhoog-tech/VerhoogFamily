@@ -8,5 +8,8 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ]
+  ],
+  "github": {
+    "silent": false
+  }
 }
