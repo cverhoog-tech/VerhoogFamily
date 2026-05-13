@@ -1,6 +1,6 @@
 (() => {
-  if (window.__homePremiumPolishV2) return;
-  window.__homePremiumPolishV2 = true;
+  if (window.__homePremiumPolishV3) return;
+  window.__homePremiumPolishV3 = true;
 
   const statImages = [
     'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=700&q=80',
@@ -66,7 +66,9 @@
     if (cards.length < 3) return;
 
     cards.forEach((card, index) => {
+      if (card.dataset.premiumStatV3 === '1') return;
       const data = statData[index];
+      card.dataset.premiumStatV3 = '1';
       card.classList.remove('premium-stat-card');
       card.classList.add('premium-stat-card-v2');
       card.style.setProperty('--premium-img', `url(${statImages[index]})`);
@@ -80,7 +82,7 @@
   }
 
   function findHero(root) {
-    const existing = root.querySelector('.premium-hero-carousel, .premium-hero-carousel-v2');
+    const existing = root.querySelector('.premium-hero-carousel-v2');
     if (existing) return existing;
 
     const nodes = Array.from(root.querySelectorAll('section, article, div'));
@@ -90,40 +92,96 @@
     });
   }
 
+  function syncDots(hero) {
+    const track = hero.querySelector('.premium-hero-track-v2');
+    const dots = Array.from(hero.querySelectorAll('.premium-hero-dots-v2 span'));
+    if (!track || !dots.length) return;
+    const index = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+    dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+  }
+
+  function goToSlide(hero, nextIndex) {
+    const track = hero.querySelector('.premium-hero-track-v2');
+    if (!track) return;
+    const total = heroSlides.length;
+    const safeIndex = ((nextIndex % total) + total) % total;
+    track.scrollTo({ left: safeIndex * track.clientWidth, behavior: 'smooth' });
+    setTimeout(() => syncDots(hero), 260);
+  }
+
+  function attachCarouselControls(hero) {
+    if (hero.dataset.carouselBoundV3 === '1') return;
+    hero.dataset.carouselBoundV3 = '1';
+
+    const track = hero.querySelector('.premium-hero-track-v2');
+    const prev = hero.querySelector('.premium-hero-prev-v2');
+    const next = hero.querySelector('.premium-hero-next-v2');
+    const dots = Array.from(hero.querySelectorAll('.premium-hero-dots-v2 span'));
+    if (!track || !prev || !next) return;
+
+    const currentIndex = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+
+    prev.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      goToSlide(hero, currentIndex() - 1);
+    });
+
+    next.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      goToSlide(hero, currentIndex() + 1);
+    });
+
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        goToSlide(hero, index);
+      });
+    });
+
+    track.addEventListener('scroll', () => syncDots(hero), { passive: true });
+
+    let startX = 0;
+    track.addEventListener('touchstart', (event) => {
+      startX = event.touches[0].clientX;
+    }, { passive: true });
+    track.addEventListener('touchend', (event) => {
+      const endX = event.changedTouches[0].clientX;
+      const delta = startX - endX;
+      if (Math.abs(delta) > 36) goToSlide(hero, currentIndex() + (delta > 0 ? 1 : -1));
+    }, { passive: true });
+  }
+
   function buildCarousel(root) {
     const hero = findHero(root);
     if (!hero) return;
 
-    hero.className = 'premium-hero-carousel-v2';
-    hero.innerHTML = `
-      <button class="premium-hero-nav-v2 premium-hero-prev-v2" type="button" aria-label="Vorige">‹</button>
-      <div class="premium-hero-track-v2">
-        ${heroSlides.map((slide) => `
-          <section class="premium-hero-slide-v2">
-            <img class="premium-hero-bg-v2" src="${slide.img}" alt="${slide.title}">
-            <div class="premium-hero-content-v2">
-              <div class="premium-hero-icon-v2">${slide.icon}</div>
-              <div class="premium-hero-title-v2">${slide.title}</div>
-              <div class="premium-hero-sub-v2">${slide.sub}</div>
-              <button class="premium-hero-cta-v2" type="button">${slide.cta} →</button>
-            </div>
-          </section>
-        `).join('')}
-      </div>
-      <button class="premium-hero-nav-v2 premium-hero-next-v2" type="button" aria-label="Volgende">›</button>
-      <div class="premium-hero-dots-v2">${heroSlides.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
-    `;
+    if (hero.dataset.premiumHeroV3 !== '1') {
+      hero.dataset.premiumHeroV3 = '1';
+      hero.className = 'premium-hero-carousel-v2';
+      hero.innerHTML = `
+        <button class="premium-hero-nav-v2 premium-hero-prev-v2" type="button" aria-label="Vorige">‹</button>
+        <div class="premium-hero-track-v2">
+          ${heroSlides.map((slide) => `
+            <section class="premium-hero-slide-v2">
+              <img class="premium-hero-bg-v2" src="${slide.img}" alt="${slide.title}">
+              <div class="premium-hero-content-v2">
+                <div class="premium-hero-icon-v2">${slide.icon}</div>
+                <div class="premium-hero-title-v2">${slide.title}</div>
+                <div class="premium-hero-sub-v2">${slide.sub}</div>
+                <button class="premium-hero-cta-v2" type="button">${slide.cta} →</button>
+              </div>
+            </section>
+          `).join('')}
+        </div>
+        <button class="premium-hero-nav-v2 premium-hero-next-v2" type="button" aria-label="Volgende">›</button>
+        <div class="premium-hero-dots-v2">${heroSlides.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
+      `;
+    }
 
-    const track = hero.querySelector('.premium-hero-track-v2');
-    const dots = Array.from(hero.querySelectorAll('.premium-hero-dots-v2 span'));
-    const go = (direction) => track.scrollBy({ left: direction * track.clientWidth, behavior: 'smooth' });
-
-    hero.querySelector('.premium-hero-prev-v2').onclick = (event) => { event.stopPropagation(); go(-1); };
-    hero.querySelector('.premium-hero-next-v2').onclick = (event) => { event.stopPropagation(); go(1); };
-    track.addEventListener('scroll', () => {
-      const index = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
-      dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
-    }, { passive: true });
+    attachCarouselControls(hero);
   }
 
   function apply() {
@@ -138,5 +196,5 @@
   window.addEventListener('load', () => [50, 150, 350, 800, 1400, 2400].forEach((delay) => setTimeout(apply, delay)));
   document.addEventListener('click', () => [80, 280, 800].forEach((delay) => setTimeout(apply, delay)), true);
   document.addEventListener('visibilitychange', apply);
-  setInterval(apply, 900);
+  setInterval(apply, 1200);
 })();
