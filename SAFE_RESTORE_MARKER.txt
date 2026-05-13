@@ -1,1 +1,0 @@
-Restored app functionality and kept only safe home background update.
