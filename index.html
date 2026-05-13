@@ -1885,8 +1885,7 @@ body{background:#fff!important;}
 <div class="screen" id="screen-tasks">
   <div class="task-tabs">
     <button class="ttab active" onclick="setTaskTab('overzicht',this)">Overzicht</button>
-    <button class="ttab" onclick="setTaskTab('week',this)">Week</button>
-    <button class="ttab" onclick="setTaskTab('vast',this)">🔁 Vast</button>
+    <button class="ttab" onclick="setTaskTab('terugkerend',this)">🔁 Terugkerend</button>
     <button class="ttab" onclick="setTaskTab('persoon',this)">Persoon</button>
     <button class="ttab ttab-trade" onclick="openTradeSheet()" title="Taak ruilen">🤝</button>
   </div>
@@ -3002,7 +3001,15 @@ function showScreen(id) {
 
 function _renderScreen(id) {
   if(id==='home')         renderHome();
-  else if(id==='tasks')   renderTasks();
+  else if(id==='tasks')   {
+    // Always show overzicht tab first when navigating to tasks
+    if(taskTab==='week'||taskTab==='vast') {
+      taskTab='overzicht';
+      document.querySelectorAll('.ttab').forEach(function(b){b.classList.remove('active');});
+      var first=document.querySelector('.ttab');if(first)first.classList.add('active');
+    }
+    renderTasks();
+  }
   else if(id==='shop')    renderShop();
   else if(id==='notes')   renderNotes();
   else if(id==='cal')     renderCal();
@@ -10136,6 +10143,7 @@ body.famTask .screen,body.famTask .page,body.famTask main,body.famTask #task-con
 </style>
 <script id="famV023js">
 
+
 (function(){
 try{
 if(window.__famV023){return;} window.__famV023=1;
@@ -10715,7 +10723,19 @@ function bind(){
 }
 
 /* ── MAIN LOOP ── */
-function run(){home();bind();render(false);langBtn();if(!task()){document.body.classList.remove('famTask');}}
+function run(){
+  home();bind();render(false);langBtn();
+  if(!task()){document.body.classList.remove('famTask');}
+  // Force overzicht tab when on tasks screen to prevent old UI showing
+  if(task()&&overview()){
+    if(window.taskTab&&(window.taskTab==='week'||window.taskTab==='vast')){
+      window.taskTab='overzicht';
+      var tabs=document.querySelectorAll('.ttab');
+      tabs.forEach(function(b){b.classList.remove('active');});
+      if(tabs[0])tabs[0].classList.add('active');
+    }
+  }
+}
 
 document.addEventListener('DOMContentLoaded',function(){run();setTimeout(function(){render(true);},60);});
 window.addEventListener('load',function(){run();setTimeout(function(){render(true);},120);});
@@ -10725,6 +10745,7 @@ new MutationObserver(run).observe(document.documentElement,{childList:true,subtr
 
 }catch(e){console.error('fam v0.23 failed',e);}
 })();
+
 
 
 </script>
