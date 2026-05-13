@@ -1,6 +1,6 @@
 (() => {
-  if (window.__familyAppTaskCreateSubmitGuardV2) return;
-  window.__familyAppTaskCreateSubmitGuardV2 = true;
+  if (window.__familyAppTaskCreateSubmitGuardV3) return;
+  window.__familyAppTaskCreateSubmitGuardV3 = true;
 
   const INTERACTIVE_SCOPE = [
     '#fqModal',
@@ -25,6 +25,17 @@
     '.fqHelp',
     '.fqSubAdd'
   ].join(',');
+
+  const TASK_STORAGE_KEYS = /^(fam_tasks_v0|fqsub_)/;
+  let lastTaskSaveAt = 0;
+
+  function markTaskSave() {
+    lastTaskSaveAt = Date.now();
+  }
+
+  function wasRecentTaskSave() {
+    return Date.now() - lastTaskSaveAt < 2500;
+  }
 
   function isTaskOrQuestScope(target) {
     return !!(target && target.closest && target.closest(INTERACTIVE_SCOPE));
@@ -57,6 +68,21 @@
       button.setAttribute('type', 'button');
     });
   }
+
+  const originalSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function familyAppGuardedSetItem(key, value) {
+    const result = originalSetItem.apply(this, arguments);
+    try {
+      if (TASK_STORAGE_KEYS.test(String(key || ''))) markTaskSave();
+    } catch (error) {}
+    return result;
+  };
+
+  window.addEventListener('beforeunload', (event) => {
+    if (!wasRecentTaskSave()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
 
   document.addEventListener('submit', (event) => {
     if (!isTaskOrQuestScope(event.target)) return;
