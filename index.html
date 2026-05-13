@@ -3561,6 +3561,126 @@ function renderTasksOverzicht(el) {
   }
 }
 
+function renderTasksTerugkerend(el) {
+  var now = new Date();
+  var todayNum = now.getDay();
+  var weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - ((todayNum+6)%7));
+  weekStart.setHours(0,0,0,0);
+  var months = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  var ws = weekStart.getDate()+' '+months[weekStart.getMonth()];
+  var weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  var we = weekEnd.getDate()+' '+months[weekEnd.getMonth()];
+  var dateRange = ws+' \u2013 '+we;
+  if(!window.fqRecurView) window.fqRecurView = 'Wekelijks';
+  var weekTasks = taskData.filter(function(t){
+    if(!t.date) return false;
+    var d = new Date(t.date+'T00:00:00');
+    return d >= weekStart && d <= weekEnd;
+  });
+  var doneCnt = weekTasks.filter(function(t){return t.done;}).length;
+  var totalCnt = weekTasks.length || 1;
+  var pct = Math.round(doneCnt/totalCnt*100);
+  var motiv = doneCnt===0 ? 'Laten we beginnen! \uD83D\uDCAA' : doneCnt < totalCnt ? 'Goed bezig! \uD83D\uDCAA' : 'Alles klaar! \uD83C\uDF89';
+  var circ = 201.06;
+  var dash = circ*(1-pct/100);
+  var h = '<div style="padding:14px 14px 100px;background:transparent;">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;position:relative;">';
+  h += '<div><div id="fqRecurTitle" onclick="fqToggleRecurView(this)" style="font-size:22px;font-weight:950;color:#111827;letter-spacing:-.4px;cursor:pointer;display:flex;align-items:center;gap:6px;">'+window.fqRecurView+'e taken <span style="font-size:16px;">&#8964;</span></div>';
+  h += '<div style="font-size:13px;color:#667085;font-weight:700;margin-top:2px;">'+dateRange+' &#8250;</div></div>';
+  h += '<button onclick="fqScrollToToday()" style="border:1.5px solid #111827;background:transparent;border-radius:99px;padding:8px 16px;font-size:13px;font-weight:850;cursor:pointer;color:#111827;white-space:nowrap;">Vandaag</button></div>';
+  h += '<div id="fqRecurDropdown" style="display:none;position:absolute;z-index:50;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);border:1px solid #edf0ec;padding:6px;width:180px;margin-top:-8px;">';
+  ['Wekelijks','Maandelijks','Jaarlijks'].forEach(function(m){
+    var active = m===window.fqRecurView;
+    h += '<button onclick="fqSetRecurView(\''+m+'\')" style="display:block;width:100%;text-align:left;padding:10px 14px;border:none;border-radius:12px;font-size:14px;font-weight:'+(active?'900':'700')+';background:'+(active?'#edf8e9':'transparent')+';color:'+(active?'#2a7a28':'#111827')+';cursor:pointer;">'+m+'e taken</button>';
+  });
+  h += '</div>';
+  h += '<div style="background:#fff;border:1px solid #edf0ec;border-radius:20px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 12px rgba(17,24,39,.05);">';
+  h += '<div style="position:relative;width:72px;height:72px;flex-shrink:0;">';
+  h += '<svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)"><circle cx="36" cy="36" r="32" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="32" fill="none" stroke="#3f7f2f" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+dash+'"/></svg>';
+  h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"><span style="font-size:15px;font-weight:950;color:#111827;line-height:1;">'+doneCnt+'/'+totalCnt+'</span><span style="font-size:10px;color:#667085;font-weight:700;">voltooid</span></div></div>';
+  h += '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;color:#111827;margin-bottom:6px;">'+motiv+'</div>';
+  h += '<div style="height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-bottom:5px;"><div style="height:100%;width:'+pct+'%;background:#3f7f2f;border-radius:99px;"></div></div>';
+  h += '<div style="font-size:12px;color:#667085;font-weight:700;">'+(totalCnt-doneCnt)+' taken te gaan</div></div>';
+  h += '<div style="font-size:38px;flex-shrink:0;">\uD83E\uDEB4</div></div>';
+  var dayAbbr=['MA','DI','WO','DO','VR','ZA','ZO'];
+  for(var i=0;i<7;i++){
+    var dayDate = new Date(weekStart); dayDate.setDate(weekStart.getDate()+i);
+    var isToday = dayDate.toDateString()===now.toDateString();
+    var dateStr = dayDate.toISOString().split('T')[0];
+    var dayTasks = taskData.filter(function(t){return t.date===dateStr;});
+    var bg = isToday?'#f0fdf4':'#fff';
+    var bl = isToday?'border-left:4px solid #3f7f2f;':'border-left:4px solid transparent;';
+    h += '<div id="fqDay-'+i+'" style="background:'+bg+';border:1px solid #edf0ec;'+bl+'border-radius:16px;margin-bottom:8px;">';
+    if(!dayTasks.length){
+      h += '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;">';
+      h += '<div style="width:36px;text-align:center;"><div style="font-size:11px;font-weight:900;color:'+(isToday?'#3f7f2f':'#9aa3af')+';letter-spacing:.3px;">'+dayAbbr[i]+'</div><div style="font-size:17px;font-weight:950;color:'+(isToday?'#3f7f2f':'#111827')+';">'+dayDate.getDate()+'</div></div>';
+      h += '<div style="flex:1;font-size:13px;color:#c5cbd3;font-style:italic;">Vrije dag</div></div>';
+    } else {
+      var dI = i;
+      dayTasks.forEach(function(t,ti){
+        h += '<div style="display:flex;align-items:center;gap:11px;padding:'+(ti===0?'13px 13px 9px':'4px 13px 9px')+';cursor:pointer;">';
+        if(ti===0){
+          h += '<div style="width:36px;flex-shrink:0;text-align:center;"><div style="font-size:11px;font-weight:900;color:'+(isToday?'#3f7f2f':'#9aa3af')+';letter-spacing:.3px;">'+dayAbbr[dI]+'</div><div style="font-size:17px;font-weight:950;color:'+(isToday?'#3f7f2f':'#111827')+';">'+dayDate.getDate()+'</div></div>';
+        } else {
+          h += '<div style="width:36px;flex-shrink:0;"></div>';
+        }
+        h += '<div onclick="event.stopPropagation();toggleTask('+t.id+')" style="width:28px;height:28px;border-radius:50%;border:2px solid '+(t.done?'#3f7f2f':'#d1d5db')+';background:'+(t.done?'#3f7f2f':'transparent')+';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;" id="ck-'+t.id+'">';
+        if(t.done) h += '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+        h += '</div>';
+        h += '<div style="flex:1;min-width:0;">';
+        h += '<div style="font-size:15px;font-weight:'+(t.done?'700':'850')+';color:'+(t.done?'#9aa3af':'#111827')+';text-decoration:'+(t.done?'line-through':'none')+';display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+t.title;
+        if(isToday&&!t.done) h += '<span style="font-size:10px;font-weight:900;background:#f0fdf4;color:#3f7f2f;padding:2px 7px;border-radius:99px;">Vandaag</span>';
+        h += '</div>';
+        if(t.assigned&&t.assigned.length>1){
+          var avH='<div style="display:flex;margin-top:3px;">';
+          var aColors={'SK':'#3f7f2f','JD':'#6d28d9','ES':'#ec4899','SH':'#f97316'};
+          t.assigned.forEach(function(a){avH+='<div style="width:20px;height:20px;border-radius:50%;background:'+(aColors[a]||'#6d28d9')+';border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;margin-right:-4px;">'+a+'</div>';});
+          avH+='</div>';
+          h+=avH;
+        }
+        h += '</div>';
+        var ac_map={'SK':'#3f7f2f','JD':'#6d28d9','ES':'#ec4899','SH':'#f97316'};
+        var av=(t.assigned&&t.assigned[0])||'SK';
+        h += '<div style="width:28px;height:28px;border-radius:50%;background:'+(ac_map[av]||'#3f7f2f')+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;flex-shrink:0;">'+av+'</div>';
+        h += '<div style="font-size:18px;color:#c5cbd3;">&#8250;</div>';
+        h += '</div>';
+        if(ti<dayTasks.length-1) h+='<div style="height:1px;background:#f3f4f6;margin:0 13px 0 61px;"></div>';
+      });
+    }
+    h += '</div>';
+  }
+  h += '<div style="display:flex;gap:10px;align-items:center;padding:4px 0 16px;">';
+  h += '<button onclick="openAdd(\'task\')" style="flex:1;border:none;border-radius:99px;padding:15px;font-size:15px;font-weight:900;background:#3f7f2f;color:#fff;box-shadow:0 7px 20px rgba(63,127,47,.26);cursor:pointer;">+ Taak toevoegen</button>';
+  h += '<button style="width:50px;height:50px;border-radius:50%;border:none;background:#6d28d9;color:#fff;font-size:20px;cursor:pointer;box-shadow:0 7px 18px rgba(109,40,217,.28);">&#10022;</button>';
+  h += '</div></div>';
+  el.innerHTML = h;
+}
+
+function fqToggleRecurView(btn){
+  var dd=document.getElementById('fqRecurDropdown');
+  if(!dd)return;
+  dd.style.display=dd.style.display==='none'?'block':'none';
+  var rect=(btn||document.getElementById('fqRecurTitle')).getBoundingClientRect();
+  dd.style.top=(rect.bottom+window.scrollY+4)+'px';
+  dd.style.left=(rect.left+window.scrollX)+'px';
+}
+
+function fqSetRecurView(v){
+  window.fqRecurView=v;
+  var dd=document.getElementById('fqRecurDropdown');
+  if(dd) dd.style.display='none';
+  var el=document.getElementById('task-content');
+  if(el) renderTasksTerugkerend(el);
+}
+
+function fqScrollToToday(){
+  var todayIdx=((new Date().getDay()+6)%7);
+  var el=document.getElementById('fqDay-'+todayIdx);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+
 function renderTasksWeek(el) {
   var days=['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];
   var today=todayName();
