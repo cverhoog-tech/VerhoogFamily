@@ -3,11 +3,20 @@ const nameKey = 'familyapp-profile-name-v1';
 const partnerKey = 'familyapp-partner-name-v1';
 
 const avatarChoices = [
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Kirito&backgroundColor=e8f5e3',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Asuna&backgroundColor=f6f2ff',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Meliodas&backgroundColor=fff1e4',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Elizabeth&backgroundColor=ffeef8',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Sinon&backgroundColor=eaf1ff',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Leafa&backgroundColor=e8fff1',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Ban&backgroundColor=f7f7f7',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=King&backgroundColor=f1f5ff',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Merlin&backgroundColor=f3e8ff',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Alice&backgroundColor=fff4e8',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Eugeo&backgroundColor=e8f7ff',
+  'https://api.dicebear.com/8.x/adventurer/svg?seed=Yui&backgroundColor=fff0f8',
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Kai&backgroundColor=e8f5e3',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Mika&backgroundColor=f6f2ff',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Rin&backgroundColor=fff1e4',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Yuna&backgroundColor=ffeef8',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=80'
 ];
 
 function getName() { return localStorage.getItem(nameKey) || 'Shane'; }
@@ -103,7 +112,6 @@ export function renderProfileScreen(container) {
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
         <div class="profile-choice-row">
           ${avatarChoices.map((src) => `<button class="profile-choice ${src === avatar ? 'selected' : ''}" data-avatar-choice="${src}"><img src="${src}" alt="Avatar keuze"><span>✓</span></button>`).join('')}
-          <button class="profile-next-avatar">›</button>
         </div>
       </section>
 
