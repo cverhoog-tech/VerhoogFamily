@@ -198,3 +198,123 @@
   document.addEventListener('visibilitychange', apply);
   setInterval(apply, 1200);
 })();
+
+(() => {
+  if (window.__questModalRouteHotfixV1) return;
+  window.__questModalRouteHotfixV1 = true;
+
+  const STYLE_ID = 'quest-modal-route-hotfix-style';
+  const RETURN_KEY = 'familyapp-return-to-tasks-after-create-v1';
+  const ROUTE_KEY = 'familyapp-last-screen-label-v1';
+
+  function injectStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .fqDoneWrap .fqDone:not(.reopen),
+      #fqDoneBtn:not(.reopen) {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 52%, #1d4ed8 100%) !important;
+        color: #ffffff !important;
+        border: 0 !important;
+        box-shadow: 0 16px 38px rgba(37, 99, 235, 0.36), inset 0 1px 0 rgba(255,255,255,.22) !important;
+      }
+      .fqDoneWrap .fqDone:not(.reopen):active,
+      #fqDoneBtn:not(.reopen):active {
+        transform: scale(.98) !important;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, .28), inset 0 1px 0 rgba(255,255,255,.18) !important;
+      }
+      .fqDoneWrap .fqDone.reopen,
+      #fqDoneBtn.reopen {
+        background: rgba(255,255,255,.10) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255,255,255,.20) !important;
+        box-shadow: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function headerText() {
+    const header = document.querySelector('.header-title');
+    return (header && header.textContent || '').trim().toLowerCase();
+  }
+
+  function rememberActiveRoute() {
+    const label = headerText();
+    if (label) localStorage.setItem(ROUTE_KEY, label);
+  }
+
+  function looksLikeAuthScreen() {
+    const text = (document.body.textContent || '').toLowerCase();
+    const header = headerText();
+    return /inloggen|login|aanmelden|google/i.test(text) && !/taken|tasks/i.test(header);
+  }
+
+  function clickTasksNav() {
+    const candidates = Array.from(document.querySelectorAll('button, .nav-btn, [role="button"], a'));
+    const tasks = candidates.find((button) => /taken|tasks/i.test(button.textContent || ''));
+    if (tasks) {
+      tasks.click();
+      return true;
+    }
+    return false;
+  }
+
+  function markReturnToTasks() {
+    localStorage.setItem(RETURN_KEY, String(Date.now()));
+    localStorage.setItem(ROUTE_KEY, 'taken');
+  }
+
+  function restoreTasksIfNeeded() {
+    const stamped = Number(localStorage.getItem(RETURN_KEY) || 0);
+    if (!stamped) return;
+    if (Date.now() - stamped > 15000) {
+      localStorage.removeItem(RETURN_KEY);
+      return;
+    }
+
+    const header = headerText();
+    if (/taken|tasks/i.test(header)) {
+      localStorage.removeItem(RETURN_KEY);
+      return;
+    }
+
+    if (looksLikeAuthScreen() || /familieapp|home|profiel|profile/i.test(header)) {
+      clickTasksNav();
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    rememberActiveRoute();
+    const target = event.target && event.target.closest ? event.target.closest('button, .fqSave, .sheet-btn, .fqAdd') : null;
+    if (!target) return;
+    const text = (target.textContent || '').toLowerCase();
+    const isQuestCreate = /quest toevoegen|nieuwe quest|opslaan|toevoegen|save|add quest/i.test(text);
+    const isTaskContext = document.querySelector('#task-content, .task-content, .fqModal, .fqAdd, .fqSave') || /taken|tasks/i.test(headerText());
+    if (isQuestCreate && isTaskContext) {
+      markReturnToTasks();
+      setTimeout(restoreTasksIfNeeded, 180);
+      setTimeout(restoreTasksIfNeeded, 600);
+      setTimeout(restoreTasksIfNeeded, 1400);
+      setTimeout(restoreTasksIfNeeded, 2800);
+    }
+  }, true);
+
+  window.addEventListener('storage', (event) => {
+    if (event.key && /fam_tasks_v0|familyapp:.*tasks|tasks/i.test(event.key)) {
+      markReturnToTasks();
+      setTimeout(restoreTasksIfNeeded, 220);
+    }
+  });
+
+  window.addEventListener('load', () => {
+    injectStyle();
+    setTimeout(restoreTasksIfNeeded, 400);
+  });
+  document.addEventListener('visibilitychange', restoreTasksIfNeeded);
+  setInterval(() => {
+    injectStyle();
+    restoreTasksIfNeeded();
+  }, 900);
+})();
