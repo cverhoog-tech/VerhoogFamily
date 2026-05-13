@@ -1,2 +1,0 @@
-Redeploy trigger for FamilieApp v0.35.
-index.html is restored in the repository root.
