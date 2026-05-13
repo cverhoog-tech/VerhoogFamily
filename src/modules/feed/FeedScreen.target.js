@@ -32,7 +32,7 @@ function seedPosts() {
     },
     { id: 'task', type: 'task', author: 'Shane', avatar: avatars.shane, time: '1u', text: 'heeft een taak afgerond', title: 'Vuilnis buiten zetten', points: '+10 punten', likes: 8, liked: false, comments: [] },
     { id: 'agenda', type: 'agenda', author: 'Esra', avatar: avatars.esra, time: '2u', text: 'heeft een afspraak toegevoegd', title: 'Tandarts - Emma', subtitle: 'Morgen om 14:30', likes: 3, liked: false, comments: [] },
-    { id: 'grocery', type: 'grocery', author: 'Boodschappenlijst', avatar: avatars.esra, time: '5u', text: 'is bijgewerkt', title: '🥛 Melk   🍌 Bananen   🍞 Brood   +2 meer', likes: 4, liked: false, comments: [] },
+    { id: 'grocery', type: 'grocery', author: 'Boodschappenlijst', avatar: avatars.esra, time: '5u', text: 'is bijgewerkt', title: 'Melk, Bananen, Brood en 2 meer', likes: 4, liked: false, comments: [] },
     { id: 'birthday', type: 'agenda', author: 'Verjaardag', avatar: avatars.emma, time: '1d', text: 'morgen', title: 'Emma', subtitle: '8 jaar! 🎉', likes: 6, liked: false, comments: [] }
   ];
 }
@@ -60,9 +60,25 @@ function toast(message) {
 }
 
 function routeTo(label) {
-  const buttons = Array.from(document.querySelectorAll('button, .nav-btn, [role="button"]'));
-  const found = buttons.find((button) => (button.textContent || '').toLowerCase().includes(label));
-  if (found) found.click(); else toast('Open module: ' + label);
+  const normalized = String(label || '').toLowerCase();
+  const aliases = {
+    tasks: ['taken', 'task'],
+    updates: ['feed', 'update', 'updates'],
+    agenda: ['agenda', 'kalender', 'afspraken'],
+    groceries: ['boodschappen', 'lijst'],
+    notes: ['notities', 'notes'],
+  };
+  const wanted = aliases[normalized] || [normalized];
+  const candidates = Array.from(document.querySelectorAll('.nav-btn, .more-btn, button, [role="button"]'));
+  const found = candidates.find((button) => {
+    const text = (button.textContent || '').toLowerCase().trim();
+    return wanted.some((term) => text.includes(term));
+  });
+  if (found) {
+    requestAnimationFrame(() => found.click());
+  } else {
+    toast('Open module: ' + label);
+  }
 }
 
 function icon(type) {
@@ -101,21 +117,20 @@ function renderPost(post) {
   const mediaHtml = post.image ? `<img class="target-upload-image" src="${post.image}" alt="Upload">` : '';
   const gifHtml = post.gif ? `<img class="target-upload-image" src="${post.gif}" alt="GIF">` : '';
   const detail = post.type === 'agenda' ? `<button class="target-agenda-pill" data-route="agenda"><strong>▣ ${escapeHtml(post.title)}</strong><small>${escapeHtml(post.subtitle)}</small></button>` :
-    post.type === 'grocery' ? `<button class="target-grocery-pill" data-route="boodschappen">${escapeHtml(post.title)}</button>` :
+    post.type === 'grocery' ? `<button class="target-grocery-pill" data-route="groceries">🥛 ${escapeHtml(post.title)}</button>` :
     post.type === 'task' ? `<h3>${escapeHtml(post.title)}</h3><b class="target-points">${escapeHtml(post.points)}</b>` :
     post.type === 'birthday' ? `<button class="target-birthday-pill" data-route="agenda"><img src="${avatars.emma}" alt="Emma"><div><strong>${escapeHtml(post.title)}</strong><small>${escapeHtml(post.subtitle)}</small></div></button>` : '';
 
   return `
     <article class="target-card" data-feed-type="${post.type}" data-post-id="${post.id}">
-      <button class="target-type-icon ${iconClass}" data-route="${post.type === 'grocery' ? 'boodschappen' : post.type === 'task' ? 'taken' : post.type === 'agenda' ? 'agenda' : ''}">${symbol}</button>
-      <button class="target-photo-button" data-profile="${escapeHtml(post.author)}"><img class="target-user-photo" src="${post.avatar}" alt="${escapeHtml(post.author)}"></button>
+      <button class="target-type-icon ${iconClass}" data-route="${post.type === 'grocery' ? 'groceries' : post.type === 'task' ? 'tasks' : post.type === 'agenda' ? 'agenda' : 'updates'}">${symbol}</button>
       <div class="target-card-body">
         <div class="target-card-top"><p><strong>${escapeHtml(post.author)}</strong> ${escapeHtml(post.text)}</p><button data-menu>${escapeHtml(post.time)} ···</button></div>
         ${detail}
         ${photoHtml}${mediaHtml}${gifHtml}
         <div class="target-reactions"><button data-like="${post.id}" class="${post.liked ? 'liked' : ''}">♥ ${post.likes || 0}</button><button data-focus-comment="${post.id}">○ ${(post.comments || []).length}</button></div>
         ${renderComments(post)}
-        <div class="target-comment-box"><img src="${ownAvatar()}" alt="Jij"><input data-comment-input="${post.id}" placeholder="Schrijf een reactie..."><button data-send-comment="${post.id}">Plaats</button></div>
+        <div class="target-comment-box"><img src="${ownAvatar()}" alt="Jij"><input data-comment-input="${post.id}" placeholder="Schrijf een reactie..."><button data-send-comment="${post.id}">➤</button></div>
       </div>
     </article>
   `;
@@ -180,18 +195,16 @@ function bindPostActions(container) {
   container.querySelectorAll('[data-focus-comment]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); const input = container.querySelector(`[data-comment-input="${button.dataset.focusComment}"]`); if (input) input.focus(); });
   container.querySelectorAll('[data-reply]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); addReply(button.dataset.reply, button.dataset.comment); renderPosts(container); });
   container.querySelectorAll('[data-comment-like]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); toast('Reactie geliked'); });
-  container.querySelectorAll('[data-profile]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); toast('Profiel openen: ' + button.dataset.profile); });
   container.querySelectorAll('[data-route]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); if (button.dataset.route) routeTo(button.dataset.route); });
 }
 
 function bindComposer(container) {
   container.querySelector('[data-action="photo"]').onclick = () => container.querySelector('.target-photo-input').click();
-  container.querySelector('[data-action="avatar-upload"]').onclick = () => container.querySelector('.target-avatar-input').click();
   container.querySelector('[data-action="emoji"]').onclick = () => { const input = container.querySelector('.target-input-field'); input.value += '😊'; input.focus(); };
   container.querySelector('[data-action="gif"]').onclick = () => { const input = container.querySelector('.target-input-field'); input.dataset.gif = 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif'; container.querySelector('.target-media-preview').innerHTML = `<img src="${input.dataset.gif}" alt="GIF">`; };
-  container.querySelector('[data-action="post"]').onclick = () => publish(container);
+  container.querySelectorAll('[data-action="post"]').forEach((button) => { button.onclick = (event) => { event.stopPropagation(); publish(container); }; });
+  container.querySelector('.target-input-field').addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') publish(container); });
   container.querySelector('.target-photo-input').onchange = (event) => { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { event.target.dataset.preview = reader.result; container.querySelector('.target-media-preview').innerHTML = `<img src="${reader.result}" alt="Preview">`; }; reader.readAsDataURL(file); };
-  container.querySelector('.target-avatar-input').onchange = (event) => { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { localStorage.setItem(avatarKey, reader.result); renderFeedScreen(container); }; reader.readAsDataURL(file); };
 }
 
 export function renderFeedScreen(container) {
@@ -200,24 +213,25 @@ export function renderFeedScreen(container) {
       <section class="target-feed-summary">
         <h2>Goedemiddag Shane 👋</h2><p>Dit is er vandaag in het gezin</p>
         <div class="target-stat-grid">
-          <button class="target-stat" data-route="taken"><span class="target-stat-icon green">✓</span><strong>4</strong><small>Taken afgerond</small></button>
+          <button class="target-stat" data-route="tasks"><span class="target-stat-icon green">✓</span><strong>4</strong><small>Taken afgerond</small></button>
           <button class="target-stat" data-route="agenda"><span class="target-stat-icon purple">▣</span><strong>2</strong><small>Afspraken</small></button>
-          <button class="target-stat" data-route="boodschappen"><span class="target-stat-icon orange">▣</span><strong>3</strong><small>Boodschappen</small></button>
-          <button class="target-stat" data-route="feed"><span class="target-stat-icon blue">●●</span><strong>5</strong><small>Nieuwe updates</small></button>
+          <button class="target-stat" data-route="groceries"><span class="target-stat-icon orange">▣</span><strong>3</strong><small>Boodschappen</small></button>
+          <button class="target-stat" data-route="updates"><span class="target-stat-icon blue">●●</span><strong>5</strong><small>Nieuwe updates</small></button>
         </div>
       </section>
       <section class="target-composer">
-        <button class="target-avatar solid" data-action="avatar-upload"><img class="target-own-avatar-img" src="${ownAvatar()}" alt="Jouw foto"></button>
-        <textarea class="target-input-field" placeholder="Deel iets met het gezin..."></textarea>
+        <img class="target-composer-avatar" src="${ownAvatar()}" alt="Jouw foto">
+        <div class="target-input-wrap"><textarea class="target-input-field" placeholder="Deel iets met het gezin..."></textarea><button class="target-send-inline" data-action="post" aria-label="Post plaatsen">➤</button></div>
         <div class="target-media-preview"></div>
-        <input class="target-photo-input" type="file" accept="image/*" hidden><input class="target-avatar-input" type="file" accept="image/*" hidden>
-        <div class="target-composer-actions"><button data-action="photo">▧ Foto</button><button data-action="emoji">😊 Emoji</button><button data-action="gif">GIF</button><button data-action="post">☷</button><button class="target-post" data-action="post">Posten</button></div>
+        <input class="target-photo-input" type="file" accept="image/*" hidden>
+        <div class="target-composer-actions"><button data-action="photo">▧</button><button data-action="emoji">😊</button><button data-action="gif">GIF</button><button class="target-post" data-action="post">Posten</button></div>
       </section>
       <nav class="target-tabs"><button class="active" data-filter="all">⌂ Alle updates</button><button data-filter="task">☑ Taken</button><button data-filter="agenda">▣ Agenda</button><button data-filter="photo">▧ Foto's</button><button data-filter="note">▱ Notities</button></nav>
       <section class="target-feed-list"></section>
     </section>
   `;
   container.querySelectorAll('[data-filter]').forEach((button) => button.onclick = () => { container.querySelectorAll('[data-filter]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); const filter = button.dataset.filter; container.querySelectorAll('[data-feed-type]').forEach((card) => { card.hidden = filter !== 'all' && card.dataset.feedType !== filter; }); });
+  container.querySelectorAll('[data-route]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); routeTo(button.dataset.route); });
   bindComposer(container);
   renderPosts(container);
 }
