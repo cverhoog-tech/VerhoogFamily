@@ -15,6 +15,31 @@ module.exports = async function handler(req, res) {
 <link rel="stylesheet" href="/trade-engine.css">
 <script src="/trade-engine.js" defer></script>
 
+<script type="module" id="modern-feed-bridge-loader">
+  import { mountLegacyFeedBridge } from '/src/app/legacy-feed-bridge.js';
+
+  function tryModernFeedMount() {
+    try {
+      mountLegacyFeedBridge();
+    } catch (error) {
+      console.warn('Modern feed bridge kon niet laden', error);
+    }
+  }
+
+  window.addEventListener('load', function () {
+    setTimeout(tryModernFeedMount, 120);
+    setTimeout(tryModernFeedMount, 450);
+    setTimeout(tryModernFeedMount, 900);
+  });
+
+  document.addEventListener('click', function () {
+    setTimeout(tryModernFeedMount, 120);
+    setTimeout(tryModernFeedMount, 420);
+  }, true);
+
+  setInterval(tryModernFeedMount, 1200);
+</script>
+
 <style id="premium-grocery-bg-css">
 body.groceries-premium{background:#f8faf6!important;scrollbar-width:none;}
 body.groceries-premium::-webkit-scrollbar{display:none;}
@@ -22,17 +47,14 @@ body.groceries-premium .screen.active{position:relative;overflow:hidden;backgrou
 body.groceries-premium .screen.active>*{position:relative;z-index:2;}
 body.groceries-premium .screen.active::before{content:"";position:fixed;inset:0;max-width:480px;margin:auto;pointer-events:none;z-index:0;background-repeat:no-repeat;background-size:cover;}
 body.groceries-premium .screen.active::after{content:"";position:fixed;inset:0;max-width:480px;margin:auto;pointer-events:none;z-index:1;background:linear-gradient(180deg,rgba(255,255,255,.58) 0%,rgba(255,255,255,.42) 42%,rgba(255,255,255,.78) 100%);}
-
 body.groceries-premium[data-shop-bg="leaf"] .screen.active::before{background-image:url('/backgrounds/leaf.webp');background-position:center center;}
 body.groceries-premium[data-shop-bg="cream"] .screen.active::before{background-image:url('/backgrounds/cream.webp');background-position:center bottom;}
 body.groceries-premium[data-shop-bg="beige"] .screen.active::before{background-image:url('/backgrounds/beige.webp');background-position:center bottom;}
 body.groceries-premium[data-shop-bg="marble"] .screen.active::before{background-image:url('/backgrounds/marble.webp');background-position:center center;}
-
 body.groceries-premium[data-shop-bg="cream"] .screen.active::after{background:linear-gradient(180deg,rgba(255,255,255,.50) 0%,rgba(255,255,255,.34) 45%,rgba(255,255,255,.72) 100%);}
 body.groceries-premium[data-shop-bg="leaf"] .screen.active::after{background:linear-gradient(180deg,rgba(255,255,255,.56) 0%,rgba(255,255,255,.38) 45%,rgba(255,255,255,.76) 100%);}
 body.groceries-premium[data-shop-bg="beige"] .screen.active::after{background:linear-gradient(180deg,rgba(255,255,255,.52) 0%,rgba(255,255,255,.34) 46%,rgba(255,255,255,.74) 100%);}
 body.groceries-premium[data-shop-bg="marble"] .screen.active::after{background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.46) 45%,rgba(255,255,255,.82) 100%);}
-
 body.groceries-premium .app-header,body.groceries-premium .bottom-nav{background:rgba(255,255,255,.74)!important;backdrop-filter:blur(24px) saturate(1.25);-webkit-backdrop-filter:blur(24px) saturate(1.25);border-color:rgba(255,255,255,.64)!important;box-shadow:0 12px 34px rgba(31,41,51,.045);}
 body.groceries-premium .shop-cols,body.groceries-premium .task-content{background:transparent!important;}
 body.groceries-premium .shop-col{background:rgba(255,255,255,.18)!important;border-right-color:rgba(255,255,255,.48)!important;backdrop-filter:blur(4px) saturate(1.08);-webkit-backdrop-filter:blur(4px) saturate(1.08);}
@@ -66,7 +88,7 @@ body:not(.groceries-premium) .premium-bg-switcher{display:none!important;}
 </script>
 `;
 
-    if (!html.includes("premium-grocery-bg-css")) {
+    if (!html.includes("modern-feed-bridge-loader")) {
       html = html.replace("</head>", injection + "</head>");
     }
 
