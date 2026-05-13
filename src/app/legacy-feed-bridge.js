@@ -1,5 +1,5 @@
 import { loadStylesheet } from './module-loader.js';
-import { renderFeedScreen } from '../modules/feed/FeedScreen.next.js';
+import { renderFeedScreen } from '../modules/feed/FeedScreen.target.js';
 
 const LEGACY_FEED_SELECTORS = [
   '#feed-content',
@@ -34,10 +34,7 @@ export function mountLegacyFeedBridge() {
   loadStylesheet('/src/styles/tokens.css');
   loadStylesheet('/src/styles/layout.css');
   loadStylesheet('/src/styles/components.css');
-  loadStylesheet('/src/modules/feed/feed.styles.css');
-  loadStylesheet('/src/modules/feed/feed.motion.css');
-  loadStylesheet('/src/modules/feed/feed.premium.css');
-  loadStylesheet('/src/modules/feed/feed.polish.css');
+  loadStylesheet('/src/modules/feed/feed.target.css');
 
   root.dataset.modernFeed = 'true';
   renderFeedScreen(root);
