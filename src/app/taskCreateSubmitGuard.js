@@ -1,24 +1,55 @@
 (() => {
-  if (window.__familyAppTaskCreateSubmitGuardV1) return;
-  window.__familyAppTaskCreateSubmitGuardV1 = true;
+  if (window.__familyAppTaskCreateSubmitGuardV2) return;
+  window.__familyAppTaskCreateSubmitGuardV2 = true;
 
   const INTERACTIVE_SCOPE = [
     '#fqModal',
     '.fqModal',
+    '#fqGQPop',
+    '.fqGQPop',
     '.add-sheet',
     '.add-overlay',
     '#task-content',
     '.task-content'
   ].join(',');
 
+  const SAVE_ACTION_SELECTOR = [
+    'button',
+    'a',
+    'input[type="submit"]',
+    'input[type="button"]',
+    '.sheet-btn',
+    '.fqSave',
+    '.fqAdd',
+    '.fqDone',
+    '.fqHelp',
+    '.fqSubAdd'
+  ].join(',');
+
   function isTaskOrQuestScope(target) {
     return !!(target && target.closest && target.closest(INTERACTIVE_SCOPE));
+  }
+
+  function isSaveLikeAction(target) {
+    if (!target || !target.closest) return false;
+    const action = target.closest(SAVE_ACTION_SELECTOR);
+    if (!action || !isTaskOrQuestScope(action)) return false;
+
+    const text = `${action.textContent || ''} ${action.value || ''} ${action.getAttribute('aria-label') || ''}`.toLowerCase();
+    const className = String(action.className || '').toLowerCase();
+
+    return action.matches('input[type="submit"]')
+      || className.includes('fqsave')
+      || className.includes('sheet-btn')
+      || /opslaan|toevoegen|quest toevoegen|nieuwe quest|save|add quest|create|aanmaken|voltooid|markeer/.test(text);
   }
 
   function normalizeSubmitButtons(root = document) {
     root.querySelectorAll([
       '#fqModal button:not([type])',
       '.fqModal button:not([type])',
+      '#fqGQPop button:not([type])',
+      '.fqGQPop button:not([type])',
       '.add-sheet button:not([type])',
       '#task-content button:not([type])',
       '.task-content button:not([type])'
@@ -33,11 +64,15 @@
   }, true);
 
   document.addEventListener('click', (event) => {
-    const button = event.target && event.target.closest ? event.target.closest('button, input[type="submit"]') : null;
-    if (!button || !isTaskOrQuestScope(button)) return;
+    const action = event.target && event.target.closest ? event.target.closest(SAVE_ACTION_SELECTOR) : null;
+    if (!action || !isTaskOrQuestScope(action)) return;
 
-    if (button.tagName === 'BUTTON' && !button.getAttribute('type')) {
-      button.setAttribute('type', 'button');
+    if (action.tagName === 'BUTTON' && !action.getAttribute('type')) {
+      action.setAttribute('type', 'button');
+    }
+
+    if (isSaveLikeAction(action)) {
+      event.preventDefault();
     }
   }, true);
 
