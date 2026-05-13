@@ -9796,5 +9796,741 @@ function initApp() {
   dots.forEach(function(dot,i){ dot.addEventListener('click', function(){ index = i; update(); }); });
 })();
 </script>
+
+<style id="famV023css">
+/* FamilieApp v023 — Premium Quest UI */
+:root{--g:#3f7f2f;--g2:#2f6323;--gl:#6bd35b;--n:#111827;--m:#667085;--p:#7c4dff;--dark:#08111f}
+
+/* ── BACKGROUND OVERLAY ── */
+#famBg{position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(246,250,247,.85)),url('https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=1800&q=90&fm=webp') center top/cover no-repeat;opacity:0;transition:.2s}
+body.famTask #famBg{opacity:.95}
+body.famTask .screen,body.famTask .page,body.famTask main,body.famTask #task-content,body.famTask .task-content{background:transparent!important;position:relative;z-index:1}
+
+/* ── HOME CARDS ── */
+.home-pills,.home-epic-cards{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:10px!important;padding:0 16px 14px!important}
+.home-pills>*,.home-epic-cards>*,.home-card,.home-pill,.epic-card{height:205px!important;min-height:205px!important;border-radius:24px!important;background-size:cover!important;background-position:center!important;overflow:hidden!important;position:relative!important;box-shadow:0 16px 36px rgba(17,24,39,.18)!important}
+.home-carousel,.recipes-carousel,.hero-carousel,.home-slide,.recipes-slide,.agenda-slide,.meals-slide{height:240px!important;min-height:240px!important;background-size:cover!important;background-position:center!important}
+.home-carousel,.recipes-carousel,.hero-carousel{border-radius:28px!important;margin:0 16px 18px!important;overflow:hidden!important}
+.home-pills>*:after,.home-epic-cards>*:after,.home-card:after,.home-pill:after,.epic-card:after,.home-slide:after,.recipes-slide:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.66));z-index:0}
+.home-pills>*>*,.home-epic-cards>*>*,.home-card>*,.home-pill>*,.epic-card>*,.home-slide>*,.recipes-slide>*{position:relative!important;z-index:1!important}
+
+/* ── QUEST LIST WRAPPER ── */
+.fq{padding:14px 14px 118px;background:transparent;min-height:70vh}
+
+/* ── STICKY TOP BAR ── */
+.fqTop{position:sticky;top:0;z-index:20;display:flex;justify-content:flex-end;margin:0 -14px 10px;padding:10px 14px;background:linear-gradient(180deg,rgba(246,250,247,.92) 65%,rgba(246,250,247,0))}
+.fqAdd{border:0;border-radius:999px;background:linear-gradient(135deg,#3f7f2f,#2f7426);color:#fff;font-weight:950;padding:12px 20px;box-shadow:0 14px 36px rgba(63,127,47,.36);font-size:15px;letter-spacing:-.2px}
+.fqAdd:active{transform:scale(.97)}
+
+/* ── STAT TILES (photo backgrounds) ── */
+.fqStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 18px}
+.fqStat{height:152px;border-radius:22px;color:#fff;position:relative;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;background-size:cover;background-position:center;box-shadow:0 16px 40px rgba(17,24,39,.22);border:1px solid rgba(255,255,255,.55);cursor:pointer;transition:.14s}
+.fqStat:active{transform:scale(.975)}
+.fqStat:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,10,20,.03),rgba(5,10,20,.74))}
+.fqStat>*{position:relative;z-index:1}
+.fqIcon{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(9px);display:flex;align-items:center;justify-content:center;font-size:13px;margin-bottom:auto;border:1px solid rgba(255,255,255,.4)}
+.fqStat h4{font-size:11px;margin:0 0 4px;font-weight:900;letter-spacing:.5px;text-shadow:0 4px 12px rgba(0,0,0,.4)}
+.fqStat b{font-size:28px;line-height:1;font-weight:950;letter-spacing:-.6px;text-shadow:0 8px 24px rgba(0,0,0,.45)}
+.fqStat p{font-size:11px;line-height:1.2;margin:4px 0 0;font-weight:750;text-shadow:0 4px 14px rgba(0,0,0,.4)}
+.fqBar{height:5px;background:rgba(255,255,255,.35);border-radius:99px;margin-top:9px;overflow:hidden}
+.fqBar i{display:block;height:100%;background:#6bd35b;border-radius:99px}
+.fqBar.p i{background:#8b5cf6}
+.fqNext{position:absolute;right:10px;bottom:12px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid rgba(255,255,255,.25)}
+
+/* Party tile avatars */
+.fqPartyAvatars{display:flex;margin-bottom:3px}
+.fqPav{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;margin-right:-5px}
+.fqPav1{background:#3b82f6}.fqPav2{background:#ec4899}.fqPav3{background:#f97316}
+
+/* ── DAY GROUP HEADERS ── */
+.fqHead{display:flex;justify-content:space-between;align-items:flex-end;margin:18px 0 7px}
+.fqHead h3{font-size:26px;line-height:1;font-weight:950;color:var(--n);margin:0;letter-spacing:-.6px}
+.fqHead span{font-size:13px;color:var(--m);font-weight:850}
+.fqDayBar{height:3px;background:rgba(17,24,39,.1);border-radius:99px;overflow:hidden;margin-bottom:12px}
+.fqDayBar i{display:block;height:100%;background:var(--g);border-radius:99px}
+
+/* ── QUEST CARDS ── */
+.fqCard{display:flex;gap:12px;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.75);border-radius:26px;padding:13px;margin-bottom:11px;box-shadow:0 14px 38px rgba(17,24,39,.1),0 2px 8px rgba(17,24,39,.06);cursor:pointer;position:relative;transition:.14s}
+.fqCard:active{transform:scale(.98)}
+.fqCard.done{opacity:.68}
+.fqCard.raid{background:linear-gradient(135deg,#17202b,#2e1f4c);border:none;box-shadow:0 16px 44px rgba(30,20,70,.36)}
+.fqCard.dungeon{background:linear-gradient(135deg,#1c1407,#4a2d00);border:none;box-shadow:0 16px 44px rgba(74,45,0,.36)}
+
+.fqDel{position:absolute;right:13px;top:13px;border:0;border-radius:99px;background:#fff0f0;color:#dc2626;font-weight:950;width:32px;height:32px;z-index:3;font-size:14px}
+
+.fqImg{width:86px;min-width:86px;height:86px;border-radius:18px;background-size:cover;background-position:center;position:relative;overflow:hidden;box-shadow:0 6px 18px rgba(17,24,39,.18)}
+.fqChk{position:absolute;left:6px;top:6px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;color:var(--g);font-weight:950;font-size:14px;border:2px solid rgba(255,255,255,.9)}
+.done .fqChk{background:var(--g);color:#fff}
+
+.fqBody{flex:1;min-width:0;padding-right:32px}
+.fqBadges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+.fqBadge{font-size:10px;font-weight:900;letter-spacing:.6px;padding:3px 8px;border-radius:99px}
+.fqBadge.side{background:#edf8e9;color:#2a7a28}
+.fqBadge.raid{background:rgba(109,40,217,.18);color:#7c3aed}
+.fqBadge.dungeon{background:rgba(217,119,6,.18);color:#b45309}
+.fqBadge.laag{background:#f0fdf4;color:#15803d}
+.fqBadge.normaal{background:#fff7ed;color:#c2410c}
+.fqBadge.hoog{background:#fef2f2;color:#dc2626}
+.fqBadge.epic{background:rgba(109,40,217,.18);color:#7c3aed}
+.fqCard.raid .fqBadge.raid,.fqCard.raid .fqBadge.epic{background:rgba(167,139,250,.2);color:#c4b5fd}
+.fqCard.dungeon .fqBadge.dungeon{background:rgba(251,191,36,.18);color:#fbbf24}
+.fqCard.dungeon .fqBadge.normaal{background:rgba(251,191,36,.1);color:#fde68a}
+
+.fqTitle{font-size:17px;font-weight:950;color:var(--n);margin:5px 0 3px;line-height:1.05;letter-spacing:-.3px}
+.fqCard.raid .fqTitle,.fqCard.dungeon .fqTitle{color:#fff}
+.done .fqTitle{text-decoration:line-through;color:#9aa3af}
+.fqDesc{font-size:12px;color:var(--m);line-height:1.3;margin-bottom:8px}
+.fqCard.raid .fqDesc,.fqCard.dungeon .fqDesc{color:rgba(255,255,255,.6)}
+
+.fqMeta{display:flex;gap:5px;flex-wrap:wrap}
+.fqMetaTag{font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px;background:#f4f4f5;color:#697386;display:flex;align-items:center;gap:3px}
+.fqMetaTag.xp{background:#edf8e9;color:#2a7a28}
+.fqMetaTag.pp{background:#eff6ff;color:#1d4ed8}
+.fqCard.raid .fqMetaTag,.fqCard.dungeon .fqMetaTag{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75)}
+.fqCard.raid .fqMetaTag.xp{background:rgba(109,40,217,.2);color:#c4b5fd}
+.fqCard.dungeon .fqMetaTag.xp{background:rgba(251,191,36,.18);color:#fde68a}
+
+.fqArrow{align-self:center;font-size:24px;color:#c5cbd3;font-weight:300}
+.fqCard.raid .fqArrow,.fqCard.dungeon .fqArrow{color:rgba(255,255,255,.3)}
+
+.fqStartBtn{align-self:center;padding:10px 14px;border:none;border-radius:99px;font-size:13px;font-weight:950;cursor:pointer;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+.fqStartBtn.raid{background:#7c3aed;color:#fff}
+.fqStartBtn.dungeon{background:#d97706;color:#fff}
+
+/* ── MODAL (dark full-screen) ── */
+.fqModal{position:fixed;inset:0;display:none;background:var(--dark);z-index:80}
+.fqModal.open{display:block}
+.fqPage{width:100%;max-width:480px;margin:0 auto;height:100vh;overflow-y:auto;padding-bottom:120px}
+.fqHero{height:270px;background-size:cover;background-position:center;position:relative}
+.fqHero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.06),var(--dark))}
+.fqClose{position:fixed;top:14px;right:16px;z-index:83;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.92);font-size:20px;color:#111827;box-shadow:0 4px 14px rgba(0,0,0,.2);cursor:pointer}
+.fqHeroT{position:absolute;left:16px;right:16px;bottom:20px;z-index:2}
+.fqHeroT small{font-size:12px;color:rgba(255,255,255,.65);font-weight:700;letter-spacing:.4px}
+.fqHeroT h2{font-size:30px;line-height:1;font-weight:950;color:#fff;margin:5px 0 3px;letter-spacing:-.5px;text-shadow:0 8px 24px rgba(0,0,0,.5)}
+.fqContent{padding:16px;color:#fff}
+.fqContent>p{color:#d5dbe8;font-size:14px;line-height:1.5;margin-bottom:12px}
+
+.fqBox{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:15px;margin-bottom:12px;box-shadow:0 12px 30px rgba(0,0,0,.18)}
+.fqBox b{color:#fff;font-size:15px;font-weight:900;display:block;margin-bottom:10px}
+.fqBox p{color:#d5dbe8;font-size:14px;line-height:1.5}
+
+/* Progress */
+.fqProgLabel{font-size:14px;font-weight:900;color:#fff;margin-bottom:8px}
+.fqProgBar{height:7px;background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;margin-bottom:14px}
+.fqProgBar i{display:block;height:100%;background:var(--gl);border-radius:99px;transition:.3s}
+
+/* Subquests */
+.fqSub{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer}
+.fqSub:last-child{border-bottom:none}
+.fqSubChk{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:transparent;flex-shrink:0;transition:.15s}
+.fqSub.done .fqSubChk{background:var(--g);border-color:var(--g);color:#fff}
+.fqSubText{flex:1;font-size:14px;font-weight:750;color:#d5dbe8}
+.fqSub.done .fqSubText{text-decoration:line-through;color:#667085}
+.fqSubXP{font-size:12px;font-weight:900;color:#6bd35b;background:rgba(107,211,91,.12);padding:4px 9px;border-radius:99px}
+.fqSubDel{border:0;background:#fff0f0;color:#dc2626;border-radius:999px;width:28px;height:28px;font-weight:900;font-size:13px}
+.fqSubAdd{width:100%;border:1px dashed rgba(189,213,180,.45);background:rgba(247,251,245,.08);color:#a9f59d;border-radius:14px;padding:11px;font-weight:900;margin-top:8px;cursor:pointer}
+
+/* Filter pills */
+.fqFilter{display:flex;gap:8px;overflow:auto;margin:10px 0 14px;scrollbar-width:none}
+.fqFilter::-webkit-scrollbar{display:none}
+.fqFilter button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#d5dbe8;border-radius:999px;padding:9px 12px;font-weight:800;cursor:pointer}
+.fqFilter button.on{background:var(--g);color:#fff}
+
+/* Leaderboard */
+.fqUpdate{display:flex;justify-content:space-between;gap:12px;padding:12px;border-radius:16px;background:rgba(255,255,255,.07);margin-top:8px}
+.fqUpdate small{color:#9aa7bd}
+.fqLeader{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:14px;background:rgba(255,255,255,.07);margin-top:8px}
+
+/* Help button */
+.fqHelp{width:100%;border:0;border-radius:16px;padding:14px 16px;font-size:15px;font-weight:900;background:#2563eb;color:#fff;margin-top:10px;box-shadow:0 10px 26px rgba(37,99,235,.25);cursor:pointer}
+
+/* Rewards */
+.fqRewards{display:flex;gap:10px;margin-top:10px}
+.fqRewardChip{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.fqRewardIcon{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,.1)}
+.fqRewardLabel{font-size:11px;font-weight:750;color:#9aa7bd}
+.fqRewardVal{font-size:13px;font-weight:950;color:#fff}
+
+/* Done button */
+.fqDoneWrap{position:fixed;left:0;right:0;bottom:0;z-index:82;background:linear-gradient(180deg,rgba(8,17,31,0),var(--dark) 30%);padding:28px 16px calc(env(safe-area-inset-bottom,0px)+16px);display:flex;justify-content:center}
+.fqDone{width:100%;max-width:448px;border:0;border-radius:18px;padding:17px;font-size:16px;font-weight:950;background:var(--g);color:#fff;box-shadow:0 14px 36px rgba(63,127,47,.3);cursor:pointer;letter-spacing:-.2px}
+.fqDone.reopen{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}
+
+/* Create form */
+.fqForm label{display:block;font-size:12px;font-weight:900;color:#a9f59d;margin:14px 0 7px}
+.fqForm input,.fqForm textarea,.fqForm select{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:13px 14px;font-size:15px;background:rgba(255,255,255,.08);color:#fff}
+.fqSeg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fqSeg button{border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:12px 8px;font-weight:900;background:rgba(255,255,255,.08);color:#d5dbe8;cursor:pointer}
+.fqSeg button.on{background:rgba(63,127,47,.25);color:#a9f59d;border-color:rgba(169,245,157,.45)}
+.fqSave{width:100%;max-width:448px;border:0;border-radius:18px;padding:16px;font-size:15px;font-weight:900;background:var(--g);color:#fff;box-shadow:0 14px 36px rgba(63,127,47,.26);cursor:pointer}
+
+/* Group quest popup */
+.fqGQPop{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+88px);left:12px;right:12px;max-width:456px;margin:0 auto;background:#fff;border-radius:22px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.22);z-index:90;border:1px solid #edf0ec;display:none}
+.fqGQPop.open{display:block}
+.fqGQClose{position:absolute;top:12px;right:14px;border:none;background:none;font-size:20px;color:var(--m);cursor:pointer}
+.fqGQTag{font-size:10px;font-weight:950;letter-spacing:1px;color:#6d28d9;margin-bottom:6px}
+.fqGQTitle{font-size:18px;font-weight:950;color:var(--n);margin-bottom:2px}
+.fqGQQuest{font-size:14px;font-weight:800;color:var(--g);margin-bottom:10px}
+.fqGQAvs{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.fqGQXP{font-size:12px;font-weight:800;background:#f4f4f5;padding:5px 11px;border-radius:99px;color:var(--m)}
+.fqGQBtns{display:flex;gap:8px}
+.fqGQBtn{flex:1;padding:12px;border-radius:14px;font-size:14px;font-weight:950;cursor:pointer;border:none}
+.fqGQBtn.no{background:#f4f4f5;color:var(--n)}
+.fqGQBtn.yes{background:#6d28d9;color:#fff;box-shadow:0 8px 20px rgba(109,40,217,.3)}
+
+/* Lang toggle */
+.famLang{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px)+92px);z-index:60;border:0;border-radius:999px;background:#111827;color:#fff;padding:10px 12px;font-weight:900;box-shadow:0 12px 30px rgba(17,24,39,.22);cursor:pointer}
+
+@media(max-width:390px){
+  .fqStat{height:142px;padding:10px}
+  .fqStat b{font-size:26px}
+  .fqStat p{font-size:10.5px}
+  .fqImg{width:78px;min-width:78px;height:78px}
+  .fqTitle{font-size:16px}
+}
+
+</style>
+<script id="famV023js">
+(function(){
+try{
+if(window.__famV023){return;} window.__famV023=1;
+
+/* ── LANGUAGE ── */
+var lang=localStorage.getItem('fam_lang')||'nl';
+var tr={
+  en:{add:'+ Add Quest',today:'Today',tomorrow:'Tomorrow',overmorrow:'Day after tomorrow',week:'Next week',later:'Later',done:'completed',level:'Level',streak:'Streak',party:'Party',newq:'New Quest',complete:'Mark as completed',reopen:'Reopen quest',help:'Ask for help',rewards:'Rewards',subprog:'completed',askhelp:'Ask for help 👥',groupq:'GROUP QUEST',helpreq:'Help requested!',helpat:'asks for help with:',xpboth:'+20 XP for both of you',decline:'Decline',accept:'Accept'},
+  nl:{add:'+ Quest toevoegen',today:'Vandaag',tomorrow:'Morgen',overmorrow:'Overmorgen',week:'Volgende week',later:'Later',done:'voltooid',level:'Level',streak:'Streak',party:'Party',newq:'Nieuwe Quest',complete:'Markeer als voltooid',reopen:'Quest opnieuw openen',help:'Vraag om hulp',rewards:'Beloningen',subprog:'voltooid',askhelp:'Vraag hulp 👥',groupq:'GROUP QUEST',helpreq:'Hulp gevraagd!',helpat:'vraagt om hulp bij:',xpboth:'+20 XP voor jullie beiden',decline:'Weigeren',accept:'Accepteren'}
+};
+var L=function(k){return (tr[lang]&&tr[lang][k])||k;};
+
+/* ── IMAGE MAPS ── */
+var H={tasks:'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=95&fm=webp',shop:'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=95&fm=webp',posts:'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1200&q=95&fm=webp',recipes:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=95&fm=webp'};
+var I={today:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=95&fm=webp',level:'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=95&fm=webp',streak:'https://images.unsplash.com/photo-1476231682828-37e571bc172f?auto=format&fit=crop&w=900&q=95&fm=webp',party:'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=95&fm=webp',home:'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=700&q=90&fm=webp',plant:'https://images.unsplash.com/photo-1525498128493-380d1990a112?auto=format&fit=crop&w=700&q=90&fm=webp',car:'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=700&q=90&fm=webp',dent:'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=700&q=90&fm=webp',kids:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=700&q=90&fm=webp',food:'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=700&q=90&fm=webp',work:'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=700&q=90&fm=webp',laundry:'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?auto=format&fit=crop&w=700&q=90&fm=webp'};
+
+function pick(s){
+  s=(s||'').toLowerCase();
+  if(s.indexOf('kind')>-1||s.indexOf('school')>-1){return I.kids;}
+  if(s.indexOf('auto')>-1||s.indexOf('car')>-1){return I.car;}
+  if(s.indexOf('plant')>-1){return I.plant;}
+  if(s.indexOf('was')>-1||s.indexOf('laundry')>-1){return I.laundry;}
+  if(s.indexOf('eten')>-1||s.indexOf('kook')>-1||s.indexOf('boodschap')>-1){return I.food;}
+  if(s.indexOf('tand')>-1||s.indexOf('dokter')>-1){return I.dent;}
+  if(s.indexOf('kamer')>-1||s.indexOf('huis')>-1||s.indexOf('stof')>-1){return I.home;}
+  return I.work;
+}
+
+/* ── PRIORITY HELPERS ── */
+function prioCls(p){
+  if(!p)return '';
+  p=p.toLowerCase();
+  if(p==='hoog'||p==='high')return 'hoog';
+  if(p==='normaal'||p==='medium'||p==='normal')return 'normaal';
+  return 'laag';
+}
+function prioLabel(p){
+  if(!p)return 'Laag';
+  var m={hoog:'Hoog',high:'Hoog',normaal:'Normaal',medium:'Normaal',normal:'Normaal',laag:'Laag',low:'Laag'};
+  return m[p.toLowerCase()]||p;
+}
+function xpForType(type,prio){
+  if(!prio)prio='laag';
+  prio=prio.toLowerCase();
+  if(type.indexOf('RAID')>-1)return '+120 XP';
+  if(type.indexOf('DUNGEON')>-1)return '+60 XP';
+  if(prio==='hoog'||prio==='high')return '+30 XP';
+  if(prio==='normaal'||prio==='medium')return '+20 XP';
+  return '+10 XP';
+}
+
+/* ── DATA ── */
+var data=JSON.parse(localStorage.getItem('fam_tasks_v023')||localStorage.getItem('fam_tasks_v022')||localStorage.getItem('fam_tasks_v021')||'null')||[
+  ['living','SIDE QUEST','Stofzuigen woonkamer','Maak de woonkamer weer fris.','2026-05-13','Esra','+20 XP',I.home,['Kussens opruimen','Vloer stofzuigen','Kleed schoonmaken'],1,'once','2026-05-13','laag'],
+  ['plant','SIDE QUEST','Planten water geven','Zorg dat alle planten genoeg water hebben.','2026-05-14','Esra','+10 XP',I.plant,['Gieter vullen','Alle planten nalopen'],0,'once','2026-05-14','laag'],
+  ['car','SIDE QUEST','Auto wassen','Maak de auto van buiten en binnen schoon.','2026-05-20','Shane','+40 XP',I.car,['Buitenkant wassen','Interieur opruimen'],0,'once','2026-05-20','normaal']
+];
+
+function save(){localStorage.setItem('fam_tasks_v023',JSON.stringify(data));}
+
+/* ── HOME BG ── */
+function bg(el,url){
+  if(!el){return;}
+  el.style.setProperty('background-image','url('+url+')','important');
+  el.style.setProperty('background-size','cover','important');
+  el.style.setProperty('background-position','center','important');
+  var im=el.querySelector('img');
+  if(im){im.src=url;im.style.opacity=1;im.style.objectFit='cover';}
+}
+function home(){
+  if(!T(A('.header-title')[0]).match(/familie|family/)){return;}
+  var c=A('.home-epic-cards .epic-card,.home-pills .home-pill,.home-card,.home-pills>*,.home-epic-cards>*');
+  bg(c[0],H.tasks);bg(c[1],H.shop);bg(c[2],H.posts);
+  var s=A('.home-carousel .home-slide,.home-slide,.recipes-slide,.agenda-slide,.meals-slide');
+  bg(s[0],H.recipes);
+}
+
+/* ── HELPERS ── */
+var A=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+var T=function(e){return (e&&e.textContent||'').toLowerCase();};
+function task(){return A('.task-tabs,.ttab').length||T(A('.header-title')[0]).match(/taken|tasks/);}
+function overview(){var a=A('.ttab.active,.task-tabs .active')[0];return !a||T(a).match(/overzicht|overview/);}
+function root(){return document.getElementById('task-content')||A('.task-content')[0];}
+
+/* ── GROUPING ── */
+function group(x){
+  var d=new Date(x[11]||x[4]);
+  var now=new Date();now.setHours(0,0,0,0);
+  var diff=Math.round((new Date(d.toDateString())-now)/86400000);
+  if(isNaN(diff)){return L('later');}
+  if(diff===0){return L('today');}
+  if(diff===1){return L('tomorrow');}
+  if(diff===2){return L('overmorrow');}
+  if(diff>2&&diff<8){return L('week');}
+  return L('later');
+}
+
+/* ── STAT TILES ── */
+function stats(done,total){
+  var pct=Math.round(done/Math.max(total,1)*100);
+  return '<div class="fqStats">'+
+    '<div class="fqStat" data-stat="level" style="background-image:url('+I.level+')">'+
+      '<div class="fqIcon">⭐</div>'+
+      '<h4>'+L('level').toUpperCase()+'</h4>'+
+      '<b>12</b>'+
+      '<div class="fqBar p"><i style="width:56%"></i></div>'+
+      '<p>450 / 800 XP</p>'+
+      '<div class="fqNext">›</div>'+
+    '</div>'+
+    '<div class="fqStat" data-stat="streak" style="background-image:url('+I.streak+')">'+
+      '<div class="fqIcon">🔥</div>'+
+      '<h4>'+L('streak').toUpperCase()+'</h4>'+
+      '<b>7</b>'+
+      '<p>dagen op rij</p>'+
+      '<div class="fqNext">›</div>'+
+    '</div>'+
+    '<div class="fqStat" data-stat="party" style="background-image:url('+I.party+')">'+
+      '<div class="fqIcon">👥</div>'+
+      '<h4>'+L('party').toUpperCase()+'</h4>'+
+      '<b>3</b>'+
+      '<div class="fqPartyAvatars"><div class="fqPav fqPav1">SK</div><div class="fqPav fqPav2">ES</div><div class="fqPav fqPav3">SH</div></div>'+
+      '<div class="fqNext">›</div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ── QUEST CARD ── */
+function card(x){
+  var isRaid=x[1].indexOf('RAID')>-1;
+  var isDung=x[1].indexOf('DUNGEON')>-1;
+  var cls=isRaid?'raid':(isDung?'dungeon':'');
+  var prio=x[12]||'laag';
+  var typeBadge='<span class="fqBadge '+(isRaid?'raid':(isDung?'dungeon':'side'))+'">'+x[1]+'</span>';
+  var prioBadge='<span class="fqBadge '+prioCls(prio)+'">'+prioLabel(prio)+'</span>';
+  var actionBtn=(isRaid||isDung)?'<button class="fqStartBtn '+(isRaid?'raid':'dungeon')+'">'+(isRaid?'Start raid':'Start dungeon')+'</button>':'<div class="fqArrow">›</div>';
+  var ppTag=x[13]?'<span class="fqMetaTag pp">👥 '+x[13]+'</span>':'';
+  return '<div class="fqCard '+(x[9]?'done ':'')+cls+'" data-id="'+x[0]+'">'+
+    '<button class="fqDel" data-del="'+x[0]+'">✕</button>'+
+    '<div class="fqImg" style="background-image:url('+x[7]+')">'+
+      '<div class="fqChk">'+(x[9]?'✓':'')+'</div>'+
+    '</div>'+
+    '<div class="fqBody">'+
+      '<div class="fqBadges">'+typeBadge+prioBadge+'</div>'+
+      '<div class="fqTitle">'+x[2]+'</div>'+
+      '<div class="fqDesc">'+x[3]+'</div>'+
+      '<div class="fqMeta">'+
+        '<span class="fqMetaTag">📅 '+(x[11]||x[4])+'</span>'+
+        '<span class="fqMetaTag">'+x[5]+'</span>'+
+        ppTag+
+        '<span class="fqMetaTag xp">'+x[6]+'</span>'+
+      '</div>'+
+    '</div>'+
+    actionBtn+
+  '</div>';
+}
+
+/* ── RENDER OVERVIEW ── */
+function ensure(){
+  if(!document.getElementById('famBg')){
+    var d=document.createElement('div');d.id='famBg';document.body.prepend(d);
+  }
+}
+
+function render(force){
+  ensure();
+  document.body.classList.toggle('famTask',!!task());
+  var r=root();
+  if(!r||!task()){return;}
+  if(!overview()){r.dataset.v023='';return;}
+  if(!force&&r.dataset.v023==='1'){return;}
+  r.dataset.v023='1';
+  var done=data.filter(function(x){return x[9];}).length;
+  var groups={};
+  data.forEach(function(x){var g=group(x);(groups[g]||(groups[g]=[])).push(x);});
+  var order=[L('today'),L('tomorrow'),L('overmorrow'),L('week'),L('later')];
+  var groupsHtml=order.filter(function(g){return groups[g];}).map(function(g){
+    var gDone=groups[g].filter(function(x){return x[9];}).length;
+    var gTotal=groups[g].length;
+    var pct=Math.round(gDone/Math.max(gTotal,1)*100);
+    return '<div class="fqHead" id="grp-'+g.replace(/\s+/g,'-')+'">'+
+      '<h3>'+g+'<span style="font-size:14px;color:var(--m);font-weight:600;margin-left:6px;letter-spacing:0"> • '+ new Date().toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{day:'numeric',month:'long'})+'</span></h3>'+
+      '<span>'+gDone+' / '+gTotal+' '+L('done')+'</span>'+
+    '</div>'+
+    '<div class="fqDayBar"><i style="width:'+pct+'%"></i></div>'+
+    groups[g].map(card).join('');
+  }).join('');
+  r.innerHTML='<div class="fq">'+
+    '<div class="fqTop"><button class="fqAdd">'+L('add')+'</button></div>'+
+    stats(done,data.length)+
+    groupsHtml+
+  '</div>';
+
+  /* card click handlers */
+  A('.fqCard',r).forEach(function(e){
+    e.onclick=function(ev){
+      var delBtn=ev.target.closest('[data-del]');
+      if(delBtn){ev.stopPropagation();data=data.filter(function(x){return x[0]!==delBtn.dataset.del;});save();r.dataset.v023='';render(true);return;}
+      var startBtn=ev.target.closest('.fqStartBtn');
+      if(startBtn){ev.stopPropagation();detail(e.dataset.id);return;}
+      detail(e.dataset.id);
+    };
+  });
+
+  A('.fqAdd',r)[0].onclick=create;
+
+  A('.fqStat',r).forEach(function(s){
+    s.onclick=function(){
+      var t=s.dataset.stat;
+      if(t==='today'){var el=document.getElementById('grp-'+L('today'));if(el){el.scrollIntoView({behavior:'smooth'});}else{simpleModal(L('today'),'Geen quests voor vandaag.',I.today);}}
+      if(t==='level'){levelModal();}
+      if(t==='streak'){streakModal();}
+      if(t==='party'){partyModal();}
+    };
+  });
+}
+
+/* ── MODAL BASE ── */
+function modal(html){
+  var m=document.getElementById('fqModal');
+  if(!m){m=document.createElement('div');m.id='fqModal';m.className='fqModal';document.body.appendChild(m);}
+  m.innerHTML=html;
+  m.classList.add('open');
+  document.body.style.overflow='hidden';
+  A('.fqClose',m).forEach(function(b){b.onclick=function(){closeModal();};});
+  return m;
+}
+function closeModal(){
+  var m=document.getElementById('fqModal');
+  if(m){m.classList.remove('open');document.body.style.overflow='';}
+}
+
+function hero(img,badges,title,meta){
+  return '<div class="fqPage"><button class="fqClose">✕</button>'+
+    '<div class="fqHero" style="background-image:url('+img+')">'+
+      '<div class="fqHeroT">'+
+        (badges?'<div class="fqBadges">'+badges+'</div>':'')+
+        '<h2>'+title+'</h2>'+
+        (meta?'<small>'+meta+'</small>':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="fqContent">';
+}
+
+function simpleModal(t,b,img){
+  modal(hero(img,'',t,'')+'<div class="fqBox"><p>'+b+'</p></div></div></div>');
+}
+
+/* ── LEVEL MODAL ── */
+function levelModal(){
+  var ups=[
+    ['Quest voltooid','Stofzuigen woonkamer','+20 XP'],
+    ['Hulp gegeven aan Esra','Group quest assist','+15 XP'],
+    ['Weekdoel bereikt','Familie productiviteit streak','+50 XP'],
+    ['Ability vooruitgang','Planning Boost ontgrendelt binnenkort','72%']
+  ];
+  var leaders=[['1','Esra','950 XP'],['2','Jamie','720 XP'],['3','Shane','450 XP'],['4','Liam','380 XP']];
+  var u=ups.map(function(x){return '<div class="fqUpdate"><div><b style="color:#fff">'+x[0]+'</b><br><small>'+x[1]+'</small></div><b style="color:#6bd35b">'+x[2]+'</b></div>';}).join('');
+  var l=leaders.map(function(x){return '<div class="fqLeader"><b style="color:#fff">'+x[0]+'</b><span style="color:#d5dbe8">'+x[1]+'<br><small style="color:#9aa7bd">Family rank</small></span><b style="color:#6bd35b">'+x[2]+'</b></div>';}).join('');
+  var m=modal(
+    hero(I.level,'<span class="fqBadge side">LEVEL PROGRESS</span>','Level 12','450 / 800 XP richting je volgende ability.')+
+    '<div class="fqBox"><b>Context updates</b>'+u+'</div>'+
+    '<div class="fqBox"><b>Vergelijk met anderen</b>'+
+      '<div class="fqFilter"><button class="on">Familie</button><button>Huishouden</button><button>Vrienden</button></div>'+
+      l+
+    '</div></div>'+
+    '<div class="fqDoneWrap"><button class="fqDone" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)" onclick="document.getElementById(\'fqModal\').classList.remove(\'open\');document.body.style.overflow=\'\'">Sluiten</button></div>'+
+    '</div>'
+  );
+  A('.fqFilter button',m).forEach(function(btn){btn.onclick=function(){A('.fqFilter button',m).forEach(function(b){b.classList.remove('on');});btn.classList.add('on');};});
+}
+
+/* ── STREAK MODAL ── */
+function streakModal(){
+  var rs=[['3 dagen','+10 XP','✓'],['7 dagen','+25 XP','✓'],['14 dagen','+50 XP','🔒'],['30 dagen','+100 XP','🔒']].map(function(x){
+    return '<div class="fqUpdate"><div><b style="color:#fff">'+x[0]+'</b><br><small>Streak reward</small></div><b style="color:'+(x[2]==='✓'?'#6bd35b':'#9aa7bd')+'">'+x[1]+' '+x[2]+'</b></div>';
+  }).join('');
+  modal(
+    hero(I.streak,'<span class="fqBadge side">STREAK</span>','7 dagen','Je hebt 7 dagen achter elkaar minimaal een quest voltooid.')+
+    '<div class="fqBox"><b>Waarom dit telt</b><p>Je streak laat zien dat het huishouden ritme krijgt. Houd hem vast om extra XP en family abilities sneller vrij te spelen.</p></div>'+
+    '<div class="fqBox"><b>Volgende mijlpaal</b><p>14 dagen streak — nog 7 dagen te gaan.</p><div class="fqProgBar" style="margin-top:10px"><i style="width:50%"></i></div></div>'+
+    '<div class="fqBox"><b>Rewards</b>'+rs+'</div></div>'+
+    '<div class="fqDoneWrap"><button class="fqDone" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)" onclick="document.getElementById(\'fqModal\').classList.remove(\'open\');document.body.style.overflow=\'\'">Sluiten</button></div>'+
+    '</div>'
+  );
+}
+
+/* ── PARTY MODAL ── */
+function partyModal(){
+  var members=[
+    {init:'SK',color:'#3b82f6',name:'Shane K.',xp:'450 XP',streak:'7'},
+    {init:'ES',color:'#ec4899',name:'Esra S.',xp:'720 XP',streak:'5'},
+    {init:'SH',color:'#f97316',name:'Shane H.',xp:'380 XP',streak:'3'}
+  ];
+  var mhtml=members.map(function(m){
+    return '<div class="fqLeader">'+
+      '<div style="width:32px;height:32px;border-radius:50%;background:'+m.color+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff;">'+m.init+'</div>'+
+      '<span style="color:#d5dbe8">'+m.name+'<br><small style="color:#9aa7bd">'+m.xp+' &nbsp;·&nbsp; 🔥 '+m.streak+'</small></span>'+
+      '<b style="color:#6bd35b">actief</b>'+
+    '</div>';
+  }).join('');
+  modal(
+    hero(I.party,'<span class="fqBadge side">PARTY</span>','3 Actief','Jullie werken samen aan het huishouden.')+
+    '<div class="fqBox"><b>Party leden</b>'+mhtml+'</div>'+
+    '<div class="fqBox"><p>Nodig iemand uit om quests samen te doen en extra XP te verdienen!</p>'+
+      '<button class="fqHelp" onclick="">+ Iemand uitnodigen</button>'+
+    '</div></div>'+
+    '<div class="fqDoneWrap"><button class="fqDone" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)" onclick="document.getElementById(\'fqModal\').classList.remove(\'open\');document.body.style.overflow=\'\'">Sluiten</button></div>'+
+    '</div>'
+  );
+}
+
+/* ── DETAIL MODAL ── */
+function get(id){return data.find(function(x){return x[0]===id;})||data[0];}
+function sub(x){return JSON.parse(localStorage.getItem('fqsub_'+x[0])||'null')||x[8].map(function(){return !!x[9];});}
+function setsub(x,s){localStorage.setItem('fqsub_'+x[0],JSON.stringify(s));}
+
+function detail(id){
+  var x=get(id);
+  var st=sub(x);
+  var isRaid=x[1].indexOf('RAID')>-1;
+  var isDung=x[1].indexOf('DUNGEON')>-1;
+  var prio=x[12]||'laag';
+  var typeBadge='<span class="fqBadge '+(isRaid?'raid':(isDung?'dungeon':'side'))+'">'+x[1]+'</span>';
+  var prioBadge='<span class="fqBadge '+prioCls(prio)+'">'+prioLabel(prio)+'</span>';
+
+  /* subquest XP distribution */
+  var subXPs=x[8].map(function(){return '+5 XP';});
+  if(x[6]){
+    var totalNum=parseInt(x[6])||20;
+    var perSub=Math.max(5,Math.round(totalNum/Math.max(x[8].length,1)/5)*5);
+    subXPs=x[8].map(function(){return '+'+perSub+' XP';});
+  }
+
+  function subHtml(){
+    return st.map(function(done,i){
+      return '<div class="fqSub '+(done?'done':'')+'" data-si="'+i+'">'+
+        '<div class="fqSubChk">'+(done?'✓':'')+'</div>'+
+        '<span class="fqSubText">'+x[8][i]+'</span>'+
+        '<span class="fqSubXP">'+subXPs[i]+'</span>'+
+        '<button class="fqSubDel" data-si="'+i+'">✕</button>'+
+      '</div>';
+    }).join('');
+  }
+
+  var m=modal(
+    hero(x[7],typeBadge+prioBadge,x[2],(x[11]||x[4])+' &nbsp;·&nbsp; '+x[5]+' &nbsp;·&nbsp; '+x[6])+
+    '<p>'+x[3]+'</p>'+
+    '<div class="fqBox">'+
+      '<div class="fqProgLabel" id="fqPL"></div>'+
+      '<div class="fqProgBar"><i id="fqPB"></i></div>'+
+      '<div id="fqSubList">'+subHtml()+'</div>'+
+      '<button class="fqSubAdd">+ Subquest toevoegen</button>'+
+    '</div>'+
+    '<div class="fqBox">'+
+      '<b>'+L('help')+'</b>'+
+      '<p>Maak er een group quest van en verdien samen extra XP!</p>'+
+      '<button class="fqHelp fqHelpBtn">'+L('askhelp')+'</button>'+
+    '</div>'+
+    '<div class="fqBox">'+
+      '<b>'+L('rewards')+'</b>'+
+      '<div class="fqRewards">'+
+        '<div class="fqRewardChip"><div class="fqRewardIcon">🏆</div><div class="fqRewardLabel">XP</div><div class="fqRewardVal">'+x[6]+'</div></div>'+
+        '<div class="fqRewardChip"><div class="fqRewardIcon">⭐</div><div class="fqRewardLabel">Discipline</div><div class="fqRewardVal">+5</div></div>'+
+        '<div class="fqRewardChip"><div class="fqRewardIcon">🏠</div><div class="fqRewardLabel">Homekeeping</div><div class="fqRewardVal">+10</div></div>'+
+      '</div>'+
+    '</div>'+
+    '</div>'+
+    '<div class="fqDoneWrap"><button class="fqDone" id="fqDoneBtn">'+L('complete')+'</button></div>'+
+    '</div>'
+  );
+
+  function upd(){
+    var rows=A('.fqSub',m);
+    st=rows.map(function(r){return r.classList.contains('done');});
+    var d=st.filter(Boolean).length,t=rows.length;
+    var pb=document.getElementById('fqPB');
+    var pl=document.getElementById('fqPL');
+    var btn=document.getElementById('fqDoneBtn');
+    setsub(x,st);
+    if(pb){pb.style.width=(t?Math.round(d/t*100):0)+'%';}
+    if(pl){pl.textContent=d+' / '+t+' '+L('subprog');}
+    if(t&&d===t){btn.textContent='↩ '+L('reopen');btn.classList.add('reopen');x[9]=1;}
+    else{btn.textContent='✓ '+L('complete');btn.classList.remove('reopen');x[9]=0;}
+    save();
+    var r=root();if(r){r.dataset.v023='';render(true);}
+  }
+
+  /* bind sub clicks */
+  A('.fqSub',m).forEach(function(row){
+    row.onclick=function(ev){
+      var del=ev.target.closest('.fqSubDel');
+      if(del){
+        ev.stopPropagation();
+        var si=parseInt(del.dataset.si);
+        x[8].splice(si,1);st.splice(si,1);setsub(x,st);save();
+        detail(x[0]);return;
+      }
+      row.classList.toggle('done');
+      var chk=row.querySelector('.fqSubChk');
+      if(chk){chk.textContent=row.classList.contains('done')?'✓':'';}
+      upd();
+    };
+  });
+
+  A('.fqSubAdd',m)[0].onclick=function(){
+    var s=prompt('Subquest naam?');
+    if(!s){return;}
+    x[8].push(s);st.push(false);setsub(x,st);save();detail(x[0]);
+  };
+
+  A('.fqDoneBtn',m);
+  document.getElementById('fqDoneBtn').onclick=function(){
+    var allDone=!x[9];
+    A('.fqSub',m).forEach(function(row){
+      row.classList.toggle('done',allDone);
+      var chk=row.querySelector('.fqSubChk');
+      if(chk){chk.textContent=allDone?'✓':'';}
+    });
+    upd();
+  };
+
+  A('.fqHelpBtn',m).forEach(function(btn){
+    btn.onclick=function(){showGQPopup(x[2]);};
+  });
+
+  upd();
+}
+
+/* ── GROUP QUEST POPUP ── */
+function showGQPopup(questTitle){
+  closeModal();
+  var pop=document.getElementById('fqGQPop');
+  if(!pop){
+    pop=document.createElement('div');
+    pop.id='fqGQPop';
+    pop.className='fqGQPop';
+    document.body.appendChild(pop);
+  }
+  pop.innerHTML=
+    '<button class="fqGQClose">✕</button>'+
+    '<div class="fqGQTag">'+L('groupq')+'</div>'+
+    '<div class="fqGQTitle">'+L('helpreq')+'</div>'+
+    '<div style="font-size:13px;color:var(--m);margin-bottom:4px;">Shane '+L('helpat')+'</div>'+
+    '<div class="fqGQQuest">'+questTitle+'</div>'+
+    '<div class="fqGQAvs">'+
+      '<div class="fqPav fqPav3" style="width:32px;height:32px;font-size:11px;">SH</div>'+
+      '<div class="fqPav fqPav1" style="width:32px;height:32px;font-size:11px;">SK</div>'+
+      '<span class="fqGQXP">'+L('xpboth')+'</span>'+
+    '</div>'+
+    '<div class="fqGQBtns">'+
+      '<button class="fqGQBtn no">'+L('decline')+'</button>'+
+      '<button class="fqGQBtn yes">'+L('accept')+'</button>'+
+    '</div>';
+  pop.classList.add('open');
+  A('.fqGQClose,.fqGQBtn',pop).forEach(function(b){
+    b.onclick=function(){pop.classList.remove('open');};
+  });
+}
+
+/* ── CREATE QUEST ── */
+function create(){
+  var m=modal(
+    '<div class="fqPage"><button class="fqClose">✕</button>'+
+    '<div class="fqContent fqForm">'+
+    '<h2 style="color:#fff;font-size:26px;font-weight:950;margin-bottom:16px;">'+L('newq')+'</h2>'+
+    '<label>Naam</label><input id="qn" placeholder="Wat moet er gebeuren?">'+
+    '<label>Omschrijving</label><textarea id="qd" rows="3" placeholder="Korte beschrijving..."></textarea>'+
+    '<label>Quest type</label>'+
+    '<div class="fqSeg"><button id="qside" class="on">Side Quest</button><button id="qdun">Dungeon</button><button id="qraid">Raid</button></div>'+
+    '<label>Prioriteit</label>'+
+    '<div class="fqSeg"><button id="qlaag" class="on">Laag</button><button id="qnorm">Normaal</button><button id="qhoog">Hoog</button></div>'+
+    '<label>Datum</label><input id="qdate" type="date">'+
+    '<label>Toegewezen aan</label>'+
+    '<select id="qwho"><option>Shane</option><option>Esra</option><option>Beiden</option></select>'+
+    '</div>'+
+    '<div class="fqDoneWrap"><button class="fqDone fqSave">Quest opslaan</button></div>'+
+    '</div>'
+  );
+
+  var qtype='SIDE QUEST',qprio='laag';
+
+  function onType(id,t){A('#qside,#qdun,#qraid',m).forEach(function(b){b.classList.remove('on');});A('#'+id,m)[0].classList.add('on');qtype=t;}
+  function onPrio(id,p){A('#qlaag,#qnorm,#qhoog',m).forEach(function(b){b.classList.remove('on');});A('#'+id,m)[0].classList.add('on');qprio=p;}
+
+  A('#qside',m)[0].onclick=function(){onType('qside','SIDE QUEST');};
+  A('#qdun',m)[0].onclick=function(){onType('qdun','DUNGEON');};
+  A('#qraid',m)[0].onclick=function(){onType('qraid','RAID');};
+  A('#qlaag',m)[0].onclick=function(){onPrio('qlaag','laag');};
+  A('#qnorm',m)[0].onclick=function(){onPrio('qnorm','normaal');};
+  A('#qhoog',m)[0].onclick=function(){onPrio('qhoog','hoog');};
+
+  A('.fqSave',m)[0].onclick=function(){
+    var n=A('#qn',m)[0].value.trim();
+    if(!n){return;}
+    var d=A('#qd',m)[0].value.trim()||'Nieuwe quest.';
+    var date=A('#qdate',m)[0].value||new Date().toISOString().slice(0,10);
+    var who=A('#qwho',m)[0].value;
+    var xp=xpForType(qtype,qprio);
+    data.push(['q'+Date.now(),qtype,n,d,date,who,xp,pick(n+' '+d),['Eerste stap'],0,'once',date,qprio]);
+    save();
+    closeModal();
+    var r=root();if(r){r.dataset.v023='';render(true);}
+  };
+}
+
+/* ── LANG BUTTON ── */
+function langBtn(){
+  if(document.getElementById('famLang')){return;}
+  var b=document.createElement('button');
+  b.id='famLang';b.className='famLang';
+  b.textContent=lang==='en'?'NL':'EN';
+  b.onclick=function(){lang=lang==='en'?'nl':'en';localStorage.setItem('fam_lang',lang);location.reload();};
+  document.body.appendChild(b);
+}
+
+/* ── BIND TABS ── */
+function bind(){
+  A('.ttab,.task-tabs button,.nav-btn').forEach(function(t){
+    if(t.dataset.v023){return;}
+    t.dataset.v023='1';
+    t.addEventListener('click',function(){
+      var r=root();if(r){r.dataset.v023='';}
+      setTimeout(run,30);
+      setTimeout(function(){render(true);},180);
+    });
+  });
+}
+
+/* ── MAIN LOOP ── */
+function run(){home();bind();render(false);langBtn();if(!task()){document.body.classList.remove('famTask');}}
+
+document.addEventListener('DOMContentLoaded',function(){run();setTimeout(function(){render(true);},60);});
+window.addEventListener('load',function(){run();setTimeout(function(){render(true);},120);});
+for(var i=0;i<12;i++){setTimeout(run,i*150);}
+setInterval(run,900);
+new MutationObserver(run).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+
+}catch(e){console.error('fam v0.23 failed',e);}
+})();
+
+</script>
 </body>
 </html>
