@@ -15,29 +15,46 @@ module.exports = async function handler(req, res) {
 <link rel="stylesheet" href="/trade-engine.css">
 <script src="/trade-engine.js" defer></script>
 
-<script type="module" id="modern-feed-bridge-loader">
+<script type="module" id="modern-bridge-loader">
   import { mountLegacyFeedBridge } from '/src/app/legacy-feed-bridge.js';
+  import { mountLegacyProfileBridge } from '/src/app/legacy-profile-bridge.js';
 
-  function tryModernFeedMount() {
+  function tryModernMounts() {
     try {
       mountLegacyFeedBridge();
+      mountLegacyProfileBridge();
     } catch (error) {
-      console.warn('Modern feed bridge kon niet laden', error);
+      console.warn('Modern bridges konden niet laden', error);
     }
   }
 
+  function syncOwnAvatarLinks() {
+    var avatarUrl = localStorage.getItem('familyapp-current-user-avatar-v1');
+    var headerAvatars = document.querySelectorAll('.header-avatar');
+    headerAvatars.forEach(function (avatar) {
+      avatar.style.cursor = 'pointer';
+      avatar.onclick = function () {
+        var profileButton = Array.from(document.querySelectorAll('button, .more-btn, [role="button"]')).find(function (button) {
+          return /profiel|profile/i.test(button.textContent || '');
+        });
+        if (profileButton) profileButton.click();
+      };
+      if (avatarUrl && !avatar.querySelector('img')) {
+        avatar.innerHTML = '<img src="' + avatarUrl + '" alt="Profiel" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block">';
+      }
+    });
+  }
+
   window.addEventListener('load', function () {
-    setTimeout(tryModernFeedMount, 120);
-    setTimeout(tryModernFeedMount, 450);
-    setTimeout(tryModernFeedMount, 900);
+    [120, 450, 900, 1500].forEach(function (delay) { setTimeout(function(){ tryModernMounts(); syncOwnAvatarLinks(); }, delay); });
   });
 
   document.addEventListener('click', function () {
-    setTimeout(tryModernFeedMount, 120);
-    setTimeout(tryModernFeedMount, 420);
+    setTimeout(function(){ tryModernMounts(); syncOwnAvatarLinks(); }, 120);
+    setTimeout(function(){ tryModernMounts(); syncOwnAvatarLinks(); }, 420);
   }, true);
 
-  setInterval(tryModernFeedMount, 1200);
+  setInterval(function(){ tryModernMounts(); syncOwnAvatarLinks(); }, 1200);
 </script>
 
 <style id="premium-grocery-bg-css">
@@ -88,7 +105,7 @@ body:not(.groceries-premium) .premium-bg-switcher{display:none!important;}
 </script>
 `;
 
-    if (!html.includes("modern-feed-bridge-loader")) {
+    if (!html.includes("modern-bridge-loader")) {
       html = html.replace("</head>", injection + "</head>");
     }
 
