@@ -1,306 +1,223 @@
-const defaultAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80';
-const esraAvatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80';
-const lisaAvatar = 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=120&q=80';
-const familyPhotoOne = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=180&q=80';
-const familyPhotoTwo = 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=180&q=80';
-const familyPhotoThree = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=180&q=80';
-const storageKey = 'familyapp-premium-feed-posts-v1';
+const avatars = {
+  shane: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
+  esra: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+  sophie: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80',
+  mark: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&q=80',
+  emma: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=120&q=80',
+};
+
+const photos = {
+  forest: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=240&q=80',
+  dog: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=240&q=80',
+  lake: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=240&q=80',
+};
+
+const feedKey = 'familyapp-feed-state-v3';
 const avatarKey = 'familyapp-current-user-avatar-v1';
 
-function getOwnAvatar() {
-  return localStorage.getItem(avatarKey) || defaultAvatar;
+function ownAvatar() {
+  return localStorage.getItem(avatarKey) || avatars.shane;
 }
 
-function getSavedPosts() {
-  try {
-    return JSON.parse(localStorage.getItem(storageKey) || '[]');
-  } catch (error) {
-    return [];
-  }
+function seedPosts() {
+  return [
+    {
+      id: 'walk', type: 'photo', author: 'Sophie', avatar: avatars.sophie, time: '2 uur geleden',
+      text: 'Heerlijke wandeling gemaakt in het bos vandaag! 🌳🚶', photos: [photos.forest, photos.dog, photos.lake], likes: 12, liked: false,
+      comments: [
+        { id: 'c1', author: 'Mark', avatar: avatars.mark, text: "Wat een mooie foto's! 🥾", likes: 2, liked: false, replies: [
+          { id: 'r1', author: 'Sophie', avatar: avatars.sophie, text: 'Dankjewel! 😊', likes: 0, liked: false }
+        ] }
+      ]
+    },
+    { id: 'task', type: 'task', author: 'Shane', avatar: avatars.shane, time: '1u', text: 'heeft een taak afgerond', title: 'Vuilnis buiten zetten', points: '+10 punten', likes: 8, liked: false, comments: [] },
+    { id: 'agenda', type: 'agenda', author: 'Esra', avatar: avatars.esra, time: '2u', text: 'heeft een afspraak toegevoegd', title: 'Tandarts - Emma', subtitle: 'Morgen om 14:30', likes: 3, liked: false, comments: [] },
+    { id: 'grocery', type: 'grocery', author: 'Boodschappenlijst', avatar: avatars.esra, time: '5u', text: 'is bijgewerkt', title: '🥛 Melk   🍌 Bananen   🍞 Brood   +2 meer', likes: 4, liked: false, comments: [] },
+    { id: 'birthday', type: 'agenda', author: 'Verjaardag', avatar: avatars.emma, time: '1d', text: 'morgen', title: 'Emma', subtitle: '8 jaar! 🎉', likes: 6, liked: false, comments: [] }
+  ];
 }
 
-function savePosts(posts) {
-  localStorage.setItem(storageKey, JSON.stringify(posts));
+function state() {
+  try { return JSON.parse(localStorage.getItem(feedKey)) || seedPosts(); }
+  catch (e) { return seedPosts(); }
+}
+
+function save(next) {
+  localStorage.setItem(feedKey, JSON.stringify(next));
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
 }
 
 function toast(message) {
   let el = document.querySelector('.target-toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'target-toast';
-    document.body.appendChild(el);
-  }
+  if (!el) { el = document.createElement('div'); el.className = 'target-toast'; document.body.appendChild(el); }
   el.textContent = message;
   el.classList.add('show');
-  window.clearTimeout(el._timer);
-  el._timer = window.setTimeout(() => el.classList.remove('show'), 1800);
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
-function openProfile(name) {
-  toast('Profiel openen: ' + name);
-}
-
-function navigateLegacy(label) {
+function routeTo(label) {
   const buttons = Array.from(document.querySelectorAll('button, .nav-btn, [role="button"]'));
-  const target = buttons.find((button) => (button.textContent || '').toLowerCase().includes(label));
-  if (target) {
-    target.click();
-    return;
-  }
-  toast('Module openen: ' + label);
+  const found = buttons.find((button) => (button.textContent || '').toLowerCase().includes(label));
+  if (found) found.click(); else toast('Open module: ' + label);
 }
 
-function makeUserPostHtml(post) {
-  const media = post.image ? '<img class="target-upload-image" src="' + post.image + '" alt="Geupload">' : '';
-  const gif = post.gif ? '<img class="target-upload-image" src="' + post.gif + '" alt="GIF">' : '';
-  const comments = (post.comments || []).map((comment) => '<div class="target-comment"><strong>SK</strong> ' + comment + '</div>').join('');
-  return [
-    '<article class="target-card user-post-card" data-feed-type="note" data-post-id="' + post.id + '" data-label="Eigen update">',
-    '  <button class="target-type-icon note" data-action="note">✎</button>',
-    '  <button class="target-photo-button" data-profile="Shane"><img class="target-user-photo" src="' + post.avatar + '" alt="Shane"></button>',
-    '  <div class="target-card-body">',
-    '    <div class="target-card-top"><p><strong>Shane</strong> plaatste een update</p><button data-action="menu">nu ···</button></div>',
-    '    <p class="target-post-text">' + post.text + '</p>',
-    media,
-    gif,
-    '    <div class="target-reactions"><button data-like-post="' + post.id + '">♥ ' + (post.likes || 0) + '</button><button data-comment-post="' + post.id + '">○ ' + (post.comments || []).length + '</button></div>',
-    '    <div class="target-comments">' + comments + '</div>',
-    '  </div>',
-    '</article>',
-  ].join('');
+function icon(type) {
+  if (type === 'task') return ['✓', 'task'];
+  if (type === 'agenda') return ['▣', 'agenda'];
+  if (type === 'photo') return ['▧', 'photo'];
+  if (type === 'grocery') return ['▰', 'grocery'];
+  return ['✎', 'note'];
 }
 
-function renderSavedPosts(container) {
+function renderComments(post) {
+  if (!post.comments || !post.comments.length) return '';
+  return '<div class="target-comments">' + post.comments.map((comment) => {
+    const replies = (comment.replies || []).map((reply) => `
+      <div class="target-reply">
+        <img src="${reply.avatar}" alt="${escapeHtml(reply.author)}">
+        <div><strong>${escapeHtml(reply.author)}</strong><p>${escapeHtml(reply.text)}</p></div>
+      </div>
+    `).join('');
+    return `
+      <div class="target-comment" data-comment-id="${comment.id}">
+        <img src="${comment.avatar}" alt="${escapeHtml(comment.author)}">
+        <div class="target-comment-main">
+          <div class="target-comment-bubble"><strong>${escapeHtml(comment.author)}</strong><p>${escapeHtml(comment.text)}</p></div>
+          <div class="target-comment-actions"><button data-reply="${post.id}" data-comment="${comment.id}">Beantwoorden</button><button data-comment-like="${post.id}" data-comment="${comment.id}" class="${comment.liked ? 'liked' : ''}">♡ ${comment.likes || 0}</button></div>
+          ${replies}
+        </div>
+      </div>
+    `;
+  }).join('') + '</div>';
+}
+
+function renderPost(post) {
+  const [symbol, iconClass] = icon(post.type);
+  const photoHtml = post.photos && post.photos.length ? '<div class="target-photo-row">' + post.photos.map((src) => `<button data-open-photo><img src="${src}" alt="Foto"></button>`).join('') + '</div>' : '';
+  const mediaHtml = post.image ? `<img class="target-upload-image" src="${post.image}" alt="Upload">` : '';
+  const gifHtml = post.gif ? `<img class="target-upload-image" src="${post.gif}" alt="GIF">` : '';
+  const detail = post.type === 'agenda' ? `<button class="target-agenda-pill" data-route="agenda"><strong>▣ ${escapeHtml(post.title)}</strong><small>${escapeHtml(post.subtitle)}</small></button>` :
+    post.type === 'grocery' ? `<button class="target-grocery-pill" data-route="boodschappen">${escapeHtml(post.title)}</button>` :
+    post.type === 'task' ? `<h3>${escapeHtml(post.title)}</h3><b class="target-points">${escapeHtml(post.points)}</b>` :
+    post.type === 'birthday' ? `<button class="target-birthday-pill" data-route="agenda"><img src="${avatars.emma}" alt="Emma"><div><strong>${escapeHtml(post.title)}</strong><small>${escapeHtml(post.subtitle)}</small></div></button>` : '';
+
+  return `
+    <article class="target-card" data-feed-type="${post.type}" data-post-id="${post.id}">
+      <button class="target-type-icon ${iconClass}" data-route="${post.type === 'grocery' ? 'boodschappen' : post.type === 'task' ? 'taken' : post.type === 'agenda' ? 'agenda' : ''}">${symbol}</button>
+      <button class="target-photo-button" data-profile="${escapeHtml(post.author)}"><img class="target-user-photo" src="${post.avatar}" alt="${escapeHtml(post.author)}"></button>
+      <div class="target-card-body">
+        <div class="target-card-top"><p><strong>${escapeHtml(post.author)}</strong> ${escapeHtml(post.text)}</p><button data-menu>${escapeHtml(post.time)} ···</button></div>
+        ${detail}
+        ${photoHtml}${mediaHtml}${gifHtml}
+        <div class="target-reactions"><button data-like="${post.id}" class="${post.liked ? 'liked' : ''}">♥ ${post.likes || 0}</button><button data-focus-comment="${post.id}">○ ${(post.comments || []).length}</button></div>
+        ${renderComments(post)}
+        <div class="target-comment-box"><img src="${ownAvatar()}" alt="Jij"><input data-comment-input="${post.id}" placeholder="Schrijf een reactie..."><button data-send-comment="${post.id}">Plaats</button></div>
+      </div>
+    </article>
+  `;
+}
+
+function renderPosts(container) {
   const list = container.querySelector('.target-feed-list');
   if (!list) return;
-  const posts = getSavedPosts();
-  list.querySelectorAll('.user-post-card').forEach((node) => node.remove());
-  list.insertAdjacentHTML('afterbegin', posts.map(makeUserPostHtml).join(''));
+  list.innerHTML = state().map(renderPost).join('');
+  bindPostActions(container);
 }
 
-function addEmoji(container, emoji) {
+function publish(container) {
   const input = container.querySelector('.target-input-field');
-  input.value = (input.value || '') + emoji;
-  input.focus();
+  const photoInput = container.querySelector('.target-photo-input');
+  const text = input.value.trim();
+  const image = photoInput.dataset.preview || '';
+  const gif = input.dataset.gif || '';
+  if (!text && !image && !gif) { toast('Schrijf eerst iets of voeg media toe'); return; }
+  const posts = state();
+  posts.unshift({ id: 'post-' + Date.now(), type: 'note', author: 'Shane', avatar: ownAvatar(), time: 'nu', text, image, gif, likes: 0, liked: false, comments: [] });
+  save(posts);
+  input.value = ''; input.dataset.gif = ''; photoInput.value = ''; photoInput.dataset.preview = '';
+  container.querySelector('.target-media-preview').innerHTML = '';
+  renderPosts(container);
+  toast('Post geplaatst');
 }
 
-function publishPost(container) {
-  const input = container.querySelector('.target-input-field');
-  const imageInput = container.querySelector('.target-photo-input');
-  const text = (input.value || '').trim();
-  const pendingImage = imageInput.dataset.preview || '';
-  const pendingGif = input.dataset.gif || '';
-
-  if (!text && !pendingImage && !pendingGif) {
-    toast('Schrijf eerst iets of voeg media toe');
-    return;
-  }
-
-  const posts = getSavedPosts();
-  posts.unshift({
-    id: 'post-' + Date.now(),
-    text: text || 'Nieuwe update',
-    image: pendingImage,
-    gif: pendingGif,
-    avatar: getOwnAvatar(),
-    likes: 0,
-    comments: [],
-  });
-  savePosts(posts);
-  input.value = '';
-  input.dataset.gif = '';
-  imageInput.value = '';
-  imageInput.dataset.preview = '';
-  const preview = container.querySelector('.target-media-preview');
-  if (preview) preview.innerHTML = '';
-  renderSavedPosts(container);
-  bindDynamicPostActions(container);
-  toast('Update geplaatst');
+function toggleLike(postId) {
+  const posts = state();
+  const post = posts.find((item) => item.id === postId);
+  if (!post) return;
+  post.liked = !post.liked;
+  post.likes = Math.max(0, (post.likes || 0) + (post.liked ? 1 : -1));
+  save(posts);
 }
 
-function bindDynamicPostActions(container) {
-  container.querySelectorAll('[data-like-post]').forEach((button) => {
-    button.onclick = (event) => {
-      event.stopPropagation();
-      const posts = getSavedPosts();
-      const post = posts.find((item) => item.id === button.dataset.likePost);
-      if (post) post.likes = (post.likes || 0) + 1;
-      savePosts(posts);
-      renderSavedPosts(container);
-      bindDynamicPostActions(container);
-    };
-  });
-
-  container.querySelectorAll('[data-comment-post]').forEach((button) => {
-    button.onclick = (event) => {
-      event.stopPropagation();
-      const text = prompt('Plaats een reactie');
-      if (!text) return;
-      const posts = getSavedPosts();
-      const post = posts.find((item) => item.id === button.dataset.commentPost);
-      if (post) post.comments = [...(post.comments || []), text];
-      savePosts(posts);
-      renderSavedPosts(container);
-      bindDynamicPostActions(container);
-    };
-  });
+function addComment(postId, text) {
+  const posts = state();
+  const post = posts.find((item) => item.id === postId);
+  if (!post || !text.trim()) return;
+  post.comments = post.comments || [];
+  post.comments.push({ id: 'comment-' + Date.now(), author: 'Shane', avatar: ownAvatar(), text: text.trim(), likes: 0, liked: false, replies: [] });
+  save(posts);
 }
 
-function bindFeedActions(container) {
-  container.querySelectorAll('[data-profile]').forEach((el) => {
-    el.onclick = (event) => {
-      event.stopPropagation();
-      openProfile(el.dataset.profile);
-    };
-  });
+function addReply(postId, commentId) {
+  const text = prompt('Reageer op deze reactie');
+  if (!text) return;
+  const posts = state();
+  const post = posts.find((item) => item.id === postId);
+  const comment = post && (post.comments || []).find((item) => item.id === commentId);
+  if (!comment) return;
+  comment.replies = comment.replies || [];
+  comment.replies.push({ id: 'reply-' + Date.now(), author: 'Shane', avatar: ownAvatar(), text: text.trim(), likes: 0, liked: false });
+  save(posts);
+}
 
-  container.querySelectorAll('[data-route]').forEach((button) => {
-    button.onclick = (event) => {
-      event.stopPropagation();
-      navigateLegacy(button.dataset.route);
-    };
-  });
+function bindPostActions(container) {
+  container.querySelectorAll('[data-like]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); toggleLike(button.dataset.like); renderPosts(container); });
+  container.querySelectorAll('[data-send-comment]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); const input = container.querySelector(`[data-comment-input="${button.dataset.sendComment}"]`); addComment(button.dataset.sendComment, input.value); renderPosts(container); });
+  container.querySelectorAll('[data-focus-comment]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); const input = container.querySelector(`[data-comment-input="${button.dataset.focusComment}"]`); if (input) input.focus(); });
+  container.querySelectorAll('[data-reply]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); addReply(button.dataset.reply, button.dataset.comment); renderPosts(container); });
+  container.querySelectorAll('[data-comment-like]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); toast('Reactie geliked'); });
+  container.querySelectorAll('[data-profile]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); toast('Profiel openen: ' + button.dataset.profile); });
+  container.querySelectorAll('[data-route]').forEach((button) => button.onclick = (event) => { event.stopPropagation(); if (button.dataset.route) routeTo(button.dataset.route); });
+}
 
-  container.querySelectorAll('[data-filter]').forEach((button) => {
-    button.onclick = () => {
-      container.querySelectorAll('[data-filter]').forEach((item) => item.classList.remove('active'));
-      button.classList.add('active');
-      const filter = button.dataset.filter;
-      container.querySelectorAll('[data-feed-type]').forEach((card) => {
-        card.hidden = filter !== 'all' && card.dataset.feedType !== filter;
-      });
-    };
-  });
-
-  container.querySelector('[data-action="photo"]').onclick = (event) => {
-    event.stopPropagation();
-    container.querySelector('.target-photo-input').click();
-  };
-
-  container.querySelector('[data-action="avatar-upload"]').onclick = (event) => {
-    event.stopPropagation();
-    container.querySelector('.target-avatar-input').click();
-  };
-
-  container.querySelector('[data-action="emoji"]').onclick = (event) => {
-    event.stopPropagation();
-    addEmoji(container, '😊');
-  };
-
-  container.querySelector('[data-action="gif"]').onclick = (event) => {
-    event.stopPropagation();
-    const input = container.querySelector('.target-input-field');
-    input.dataset.gif = 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif';
-    container.querySelector('.target-media-preview').innerHTML = '<img src="' + input.dataset.gif + '" alt="GIF">';
-    toast('GIF toegevoegd');
-  };
-
-  container.querySelector('[data-action="post"]').onclick = (event) => {
-    event.stopPropagation();
-    publishPost(container);
-  };
-
-  container.querySelector('.target-photo-input').onchange = (event) => {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      event.target.dataset.preview = reader.result;
-      container.querySelector('.target-media-preview').innerHTML = '<img src="' + reader.result + '" alt="Preview">';
-    };
-    reader.readAsDataURL(file);
-  };
-
-  container.querySelector('.target-avatar-input').onchange = (event) => {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      localStorage.setItem(avatarKey, reader.result);
-      container.querySelectorAll('.target-own-avatar-img').forEach((img) => img.src = reader.result);
-      toast('Profielfoto opgeslagen');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  container.querySelectorAll('[data-comment-static]').forEach((button) => {
-    button.onclick = (event) => {
-      event.stopPropagation();
-      const text = prompt('Plaats een reactie');
-      if (text) toast('Reactie geplaatst');
-    };
-  });
-
-  container.querySelectorAll('[data-like-static]').forEach((button) => {
-    button.onclick = (event) => {
-      event.stopPropagation();
-      const count = parseInt(button.dataset.count || '0', 10) + 1;
-      button.dataset.count = String(count);
-      button.textContent = '♥ ' + count;
-    };
-  });
-
-  container.querySelectorAll('.target-card').forEach((card) => {
-    card.onclick = () => toast(card.dataset.label || 'Update openen');
-  });
-
-  bindDynamicPostActions(container);
+function bindComposer(container) {
+  container.querySelector('[data-action="photo"]').onclick = () => container.querySelector('.target-photo-input').click();
+  container.querySelector('[data-action="avatar-upload"]').onclick = () => container.querySelector('.target-avatar-input').click();
+  container.querySelector('[data-action="emoji"]').onclick = () => { const input = container.querySelector('.target-input-field'); input.value += '😊'; input.focus(); };
+  container.querySelector('[data-action="gif"]').onclick = () => { const input = container.querySelector('.target-input-field'); input.dataset.gif = 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif'; container.querySelector('.target-media-preview').innerHTML = `<img src="${input.dataset.gif}" alt="GIF">`; };
+  container.querySelector('[data-action="post"]').onclick = () => publish(container);
+  container.querySelector('.target-photo-input').onchange = (event) => { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { event.target.dataset.preview = reader.result; container.querySelector('.target-media-preview').innerHTML = `<img src="${reader.result}" alt="Preview">`; }; reader.readAsDataURL(file); };
+  container.querySelector('.target-avatar-input').onchange = (event) => { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { localStorage.setItem(avatarKey, reader.result); renderFeedScreen(container); }; reader.readAsDataURL(file); };
 }
 
 export function renderFeedScreen(container) {
-  const ownAvatar = getOwnAvatar();
-  container.innerHTML = [
-    '<section class="target-feed">',
-    '  <section class="target-feed-summary">',
-    '    <h2>Goedemiddag Shane 👋</h2>',
-    '    <p>Dit is er vandaag in het gezin</p>',
-    '    <div class="target-stat-grid">',
-    '      <button class="target-stat" data-route="taken"><span class="target-stat-icon green">✓</span><strong>4</strong><small>Taken afgerond</small></button>',
-    '      <button class="target-stat" data-route="agenda"><span class="target-stat-icon purple">▣</span><strong>2</strong><small>Afspraken</small></button>',
-    '      <button class="target-stat" data-route="boodschappen"><span class="target-stat-icon orange">▣</span><strong>3</strong><small>Boodschappen</small></button>',
-    '      <button class="target-stat" data-filter="all"><span class="target-stat-icon blue">●●</span><strong>5</strong><small>Nieuwe updates</small></button>',
-    '    </div>',
-    '  </section>',
-    '  <section class="target-composer">',
-    '    <button class="target-avatar solid" data-action="avatar-upload"><img class="target-own-avatar-img" src="' + ownAvatar + '" alt="Jouw foto"></button>',
-    '    <textarea class="target-input-field" placeholder="Deel iets met het gezin..."></textarea>',
-    '    <div class="target-media-preview"></div>',
-    '    <input class="target-photo-input" type="file" accept="image/*" hidden>',
-    '    <input class="target-avatar-input" type="file" accept="image/*" hidden>',
-    '    <div class="target-composer-actions">',
-    '      <button data-action="photo" aria-label="Foto toevoegen">▧</button><button data-action="emoji" aria-label="Emoji kiezen">😊</button><button data-action="gif" aria-label="GIF toevoegen">GIF</button><button data-action="post" aria-label="Post plaatsen">☷</button>',
-    '      <button class="target-post" data-action="post">Posten</button>',
-    '    </div>',
-    '  </section>',
-    '  <nav class="target-tabs">',
-    '    <button class="active" data-filter="all">⌂ Alle updates</button>',
-    '    <button data-filter="task">☑ Taken</button>',
-    '    <button data-filter="agenda">▣ Agenda</button>',
-    "    <button data-filter=\"photo\">▧ Foto's</button>",
-    '    <button data-filter="note">▱ Notities</button>',
-    '  </nav>',
-    '  <section class="target-feed-list">',
-    '    <article class="target-card task-card" data-feed-type="task" data-label="Taak: Vuilnis buiten zetten">',
-    '      <button class="target-type-icon task" data-route="taken">✓</button>',
-    '      <button class="target-photo-button" data-profile="Shane"><img class="target-user-photo" src="' + defaultAvatar + '" alt="Shane"></button>',
-    '      <div class="target-card-body"><div class="target-card-top"><p><strong>Shane</strong> heeft een taak afgerond</p><button>1u ···</button></div><h3>Vuilnis buiten zetten</h3><div class="target-card-footer"><b>+10 punten</b><button class="target-mini-avatars" data-like-static data-count="2"><span></span><span></span><span></span><em>+2</em></button></div><div class="target-reactions"><button data-like-static data-count="8">♥ 8</button><button data-comment-static>○ Reageer</button></div></div>',
-    '    </article>',
-    '    <article class="target-card agenda-card" data-feed-type="agenda" data-label="Afspraak: Tandarts Emma">',
-    '      <button class="target-type-icon agenda" data-route="agenda">▣</button><button class="target-photo-button" data-profile="Esra"><img class="target-user-photo" src="' + esraAvatar + '" alt="Esra"></button><div class="target-card-body"><div class="target-card-top"><p><strong>Esra</strong> heeft een afspraak toegevoegd</p><button>2u ···</button></div><button class="target-agenda-pill" data-route="agenda"><strong>▣ Tandarts - Emma</strong><small>Morgen om 14:30</small></button><div class="target-reactions"><button data-like-static data-count="3">♥ 3</button><button data-comment-static>○ Reageer</button></div></div>',
-    '    </article>',
-    '    <article class="target-card photo-card" data-feed-type="photo" data-label="Foto update van Esra">',
-    '      <button class="target-type-icon photo">▧</button><button class="target-photo-button" data-profile="Esra"><img class="target-user-photo" src="' + esraAvatar + '" alt="Esra"></button><div class="target-card-body"><div class="target-card-top"><p><strong>Esra</strong> heeft 3 foto’s toegevoegd</p><button>3u ···</button></div><div class="target-photo-row"><button><img src="' + familyPhotoOne + '" alt="Foto 1"></button><button><img src="' + familyPhotoTwo + '" alt="Foto 2"></button><button><img src="' + familyPhotoThree + '" alt="Foto 3"></button></div><div class="target-reactions"><button data-like-static data-count="8">♥ 8</button><button data-comment-static>○ 2</button></div></div>',
-    '    </article>',
-    '    <article class="target-card grocery-card" data-feed-type="grocery" data-label="Boodschappenlijst bijgewerkt">',
-    '      <button class="target-type-icon grocery" data-route="boodschappen">▰</button><button class="target-photo-button" data-profile="Lisa"><img class="target-user-photo" src="' + lisaAvatar + '" alt="Lisa"></button><div class="target-card-body"><div class="target-card-top"><p><strong>Boodschappenlijst</strong> is bijgewerkt</p><button>5u ···</button></div><button class="target-grocery-pill" data-route="boodschappen">🥛 Melk &nbsp; 🍌 Bananen &nbsp; 🍞 Brood &nbsp; +2 meer</button><div class="target-reactions"><button data-like-static data-count="4">♥ 4</button><button data-comment-static>○ Reageer</button></div></div>',
-    '    </article>',
-    '    <article class="target-card birthday-card" data-feed-type="agenda" data-label="Verjaardag Emma">',
-    '      <button class="target-type-icon birthday" data-route="agenda">♛</button><button class="target-photo-button" data-profile="Lisa"><img class="target-user-photo" src="' + lisaAvatar + '" alt="Lisa"></button><div class="target-card-body"><div class="target-card-top"><p><strong>Verjaardag</strong> morgen</p><button>1d ···</button></div><button class="target-birthday-pill" data-route="agenda"><img src="' + familyPhotoTwo + '" alt="Emma"><div><strong>Emma</strong><small>8 jaar! 🎉</small></div></button><div class="target-reactions"><button data-like-static data-count="6">♥ 6</button><button data-comment-static>○ Reageer</button></div></div>',
-    '    </article>',
-    '  </section>',
-    '</section>'
-  ].join('');
-
-  renderSavedPosts(container);
-  bindFeedActions(container);
+  container.innerHTML = `
+    <section class="target-feed">
+      <section class="target-feed-summary">
+        <h2>Goedemiddag Shane 👋</h2><p>Dit is er vandaag in het gezin</p>
+        <div class="target-stat-grid">
+          <button class="target-stat" data-route="taken"><span class="target-stat-icon green">✓</span><strong>4</strong><small>Taken afgerond</small></button>
+          <button class="target-stat" data-route="agenda"><span class="target-stat-icon purple">▣</span><strong>2</strong><small>Afspraken</small></button>
+          <button class="target-stat" data-route="boodschappen"><span class="target-stat-icon orange">▣</span><strong>3</strong><small>Boodschappen</small></button>
+          <button class="target-stat" data-route="feed"><span class="target-stat-icon blue">●●</span><strong>5</strong><small>Nieuwe updates</small></button>
+        </div>
+      </section>
+      <section class="target-composer">
+        <button class="target-avatar solid" data-action="avatar-upload"><img class="target-own-avatar-img" src="${ownAvatar()}" alt="Jouw foto"></button>
+        <textarea class="target-input-field" placeholder="Deel iets met het gezin..."></textarea>
+        <div class="target-media-preview"></div>
+        <input class="target-photo-input" type="file" accept="image/*" hidden><input class="target-avatar-input" type="file" accept="image/*" hidden>
+        <div class="target-composer-actions"><button data-action="photo">▧ Foto</button><button data-action="emoji">😊 Emoji</button><button data-action="gif">GIF</button><button data-action="post">☷</button><button class="target-post" data-action="post">Posten</button></div>
+      </section>
+      <nav class="target-tabs"><button class="active" data-filter="all">⌂ Alle updates</button><button data-filter="task">☑ Taken</button><button data-filter="agenda">▣ Agenda</button><button data-filter="photo">▧ Foto's</button><button data-filter="note">▱ Notities</button></nav>
+      <section class="target-feed-list"></section>
+    </section>
+  `;
+  container.querySelectorAll('[data-filter]').forEach((button) => button.onclick = () => { container.querySelectorAll('[data-filter]').forEach((item) => item.classList.remove('active')); button.classList.add('active'); const filter = button.dataset.filter; container.querySelectorAll('[data-feed-type]').forEach((card) => { card.hidden = filter !== 'all' && card.dataset.feedType !== filter; }); });
+  bindComposer(container);
+  renderPosts(container);
 }
