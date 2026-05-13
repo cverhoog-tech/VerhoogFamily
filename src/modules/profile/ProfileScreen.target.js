@@ -1,28 +1,29 @@
-const avatarKey = 'familyapp-current-user-avatar-v1';
-const nameKey = 'familyapp-profile-name-v1';
-const partnerKey = 'familyapp-partner-name-v1';
+import {
+  animeAvatarCollection,
+  avatarUrlForId,
+  getCurrentAvatarId,
+  getCurrentAvatarUrl,
+  getPartnerName,
+  getProfileName,
+  nameKey,
+  partnerKey,
+  setPresetAvatar,
+  setUploadedAvatar,
+} from './avatarStore.js';
 
-const avatarChoices = [
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Kirito&backgroundColor=e8f5e3',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Asuna&backgroundColor=f6f2ff',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Meliodas&backgroundColor=fff1e4',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Elizabeth&backgroundColor=ffeef8',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Sinon&backgroundColor=eaf1ff',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Leafa&backgroundColor=e8fff1',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Ban&backgroundColor=f7f7f7',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=King&backgroundColor=f1f5ff',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Merlin&backgroundColor=f3e8ff',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Alice&backgroundColor=fff4e8',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Eugeo&backgroundColor=e8f7ff',
-  'https://api.dicebear.com/8.x/adventurer/svg?seed=Yui&backgroundColor=fff0f8',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=80'
-];
+const activeCategoryKey = 'familyapp-avatar-category-v1';
 
-function getName() { return localStorage.getItem(nameKey) || 'Shane'; }
-function getPartnerName() { return localStorage.getItem(partnerKey) || 'Esra'; }
-function getAvatar() { return localStorage.getItem(avatarKey) || avatarChoices[0]; }
-function setAvatar(src) { localStorage.setItem(avatarKey, src); }
+function getActiveCategory() {
+  return localStorage.getItem(activeCategoryKey) || 'Alle';
+}
+
+function setActiveCategory(category) {
+  localStorage.setItem(activeCategoryKey, category);
+}
+
+function categories() {
+  return ['Alle', ...Array.from(new Set(animeAvatarCollection.map((avatar) => avatar.category)))];
+}
 
 function toast(message) {
   let el = document.querySelector('.profile-toast');
@@ -57,16 +58,23 @@ function bindProfileActions(container) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      setAvatar(reader.result);
+      setUploadedAvatar(reader.result);
       renderProfileScreen(container);
       toast('Avatar bijgewerkt');
     };
     reader.readAsDataURL(file);
   };
 
-  container.querySelectorAll('[data-avatar-choice]').forEach((button) => {
+  container.querySelectorAll('[data-avatar-category]').forEach((button) => {
     button.onclick = () => {
-      setAvatar(button.dataset.avatarChoice);
+      setActiveCategory(button.dataset.avatarCategory);
+      renderProfileScreen(container);
+    };
+  });
+
+  container.querySelectorAll('[data-avatar-id]').forEach((button) => {
+    button.onclick = () => {
+      setPresetAvatar(button.dataset.avatarId);
       renderProfileScreen(container);
       toast('Avatar gekozen');
     };
@@ -78,9 +86,15 @@ function bindProfileActions(container) {
 }
 
 export function renderProfileScreen(container) {
-  const avatar = getAvatar();
-  const name = getName();
+  const avatar = getCurrentAvatarUrl();
+  const avatarId = getCurrentAvatarId();
+  const name = getProfileName();
   const partner = getPartnerName();
+  const activeCategory = getActiveCategory();
+  const visibleAvatars = activeCategory === 'Alle'
+    ? animeAvatarCollection
+    : animeAvatarCollection.filter((item) => item.category === activeCategory);
+
   container.innerHTML = `
     <section class="profile-target">
       <section class="profile-hero-card">
@@ -99,7 +113,7 @@ export function renderProfileScreen(container) {
         <div class="profile-input-row"><input data-profile-name value="${name}"><span>✎</span></div>
         <label>Partner naam</label>
         <div class="profile-input-row"><input data-partner-name value="${partner}"><span>✎</span></div>
-        <div class="profile-info-note"><span>ⓘ</span> Deze namen zijn zichtbaar voor je gezin.</div>
+        <div class="profile-info-note"><span>ⓘ</span> Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.</div>
         <button class="profile-save-btn" data-save-profile>Opslaan</button>
       </section>
 
@@ -110,8 +124,14 @@ export function renderProfileScreen(container) {
           <button data-upload-avatar>⇧ Upload foto</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
-        <div class="profile-choice-row">
-          ${avatarChoices.map((src) => `<button class="profile-choice ${src === avatar ? 'selected' : ''}" data-avatar-choice="${src}"><img src="${src}" alt="Avatar keuze"><span>✓</span></button>`).join('')}
+        <div class="profile-avatar-tabs">
+          ${categories().map((category) => `<button class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
+        </div>
+        <div class="profile-choice-grid">
+          ${visibleAvatars.map((item) => {
+            const src = avatarUrlForId(item.id);
+            return `<button class="profile-choice profile-rarity-${item.rarity} ${item.id === avatarId ? 'selected' : ''}" data-avatar-id="${item.id}"><img src="${src}" alt="${item.label}"><span>✓</span><small>${item.label}</small></button>`;
+          }).join('')}
         </div>
       </section>
 
