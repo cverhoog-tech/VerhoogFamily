@@ -1,8 +1,0 @@
-.module-root {
-  min-height: 100vh;
-  padding-bottom: 120px;
-}
-
-.bottom-navigation-item.active {
-  color: var(--color-primary);
-}
