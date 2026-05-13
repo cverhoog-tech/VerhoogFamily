@@ -1,0 +1,23 @@
+FamilieApp Snapshot — v023
+Datum: 2026-05-13
+Status: Stabiele build met premium quest UI
+
+Wijzigingen t.o.v. v022:
+- Stat tiles met foto-achtergronden (Level / Streak / Party)
+- Prioriteit badges op quest cards (Laag / Normaal / Hoog)
+- Voortgangsbalk per dag-groep
+- Party modal met avatars
+- Subquests met XP per stap
+- Beloningen sectie in detail modal
+- Group Quest popup
+- Betere glasmorphism cards
+- Data migratie van v021/v022 automatisch
+
+Bestanden:
+- index.html      (hoofd app, ongewijzigd)
+- vercel.json     (routing config, ongewijzigd)
+- v023.js         (quest logica — nieuw)
+- v023.css        (premium styling — nieuw)
+- v022.js         (vorige versie — bewaard als backup)
+- v022.css        (vorige versie — bewaard als backup)
+- SNAPSHOT_v023.txt (dit bestand)
