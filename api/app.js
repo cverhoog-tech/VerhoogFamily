@@ -16,7 +16,6 @@ module.exports = async function handler(req, res) {
 <script src="/trade-engine.js" defer></script>
 <link rel="stylesheet" href="/src/app/homePremiumPolish.css?v=5">
 <script src="/src/app/homePremiumPolish.js?v=5" defer></script>
-<script src="/src/app/questStabilityHotfix.js?v=2" defer></script>
 
 <script type="module" id="modern-bridge-loader">
   import { mountLegacyFeedBridge } from '/src/app/legacy-feed-bridge.js';
