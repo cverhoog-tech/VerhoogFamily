@@ -1,6 +1,6 @@
 (() => {
-  if (window.__familyAppTaskCreateSubmitGuardV3) return;
-  window.__familyAppTaskCreateSubmitGuardV3 = true;
+  if (window.__familyAppTaskCreateSubmitGuardV4) return;
+  window.__familyAppTaskCreateSubmitGuardV4 = true;
 
   const INTERACTIVE_SCOPE = [
     '#fqModal',
@@ -27,14 +27,82 @@
   ].join(',');
 
   const TASK_STORAGE_KEYS = /^(fam_tasks_v0|fqsub_)/;
+  const RESUME_KEY = 'familyapp-resume-tasks-after-save-v1';
   let lastTaskSaveAt = 0;
 
   function markTaskSave() {
     lastTaskSaveAt = Date.now();
+    try {
+      localStorage.setItem(RESUME_KEY, String(lastTaskSaveAt));
+    } catch (error) {}
   }
 
   function wasRecentTaskSave() {
     return Date.now() - lastTaskSaveAt < 2500;
+  }
+
+  function hasRecentResumeRequest() {
+    const stamp = Number(localStorage.getItem(RESUME_KEY) || 0);
+    return stamp && Date.now() - stamp < 45000;
+  }
+
+  function clearResumeRequest() {
+    localStorage.removeItem(RESUME_KEY);
+  }
+
+  function textOf(node) {
+    return String(node && node.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function findClickableByText(pattern) {
+    return Array.from(document.querySelectorAll('button, a, [role="button"], input[type="button"], input[type="submit"]')).find((el) => {
+      const text = `${textOf(el)} ${el.value || ''} ${el.getAttribute('aria-label') || ''}`;
+      return pattern.test(text);
+    });
+  }
+
+  function looksLikeLoginScreen() {
+    const bodyText = textOf(document.body).toLowerCase();
+    return /inloggen met google|e-mail inloggen|registreren|offline gebruiken/.test(bodyText);
+  }
+
+  function looksLikeTasksScreen() {
+    const header = document.querySelector('.header-title');
+    return /taken|tasks/i.test(textOf(header)) || !!document.querySelector('#task-content, .task-content, .task-tabs');
+  }
+
+  function clickTasksNav() {
+    const target = findClickableByText(/taken|tasks/i);
+    if (!target) return false;
+    target.click();
+    return true;
+  }
+
+  function recoverAfterAuthReset() {
+    if (!hasRecentResumeRequest()) return;
+
+    if (looksLikeTasksScreen()) {
+      clearResumeRequest();
+      return;
+    }
+
+    if (looksLikeLoginScreen()) {
+      const offline = findClickableByText(/offline gebruiken/i);
+      if (offline) {
+        offline.click();
+        setTimeout(clickTasksNav, 250);
+        setTimeout(clickTasksNav, 750);
+        setTimeout(() => {
+          if (looksLikeTasksScreen()) clearResumeRequest();
+        }, 1400);
+      }
+      return;
+    }
+
+    clickTasksNav();
+    setTimeout(() => {
+      if (looksLikeTasksScreen()) clearResumeRequest();
+    }, 800);
   }
 
   function isTaskOrQuestScope(target) {
@@ -113,5 +181,6 @@
   window.addEventListener('load', () => {
     normalizeSubmitButtons();
     if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    [200, 700, 1500, 2800].forEach((delay) => setTimeout(recoverAfterAuthReset, delay));
   });
 })();
