@@ -35,6 +35,9 @@ export function mountLegacyFeedBridge() {
   loadStylesheet('/src/styles/layout.css');
   loadStylesheet('/src/styles/components.css');
   loadStylesheet('/src/modules/feed/feed.styles.css');
+  loadStylesheet('/src/modules/feed/feed.motion.css');
+  loadStylesheet('/src/modules/feed/feed.premium.css');
+  loadStylesheet('/src/modules/feed/feed.polish.css');
 
   root.dataset.modernFeed = 'true';
   renderFeedScreen(root);
