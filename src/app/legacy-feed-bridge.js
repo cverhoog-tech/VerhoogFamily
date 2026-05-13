@@ -36,7 +36,11 @@ export function mountLegacyFeedBridge() {
   loadStylesheet('/src/styles/components.css');
   loadStylesheet('/src/modules/feed/feed.target.css');
 
-  root.dataset.modernFeed = 'true';
+  if (root.dataset.modernFeed === 'target-v2') {
+    return true;
+  }
+
+  root.dataset.modernFeed = 'target-v2';
   renderFeedScreen(root);
 
   return true;
