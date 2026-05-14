@@ -159,6 +159,8 @@
     if (!hero) return;
 
     if (hero.dataset.premiumHeroV3 !== '1') {
+          // Carrousel beheerd door home.js initCarousel() -- niet overschrijven
+          return;
       hero.dataset.premiumHeroV3 = '1';
       hero.className = 'premium-hero-carousel-v2';
       hero.innerHTML = `
