@@ -73,12 +73,9 @@ try{
     }
   }
   function run(){
-    var changed=applyToStorage();
+    applyToStorage();
     applyToDom();
-    if(changed&&document.querySelector('.fqCard')&&!window.__familyTaskImageReloading){
-      window.__familyTaskImageReloading=1;
-      setTimeout(function(){window.location.reload();},100);
-    }
+    // No page reload here. Reloads reset the active screen and sent users to Home after creating a quest.
   }
 
   window.FamilyTaskImages={tags:IMAGE_TAGS,match:matchTaskImage,refresh:run};
@@ -86,4 +83,130 @@ try{
   new MutationObserver(run).observe(document.documentElement,{subtree:true,childList:true});
   setInterval(run,1500);
 }catch(e){console.warn('task-image-hashtags failed',e);}
+})();
+
+(function(){
+  if(window.__familyAppTaskCreateStayPatchV2) return;
+  window.__familyAppTaskCreateStayPatchV2 = true;
+
+  function forceTasksScreen(){
+    try{
+      if(typeof _currentScreen !== 'undefined') window._currentScreen = 'tasks';
+      document.querySelectorAll('.screen').forEach(function(screen){ screen.classList.remove('active'); });
+      var taskScreen = document.getElementById('screen-tasks');
+      if(taskScreen) taskScreen.classList.add('active');
+      var title = document.getElementById('hdr-title');
+      if(title) title.textContent = 'Taken';
+      document.querySelectorAll('.nav-btn').forEach(function(btn){
+        var isTasks = btn.dataset && btn.dataset.goto === 'tasks';
+        btn.classList.toggle('active', !!isTasks);
+      });
+      if(typeof renderTasks === 'function') renderTasks();
+      if(typeof updateStats === 'function') updateStats();
+    }catch(e){}
+  }
+
+  function persistTasksOnly(){
+    try{
+      if(window.AppState && typeof AppState.get === 'function'){
+        var state = AppState.get();
+        if(state){
+          state.tasks = taskData;
+          state.taskNextId = taskNextId;
+          state.recur = recurData;
+          state.recurNextId = recurNextId;
+          state.meta = state.meta || {};
+          state.meta.lastSaved = new Date().toISOString();
+          localStorage.setItem('familieapp_state_v024', JSON.stringify(state));
+        }
+      }
+      if(typeof syncToFirebase === 'function') syncToFirebase();
+    }catch(e){}
+  }
+
+  function installSaveItemPatch(){
+    if(typeof saveItem !== 'function' || saveItem.__stayOnTasksPatchV2) return;
+    var originalSaveItem = saveItem;
+    saveItem = function(){
+      if(typeof currentAddType !== 'undefined' && currentAddType === 'task'){
+        var f1 = document.getElementById('f1');
+        var val = f1 ? f1.value.trim() : '';
+        if(!val){ if(typeof closeAdd === 'function') closeAdd(); forceTasksScreen(); return; }
+
+        if(typeof taskTypeMode !== 'undefined' && taskTypeMode === 'herhalend'){
+          var who2=[];
+          if(typeof wieRShane !== 'undefined' && wieRShane) who2.push('Shane');
+          if(typeof wieREsra !== 'undefined' && wieREsra) who2.push('Esra');
+          if(!who2.length) who2.push(myName);
+          var r={id:'r'+recurNextId++,title:val,who:who2,freq:freqMode,days:[],streak:0,doneWeek:{},doneDates:{}};
+          if(freqMode==='weekly'){
+            document.querySelectorAll('#freq-days .day-pill.active').forEach(function(b){r.days.push(b.dataset.day);});
+            if(!r.days.length){ if(typeof showToast === 'function') showToast('Kies minimaal één dag'); return; }
+            r.freqLabel=r.days.map(function(d){return d.slice(0,2);}).join(', ');
+          } else {
+            var wkBtn=document.querySelector('[data-wk].active');
+            var dayBtn=document.querySelector('#freq-month-days .day-pill.active');
+            r.week=wkBtn?parseInt(wkBtn.dataset.wk,10):1;
+            r.day=dayBtn?dayBtn.dataset.day:'maandag';
+            r.weeks=freqMode==='monthly2'?[r.week,r.week+2]:[r.week];
+            r.freqLabel='Week '+r.week+' · '+r.day.slice(0,2);
+          }
+          recurData.push(r);
+          persistTasksOnly();
+          if(typeof addActivity === 'function') addActivity('🔁','#e8f5e3',myName+' voegde vaste taak "'+val+'" toe');
+        } else {
+          var who=[];
+          if(typeof wieShane !== 'undefined' && wieShane) who.push('Shane');
+          if(typeof wieEsra !== 'undefined' && wieEsra) who.push('Esra');
+          if(!who.length) who.push(myName);
+          var date=(document.getElementById('f3')||{}).value||null;
+          var prio=(document.getElementById('f4')||{}).value||'med';
+          taskData.unshift({id:taskNextId++,title:val,who:who,date:date,done:false,prio:prio});
+          persistTasksOnly();
+          if(typeof addActivity === 'function') addActivity('📋','#f0ede8',myName+' maakte taak "'+val+'" aan');
+          if(typeof addNotif === 'function') addNotif('📋','#f0ede8','Nieuwe taak',''+val);
+        }
+
+        if(typeof closeAdd === 'function') closeAdd();
+        if(typeof renderTasks === 'function') renderTasks();
+        if(typeof updateStats === 'function') updateStats();
+        if(typeof taskTypeMode !== 'undefined') taskTypeMode='eenmalig';
+        if(typeof wieShane !== 'undefined') wieShane=true;
+        if(typeof wieEsra !== 'undefined') wieEsra=false;
+        if(typeof wieRShane !== 'undefined') wieRShane=true;
+        if(typeof wieREsra !== 'undefined') wieREsra=false;
+        if(typeof freqMode !== 'undefined') freqMode='weekly';
+        [0,80,200,500].forEach(function(delay){ setTimeout(forceTasksScreen, delay); });
+        return;
+      }
+      return originalSaveItem.apply(this, arguments);
+    };
+    saveItem.__stayOnTasksPatchV2 = true;
+  }
+
+  function installQuestOverlayPatch(){
+    if(typeof openQuestCreator !== 'function' || openQuestCreator.__stayOnTasksPatchV2) return;
+    var originalOpenQuestCreator = openQuestCreator;
+    openQuestCreator = function(){
+      var result = originalOpenQuestCreator.apply(this, arguments);
+      setTimeout(function(){
+        var buttons=[].slice.call(document.querySelectorAll('button'));
+        buttons.forEach(function(btn){
+          var label=(btn.textContent||'').toLowerCase();
+          if(label.indexOf('quest')>-1 && (label.indexOf('toevoegen')>-1 || label.indexOf('opslaan')>-1 || label.indexOf('aanmaken')>-1)){
+            btn.addEventListener('click', function(){
+              [120,300,700,1200].forEach(function(delay){ setTimeout(forceTasksScreen, delay); });
+            }, true);
+          }
+        });
+      }, 120);
+      return result;
+    };
+    openQuestCreator.__stayOnTasksPatchV2 = true;
+  }
+
+  function install(){ installSaveItemPatch(); installQuestOverlayPatch(); }
+  window.addEventListener('load', function(){ [100,500,1200,2500].forEach(function(delay){ setTimeout(install, delay); }); });
+  document.addEventListener('click', function(){ setTimeout(install, 50); }, true);
+  setInterval(install, 1500);
 })();
