@@ -53,6 +53,22 @@ function bindProfileActions(container) {
   container.querySelector('[data-upload-avatar]').onclick = () => fileInput.click();
   container.querySelector('[data-camera-avatar]').onclick = () => fileInput.click();
 
+  const openAvatarBtn = container.querySelector('[data-open-avatar-popup]');
+  if (openAvatarBtn) {
+    openAvatarBtn.onclick = () => {
+      const popup = container.querySelector('.profile-avatar-popup');
+      if (popup) popup.classList.add('show');
+    };
+  }
+
+  const closeAvatarBtn = container.querySelector('[data-close-avatar-popup]');
+  if (closeAvatarBtn) {
+    closeAvatarBtn.onclick = () => {
+      const popup = container.querySelector('.profile-avatar-popup');
+      if (popup) popup.classList.remove('show');
+    };
+  }
+
   fileInput.onchange = (event) => {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
@@ -85,6 +101,24 @@ function bindProfileActions(container) {
   });
 }
 
+function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
+  return `
+    <div class="profile-avatar-popup-inner">
+      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="Sluiten">✕</button>
+      <h3 class="profile-avatar-popup-title">Kies een avatar</h3>
+      <div class="profile-avatar-tabs">
+        ${categories().map((category) => `<button class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
+      </div>
+      <div class="profile-choice-grid">
+        ${visibleAvatars.map((item) => {
+          const src = avatarUrlForId(item.id);
+          return `<button class="profile-choice profile-rarity-${item.rarity} ${item.id === currentAvatarId ? 'selected' : ''}" data-avatar-id="${item.id}"><img src="${src}" alt="${item.label}"><span>✓</span><small>${item.label}</small></button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
 export function renderProfileScreen(container) {
   const avatar = getCurrentAvatarUrl();
   const avatarId = getCurrentAvatarId();
@@ -94,6 +128,12 @@ export function renderProfileScreen(container) {
   const visibleAvatars = activeCategory === 'Alle'
     ? animeAvatarCollection
     : animeAvatarCollection.filter((item) => item.category === activeCategory);
+
+  const popupHtml = `
+    <div class="profile-avatar-popup">
+      ${renderAvatarPopup(activeCategory, visibleAvatars, avatarId)}
+    </div>
+  `;
 
   container.innerHTML = `
     <section class="profile-target">
@@ -120,19 +160,10 @@ export function renderProfileScreen(container) {
       <section class="profile-card profile-avatar-card">
         <h2>Mijn avatar</h2>
         <div class="profile-avatar-actions">
-          <button class="active">▧ Kies uit de app</button>
+          <button data-open-avatar-popup>▧ Kies uit de app</button>
           <button data-upload-avatar>⇧ Upload foto</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
-        <div class="profile-avatar-tabs">
-          ${categories().map((category) => `<button class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
-        </div>
-        <div class="profile-choice-grid">
-          ${visibleAvatars.map((item) => {
-            const src = avatarUrlForId(item.id);
-            return `<button class="profile-choice profile-rarity-${item.rarity} ${item.id === avatarId ? 'selected' : ''}" data-avatar-id="${item.id}"><img src="${src}" alt="${item.label}"><span>✓</span><small>${item.label}</small></button>`;
-          }).join('')}
-        </div>
       </section>
 
       <section class="profile-card profile-settings-card">
@@ -146,6 +177,7 @@ export function renderProfileScreen(container) {
         <p>Gratis — geen creditcard nodig.<br>Haal je key op via <strong>aistudio.google.com/apikey</strong></p>
       </section>
     </section>
+    ${popupHtml}
   `;
   bindProfileActions(container);
 }
