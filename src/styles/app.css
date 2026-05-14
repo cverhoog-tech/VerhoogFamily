@@ -1692,31 +1692,20 @@ body{background:#fff!important;}
 #screen-home .home-slide .slide-content{overflow:hidden!important;}
 #screen-home .home-slide h2,
 #screen-home .home-slide .slide-title{ text-shadow:0 4px 18px rgba(0,0,0,.42)!important; }
-/* v0.261 - Task dashboard premium stat backgrounds */
-
 .fqStat[data-stat="level"]{
   background-image:
     linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.48)),
-    url('../assets/home-cards/level-adventure.webp') !important;
-  background-size: cover !important;
-  background-position: center center !important;
-  background-repeat: no-repeat !important;
+    url("../assets/home-cards/level-adventure.webp") !important;
 }
 
 .fqStat[data-stat="streak"]{
   background-image:
     linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.48)),
-    url('../assets/home-cards/streak-bowling.webp') !important;
-  background-size: cover !important;
-  background-position: center center !important;
-  background-repeat: no-repeat !important;
+    url("../assets/home-cards/streak-bowling.webp") !important;
 }
 
 .fqStat[data-stat="party"]{
   background-image:
     linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.48)),
-    url('../assets/home-cards/party-adventurers.webp') !important;
-  background-size: cover !important;
-  background-position: center center !important;
-  background-repeat: no-repeat !important;
+    url("../assets/home-cards/party-adventurers.webp") !important;
 }
