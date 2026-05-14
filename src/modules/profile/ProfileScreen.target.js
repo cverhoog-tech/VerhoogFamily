@@ -1,5 +1,6 @@
 import {
   animeAvatarCollection,
+  avatarMetaForId,
   avatarUrlForId,
   getCurrentAvatarId,
   getCurrentAvatarUrl,
@@ -38,20 +39,26 @@ function toast(message) {
   el._timer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
-function bindProfileActions(container, options = {}) {
+function bindProfileActions(container) {
   const nameInput = container.querySelector('[data-profile-name]');
   const partnerInput = container.querySelector('[data-partner-name]');
   const fileInput = container.querySelector('.profile-upload-input');
 
-  container.querySelector('[data-save-profile]').onclick = () => {
-    localStorage.setItem(nameKey, nameInput.value.trim() || 'Shane');
-    localStorage.setItem(partnerKey, partnerInput.value.trim() || 'Esra');
-    renderProfileScreen(container);
-    toast('Profiel opgeslagen');
-  };
+  const saveButton = container.querySelector('[data-save-profile]');
+  if (saveButton) {
+    saveButton.onclick = () => {
+      localStorage.setItem(nameKey, nameInput.value.trim() || 'Shane');
+      localStorage.setItem(partnerKey, partnerInput.value.trim() || 'Esra');
+      renderProfileScreen(container);
+      toast('Profiel opgeslagen');
+    };
+  }
 
-  container.querySelector('[data-upload-avatar]').onclick = () => fileInput.click();
-  container.querySelector('[data-camera-avatar]').onclick = () => fileInput.click();
+  const uploadBtn = container.querySelector('[data-upload-avatar]');
+  if (uploadBtn) uploadBtn.onclick = () => fileInput.click();
+
+  const cameraBtn = container.querySelector('[data-camera-avatar]');
+  if (cameraBtn) cameraBtn.onclick = () => fileInput.click();
 
   const openAvatarBtn = container.querySelector('[data-open-avatar-popup]');
   if (openAvatarBtn) {
@@ -69,17 +76,19 @@ function bindProfileActions(container, options = {}) {
     };
   }
 
-  fileInput.onchange = (event) => {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setUploadedAvatar(reader.result);
-      renderProfileScreen(container);
-      toast('Avatar bijgewerkt');
+  if (fileInput) {
+    fileInput.onchange = (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        setUploadedAvatar(reader.result);
+        renderProfileScreen(container);
+        toast('Avatar bijgewerkt');
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-  };
+  }
 
   container.querySelectorAll('[data-avatar-category]').forEach((button) => {
     button.onclick = (event) => {
@@ -91,9 +100,11 @@ function bindProfileActions(container, options = {}) {
   });
 
   container.querySelectorAll('[data-avatar-id]').forEach((button) => {
-    button.onclick = () => {
+    button.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       setPresetAvatar(button.dataset.avatarId);
-      renderProfileScreen(container);
+      renderProfileScreen(container, { keepAvatarPopupOpen: true });
       toast('Avatar gekozen');
     };
   });
@@ -109,12 +120,18 @@ function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
       <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="Sluiten">✕</button>
       <h3 class="profile-avatar-popup-title">Kies een avatar</h3>
       <div class="profile-avatar-tabs">
-        ${categories().map((category) => `<button class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
+        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
       </div>
-      <div class="profile-choice-grid">
+      <div class="profile-choice-grid profile-choice-grid-exact">
         ${visibleAvatars.map((item) => {
           const src = avatarUrlForId(item.id);
-          return `<button class="profile-choice profile-rarity-${item.rarity} ${item.id === currentAvatarId ? 'selected' : ''}" data-avatar-id="${item.id}"><img src="${src}" alt="${item.label}"><span>✓</span><small>${item.label}</small></button>`;
+          const selected = item.id === currentAvatarId ? 'selected' : '';
+          const pos = item.objectPosition || '50% 36%';
+          return `<button type="button" class="profile-choice profile-choice-exact profile-rarity-${item.rarity} ${selected}" data-avatar-id="${item.id}">
+            <img src="${src}" alt="${item.label}" style="object-position:${pos}">
+            <span>✓</span>
+            <small>${item.label}</small>
+          </button>`;
         }).join('')}
       </div>
     </div>
@@ -124,12 +141,14 @@ function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
 export function renderProfileScreen(container, options = {}) {
   const avatar = getCurrentAvatarUrl();
   const avatarId = getCurrentAvatarId();
+  const avatarMeta = avatarMetaForId(avatarId);
   const name = getProfileName();
   const partner = getPartnerName();
   const activeCategory = getActiveCategory();
   const visibleAvatars = activeCategory === 'Alle'
     ? animeAvatarCollection
     : animeAvatarCollection.filter((item) => item.category === activeCategory);
+  const mainObjectPosition = avatarMeta.objectPosition || '50% 36%';
 
   const popupHtml = `
     <div class="profile-avatar-popup ${options.keepAvatarPopupOpen ? 'show' : ''}">
@@ -141,7 +160,7 @@ export function renderProfileScreen(container, options = {}) {
     <section class="profile-target">
       <section class="profile-hero-card">
         <div class="profile-avatar-wrap">
-          <img class="profile-main-avatar" src="${avatar}" alt="${name}">
+          <img class="profile-main-avatar" src="${avatar}" alt="${name}" style="object-position:${mainObjectPosition}">
           <button class="profile-camera-btn" data-camera-avatar aria-label="Avatar wijzigen">📷</button>
         </div>
         <h1>${name}</h1>
