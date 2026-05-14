@@ -3,6 +3,15 @@ export const avatarIdKey = 'familyapp-current-user-avatar-id-v1';
 export const nameKey = 'familyapp-profile-name-v1';
 export const partnerKey = 'familyapp-partner-name-v1';
 
+const uploadedAvatarBaseUrl = 'https://raw.githubusercontent.com/cverhoog-tech/VerhoogFamily/main/FamilyApp-clean-avatar-background-fix/src/assets/avatars';
+const newAvatarRarities = [
+  'common','epic','legendary','rare','mythic','rare','common','mythic','epic','common',
+  'rare','common','epic','uncommon','celestial','rare','rare','uncommon','legendary','common',
+  'epic','legendary','rare','rare','uncommon','mythic','mythic','celestial','epic','epic',
+  'legendary','uncommon','rare','uncommon','legendary','mythic','legendary','mythic','rare','common',
+  'epic','epic','rare','legendary','epic','uncommon','rare','mythic','epic','legendary',
+];
+
 export const animeAvatarCollection = [
   { id: 'shadow-swordsman', category: 'Helden', label: 'Shadow Swordsman', seed: 'shadow-swordsman', bg: 'e8f5e3', rarity: 'legendary' },
   { id: 'gold-knight', category: 'Helden', label: 'Gold Knight', seed: 'gold-knight', bg: 'fff4d8', rarity: 'epic' },
@@ -31,6 +40,16 @@ export const animeAvatarCollection = [
   { id: 'kid-hero', category: 'Familie', label: 'Kid Hero', seed: 'kid-hero', bg: 'fff8e8', rarity: 'common' },
   { id: 'real-shane', category: 'Realistisch', label: 'Realistisch 1', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80', rarity: 'common' },
   { id: 'real-esra', category: 'Realistisch', label: 'Realistisch 2', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=80', rarity: 'common' },
+  ...newAvatarRarities.map((rarity, index) => {
+    const number = String(index + 1).padStart(2, '0');
+    return {
+      id: `anime-${number}`,
+      category: 'Nieuwe avatars',
+      label: `Avatar ${number}`,
+      url: `${uploadedAvatarBaseUrl}/avatar-${number}.webp`,
+      rarity,
+    };
+  }),
 ];
 
 export function avatarUrlForId(id) {
@@ -73,7 +92,7 @@ export function getUserAvatar(author, explicitAvatar) {
   const name = String(author || '').toLowerCase();
   if (name.includes('shane')) return getCurrentAvatarUrl();
   if (explicitAvatar && explicitAvatar.startsWith('data:')) return explicitAvatar;
-  if (explicitAvatar && explicitAvatar.includes('dicebear')) return explicitAvatar;
+  if (explicitAvatar && (explicitAvatar.includes('dicebear') || explicitAvatar.includes('images.unsplash.com') || explicitAvatar.includes('raw.githubusercontent.com'))) return explicitAvatar;
   if (name.includes('esra')) return avatarUrlForId('family-mom');
   if (name.includes('sophie')) return avatarUrlForId('teen-girl');
   if (name.includes('mark')) return avatarUrlForId('family-dad');
