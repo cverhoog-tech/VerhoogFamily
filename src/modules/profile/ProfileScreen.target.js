@@ -38,7 +38,7 @@ function toast(message) {
   el._timer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
-function bindProfileActions(container) {
+function bindProfileActions(container, options = {}) {
   const nameInput = container.querySelector('[data-profile-name]');
   const partnerInput = container.querySelector('[data-partner-name]');
   const fileInput = container.querySelector('.profile-upload-input');
@@ -82,9 +82,11 @@ function bindProfileActions(container) {
   };
 
   container.querySelectorAll('[data-avatar-category]').forEach((button) => {
-    button.onclick = () => {
+    button.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       setActiveCategory(button.dataset.avatarCategory);
-      renderProfileScreen(container);
+      renderProfileScreen(container, { keepAvatarPopupOpen: true });
     };
   });
 
@@ -119,7 +121,7 @@ function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
   `;
 }
 
-export function renderProfileScreen(container) {
+export function renderProfileScreen(container, options = {}) {
   const avatar = getCurrentAvatarUrl();
   const avatarId = getCurrentAvatarId();
   const name = getProfileName();
@@ -130,7 +132,7 @@ export function renderProfileScreen(container) {
     : animeAvatarCollection.filter((item) => item.category === activeCategory);
 
   const popupHtml = `
-    <div class="profile-avatar-popup">
+    <div class="profile-avatar-popup ${options.keepAvatarPopupOpen ? 'show' : ''}">
       ${renderAvatarPopup(activeCategory, visibleAvatars, avatarId)}
     </div>
   `;

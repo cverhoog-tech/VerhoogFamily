@@ -1662,3 +1662,22 @@ body{background:#fff!important;}
     color:rgba(255,255,255,.92)!important;
 }
 
+
+/* v0.256 home carousel background stabilization */
+#screen-home .home-carousel-track .home-slide{background:#eef7ef!important;}
+#screen-home .home-slide .slide-bg{
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  transform:none!important;
+  filter:none!important;
+}
+#screen-home .home-slide .slide-bg::after{
+  background:linear-gradient(180deg,rgba(0,0,0,.10) 0%,rgba(0,0,0,.24) 42%,rgba(0,0,0,.58) 100%)!important;
+}
+#screen-home .recipes-slide .slide-bg{background-image:url('../assets/home-bg/recipes.svg')!important;}
+#screen-home .agenda-slide .slide-bg{background-image:url('../assets/home-bg/agenda.svg')!important;}
+#screen-home .meals-slide .slide-bg{background-image:url('../assets/home-bg/meals.svg')!important;}
+#screen-home .home-slide .slide-content{overflow:hidden!important;}
+#screen-home .home-slide h2,
+#screen-home .home-slide .slide-title{ text-shadow:0 4px 18px rgba(0,0,0,.42)!important; }
