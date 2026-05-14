@@ -1,0 +1,15 @@
+{
+  "routes": [
+    {
+      "src": "^/$",
+      "dest": "/api/app"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "github": {
+    "silent": false
+  }
+}
