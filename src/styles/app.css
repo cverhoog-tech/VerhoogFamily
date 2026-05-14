@@ -17,7 +17,7 @@
   --c-card-shadow:  rgba(17,24,39,.07);
   --c-sheet-bg:     #ffffff;
   --c-input-bg:     #ffffff;
-  --c-partner:      #c0547a;
+  --c-partner:      #c0547a;h
   --c-partner-light:#fce7f3;
   --radius-card:    22px;
   --radius-btn:     999px;
@@ -1639,5 +1639,26 @@ body{background:#fff!important;}
   #screen-home .epic-card .card-number{font-size:25px!important;}
   #screen-home .epic-card .card-label{font-size:13px!important;}
   #screen-home .home-carousel{margin-left:16px!important;margin-right:16px!important;height:252px!important;}
+}
+
+/* v0.255 hero card fix */
+#screen-home .epic-card .card-icon,
+#screen-home .epic-card .card-arrow{
+    width:46px!important;
+    height:46px!important;
+    font-size:24px!important;
+    flex-shrink:0!important;
+}
+#screen-home .epic-card .card-number{
+    font-size:28px!important;
+    font-weight:900!important;
+    letter-spacing:-0.5px!important;
+}
+#screen-home .epic-card .card-label{
+    font-size:12px!important;
+    font-weight:700!important;
+    margin-top:4px!important;
+    word-break:break-word!important;
+    color:rgba(255,255,255,.92)!important;
 }
 
