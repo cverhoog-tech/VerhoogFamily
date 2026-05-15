@@ -1,11 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.317
+// APP MODULES v0.320
 // Central script/module bootstrap for FamilyApp.
+// Experimental task tab runtime layers disabled after mobile freeze.
 // ============================================================
 
 (function(){
-  var VERSION = '0.317';
+  var VERSION = '0.320';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -21,11 +22,9 @@
     { id: 'epic-hero-backgrounds-js', src: 'src/core/epicHeroBackgrounds.js', group: 'rendering', critical: false },
     { id: 'quest-renderer-js', src: 'src/core/questRenderer.js', group: 'rendering', critical: false },
 
-    // Tasks
-    { id: 'premium-task-tabs-js', src: 'src/modules/tasks/premiumTaskTabs.js', group: 'tasks', critical: false },
+    // Tasks - safe layers only. Runtime task-tab replacement disabled.
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
-    { id: 'task-top-nav-stability-js', src: 'src/modules/tasks/taskTopNavStability.js', group: 'tasks', critical: false },
     { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
     { id: 'raid-card-polish-js', src: 'src/modules/tasks/raidCardPolish.js', group: 'tasks', critical: false },
     { id: 'group-quest-editor-js', src: 'src/modules/tasks/groupQuestEditor.js', group: 'tasks', critical: false },
@@ -34,97 +33,47 @@
 
   function emit(name, detail){
     try {
-      window.dispatchEvent(new CustomEvent('familyapp:modules:' + name, {
-        detail: detail || {}
-      }));
+      window.dispatchEvent(new CustomEvent('familyapp:modules:' + name, { detail: detail || {} }));
     } catch(e) {}
   }
 
   function loadScript(module){
     if(!module || !module.id || !module.src) return Promise.resolve(null);
-
     if(loaded[module.id] || document.getElementById(module.id)){
       loaded[module.id] = true;
       return Promise.resolve(module);
     }
-
     return new Promise(function(resolve){
       var script = document.createElement('script');
       script.id = module.id;
       script.src = module.src;
       script.defer = true;
-
-      script.onload = function(){
-        loaded[module.id] = true;
-        emit('loaded', module);
-        resolve(module);
-      };
-
-      script.onerror = function(){
-        failed[module.id] = module;
-        console.warn('[AppModules] failed to load', module.id, module.src);
-        emit('failed', module);
-        resolve(null);
-      };
-
+      script.onload = function(){ loaded[module.id] = true; emit('loaded', module); resolve(module); };
+      script.onerror = function(){ failed[module.id] = module; console.warn('[AppModules] failed to load', module.id, module.src); emit('failed', module); resolve(null); };
       document.body.appendChild(script);
     });
   }
 
   function boot(){
     if(booting || booted) return Promise.resolve(status());
-
     booting = true;
-
     var chain = Promise.resolve();
-
-    registry.forEach(function(module){
-      chain = chain.then(function(){
-        return loadScript(module);
-      });
-    });
-
-    return chain.then(function(){
-      booting = false;
-      booted = true;
-      emit('ready', status());
-      return status();
-    });
+    registry.forEach(function(module){ chain = chain.then(function(){ return loadScript(module); }); });
+    return chain.then(function(){ booting = false; booted = true; emit('ready', status()); return status(); });
   }
 
   function status(){
-    return {
-      version: VERSION,
-      registered: registry.length,
-      loaded: Object.keys(loaded),
-      failed: Object.keys(failed),
-      registry: registry.slice()
-    };
+    return { version: VERSION, registered: registry.length, loaded: Object.keys(loaded), failed: Object.keys(failed), registry: registry.slice() };
   }
 
   function register(module){
     if(!module || !module.id || !module.src) return false;
-
-    if(!registry.some(function(item){
-      return item.id === module.id;
-    })) {
-      registry.push(module);
-    }
-
+    if(!registry.some(function(item){ return item.id === module.id; })) registry.push(module);
     return true;
   }
 
-  window.AppModules = {
-    version: VERSION,
-    register: register,
-    boot: boot,
-    loadScript: loadScript,
-    status: status
-  };
+  window.AppModules = { version: VERSION, register: register, boot: boot, loadScript: loadScript, status: status };
 
-  if(document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
