@@ -1,34 +1,39 @@
 'use strict';
 // ============================================================
-// TASK NAV NATIVE CSS v0.322
-// Safe static styling only. Pins task nav directly below app header.
+// TASK NAV NATIVE CSS v0.323
+// Safe static styling only. Uses fixed task nav below the app header
+// so old screen-flow spacing can no longer push the nav down.
 // ============================================================
 
 (function(){
-  var STYLE_ID = 'task-nav-native-css-v0322';
+  var STYLE_ID = 'task-nav-native-css-v0323';
 
   function inject(){
-    var prev = document.getElementById('task-nav-native-css-v0321');
-    if(prev) prev.remove();
+    ['task-nav-native-css-v0321','task-nav-native-css-v0322'].forEach(function(id){
+      var old = document.getElementById(id);
+      if(old) old.remove();
+    });
     if(document.getElementById(STYLE_ID)) return;
 
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = [
       'html,body{overflow-x:hidden!important;max-width:100vw!important}',
-      '.app-header{min-height:64px!important;height:64px!important;padding-top:12px!important;padding-bottom:12px!important;box-sizing:border-box!important}',
+      '.app-header{position:sticky!important;top:0!important;z-index:70!important;min-height:64px!important;height:64px!important;padding-top:12px!important;padding-bottom:12px!important;box-sizing:border-box!important}',
       '#screen-tasks{padding-top:0!important;margin-top:0!important;max-width:100vw!important;overflow-x:hidden!important}',
       '#screen-tasks.screen.active{display:block!important;padding-top:0!important;margin-top:0!important}',
 
       '#screen-tasks .task-tabs{',
-      '  position:sticky!important;',
+      '  position:fixed!important;',
       '  top:64px!important;',
-      '  z-index:30!important;',
+      '  left:50%!important;',
+      '  transform:translateX(-50%)!important;',
+      '  z-index:69!important;',
       '  display:flex!important;',
       '  align-items:center!important;',
       '  gap:8px!important;',
       '  width:100%!important;',
-      '  max-width:100vw!important;',
+      '  max-width:480px!important;',
       '  min-height:52px!important;',
       '  height:52px!important;',
       '  padding:7px 12px!important;',
@@ -78,7 +83,7 @@
       '#screen-tasks .ttab-trade{min-width:56px!important;padding:0 13px!important}',
 
       '#screen-tasks #task-content,.task-content{',
-      '  padding-top:14px!important;',
+      '  padding-top:66px!important;',
       '  margin-top:0!important;',
       '  max-width:100vw!important;',
       '  overflow-x:hidden!important;',
@@ -91,7 +96,7 @@
       '  #screen-tasks .task-tabs{top:62px!important;height:50px!important;min-height:50px!important;padding:6px 10px!important;gap:8px!important}',
       '  #screen-tasks .ttab{height:36px!important;min-width:86px!important;padding:0 11px!important;font-size:12px!important}',
       '  #screen-tasks .ttab.gq-tab,#screen-tasks .ttab.preview-tab{min-width:102px!important}',
-      '  #screen-tasks #task-content,.task-content{padding-top:12px!important}',
+      '  #screen-tasks #task-content,.task-content{padding-top:64px!important}',
       '}',
       '@media(max-width:360px){#screen-tasks .ttab{min-width:80px!important;padding:0 10px!important;font-size:11.5px!important}}'
     ].join('');
