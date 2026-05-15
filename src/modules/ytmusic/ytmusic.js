@@ -79,6 +79,7 @@ function closeYtBar(){
     document.body.appendChild(script);
   }
 
+  loadScriptOnce('mobile-viewport-lock-js','src/core/mobileViewportLock.js');
   loadScriptOnce('quest-engine-js','src/core/questEngine.js');
   loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
   loadScriptOnce('epic-hero-backgrounds-js','src/core/epicHeroBackgrounds.js');
