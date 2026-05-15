@@ -1,13 +1,16 @@
 'use strict';
 // ============================================================
-// GROUP QUEST EDITOR v0.284
+// GROUP QUEST EDITOR v0.285
 // Premium local-first creation/edit flow for group quests with
-// editable subtasks and family invites.
+// editable subtasks and family invites. XP is derived from quest type.
 // ============================================================
 
 (function(){
   var draftSteps = [];
   var editingQuestId = null;
+  var bodyScrollY = 0;
+  var XP_BY_TYPE = { task: 120, weekly: 220, raid: 320 };
+  var TYPE_LABEL = { task: 'Task party', weekly: 'Weekly raid', raid: 'Family raid' };
 
   function esc(value){
     return String(value || '').replace(/[&<>"]/g, function(ch){
@@ -15,25 +18,44 @@
     });
   }
 
+  function xpForType(type){ return XP_BY_TYPE[type] || XP_BY_TYPE.weekly; }
+
   function injectStyles(){
     var old = document.getElementById('group-quest-editor-styles');
     if(old) old.remove();
     var s = document.createElement('style');
     s.id = 'group-quest-editor-styles';
     s.textContent = [
-      '.gqeOverlay{position:fixed;inset:0;z-index:9999;background:rgba(9,12,18,.52);backdrop-filter:blur(16px);display:flex;align-items:flex-end;justify-content:center;padding:18px}',
-      '.gqePanel{width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:30px;background:linear-gradient(180deg,#ffffff,#f7faf6);box-shadow:0 30px 80px rgba(17,24,39,.28);border:1px solid rgba(255,255,255,.72)}',
-      '.gqeHero{position:relative;overflow:hidden;border-radius:30px 30px 22px 22px;padding:22px;color:#fff;background:linear-gradient(135deg,rgba(17,24,39,.96),rgba(49,95,44,.92),rgba(109,40,217,.88)),url(https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=90&fm=webp) center/cover}',
-      '.gqeHero small{display:block;font-size:10px;font-weight:950;letter-spacing:.14em;text-transform:uppercase;opacity:.72}.gqeHero h2{margin:6px 0 6px;font-size:28px;line-height:1;letter-spacing:-.6px}.gqeHero p{margin:0;font-size:13px;line-height:1.35;opacity:.82;max-width:320px}',
-      '.gqeBody{padding:18px}.gqeField{margin-bottom:13px}.gqeField label{display:block;margin:0 0 6px;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:#667085}.gqeField input,.gqeField textarea,.gqeField select{width:100%;border:1px solid #e1eadc;background:#fff;border-radius:16px;padding:12px 13px;font-size:15px;font-weight:750;color:#111827;outline:none;box-sizing:border-box}.gqeField textarea{min-height:74px;resize:vertical;line-height:1.35}',
-      '.gqeGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gqeSubAdd{display:flex;gap:8px}.gqeSubAdd input{flex:1}.gqeSubAdd button,.gqeActions button{border:0;border-radius:16px;padding:12px 14px;font-size:13px;font-weight:950;cursor:pointer}.gqeSubAdd button{background:#315f2c;color:#fff;white-space:nowrap}',
-      '.gqeSteps{display:flex;flex-direction:column;gap:7px;margin-top:9px}.gqeStep{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e7ede3;border-radius:15px;padding:9px 10px}.gqeStep span{flex:1;min-width:0;font-size:13px;font-weight:850;color:#111827}.gqeStep button{border:0;width:26px;height:26px;border-radius:50%;background:#fee2e2;color:#b91c1c;font-weight:950}',
-      '.gqeMembers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.gqeMember{position:relative;border:1px solid #e1eadc;background:#fff;border-radius:17px;padding:10px 8px;text-align:center;font-size:12px;font-weight:900;color:#111827}.gqeMember input{position:absolute;opacity:0}.gqeMember b{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;margin:0 auto 6px;background:linear-gradient(135deg,#315f2c,#6d28d9);color:#fff;font-size:10px}.gqeMember:has(input:checked){border-color:#6d28d9;box-shadow:0 0 0 2px rgba(109,40,217,.12);background:#f5f3ff}',
-      '.gqeActions{display:flex;gap:9px;padding:0 18px 18px}.gqeActions button{flex:1;background:linear-gradient(135deg,#86efac,#315f2c);color:#07280a}.gqeActions button.ghost{background:#fff;color:#111827;border:1px solid #e1eadc}',
+      'body.gqeLocked{position:fixed!important;left:0;right:0;width:100%;overflow:hidden!important;touch-action:none}',
+      '.gqeOverlay{position:fixed;inset:0;z-index:9999;background:rgba(9,12,18,.58);backdrop-filter:blur(18px);display:flex;align-items:flex-end;justify-content:center;padding:14px;touch-action:none;overscroll-behavior:contain}',
+      '.gqePanel{width:min(560px,100%);max-height:90vh;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-radius:32px;background:linear-gradient(180deg,#ffffff,#f7faf6);box-shadow:0 34px 90px rgba(17,24,39,.34);border:1px solid rgba(255,255,255,.82);touch-action:pan-y}',
+      '.gqeHero{position:relative;overflow:hidden;border-radius:32px 32px 24px 24px;padding:24px;color:#fff;background:linear-gradient(135deg,rgba(17,24,39,.96),rgba(49,95,44,.90),rgba(109,40,217,.88)),url(https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=90&fm=webp) center/cover;isolation:isolate}',
+      '.gqeHero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 84% 6%,rgba(255,255,255,.30),transparent 32%),linear-gradient(180deg,transparent,rgba(0,0,0,.22));pointer-events:none}.gqeHero>*{position:relative;z-index:1}',
+      '.gqeHero small{display:block;font-size:10px;font-weight:950;letter-spacing:.16em;text-transform:uppercase;opacity:.72}.gqeHero h2{margin:7px 0 8px;font-size:30px;line-height:1;letter-spacing:-.7px}.gqeHero p{margin:0;font-size:13px;line-height:1.35;opacity:.84;max-width:330px}',
+      '.gqeXpPreview{display:inline-flex;align-items:center;gap:8px;margin-top:16px;background:linear-gradient(135deg,#fef3c7,#facc15);color:#2d2100;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:950;box-shadow:0 12px 24px rgba(250,204,21,.22)}',
+      '.gqeBody{padding:18px}.gqeSection{background:#fff;border:1px solid #e7ede3;border-radius:22px;padding:14px;margin-bottom:12px;box-shadow:0 8px 22px rgba(17,24,39,.045)}',
+      '.gqeField{margin-bottom:13px}.gqeField:last-child{margin-bottom:0}.gqeField label{display:block;margin:0 0 6px;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:#667085}.gqeField input,.gqeField textarea,.gqeField select{width:100%;border:1px solid #e1eadc;background:#fff;border-radius:16px;padding:12px 13px;font-size:16px;font-weight:750;color:#111827;outline:none;box-sizing:border-box;touch-action:manipulation}.gqeField textarea{min-height:78px;resize:none;line-height:1.35}',
+      '.gqeGrid{display:grid;grid-template-columns:1fr;gap:10px}.gqeTypeGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.gqeTypeCard{position:relative;border:1px solid #e1eadc;background:#fff;border-radius:18px;padding:12px 8px;text-align:center;font-size:11px;font-weight:950;color:#111827;cursor:pointer}.gqeTypeCard input{position:absolute;opacity:0}.gqeTypeCard b{display:block;font-size:14px;margin-bottom:4px}.gqeTypeCard span{display:block;color:#315f2c;font-size:12px}.gqeTypeCard:has(input:checked){border-color:#6d28d9;background:#f5f3ff;box-shadow:0 0 0 2px rgba(109,40,217,.12)}',
+      '.gqeSubAdd{display:flex;gap:8px}.gqeSubAdd input{flex:1}.gqeSubAdd button,.gqeActions button{border:0;border-radius:16px;padding:12px 14px;font-size:13px;font-weight:950;cursor:pointer}.gqeSubAdd button{background:#315f2c;color:#fff;white-space:nowrap}',
+      '.gqeSteps{display:flex;flex-direction:column;gap:7px;margin-top:10px}.gqeStep{display:flex;align-items:center;gap:8px;background:#f8faf7;border:1px solid #e7ede3;border-radius:16px;padding:10px 11px}.gqeStep span{flex:1;min-width:0;font-size:13px;font-weight:850;color:#111827}.gqeStep button{border:0;width:27px;height:27px;border-radius:50%;background:#fee2e2;color:#b91c1c;font-weight:950}',
+      '.gqeMembers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.gqeMember{position:relative;border:1px solid #e1eadc;background:#fff;border-radius:18px;padding:11px 8px;text-align:center;font-size:12px;font-weight:900;color:#111827}.gqeMember input{position:absolute;opacity:0}.gqeMember b{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;margin:0 auto 7px;background:linear-gradient(135deg,#315f2c,#6d28d9);color:#fff;font-size:10px}.gqeMember:has(input:checked){border-color:#6d28d9;box-shadow:0 0 0 2px rgba(109,40,217,.12);background:#f5f3ff}',
+      '.gqeActions{position:sticky;bottom:0;display:flex;gap:9px;padding:12px 18px 18px;background:linear-gradient(180deg,rgba(247,250,246,.78),#f7faf6 45%);backdrop-filter:blur(12px)}.gqeActions button{flex:1;background:linear-gradient(135deg,#86efac,#315f2c);color:#07280a}.gqeActions button.ghost{background:#fff;color:#111827;border:1px solid #e1eadc}',
       '.gqEditStepsBtn{background:rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important;border:1px solid rgba(255,255,255,.22)!important;backdrop-filter:blur(12px)!important}',
-      '@media(max-width:420px){.gqeOverlay{padding:10px}.gqePanel{max-height:92vh;border-radius:28px}.gqeGrid{grid-template-columns:1fr}.gqeMembers{grid-template-columns:repeat(2,minmax(0,1fr))}.gqeActions{flex-direction:column}}'
+      '@media(max-width:420px){.gqeOverlay{padding:8px}.gqePanel{max-height:92vh;border-radius:30px}.gqeHero{padding:22px}.gqeHero h2{font-size:27px}.gqeTypeGrid{grid-template-columns:1fr}.gqeMembers{grid-template-columns:repeat(2,minmax(0,1fr))}.gqeActions{flex-direction:column}}'
     ].join('');
     document.head.appendChild(s);
+  }
+
+  function lockBody(){
+    bodyScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.classList.add('gqeLocked');
+    document.body.style.top = '-' + bodyScrollY + 'px';
+  }
+
+  function unlockBody(){
+    document.body.classList.remove('gqeLocked');
+    document.body.style.top = '';
+    window.scrollTo(0, bodyScrollY || 0);
   }
 
   function members(){
@@ -49,6 +71,17 @@
     if(typeof window.loadGroupQuests !== 'function') return null;
     return window.loadGroupQuests().find(function(q){ return q.id === id; }) || null;
   }
+
+  function selectedType(){
+    var el = document.querySelector('input[name="gqeType"]:checked');
+    return el ? el.value : 'weekly';
+  }
+
+  window.updateGroupQuestXpPreview = function(){
+    var type = selectedType();
+    var el = document.getElementById('gqeXpPreview');
+    if(el) el.textContent = TYPE_LABEL[type] + ' · ' + xpForType(type) + ' XP';
+  };
 
   function renderSteps(){
     var box = document.getElementById('gqeSteps');
@@ -76,8 +109,13 @@
     renderSteps();
   };
 
+  function typeCard(value, label, xp, current){
+    return '<label class="gqeTypeCard"><input type="radio" name="gqeType" value="'+value+'" '+(current===value?'checked':'')+' onchange="updateGroupQuestXpPreview()"><b>'+label+'</b><span>'+xp+' XP</span></label>';
+  }
+
   function modalHtml(quest){
     var editing = !!quest;
+    var type = quest ? (quest.type || 'weekly') : 'weekly';
     var invited = quest ? (quest.invitedMemberIds || []) : ['esra'];
     var joined = quest ? (quest.members || []).map(function(m){ return m.id; }) : [typeof window.getActiveGroupQuestMemberId === 'function' ? window.getActiveGroupQuestMemberId() : 'shane'];
     var memberHtml = members().map(function(m){
@@ -87,13 +125,13 @@
 
     return '<div class="gqeOverlay" id="gqeOverlay">'
       + '<div class="gqePanel">'
-      + '<div class="gqeHero"><small>Family raid builder</small><h2>'+(editing?'Group quest bewerken':'Nieuwe group quest')+'</h2><p>Maak een gezamenlijke quest met subtaken, invites en shared XP.</p></div>'
+      + '<div class="gqeHero"><small>Family raid builder</small><h2>'+(editing?'Group quest bewerken':'Nieuwe group quest')+'</h2><p>Maak een gezamenlijke quest met subtaken, invites en vaste XP per questtype.</p><div class="gqeXpPreview" id="gqeXpPreview">'+TYPE_LABEL[type]+' · '+xpForType(type)+' XP</div></div>'
       + '<div class="gqeBody">'
-      + '<div class="gqeField"><label>Titel</label><input id="gqeTitle" value="'+esc(quest ? quest.title : '')+'" placeholder="Bijv. Weekend reset"></div>'
-      + '<div class="gqeField"><label>Omschrijving</label><textarea id="gqeDesc" placeholder="Wat moet er samen gebeuren?">'+esc(quest ? quest.description : '')+'</textarea></div>'
-      + '<div class="gqeGrid"><div class="gqeField"><label>XP reward</label><input id="gqeXp" type="number" value="'+esc(quest ? quest.xp : 220)+'"></div><div class="gqeField"><label>Type</label><select id="gqeType"><option value="task">Task</option><option value="weekly" '+(!quest || quest.type === 'weekly' ? 'selected':'')+'>Weekly</option><option value="raid" '+(quest && quest.type === 'raid' ? 'selected':'')+'>Raid</option></select></div></div>'
-      + '<div class="gqeField"><label>Subtaken</label><div class="gqeSubAdd"><input id="gqeStepInput" placeholder="Nieuwe subtaak"><button type="button" onclick="addGroupQuestDraftStep()">Toevoegen</button></div><div class="gqeSteps" id="gqeSteps"></div></div>'
-      + '<div class="gqeField"><label>Invite gezinsleden</label><div class="gqeMembers">'+memberHtml+'</div></div>'
+      + '<section class="gqeSection"><div class="gqeField"><label>Titel</label><input id="gqeTitle" value="'+esc(quest ? quest.title : '')+'" placeholder="Bijv. Weekend reset"></div>'
+      + '<div class="gqeField"><label>Omschrijving</label><textarea id="gqeDesc" placeholder="Wat moet er samen gebeuren?">'+esc(quest ? quest.description : '')+'</textarea></div></section>'
+      + '<section class="gqeSection"><div class="gqeField"><label>Quest type bepaalt XP</label><div class="gqeTypeGrid">'+typeCard('task','Task',XP_BY_TYPE.task,type)+typeCard('weekly','Weekly',XP_BY_TYPE.weekly,type)+typeCard('raid','Raid',XP_BY_TYPE.raid,type)+'</div></div></section>'
+      + '<section class="gqeSection"><div class="gqeField"><label>Subtaken</label><div class="gqeSubAdd"><input id="gqeStepInput" placeholder="Nieuwe subtaak"><button type="button" onclick="addGroupQuestDraftStep()">Toevoegen</button></div><div class="gqeSteps" id="gqeSteps"></div></div></section>'
+      + '<section class="gqeSection"><div class="gqeField"><label>Invite gezinsleden</label><div class="gqeMembers">'+memberHtml+'</div></div></section>'
       + '</div>'
       + '<div class="gqeActions"><button class="ghost" type="button" onclick="closeGroupQuestEditor()">Annuleer</button><button type="button" onclick="saveGroupQuestEditor()">'+(editing?'Opslaan':'Group quest maken')+'</button></div>'
       + '</div></div>';
@@ -104,6 +142,7 @@
     if(el) el.remove();
     editingQuestId = null;
     draftSteps = [];
+    unlockBody();
   };
 
   window.openGroupQuestEditor = function(id){
@@ -114,6 +153,7 @@
     if(!draftSteps.length && !quest) draftSteps = ['Hulp accepteren', 'Taak verdelen', 'Samen afronden'];
     var old = document.getElementById('gqeOverlay');
     if(old) old.remove();
+    lockBody();
     document.body.insertAdjacentHTML('beforeend', modalHtml(quest));
     renderSteps();
     var input = document.getElementById('gqeStepInput');
@@ -131,8 +171,8 @@
     if(typeof window.loadGroupQuests !== 'function' || typeof window.saveGroupQuests !== 'function') return;
     var title = (document.getElementById('gqeTitle') || {}).value || '';
     var desc = (document.getElementById('gqeDesc') || {}).value || '';
-    var xp = parseInt((document.getElementById('gqeXp') || {}).value || '220', 10);
-    var type = (document.getElementById('gqeType') || {}).value || 'weekly';
+    var type = selectedType();
+    var xp = xpForType(type);
     title = title.trim();
     desc = desc.trim();
     if(!title){
@@ -162,7 +202,7 @@
       status: existing ? existing.status : 'open',
       target: draftSteps.length,
       progress: Math.min(existing ? (existing.progress || 0) : 0, draftSteps.length),
-      xp: isNaN(xp) ? 220 : xp,
+      xp: xp,
       coinReward: existing ? (existing.coinReward || 30) : 30,
       multiplier: existing ? (existing.multiplier || 1.12) : 1.12,
       deadline: existing ? (existing.deadline || (typeof window.gqTodayIso === 'function' ? window.gqTodayIso() : new Date().toISOString().slice(0,10))) : (typeof window.gqTodayIso === 'function' ? window.gqTodayIso() : new Date().toISOString().slice(0,10)),
@@ -180,9 +220,7 @@
     if(typeof window.renderTasks === 'function') window.renderTasks();
   };
 
-  window.createDemoGroupQuest = function(){
-    window.openGroupQuestEditor();
-  };
+  window.createDemoGroupQuest = function(){ window.openGroupQuestEditor(); };
 
   function addEditButtons(){
     document.querySelectorAll('#task-content .gq-card.premium').forEach(function(card){
