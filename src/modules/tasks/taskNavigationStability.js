@@ -1,8 +1,8 @@
 'use strict';
 // ============================================================
-// TASK NAVIGATION STABILITY v0.279
-// Minimal render guard only. The previous containment/GPU styles caused
-// mobile layout side effects on the bottom navigation and carousel.
+// TASK NAVIGATION STABILITY v0.280
+// Render guard only. Do NOT override bottom nav layout here.
+// Bottom navigation alignment belongs to the main app CSS.
 // ============================================================
 
 (function(){
@@ -47,11 +47,8 @@
     s.id = 'task-navigation-stability-styles';
     s.textContent = [
       'html,body{max-width:100%;overflow-x:hidden;}',
-      '.screen{max-width:100%;overflow-x:hidden;}',
       '#task-content{max-width:100%;overflow-x:hidden;}',
-      '.task-tabs{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}',
-      '.bottom-nav{left:0!important;right:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;}',
-      '.bottom-nav *{box-sizing:border-box;}'
+      '.task-tabs{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}'
     ].join('');
     document.head.appendChild(s);
   }
