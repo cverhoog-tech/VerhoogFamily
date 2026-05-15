@@ -1,15 +1,15 @@
 'use strict';
 // ============================================================
-// TASK NAV NATIVE CSS v0.323
-// Safe static styling only. Uses fixed task nav below the app header
-// so old screen-flow spacing can no longer push the nav down.
+// TASK NAV NATIVE CSS v0.324
+// Safe static styling only. Prevents iOS fixed nav from inheriting
+// screen animation/transform scroll behavior.
 // ============================================================
 
 (function(){
-  var STYLE_ID = 'task-nav-native-css-v0323';
+  var STYLE_ID = 'task-nav-native-css-v0324';
 
   function inject(){
-    ['task-nav-native-css-v0321','task-nav-native-css-v0322'].forEach(function(id){
+    ['task-nav-native-css-v0321','task-nav-native-css-v0322','task-nav-native-css-v0323'].forEach(function(id){
       var old = document.getElementById(id);
       if(old) old.remove();
     });
@@ -20,14 +20,27 @@
     style.textContent = [
       'html,body{overflow-x:hidden!important;max-width:100vw!important}',
       '.app-header{position:sticky!important;top:0!important;z-index:70!important;min-height:64px!important;height:64px!important;padding-top:12px!important;padding-bottom:12px!important;box-sizing:border-box!important}',
-      '#screen-tasks{padding-top:0!important;margin-top:0!important;max-width:100vw!important;overflow-x:hidden!important}',
-      '#screen-tasks.screen.active{display:block!important;padding-top:0!important;margin-top:0!important}',
+
+      '#screen-tasks{',
+      '  padding-top:0!important;',
+      '  margin-top:0!important;',
+      '  max-width:100vw!important;',
+      '  overflow-x:hidden!important;',
+      '  transform:none!important;',
+      '  animation:none!important;',
+      '  contain:none!important;',
+      '  perspective:none!important;',
+      '  filter:none!important;',
+      '}',
+      '#screen-tasks.screen.active{display:block!important;padding-top:0!important;margin-top:0!important;transform:none!important;animation:none!important}',
 
       '#screen-tasks .task-tabs{',
       '  position:fixed!important;',
       '  top:64px!important;',
       '  left:50%!important;',
-      '  transform:translateX(-50%)!important;',
+      '  right:auto!important;',
+      '  bottom:auto!important;',
+      '  transform:translate3d(-50%,0,0)!important;',
       '  z-index:69!important;',
       '  display:flex!important;',
       '  align-items:center!important;',
@@ -50,6 +63,8 @@
       '  box-shadow:0 8px 18px rgba(17,24,39,.04)!important;',
       '  white-space:nowrap!important;',
       '  touch-action:pan-x!important;',
+      '  will-change:transform!important;',
+      '  backface-visibility:hidden!important;',
       '}',
       '#screen-tasks .task-tabs::-webkit-scrollbar{display:none!important}',
 
@@ -73,22 +88,12 @@
       '  letter-spacing:-.1px!important;',
       '  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;',
       '}',
-      '#screen-tasks .ttab.active{',
-      '  color:#fff!important;',
-      '  background:linear-gradient(135deg,#315f2c,#4f8a3c)!important;',
-      '  box-shadow:0 10px 22px rgba(49,95,44,.18),inset 0 1px 0 rgba(255,255,255,.22)!important;',
-      '}',
+      '#screen-tasks .ttab.active{color:#fff!important;background:linear-gradient(135deg,#315f2c,#4f8a3c)!important;box-shadow:0 10px 22px rgba(49,95,44,.18),inset 0 1px 0 rgba(255,255,255,.22)!important}',
       '#screen-tasks .ttab.gq-tab,#screen-tasks .ttab.preview-tab,#screen-tasks .ttab[data-tab="groupquests"],#screen-tasks .ttab[data-tab="preview"]{min-width:108px!important}',
       '#screen-tasks .ttab.gq-tab.active,#screen-tasks .ttab.preview-tab.active{background:linear-gradient(135deg,#315f2c,#6d28d9)!important}',
       '#screen-tasks .ttab-trade{min-width:56px!important;padding:0 13px!important}',
 
-      '#screen-tasks #task-content,.task-content{',
-      '  padding-top:66px!important;',
-      '  margin-top:0!important;',
-      '  max-width:100vw!important;',
-      '  overflow-x:hidden!important;',
-      '  box-sizing:border-box!important;',
-      '}',
+      '#screen-tasks #task-content,.task-content{padding-top:66px!important;margin-top:0!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}',
       '#screen-tasks #task-content > *:first-child{margin-top:0!important}',
 
       '@media(max-width:420px){',
