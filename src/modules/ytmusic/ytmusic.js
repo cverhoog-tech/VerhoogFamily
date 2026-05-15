@@ -83,6 +83,7 @@ function closeYtBar(){
   loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
   loadScriptOnce('group-quest-premium-js','src/modules/tasks/groupQuestPremium.js');
   loadScriptOnce('group-quest-layout-fix-js','src/modules/tasks/groupQuestLayoutFix.js');
+  loadScriptOnce('raid-card-polish-js','src/modules/tasks/raidCardPolish.js');
   loadScriptOnce('quest-overview-integration-js','src/modules/tasks/questOverviewIntegration.js');
   loadScriptOnce('quest-overview-watcher-js','src/modules/tasks/questOverviewWatcher.js');
   loadScriptOnce('task-navigation-stability-js','src/modules/tasks/taskNavigationStability.js');
