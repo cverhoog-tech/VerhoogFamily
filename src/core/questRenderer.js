@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// QUEST RENDERER v0.293
+// QUEST RENDERER v0.298
 // Stable renderer foundation for future task/group/main quest screens.
-// No MutationObservers, no DOM patch loops, no gesture overrides.
+// EpicHeroBackgrounds is now the source of truth for group/raid/dungeon.
 // ============================================================
 
 (function(){
-  var VERSION = '0.293';
+  var VERSION = '0.298';
 
   var IMAGE_RULES = [
     { keys: ['auto', 'car', 'wassen'], url: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=900&q=92&fm=webp' },
@@ -30,8 +30,27 @@
     catch(e){ return fallback; }
   }
 
+  function questKeywordText(quest){
+    return [
+      quest.title || '', quest.description || '', quest.questType || '', quest.type || '',
+      quest.partyType || '', quest.difficulty || '', (quest.tags || []).join(' '),
+      quest.helpRequested ? 'group teamwork help' : ''
+    ].join(' ').toLowerCase();
+  }
+
+  function isEpicQuest(quest){
+    var text = questKeywordText(quest);
+    var type = String(quest.questType || quest.type || '').toLowerCase();
+    return quest.helpRequested || quest.partyType === 'group' || ['group','raid','dungeon','pvp','adventure'].indexOf(type) > -1 || /\b(group|raid|dungeon|boss|dragon|party|teamwork|arena|pvp)\b/.test(text);
+  }
+
   function pickImage(quest){
-    var text = ((quest.title || '') + ' ' + (quest.description || '') + ' ' + (quest.questType || '')).toLowerCase();
+    quest = quest || {};
+    if(window.EpicHeroBackgrounds && typeof window.EpicHeroBackgrounds.getHeroBackground === 'function' && isEpicQuest(quest)){
+      return window.EpicHeroBackgrounds.getHeroBackground(Object.assign({}, quest, { autoBackground: true }));
+    }
+    if(quest.background && !quest.autoBackground) return quest.background;
+    var text = questKeywordText(quest);
     for(var i=0;i<IMAGE_RULES.length;i++){
       if(IMAGE_RULES[i].keys.some(function(key){ return text.indexOf(key) > -1; })) return IMAGE_RULES[i].url;
     }
@@ -39,11 +58,7 @@
   }
 
   function getStoredPeople(){
-    var stores = [
-      'fam_members', 'fam_family_members', 'family_members', 'fam_profiles',
-      'fam_user_profiles', 'fam_household_members', 'fam_group_members',
-      'fam_group_quest_members_v001'
-    ];
+    var stores = ['fam_members','fam_family_members','family_members','fam_profiles','fam_user_profiles','fam_household_members','fam_group_members','fam_group_quest_members_v001'];
     var people = [];
     stores.forEach(function(key){
       var value = safeParse(localStorage.getItem(key), null);
@@ -51,11 +66,7 @@
       if(Array.isArray(value)) people = people.concat(value);
       else if(Array.isArray(value.members)) people = people.concat(value.members);
       else if(Array.isArray(value.profiles)) people = people.concat(value.profiles);
-      else if(typeof value === 'object'){
-        Object.keys(value).forEach(function(id){
-          if(value[id] && typeof value[id] === 'object') people.push(Object.assign({ id: id }, value[id]));
-        });
-      }
+      else if(typeof value === 'object') Object.keys(value).forEach(function(id){ if(value[id] && typeof value[id] === 'object') people.push(Object.assign({ id:id }, value[id])); });
     });
     return people;
   }
@@ -64,34 +75,25 @@
     if(!person) return null;
     var name = person.name || person.displayName || person.fullName || person.label || person.id || '';
     var initials = person.initials || String(name || person.id || '?').split(/\s+/).map(function(p){ return p[0]; }).join('').slice(0,2).toUpperCase();
-    return {
-      id: person.id || person.uid || person.memberId || person.userId || String(name).toLowerCase(),
-      name: name,
-      initials: initials,
-      avatar: person.avatar || person.avatarUrl || person.photoURL || person.photoUrl || person.image || person.imageUrl || person.profileImage || person.profileImageUrl || person.picture || person.pictureUrl || ''
-    };
+    return { id: person.id || person.uid || person.memberId || person.userId || String(name).toLowerCase(), name:name, initials:initials, avatar: person.avatar || person.avatarUrl || person.photoURL || person.photoUrl || person.image || person.imageUrl || person.profileImage || person.profileImageUrl || person.picture || person.pictureUrl || '' };
   }
 
   function lookupProfileAvatar(id, fallbackLookup){
     var fallback = fallbackLookup && fallbackLookup(id) || null;
     var people = getStoredPeople().map(normalizePerson).filter(Boolean);
     var needle = String(id || '').toLowerCase();
-    var found = people.find(function(p){
-      return String(p.id || '').toLowerCase() === needle || String(p.name || '').toLowerCase() === needle;
-    });
+    var found = people.find(function(p){ return String(p.id || '').toLowerCase() === needle || String(p.name || '').toLowerCase() === needle; });
     return Object.assign({}, fallback || {}, found || {});
   }
 
   function progress(quest){
-    if(window.QuestEngine && typeof window.QuestEngine.calculateProgress === 'function'){
-      return window.QuestEngine.calculateProgress(quest);
-    }
+    if(window.QuestEngine && typeof window.QuestEngine.calculateProgress === 'function') return window.QuestEngine.calculateProgress(quest);
     var steps = quest.steps || [];
     if(steps.length){
       var done = steps.filter(function(s){ return s.status === 'completed' || s.done; }).length;
-      return { completed: done, total: steps.length, percent: Math.round(done / Math.max(1, steps.length) * 100) };
+      return { completed:done, total:steps.length, percent:Math.round(done / Math.max(1, steps.length) * 100) };
     }
-    return { completed: quest.progress || 0, total: quest.target || 1, percent: Math.round((quest.progress || 0) / Math.max(1, quest.target || 1) * 100) };
+    return { completed:quest.progress || 0, total:quest.target || 1, percent:Math.round((quest.progress || 0) / Math.max(1, quest.target || 1) * 100) };
   }
 
   function renderAvatars(quest, memberLookup){
@@ -102,7 +104,7 @@
     if(!ids.length && quest.ownerId) ids.push(quest.ownerId);
     if(!ids.length) return '';
     return '<div class="qrAvatars">' + ids.slice(0,4).map(function(id){
-      var m = lookupProfileAvatar(id, memberLookup) || { initials: String(id || '?').slice(0,2).toUpperCase() };
+      var m = lookupProfileAvatar(id, memberLookup) || { initials:String(id || '?').slice(0,2).toUpperCase() };
       var img = m.avatar || m.avatarUrl || m.photoURL || '';
       var pending = (quest.invitedMemberIds || []).indexOf(id) > -1 && (quest.acceptedMemberIds || []).indexOf(id) === -1;
       return '<span class="qrAvatar '+(img?'hasImg':'')+' '+(pending?'pending':'')+'" title="'+esc(m.name || id)+'" '+(img?'style="background-image:url('+esc(img)+')"':'')+'>'+(!img?esc(m.initials || '?'):'')+'</span>';
@@ -110,24 +112,17 @@
   }
 
   function stepTitle(step){ return typeof step === 'string' ? step : (step.title || step.name || 'Subtaak'); }
-
   function renderSteps(quest, options){
     options = options || {};
     var steps = quest.steps || [];
     var editable = !!options.editable;
     if(!steps.length && !editable) return '';
     var html = '<div class="qrSteps '+(editable?'editable':'')+'">';
-    html += steps.slice(0,5).map(function(step, index){
+    html += steps.slice(0,5).map(function(step,index){
       var done = step.status === 'completed' || step.done;
-      return '<div class="qrStep '+(done?'done':'')+'" data-step-index="'+index+'">'
-        + '<button type="button" class="qrCheck" data-step-toggle="'+index+'">'+(done?'✓':'')+'</button>'
-        + (editable ? '<input class="qrStepInput" value="'+esc(stepTitle(step))+'" placeholder="Subtaak">' : '<b>'+esc(stepTitle(step))+'</b>')
-        + (editable ? '<button type="button" class="qrStepRemove" data-step-remove="'+index+'">×</button>' : '')
-        + '</div>';
+      return '<div class="qrStep '+(done?'done':'')+'" data-step-index="'+index+'"><button type="button" class="qrCheck" data-step-toggle="'+index+'">'+(done?'✓':'')+'</button>' + (editable ? '<input class="qrStepInput" value="'+esc(stepTitle(step))+'" placeholder="Subtaak">' : '<b>'+esc(stepTitle(step))+'</b>') + (editable ? '<button type="button" class="qrStepRemove" data-step-remove="'+index+'">×</button>' : '') + '</div>';
     }).join('');
-    if(editable){
-      html += '<div class="qrStep qrStepDraft"><span class="qrCheck empty"></span><input class="qrStepInput qrStepDraftInput" placeholder="Nieuwe subtaak typen..."><button type="button" class="qrStepRemove muted">＋</button></div>';
-    }
+    if(editable) html += '<div class="qrStep qrStepDraft"><span class="qrCheck empty"></span><input class="qrStepInput qrStepDraftInput" placeholder="Nieuwe subtaak typen..."><button type="button" class="qrStepRemove muted">＋</button></div>';
     html += '</div>';
     return html;
   }
@@ -138,18 +133,7 @@
     var isGroup = quest.partyType === 'group' || quest.helpRequested;
     var bg = pickImage(quest);
     var reward = quest.rewards && quest.rewards.xp || quest.xp || 0;
-    return '<article class="qrCard '+(isGroup?'group':'')+'" data-quest-id="'+esc(quest.id)+'">'
-      + '<div class="qrBg" style="background-image:url('+bg+')"></div>'
-      + '<div class="qrShade"></div>'
-      + '<div class="qrContent">'
-      + '<div class="qrTop"><span class="qrBadge">'+(isGroup?'⚔️ Group Quest':'✅ Quest')+'</span><span class="qrXp">'+reward+' XP</span></div>'
-      + '<h3>'+esc(quest.title)+'</h3>'
-      + '<p>'+esc(quest.description)+'</p>'
-      + '<div class="qrMeta">'+renderAvatars(quest, options.memberLookup)+'<span>'+p.completed+'/'+p.total+' stappen</span></div>'
-      + '<div class="qrProgress"><i style="width:'+p.percent+'%"></i></div>'
-      + renderSteps(quest, { editable: options.editableSteps })
-      + '</div>'
-      + '</article>';
+    return '<article class="qrCard '+(isGroup?'group':'')+'" data-quest-id="'+esc(quest.id)+'"><div class="qrBg" style="background-image:url('+bg+')"></div><div class="qrShade"></div><div class="qrContent"><div class="qrTop"><span class="qrBadge">'+(isGroup?'⚔️ Group Quest':'✅ Quest')+'</span><span class="qrXp">'+reward+' XP</span></div><h3>'+esc(quest.title)+'</h3><p>'+esc(quest.description)+'</p><div class="qrMeta">'+renderAvatars(quest, options.memberLookup)+'<span>'+p.completed+'/'+p.total+' stappen</span></div><div class="qrProgress"><i style="width:'+p.percent+'%"></i></div>'+renderSteps(quest, { editable:options.editableSteps })+'</div></article>';
   }
 
   function injectStyles(){
@@ -172,14 +156,6 @@
     document.head.appendChild(s);
   }
 
-  window.QuestRenderer = {
-    version: VERSION,
-    injectStyles: injectStyles,
-    pickImage: pickImage,
-    renderQuestCard: renderQuestCard,
-    renderSteps: renderSteps,
-    lookupProfileAvatar: lookupProfileAvatar
-  };
-
+  window.QuestRenderer = { version:VERSION, injectStyles:injectStyles, pickImage:pickImage, renderQuestCard:renderQuestCard, renderSteps:renderSteps, lookupProfileAvatar:lookupProfileAvatar };
   injectStyles();
 })();
