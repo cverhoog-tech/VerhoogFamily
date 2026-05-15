@@ -88,5 +88,6 @@ function closeYtBar(){
   loadScriptOnce('group-quest-layout-fix-js','src/modules/tasks/groupQuestLayoutFix.js');
   loadScriptOnce('raid-card-polish-js','src/modules/tasks/raidCardPolish.js');
   loadScriptOnce('group-quest-editor-js','src/modules/tasks/groupQuestEditor.js');
+  loadScriptOnce('group-quest-editor-compact-polish-js','src/modules/tasks/groupQuestEditorCompactPolish.js');
 })();
 
