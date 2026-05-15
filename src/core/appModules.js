@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.321
-// Stable bootstrap modules only.
+// APP MODULES v0.325
+// Stable bootstrap modules.
 // ============================================================
 
 (function(){
-  var VERSION = '0.321';
+  var VERSION = '0.325';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -23,6 +23,7 @@
 
     // Tasks
     { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
+    { id: 'task-nav-portal-js', src: 'src/modules/tasks/taskNavPortal.js', group: 'tasks', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
     { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
