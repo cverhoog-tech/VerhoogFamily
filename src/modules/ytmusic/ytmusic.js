@@ -81,6 +81,7 @@ function closeYtBar(){
 
   loadScriptOnce('quest-engine-js','src/core/questEngine.js');
   loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
+  loadScriptOnce('epic-hero-backgrounds-js','src/core/epicHeroBackgrounds.js');
   loadScriptOnce('quest-renderer-js','src/core/questRenderer.js');
   loadScriptOnce('quest-renderer-preview-js','src/modules/tasks/questRendererPreview.js');
   loadScriptOnce('group-quest-premium-js','src/modules/tasks/groupQuestPremium.js');
