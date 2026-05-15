@@ -47,15 +47,14 @@ function updateYtPlayBtn(playing){
   var viz  = document.getElementById('yt-visualizer');
   if(icon){
     icon.innerHTML = playing
-      ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'    // pause icon
-      : '<path d="M8 5v14l11-7z"/>';                         // play icon
+      ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+      : '<path d="M8 5v14l11-7z"/>';
   }
   if(viz) viz.classList.toggle('yt-paused', !playing);
 }
 
 function ytNext(){
   showToast('⏭ Volgende nummer — in YouTube Music tab');
-  // Animate thumb
   var thumb = document.getElementById('yt-thumb');
   if(thumb){ thumb.style.transform='scale(.85)'; setTimeout(function(){thumb.style.transform='';},200); }
 }
@@ -70,12 +69,18 @@ function closeYtBar(){
   ytState.playing=false;
 }
 
-(function loadGroupQuestPremiumLayer(){
-  if(document.getElementById('group-quest-premium-js')) return;
-  var script=document.createElement('script');
-  script.id='group-quest-premium-js';
-  script.src='src/modules/tasks/groupQuestPremium.js';
-  script.defer=true;
-  document.body.appendChild(script);
+(function loadFamilyRpgLayers(){
+  function loadScriptOnce(id, src){
+    if(document.getElementById(id)) return;
+    var script=document.createElement('script');
+    script.id=id;
+    script.src=src;
+    script.defer=true;
+    document.body.appendChild(script);
+  }
+
+  loadScriptOnce('quest-engine-js','src/core/questEngine.js');
+  loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
+  loadScriptOnce('group-quest-premium-js','src/modules/tasks/groupQuestPremium.js');
 })();
 
