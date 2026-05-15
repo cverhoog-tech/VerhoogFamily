@@ -70,3 +70,12 @@ function closeYtBar(){
   ytState.playing=false;
 }
 
+(function loadGroupQuestPremiumLayer(){
+  if(document.getElementById('group-quest-premium-js')) return;
+  var script=document.createElement('script');
+  script.id='group-quest-premium-js';
+  script.src='src/modules/tasks/groupQuestPremium.js';
+  script.defer=true;
+  document.body.appendChild(script);
+})();
+
