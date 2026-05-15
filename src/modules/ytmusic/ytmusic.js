@@ -83,5 +83,6 @@ function closeYtBar(){
   loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
   loadScriptOnce('group-quest-premium-js','src/modules/tasks/groupQuestPremium.js');
   loadScriptOnce('quest-overview-integration-js','src/modules/tasks/questOverviewIntegration.js');
+  loadScriptOnce('quest-overview-watcher-js','src/modules/tasks/questOverviewWatcher.js');
 })();
 
