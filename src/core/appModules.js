@@ -1,12 +1,11 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.320
-// Central script/module bootstrap for FamilyApp.
-// Experimental task tab runtime layers disabled after mobile freeze.
+// APP MODULES v0.321
+// Stable bootstrap modules only.
 // ============================================================
 
 (function(){
-  var VERSION = '0.320';
+  var VERSION = '0.321';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -22,7 +21,8 @@
     { id: 'epic-hero-backgrounds-js', src: 'src/core/epicHeroBackgrounds.js', group: 'rendering', critical: false },
     { id: 'quest-renderer-js', src: 'src/core/questRenderer.js', group: 'rendering', critical: false },
 
-    // Tasks - safe layers only. Runtime task-tab replacement disabled.
+    // Tasks
+    { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
     { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
