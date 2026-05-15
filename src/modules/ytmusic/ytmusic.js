@@ -79,6 +79,7 @@ function closeYtBar(){
     document.body.appendChild(script);
   }
 
+  loadScriptOnce('mobile-overflow-guard-js','src/core/mobileOverflowGuard.js');
   loadScriptOnce('quest-engine-js','src/core/questEngine.js');
   loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
   loadScriptOnce('group-quest-premium-js','src/modules/tasks/groupQuestPremium.js');
