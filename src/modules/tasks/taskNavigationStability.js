@@ -1,9 +1,8 @@
 'use strict';
 // ============================================================
-// TASK NAVIGATION STABILITY v0.278
-// Reduces flicker caused by repeated task tab rerenders and stacked
-// overlay integrations. This is a temporary safety layer until the old
-// v023 renderer is replaced by a unified quest renderer.
+// TASK NAVIGATION STABILITY v0.279
+// Minimal render guard only. The previous containment/GPU styles caused
+// mobile layout side effects on the bottom navigation and carousel.
 // ============================================================
 
 (function(){
@@ -42,15 +41,17 @@
   }
 
   function injectStyles(){
-    if(document.getElementById('task-navigation-stability-styles')) return;
+    var old = document.getElementById('task-navigation-stability-styles');
+    if(old) old.remove();
     var s = document.createElement('style');
     s.id = 'task-navigation-stability-styles';
     s.textContent = [
-      '#screen-tasks{contain:layout paint;}',
-      '#task-content{backface-visibility:hidden;transform:translateZ(0);}',
-      '.task-tabs .ttab{transform:translateZ(0);}',
-      '.bottom-nav,.tabbar,.nav-bottom{backface-visibility:hidden;transform:translateZ(0);}',
-      'body.famTask #task-content{will-change:auto;}'
+      'html,body{max-width:100%;overflow-x:hidden;}',
+      '.screen{max-width:100%;overflow-x:hidden;}',
+      '#task-content{max-width:100%;overflow-x:hidden;}',
+      '.task-tabs{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;}',
+      '.bottom-nav{left:0!important;right:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;}',
+      '.bottom-nav *{box-sizing:border-box;}'
     ].join('');
     document.head.appendChild(s);
   }
