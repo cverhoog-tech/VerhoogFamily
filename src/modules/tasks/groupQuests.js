@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// GROUP QUESTS / PARTY SYSTEM v0.1
+// GROUP QUESTS / PARTY SYSTEM v0.271
 // Local-first prototype: open group quests, join/leave party,
 // shared progress and XP preview. Later this can move to backend.
 // ============================================================
@@ -245,3 +245,44 @@ function createDemoGroupQuest() {
   saveGroupQuests(quests);
   renderTasks();
 }
+
+function injectGroupQuestStyles() {
+  if (document.getElementById('group-quests-inline-styles')) return;
+  var css = document.createElement('style');
+  css.id = 'group-quests-inline-styles';
+  css.textContent = '.group-quests-view{padding:14px 14px 110px;background:#f7faf6;min-height:100%;}.gq-hero{position:relative;overflow:hidden;border-radius:24px;padding:20px;min-height:145px;display:flex;justify-content:space-between;gap:16px;align-items:flex-end;color:#fff;background:linear-gradient(135deg,#1f2937,#315f2c 55%,#6d28d9);box-shadow:0 18px 36px rgba(31,41,55,.18);}.gq-hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(255,255,255,.26),transparent 36%);pointer-events:none}.gq-hero>*{position:relative;z-index:1}.gq-hero p{margin:0 0 6px;font-size:11px;font-weight:950;letter-spacing:.12em;opacity:.76}.gq-hero h2{margin:0;font-size:25px;letter-spacing:-.5px}.gq-hero span{display:block;margin-top:6px;font-size:13px;line-height:1.35;opacity:.82}.gq-hero button,.gq-actions button{border:0;border-radius:999px;background:#fff;color:#24521f;padding:11px 14px;font-size:13px;font-weight:900;white-space:nowrap;box-shadow:0 8px 18px rgba(0,0,0,.18);cursor:pointer}.gq-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.gq-summary-grid div{background:#fff;border:1px solid #e7ede3;border-radius:18px;padding:12px 8px;text-align:center;box-shadow:0 3px 12px rgba(17,24,39,.04)}.gq-summary-grid b{display:block;font-size:20px;color:#111827}.gq-summary-grid span{display:block;margin-top:2px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:850;color:#6b7280}.gq-card{background:#fff;border:1px solid #e7ede3;border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:0 5px 18px rgba(17,24,39,.055)}.gq-card.completed{opacity:.72}.gq-card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.gq-card h3{margin:4px 0 0;font-size:18px;color:#111827;letter-spacing:-.25px}.gq-card p{margin:10px 0 12px;font-size:13px;line-height:1.45;color:#667085}.gq-card strong{background:#edf8e9;color:#2d5a27;border-radius:999px;padding:7px 10px;font-size:12px;white-space:nowrap}.gq-type{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:950;color:#6d28d9}.gq-progress{height:8px;border-radius:999px;background:#edf0ec;overflow:hidden}.gq-progress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#3f7f2f,#6d28d9);transition:width .22s ease}.gq-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.gq-meta span{font-size:11px;font-weight:800;color:#5f6b5d;background:#f3f6f1;border-radius:999px;padding:5px 8px}.gq-party{display:flex;margin-top:12px;min-height:33px}.gq-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3f7f2f,#6d28d9);border:2px solid #fff;margin-right:-6px;color:#fff;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 5px 12px rgba(0,0,0,.12)}.gq-avatar span{font-size:10px;font-weight:950}.gq-avatar small{position:absolute;right:-2px;bottom:-3px;min-width:15px;height:15px;border-radius:50%;background:#fff;color:#24521f;border:1px solid #dce8d7;font-size:9px;font-weight:950;display:flex;align-items:center;justify-content:center}.gq-actions{display:flex;gap:8px;margin-top:14px}.gq-actions button{flex:1;background:#315f2c;color:#fff;box-shadow:0 7px 16px rgba(49,95,44,.18)}.gq-actions button.ghost{background:#f3f6f1;color:#315f2c;box-shadow:none;border:1px solid #e1eadc}.gq-empty{background:#fff;border:1px dashed #cfd9ca;border-radius:18px;padding:18px;text-align:center;color:#667085;font-weight:750}.gq-section-title{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:#667085;margin:18px 4px 10px}.task-tabs .ttab.gq-tab{background:linear-gradient(135deg,#315f2c,#6d28d9);color:#fff;border-color:transparent}@media(max-width:420px){.gq-hero{display:block}.gq-hero button{margin-top:14px;width:100%}.gq-summary-grid{gap:7px}.gq-summary-grid div{padding:10px 4px}.gq-actions{flex-direction:column}}';
+  document.head.appendChild(css);
+}
+
+function installGroupQuestTab() {
+  injectGroupQuestStyles();
+  var tabs = document.querySelector('.task-tabs');
+  if (!tabs || document.querySelector('.ttab.gq-tab')) return;
+  var trade = tabs.querySelector('.ttab-trade');
+  var btn = document.createElement('button');
+  btn.className = 'ttab gq-tab';
+  btn.textContent = '⚔️ Group';
+  btn.onclick = function(){ setTaskTab('groupquests', btn); };
+  tabs.insertBefore(btn, trade || null);
+}
+
+(function patchGroupQuestRender(){
+  function patch(){
+    installGroupQuestTab();
+    if (window.__groupQuestRenderPatched || typeof window.renderTasks !== 'function') return;
+    window.__groupQuestRenderPatched = true;
+    var originalRenderTasks = window.renderTasks;
+    window.renderTasks = function(){
+      if (window.taskTab === 'groupquests') {
+        var el = document.getElementById('task-content');
+        renderGroupQuests(el);
+        return;
+      }
+      return originalRenderTasks.apply(this, arguments);
+    };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', patch);
+  else patch();
+  setTimeout(patch, 250);
+  window.addEventListener('familyapp:navigation-rendered', patch);
+})();
