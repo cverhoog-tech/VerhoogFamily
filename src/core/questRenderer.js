@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// QUEST RENDERER v0.291
+// QUEST RENDERER v0.293
 // Stable renderer foundation for future task/group/main quest screens.
 // No MutationObservers, no DOM patch loops, no gesture overrides.
 // ============================================================
 
 (function(){
-  var VERSION = '0.291';
+  var VERSION = '0.293';
 
   var IMAGE_RULES = [
     { keys: ['auto', 'car', 'wassen'], url: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=900&q=92&fm=webp' },
@@ -25,12 +25,61 @@
     });
   }
 
+  function safeParse(raw, fallback){
+    try { return raw ? JSON.parse(raw) : fallback; }
+    catch(e){ return fallback; }
+  }
+
   function pickImage(quest){
     var text = ((quest.title || '') + ' ' + (quest.description || '') + ' ' + (quest.questType || '')).toLowerCase();
     for(var i=0;i<IMAGE_RULES.length;i++){
       if(IMAGE_RULES[i].keys.some(function(key){ return text.indexOf(key) > -1; })) return IMAGE_RULES[i].url;
     }
     return quest.background || 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=92&fm=webp';
+  }
+
+  function getStoredPeople(){
+    var stores = [
+      'fam_members', 'fam_family_members', 'family_members', 'fam_profiles',
+      'fam_user_profiles', 'fam_household_members', 'fam_group_members',
+      'fam_group_quest_members_v001'
+    ];
+    var people = [];
+    stores.forEach(function(key){
+      var value = safeParse(localStorage.getItem(key), null);
+      if(!value) return;
+      if(Array.isArray(value)) people = people.concat(value);
+      else if(Array.isArray(value.members)) people = people.concat(value.members);
+      else if(Array.isArray(value.profiles)) people = people.concat(value.profiles);
+      else if(typeof value === 'object'){
+        Object.keys(value).forEach(function(id){
+          if(value[id] && typeof value[id] === 'object') people.push(Object.assign({ id: id }, value[id]));
+        });
+      }
+    });
+    return people;
+  }
+
+  function normalizePerson(person){
+    if(!person) return null;
+    var name = person.name || person.displayName || person.fullName || person.label || person.id || '';
+    var initials = person.initials || String(name || person.id || '?').split(/\s+/).map(function(p){ return p[0]; }).join('').slice(0,2).toUpperCase();
+    return {
+      id: person.id || person.uid || person.memberId || person.userId || String(name).toLowerCase(),
+      name: name,
+      initials: initials,
+      avatar: person.avatar || person.avatarUrl || person.photoURL || person.photoUrl || person.image || person.imageUrl || person.profileImage || person.profileImageUrl || person.picture || person.pictureUrl || ''
+    };
+  }
+
+  function lookupProfileAvatar(id, fallbackLookup){
+    var fallback = fallbackLookup && fallbackLookup(id) || null;
+    var people = getStoredPeople().map(normalizePerson).filter(Boolean);
+    var needle = String(id || '').toLowerCase();
+    var found = people.find(function(p){
+      return String(p.id || '').toLowerCase() === needle || String(p.name || '').toLowerCase() === needle;
+    });
+    return Object.assign({}, fallback || {}, found || {});
   }
 
   function progress(quest){
@@ -49,22 +98,38 @@
     var ids = [];
     (quest.acceptedMemberIds || []).forEach(function(id){ if(ids.indexOf(id) === -1) ids.push(id); });
     (quest.assignedMemberIds || []).forEach(function(id){ if(ids.indexOf(id) === -1) ids.push(id); });
+    (quest.invitedMemberIds || []).forEach(function(id){ if(ids.indexOf(id) === -1) ids.push(id); });
     if(!ids.length && quest.ownerId) ids.push(quest.ownerId);
     if(!ids.length) return '';
     return '<div class="qrAvatars">' + ids.slice(0,4).map(function(id){
-      var m = memberLookup && memberLookup(id) || { initials: String(id || '?').slice(0,2).toUpperCase() };
+      var m = lookupProfileAvatar(id, memberLookup) || { initials: String(id || '?').slice(0,2).toUpperCase() };
       var img = m.avatar || m.avatarUrl || m.photoURL || '';
-      return '<span class="qrAvatar '+(img?'hasImg':'')+'" '+(img?'style="background-image:url('+esc(img)+')"':'')+'>'+(!img?esc(m.initials || '?'):'')+'</span>';
+      var pending = (quest.invitedMemberIds || []).indexOf(id) > -1 && (quest.acceptedMemberIds || []).indexOf(id) === -1;
+      return '<span class="qrAvatar '+(img?'hasImg':'')+' '+(pending?'pending':'')+'" title="'+esc(m.name || id)+'" '+(img?'style="background-image:url('+esc(img)+')"':'')+'>'+(!img?esc(m.initials || '?'):'')+'</span>';
     }).join('') + '</div>';
   }
 
-  function renderSteps(quest){
+  function stepTitle(step){ return typeof step === 'string' ? step : (step.title || step.name || 'Subtaak'); }
+
+  function renderSteps(quest, options){
+    options = options || {};
     var steps = quest.steps || [];
-    if(!steps.length) return '';
-    return '<div class="qrSteps">' + steps.slice(0,5).map(function(step){
+    var editable = !!options.editable;
+    if(!steps.length && !editable) return '';
+    var html = '<div class="qrSteps '+(editable?'editable':'')+'">';
+    html += steps.slice(0,5).map(function(step, index){
       var done = step.status === 'completed' || step.done;
-      return '<div class="qrStep '+(done?'done':'')+'"><span class="qrCheck">'+(done?'✓':'')+'</span><b>'+esc(step.title || step)+'</b></div>';
-    }).join('') + '</div>';
+      return '<div class="qrStep '+(done?'done':'')+'" data-step-index="'+index+'">'
+        + '<button type="button" class="qrCheck" data-step-toggle="'+index+'">'+(done?'✓':'')+'</button>'
+        + (editable ? '<input class="qrStepInput" value="'+esc(stepTitle(step))+'" placeholder="Subtaak">' : '<b>'+esc(stepTitle(step))+'</b>')
+        + (editable ? '<button type="button" class="qrStepRemove" data-step-remove="'+index+'">×</button>' : '')
+        + '</div>';
+    }).join('');
+    if(editable){
+      html += '<div class="qrStep qrStepDraft"><span class="qrCheck empty"></span><input class="qrStepInput qrStepDraftInput" placeholder="Nieuwe subtaak typen..."><button type="button" class="qrStepRemove muted">＋</button></div>';
+    }
+    html += '</div>';
+    return html;
   }
 
   function renderQuestCard(quest, options){
@@ -82,13 +147,14 @@
       + '<p>'+esc(quest.description)+'</p>'
       + '<div class="qrMeta">'+renderAvatars(quest, options.memberLookup)+'<span>'+p.completed+'/'+p.total+' stappen</span></div>'
       + '<div class="qrProgress"><i style="width:'+p.percent+'%"></i></div>'
-      + renderSteps(quest)
+      + renderSteps(quest, { editable: options.editableSteps })
       + '</div>'
       + '</article>';
   }
 
   function injectStyles(){
-    if(document.getElementById('quest-renderer-styles')) return;
+    var old = document.getElementById('quest-renderer-styles');
+    if(old) old.remove();
     var s = document.createElement('style');
     s.id = 'quest-renderer-styles';
     s.textContent = [
@@ -98,9 +164,10 @@
       '.qrContent{position:relative;z-index:2;min-height:230px;display:flex;flex-direction:column;justify-content:flex-end;padding:16px}',
       '.qrTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.qrBadge{border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);padding:6px 9px;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}.qrXp{border-radius:999px;background:linear-gradient(135deg,#fef3c7,#facc15);color:#2d2100;padding:7px 10px;font-size:12px;font-weight:950}',
       '.qrCard h3{margin:0 0 6px;font-size:25px;line-height:1.02;letter-spacing:-.65px}.qrCard p{margin:0 0 11px;font-size:13px;line-height:1.35;color:rgba(255,255,255,.78)}',
-      '.qrMeta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;font-weight:900;color:rgba(255,255,255,.78)}.qrAvatars{display:flex}.qrAvatar{width:30px;height:30px;border-radius:50%;margin-right:-8px;border:2px solid rgba(255,255,255,.88);background:linear-gradient(135deg,#315f2c,#6d28d9);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:950;background-size:cover;background-position:center}',
+      '.qrMeta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;font-weight:900;color:rgba(255,255,255,.78)}.qrAvatars{display:flex}.qrAvatar{width:30px;height:30px;border-radius:50%;margin-right:-8px;border:2px solid rgba(255,255,255,.88);background:linear-gradient(135deg,#315f2c,#6d28d9);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:950;background-size:cover;background-position:center}.qrAvatar.pending{opacity:.62;border-style:dashed}',
       '.qrProgress{height:8px;border-radius:999px;background:rgba(255,255,255,.20);overflow:hidden;margin-top:10px}.qrProgress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#86efac,#c4b5fd)}',
-      '.qrSteps{display:flex;flex-direction:column;gap:7px;margin-top:12px}.qrStep{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12)}.qrStep b{font-size:12px;color:rgba(255,255,255,.88)}.qrCheck{width:19px;height:19px;border-radius:7px;border:2px solid rgba(134,239,172,.72);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:950;color:#bbf7d0}.qrStep.done{background:rgba(34,197,94,.18)}'
+      '.qrSteps{display:flex;flex-direction:column;gap:7px;margin-top:12px}.qrStep{display:grid;grid-template-columns:23px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 9px;border-radius:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12)}.qrStep b{font-size:12px;color:rgba(255,255,255,.88)}.qrCheck{width:20px;height:20px;border-radius:7px;border:2px solid rgba(134,239,172,.72);background:rgba(134,239,172,.08);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:950;color:#bbf7d0;padding:0}.qrStep.done{background:rgba(34,197,94,.18)}',
+      '.qrSteps.editable .qrStep{padding:7px 8px}.qrStepInput{width:100%;min-width:0;border:0;outline:0;background:transparent;color:rgba(255,255,255,.92);font-size:13px;font-weight:800;padding:5px 0}.qrStepInput::placeholder{color:rgba(255,255,255,.45)}.qrStepRemove{width:24px;height:24px;border:0;border-radius:9px;background:rgba(239,68,68,.18);color:#fecaca;font-size:16px;font-weight:950;line-height:1}.qrStepRemove.muted{background:rgba(134,239,172,.14);color:#bbf7d0}.qrStepDraft{border-style:dashed;background:rgba(255,255,255,.075)}.qrCheck.empty{opacity:.7}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -110,7 +177,8 @@
     injectStyles: injectStyles,
     pickImage: pickImage,
     renderQuestCard: renderQuestCard,
-    renderSteps: renderSteps
+    renderSteps: renderSteps,
+    lookupProfileAvatar: lookupProfileAvatar
   };
 
   injectStyles();
