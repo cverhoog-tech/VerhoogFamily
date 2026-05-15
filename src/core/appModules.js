@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.308
+// APP MODULES v0.315
 // Central script/module bootstrap for FamilyApp.
 // Replaces ad-hoc feature bootstrapping from unrelated modules.
 // ============================================================
 
 (function(){
-  var VERSION = '0.308';
+  var VERSION = '0.315';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -22,6 +22,7 @@
     { id: 'quest-renderer-js', src: 'src/core/questRenderer.js', group: 'rendering', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
+    { id: 'task-top-nav-stability-js', src: 'src/modules/tasks/taskTopNavStability.js', group: 'tasks', critical: false },
     { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
     { id: 'raid-card-polish-js', src: 'src/modules/tasks/raidCardPolish.js', group: 'tasks', critical: false },
     { id: 'group-quest-editor-js', src: 'src/modules/tasks/groupQuestEditor.js', group: 'tasks', critical: false },
@@ -54,23 +55,11 @@
     booting = true;
     var chain = Promise.resolve();
     registry.forEach(function(module){ chain = chain.then(function(){ return loadScript(module); }); });
-    return chain.then(function(){
-      booting = false;
-      booted = true;
-      emit('ready', status());
-      return status();
-    });
+    return chain.then(function(){ booting = false; booted = true; emit('ready', status()); return status(); });
   }
 
-  function status(){
-    return { version: VERSION, registered: registry.length, loaded: Object.keys(loaded), failed: Object.keys(failed), registry: registry.slice() };
-  }
-
-  function register(module){
-    if(!module || !module.id || !module.src) return false;
-    if(!registry.some(function(item){ return item.id === module.id; })) registry.push(module);
-    return true;
-  }
+  function status(){ return { version: VERSION, registered: registry.length, loaded: Object.keys(loaded), failed: Object.keys(failed), registry: registry.slice() }; }
+  function register(module){ if(!module || !module.id || !module.src) return false; if(!registry.some(function(item){ return item.id === module.id; })) registry.push(module); return true; }
 
   window.AppModules = { version: VERSION, register: register, boot: boot, loadScript: loadScript, status: status };
 
