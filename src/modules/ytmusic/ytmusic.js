@@ -69,7 +69,7 @@ function closeYtBar(){
   ytState.playing=false;
 }
 
-(function loadFamilyRpgLayers(){
+(function loadFamilyAppModules(){
   function loadScriptOnce(id, src){
     if(document.getElementById(id)) return;
     var script=document.createElement('script');
@@ -79,16 +79,6 @@ function closeYtBar(){
     document.body.appendChild(script);
   }
 
-  loadScriptOnce('mobile-viewport-lock-js','src/core/mobileViewportLock.js');
-  loadScriptOnce('quest-engine-js','src/core/questEngine.js');
-  loadScriptOnce('quest-adapter-js','src/core/questAdapter.js');
-  loadScriptOnce('epic-hero-backgrounds-js','src/core/epicHeroBackgrounds.js');
-  loadScriptOnce('quest-renderer-js','src/core/questRenderer.js');
-  loadScriptOnce('quest-renderer-preview-js','src/modules/tasks/questRendererPreview.js');
-  loadScriptOnce('group-quest-premium-js','src/modules/tasks/groupQuestPremium.js');
-  loadScriptOnce('group-quest-layout-fix-js','src/modules/tasks/groupQuestLayoutFix.js');
-  loadScriptOnce('raid-card-polish-js','src/modules/tasks/raidCardPolish.js');
-  loadScriptOnce('group-quest-editor-js','src/modules/tasks/groupQuestEditor.js');
-  loadScriptOnce('group-quest-editor-compact-polish-js','src/modules/tasks/groupQuestEditorCompactPolish.js');
+  loadScriptOnce('family-app-modules-js','src/core/appModules.js');
 })();
 
