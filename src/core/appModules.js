@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.325
-// Stable bootstrap modules.
+// APP MODULES v0.326
+// Stable bootstrap modules. Task nav portal overlay disabled.
 // ============================================================
 
 (function(){
-  var VERSION = '0.325';
+  var VERSION = '0.326';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -23,7 +23,6 @@
 
     // Tasks
     { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
-    { id: 'task-nav-portal-js', src: 'src/modules/tasks/taskNavPortal.js', group: 'tasks', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
     { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
@@ -33,9 +32,7 @@
   ];
 
   function emit(name, detail){
-    try {
-      window.dispatchEvent(new CustomEvent('familyapp:modules:' + name, { detail: detail || {} }));
-    } catch(e) {}
+    try { window.dispatchEvent(new CustomEvent('familyapp:modules:' + name, { detail: detail || {} })); } catch(e) {}
   }
 
   function loadScript(module){
@@ -63,15 +60,8 @@
     return chain.then(function(){ booting = false; booted = true; emit('ready', status()); return status(); });
   }
 
-  function status(){
-    return { version: VERSION, registered: registry.length, loaded: Object.keys(loaded), failed: Object.keys(failed), registry: registry.slice() };
-  }
-
-  function register(module){
-    if(!module || !module.id || !module.src) return false;
-    if(!registry.some(function(item){ return item.id === module.id; })) registry.push(module);
-    return true;
-  }
+  function status(){ return { version: VERSION, registered: registry.length, loaded: Object.keys(loaded), failed: Object.keys(failed), registry: registry.slice() }; }
+  function register(module){ if(!module || !module.id || !module.src) return false; if(!registry.some(function(item){ return item.id === module.id; })) registry.push(module); return true; }
 
   window.AppModules = { version: VERSION, register: register, boot: boot, loadScript: loadScript, status: status };
 
