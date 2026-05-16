@@ -1,15 +1,16 @@
 'use strict';
 // ============================================================
-// TASK NAV NATIVE CSS v0.324
-// Safe static styling only. Prevents iOS fixed nav from inheriting
-// screen animation/transform scroll behavior.
+// TASK NAV NATIVE CSS v0.327
+// Structural fix: the Tasks screen gets its own scroll container.
+// Header and task-tabs stay fixed in the screen stack; only content scrolls.
+// No portal, no DOM replacement, no observers.
 // ============================================================
 
 (function(){
-  var STYLE_ID = 'task-nav-native-css-v0324';
+  var STYLE_ID = 'task-nav-native-css-v0327';
 
   function inject(){
-    ['task-nav-native-css-v0321','task-nav-native-css-v0322','task-nav-native-css-v0323'].forEach(function(id){
+    ['task-nav-native-css-v0321','task-nav-native-css-v0322','task-nav-native-css-v0323','task-nav-native-css-v0324'].forEach(function(id){
       var old = document.getElementById(id);
       if(old) old.remove();
     });
@@ -19,34 +20,40 @@
     style.id = STYLE_ID;
     style.textContent = [
       'html,body{overflow-x:hidden!important;max-width:100vw!important}',
-      '.app-header{position:sticky!important;top:0!important;z-index:70!important;min-height:64px!important;height:64px!important;padding-top:12px!important;padding-bottom:12px!important;box-sizing:border-box!important}',
+      '.app-header{position:sticky!important;top:0!important;z-index:70!important;min-height:64px!important;height:64px!important;padding-top:12px!important;padding-bottom:12px!important;box-sizing:border-box!important;background:var(--c-header-bg)!important}',
 
-      '#screen-tasks{',
-      '  padding-top:0!important;',
-      '  margin-top:0!important;',
-      '  max-width:100vw!important;',
-      '  overflow-x:hidden!important;',
+      '#screen-tasks.screen.active{',
+      '  display:flex!important;',
+      '  flex-direction:column!important;',
+      '  position:fixed!important;',
+      '  left:0!important;',
+      '  right:0!important;',
+      '  top:64px!important;',
+      '  bottom:74px!important;',
+      '  width:100%!important;',
+      '  max-width:480px!important;',
+      '  margin:0 auto!important;',
+      '  padding:0!important;',
+      '  overflow:hidden!important;',
+      '  background:var(--c-bg)!important;',
       '  transform:none!important;',
       '  animation:none!important;',
       '  contain:none!important;',
-      '  perspective:none!important;',
-      '  filter:none!important;',
       '}',
-      '#screen-tasks.screen.active{display:block!important;padding-top:0!important;margin-top:0!important;transform:none!important;animation:none!important}',
 
       '#screen-tasks .task-tabs{',
-      '  position:fixed!important;',
-      '  top:64px!important;',
-      '  left:50%!important;',
+      '  position:relative!important;',
+      '  top:auto!important;',
+      '  left:auto!important;',
       '  right:auto!important;',
-      '  bottom:auto!important;',
-      '  transform:translate3d(-50%,0,0)!important;',
-      '  z-index:69!important;',
+      '  transform:none!important;',
+      '  z-index:20!important;',
+      '  flex:0 0 52px!important;',
       '  display:flex!important;',
       '  align-items:center!important;',
       '  gap:8px!important;',
       '  width:100%!important;',
-      '  max-width:480px!important;',
+      '  max-width:100%!important;',
       '  min-height:52px!important;',
       '  height:52px!important;',
       '  padding:7px 12px!important;',
@@ -63,8 +70,6 @@
       '  box-shadow:0 8px 18px rgba(17,24,39,.04)!important;',
       '  white-space:nowrap!important;',
       '  touch-action:pan-x!important;',
-      '  will-change:transform!important;',
-      '  backface-visibility:hidden!important;',
       '}',
       '#screen-tasks .task-tabs::-webkit-scrollbar{display:none!important}',
 
@@ -93,15 +98,28 @@
       '#screen-tasks .ttab.gq-tab.active,#screen-tasks .ttab.preview-tab.active{background:linear-gradient(135deg,#315f2c,#6d28d9)!important}',
       '#screen-tasks .ttab-trade{min-width:56px!important;padding:0 13px!important}',
 
-      '#screen-tasks #task-content,.task-content{padding-top:66px!important;margin-top:0!important;max-width:100vw!important;overflow-x:hidden!important;box-sizing:border-box!important}',
+      '#screen-tasks #task-content,.task-content{',
+      '  flex:1 1 auto!important;',
+      '  min-height:0!important;',
+      '  height:auto!important;',
+      '  padding:14px 0 130px!important;',
+      '  margin:0!important;',
+      '  max-width:100%!important;',
+      '  overflow-x:hidden!important;',
+      '  overflow-y:auto!important;',
+      '  -webkit-overflow-scrolling:touch!important;',
+      '  box-sizing:border-box!important;',
+      '  background:var(--c-bg)!important;',
+      '}',
       '#screen-tasks #task-content > *:first-child{margin-top:0!important}',
 
       '@media(max-width:420px){',
       '  .app-header{min-height:62px!important;height:62px!important}',
-      '  #screen-tasks .task-tabs{top:62px!important;height:50px!important;min-height:50px!important;padding:6px 10px!important;gap:8px!important}',
+      '  #screen-tasks.screen.active{top:62px!important;bottom:74px!important}',
+      '  #screen-tasks .task-tabs{height:50px!important;min-height:50px!important;flex-basis:50px!important;padding:6px 10px!important;gap:8px!important}',
       '  #screen-tasks .ttab{height:36px!important;min-width:86px!important;padding:0 11px!important;font-size:12px!important}',
       '  #screen-tasks .ttab.gq-tab,#screen-tasks .ttab.preview-tab{min-width:102px!important}',
-      '  #screen-tasks #task-content,.task-content{padding-top:64px!important}',
+      '  #screen-tasks #task-content,.task-content{padding-top:12px!important;padding-bottom:130px!important}',
       '}',
       '@media(max-width:360px){#screen-tasks .ttab{min-width:80px!important;padding:0 10px!important;font-size:11.5px!important}}'
     ].join('');
