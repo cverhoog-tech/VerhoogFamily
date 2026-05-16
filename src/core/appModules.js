@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.344
+// APP MODULES v0.348
 // Stable bootstrap modules.
 // ============================================================
 
 (function(){
-  var VERSION = '0.344';
+  var VERSION = '0.348';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -30,6 +30,11 @@
     { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
 
     // Tasks
+    { id: 'hero-card-data-adapter-js', src: 'src/modules/tasks/heroCardDataAdapter.js', group: 'tasks', critical: false },
+    { id: 'hero-card-renderer-js', src: 'src/modules/tasks/heroCardRenderer.js', group: 'tasks', critical: false },
+    { id: 'hero-carousel-gestures-js', src: 'src/modules/tasks/heroCarouselGestures.js', group: 'tasks', critical: false },
+    { id: 'group-quest-hero-carousel-js', src: 'src/modules/tasks/groupQuestHeroCarousel.js', group: 'tasks', critical: false },
+    { id: 'group-quest-hero-carousel-loader-js', src: 'src/modules/tasks/groupQuestHeroCarouselLoader.js', group: 'tasks', critical: false },
     { id: 'task-repository-adapter-js', src: 'src/modules/tasks/taskRepositoryAdapter.js', group: 'tasks', critical: false },
     { id: 'task-mutation-repository-bridge-js', src: 'src/modules/tasks/taskMutationRepositoryBridge.js', group: 'tasks', critical: false },
     { id: 'recurring-task-repository-bridge-js', src: 'src/modules/tasks/recurringTaskRepositoryBridge.js', group: 'tasks', critical: false },
@@ -69,7 +74,13 @@
     booting = true;
     var chain = Promise.resolve();
     registry.forEach(function(module){ chain = chain.then(function(){ return loadScript(module); }); });
-    return chain.then(function(){ booting = false; booted = true; emit('ready', status()); return status(); });
+    return chain.then(function(){
+      booting = false;
+      booted = true;
+      if(window.GroupQuestHeroCarouselLoader && typeof window.GroupQuestHeroCarouselLoader.build === 'function') window.GroupQuestHeroCarouselLoader.build();
+      emit('ready', status());
+      return status();
+    });
   }
 
   function status(){ return { version: VERSION, registered: registry.length, loaded: Object.keys(loaded), failed: Object.keys(failed), registry: registry.slice() }; }
