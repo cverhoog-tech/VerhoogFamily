@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.339
+// APP MODULES v0.344
 // Stable bootstrap modules.
 // ============================================================
 
 (function(){
-  var VERSION = '0.339';
+  var VERSION = '0.344';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -25,6 +25,9 @@
     { id: 'quest-adapter-js', src: 'src/core/questAdapter.js', group: 'quests', critical: false },
     { id: 'epic-hero-backgrounds-js', src: 'src/core/epicHeroBackgrounds.js', group: 'rendering', critical: false },
     { id: 'quest-renderer-js', src: 'src/core/questRenderer.js', group: 'rendering', critical: false },
+
+    // Finance
+    { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
 
     // Tasks
     { id: 'task-repository-adapter-js', src: 'src/modules/tasks/taskRepositoryAdapter.js', group: 'tasks', critical: false },
