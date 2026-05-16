@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// HOUSEHOLD REPOSITORY v0.309
+// HOUSEHOLD REPOSITORY v0.330
 // Shared persistence boundary for local prototype and future backend sync.
-// All household data should gradually move through this layer instead of
-// direct localStorage access in feature modules.
+// Feature modules should gradually move through this layer instead of
+// direct localStorage access.
 // ============================================================
 
 (function(){
-  var VERSION = '0.309';
+  var VERSION = '0.330';
   var PREFIX = 'familyapp_repo_';
   var META_KEY = PREFIX + 'meta_v001';
   var listeners = {};
@@ -30,7 +30,7 @@
   var LEGACY_KEYS = {
     groupQuests: ['fam_group_quests_v001', 'groupQuests', 'family_group_quests'],
     members: ['familyapp_household_members_v001', 'fam_group_quest_members_v001', 'fam_members', 'family_members'],
-    tasks: ['fam_tasks', 'tasks'],
+    tasks: ['fam_tasks_v023', 'fam_tasks_v022', 'fam_tasks_v021', 'fam_tasks', 'tasks'],
     recipes: ['fam_recipes', 'recipes'],
     meals: ['fam_meals', 'meals'],
     groceries: ['fam_groceries', 'groceries'],
@@ -74,7 +74,7 @@
   }
 
   function saveMeta(meta){
-    var next = Object.assign({}, getMeta(), meta || {}, { updatedAt: nowIso() });
+    var next = Object.assign({}, getMeta(), meta || {}, { version: VERSION, updatedAt: nowIso() });
     localStorage.setItem(META_KEY, JSON.stringify(next));
     emit('meta', next);
     return next;
@@ -121,6 +121,40 @@
     return write(collection, next);
   }
 
+  function listTasks(){
+    return read(COLLECTIONS.tasks, []);
+  }
+
+  function saveTasks(tasks, options){
+    var next = Array.isArray(tasks) ? tasks : [];
+    write(COLLECTIONS.tasks, next, options || {});
+    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail: { tasks: next } })); } catch(e) {}
+    return next;
+  }
+
+  function getTaskId(task){
+    return Array.isArray(task) ? task[0] : task && task.id;
+  }
+
+  function upsertTask(task){
+    var tasks = listTasks();
+    var id = getTaskId(task) || ('task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
+    if(Array.isArray(task)) task[0] = id;
+    else task = Object.assign({}, task || {}, { id: id });
+
+    var index = tasks.findIndex(function(item){ return getTaskId(item) === id; });
+    if(index >= 0) tasks[index] = task;
+    else tasks.push(task);
+    saveTasks(tasks, { operation: 'upsertTask', id: id });
+    return task;
+  }
+
+  function removeTask(id){
+    var tasks = listTasks().filter(function(task){ return getTaskId(task) !== id; });
+    saveTasks(tasks, { operation: 'removeTask', id: id });
+    return true;
+  }
+
   function appendActivity(event){
     var activity = read(COLLECTIONS.activity, []);
     var item = Object.assign({ id: 'act-' + Date.now(), at: nowIso() }, event || {});
@@ -148,12 +182,14 @@
   }
 
   function backendStatus(){
+    var supabaseStatus = window.SupabaseAdapter && window.SupabaseAdapter.status ? window.SupabaseAdapter.status() : null;
     return {
       provider: getMeta().backendProvider,
       mode: getMeta().mode,
-      connected: false,
-      realtime: false,
-      reason: 'Backend adapter not connected yet'
+      connected: !!(supabaseStatus && supabaseStatus.connected),
+      realtime: !!(supabaseStatus && supabaseStatus.realtime),
+      supabase: supabaseStatus,
+      reason: supabaseStatus ? null : 'Backend adapter not connected yet'
     };
   }
 
@@ -167,6 +203,10 @@
     patch: patch,
     on: on,
     emit: emit,
+    listTasks: listTasks,
+    saveTasks: saveTasks,
+    upsertTask: upsertTask,
+    removeTask: removeTask,
     appendActivity: appendActivity,
     exportSnapshot: exportSnapshot,
     importSnapshot: importSnapshot,
