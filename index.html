@@ -441,83 +441,30 @@
 
 <!-- PROFIEL -->
 <div class="screen" id="screen-profile">
-  <div id="profile-view">
-    <div class="profile-head">
-      <div class="prof-avatar" id="prof-avatar" onclick="openAvatarPicker()">SK</div>
-      <h2 id="prof-name">Shane</h2>
-      <p>Gezinsbeheerder</p>
-      <button onclick="openProfileEdit()" style="margin-top:10px;background:var(--c-surface2);border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;color:var(--c-text);cursor:pointer">✏️ Profiel bewerken</button>
-    </div>
-    <div class="profile-stats">
-      <div><b id="prof-tasks">0</b><span>Taken</span></div>
-      <div><b id="prof-xp">0</b><span>XP</span></div>
-      <div><b id="prof-streak">0</b><span>Streak</span></div>
-    </div>
-    <div class="profile-section">
-      <h3>Partner</h3>
-      <div class="profile-row"><span>Naam partner</span><b id="prof-partner">Esra</b></div>
-    </div>
-    <div class="profile-section">
-      <h3>Instellingen</h3>
-      <div class="profile-row" onclick="openAvatarPicker()"><span>🎭 Avatar wijzigen</span><span>›</span></div>
-      <div class="profile-row" onclick="openAppIconPicker()"><span>📱 App icoon wijzigen</span><span>›</span></div>
-      <div class="profile-row" onclick="openThemePicker()"><span>🎨 Thema kleur</span><span>›</span></div>
-      <div class="profile-row" onclick="showScreen('skills')"><span>✨ Vaardigheden & badges</span><span>›</span></div>
-      <div class="profile-row"><span>🔔 Notificaties</span><span>›</span></div>
-      <div class="profile-row"><span>🔒 Privacy</span><span>›</span></div>
-      <div class="profile-row" onclick="resetAll()" style="color:#c0547a"><span>🗑 Reset app</span><span>›</span></div>
-      <div class="profile-row" onclick="logoutUser()" style="color:#dc2626"><span>🚪 Uitloggen</span><span>›</span></div>
-    </div>
+  <div class="profile-banner">
+    <div class="profile-avatar" id="prof-avatar">SK</div>
+    <div class="profile-name" id="prof-name">Shane</div>
+    <div class="profile-role" id="prof-role">Gezinslid</div>
   </div>
-
-  <div id="profile-edit" style="display:none;padding:16px">
-    <h2 style="margin:0 0 16px;font-size:22px;color:var(--c-text)">Profiel bewerken</h2>
-    <div class="field"><label>Jouw naam</label><input id="edit-name" placeholder="Naam"></div>
-    <div class="field"><label>Partner naam</label><input id="edit-partner" placeholder="Partner naam"></div>
-    <div style="display:flex;gap:10px;margin-top:20px">
-      <button onclick="closeProfileEdit()" style="flex:1;background:var(--c-surface2);border:none;border-radius:12px;padding:12px;font-weight:600;color:var(--c-text2);cursor:pointer">Annuleren</button>
-      <button onclick="saveProfileEdit()" style="flex:1;background:var(--c-primary);color:#fff;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer">Opslaan</button>
-    </div>
+  <div style="padding:16px">
+    <button class="settings-row" onclick="openProfileNames()"><span>👨‍👩‍👧 Namen instellen</span><span>›</span></button>
+    <button class="settings-row" onclick="openThemePicker()"><span>🎨 Thema</span><span>›</span></button>
+    <button class="settings-row" onclick="showScreen('achievements')"><span>🏆 Achievements</span><span>›</span></button>
+    <button class="settings-row" onclick="showScreen('skills')"><span>⭐ Skills & Levels</span><span>›</span></button>
+    <button class="settings-row" onclick="openNavConfig()"><span>📱 Navigatiebalk</span><span>›</span></button>
+    <button class="settings-row" onclick="shareFamilyCode()"><span>🔗 Gezinscode delen</span><span>›</span></button>
+    <button class="settings-row" onclick="signOut()"><span>🚪 Uitloggen</span><span>›</span></button>
   </div>
 </div>
 
-<!-- MEER SCHERM -->
-<div class="screen" id="screen-more">
-  <div class="list-header">
-    <h2>Meer</h2>
-  </div>
-  <div style="padding:8px 16px 100px">
-    <div class="more-item" onclick="showScreenMore('cal')">📅 <span>Agenda</span><span>›</span></div>
-    <div class="more-item" onclick="showScreenMore('finance')">💰 <span>Financiën</span><span>›</span></div>
-    <div class="more-item" onclick="showScreenMore('shop')">🛒 <span>Boodschappen</span><span>›</span></div>
-    <div class="more-item" onclick="showScreen('recipes')">🍳 <span>Recepten</span><span>›</span></div>
-    <div class="more-item" onclick="showScreen('meals')">🍽️ <span>Maaltijden plannen</span><span>›</span></div>
-    <div class="more-item" onclick="showScreen('skills')">✨ <span>Vaardigheden & badges</span><span>›</span></div>
-    <div class="more-item" onclick="showScreen('achievements')">🏆 <span>Prestaties</span><span>›</span></div>
-  </div>
-</div>
-
-<!-- PRESTATIES / ACHIEVEMENTS -->
+<!-- ACHIEVEMENTS -->
 <div class="screen" id="screen-achievements">
-  <div class="list-header"><h2>Prestaties</h2></div>
-  <div style="padding:8px 16px 100px">
-    <div class="achievement-card unlocked"><div class="ach-icon">🔥</div><div><b>Streak Starter</b><p>3 dagen op rij taken voltooid</p></div></div>
-    <div class="achievement-card"><div class="ach-icon">⭐</div><div><b>Taak Held</b><p>10 taken voltooid</p></div></div>
-    <div class="achievement-card"><div class="ach-icon">👥</div><div><b>Team Player</b><p>5 duo-taken samen gedaan</p></div></div>
-    <div class="achievement-card"><div class="ach-icon">🛒</div><div><b>Boodschappen Baas</b><p>20 items afgevinkt</p></div></div>
-  </div>
+  <div id="achievements-content"></div>
 </div>
 
-<!-- VAARDIGHEDEN / SKILLS -->
+<!-- SKILLS -->
 <div class="screen" id="screen-skills">
-  <div class="list-header">
-    <h2>Vaardigheden</h2>
-    <button class="add-btn" onclick="showScreen('profile')">Terug</button>
-  </div>
-  <div style="padding:8px 16px 100px">
-    <div id="skills-summary"></div>
-    <div id="skills-list"></div>
-  </div>
+  <div id="skills-content"></div>
 </div>
 
 <!-- RECEPTEN -->
@@ -591,46 +538,38 @@
   </div>
 </div>
 
-
-
-
-
-
-
-
-
 <script src="task-image-hashtags.js"></script>
-
-  <script src="task-image-hashtags.js"></script>
-  <script src="trade-engine.js"></script>
-  <script src="src/core/data.js"></script>
-  <script src="src/core/store.js"></script>
-  <script src="src/core/utils.js"></script>
-  <script src="src/core/theme.js"></script>
-  <script src="src/core/appIcon.js"></script>
-  <script src="src/core/profile.legacy.js"></script>
-  <script src="src/core/navigation.js"></script>
-  <script src="src/core/addSheet.js"></script>
-  <script src="src/core/autocomplete.js"></script>
-  <script src="src/core/search.js"></script>
-  <script src="src/core/swipe.js"></script>
-  <script src="src/core/dailyBonus.js"></script>
-  <script src="src/modules/home/home.js"></script>
-  <script src="src/modules/tasks/tasks.js"></script>
-  <script src="src/modules/tasks/templates.js"></script>
-  <script src="src/modules/tasks/duoQuests.js"></script>
-  <script src="src/modules/tasks/quest-overlay.js"></script>
-  <script src="src/modules/tasks/groupQuests.js"></script>
-  <script src="src/modules/shop/shop.js"></script>
-  <script src="src/modules/notes/notes.js"></script>
-  <script src="src/modules/feed/feed.js"></script>
-  <script src="src/modules/calendar/calendar.js"></script>
-  <script src="src/modules/finance/finance.js"></script>
-  <script src="src/modules/finance/charts.js"></script>
-  <script src="src/modules/achievements/achievements.js"></script>
-  <script src="src/modules/recipes/recipes.js"></script>
-  <script src="src/modules/skills/skills.js"></script>
-  <script src="src/modules/meals/meals.js"></script>
-  <script src="src/modules/ytmusic/ytmusic.js"></script>
+<script src="task-image-hashtags.js"></script>
+<script src="trade-engine.js"></script>
+<script src="src/core/data.js"></script>
+<script src="src/core/store.js"></script>
+<script src="src/core/utils.js"></script>
+<script src="src/core/theme.js"></script>
+<script src="src/core/appIcon.js"></script>
+<script src="src/core/profile.legacy.js"></script>
+<script src="src/core/navigation.js"></script>
+<script src="src/core/addSheet.js"></script>
+<script src="src/core/autocomplete.js"></script>
+<script src="src/core/search.js"></script>
+<script src="src/core/swipe.js"></script>
+<script src="src/core/dailyBonus.js"></script>
+<script src="src/modules/home/home.js"></script>
+<script src="src/modules/tasks/tasks.js"></script>
+<script src="src/modules/tasks/templates.js"></script>
+<script src="src/modules/tasks/duoQuests.js"></script>
+<script src="src/modules/tasks/quest-overlay.js"></script>
+<script src="src/modules/tasks/groupQuests.js"></script>
+<script src="src/modules/shop/shop.js"></script>
+<script src="src/modules/notes/notes.js"></script>
+<script src="src/modules/feed/feed.js"></script>
+<script src="src/modules/calendar/calendar.js"></script>
+<script src="src/modules/finance/finance.js"></script>
+<script src="src/modules/finance/charts.js"></script>
+<script src="src/modules/achievements/achievements.js"></script>
+<script src="src/modules/recipes/recipes.js"></script>
+<script src="src/modules/skills/skills.js"></script>
+<script src="src/modules/meals/meals.js"></script>
+<script src="src/modules/ytmusic/ytmusic.js"></script>
+<script src="src/core/appModules.js"></script>
 </body>
 </html>
