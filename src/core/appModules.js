@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.335
+// APP MODULES v0.336
 // Stable bootstrap modules.
 // ============================================================
 
 (function(){
-  var VERSION = '0.335';
+  var VERSION = '0.336';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -27,6 +27,7 @@
     { id: 'task-repository-adapter-js', src: 'src/modules/tasks/taskRepositoryAdapter.js', group: 'tasks', critical: false },
     { id: 'task-mutation-repository-bridge-js', src: 'src/modules/tasks/taskMutationRepositoryBridge.js', group: 'tasks', critical: false },
     { id: 'recurring-task-repository-bridge-js', src: 'src/modules/tasks/recurringTaskRepositoryBridge.js', group: 'tasks', critical: false },
+    { id: 'task-repository-render-bridge-js', src: 'src/modules/tasks/taskRepositoryRenderBridge.js', group: 'tasks', critical: false },
     { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
