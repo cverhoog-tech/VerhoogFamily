@@ -222,10 +222,6 @@
     <div class="home-activity-section">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px">
       <div class="home-section-label">Activiteit</div>
-      <button onclick="openYouTubeMusic()" style="background:#ff0000;color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
-        Muziek
-      </button>
     </div>
     <div id="activity-list"></div>
   </div>
@@ -486,22 +482,6 @@
   <div id="meals-grid" style="padding:8px 16px 100px"></div>
 </div>
 
-<!-- YOUTUBE MUSIC BAR -->
-<div id="yt-bar" class="yt-bar hidden">
-  <div id="yt-thumb" class="yt-thumb">🎵</div>
-  <div class="yt-info">
-    <div id="yt-title" class="yt-title">YouTube Music</div>
-    <div id="yt-artist" class="yt-artist">Niet actief</div>
-  </div>
-  <div class="yt-controls">
-    <button onclick="ytPrev()" class="yt-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-    <button onclick="ytTogglePlay()" class="yt-play-btn"><svg id="yt-play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
-    <button onclick="ytNext()" class="yt-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zm-11 12l8.5-6L5 6v12z"/></svg></button>
-    <button onclick="closeYtBar()" class="yt-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-  </div>
-  <div id="yt-visualizer" class="yt-visualizer"><span></span><span></span><span></span></div>
-</div>
-
 <!-- ADD SHEET -->
 <div class="add-overlay" id="add-overlay">
   <div class="add-backdrop" onclick="closeAdd()"></div>
@@ -514,18 +494,9 @@
 </div>
 
 <!-- BOTTOM NAV -->
-<nav class="bottom-nav" id="bottom-nav">
-  <!-- Rendered dynamically by renderNav() -->
-</nav>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+<div class="more-menu" id="more-menu"><div class="more-grid" id="more-grid"></div></div>
 
-<!-- MORE MENU -->
-<div class="more-menu" id="more-menu">
-  <div class="more-grid" id="more-grid">
-    <!-- Rendered dynamically -->
-  </div>
-</div>
-
-<!-- NAV CONFIG SHEET -->
 <div class="nav-config-overlay" id="nav-config-overlay">
   <div class="add-backdrop" onclick="closeNavConfig()"></div>
   <div class="nav-config-sheet">
@@ -539,7 +510,6 @@
 </div>
 
 <script src="task-image-hashtags.js"></script>
-<script src="task-image-hashtags.js"></script>
 <script src="trade-engine.js"></script>
 <script src="src/core/data.js"></script>
 <script src="src/core/store.js"></script>
@@ -550,6 +520,7 @@
 <script src="src/core/navigation.js"></script>
 <script src="src/core/addSheet.js"></script>
 <script src="src/core/autocomplete.js"></script>
+<script src="src/core/foodShopSheetRepair.js"></script>
 <script src="src/core/search.js"></script>
 <script src="src/core/swipe.js"></script>
 <script src="src/core/dailyBonus.js"></script>
