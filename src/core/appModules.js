@@ -1,11 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.348
+// APP MODULES v0.351
 // Stable bootstrap modules.
+// Group quest hero carousel runtime disabled because it destabilized Tasks.
 // ============================================================
 
 (function(){
-  var VERSION = '0.348';
+  var VERSION = '0.351';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -30,11 +31,6 @@
     { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
 
     // Tasks
-    { id: 'hero-card-data-adapter-js', src: 'src/modules/tasks/heroCardDataAdapter.js', group: 'tasks', critical: false },
-    { id: 'hero-card-renderer-js', src: 'src/modules/tasks/heroCardRenderer.js', group: 'tasks', critical: false },
-    { id: 'hero-carousel-gestures-js', src: 'src/modules/tasks/heroCarouselGestures.js', group: 'tasks', critical: false },
-    { id: 'group-quest-hero-carousel-js', src: 'src/modules/tasks/groupQuestHeroCarousel.js', group: 'tasks', critical: false },
-    { id: 'group-quest-hero-carousel-loader-js', src: 'src/modules/tasks/groupQuestHeroCarouselLoader.js', group: 'tasks', critical: false },
     { id: 'task-repository-adapter-js', src: 'src/modules/tasks/taskRepositoryAdapter.js', group: 'tasks', critical: false },
     { id: 'task-mutation-repository-bridge-js', src: 'src/modules/tasks/taskMutationRepositoryBridge.js', group: 'tasks', critical: false },
     { id: 'recurring-task-repository-bridge-js', src: 'src/modules/tasks/recurringTaskRepositoryBridge.js', group: 'tasks', critical: false },
@@ -77,7 +73,8 @@
     return chain.then(function(){
       booting = false;
       booted = true;
-      if(window.GroupQuestHeroCarouselLoader && typeof window.GroupQuestHeroCarouselLoader.build === 'function') window.GroupQuestHeroCarouselLoader.build();
+      var oldCarousel = document.getElementById('group-quest-hero-carousel');
+      if(oldCarousel && oldCarousel.parentNode) oldCarousel.parentNode.removeChild(oldCarousel);
       emit('ready', status());
       return status();
     });
