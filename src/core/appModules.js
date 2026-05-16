@@ -1,20 +1,22 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.326
-// Stable bootstrap modules. Task nav portal overlay disabled.
+// APP MODULES v0.332
+// Stable bootstrap modules. Music module removal loaded first.
 // ============================================================
 
 (function(){
-  var VERSION = '0.326';
+  var VERSION = '0.332';
   var loaded = {};
   var failed = {};
   var booting = false;
   var booted = false;
 
   var registry = [
+    { id: 'remove-music-module-js', src: 'src/core/removeMusicModule.js', group: 'core', critical: false },
     { id: 'mobile-viewport-lock-js', src: 'src/core/mobileViewportLock.js', group: 'core', critical: false },
     { id: 'live-sync-adapter-js', src: 'src/core/liveSyncAdapter.js', group: 'core', critical: false },
     { id: 'household-identity-js', src: 'src/core/householdIdentity.js', group: 'core', critical: false },
+    { id: 'household-repository-js', src: 'src/core/householdRepository.js', group: 'core', critical: false },
     { id: 'reactive-household-state-js', src: 'src/core/reactiveHouseholdState.js', group: 'core', critical: false },
     { id: 'quest-engine-js', src: 'src/core/questEngine.js', group: 'quests', critical: false },
     { id: 'quest-adapter-js', src: 'src/core/questAdapter.js', group: 'quests', critical: false },
