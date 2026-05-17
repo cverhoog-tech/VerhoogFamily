@@ -1,35 +1,52 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v0.340
-// Uses independent GroceryQuickAddModal instead of legacy addSheet.
+// BOODSCHAPPEN v0.354
+// Grocery add flow loads ModalManager + BottomSheet deterministically.
 // ============================================================
 
 (function(){
-  function loadQuickAddModal(){
-    if(window.GroceryQuickAddModal || document.getElementById('grocery-quick-add-modal-js')) return;
-    var script = document.createElement('script');
-    script.id = 'grocery-quick-add-modal-js';
-    script.src = 'src/core/groceryQuickAddModal.js';
-    script.defer = true;
-    script.onload = function(){
-      if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') {
-        window.GroceryQuickAddModal.installButton();
+  var loadingPromise = null;
+
+  function loadScriptOnce(id, src, ready){
+    return new Promise(function(resolve){
+      if(ready && ready()) return resolve();
+      if(document.getElementById(id)) {
+        var tries = 0;
+        var wait = setInterval(function(){
+          tries++;
+          if(!ready || ready() || tries > 50){ clearInterval(wait); resolve(); }
+        }, 40);
+        return;
       }
-    };
-    document.body.appendChild(script);
+      var script = document.createElement('script');
+      script.id = id;
+      script.src = src;
+      script.onload = function(){ resolve(); };
+      script.onerror = function(){ console.warn('[Shop] failed to load', src); resolve(); };
+      document.body.appendChild(script);
+    });
+  }
+
+  function ensureGroceryAddStack(){
+    if(loadingPromise) return loadingPromise;
+    loadingPromise = Promise.resolve()
+      .then(function(){ return loadScriptOnce('modal-manager-js', 'src/core/modalManager.js', function(){ return !!window.ModalManager; }); })
+      .then(function(){ return loadScriptOnce('bottom-sheet-js', 'src/core/bottomSheet.js', function(){ return !!window.BottomSheet; }); })
+      .then(function(){ return loadScriptOnce('grocery-quick-add-modal-js', 'src/core/groceryQuickAddModal.js', function(){ return !!window.GroceryQuickAddModal; }); })
+      .then(function(){
+        if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
+      });
+    return loadingPromise;
   }
 
   function openGroceryQuickAdd(){
-    loadQuickAddModal();
-    if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.open === 'function') {
-      window.GroceryQuickAddModal.open();
-      return false;
-    }
-    setTimeout(function(){
+    ensureGroceryAddStack().then(function(){
       if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.open === 'function') {
         window.GroceryQuickAddModal.open();
+      } else if(typeof window.openAdd === 'function') {
+        window.openAdd('shop');
       }
-    }, 120);
+    });
     return false;
   }
 
@@ -50,22 +67,21 @@
       if(e) e.preventDefault();
       return openGroceryQuickAdd();
     };
+    btn.textContent = '+ Toevoegen';
+    btn.style.pointerEvents = 'auto';
   }
 
   window.openGroceryQuickAdd = openGroceryQuickAdd;
   window.wireShopAddButton = wireShopAddButton;
 
-  if(document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){
-      loadQuickAddModal();
-      wireShopAddButton();
-      [100, 300, 800, 1500].forEach(function(delay){ setTimeout(wireShopAddButton, delay); });
-    });
-  } else {
-    loadQuickAddModal();
+  function bootShopAdd(){
+    ensureGroceryAddStack();
     wireShopAddButton();
-    [100, 300, 800, 1500].forEach(function(delay){ setTimeout(wireShopAddButton, delay); });
+    [100, 300, 800, 1500, 2500].forEach(function(delay){ setTimeout(wireShopAddButton, delay); });
   }
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootShopAdd);
+  else bootShopAdd();
 })();
 
 function renderShop() {
