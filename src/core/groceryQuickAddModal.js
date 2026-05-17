@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// GROCERY QUICK ADD MODAL v0.340
-// Independent grocery add flow. Does not depend on legacy add-overlay,
-// openAdd(), addSheet.js, or the async AppModules loader.
+// GROCERY QUICK ADD v0.353
+// Uses the new ModalManager/BottomSheet foundation.
+// Keeps smart suggestions, emoji/category matching and repository persistence.
 // ============================================================
 
 (function(){
-  var VERSION = '0.340';
+  var VERSION = '0.353';
   var STORAGE_KEY = 'familyapp_food_shop_v001';
-  var modalId = 'grocery-quick-add-modal';
+  var STYLE_ID = 'grocery-bottom-sheet-style';
 
   var FALLBACK_ITEMS = [
     {n:'Melk',e:'🥛',c:'Zuivel',q:'1 liter'},
@@ -96,127 +96,125 @@
   }
 
   function ensureStyles(){
-    if(document.getElementById('grocery-quick-add-style')) return;
+    if(document.getElementById(STYLE_ID)) return;
     var style = document.createElement('style');
-    style.id = 'grocery-quick-add-style';
+    style.id = STYLE_ID;
     style.textContent = [
-      '#'+modalId+'{position:fixed!important;inset:0!important;z-index:999999!important;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.46)!important}',
-      '#'+modalId+'.open{display:flex!important}',
-      '#'+modalId+' .gqa-sheet{width:100%;max-width:480px;background:var(--c-sheet-bg,#fff);border-radius:24px 24px 0 0;padding:18px 16px 34px;box-shadow:0 -18px 45px rgba(0,0,0,.22)}',
-      '#'+modalId+' .gqa-title{font-size:20px;font-weight:950;color:var(--c-text,#1f2933);margin-bottom:14px}',
-      '#'+modalId+' label{display:block;font-size:11px;font-weight:900;color:var(--c-text2,#697386);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px}',
-      '#'+modalId+' input,#'+modalId+' select{width:100%;border:1.5px solid var(--c-border,#edf0ec);border-radius:18px;padding:12px;font-size:15px;background:var(--c-input-bg,#fff);color:var(--c-text,#1f2933);outline:none}',
-      '#'+modalId+' input:focus,#'+modalId+' select:focus{border-color:var(--c-primary,#3f7f2f)}',
-      '#'+modalId+' .gqa-row{display:grid;grid-template-columns:1fr 88px;gap:10px}',
-      '#'+modalId+' .gqa-actions{display:flex;gap:10px;margin-top:16px}',
-      '#'+modalId+' .gqa-btn{flex:1;border:0;border-radius:18px;padding:14px;font-size:15px;font-weight:950}',
-      '#'+modalId+' .gqa-save{background:var(--c-primary,#3f7f2f);color:#fff}',
-      '#'+modalId+' .gqa-cancel{background:var(--c-surface2,#f8faf7);color:var(--c-text2,#697386)}',
-      '#'+modalId+' .gqa-suggestions{display:none;margin-top:8px;border:1px solid var(--c-border,#edf0ec);border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(17,24,39,.13)}',
-      '#'+modalId+' .gqa-suggestion{width:100%;border:0;background:#fff;padding:10px 12px;display:flex;align-items:center;gap:10px;text-align:left}',
-      '#'+modalId+' .gqa-suggestion:active{background:#f3f7f0}'
+      '.grocery-sheet-grid{display:grid;grid-template-columns:1fr 86px;gap:10px}',
+      '.grocery-suggestions{display:none;margin-top:8px;border:1px solid var(--c-border,#edf0ec);border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(17,24,39,.13)}',
+      '.grocery-suggestion{width:100%;border:0;background:#fff;padding:10px 12px;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer}',
+      '.grocery-suggestion:active{background:#f3f7f0}',
+      '.grocery-suggestion-emoji{font-size:23px;width:28px;text-align:center}',
+      '.grocery-suggestion-title{display:block;font-size:14px;color:var(--c-text,#1f2933);font-weight:900}',
+      '.grocery-suggestion-meta{font-size:11px;color:var(--c-text2,#697386)}'
     ].join('\n');
     document.head.appendChild(style);
   }
 
-  function ensureModal(){
-    ensureStyles();
-    var modal = document.getElementById(modalId);
-    if(modal) return modal;
-    modal = document.createElement('div');
-    modal.id = modalId;
-    modal.innerHTML = '<div class="gqa-sheet">'
-      +'<div style="width:42px;height:4px;background:var(--c-border,#edf0ec);border-radius:99px;margin:0 auto 16px"></div>'
-      +'<div class="gqa-title">🛒 Boodschap toevoegen</div>'
-      +'<label>Product</label><input id="gqa-name" placeholder="bijv. Melk" autocomplete="off">'
-      +'<div class="gqa-suggestions" id="gqa-suggestions"></div>'
-      +'<div class="gqa-row"><div><label>Hoeveelheid</label><input id="gqa-qty" placeholder="1x"></div><div><label>Icoon</label><input id="gqa-emoji" value="📦"></div></div>'
-      +'<label>Categorie</label><select id="gqa-cat"><option>Groente</option><option>Fruit</option><option>Zuivel</option><option>Brood</option><option>Vlees</option><option>Dranken</option><option>Overig</option></select>'
-      +'<div class="gqa-actions"><button class="gqa-btn gqa-cancel" id="gqa-cancel">Annuleren</button><button class="gqa-btn gqa-save" id="gqa-save">Toevoegen</button></div>'
-      +'</div>';
-    document.body.appendChild(modal);
-
-    modal.addEventListener('click', function(e){ if(e.target === modal) close(); });
-    modal.querySelector('#gqa-cancel').onclick = close;
-    modal.querySelector('#gqa-save').onclick = save;
-    modal.querySelector('#gqa-name').oninput = onInput;
-    return modal;
+  function sheetHtml(){
+    return ''
+      +'<div class="fam-modal-field"><label>Product</label><input id="grocery-name" autocomplete="off" placeholder="bijv. Melk"><div class="grocery-suggestions" id="grocery-suggestions"></div></div>'
+      +'<div class="grocery-sheet-grid">'
+      +'<div class="fam-modal-field"><label>Hoeveelheid</label><input id="grocery-qty" placeholder="1x"></div>'
+      +'<div class="fam-modal-field"><label>Icoon</label><input id="grocery-emoji" value="📦"></div>'
+      +'</div>'
+      +'<div class="fam-modal-field"><label>Categorie</label><select id="grocery-cat"><option>Groente</option><option>Fruit</option><option>Zuivel</option><option>Brood</option><option>Vlees</option><option>Dranken</option><option>Overig</option></select></div>';
   }
 
-  function onInput(){
-    var name = document.getElementById('gqa-name');
-    var qty = document.getElementById('gqa-qty');
-    var emoji = document.getElementById('gqa-emoji');
-    var cat = document.getElementById('gqa-cat');
-    var box = document.getElementById('gqa-suggestions');
+  function attachAutocomplete(modal){
+    var name = modal.querySelector('#grocery-name');
+    var qty = modal.querySelector('#grocery-qty');
+    var emoji = modal.querySelector('#grocery-emoji');
+    var cat = modal.querySelector('#grocery-cat');
+    var box = modal.querySelector('#grocery-suggestions');
     if(!name || !box) return;
-    var g = guess(name.value);
-    if(name.value.trim()){
-      if(emoji) emoji.value = g.e || '📦';
-      if(cat) cat.value = g.c || 'Overig';
-      if(qty && !qty.value) qty.value = g.q || '1x';
+
+    function apply(item){
+      if(!item) return;
+      name.value = item.n || name.value;
+      if(qty) qty.value = item.q || '1x';
+      if(emoji) emoji.value = item.e || '📦';
+      if(cat) cat.value = item.c || 'Overig';
+      box.style.display = 'none';
+      if(qty) qty.focus();
     }
-    var results = getSuggestions(name.value);
-    if(!results.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
-    box.style.display = 'block';
-    box.innerHTML = results.map(function(item, index){
-      return '<button class="gqa-suggestion" data-i="'+index+'" type="button"><span style="font-size:23px;width:28px;text-align:center">'+item.e+'</span><span style="flex:1"><b style="display:block;font-size:14px;color:#1f2933">'+item.n+'</b><small style="font-size:11px;color:#697386">'+item.q+' · '+item.c+'</small></span></button>';
-    }).join('');
-    box.querySelectorAll('.gqa-suggestion').forEach(function(btn){
-      btn.onclick = function(){
-        var item = results[parseInt(btn.getAttribute('data-i'),10)];
-        if(!item) return;
-        name.value = item.n;
-        if(qty) qty.value = item.q;
-        if(emoji) emoji.value = item.e;
-        if(cat) cat.value = item.c;
-        box.style.display = 'none';
-        if(qty) qty.focus();
-      };
+
+    function onInput(){
+      var value = name.value.trim();
+      var g = guess(value);
+      if(value){
+        if(emoji) emoji.value = g.e || '📦';
+        if(cat) cat.value = g.c || 'Overig';
+        if(qty && !qty.value) qty.value = g.q || '1x';
+      }
+      var results = getSuggestions(value);
+      if(!results.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+      box.style.display = 'block';
+      box.innerHTML = results.map(function(item, index){
+        return '<button class="grocery-suggestion" data-i="'+index+'" type="button"><span class="grocery-suggestion-emoji">'+item.e+'</span><span style="flex:1"><b class="grocery-suggestion-title">'+item.n+'</b><small class="grocery-suggestion-meta">'+item.q+' · '+item.c+'</small></span></button>';
+      }).join('');
+      box.querySelectorAll('[data-i]').forEach(function(btn){
+        btn.onclick = function(){ apply(results[parseInt(btn.getAttribute('data-i'),10)]); };
+      });
+    }
+
+    name.oninput = onInput;
+    name.onfocus = function(){ if(name.value.trim()) onInput(); };
+    setTimeout(function(){ name.focus(); }, 80);
+  }
+
+  function valuesFrom(modal){
+    var name = modal.querySelector('#grocery-name');
+    var qty = modal.querySelector('#grocery-qty');
+    var emoji = modal.querySelector('#grocery-emoji');
+    var cat = modal.querySelector('#grocery-cat');
+    var value = name ? name.value.trim() : '';
+    var g = guess(value);
+    return {
+      name: value,
+      qty: qty && qty.value ? qty.value : (g.q || '1x'),
+      emoji: emoji && emoji.value ? emoji.value : (g.e || '📦'),
+      cat: cat && cat.value ? cat.value : (g.c || 'Overig')
+    };
+  }
+
+  function saveFromModal(modal){
+    ensureState();
+    var v = valuesFrom(modal);
+    if(!v.name) return true;
+    window.shopData.unshift({
+      id: window.shopNextId++,
+      name: v.name,
+      qty: v.qty,
+      cat: v.cat,
+      who: window.myName || 'Gezin',
+      done: false,
+      photo: v.emoji
     });
+    persist();
+    if(typeof window.renderShop === 'function') window.renderShop();
+    if(typeof window.updateStats === 'function') window.updateStats();
+    if(typeof window.addActivity === 'function') window.addActivity('🛒','#fff3dc',(window.myName || 'Gezin')+' voegde "'+v.name+'" toe');
+    if(typeof window.showToast === 'function') window.showToast('Boodschap toegevoegd ✓');
+    return true;
   }
 
   function open(){
     ensureState();
-    var modal = ensureModal();
-    modal.classList.add('open');
-    ['gqa-name','gqa-qty'].forEach(function(id){ var el = document.getElementById(id); if(el) el.value = ''; });
-    var e = document.getElementById('gqa-emoji'); if(e) e.value = '📦';
-    var c = document.getElementById('gqa-cat'); if(c) c.value = 'Overig';
-    var box = document.getElementById('gqa-suggestions'); if(box){ box.style.display = 'none'; box.innerHTML = ''; }
-    setTimeout(function(){ var n = document.getElementById('gqa-name'); if(n) n.focus(); }, 40);
-  }
-
-  function close(){
-    var modal = document.getElementById(modalId);
-    if(modal) modal.classList.remove('open');
-  }
-
-  function save(){
-    ensureState();
-    var name = document.getElementById('gqa-name');
-    var qty = document.getElementById('gqa-qty');
-    var emoji = document.getElementById('gqa-emoji');
-    var cat = document.getElementById('gqa-cat');
-    var value = name ? name.value.trim() : '';
-    if(!value) return close();
-    var g = guess(value);
-    var item = {
-      id: window.shopNextId++,
-      name: value,
-      qty: qty && qty.value ? qty.value : (g.q || '1x'),
-      cat: cat && cat.value ? cat.value : (g.c || 'Overig'),
-      who: window.myName || 'Gezin',
-      done: false,
-      photo: emoji && emoji.value ? emoji.value : (g.e || '📦')
-    };
-    window.shopData.unshift(item);
-    persist();
-    if(typeof window.renderShop === 'function') window.renderShop();
-    if(typeof window.updateStats === 'function') window.updateStats();
-    if(typeof window.addActivity === 'function') window.addActivity('🛒','#fff3dc',(window.myName || 'Gezin')+' voegde "'+value+'" toe');
-    if(typeof window.showToast === 'function') window.showToast('Boodschap toegevoegd ✓');
-    close();
+    ensureStyles();
+    if(!window.ModalManager || !window.BottomSheet){
+      if(typeof window.openAdd === 'function') return window.openAdd('shop');
+      return;
+    }
+    window.BottomSheet.open({
+      title: '🛒 Boodschap toevoegen',
+      html: sheetHtml(),
+      onOpen: function(ctx){ attachAutocomplete(ctx.modal); },
+      actions: [
+        { label: 'Annuleren' },
+        { label: 'Toevoegen', primary: true, onClick: function(ctx){ return saveFromModal(ctx.modal); } }
+      ]
+    });
   }
 
   function installButton(){
@@ -224,30 +222,26 @@
     if(!screen) return;
     var header = screen.querySelector('.list-header');
     if(!header) return;
-    var oldBtn = header.querySelector('.add-btn');
-    if(oldBtn){
-      oldBtn.setAttribute('onclick','GroceryQuickAddModal.open()');
-      oldBtn.onclick = function(e){ e.preventDefault(); open(); return false; };
-      oldBtn.textContent = '+ Toevoegen';
-      oldBtn.style.pointerEvents = 'auto';
-      return;
+    var btn = header.querySelector('.add-btn');
+    if(!btn){
+      btn = document.createElement('button');
+      btn.className = 'add-btn';
+      btn.textContent = '+ Toevoegen';
+      header.appendChild(btn);
     }
-    var btn = document.createElement('button');
-    btn.className = 'add-btn';
+    btn.setAttribute('onclick','return GroceryQuickAddModal.open()');
+    btn.onclick = function(e){ if(e) e.preventDefault(); open(); return false; };
     btn.textContent = '+ Toevoegen';
-    btn.onclick = function(e){ e.preventDefault(); open(); return false; };
-    header.appendChild(btn);
+    btn.style.pointerEvents = 'auto';
   }
 
   function boot(){
     ensureStyles();
-    ensureModal();
     installButton();
     [100,300,800,1500,2500].forEach(function(delay){ setTimeout(installButton, delay); });
   }
 
-  window.GroceryQuickAddModal = { version: VERSION, open: open, close: close, save: save, installButton: installButton };
-
+  window.GroceryQuickAddModal = { version: VERSION, open: open, installButton: installButton, guess: guess, getSuggestions: getSuggestions };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();
