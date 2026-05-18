@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.360
+// APP MODULES v0.361
 // Stable bootstrap modules.
 // Group quest hero carousel runtime disabled because it destabilized Tasks.
 // ============================================================
 
 (function(){
-  var VERSION = '0.360';
+  var VERSION = '0.361';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -20,6 +20,7 @@
     { id: 'food-modules-repair-js', src: 'src/core/foodModulesRepair.js', group: 'core', critical: false },
     { id: 'food-add-bridge-js', src: 'src/core/foodAddBridge.js', group: 'core', critical: false },
     { id: 'food-shop-sheet-repair-js', src: 'src/core/foodShopSheetRepair.js', group: 'core', critical: false },
+    { id: 'grocery-quick-add-modal-js', src: 'src/core/groceryQuickAddModal.js', group: 'food', critical: false },
     { id: 'live-sync-adapter-js', src: 'src/core/liveSyncAdapter.js', group: 'core', critical: false },
     { id: 'household-identity-js', src: 'src/core/householdIdentity.js', group: 'core', critical: false },
     { id: 'household-repository-js', src: 'src/core/householdRepository.js', group: 'core', critical: false },
@@ -84,6 +85,7 @@
       booted = true;
       var oldCarousel = document.getElementById('group-quest-hero-carousel');
       if(oldCarousel && oldCarousel.parentNode) oldCarousel.parentNode.removeChild(oldCarousel);
+      if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
       if(window.RecipePremiumCookingBridge && typeof window.RecipePremiumCookingBridge.boot === 'function') window.RecipePremiumCookingBridge.boot();
       if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       emit('ready', status());
