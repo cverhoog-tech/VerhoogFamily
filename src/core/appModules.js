@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.351
+// APP MODULES v0.360
 // Stable bootstrap modules.
 // Group quest hero carousel runtime disabled because it destabilized Tasks.
 // ============================================================
 
 (function(){
-  var VERSION = '0.351';
+  var VERSION = '0.360';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -15,6 +15,8 @@
   var registry = [
     { id: 'remove-music-module-js', src: 'src/core/removeMusicModule.js', group: 'core', critical: false },
     { id: 'mobile-viewport-lock-js', src: 'src/core/mobileViewportLock.js', group: 'core', critical: false },
+    { id: 'modal-manager-js', src: 'src/core/modalManager.js', group: 'core', critical: false },
+    { id: 'bottom-sheet-js', src: 'src/core/bottomSheet.js', group: 'core', critical: false },
     { id: 'food-modules-repair-js', src: 'src/core/foodModulesRepair.js', group: 'core', critical: false },
     { id: 'food-add-bridge-js', src: 'src/core/foodAddBridge.js', group: 'core', critical: false },
     { id: 'food-shop-sheet-repair-js', src: 'src/core/foodShopSheetRepair.js', group: 'core', critical: false },
@@ -29,6 +31,13 @@
 
     // Finance
     { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
+    { id: 'savings-bottom-sheet-bridge-js', src: 'src/modules/finance/savingsBottomSheetBridge.js', group: 'finance', critical: false },
+
+    // Food / Recipes
+    { id: 'recipe-bottom-sheet-bridge-js', src: 'src/modules/recipes/recipeBottomSheetBridge.js', group: 'food', critical: false },
+    { id: 'recipe-standalone-add-button-js', src: 'src/modules/recipes/recipeStandaloneAddButton.js', group: 'food', critical: false },
+    { id: 'recipe-add-button-bridge-js', src: 'src/modules/recipes/recipeAddButtonBridge.js', group: 'food', critical: false },
+    { id: 'recipe-premium-cooking-bridge-js', src: 'src/modules/recipes/recipePremiumCookingBridge.js', group: 'food', critical: false },
 
     // Tasks
     { id: 'task-repository-adapter-js', src: 'src/modules/tasks/taskRepositoryAdapter.js', group: 'tasks', critical: false },
@@ -75,6 +84,8 @@
       booted = true;
       var oldCarousel = document.getElementById('group-quest-hero-carousel');
       if(oldCarousel && oldCarousel.parentNode) oldCarousel.parentNode.removeChild(oldCarousel);
+      if(window.RecipePremiumCookingBridge && typeof window.RecipePremiumCookingBridge.boot === 'function') window.RecipePremiumCookingBridge.boot();
+      if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       emit('ready', status());
       return status();
     });
