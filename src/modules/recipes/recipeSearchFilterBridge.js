@@ -1,14 +1,15 @@
 'use strict';
 // ============================================================
-// RECIPE SEARCH FILTER BRIDGE v0.367
-// Adds search + cuisine/category filters and hides legacy featured header
-// that conflicts with premium recipe grid.
+// RECIPE SEARCH FILTER BRIDGE v0.368
+// Safe search + cuisine/category filters.
+// Never mutates window.recipesData during render.
 // ============================================================
 
 (function(){
-  var VERSION = '0.367';
+  var VERSION = '0.368';
   var STYLE_ID = 'recipe-search-filter-style';
   var state = { query:'', filter:'all' };
+  var rendering = false;
 
   function esc(v){
     return String(v == null ? '' : v)
@@ -34,34 +35,25 @@
       '.recipe-filter-chip{border:0!important;border-radius:999px!important;padding:9px 13px!important;background:var(--c-surface2,#f4f7f2)!important;color:var(--c-text2,#667085)!important;font-size:12px!important;font-weight:950!important;white-space:nowrap!important;cursor:pointer!important}',
       '.recipe-filter-chip.active{background:var(--c-primary,#3f7f2f)!important;color:#fff!important;box-shadow:0 8px 18px rgba(63,127,47,.18)!important}',
       '.recipe-filter-empty{grid-column:1/-1;text-align:center;padding:42px 22px;color:var(--c-text2,#667085);font-weight:800}',
-      '.recipe-legacy-featured-hidden{display:none!important}'
+      '.recipe-legacy-featured-hidden{display:none!important}',
+      '#recipe-grid.recipe-premium-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:14px!important;padding:0 16px 120px!important}'
     ].join('\n');
     document.head.appendChild(style);
   }
 
   function normalize(v){ return String(v || '').toLowerCase().trim(); }
 
-  function isLegacyFeaturedNode(node){
-    if(!node || node.nodeType !== 1 || node.id === 'recipe-grid' || node.id === 'recipe-filter-wrap') return false;
-    var text = normalize(node.textContent);
-    if(!text) return false;
-    var hasPasta = text.indexOf('pasta pesto') > -1;
-    var hasMeta = text.indexOf('20 min') > -1 || text.indexOf('makkelijk') > -1;
-    var hasRecipeCard = node.querySelector && node.querySelector('#recipe-grid,.recipe-card,.recipe-premium-card');
-    return hasPasta && hasMeta && !hasRecipeCard;
-  }
-
   function hideLegacyFeatured(){
     var screen = document.getElementById('screen-recipes');
     if(!screen) return;
-    Array.prototype.slice.call(screen.children || []).forEach(function(child){
-      if(isLegacyFeaturedNode(child)) child.classList.add('recipe-legacy-featured-hidden');
+    Array.prototype.slice.call(screen.querySelectorAll('*')).forEach(function(node){
+      if(node.id === 'recipe-grid' || node.id === 'recipe-filter-wrap') return;
+      if(node.querySelector && node.querySelector('#recipe-grid,.recipe-premium-card,.recipe-card')) return;
+      var text = normalize(node.textContent);
+      if(text.indexOf('pasta pesto') > -1 && (text.indexOf('20 min') > -1 || text.indexOf('makkelijk') > -1)){
+        node.classList.add('recipe-legacy-featured-hidden');
+      }
     });
-    var grid = document.getElementById('recipe-grid');
-    if(grid && grid.parentNode){
-      var siblings = Array.prototype.slice.call(grid.parentNode.children || []);
-      siblings.forEach(function(child){ if(isLegacyFeaturedNode(child)) child.classList.add('recipe-legacy-featured-hidden'); });
-    }
   }
 
   function matchesFilter(recipe){
@@ -80,49 +72,68 @@
 
   function filteredRecipes(){
     if(!Array.isArray(window.recipesData)) return [];
-    return window.recipesData.filter(function(r){ return matchesFilter(r) && matchesSearch(r); });
+    return window.recipesData.filter(function(r){ return r && matchesFilter(r) && matchesSearch(r); });
+  }
+
+  function fallbackEmoji(r){
+    return (r && (r.emoji || (window.CAT_EMOJIS && window.CAT_EMOJIS[r.cat]))) || '🍴';
+  }
+
+  function cardHtml(r){
+    var emoji = fallbackEmoji(r);
+    var photo = r.photo || '';
+    var bg = photo
+      ? '<div class="recipe-premium-bg" style="background-image:url(\''+esc(photo)+'\')"></div>'
+      : '<div class="recipe-premium-emoji-fallback">'+esc(emoji)+'</div>';
+    return '<article class="recipe-premium-card" data-rid="'+esc(r.id)+'">'
+      + bg
+      + '<div class="recipe-premium-overlay"></div>'
+      + '<div class="recipe-premium-cuisine">'+esc(r.cuisine || r.cat || 'Recept')+'</div>'
+      + '<div class="recipe-premium-time">⏱ '+esc(r.time || 20)+'m</div>'
+      + '<div class="recipe-premium-body">'
+      + '<div class="recipe-premium-title">'+esc(r.name)+'</div>'
+      + '<div class="recipe-premium-meta"><span class="recipe-premium-pill">'+esc(emoji)+' '+esc(r.cat || 'Diner')+'</span><span class="recipe-premium-pill">👥 '+esc(r.persons || 4)+'p</span></div>'
+      + '</div></article>';
   }
 
   function renderGrid(){
+    if(rendering) return false;
     var grid = document.getElementById('recipe-grid');
     if(!grid) return false;
-    if(!window.RecipePremiumCardBridge || typeof window.RecipePremiumCardBridge.renderPremiumGrid !== 'function'){
-      if(typeof window.renderRecipeGrid === 'function') window.renderRecipeGrid();
-      return true;
-    }
-    var original = window.recipesData;
-    var data = filteredRecipes();
+    rendering = true;
     try {
-      window.recipesData = data;
-      window.recipeCatFilter = 'all';
-      window.RecipePremiumCardBridge.renderPremiumGrid();
+      ensureStyles();
+      hideLegacyFeatured();
+      var data = filteredRecipes();
+      grid.classList.add('recipe-premium-grid');
       if(!data.length){
         grid.innerHTML = '<div class="recipe-filter-empty">Geen recepten gevonden. Probeer een andere zoekterm of filter.</div>';
+      } else {
+        grid.innerHTML = data.map(cardHtml).join('');
+        grid.querySelectorAll('[data-rid]').forEach(function(card){
+          card.onclick = function(){
+            var id = parseInt(card.getAttribute('data-rid'),10);
+            if(typeof window.openRecipeDetail === 'function') window.openRecipeDetail(id);
+          };
+        });
       }
+      return true;
+    } catch(error){
+      console.warn('[RecipeSearchFilterBridge] render failed', error);
+      if(typeof window.renderRecipeGrid === 'function') {
+        try { window.renderRecipeGrid(); } catch(e) {}
+      }
+      return false;
     } finally {
-      window.recipesData = original;
+      rendering = false;
     }
-    return true;
   }
 
   function chips(){
     var filters = [
-      ['all','Alle'],
-      ['Diner','Diner'],
-      ['Turks','🇹🇷 Turks'],
-      ['Italiaans','🇮🇹 Italiaans'],
-      ['Nederlands','🇳🇱 Nederlands'],
-      ['Surinaams','🇸🇷 Surinaams'],
-      ['Indonesisch','🇮🇩 Indonesisch'],
-      ['Lunch','Lunch'],
-      ['Ontbijt','Ontbijt'],
-      ['Snack','Snack'],
-      ['Dessert','Dessert'],
-      ['Bakken','Bakken']
+      ['all','Alle'], ['Diner','Diner'], ['Turks','🇹🇷 Turks'], ['Italiaans','🇮🇹 Italiaans'], ['Nederlands','🇳🇱 Nederlands'], ['Surinaams','🇸🇷 Surinaams'], ['Indonesisch','🇮🇩 Indonesisch'], ['Lunch','Lunch'], ['Ontbijt','Ontbijt'], ['Snack','Snack'], ['Dessert','Dessert'], ['Bakken','Bakken']
     ];
-    return filters.map(function(item){
-      return '<button type="button" class="recipe-filter-chip '+(state.filter===item[0]?'active':'')+'" data-recipe-filter="'+esc(item[0])+'">'+esc(item[1])+'</button>';
-    }).join('');
+    return filters.map(function(item){ return '<button type="button" class="recipe-filter-chip '+(state.filter===item[0]?'active':'')+'" data-recipe-filter="'+esc(item[0])+'">'+esc(item[1])+'</button>'; }).join('');
   }
 
   function install(){
@@ -138,17 +149,10 @@
       grid.parentNode.insertBefore(wrap, grid);
     }
     wrap.innerHTML = '<div class="recipe-search-box"><span>🔎</span><input id="recipe-search-input" placeholder="Zoek op gerecht, ingrediënt of keuken" value="'+esc(state.query)+'"></div><div class="recipe-filter-row">'+chips()+'</div>';
-
     var input = wrap.querySelector('#recipe-search-input');
-    if(input){
-      input.oninput = function(){ state.query = input.value || ''; renderGrid(); };
-    }
+    if(input){ input.oninput = function(){ state.query = input.value || ''; renderGrid(); }; }
     wrap.querySelectorAll('[data-recipe-filter]').forEach(function(btn){
-      btn.onclick = function(){
-        state.filter = btn.getAttribute('data-recipe-filter') || 'all';
-        install();
-        renderGrid();
-      };
+      btn.onclick = function(){ state.filter = btn.getAttribute('data-recipe-filter') || 'all'; install(); renderGrid(); };
     });
     renderGrid();
   }
