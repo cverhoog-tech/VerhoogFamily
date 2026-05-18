@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.366
+// APP MODULES v0.367
 // Stable bootstrap modules.
 // Group quest hero carousel runtime disabled because it destabilized Tasks.
 // ============================================================
 
 (function(){
-  var VERSION = '0.366';
+  var VERSION = '0.367';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -40,6 +40,7 @@
     { id: 'recipe-dutch-seed-data-js', src: 'src/modules/recipes/recipeDutchSeedData.js', group: 'food', critical: false },
     { id: 'recipe-image-fallback-bridge-js', src: 'src/modules/recipes/recipeImageFallbackBridge.js', group: 'food', critical: false },
     { id: 'recipe-premium-card-bridge-js', src: 'src/modules/recipes/recipePremiumCardBridge.js', group: 'food', critical: false },
+    { id: 'recipe-search-filter-bridge-js', src: 'src/modules/recipes/recipeSearchFilterBridge.js', group: 'food', critical: false },
     { id: 'recipe-standalone-add-button-js', src: 'src/modules/recipes/recipeStandaloneAddButton.js', group: 'food', critical: false },
     { id: 'recipe-add-button-bridge-js', src: 'src/modules/recipes/recipeAddButtonBridge.js', group: 'food', critical: false },
     { id: 'recipe-premium-cooking-bridge-js', src: 'src/modules/recipes/recipePremiumCookingBridge.js', group: 'food', critical: false },
@@ -97,6 +98,7 @@
       if(window.RecipeDutchSeedData && typeof window.RecipeDutchSeedData.seed === 'function') window.RecipeDutchSeedData.seed(false);
       if(window.RecipeImageFallbackBridge && typeof window.RecipeImageFallbackBridge.apply === 'function') window.RecipeImageFallbackBridge.apply();
       if(window.RecipePremiumCardBridge && typeof window.RecipePremiumCardBridge.boot === 'function') window.RecipePremiumCardBridge.boot();
+      if(window.RecipeSearchFilterBridge && typeof window.RecipeSearchFilterBridge.boot === 'function') window.RecipeSearchFilterBridge.boot();
       if(window.RecipePremiumCookingBridge && typeof window.RecipePremiumCookingBridge.boot === 'function') window.RecipePremiumCookingBridge.boot();
       if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
