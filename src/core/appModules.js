@@ -1,12 +1,13 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.373
+// APP MODULES v0.374
 // Stable bootstrap modules.
 // Recipe search/filter bridges disabled after iOS Safari blank-screen loop.
+// Recipe management + cooking checklist loaded after stable recipe renderer.
 // ============================================================
 
 (function(){
-  var VERSION = '0.373';
+  var VERSION = '0.374';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -43,6 +44,7 @@
     { id: 'recipe-standalone-add-button-js', src: 'src/modules/recipes/recipeStandaloneAddButton.js', group: 'food', critical: false },
     { id: 'recipe-add-button-bridge-js', src: 'src/modules/recipes/recipeAddButtonBridge.js', group: 'food', critical: false },
     { id: 'recipe-premium-cooking-bridge-js', src: 'src/modules/recipes/recipePremiumCookingBridge.js', group: 'food', critical: false },
+    { id: 'recipe-manage-image-bridge-js', src: 'src/modules/recipes/recipeManageAndImageBridge.js', group: 'food', critical: false },
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
@@ -100,6 +102,7 @@
       if(window.RecipeBrokenImageRepairBridge && typeof window.RecipeBrokenImageRepairBridge.apply === 'function') window.RecipeBrokenImageRepairBridge.apply();
       if(window.RecipePremiumCardBridge && typeof window.RecipePremiumCardBridge.boot === 'function') window.RecipePremiumCardBridge.boot();
       if(window.RecipePremiumCookingBridge && typeof window.RecipePremiumCookingBridge.boot === 'function') window.RecipePremiumCookingBridge.boot();
+      if(window.RecipeManageAndImageBridge && typeof window.RecipeManageAndImageBridge.boot === 'function') window.RecipeManageAndImageBridge.boot();
       if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
       if(typeof window.renderRecipes === 'function') window.renderRecipes();
