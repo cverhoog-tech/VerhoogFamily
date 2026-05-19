@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// RECIPE DIRECT STABLE PATCH v0.376
+// RECIPE DIRECT STABLE PATCH v0.377
 // Patches the active legacy recipes.js renderer directly.
 // No filter bridges, no render loops, no white-screen prone wrappers.
 // ============================================================
 
 (function(){
-  var VERSION = '0.376';
+  var VERSION = '0.377';
   var STYLE_ID = 'recipe-direct-stable-style';
   var search = '';
 
@@ -83,14 +83,13 @@
       existing[n(copy.name)] = true;
       added++;
     });
-    if(added || arr.some(function(r){return !r.photo;})) setRecipes(arr);
+    setRecipes(arr);
     try { if(typeof recipeNextId !== 'undefined') recipeNextId = Math.max.apply(null, arr.map(function(r){return Number(r.id)||0;})) + 1; } catch(e) {}
   }
 
   function installSearch(){
-    var list = document.getElementById('recipe-list-view');
     var grid = document.getElementById('recipe-grid');
-    if(!list || !grid || document.getElementById('recipe-search-direct')) return;
+    if(!grid || document.getElementById('recipe-search-direct')) return;
     var wrap = document.createElement('div');
     wrap.id = 'recipe-search-direct';
     wrap.className = 'recipe-search-direct';
@@ -116,13 +115,7 @@
     if(!data.length){ grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--c-text2)">Geen recepten gevonden</div>'; return; }
     grid.innerHTML = data.map(function(r){
       var photo = fallback(r);
-      return '<div class="recipe-card" data-rid="'+r.id+'">'
-        +'<div class="recipe-card-thumb" style="background:var(--c-surface2);overflow:hidden">'<
-        +'/div>'
-    }).join('');
-    grid.innerHTML = data.map(function(r){
-      var photo = fallback(r);
-      return '<div class="recipe-card" data-rid="'+r.id+'">'
+      return '<div class="recipe-card" data-rid="'+esc(r.id)+'">'
         +'<div class="recipe-card-thumb" style="background:var(--c-surface2);overflow:hidden"><img src="'+esc(photo)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<span style=&quot;font-size:44px&quot;>🍽️</span>\'"></div>'
         +'<div class="recipe-card-body"><div class="recipe-card-name">'+esc(r.name)+'</div><div class="recipe-card-meta"><span class="recipe-cat-badge">'+esc(r.cat||'Diner')+'</span><span>⏱ '+esc(r.time||20)+'m</span><span>👥 '+esc(r.persons||4)+'p</span></div></div></div>';
     }).join('');
