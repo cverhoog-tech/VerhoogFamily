@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.374
+// APP MODULES v0.377
 // Stable bootstrap modules.
 // Recipe search/filter bridges disabled after iOS Safari blank-screen loop.
-// Recipe management + cooking checklist loaded after stable recipe renderer.
+// Direct stable recipe patch loaded last for legacy recipes.js.
 // ============================================================
 
 (function(){
-  var VERSION = '0.374';
+  var VERSION = '0.377';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -45,6 +45,7 @@
     { id: 'recipe-add-button-bridge-js', src: 'src/modules/recipes/recipeAddButtonBridge.js', group: 'food', critical: false },
     { id: 'recipe-premium-cooking-bridge-js', src: 'src/modules/recipes/recipePremiumCookingBridge.js', group: 'food', critical: false },
     { id: 'recipe-manage-image-bridge-js', src: 'src/modules/recipes/recipeManageAndImageBridge.js', group: 'food', critical: false },
+    { id: 'recipe-direct-stable-patch-js', src: 'src/modules/recipes/recipeDirectStablePatch.js', group: 'food', critical: false },
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
@@ -103,9 +104,11 @@
       if(window.RecipePremiumCardBridge && typeof window.RecipePremiumCardBridge.boot === 'function') window.RecipePremiumCardBridge.boot();
       if(window.RecipePremiumCookingBridge && typeof window.RecipePremiumCookingBridge.boot === 'function') window.RecipePremiumCookingBridge.boot();
       if(window.RecipeManageAndImageBridge && typeof window.RecipeManageAndImageBridge.boot === 'function') window.RecipeManageAndImageBridge.boot();
+      if(window.RecipeDirectStablePatch && typeof window.RecipeDirectStablePatch.patch === 'function') window.RecipeDirectStablePatch.patch();
       if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
       if(typeof window.renderRecipes === 'function') window.renderRecipes();
+      if(window.RecipeDirectStablePatch && typeof window.RecipeDirectStablePatch.patch === 'function') setTimeout(window.RecipeDirectStablePatch.patch, 120);
       emit('ready', status());
       return status();
     });
