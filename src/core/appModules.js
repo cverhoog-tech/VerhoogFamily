@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.382
+// APP MODULES v0.383
 // Stable bootstrap modules.
-// Recipe checkbox observer is now explicitly loaded.
+// Native recipe search + checkbox detail fix loaded last.
 // ============================================================
 
 (function(){
-  var VERSION = '0.382';
+  var VERSION = '0.383';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -48,6 +48,7 @@
     { id: 'recipe-ingredient-checkbox-seed-booster-js', src: 'src/modules/recipes/recipeIngredientCheckboxSeedBooster.js', group: 'food', critical: false },
     { id: 'recipe-detail-checkbox-fallback-js', src: 'src/modules/recipes/recipeDetailCheckboxFallback.js', group: 'food', critical: false },
     { id: 'recipe-checkbox-observer-fix-js', src: 'src/modules/recipes/recipeCheckboxObserverFix.js', group: 'food', critical: false },
+    { id: 'recipe-native-search-checkbox-fix-js', src: 'src/modules/recipes/recipeNativeSearchAndCheckboxFix.js', group: 'food', critical: false },
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
@@ -110,15 +111,14 @@
       if(window.RecipeDirectStablePatch && typeof window.RecipeDirectStablePatch.patch === 'function') window.RecipeDirectStablePatch.patch();
       if(window.RecipeDetailCheckboxFallback && typeof window.RecipeDetailCheckboxFallback.boot === 'function') window.RecipeDetailCheckboxFallback.boot();
       if(window.RecipeCheckboxObserverFix && typeof window.RecipeCheckboxObserverFix.boot === 'function') window.RecipeCheckboxObserverFix.boot();
+      if(window.RecipeNativeSearchAndCheckboxFix && typeof window.RecipeNativeSearchAndCheckboxFix.boot === 'function') window.RecipeNativeSearchAndCheckboxFix.boot();
       if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
       if(typeof window.renderRecipes === 'function') window.renderRecipes();
       setTimeout(function(){
-        if(window.RecipeIngredientCheckboxSeedBooster && typeof window.RecipeIngredientCheckboxSeedBooster.boot === 'function') window.RecipeIngredientCheckboxSeedBooster.boot();
-        if(window.RecipeDirectStablePatch && typeof window.RecipeDirectStablePatch.patch === 'function') window.RecipeDirectStablePatch.patch();
-        if(window.RecipeDetailCheckboxFallback && typeof window.RecipeDetailCheckboxFallback.patchDetail === 'function') window.RecipeDetailCheckboxFallback.patchDetail();
-        if(window.RecipeCheckboxObserverFix && typeof window.RecipeCheckboxObserverFix.patch === 'function') window.RecipeCheckboxObserverFix.patch();
-      }, 180);
+        if(window.RecipeNativeSearchAndCheckboxFix && typeof window.RecipeNativeSearchAndCheckboxFix.boot === 'function') window.RecipeNativeSearchAndCheckboxFix.boot();
+        if(window.RecipeNativeSearchAndCheckboxFix && typeof window.RecipeNativeSearchAndCheckboxFix.filterCards === 'function') window.RecipeNativeSearchAndCheckboxFix.filterCards();
+      }, 220);
       emit('ready', status());
       return status();
     });
