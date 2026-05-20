@@ -392,10 +392,82 @@
     var wrap = document.createElement('div');
     wrap.id = 'rf-search-bar';
     wrap.className = 'rf-search';
-    wrap.innerHTML = '<input id="rf-search-input" placeholder="🔎 Zoek recept, ingrediënt of keuken" value="'+esc(state.search)+'">';
+    wrap.innerHTML = '<div style="position:relative">'
+      + '<input id="rf-search-input" placeholder="🔎 Zoek recept, ingrediënt of keuken..." autocomplete="off" value="'+esc(state.search)+'">'
+      + '<div id="rf-autocomplete" style="display:none;position:absolute;top:50px;left:0;right:0;background:var(--c-surface,#fff);border:1px solid var(--c-border,#edf0ec);border-radius:16px;box-shadow:0 8px 24px rgba(17,24,39,.1);z-index:100;overflow:hidden;max-height:220px;overflow-y:auto"></div>'
+      + '</div>';
     grid.parentNode.insertBefore(wrap, grid);
     var inp = document.getElementById('rf-search-input');
-    inp.oninput = function() { state.search = inp.value || ''; renderRecipeGrid(); };
+    var ac  = document.getElementById('rf-autocomplete');
+
+    inp.oninput = function() {
+      state.search = inp.value || '';
+      renderRecipeGrid();
+      showAutocomplete(inp.value);
+    };
+
+    inp.onfocus = function() { if (inp.value) showAutocomplete(inp.value); };
+
+    // Close autocomplete on outside click
+    document.addEventListener('click', function(e) {
+      if (!wrap.contains(e.target)) hideAutocomplete();
+    });
+
+    function showAutocomplete(q) {
+      if (!q || q.length < 1) { hideAutocomplete(); return; }
+      var qn = norm(q);
+      var suggestions = [];
+      // Recipe name matches
+      recipes().forEach(function(r) {
+        if (norm(r.name).indexOf(qn) > -1 && suggestions.length < 6) {
+          suggestions.push({ label: r.name, sub: r.cuisine || r.cat, type: 'recipe', id: r.id });
+        }
+      });
+      // Cuisine matches
+      var cuisines = [];
+      recipes().forEach(function(r) { if (r.cuisine && cuisines.indexOf(r.cuisine) === -1) cuisines.push(r.cuisine); });
+      cuisines.forEach(function(c) {
+        if (norm(c).indexOf(qn) > -1 && suggestions.length < 8) {
+          suggestions.push({ label: c, sub: 'Keuken', type: 'cuisine' });
+        }
+      });
+
+      if (!suggestions.length) { hideAutocomplete(); return; }
+
+      ac.innerHTML = suggestions.map(function(s, i) {
+        return '<div class="rf-ac-item" data-idx="'+i+'" style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(17,24,39,.05)">'
+          + '<span style="font-size:18px">'+(s.type==='recipe' ? (CAT_EMOJIS[recipes().find(function(r){return r.id===s.id;}) && recipes().find(function(r){return r.id===s.id;}).cat] || '🍴') : '🌍')+'</span>'
+          + '<div><div style="font-size:14px;font-weight:800;color:var(--c-text)">' + esc(s.label) + '</div>'
+          + '<div style="font-size:11px;color:var(--c-text2)">' + esc(s.sub) + '</div></div>'
+          + '</div>';
+      }).join('');
+
+      ac.querySelectorAll('.rf-ac-item').forEach(function(item, i) {
+        item.onmousedown = function(e) {
+          e.preventDefault();
+          var s = suggestions[i];
+          if (s.type === 'recipe') {
+            hideAutocomplete();
+            inp.value = '';
+            state.search = '';
+            openRecipeDetail(s.id);
+          } else {
+            inp.value = s.label;
+            state.search = s.label;
+            renderRecipeGrid();
+            hideAutocomplete();
+          }
+        };
+        item.addEventListener('touchstart', function(e) { item.style.background = 'var(--c-surface2)'; });
+        item.addEventListener('touchend', function() { item.style.background = ''; });
+      });
+
+      ac.style.display = 'block';
+    }
+
+    function hideAutocomplete() {
+      if (ac) ac.style.display = 'none';
+    }
   }
 
   // ── ADD BUTTON ────────────────────────────────────────────
