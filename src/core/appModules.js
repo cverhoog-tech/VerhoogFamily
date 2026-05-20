@@ -1,8 +1,8 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.383
+// APP MODULES v0.384
 // Stable bootstrap modules.
-// Native recipe search + checkbox detail fix loaded last.
+// recipes.js v0.272 is self-contained — all bridges removed.
 // ============================================================
 
 (function(){
@@ -33,22 +33,7 @@
     { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
     { id: 'savings-bottom-sheet-bridge-js', src: 'src/modules/finance/savingsBottomSheetBridge.js', group: 'finance', critical: false },
 
-    { id: 'recipe-bottom-sheet-bridge-js', src: 'src/modules/recipes/recipeBottomSheetBridge.js', group: 'food', critical: false },
-    { id: 'recipe-culture-seed-data-js', src: 'src/modules/recipes/recipeCultureSeedData.js', group: 'food', critical: false },
-    { id: 'recipe-dutch-seed-data-js', src: 'src/modules/recipes/recipeDutchSeedData.js', group: 'food', critical: false },
-    { id: 'recipe-snack-seed-data-js', src: 'src/modules/recipes/recipeSnackSeedData.js', group: 'food', critical: false },
-    { id: 'recipe-image-fallback-bridge-js', src: 'src/modules/recipes/recipeImageFallbackBridge.js', group: 'food', critical: false },
-    { id: 'recipe-broken-image-repair-bridge-js', src: 'src/modules/recipes/recipeBrokenImageRepairBridge.js', group: 'food', critical: false },
-    { id: 'recipe-premium-card-bridge-js', src: 'src/modules/recipes/recipePremiumCardBridge.js', group: 'food', critical: false },
-    { id: 'recipe-standalone-add-button-js', src: 'src/modules/recipes/recipeStandaloneAddButton.js', group: 'food', critical: false },
-    { id: 'recipe-add-button-bridge-js', src: 'src/modules/recipes/recipeAddButtonBridge.js', group: 'food', critical: false },
-    { id: 'recipe-premium-cooking-bridge-js', src: 'src/modules/recipes/recipePremiumCookingBridge.js', group: 'food', critical: false },
-    { id: 'recipe-manage-image-bridge-js', src: 'src/modules/recipes/recipeManageAndImageBridge.js', group: 'food', critical: false },
-    { id: 'recipe-direct-stable-patch-js', src: 'src/modules/recipes/recipeDirectStablePatch.js', group: 'food', critical: false },
-    { id: 'recipe-ingredient-checkbox-seed-booster-js', src: 'src/modules/recipes/recipeIngredientCheckboxSeedBooster.js', group: 'food', critical: false },
-    { id: 'recipe-detail-checkbox-fallback-js', src: 'src/modules/recipes/recipeDetailCheckboxFallback.js', group: 'food', critical: false },
-    { id: 'recipe-checkbox-observer-fix-js', src: 'src/modules/recipes/recipeCheckboxObserverFix.js', group: 'food', critical: false },
-    { id: 'recipe-native-search-checkbox-fix-js', src: 'src/modules/recipes/recipeNativeSearchAndCheckboxFix.js', group: 'food', critical: false },
+    // recipes.js is now self-contained (v0.272 refactor) — no bridges needed
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
@@ -99,26 +84,9 @@
       var oldFilter = document.getElementById('recipe-dom-filter-wrap') || document.getElementById('recipe-filter-wrap') || document.getElementById('recipe-search-hard-wrap');
       if(oldFilter && oldFilter.parentNode) oldFilter.parentNode.removeChild(oldFilter);
       if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
-      if(window.RecipeCultureSeedData && typeof window.RecipeCultureSeedData.seed === 'function') window.RecipeCultureSeedData.seed(false);
-      if(window.RecipeDutchSeedData && typeof window.RecipeDutchSeedData.seed === 'function') window.RecipeDutchSeedData.seed(false);
-      if(window.RecipeSnackSeedData && typeof window.RecipeSnackSeedData.seed === 'function') window.RecipeSnackSeedData.seed(false);
-      if(window.RecipeIngredientCheckboxSeedBooster && typeof window.RecipeIngredientCheckboxSeedBooster.boot === 'function') window.RecipeIngredientCheckboxSeedBooster.boot();
-      if(window.RecipeImageFallbackBridge && typeof window.RecipeImageFallbackBridge.apply === 'function') window.RecipeImageFallbackBridge.apply();
-      if(window.RecipeBrokenImageRepairBridge && typeof window.RecipeBrokenImageRepairBridge.apply === 'function') window.RecipeBrokenImageRepairBridge.apply();
-      if(window.RecipePremiumCardBridge && typeof window.RecipePremiumCardBridge.boot === 'function') window.RecipePremiumCardBridge.boot();
-      if(window.RecipePremiumCookingBridge && typeof window.RecipePremiumCookingBridge.boot === 'function') window.RecipePremiumCookingBridge.boot();
-      if(window.RecipeManageAndImageBridge && typeof window.RecipeManageAndImageBridge.boot === 'function') window.RecipeManageAndImageBridge.boot();
-      if(window.RecipeDirectStablePatch && typeof window.RecipeDirectStablePatch.patch === 'function') window.RecipeDirectStablePatch.patch();
-      if(window.RecipeDetailCheckboxFallback && typeof window.RecipeDetailCheckboxFallback.boot === 'function') window.RecipeDetailCheckboxFallback.boot();
-      if(window.RecipeCheckboxObserverFix && typeof window.RecipeCheckboxObserverFix.boot === 'function') window.RecipeCheckboxObserverFix.boot();
-      if(window.RecipeNativeSearchAndCheckboxFix && typeof window.RecipeNativeSearchAndCheckboxFix.boot === 'function') window.RecipeNativeSearchAndCheckboxFix.boot();
-      if(window.RecipeStandaloneAddButton && typeof window.RecipeStandaloneAddButton.install === 'function') window.RecipeStandaloneAddButton.install();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
+      // recipes.js v0.272 is self-contained — seed + render handled internally
       if(typeof window.renderRecipes === 'function') window.renderRecipes();
-      setTimeout(function(){
-        if(window.RecipeNativeSearchAndCheckboxFix && typeof window.RecipeNativeSearchAndCheckboxFix.boot === 'function') window.RecipeNativeSearchAndCheckboxFix.boot();
-        if(window.RecipeNativeSearchAndCheckboxFix && typeof window.RecipeNativeSearchAndCheckboxFix.filterCards === 'function') window.RecipeNativeSearchAndCheckboxFix.filterCards();
-      }, 220);
       emit('ready', status());
       return status();
     });
