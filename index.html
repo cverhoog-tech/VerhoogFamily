@@ -465,15 +465,37 @@
 
 <!-- RECEPTEN -->
 <div class="screen" id="screen-recipes">
-  <div id="recipes-list-view">
-    <div class="list-header"><h2>Recepten</h2><button class="add-btn" onclick="openAdd('recipe')">+ Recept</button></div>
-    <div class="recipe-hero" onclick="openRecipeDetail('r1')">
-      <div class="recipe-hero-img">🍝</div>
-      <div><b>Pasta Pesto</b><p>20 min • Makkelijk</p></div>
+  <div id="recipe-list-view">
+    <div class="list-header"><h2>Recepten</h2></div>
+    <div id="recipe-cat-chips" style="display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none">
+      <button class="chip active" data-rcat="all">Alle</button>
+      <button class="chip" data-rcat="Diner">🍽️ Diner</button>
+      <button class="chip" data-rcat="Ontbijt">🥞 Ontbijt</button>
+      <button class="chip" data-rcat="Lunch">🥗 Lunch</button>
+      <button class="chip" data-rcat="Snack">🍿 Snack</button>
+      <button class="chip" data-rcat="Dessert">🍰 Dessert</button>
+      <button class="chip" data-rcat="Bakken">🧁 Bakken</button>
     </div>
-    <div id="recipes-list"></div>
+    <div id="recipe-grid"></div>
   </div>
-  <div id="recipe-detail-view" style="display:none"></div>
+  <div id="recipe-detail-view" style="display:none">
+    <div class="list-header" style="padding:12px 16px 0">
+      <button class="back-btn" onclick="closeRecipeDetail()">← Terug</button>
+    </div>
+    <div id="recipe-detail-content"></div>
+  </div>
+  <div id="recipe-editor-view" style="display:none">
+    <div class="list-header"><h2 id="recipe-editor-title">Recept</h2></div>
+  </div>
+  <div id="recipe-import-view" style="display:none">
+    <div class="list-header"><h2>Recept importeren</h2></div>
+    <div style="padding:16px">
+      <input id="recipe-url-inp" placeholder="https://..." style="width:100%;padding:12px;border-radius:14px;border:1px solid var(--c-border);font-size:15px;margin-bottom:12px">
+      <button onclick="importRecipeFromUrl()" style="width:100%;padding:13px;border:0;border-radius:14px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:950">Importeren via AI</button>
+      <div id="recipe-import-status" style="margin-top:12px;text-align:center;color:var(--c-text2)"></div>
+      <button onclick="closeRecipeImport()" style="width:100%;margin-top:12px;padding:12px;border:1px solid var(--c-border);border-radius:14px;background:transparent;font-size:14px">Annuleren</button>
+    </div>
+  </div>
 </div>
 
 <!-- MAALTIJDEN -->
