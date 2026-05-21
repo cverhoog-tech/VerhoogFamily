@@ -202,9 +202,6 @@
 
   function boot(){
     ensureFoodState();
-    window.renderRecipes = renderRecipesSafe;
-    window.renderRecipeGrid = renderRecipesSafe;
-    window.openRecipeDetail = openRecipeDetailSafe;
     window.renderMeals = renderMealsSafe;
     window.openMealPicker = openMealPickerSafe;
     window.addRecipeToShop = addRecipeToShopSafe;
