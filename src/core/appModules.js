@@ -81,12 +81,9 @@
       booted = true;
       var oldCarousel = document.getElementById('group-quest-hero-carousel');
       if(oldCarousel && oldCarousel.parentNode) oldCarousel.parentNode.removeChild(oldCarousel);
-      var oldFilter = document.getElementById('recipe-dom-filter-wrap') || document.getElementById('recipe-filter-wrap') || document.getElementById('recipe-search-hard-wrap');
-      if(oldFilter && oldFilter.parentNode) oldFilter.parentNode.removeChild(oldFilter);
       if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
-      // recipes.js v0.272 is self-contained — seed + render handled internally
-      if(typeof window.renderRecipes === 'function') window.renderRecipes();
+      // recipes renders on navigation via navigation.js
       emit('ready', status());
       return status();
     });
