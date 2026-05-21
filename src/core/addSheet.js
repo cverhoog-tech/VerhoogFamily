@@ -198,7 +198,7 @@ function saveItem() {
     var qty  = (document.getElementById('f2')||{}).value||'1x';
     var cat  = (document.getElementById('f3')||{}).value||'Overig';
     var photo = ((document.getElementById('f4')||{}).value||'').trim()||null;
-    shopData.unshift({id:(shopNextId||1)++,name:val,qty:qty,cat:cat,who:myName,done:false,photo:photo});
+    if(!shopNextId) shopNextId=1; shopData.unshift({id:shopNextId++,name:val,qty:qty,cat:cat,who:myName,done:false,photo:photo});
     AppState.save(); renderShop(); updateStats(); addActivity('🛒','#fff3dc',myName+' voegde "'+val+'" toe');
   }
   else if(currentAddType==='cal') { var date2 = (document.getElementById('f2')||{}).value||''; var time  = (document.getElementById('f3')||{}).value||''; calData.push({id:calNextId++,title:val,date:date2,time:time,color:'#2d5a27'}); renderCal(); addActivity('📅','#dbeafe',myName+' voegde afspraak "'+val+'" toe'); }
