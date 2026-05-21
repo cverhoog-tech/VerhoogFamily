@@ -132,6 +132,7 @@
   var currentSearch = '';
 
   function renderList() {
+    console.log('[recipes] renderList start, R.length=', R.length);
     addCSS();
     var screen = document.getElementById('screen-recipes');
     if (!screen) return;
@@ -390,9 +391,15 @@
   }
 
   function renderRecipes() {
-    loadData();
-    seedData();
-    renderList();
+    try {
+      loadData();
+      seedData();
+      renderList();
+    } catch(err) {
+      var screen = document.getElementById('screen-recipes');
+      if (screen) screen.innerHTML = '<div style="padding:20px;color:red;font-size:13px">FOUT: ' + err.message + '<br><pre>' + err.stack + '</pre></div>';
+      console.error('renderRecipes error:', err);
+    }
   }
 
   window.renderRecipes     = renderRecipes;
