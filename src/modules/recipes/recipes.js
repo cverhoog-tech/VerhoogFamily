@@ -343,7 +343,12 @@
       '.rf-photo-thumb.active{border-color:var(--c-primary,#3f7f2f)}',
       '.rf-upload-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}',
       '.rf-empty{grid-column:1/-1;text-align:center;padding:40px;color:var(--c-text2)}',
-      '@media(max-width:390px){#recipe-grid{gap:11px!important;padding-left:14px!important;padding-right:14px!important}.rf-card{min-height:204px}.rf-card-name{font-size:16px}}'
+      '@media(max-width:390px){#recipe-grid{gap:11px!important;padding-left:14px!important;padding-right:14px!important}.rf-card{min-height:204px}.rf-card-name{font-size:16px}}',
+      // Back button
+      '.back-btn{border:0;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:900;background:var(--c-surface2,#f4f7f2);color:var(--c-text,#111827);cursor:pointer;margin:8px 0 0 16px}',
+      // Cat chips scrollbar hide
+      '#recipe-cat-chips{-webkit-overflow-scrolling:touch}',
+      '#recipe-cat-chips::-webkit-scrollbar{display:none}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -386,9 +391,11 @@
   // ── SEARCH BAR ────────────────────────────────────────────
 
   function installSearchBar() {
-    var grid = document.getElementById('recipe-grid');
-    if (!grid || !grid.parentNode) return;
     if (document.getElementById('rf-search-bar')) return;
+    // Attach to recipe-list-view directly, before the chips
+    var listView = document.getElementById('recipe-list-view');
+    var chips = document.getElementById('recipe-cat-chips');
+    if (!listView) return;
     var wrap = document.createElement('div');
     wrap.id = 'rf-search-bar';
     wrap.className = 'rf-search';
@@ -396,7 +403,12 @@
       + '<input id="rf-search-input" placeholder="🔎 Zoek recept, ingrediënt of keuken..." autocomplete="off" value="'+esc(state.search)+'">'
       + '<div id="rf-autocomplete" style="display:none;position:absolute;top:50px;left:0;right:0;background:var(--c-surface,#fff);border:1px solid var(--c-border,#edf0ec);border-radius:16px;box-shadow:0 8px 24px rgba(17,24,39,.1);z-index:100;overflow:hidden;max-height:220px;overflow-y:auto"></div>'
       + '</div>';
-    grid.parentNode.insertBefore(wrap, grid);
+    // Insert before chips if they exist, else append to listView
+    if (chips && chips.parentNode === listView) {
+      listView.insertBefore(wrap, chips);
+    } else {
+      listView.insertBefore(wrap, listView.firstChild.nextSibling || listView.firstChild);
+    }
     var inp = document.getElementById('rf-search-input');
     var ac  = document.getElementById('rf-autocomplete');
 
@@ -477,6 +489,15 @@
     if (!screen) return;
     var header = screen.querySelector('.list-header');
     if (!header) return;
+    // Re-bind chips every time in case they lost their handlers
+    document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(c) {
+      c.onclick = function() {
+        document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(x){ x.classList.remove('active'); });
+        c.classList.add('active');
+        state.catFilter = c.dataset.rcat || 'all';
+        renderRecipeGrid();
+      };
+    });
     if (document.getElementById('rf-add-btn')) return;
     header.querySelectorAll('.add-btn').forEach(function(b) { b.style.display = 'none'; });
     var btn = document.createElement('button');
@@ -491,7 +512,6 @@
 
   function renderRecipeGrid() {
     injectStyles();
-    installSearchBar();
     installAddButton();
     var grid = document.getElementById('recipe-grid');
     if (!grid) return;
@@ -529,10 +549,9 @@
     });
   }
 
-  function renderRecipes() {
-    injectStyles();
-    runSeed();
+  function bindChips() {
     document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(c) {
+      c.onclick = null; // remove old handler first
       c.onclick = function() {
         document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(x){ x.classList.remove('active'); });
         c.classList.add('active');
@@ -540,7 +559,18 @@
         renderRecipeGrid();
       };
     });
+  }
+
+  function renderRecipes() {
+    injectStyles();
+    runSeed();
     showView('list');
+    bindChips();
+    // Remove old search bar so it gets re-created fresh
+    var oldBar = document.getElementById('rf-search-bar');
+    if (oldBar) oldBar.parentNode.removeChild(oldBar);
+    installSearchBar();
+    installAddButton();
     renderRecipeGrid();
   }
 
