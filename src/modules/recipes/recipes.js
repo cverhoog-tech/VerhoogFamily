@@ -391,8 +391,9 @@
   // ── SEARCH BAR ────────────────────────────────────────────
 
   function installSearchBar() {
-    if (document.getElementById('rf-search-bar')) return;
-    // Attach to recipe-list-view directly, before the chips
+    // Always recreate to ensure fresh event listeners
+    var old = document.getElementById('rf-search-bar');
+    if (old) old.parentNode.removeChild(old);
     var listView = document.getElementById('recipe-list-view');
     var chips = document.getElementById('recipe-cat-chips');
     if (!listView) return;
@@ -489,15 +490,6 @@
     if (!screen) return;
     var header = screen.querySelector('.list-header');
     if (!header) return;
-    // Re-bind chips every time in case they lost their handlers
-    document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(c) {
-      c.onclick = function() {
-        document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(x){ x.classList.remove('active'); });
-        c.classList.add('active');
-        state.catFilter = c.dataset.rcat || 'all';
-        renderRecipeGrid();
-      };
-    });
     if (document.getElementById('rf-add-btn')) return;
     header.querySelectorAll('.add-btn').forEach(function(b) { b.style.display = 'none'; });
     var btn = document.createElement('button');
@@ -550,15 +542,17 @@
   }
 
   function bindChips() {
-    document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(c) {
-      c.onclick = null; // remove old handler first
-      c.onclick = function() {
-        document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(x){ x.classList.remove('active'); });
-        c.classList.add('active');
-        state.catFilter = c.dataset.rcat || 'all';
-        renderRecipeGrid();
-      };
-    });
+    var container = document.getElementById('recipe-cat-chips');
+    if (!container) return;
+    // Use event delegation — survives DOM re-renders
+    container.onclick = function(e) {
+      var chip = e.target.closest('.chip');
+      if (!chip) return;
+      container.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('active'); });
+      chip.classList.add('active');
+      state.catFilter = chip.dataset.rcat || 'all';
+      renderRecipeGrid();
+    };
   }
 
   function renderRecipes() {
@@ -566,9 +560,6 @@
     runSeed();
     showView('list');
     bindChips();
-    // Remove old search bar so it gets re-created fresh
-    var oldBar = document.getElementById('rf-search-bar');
-    if (oldBar) oldBar.parentNode.removeChild(oldBar);
     installSearchBar();
     installAddButton();
     renderRecipeGrid();
