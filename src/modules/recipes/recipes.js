@@ -235,76 +235,45 @@
 
   // ── SETUP LIST VIEW ──────────────────────────────────────
   function setupListView() {
-    // Category chips via event delegation
-    var chips = document.getElementById('recipe-cat-chips');
-    if (chips) {
-      chips.onclick = function(e) {
-        var chip = e.target.closest('.chip');
-        if (!chip) return;
-        chips.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+    var listView = document.getElementById('recipe-list-view');
+    if (!listView) return;
+
+    // Chips: direct onclick on each chip element
+    document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(chip) {
+      chip.onclick = function() {
+        document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(c){ c.classList.remove('active'); });
         chip.classList.add('active');
-        _filter = chip.dataset.rcat || 'all';
+        _filter = chip.getAttribute('data-rcat') || 'all';
         renderGrid();
       };
-    }
+    });
 
-    // Search bar — rebuild every time
+    // Search bar — always remove old and rebuild
     var existing = document.getElementById('rf-search');
     if (existing) existing.parentNode.removeChild(existing);
 
-    var listView = document.getElementById('recipe-list-view');
-    var chipsEl  = document.getElementById('recipe-cat-chips');
-    if (!listView) return;
-
+    var chipsEl = document.getElementById('recipe-cat-chips');
+    var gridEl  = document.getElementById('recipe-grid');
     var wrap = document.createElement('div');
     wrap.id = 'rf-search';
-    wrap.style.position = 'relative';
-    wrap.innerHTML = '<input id="rf-search-inp" placeholder="🔎 Zoek recept of keuken..." autocomplete="off">'
-      + '<div id="rf-autocomplete"></div>';
+    wrap.style.cssText = 'padding:0 16px 10px;position:relative';
 
-    if (chipsEl) {
-      listView.insertBefore(wrap, chipsEl);
-    } else {
-      var grid = document.getElementById('recipe-grid');
-      listView.insertBefore(wrap, grid || null);
-    }
-
-    var inp = document.getElementById('rf-search-inp');
-    var ac  = document.getElementById('rf-autocomplete');
-    if (!inp) return;
-
+    var inp = document.createElement('input');
+    inp.id = 'rf-search-inp';
+    inp.placeholder = '🔎 Zoek recept of keuken...';
+    inp.autocomplete = 'off';
+    inp.style.cssText = 'width:100%;height:46px;border-radius:18px;border:1px solid var(--c-border,#edf0ec);background:var(--c-surface,#fff);padding:0 16px;font-size:15px;font-weight:700;outline:none;box-sizing:border-box;-webkit-appearance:none';
     inp.value = _search;
-    inp.oninput = function() {
-      _search = inp.value;
-      renderGrid();
-      showAC(inp.value);
-    };
-    inp.onfocus = function() { if (inp.value) showAC(inp.value); };
-    document.addEventListener('click', function hide(e) {
-      if (!wrap.contains(e.target)) { ac.style.display = 'none'; }
-    });
+    inp.oninput = function() { _search = inp.value; renderGrid(); };
+    wrap.appendChild(inp);
 
-    function showAC(q) {
-      if (!q) { ac.style.display = 'none'; return; }
-      var qn = norm(q);
-      var hits = _recipes.filter(function(r){ return norm(r.name).indexOf(qn) > -1; }).slice(0,6);
-      if (!hits.length) { ac.style.display = 'none'; return; }
-      ac.innerHTML = hits.map(function(r){
-        return '<div class="rf-ac" data-acid="'+esc(r.id)+'">'
-          + '<span style="font-size:20px">'+(r.emoji||CAT_EMOJIS[r.cat]||'🍴')+'</span>'
-          + '<div><div style="font-size:14px;font-weight:800">'+esc(r.name)+'</div>'
-          + '<div style="font-size:11px;color:var(--c-text2)">'+esc(r.cuisine||r.cat)+'</div></div>'
-          + '</div>';
-      }).join('');
-      ac.style.display = 'block';
-      ac.onclick = function(e) {
-        var item = e.target.closest('[data-acid]');
-        if (!item) return;
-        ac.style.display = 'none';
-        inp.value = '';
-        _search = '';
-        openDetail(item.getAttribute('data-acid'));
-      };
+    // Insert before chips
+    if (chipsEl && chipsEl.parentNode === listView) {
+      listView.insertBefore(wrap, chipsEl);
+    } else if (gridEl && gridEl.parentNode === listView) {
+      listView.insertBefore(wrap, gridEl);
+    } else {
+      listView.appendChild(wrap);
     }
 
     // Add button
@@ -591,3 +560,4 @@
   seed();
 
 })();
+
