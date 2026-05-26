@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.384
+// APP MODULES v0.385
 // Stable bootstrap modules.
-// recipes.js v0.272 is self-contained — all bridges removed.
+// recipes.js v0.272 is self-contained — recipe card image hotfix loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.383';
+  var VERSION = '0.385';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -33,7 +33,8 @@
     { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
     { id: 'savings-bottom-sheet-bridge-js', src: 'src/modules/finance/savingsBottomSheetBridge.js', group: 'finance', critical: false },
 
-    // recipes.js is now self-contained (v0.272 refactor) — no bridges needed
+    // recipes.js is self-contained (v0.272 refactor); this only fixes overview card images
+    { id: 'recipe-card-image-fix-js', src: 'src/modules/recipes/recipeCardImageFix.js', group: 'food', critical: false },
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
