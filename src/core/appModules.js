@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.388
+// APP MODULES v0.389
 // Stable bootstrap modules.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.388';
+  var VERSION = '0.389';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -38,6 +38,7 @@
     { id: 'recipe-checklist-persistence-js', src: 'src/modules/recipes/recipeChecklistPersistence.js', group: 'food', critical: false },
     { id: 'recipe-link-import-js', src: 'src/modules/recipes/recipeLinkImport.js', group: 'food', critical: false },
     { id: 'recipe-serverless-link-import-js', src: 'src/modules/recipes/recipeServerlessLinkImport.js', group: 'food', critical: false },
+    { id: 'recipe-grocery-parser-js', src: 'src/modules/recipes/recipeGroceryParser.js', group: 'food', critical: false },
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
