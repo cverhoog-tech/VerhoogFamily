@@ -1,8 +1,8 @@
 'use strict';
 // ============================================================
-// TASK DETAIL FULLSCREEN POLISH v0.294
-// Makes the task detail modal feel like a near fullscreen native sheet.
-// Removes the cramped card viewport / high page ending feeling.
+// TASK DETAIL FULLSCREEN POLISH v0.296
+// Makes the task modal feel like a near fullscreen native sheet.
+// Keeps create/edit save footers visible while removing only #fqDoneBtn.
 // ============================================================
 
 (function(){
@@ -25,7 +25,10 @@
       '#fqModal .fqContent{padding:18px 18px 36px!important;overflow:visible!important}',
       '#fqModal .fqContent>p{margin:4px 0 16px!important;font-size:19px!important;line-height:1.42!important;color:#667085!important}',
       '#fqModal .fqBox{border-radius:24px!important;margin:0 0 16px!important;box-shadow:0 12px 34px rgba(15,23,42,.06)!important}',
-      '#fqModal .fqDoneWrap,#fqModal #fqDoneBtn{display:none!important}',
+      '#fqModal #fqDoneBtn{display:none!important}',
+      '#fqModal .fqDoneWrap:has(#fqDoneBtn){display:none!important}',
+      '#fqModal .fqDoneWrap:has(.fqSaveBtn){display:block!important;position:relative!important;margin:0!important;padding:12px 18px calc(22px + env(safe-area-inset-bottom))!important;background:#f8fafc!important}',
+      '#fqModal .fqSaveBtn{display:block!important;width:100%!important;min-height:58px!important;border-radius:22px!important}',
       '#fqModal .fqContent:after{content:"";display:block;height:calc(34px + env(safe-area-inset-bottom))}',
       '@media(max-height:740px){#fqModal .fqPage{height:calc(100dvh - 8px)!important;max-height:calc(100dvh - 8px)!important;border-radius:24px 24px 0 0!important}#fqModal .fqHero{height:218px!important;border-radius:24px 24px 0 0!important}#fqModal .fqContent{padding-top:14px!important}}'
     ].join('\n');
