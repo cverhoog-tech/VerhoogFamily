@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.390
+// APP MODULES v0.391
 // Stable bootstrap modules.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.390';
+  var VERSION = '0.391';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -52,6 +52,7 @@
     { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
     { id: 'raid-card-polish-js', src: 'src/modules/tasks/raidCardPolish.js', group: 'tasks', critical: false },
     { id: 'group-quest-reward-polish-js', src: 'src/modules/tasks/groupQuestRewardPolish.js', group: 'tasks', critical: false },
+    { id: 'group-quest-card-readability-polish-js', src: 'src/modules/tasks/groupQuestCardReadabilityPolish.js', group: 'tasks', critical: false },
     { id: 'group-quest-editor-js', src: 'src/modules/tasks/groupQuestEditor.js', group: 'tasks', critical: false },
     { id: 'group-quest-editor-compact-polish-js', src: 'src/modules/tasks/groupQuestEditorCompactPolish.js', group: 'tasks', critical: false }
   ];
