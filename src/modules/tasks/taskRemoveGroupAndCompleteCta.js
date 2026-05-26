@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// TASK REMOVE GROUP + COMPLETE CTA v0.295
+// TASK REMOVE GROUP + COMPLETE CTA v0.296
 // Product cleanup:
-// - Remove the separate Group tab from the actual DOM, not just hide it.
-// - Remove task detail "Markeer als voltooid" CTA entirely.
+// - Remove the separate Group tab from the actual DOM.
+// - Remove only the task detail "Markeer als voltooid" CTA.
+// - Keep create/edit save buttons such as "Quest opslaan" intact.
 // - Keep collaboration inside normal tasks via "Vraag om hulp".
-// v0.295: also removes nav-lint chips rendered as div/span/a elements.
 // ============================================================
 
 (function(){
@@ -17,7 +17,8 @@
     var s = document.createElement('style');
     s.id = STYLE_ID;
     s.textContent = [
-      '#fqModal .fqDoneWrap,#fqModal #fqDoneBtn{display:none!important}',
+      '#fqModal #fqDoneBtn{display:none!important}',
+      '#fqModal .fqDoneWrap:has(#fqDoneBtn){display:none!important}',
       '#gq287HeroCarousel,.group-quests-view,.gq284,.gq287Wrap{display:none!important}',
       '[data-tab="group"],[data-tab="groupquests"],[data-task-tab="group"],[data-task-tab="groupquests"],.task-tab-group,.task-tab-groupquests,.gq-tab{display:none!important}'
     ].join('\n');
@@ -74,7 +75,6 @@
       if(isGroupTab(el) && el.parentNode){ el.parentNode.removeChild(el); }
     });
 
-    // Final scoped fallback: find exact visible "Group" text in likely nav rows.
     Array.prototype.slice.call(document.querySelectorAll('div,span,a,button')).forEach(function(el){
       if(textOf(el) !== 'group') return;
       var parent = el.parentElement;
@@ -99,9 +99,12 @@
   function removeCompleteCta(){
     var modal = document.getElementById('fqModal');
     if(!modal) return;
-    Array.prototype.slice.call(modal.querySelectorAll('.fqDoneWrap,#fqDoneBtn')).forEach(function(el){
-      if(el && el.parentNode) el.parentNode.removeChild(el);
-    });
+    var btn = modal.querySelector('#fqDoneBtn');
+    if(btn){
+      var wrap = btn.closest('.fqDoneWrap');
+      if(wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+      else if(btn.parentNode) btn.parentNode.removeChild(btn);
+    }
   }
 
   function wrapSetTaskTab(){
