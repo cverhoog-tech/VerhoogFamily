@@ -1,12 +1,13 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.397
+// APP MODULES v0.398
 // Stable bootstrap modules.
+// Group Quest tab/modules removed; collaboration lives in normal tasks.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.397';
+  var VERSION = '0.398';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -48,20 +49,9 @@
     { id: 'task-repository-render-bridge-js', src: 'src/modules/tasks/taskRepositoryRenderBridge.js', group: 'tasks', critical: false },
     { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
-    { id: 'group-quest-anti-flash-js', src: 'src/modules/tasks/groupQuestAntiFlash.js', group: 'tasks', critical: false },
-    { id: 'group-quest-premium-js', src: 'src/modules/tasks/groupQuestPremium.js', group: 'tasks', critical: false },
-    { id: 'group-quest-layout-fix-js', src: 'src/modules/tasks/groupQuestLayoutFix.js', group: 'tasks', critical: false },
-    { id: 'raid-card-polish-js', src: 'src/modules/tasks/raidCardPolish.js', group: 'tasks', critical: false },
-    { id: 'group-quest-reward-polish-js', src: 'src/modules/tasks/groupQuestRewardPolish.js', group: 'tasks', critical: false },
-    { id: 'group-quest-card-readability-polish-js', src: 'src/modules/tasks/groupQuestCardReadabilityPolish.js', group: 'tasks', critical: false },
-    { id: 'group-quest-step-interaction-fix-js', src: 'src/modules/tasks/groupQuestStepInteractionFix.js', group: 'tasks', critical: false },
-    { id: 'group-quest-editor-js', src: 'src/modules/tasks/groupQuestEditor.js', group: 'tasks', critical: false },
-    { id: 'group-quest-editor-compact-polish-js', src: 'src/modules/tasks/groupQuestEditorCompactPolish.js', group: 'tasks', critical: false },
-    { id: 'group-quest-edit-checkbox-fix-js', src: 'src/modules/tasks/groupQuestEditAndCheckboxFix.js', group: 'tasks', critical: false },
-    { id: 'group-quest-overview-restructure-js', src: 'src/modules/tasks/groupQuestOverviewRestructure.js', group: 'tasks', critical: false },
     { id: 'task-joinable-help-merge-js', src: 'src/modules/tasks/taskJoinableHelpMerge.js', group: 'tasks', critical: false },
     { id: 'task-shared-joinable-state-js', src: 'src/modules/tasks/taskSharedJoinableState.js', group: 'tasks', critical: false },
-    { id: 'task-detail-footer-placement-fix-js', src: 'src/modules/tasks/taskDetailFooterPlacementFix.js', group: 'tasks', critical: false }
+    { id: 'task-remove-group-complete-cta-js', src: 'src/modules/tasks/taskRemoveGroupAndCompleteCta.js', group: 'tasks', critical: false }
   ];
 
   function emit(name, detail){
@@ -93,11 +83,8 @@
     return chain.then(function(){
       booting = false;
       booted = true;
-      var oldCarousel = document.getElementById('group-quest-hero-carousel');
-      if(oldCarousel && oldCarousel.parentNode) oldCarousel.parentNode.removeChild(oldCarousel);
       if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
       if(window.MealPlannerBottomSheetBridge && typeof window.MealPlannerBottomSheetBridge.boot === 'function') window.MealPlannerBottomSheetBridge.boot();
-      // recipes renders on navigation via navigation.js
       emit('ready', status());
       return status();
     });
