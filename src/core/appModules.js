@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.386
+// APP MODULES v0.387
 // Stable bootstrap modules.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.386';
+  var VERSION = '0.387';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -35,6 +35,7 @@
 
     // recipes.js is self-contained (v0.272 refactor); helpers below patch MVP gaps
     { id: 'recipe-card-image-fix-js', src: 'src/modules/recipes/recipeCardImageFix.js', group: 'food', critical: false },
+    { id: 'recipe-checklist-persistence-js', src: 'src/modules/recipes/recipeChecklistPersistence.js', group: 'food', critical: false },
     { id: 'recipe-link-import-js', src: 'src/modules/recipes/recipeLinkImport.js', group: 'food', critical: false },
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
