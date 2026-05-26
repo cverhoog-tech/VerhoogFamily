@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.395
+// APP MODULES v0.396
 // Stable bootstrap modules.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.395';
+  var VERSION = '0.396';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -59,7 +59,8 @@
     { id: 'group-quest-editor-compact-polish-js', src: 'src/modules/tasks/groupQuestEditorCompactPolish.js', group: 'tasks', critical: false },
     { id: 'group-quest-edit-checkbox-fix-js', src: 'src/modules/tasks/groupQuestEditAndCheckboxFix.js', group: 'tasks', critical: false },
     { id: 'group-quest-overview-restructure-js', src: 'src/modules/tasks/groupQuestOverviewRestructure.js', group: 'tasks', critical: false },
-    { id: 'task-joinable-help-merge-js', src: 'src/modules/tasks/taskJoinableHelpMerge.js', group: 'tasks', critical: false }
+    { id: 'task-joinable-help-merge-js', src: 'src/modules/tasks/taskJoinableHelpMerge.js', group: 'tasks', critical: false },
+    { id: 'task-shared-joinable-state-js', src: 'src/modules/tasks/taskSharedJoinableState.js', group: 'tasks', critical: false }
   ];
 
   function emit(name, detail){
