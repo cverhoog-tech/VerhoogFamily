@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// TASK CREATE PHOTO UPLOAD v0.297
-// Adds a custom image upload to the quest create sheet.
-// The selected image is compressed and stored in the task image field,
-// so it can travel with shared task data / HouseholdRepository sync.
+// TASK CREATE PHOTO UPLOAD v0.298f
+// Adds custom image upload to quest create sheet.
+// v0.298f: robust create/save fallback so new quests appear in overview.
 // ============================================================
 
 (function(){
   var STYLE_ID = 'task-create-photo-upload-style';
   var TASK_STORE = 'fam_tasks_v023';
+  var SAVE_LOCK = false;
 
   function injectStyles(){
     if(document.getElementById(STYLE_ID)) return;
@@ -27,8 +27,6 @@
     ].join('\n');
     document.head.appendChild(s);
   }
-
-  function esc(v){ return String(v == null ? '' : v).replace(/[&<>\"]/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[ch] || ch; }); }
 
   function fallbackImage(title, desc){
     var s = String((title || '') + ' ' + (desc || '')).toLowerCase();
@@ -52,18 +50,32 @@
     return '+10 XP';
   }
 
+  function parse(raw, fallback){ try { return raw ? JSON.parse(raw) : fallback; } catch(e){ return fallback; } }
+
   function listTasks(){
-    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.listTasks) return window.TaskRepositoryAdapter.listTasks() || []; } catch(e) {}
-    try { if(window.HouseholdRepository && window.HouseholdRepository.listTasks) return window.HouseholdRepository.listTasks() || []; } catch(e) {}
-    try { return JSON.parse(localStorage.getItem(TASK_STORE) || '[]') || []; } catch(e){ return []; }
+    var repoTasks = null;
+    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.listTasks) repoTasks = window.TaskRepositoryAdapter.listTasks(); } catch(e) {}
+    if(Array.isArray(repoTasks)) return repoTasks.slice();
+    try { if(window.HouseholdRepository && window.HouseholdRepository.listTasks) repoTasks = window.HouseholdRepository.listTasks(); } catch(e) {}
+    if(Array.isArray(repoTasks)) return repoTasks.slice();
+    if(Array.isArray(window.taskData)) return window.taskData.slice();
+    return parse(localStorage.getItem(TASK_STORE), []);
   }
 
-  function saveTasks(tasks){
+  function syncEverywhere(tasks, meta){
     tasks = Array.isArray(tasks) ? tasks : [];
-    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.saveTasks) return window.TaskRepositoryAdapter.saveTasks(tasks, { source:'TaskCreatePhotoUpload' }); } catch(e) {}
-    try { if(window.HouseholdRepository && window.HouseholdRepository.saveTasks) return window.HouseholdRepository.saveTasks(tasks, { source:'TaskCreatePhotoUpload' }); } catch(e) {}
+    if(Array.isArray(window.taskData)){
+      window.taskData.length = 0;
+      tasks.forEach(function(t){ window.taskData.push(t); });
+    } else {
+      window.taskData = tasks.slice();
+    }
     try { localStorage.setItem(TASK_STORE, JSON.stringify(tasks)); } catch(e) {}
-    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail:{ tasks:tasks, source:'TaskCreatePhotoUpload' } })); } catch(e) {}
+    try { localStorage.setItem('fam_tasks_v022', JSON.stringify(tasks)); } catch(e) {}
+    try { if(window.HouseholdRepository && window.HouseholdRepository.saveTasks) window.HouseholdRepository.saveTasks(tasks, Object.assign({ source:'TaskCreatePhotoUpload' }, meta || {})); } catch(e) {}
+    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.saveTasks) window.TaskRepositoryAdapter.saveTasks(tasks, Object.assign({ source:'TaskCreatePhotoUpload' }, meta || {})); } catch(e) {}
+    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail:Object.assign({ tasks:tasks, source:'TaskCreatePhotoUpload' }, meta || {}) })); } catch(e) {}
+    return tasks;
   }
 
   function compressFile(file){
@@ -81,8 +93,7 @@
           var ch = Math.max(1, Math.round(h * scale));
           var canvas = document.createElement('canvas');
           canvas.width = cw; canvas.height = ch;
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, cw, ch);
+          canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
           var dataUrl;
           try { dataUrl = canvas.toDataURL('image/webp', 0.76); }
           catch(e){ dataUrl = canvas.toDataURL('image/jpeg', 0.78); }
@@ -142,38 +153,101 @@
     });
   }
 
-  function saveQuestFromModal(m){
+  function buildTaskFromModal(m){
     var nameEl = m.querySelector('#qn');
     var descEl = m.querySelector('#qd');
-    if(!nameEl) return false;
+    if(!nameEl) return null;
     var name = nameEl.value.trim();
-    if(!name){ nameEl.style.border = '1.5px solid #dc2626'; return true; }
+    if(!name){ nameEl.style.border = '1.5px solid #dc2626'; return false; }
     var desc = (descEl && descEl.value.trim()) || 'Nieuwe quest.';
     var dateEl = m.querySelector('#qdate');
     var whoEl = m.querySelector('#qwho');
     var date = (dateEl && dateEl.value) || new Date().toISOString().slice(0,10);
-    var who = (whoEl && whoEl.value) || 'Shane';
-    var type = window._qtype || 'SIDE QUEST';
+    var who = (whoEl && whoEl.value) || (window.myName || 'Shane');
+    var type = String(window._qtype || 'SIDE QUEST');
+    if(/group/i.test(type)) type = 'SIDE QUEST';
     var prio = window._qprio || 'laag';
     var photo = m.__questPhotoDataUrl || fallbackImage(name, desc);
-    var tasks = listTasks();
-    tasks.push(['q' + Date.now(), type, name, desc, date, who, xpFor(type, prio), photo, ['Eerste stap'], 0, 'once', date, prio]);
-    saveTasks(tasks);
-    try { if(typeof window.closeModal === 'function') window.closeModal(); else { m.classList.remove('open'); document.body.style.overflow = ''; } } catch(e) {}
+    var id = 'q' + Date.now();
+    var obj = {
+      id:id,
+      type:type,
+      title:name,
+      description:desc,
+      dueDate:date,
+      assignedTo:who,
+      xpReward:xpFor(type, prio),
+      imageUrl:photo,
+      imageDataUrlFallback:/^data:image\//.test(photo) ? photo : '',
+      subtasks:['Eerste stap'],
+      progress:0,
+      recurrence:'once',
+      recurrenceDate:date,
+      priority:prio,
+      helpRequested:false,
+      helpers:[],
+      status:'open',
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString()
+    };
+    if(window.TaskModel && window.TaskModel.toLegacyArray) return window.TaskModel.toLegacyArray(obj);
+    return [id, type, name, desc, date, who, xpFor(type, prio), photo, ['Eerste stap'], 0, 'once', date, prio, '', []];
+  }
+
+  function forceOverviewRender(){
+    try { window.taskTab = 'overzicht'; } catch(e) {}
     var r = document.getElementById('task-content');
-    if(r) r.dataset.v023 = '';
-    if(typeof window.renderTasks === 'function') setTimeout(function(){ window.renderTasks(true); }, 40);
+    if(r){
+      r.dataset.v023 = '';
+      r.dataset.rendered = '';
+    }
+    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.syncGlobalsFromRepository) window.TaskRepositoryAdapter.syncGlobalsFromRepository(); } catch(e) {}
+    if(typeof window.renderTasks === 'function'){
+      setTimeout(function(){ try { window.renderTasks(); } catch(e) {} }, 40);
+      setTimeout(function(){ try { window.renderTasks(true); } catch(e) {} }, 180);
+    }
+    try { if(window.TaskSharedJoinableState && window.TaskSharedJoinableState.patchCards) setTimeout(window.TaskSharedJoinableState.patchCards, 260); } catch(e) {}
+  }
+
+  function saveQuestFromModal(m){
+    if(SAVE_LOCK) return true;
+    SAVE_LOCK = true;
+    setTimeout(function(){ SAVE_LOCK = false; }, 700);
+
+    var task = buildTaskFromModal(m);
+    if(task === false) return true;
+    if(!task) return false;
+    var id = window.TaskModel ? window.TaskModel.getId(task) : task[0];
+    var tasks = listTasks().filter(function(t){
+      var tid = window.TaskModel ? window.TaskModel.getId(t) : (Array.isArray(t) ? t[0] : t && t.id);
+      return String(tid) !== String(id);
+    });
+    tasks.unshift(task);
+    syncEverywhere(tasks, { operation:'createQuest', id:id });
+    try { if(typeof window.closeModal === 'function') window.closeModal(); else { m.classList.remove('open'); document.body.style.overflow = ''; } } catch(e) {}
+    forceOverviewRender();
+    setTimeout(function(){
+      var visible = !!document.querySelector('.fqCard[data-id="'+CSS.escape(String(id))+'"]');
+      if(!visible) forceOverviewRender();
+    }, 450);
     if(typeof window.showToast === 'function') window.showToast('Quest aangemaakt ✓');
     return true;
   }
 
+  function isSaveButton(btn){
+    if(!btn) return false;
+    if(btn.classList && btn.classList.contains('fqSaveBtn')) return true;
+    var txt = String(btn.textContent || '').toLowerCase().trim();
+    return /quest\s*opslaan|opslaan|aanmaken|maak.*quest/.test(txt);
+  }
+
   function bindSaveCapture(){
-    if(document.__taskCreatePhotoUploadCapture) return;
-    document.__taskCreatePhotoUploadCapture = true;
+    if(document.__taskCreatePhotoUploadCaptureV298f) return;
+    document.__taskCreatePhotoUploadCaptureV298f = true;
     document.addEventListener('click', function(ev){
-      var btn = ev.target && ev.target.closest ? ev.target.closest('.fqSaveBtn') : null;
-      if(!btn) return;
-      var m = btn.closest('#fqModal');
+      var btn = ev.target && ev.target.closest ? ev.target.closest('button,.fqSaveBtn,[role="button"]') : null;
+      if(!isSaveButton(btn)) return;
+      var m = btn.closest && btn.closest('#fqModal');
       if(!m || !m.querySelector('#qn')) return;
       ev.preventDefault();
       ev.stopPropagation();
@@ -197,5 +271,5 @@
     new MutationObserver(function(){ clearTimeout(document.body.__taskCreatePhotoUploadTimer); document.body.__taskCreatePhotoUploadTimer = setTimeout(patch, 30); }).observe(document.body, { childList:true, subtree:true });
   }
 
-  window.TaskCreatePhotoUpload = { patch: patch };
+  window.TaskCreatePhotoUpload = { patch: patch, saveQuestFromModal: saveQuestFromModal };
 })();
