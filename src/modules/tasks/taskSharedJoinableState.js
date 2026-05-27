@@ -1,12 +1,9 @@
 'use strict';
 // ============================================================
-// TASK SHARED JOINABLE STATE v0.290
-// Overrides the v0.289 local-only helper state.
-// Join/help data is written onto the task itself and persisted through
+// TASK SHARED JOINABLE STATE v0.298c
+// Join/help data is written onto shared task data and persisted through
 // TaskRepositoryAdapter / HouseholdRepository.
-// Legacy array task shape:
-//   task[13] = help requested label
-//   task[14] = helpers array
+// v0.298c: uses TaskModel accessors first, with legacy fallbacks only.
 // ============================================================
 
 (function(){
@@ -23,6 +20,7 @@
     document.head.appendChild(s);
   }
 
+  function tm(){ return window.TaskModel || null; }
   function repoReady(){ return !!(window.HouseholdRepository && typeof window.HouseholdRepository.listTasks === 'function'); }
   function adapterReady(){ return !!(window.TaskRepositoryAdapter && typeof window.TaskRepositoryAdapter.listTasks === 'function'); }
   function parse(raw, fb){ try { return raw ? JSON.parse(raw) : fb; } catch(e){ return fb; } }
@@ -42,12 +40,38 @@
     return tasks;
   }
 
-  function idOf(t){ return Array.isArray(t) ? t[0] : t && t.id; }
-  function titleOf(t){ return Array.isArray(t) ? t[2] : t && t.title; }
-  function helpOf(t){ return Array.isArray(t) ? t[13] : t && t.helpRequested; }
-  function setHelp(t, v){ if(Array.isArray(t)) t[13] = v ? 'Hulp gevraagd' : ''; else t.helpRequested = !!v; }
-  function helpersOf(t){ var h = Array.isArray(t) ? t[14] : t && t.helpers; return Array.isArray(h) ? h : []; }
-  function setHelpers(t, h){ if(Array.isArray(t)) t[14] = h; else t.helpers = h; }
+  function idOf(task){
+    if(tm()) return tm().getId(task);
+    return String(Array.isArray(task) ? task[0] : task && task.id || '');
+  }
+  function titleOf(task){
+    if(tm()) return tm().getTitle(task);
+    return Array.isArray(task) ? task[2] : task && (task.title || task.name);
+  }
+  function helpOf(task){
+    if(tm()) return tm().getHelpRequested(task);
+    return !!(Array.isArray(task) ? task[13] : task && task.helpRequested);
+  }
+  function setHelp(task, value){
+    if(tm()) return tm().setHelpRequested(task, !!value);
+    if(Array.isArray(task)) task[13] = value ? 'Hulp gevraagd' : '';
+    else if(task) task.helpRequested = !!value;
+    return task;
+  }
+  function helpersOf(task){
+    if(tm()) return tm().getHelpers(task);
+    var helpers = Array.isArray(task) ? task[14] : task && task.helpers;
+    return Array.isArray(helpers) ? helpers : [];
+  }
+  function setHelpers(task, helpers){
+    helpers = Array.isArray(helpers) ? helpers : [];
+    if(tm()) return tm().setHelpers(task, helpers);
+    if(Array.isArray(task)) task[14] = helpers;
+    else if(task) task.helpers = helpers;
+    return task;
+  }
+  function sameTitle(task, title){ return String(titleOf(task) || '').trim() === String(title || '').trim(); }
+  function sameId(task, id){ return String(idOf(task)) === String(id); }
 
   function member(){
     var id = 'shane', name = 'Shane', initials = 'SH', avatar = '';
@@ -81,10 +105,10 @@
   function setHelpByTitle(title){
     var tasks = listTasks();
     var changed = false;
-    tasks.forEach(function(t){
-      if(String(titleOf(t) || '').trim() === String(title || '').trim()){
-        setHelp(t, true);
-        if(!Array.isArray(helpersOf(t))) setHelpers(t, []);
+    tasks.forEach(function(task){
+      if(sameTitle(task, title)){
+        setHelp(task, true);
+        setHelpers(task, helpersOf(task));
         changed = true;
       }
     });
@@ -95,10 +119,10 @@
   function setHelpById(id){
     var tasks = listTasks();
     var changed = false;
-    tasks.forEach(function(t){
-      if(String(idOf(t)) === String(id)){
-        setHelp(t, true);
-        if(!Array.isArray(helpersOf(t))) setHelpers(t, []);
+    tasks.forEach(function(task){
+      if(sameId(task, id)){
+        setHelp(task, true);
+        setHelpers(task, helpersOf(task));
         changed = true;
       }
     });
@@ -111,14 +135,14 @@
     var tasks = listTasks();
     var title = '';
     var changed = false;
-    tasks.forEach(function(t){
-      if(String(idOf(t)) !== String(id)) return;
-      setHelp(t, true);
-      var helpers = helpersOf(t).slice();
+    tasks.forEach(function(task){
+      if(!sameId(task, id)) return;
+      setHelp(task, true);
+      var helpers = helpersOf(task).slice();
       if(!helpers.some(function(h){ return String(h.memberId) === String(me.memberId); })){
         helpers.push(Object.assign({}, me, { joinedAt:new Date().toISOString(), contribution:0 }));
-        setHelpers(t, helpers);
-        title = titleOf(t) || 'taak';
+        setHelpers(task, helpers);
+        title = titleOf(task) || 'taak';
         changed = true;
       }
     });
@@ -135,13 +159,13 @@
     var tasks = listTasks();
     var title = '';
     var changed = false;
-    tasks.forEach(function(t){
-      if(String(idOf(t)) !== String(id)) return;
-      var before = helpersOf(t);
+    tasks.forEach(function(task){
+      if(!sameId(task, id)) return;
+      var before = helpersOf(task);
       var helpers = before.filter(function(h){ return String(h.memberId) !== String(me.memberId); });
       if(helpers.length !== before.length){
-        setHelpers(t, helpers);
-        title = titleOf(t) || 'taak';
+        setHelpers(task, helpers);
+        title = titleOf(task) || 'taak';
         changed = true;
       }
     });
@@ -166,13 +190,13 @@
     var tasks = listTasks();
     document.querySelectorAll('.fqCard[data-id]').forEach(function(card){
       var id = card.getAttribute('data-id');
-      var t = tasks.find(function(x){ return String(idOf(x)) === String(id); });
-      if(!t || !helpOf(t)) return;
+      var task = tasks.find(function(candidate){ return sameId(candidate, id); });
+      if(!task || !helpOf(task)) return;
       card.classList.add('helpRequested');
       var old = card.querySelector('.fqJoinRow');
       if(old) old.remove();
       var body = card.querySelector('.fqBody') || card;
-      var helpers = helpersOf(t);
+      var helpers = helpersOf(task);
       var me = member();
       var joined = helpers.some(function(h){ return String(h.memberId) === String(me.memberId); });
       var row = document.createElement('div');
@@ -195,7 +219,7 @@
   function patchModal(){
     var title = modalTitle();
     if(!title) return;
-    var task = listTasks().find(function(t){ return String(titleOf(t) || '').trim() === title; });
+    var task = listTasks().find(function(candidate){ return sameTitle(candidate, title); });
     if(!task || !helpOf(task)) return;
     var btn = document.querySelector('#fqModal .fqHelpBtn');
     if(!btn) return;
