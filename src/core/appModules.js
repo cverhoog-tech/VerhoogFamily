@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.400
+// APP MODULES v0.401
 // Stable bootstrap modules.
 // Group Quest tab/modules removed; collaboration lives in normal tasks.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.400';
+  var VERSION = '0.401';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -43,6 +43,7 @@
 
     { id: 'meal-planner-bottom-sheet-bridge-js', src: 'src/modules/meals/mealPlannerBottomSheetBridge.js', group: 'food', critical: false },
 
+    { id: 'task-model-js', src: 'src/modules/tasks/taskModel.js', group: 'tasks', critical: false },
     { id: 'task-repository-adapter-js', src: 'src/modules/tasks/taskRepositoryAdapter.js', group: 'tasks', critical: false },
     { id: 'task-mutation-repository-bridge-js', src: 'src/modules/tasks/taskMutationRepositoryBridge.js', group: 'tasks', critical: false },
     { id: 'recurring-task-repository-bridge-js', src: 'src/modules/tasks/recurringTaskRepositoryBridge.js', group: 'tasks', critical: false },
