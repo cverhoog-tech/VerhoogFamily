@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// TASK CREATE PHOTO UPLOAD v0.298f
-// Adds custom image upload to quest create sheet.
-// v0.298f: robust create/save fallback so new quests appear in overview.
+// TASK CREATE PHOTO UPLOAD v0.298g
+// Adds custom image upload to the quest create sheet WITHOUT intercepting
+// the native quest-overlay save flow. The native save flow owns the visible
+// internal quest data array, so blocking it prevents new quests appearing.
 // ============================================================
 
 (function(){
   var STYLE_ID = 'task-create-photo-upload-style';
   var TASK_STORE = 'fam_tasks_v023';
-  var SAVE_LOCK = false;
 
   function injectStyles(){
     if(document.getElementById(STYLE_ID)) return;
@@ -28,55 +28,7 @@
     document.head.appendChild(s);
   }
 
-  function fallbackImage(title, desc){
-    var s = String((title || '') + ' ' + (desc || '')).toLowerCase();
-    if(/kind|school/.test(s)) return 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=700&q=90&fm=webp';
-    if(/auto|car/.test(s)) return 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=700&q=90&fm=webp';
-    if(/plant/.test(s)) return 'https://images.unsplash.com/photo-1525498128493-380d1990a112?auto=format&fit=crop&w=700&q=90&fm=webp';
-    if(/was|laundry/.test(s)) return 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?auto=format&fit=crop&w=700&q=90&fm=webp';
-    if(/eten|kook|boodschap/.test(s)) return 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=700&q=90&fm=webp';
-    if(/tand|dokter/.test(s)) return 'https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=700&q=90&fm=webp';
-    if(/kamer|huis|stof/.test(s)) return 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=700&q=90&fm=webp';
-    return 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=700&q=90&fm=webp';
-  }
-
-  function xpFor(type, prio){
-    type = String(type || 'SIDE QUEST');
-    prio = String(prio || 'laag').toLowerCase();
-    if(type.indexOf('RAID') > -1) return '+120 XP';
-    if(type.indexOf('DUNGEON') > -1) return '+60 XP';
-    if(prio === 'hoog' || prio === 'high') return '+30 XP';
-    if(prio === 'normaal' || prio === 'medium' || prio === 'normal') return '+20 XP';
-    return '+10 XP';
-  }
-
   function parse(raw, fallback){ try { return raw ? JSON.parse(raw) : fallback; } catch(e){ return fallback; } }
-
-  function listTasks(){
-    var repoTasks = null;
-    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.listTasks) repoTasks = window.TaskRepositoryAdapter.listTasks(); } catch(e) {}
-    if(Array.isArray(repoTasks)) return repoTasks.slice();
-    try { if(window.HouseholdRepository && window.HouseholdRepository.listTasks) repoTasks = window.HouseholdRepository.listTasks(); } catch(e) {}
-    if(Array.isArray(repoTasks)) return repoTasks.slice();
-    if(Array.isArray(window.taskData)) return window.taskData.slice();
-    return parse(localStorage.getItem(TASK_STORE), []);
-  }
-
-  function syncEverywhere(tasks, meta){
-    tasks = Array.isArray(tasks) ? tasks : [];
-    if(Array.isArray(window.taskData)){
-      window.taskData.length = 0;
-      tasks.forEach(function(t){ window.taskData.push(t); });
-    } else {
-      window.taskData = tasks.slice();
-    }
-    try { localStorage.setItem(TASK_STORE, JSON.stringify(tasks)); } catch(e) {}
-    try { localStorage.setItem('fam_tasks_v022', JSON.stringify(tasks)); } catch(e) {}
-    try { if(window.HouseholdRepository && window.HouseholdRepository.saveTasks) window.HouseholdRepository.saveTasks(tasks, Object.assign({ source:'TaskCreatePhotoUpload' }, meta || {})); } catch(e) {}
-    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.saveTasks) window.TaskRepositoryAdapter.saveTasks(tasks, Object.assign({ source:'TaskCreatePhotoUpload' }, meta || {})); } catch(e) {}
-    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail:Object.assign({ tasks:tasks, source:'TaskCreatePhotoUpload' }, meta || {}) })); } catch(e) {}
-    return tasks;
-  }
 
   function compressFile(file){
     return new Promise(function(resolve, reject){
@@ -92,7 +44,8 @@
           var cw = Math.max(1, Math.round(w * scale));
           var ch = Math.max(1, Math.round(h * scale));
           var canvas = document.createElement('canvas');
-          canvas.width = cw; canvas.height = ch;
+          canvas.width = cw;
+          canvas.height = ch;
           canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
           var dataUrl;
           try { dataUrl = canvas.toDataURL('image/webp', 0.76); }
@@ -107,32 +60,35 @@
     });
   }
 
-  function injectUpload(m){
-    if(!m || m.__photoUploadInjected || !m.querySelector('#qn')) return;
-    var content = m.querySelector('.fqContent');
+  function injectUpload(modal){
+    if(!modal || modal.__photoUploadInjected || !modal.querySelector('#qn')) return;
+    var content = modal.querySelector('.fqContent');
     if(!content) return;
-    m.__photoUploadInjected = true;
+    modal.__photoUploadInjected = true;
+    modal.__questPhotoDataUrl = '';
+
     var html = '<div class="fqBox fqPhotoUploadBox" id="fqPhotoUploadBox">'
       + '<div class="fqPhotoPreview" id="fqPhotoPreview">'
       + '<div class="fqPhotoText"><b>Kaartfoto</b><span>Upload een eigen foto die iedereen bij deze taak ziet.</span></div>'
       + '<div style="display:flex;gap:8px;align-items:center"><button type="button" class="fqPhotoRemove" id="fqPhotoRemove">Verwijder</button><button type="button" class="fqPhotoBtn" id="fqPhotoBtn">Foto kiezen</button></div>'
       + '</div><input id="fqPhotoInput" type="file" accept="image/*"></div>';
-    var dateBox = m.querySelector('#qdate');
+
+    var dateBox = modal.querySelector('#qdate');
     var insertBefore = dateBox ? dateBox.closest('.fqBox') : null;
     if(insertBefore) insertBefore.insertAdjacentHTML('beforebegin', html);
     else content.insertAdjacentHTML('beforeend', html);
 
-    var input = m.querySelector('#fqPhotoInput');
-    var btn = m.querySelector('#fqPhotoBtn');
-    var remove = m.querySelector('#fqPhotoRemove');
-    var preview = m.querySelector('#fqPhotoPreview');
-    var box = m.querySelector('#fqPhotoUploadBox');
-    m.__questPhotoDataUrl = '';
+    var input = modal.querySelector('#fqPhotoInput');
+    var btn = modal.querySelector('#fqPhotoBtn');
+    var remove = modal.querySelector('#fqPhotoRemove');
+    var preview = modal.querySelector('#fqPhotoPreview');
+    var box = modal.querySelector('#fqPhotoUploadBox');
 
     btn.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); input.click(); });
     remove.addEventListener('click', function(ev){
-      ev.preventDefault(); ev.stopPropagation();
-      m.__questPhotoDataUrl = '';
+      ev.preventDefault();
+      ev.stopPropagation();
+      modal.__questPhotoDataUrl = '';
       preview.style.backgroundImage = '';
       box.classList.remove('hasPhoto');
       input.value = '';
@@ -142,7 +98,7 @@
       if(!file) return;
       btn.textContent = 'Verwerken...';
       compressFile(file).then(function(dataUrl){
-        m.__questPhotoDataUrl = dataUrl;
+        modal.__questPhotoDataUrl = dataUrl;
         preview.style.backgroundImage = 'url(' + dataUrl + ')';
         box.classList.add('hasPhoto');
         btn.textContent = 'Andere foto';
@@ -153,114 +109,54 @@
     });
   }
 
-  function buildTaskFromModal(m){
-    var nameEl = m.querySelector('#qn');
-    var descEl = m.querySelector('#qd');
-    if(!nameEl) return null;
-    var name = nameEl.value.trim();
-    if(!name){ nameEl.style.border = '1.5px solid #dc2626'; return false; }
-    var desc = (descEl && descEl.value.trim()) || 'Nieuwe quest.';
-    var dateEl = m.querySelector('#qdate');
-    var whoEl = m.querySelector('#qwho');
-    var date = (dateEl && dateEl.value) || new Date().toISOString().slice(0,10);
-    var who = (whoEl && whoEl.value) || (window.myName || 'Shane');
-    var type = String(window._qtype || 'SIDE QUEST');
-    if(/group/i.test(type)) type = 'SIDE QUEST';
-    var prio = window._qprio || 'laag';
-    var photo = m.__questPhotoDataUrl || fallbackImage(name, desc);
-    var id = 'q' + Date.now();
-    var obj = {
-      id:id,
-      type:type,
-      title:name,
-      description:desc,
-      dueDate:date,
-      assignedTo:who,
-      xpReward:xpFor(type, prio),
-      imageUrl:photo,
-      imageDataUrlFallback:/^data:image\//.test(photo) ? photo : '',
-      subtasks:['Eerste stap'],
-      progress:0,
-      recurrence:'once',
-      recurrenceDate:date,
-      priority:prio,
-      helpRequested:false,
-      helpers:[],
-      status:'open',
-      createdAt:new Date().toISOString(),
-      updatedAt:new Date().toISOString()
-    };
-    if(window.TaskModel && window.TaskModel.toLegacyArray) return window.TaskModel.toLegacyArray(obj);
-    return [id, type, name, desc, date, who, xpFor(type, prio), photo, ['Eerste stap'], 0, 'once', date, prio, '', []];
-  }
+  function rememberPhotoAfterNativeSave(modal){
+    if(!modal || !modal.__questPhotoDataUrl) return;
+    var titleEl = modal.querySelector('#qn');
+    var title = titleEl ? titleEl.value.trim() : '';
+    var photo = modal.__questPhotoDataUrl;
+    if(!title || !photo) return;
 
-  function forceOverviewRender(){
-    try { window.taskTab = 'overzicht'; } catch(e) {}
-    var r = document.getElementById('task-content');
-    if(r){
-      r.dataset.v023 = '';
-      r.dataset.rendered = '';
-    }
-    try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.syncGlobalsFromRepository) window.TaskRepositoryAdapter.syncGlobalsFromRepository(); } catch(e) {}
-    if(typeof window.renderTasks === 'function'){
-      setTimeout(function(){ try { window.renderTasks(); } catch(e) {} }, 40);
-      setTimeout(function(){ try { window.renderTasks(true); } catch(e) {} }, 180);
-    }
-    try { if(window.TaskSharedJoinableState && window.TaskSharedJoinableState.patchCards) setTimeout(window.TaskSharedJoinableState.patchCards, 260); } catch(e) {}
-  }
-
-  function saveQuestFromModal(m){
-    if(SAVE_LOCK) return true;
-    SAVE_LOCK = true;
-    setTimeout(function(){ SAVE_LOCK = false; }, 700);
-
-    var task = buildTaskFromModal(m);
-    if(task === false) return true;
-    if(!task) return false;
-    var id = window.TaskModel ? window.TaskModel.getId(task) : task[0];
-    var tasks = listTasks().filter(function(t){
-      var tid = window.TaskModel ? window.TaskModel.getId(t) : (Array.isArray(t) ? t[0] : t && t.id);
-      return String(tid) !== String(id);
-    });
-    tasks.unshift(task);
-    syncEverywhere(tasks, { operation:'createQuest', id:id });
-    try { if(typeof window.closeModal === 'function') window.closeModal(); else { m.classList.remove('open'); document.body.style.overflow = ''; } } catch(e) {}
-    forceOverviewRender();
     setTimeout(function(){
-      var visible = !!document.querySelector('.fqCard[data-id="'+CSS.escape(String(id))+'"]');
-      if(!visible) forceOverviewRender();
-    }, 450);
-    if(typeof window.showToast === 'function') window.showToast('Quest aangemaakt ✓');
-    return true;
+      var tasks = parse(localStorage.getItem(TASK_STORE), []);
+      if(!Array.isArray(tasks) || !tasks.length) return;
+      for(var i = tasks.length - 1; i >= 0; i--){
+        if(Array.isArray(tasks[i]) && String(tasks[i][2] || '').trim() === title){
+          tasks[i][7] = photo;
+          break;
+        }
+        if(tasks[i] && !Array.isArray(tasks[i]) && String(tasks[i].title || tasks[i].name || '').trim() === title){
+          tasks[i].imageUrl = photo;
+          tasks[i].imageDataUrlFallback = photo;
+          break;
+        }
+      }
+      try { localStorage.setItem(TASK_STORE, JSON.stringify(tasks)); } catch(e) {}
+      try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.saveTasks) window.TaskRepositoryAdapter.saveTasks(tasks, { source:'TaskCreatePhotoUpload', operation:'attachPhotoAfterNativeSave' }); } catch(e) {}
+      try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail:{ tasks:tasks, source:'TaskCreatePhotoUpload' } })); } catch(e) {}
+    }, 220);
   }
 
-  function isSaveButton(btn){
-    if(!btn) return false;
-    if(btn.classList && btn.classList.contains('fqSaveBtn')) return true;
-    var txt = String(btn.textContent || '').toLowerCase().trim();
-    return /quest\s*opslaan|opslaan|aanmaken|maak.*quest/.test(txt);
-  }
-
-  function bindSaveCapture(){
-    if(document.__taskCreatePhotoUploadCaptureV298f) return;
-    document.__taskCreatePhotoUploadCaptureV298f = true;
+  function bindPassiveSaveObserver(){
+    if(document.__taskCreatePhotoPassiveSaveObserver) return;
+    document.__taskCreatePhotoPassiveSaveObserver = true;
     document.addEventListener('click', function(ev){
-      var btn = ev.target && ev.target.closest ? ev.target.closest('button,.fqSaveBtn,[role="button"]') : null;
-      if(!isSaveButton(btn)) return;
-      var m = btn.closest && btn.closest('#fqModal');
-      if(!m || !m.querySelector('#qn')) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-      if(typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
-      saveQuestFromModal(m);
-    }, true);
+      var btn = ev.target && ev.target.closest ? ev.target.closest('.fqSaveBtn,button') : null;
+      if(!btn) return;
+      var txt = String(btn.textContent || '').toLowerCase();
+      if(!/quest\s*opslaan|opslaan|aanmaken/.test(txt) && !(btn.classList && btn.classList.contains('fqSaveBtn'))) return;
+      var modal = btn.closest && btn.closest('#fqModal');
+      if(!modal || !modal.querySelector('#qn')) return;
+      // Do NOT preventDefault / stopPropagation here. The native quest-overlay
+      // save handler must run because it updates the renderer's internal data array.
+      rememberPhotoAfterNativeSave(modal);
+    }, false);
   }
 
   function patch(){
     injectStyles();
-    bindSaveCapture();
-    var m = document.getElementById('fqModal');
-    if(m && m.classList.contains('open')) injectUpload(m);
+    bindPassiveSaveObserver();
+    var modal = document.getElementById('fqModal');
+    if(modal && modal.classList.contains('open')) injectUpload(modal);
   }
 
   var n = 0;
@@ -268,8 +164,11 @@
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', patch); else patch();
   if(document.body && !document.body.__taskCreatePhotoUploadObserver){
     document.body.__taskCreatePhotoUploadObserver = true;
-    new MutationObserver(function(){ clearTimeout(document.body.__taskCreatePhotoUploadTimer); document.body.__taskCreatePhotoUploadTimer = setTimeout(patch, 30); }).observe(document.body, { childList:true, subtree:true });
+    new MutationObserver(function(){
+      clearTimeout(document.body.__taskCreatePhotoUploadTimer);
+      document.body.__taskCreatePhotoUploadTimer = setTimeout(patch, 30);
+    }).observe(document.body, { childList:true, subtree:true });
   }
 
-  window.TaskCreatePhotoUpload = { patch: patch, saveQuestFromModal: saveQuestFromModal };
+  window.TaskCreatePhotoUpload = { patch: patch };
 })();
