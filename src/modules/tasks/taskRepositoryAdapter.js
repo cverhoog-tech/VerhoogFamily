@@ -1,13 +1,15 @@
 'use strict';
 // ============================================================
-// TASK REPOSITORY ADAPTER v0.333
+// TASK REPOSITORY ADAPTER v0.334
 // Compatibility bridge between legacy global taskData/AppState and
 // HouseholdRepository. This lets us migrate persistence without rewriting
 // the entire task UI at once.
+// v0.334: saveTasks now syncs window.taskData immediately after save so
+// legacy renderTasks sees newly created quests.
 // ============================================================
 
 (function(){
-  var VERSION = '0.333';
+  var VERSION = '0.334';
   var LEGACY_TASK_KEYS = ['fam_tasks_v023', 'fam_tasks_v022', 'fam_tasks_v021', 'fam_tasks', 'tasks'];
   var booted = false;
 
@@ -36,22 +38,41 @@
     return readLegacyTasks();
   }
 
+  function writeGlobals(tasks){
+    var nextTasks = Array.isArray(tasks) ? tasks : [];
+    if(Array.isArray(window.taskData)){
+      window.taskData.length = 0;
+      nextTasks.forEach(function(task){ window.taskData.push(task); });
+    } else {
+      window.taskData = nextTasks.slice();
+    }
+    return window.taskData;
+  }
+
+  function emitTasksUpdated(tasks, meta){
+    try {
+      window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', {
+        detail: Object.assign({ tasks: tasks || [] }, meta || {})
+      }));
+    } catch(error) {}
+  }
+
   function saveTasks(tasks, meta){
     var nextTasks = Array.isArray(tasks) ? tasks : [];
-    if(repoReady()) return window.HouseholdRepository.saveTasks(nextTasks, meta || { source: 'TaskRepositoryAdapter' });
-    localStorage.setItem('fam_tasks_v023', JSON.stringify(nextTasks));
-    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail: { tasks: nextTasks } })); } catch(error) {}
-    return nextTasks;
+    var saved = nextTasks;
+    if(repoReady()) saved = window.HouseholdRepository.saveTasks(nextTasks, meta || { source: 'TaskRepositoryAdapter' }) || nextTasks;
+    else localStorage.setItem('fam_tasks_v023', JSON.stringify(nextTasks));
+
+    if(!Array.isArray(saved)) saved = nextTasks;
+    writeGlobals(saved);
+    try { localStorage.setItem('fam_tasks_v023', JSON.stringify(saved)); } catch(error) {}
+    emitTasksUpdated(saved, Object.assign({ source:'TaskRepositoryAdapter', version: VERSION }, meta || {}));
+    return saved;
   }
 
   function syncGlobalsFromRepository(){
     var tasks = listTasks();
-    if(Array.isArray(window.taskData)){
-      window.taskData.length = 0;
-      tasks.forEach(function(task){ window.taskData.push(task); });
-    } else {
-      window.taskData = tasks;
-    }
+    writeGlobals(tasks);
     return window.taskData;
   }
 
