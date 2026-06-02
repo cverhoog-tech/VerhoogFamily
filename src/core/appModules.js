@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.402
+// APP MODULES v0.403
 // Stable bootstrap modules.
 // Group Quest tab/modules removed; collaboration lives in normal tasks.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.402';
+  var VERSION = '0.403';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -55,6 +55,7 @@
     { id: 'task-remove-group-complete-cta-js', src: 'src/modules/tasks/taskRemoveGroupAndCompleteCta.js', group: 'tasks', critical: false },
     { id: 'task-detail-fullscreen-polish-js', src: 'src/modules/tasks/taskDetailFullscreenPolish.js', group: 'tasks', critical: false },
     { id: 'task-create-photo-upload-js', src: 'src/modules/tasks/taskCreatePhotoUpload.js', group: 'tasks', critical: false },
+    { id: 'task-custom-photo-priority-js', src: 'src/modules/tasks/taskCustomPhotoPriority.js', group: 'tasks', critical: false },
     { id: 'household-sync-test-panel-js', src: 'src/modules/tasks/householdSyncTestPanel.js', group: 'tasks', critical: false }
   ];
 
