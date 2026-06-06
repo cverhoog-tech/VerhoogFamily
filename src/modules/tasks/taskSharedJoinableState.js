@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// TASK SHARED JOINABLE STATE v0.300c
+// TASK SHARED JOINABLE STATE v0.300d
 // Shared help/join state with safer DOM behavior.
-// v0.300c: no continuous task-content MutationObserver and no repeated
-// remove/rebuild loops. Card click stays owned by quest-overlay.js.
+// v0.300d: binds the modal help button directly so Vraag om hulp works for
+// Side Quest, Dungeon and Raid detail flows.
 // ============================================================
 
 (function(){
@@ -20,7 +20,8 @@
       '.fqHelpSharedBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 9px;background:rgba(22,163,74,.10);color:#166534;font-size:11px;font-weight:950}',
       '.fqCard.helpRequested{border-color:rgba(59,130,246,.28)!important;box-shadow:0 12px 36px rgba(59,130,246,.10)!important}',
       '.fqJoinRow{position:relative;z-index:2}',
-      '.fqJoinBtn{pointer-events:auto!important;touch-action:manipulation}'
+      '.fqJoinBtn{pointer-events:auto!important;touch-action:manipulation}',
+      '.fqHelpBoxActive{border:1px solid rgba(59,130,246,.22)!important;background:rgba(59,130,246,.08)!important}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -126,7 +127,7 @@
     var r = document.getElementById('task-content');
     if(r) r.dataset.v023 = '';
     if(typeof window.renderTasks === 'function') setTimeout(function(){ try { window.renderTasks(); } catch(e) {} }, 60);
-    setTimeout(function(){ patchCards(); patchModal(); }, 180);
+    setTimeout(function(){ patchCards(); patchModal(); bindModalHelpButton(); }, 180);
   }
 
   function setHelpByTitle(title){
@@ -155,6 +156,27 @@
     });
     if(changed) saveTasks(tasks, { operation:'requestHelp', id:id });
     return changed;
+  }
+
+  function taskFromModal(){
+    var title = modalTitle();
+    if(!title) return null;
+    var tasks = listTasks();
+    return tasks.find(function(t){ return sameTitle(t, title); }) || null;
+  }
+
+  function requestHelpFromModal(){
+    var task = taskFromModal();
+    var title = modalTitle();
+    var ok = false;
+    if(task && idOf(task)) ok = setHelpById(idOf(task));
+    if(!ok && title) ok = setHelpByTitle(title);
+    if(ok){
+      activity('👥', member().name + ' vroeg hulp bij "' + (title || 'taak') + '"');
+      if(typeof window.showToast === 'function') window.showToast('Hulpvraag geplaatst 👥');
+      refresh();
+    }
+    return ok;
   }
 
   function joinTask(id){
@@ -250,7 +272,19 @@
     return h ? h.textContent.trim() : '';
   }
 
+  function bindModalHelpButton(){
+    var btn = document.querySelector('#fqModal.open .fqHelpBtn');
+    if(!btn || btn.__sharedJoinableBoundV300d) return;
+    btn.__sharedJoinableBoundV300d = true;
+    btn.onclick = function(ev){
+      if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+      requestHelpFromModal();
+      return false;
+    };
+  }
+
   function patchModal(){
+    bindModalHelpButton();
     var title = modalTitle();
     if(!title) return;
     var task = listTasks().find(function(candidate){ return sameTitle(candidate, title); });
@@ -264,8 +298,8 @@
   }
 
   function captureHelp(){
-    if(document.__sharedJoinableHelpCaptureV300c) return;
-    document.__sharedJoinableHelpCaptureV300c = true;
+    if(document.__sharedJoinableHelpCaptureV300d) return;
+    document.__sharedJoinableHelpCaptureV300d = true;
     document.addEventListener('click', function(ev){
       var joinBtn = ev.target && ev.target.closest ? ev.target.closest('[data-task-join]') : null;
       if(joinBtn){
@@ -282,19 +316,10 @@
 
       var btn = ev.target && ev.target.closest ? ev.target.closest('.fqHelpBtn') : null;
       if(!btn) return;
-      var title = modalTitle();
-      if(!title) return;
       ev.preventDefault();
       ev.stopPropagation();
       if(typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
-      if(setHelpByTitle(title)){
-        btn.textContent = '👥 Hulp gevraagd';
-        var box = btn.closest('.fqBox');
-        if(box) box.classList.add('fqHelpBoxActive');
-        activity('👥', member().name + ' vroeg hulp bij "' + title + '"');
-        if(typeof window.showToast === 'function') window.showToast('Hulpvraag geplaatst 👥');
-        refresh();
-      }
+      requestHelpFromModal();
     }, true);
   }
 
@@ -306,13 +331,13 @@
       }
     } catch(e) {}
     try {
-      if(!window.__sharedJoinableDomListenerV300c){
-        window.__sharedJoinableDomListenerV300c = true;
+      if(!window.__sharedJoinableDomListenerV300d){
+        window.__sharedJoinableDomListenerV300d = true;
         window.addEventListener('familyapp:tasks-updated', function(){ setTimeout(function(){ patchCards(); patchModal(); }, 120); });
         window.addEventListener('familyapp:active-member-changed', function(){ setTimeout(function(){ patchCards(); patchModal(); }, 120); });
         document.addEventListener('click', function(ev){
           var t = ev.target;
-          if(t && t.closest && t.closest('.ttab,.task-tabs button,[role="tab"]')) setTimeout(function(){ patchCards(); patchModal(); }, 220);
+          if(t && t.closest && t.closest('.fqCard,.fqStartBtn,.ttab,.task-tabs button,[role="tab"]')) setTimeout(function(){ patchCards(); patchModal(); bindModalHelpButton(); }, 220);
         }, false);
       }
     } catch(e) {}
@@ -333,13 +358,14 @@
     overrideOldModule();
     patchCards();
     patchModal();
+    bindModalHelpButton();
   }
 
   var n = 0;
   var timer = setInterval(function(){
     n++;
     install();
-    if(document.querySelector('.fqCard') || n > 50) clearInterval(timer);
+    if(n > 120) clearInterval(timer);
   }, 120);
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
