@@ -1,7 +1,8 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.405
+// APP MODULES v0.406
 // Stable bootstrap modules.
+// v0.300e: stable help button handler loaded after shared join state.
 // v0.299 MVP stabilization: custom task photo upload/override modules are
 // removed from bootflow. Tasks use automatic premium backgrounds for now.
 // Group Quest tab/modules removed; collaboration lives in normal tasks.
@@ -9,7 +10,7 @@
 // ============================================================
 
 (function(){
-  var VERSION = '0.405';
+  var VERSION = '0.406';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -54,6 +55,7 @@
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'task-joinable-help-merge-js', src: 'src/modules/tasks/taskJoinableHelpMerge.js', group: 'tasks', critical: false },
     { id: 'task-shared-joinable-state-js', src: 'src/modules/tasks/taskSharedJoinableState.js', group: 'tasks', critical: false },
+    { id: 'task-help-button-stabilizer-js', src: 'src/modules/tasks/taskHelpButtonStabilizer.js', group: 'tasks', critical: false },
     { id: 'task-remove-group-complete-cta-js', src: 'src/modules/tasks/taskRemoveGroupAndCompleteCta.js', group: 'tasks', critical: false },
     { id: 'task-detail-fullscreen-polish-js', src: 'src/modules/tasks/taskDetailFullscreenPolish.js', group: 'tasks', critical: false },
     { id: 'household-sync-test-panel-js', src: 'src/modules/tasks/householdSyncTestPanel.js', group: 'tasks', critical: false }
