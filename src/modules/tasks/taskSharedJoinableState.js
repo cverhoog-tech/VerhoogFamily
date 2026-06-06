@@ -1,13 +1,17 @@
 'use strict';
 // ============================================================
-// TASK SHARED JOINABLE STATE v0.298c
-// Join/help data is written onto shared task data and persisted through
+// TASK SHARED JOINABLE STATE v0.300b
+// Help/join data is written onto shared task data and persisted through
 // TaskRepositoryAdapter / HouseholdRepository.
-// v0.298c: uses TaskModel accessors first, with legacy fallbacks only.
+// v0.300b: also writes localStorage/window.taskData immediately and patches
+// after tab/render DOM changes so help state survives tab switching.
 // ============================================================
 
 (function(){
   var STYLE_ID = 'task-shared-joinable-state-style';
+  var TASK_STORE = 'fam_tasks_v023';
+  var FALLBACK_STORE = 'fam_tasks_v022';
+  var patchTimer = null;
 
   function css(){
     if(document.getElementById(STYLE_ID)) return;
@@ -15,7 +19,8 @@
     s.id = STYLE_ID;
     s.textContent = [
       '.fqAssistAvatar{background-size:cover;background-position:center}',
-      '.fqHelpSharedBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 9px;background:rgba(22,163,74,.10);color:#166534;font-size:11px;font-weight:950}'
+      '.fqHelpSharedBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 9px;background:rgba(22,163,74,.10);color:#166534;font-size:11px;font-weight:950}',
+      '.fqCard.helpRequested{border-color:rgba(59,130,246,.28)!important;box-shadow:0 12px 36px rgba(59,130,246,.10)!important}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -25,33 +30,56 @@
   function adapterReady(){ return !!(window.TaskRepositoryAdapter && typeof window.TaskRepositoryAdapter.listTasks === 'function'); }
   function parse(raw, fb){ try { return raw ? JSON.parse(raw) : fb; } catch(e){ return fb; } }
 
+  function readLocalTasks(){
+    var tasks = parse(localStorage.getItem(TASK_STORE), null);
+    if(Array.isArray(tasks)) return tasks;
+    tasks = parse(localStorage.getItem(FALLBACK_STORE), null);
+    return Array.isArray(tasks) ? tasks : [];
+  }
+
   function listTasks(){
-    if(adapterReady()) return window.TaskRepositoryAdapter.listTasks() || [];
-    if(repoReady()) return window.HouseholdRepository.listTasks() || [];
-    return parse(localStorage.getItem('fam_tasks_v023'), []);
+    var tasks = [];
+    if(adapterReady()){
+      try { tasks = window.TaskRepositoryAdapter.listTasks() || []; } catch(e) { tasks = []; }
+    } else if(repoReady()){
+      try { tasks = window.HouseholdRepository.listTasks() || []; } catch(e) { tasks = []; }
+    }
+    if(Array.isArray(tasks) && tasks.length) return tasks;
+    tasks = readLocalTasks();
+    if(Array.isArray(tasks) && tasks.length) return tasks;
+    return Array.isArray(window.taskData) ? window.taskData : [];
+  }
+
+  function syncGlobals(tasks){
+    tasks = Array.isArray(tasks) ? tasks : [];
+    try { localStorage.setItem(TASK_STORE, JSON.stringify(tasks)); } catch(e) {}
+    try { localStorage.setItem(FALLBACK_STORE, JSON.stringify(tasks)); } catch(e) {}
+    try {
+      if(Array.isArray(window.taskData)){
+        window.taskData.length = 0;
+        tasks.forEach(function(t){ window.taskData.push(t); });
+      } else {
+        window.taskData = tasks.slice();
+      }
+    } catch(e) {}
   }
 
   function saveTasks(tasks, meta){
     tasks = Array.isArray(tasks) ? tasks : [];
-    if(adapterReady()) return window.TaskRepositoryAdapter.saveTasks(tasks, Object.assign({ source:'TaskSharedJoinableState' }, meta || {}));
-    if(repoReady()) return window.HouseholdRepository.saveTasks(tasks, Object.assign({ source:'TaskSharedJoinableState' }, meta || {}));
-    localStorage.setItem('fam_tasks_v023', JSON.stringify(tasks));
-    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail:{ tasks:tasks, source:'TaskSharedJoinableState' } })); } catch(e) {}
-    return tasks;
+    syncGlobals(tasks);
+    var saved = tasks;
+    try {
+      if(adapterReady()) saved = window.TaskRepositoryAdapter.saveTasks(tasks, Object.assign({ source:'TaskSharedJoinableState' }, meta || {})) || tasks;
+      else if(repoReady()) saved = window.HouseholdRepository.saveTasks(tasks, Object.assign({ source:'TaskSharedJoinableState' }, meta || {})) || tasks;
+    } catch(e) {}
+    if(Array.isArray(saved)) syncGlobals(saved);
+    try { window.dispatchEvent(new CustomEvent('familyapp:tasks-updated', { detail:Object.assign({ tasks:saved || tasks, source:'TaskSharedJoinableState' }, meta || {}) })); } catch(e) {}
+    return saved || tasks;
   }
 
-  function idOf(task){
-    if(tm()) return tm().getId(task);
-    return String(Array.isArray(task) ? task[0] : task && task.id || '');
-  }
-  function titleOf(task){
-    if(tm()) return tm().getTitle(task);
-    return Array.isArray(task) ? task[2] : task && (task.title || task.name);
-  }
-  function helpOf(task){
-    if(tm()) return tm().getHelpRequested(task);
-    return !!(Array.isArray(task) ? task[13] : task && task.helpRequested);
-  }
+  function idOf(task){ if(tm()) return tm().getId(task); return String(Array.isArray(task) ? task[0] : task && task.id || ''); }
+  function titleOf(task){ if(tm()) return tm().getTitle(task); return Array.isArray(task) ? task[2] : task && (task.title || task.name); }
+  function helpOf(task){ if(tm()) return tm().getHelpRequested(task); return !!(Array.isArray(task) ? task[13] : task && task.helpRequested); }
   function setHelp(task, value){
     if(tm()) return tm().setHelpRequested(task, !!value);
     if(Array.isArray(task)) task[13] = value ? 'Hulp gevraagd' : '';
@@ -88,18 +116,23 @@
     return { memberId:id, name:name, initials:initials, avatar:avatar };
   }
 
-  function esc(v){ return String(v == null ? '' : v).replace(/[&<>\"]/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[ch] || ch; }); }
-
+  function esc(v){ return String(v == null ? '' : v).replace(/[&<>"]/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[ch] || ch; }); }
   function activity(icon, text){
     try { if(typeof window.addActivity === 'function') window.addActivity(icon || '👥', '#dbeafe', text); } catch(e) {}
     try { if(window.HouseholdRepository && window.HouseholdRepository.appendActivity) window.HouseholdRepository.appendActivity({ icon:icon || '👥', color:'#dbeafe', text:text, type:'task-help' }); } catch(e) {}
   }
 
+  function schedulePatch(delay){
+    clearTimeout(patchTimer);
+    patchTimer = setTimeout(function(){ patchCards(); patchModal(); }, delay || 80);
+  }
+
   function refresh(){
     var r = document.getElementById('task-content');
     if(r) r.dataset.v023 = '';
-    if(typeof window.renderTasks === 'function') setTimeout(window.renderTasks, 60);
-    setTimeout(patchCards, 140);
+    if(typeof window.renderTasks === 'function') setTimeout(function(){ try { window.renderTasks(); } catch(e) {} }, 60);
+    schedulePatch(150);
+    setTimeout(function(){ patchCards(); patchModal(); }, 360);
   }
 
   function setHelpByTitle(title){
@@ -191,9 +224,13 @@
     document.querySelectorAll('.fqCard[data-id]').forEach(function(card){
       var id = card.getAttribute('data-id');
       var task = tasks.find(function(candidate){ return sameId(candidate, id); });
-      if(!task || !helpOf(task)) return;
-      card.classList.add('helpRequested');
       var old = card.querySelector('.fqJoinRow');
+      if(!task || !helpOf(task)){
+        card.classList.remove('helpRequested');
+        if(old) old.remove();
+        return;
+      }
+      card.classList.add('helpRequested');
       if(old) old.remove();
       var body = card.querySelector('.fqBody') || card;
       var helpers = helpersOf(task);
@@ -230,8 +267,8 @@
   }
 
   function captureHelp(){
-    if(document.__sharedJoinableHelpCapture) return;
-    document.__sharedJoinableHelpCapture = true;
+    if(document.__sharedJoinableHelpCaptureV300b) return;
+    document.__sharedJoinableHelpCaptureV300b = true;
     document.addEventListener('click', function(ev){
       var btn = ev.target && ev.target.closest ? ev.target.closest('.fqHelpBtn') : null;
       if(!btn) return;
@@ -259,9 +296,19 @@
       }
     } catch(e) {}
     try {
-      if(!window.__sharedJoinableDomListener){
-        window.__sharedJoinableDomListener = true;
-        window.addEventListener('familyapp:tasks-updated', function(){ setTimeout(function(){ patchCards(); patchModal(); }, 60); });
+      if(!window.__sharedJoinableDomListenerV300b){
+        window.__sharedJoinableDomListenerV300b = true;
+        window.addEventListener('familyapp:tasks-updated', function(){ schedulePatch(70); });
+        window.addEventListener('familyapp:active-member-changed', function(){ schedulePatch(70); });
+        document.addEventListener('click', function(ev){
+          var t = ev.target;
+          if(t && t.closest && t.closest('.ttab,.task-tabs button,[role="tab"]')) setTimeout(function(){ patchCards(); patchModal(); }, 180);
+        }, true);
+        var root = document.getElementById('task-content') || document.body;
+        if(root && !root.__sharedJoinableObserverV300b){
+          root.__sharedJoinableObserverV300b = true;
+          new MutationObserver(function(){ schedulePatch(90); }).observe(root, { childList:true, subtree:true });
+        }
       }
     } catch(e) {}
   }
@@ -287,7 +334,7 @@
   var timer = setInterval(function(){
     n++;
     install();
-    if(document.querySelector('.fqCard') || n > 50) clearInterval(timer);
+    if(document.querySelector('.fqCard') || n > 70) clearInterval(timer);
   }, 120);
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
