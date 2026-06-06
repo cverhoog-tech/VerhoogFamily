@@ -1,29 +1,33 @@
 'use strict';
 // ============================================================
-// TASK CUSTOM PHOTO PRIORITY v0.298j
-// Ensures uploaded custom task photos always win over keyword/fallback images.
-// v0.298j also remembers selected create-modal photos before native save runs.
+// TASK CUSTOM PHOTO PRIORITY v0.298k
+// Custom uploaded task images win over keyword images.
+// Anti-glitch: do not observe style changes and do not rewrite unchanged DOM.
 // ============================================================
 
 (function(){
   var TASK_KEYS = ['fam_tasks_v023', 'fam_tasks_v022', 'fam_tasks_v021'];
   var OVERRIDE_KEY = 'familyapp_task_custom_photos_v1';
   var installed = false;
+  var storeSignature = '';
+  var lastPatch = 0;
 
   function parse(raw, fb){ try { return raw ? JSON.parse(raw) : fb; } catch(e){ return fb; } }
-  function isCustomPhoto(url){ return /^data:image\//.test(String(url || '')); }
   function norm(v){ return String(v || '').trim().toLowerCase(); }
+  function isCustomImage(v){ return String(v || '').indexOf('data:image/') === 0; }
   function readOverrides(){ return parse(localStorage.getItem(OVERRIDE_KEY), {}); }
   function saveOverrides(map){ try { localStorage.setItem(OVERRIDE_KEY, JSON.stringify(map || {})); } catch(e) {} }
+  function bgValue(img){ return 'url(' + JSON.stringify(String(img || '')) + ')'; }
+  function sameBg(el, img){ return !!(el && img && el.getAttribute('data-custom-photo-src') === img); }
 
   function readTasks(){
-    for(var i=0;i<TASK_KEYS.length;i++){
+    for(var i = 0; i < TASK_KEYS.length; i++){
       var tasks = parse(localStorage.getItem(TASK_KEYS[i]), null);
       if(Array.isArray(tasks) && tasks.length) return tasks;
     }
     try { if(window.TaskRepositoryAdapter && window.TaskRepositoryAdapter.listTasks) return window.TaskRepositoryAdapter.listTasks() || []; } catch(e) {}
     try { if(window.HouseholdRepository && window.HouseholdRepository.listTasks) return window.HouseholdRepository.listTasks() || []; } catch(e) {}
-    try { return Array.isArray(window.taskData) ? window.taskData : []; } catch(e) { return []; }
+    return Array.isArray(window.taskData) ? window.taskData : [];
   }
 
   function getId(task){
@@ -43,12 +47,12 @@
     else if(task){ task.imageUrl = img; task.image = img; task.imageDataUrlFallback = img; }
   }
 
-  function customMap(){
+  function buildMap(){
     var byId = {};
     var byTitle = readOverrides();
     readTasks().forEach(function(task){
       var img = getImage(task);
-      if(!isCustomPhoto(img)) return;
+      if(!isCustomImage(img)) return;
       var id = getId(task);
       var title = norm(getTitle(task));
       if(id) byId[id] = img;
@@ -57,8 +61,11 @@
     return { byId: byId, byTitle: byTitle };
   }
 
-  function patchStoredTasks(){
+  function patchStoredTasks(force){
     var overrides = readOverrides();
+    var nextSig = JSON.stringify(overrides || {});
+    if(!force && nextSig === storeSignature) return;
+    storeSignature = nextSig;
     if(!Object.keys(overrides).length) return;
     TASK_KEYS.forEach(function(key){
       var tasks = parse(localStorage.getItem(key), null);
@@ -73,41 +80,45 @@
   }
 
   function applyImage(card, img){
-    if(!card || !img) return;
-    var image = card.querySelector('.fqImg');
-    if(image){
-      image.style.setProperty('background-image', 'url(' + img + ')', 'important');
-      image.setAttribute('data-custom-photo', '1');
-    }
+    var image = card && card.querySelector('.fqImg');
+    if(!image || !img || sameBg(image, img)) return;
+    image.style.setProperty('background-image', bgValue(img), 'important');
+    image.setAttribute('data-custom-photo-src', img);
+    image.setAttribute('data-custom-photo', '1');
     card.setAttribute('data-custom-photo', '1');
   }
 
-  function patchCards(){
-    patchStoredTasks();
-    var maps = customMap();
+  function patchCards(opts){
+    opts = opts || {};
+    var now = Date.now();
+    if(!opts.force && now - lastPatch < 90) return;
+    lastPatch = now;
+    if(opts.store) patchStoredTasks(false);
+    var map = buildMap();
     Array.prototype.slice.call(document.querySelectorAll('.fqCard')).forEach(function(card){
       var id = card.getAttribute('data-id') || '';
       var titleEl = card.querySelector('.fqTitle');
       var title = titleEl ? norm(titleEl.textContent) : '';
-      var img = maps.byId[id] || maps.byTitle[title];
+      var img = map.byId[id] || map.byTitle[title];
       if(img) applyImage(card, img);
     });
   }
 
   function rememberFromModal(modal){
-    if(!modal) return;
-    var titleEl = modal.querySelector('#qn');
+    var titleEl = modal && modal.querySelector('#qn');
     var title = titleEl ? norm(titleEl.value) : '';
-    var img = modal.__questPhotoDataUrl || '';
-    if(!title || !isCustomPhoto(img)) return;
+    var img = modal && modal.__questPhotoDataUrl || '';
+    if(!title || !isCustomImage(img)) return;
     var overrides = readOverrides();
+    if(overrides[title] === img) return;
     overrides[title] = img;
     saveOverrides(overrides);
+    storeSignature = '';
   }
 
   function bindSaveCapture(){
-    if(document.__taskCustomPhotoSaveCaptureV298j) return;
-    document.__taskCustomPhotoSaveCaptureV298j = true;
+    if(document.__taskCustomPhotoSaveCaptureV298k) return;
+    document.__taskCustomPhotoSaveCaptureV298k = true;
     document.addEventListener('click', function(ev){
       var btn = ev.target && ev.target.closest ? ev.target.closest('.fqSaveBtn,button') : null;
       if(!btn) return;
@@ -116,10 +127,8 @@
       var modal = btn.closest && btn.closest('#fqModal');
       if(!modal || !modal.querySelector('#qn')) return;
       rememberFromModal(modal);
-      setTimeout(patchCards, 40);
-      setTimeout(patchCards, 180);
-      setTimeout(patchCards, 450);
-      setTimeout(patchCards, 900);
+      setTimeout(function(){ patchStoredTasks(true); patchCards({ force:true }); }, 120);
+      setTimeout(function(){ patchStoredTasks(true); patchCards({ force:true }); }, 420);
     }, true);
   }
 
@@ -127,17 +136,18 @@
     if(installed) return;
     installed = true;
     bindSaveCapture();
-    patchCards();
-    window.addEventListener('familyapp:tasks-updated', function(){ setTimeout(patchCards, 40); setTimeout(patchCards, 240); });
-    window.addEventListener('storage', function(ev){ if(TASK_KEYS.indexOf(ev.key) >= 0 || ev.key === OVERRIDE_KEY) setTimeout(patchCards, 40); });
+    patchStoredTasks(true);
+    patchCards({ force:true });
+    window.addEventListener('familyapp:tasks-updated', function(){ setTimeout(function(){ patchCards({ store:true }); }, 120); });
+    window.addEventListener('storage', function(ev){ if(TASK_KEYS.indexOf(ev.key) >= 0 || ev.key === OVERRIDE_KEY) setTimeout(function(){ patchCards({ store:true }); }, 120); });
     if(document.body){
       new MutationObserver(function(){
         clearTimeout(document.body.__taskCustomPhotoPriorityTimer);
-        document.body.__taskCustomPhotoPriorityTimer = setTimeout(patchCards, 25);
-      }).observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','data-id','class'] });
+        document.body.__taskCustomPhotoPriorityTimer = setTimeout(function(){ patchCards(); }, 140);
+      }).observe(document.body, { childList:true, subtree:true });
     }
     var n = 0;
-    var timer = setInterval(function(){ n++; patchCards(); if(n > 120) clearInterval(timer); }, 120);
+    var timer = setInterval(function(){ n++; patchCards(); if(n > 10) clearInterval(timer); }, 300);
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
