@@ -1,17 +1,15 @@
 'use strict';
 // ============================================================
-// TASK SHARED JOINABLE STATE v0.300b
-// Help/join data is written onto shared task data and persisted through
-// TaskRepositoryAdapter / HouseholdRepository.
-// v0.300b: also writes localStorage/window.taskData immediately and patches
-// after tab/render DOM changes so help state survives tab switching.
+// TASK SHARED JOINABLE STATE v0.300c
+// Shared help/join state with safer DOM behavior.
+// v0.300c: no continuous task-content MutationObserver and no repeated
+// remove/rebuild loops. Card click stays owned by quest-overlay.js.
 // ============================================================
 
 (function(){
   var STYLE_ID = 'task-shared-joinable-state-style';
   var TASK_STORE = 'fam_tasks_v023';
   var FALLBACK_STORE = 'fam_tasks_v022';
-  var patchTimer = null;
 
   function css(){
     if(document.getElementById(STYLE_ID)) return;
@@ -20,7 +18,9 @@
     s.textContent = [
       '.fqAssistAvatar{background-size:cover;background-position:center}',
       '.fqHelpSharedBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 9px;background:rgba(22,163,74,.10);color:#166534;font-size:11px;font-weight:950}',
-      '.fqCard.helpRequested{border-color:rgba(59,130,246,.28)!important;box-shadow:0 12px 36px rgba(59,130,246,.10)!important}'
+      '.fqCard.helpRequested{border-color:rgba(59,130,246,.28)!important;box-shadow:0 12px 36px rgba(59,130,246,.10)!important}',
+      '.fqJoinRow{position:relative;z-index:2}',
+      '.fqJoinBtn{pointer-events:auto!important;touch-action:manipulation}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -122,17 +122,11 @@
     try { if(window.HouseholdRepository && window.HouseholdRepository.appendActivity) window.HouseholdRepository.appendActivity({ icon:icon || '👥', color:'#dbeafe', text:text, type:'task-help' }); } catch(e) {}
   }
 
-  function schedulePatch(delay){
-    clearTimeout(patchTimer);
-    patchTimer = setTimeout(function(){ patchCards(); patchModal(); }, delay || 80);
-  }
-
   function refresh(){
     var r = document.getElementById('task-content');
     if(r) r.dataset.v023 = '';
     if(typeof window.renderTasks === 'function') setTimeout(function(){ try { window.renderTasks(); } catch(e) {} }, 60);
-    schedulePatch(150);
-    setTimeout(function(){ patchCards(); patchModal(); }, 360);
+    setTimeout(function(){ patchCards(); patchModal(); }, 180);
   }
 
   function setHelpByTitle(title){
@@ -231,19 +225,22 @@
         return;
       }
       card.classList.add('helpRequested');
-      if(old) old.remove();
-      var body = card.querySelector('.fqBody') || card;
       var helpers = helpersOf(task);
       var me = member();
       var joined = helpers.some(function(h){ return String(h.memberId) === String(me.memberId); });
+      var html = '<span class="fqHelpState">👥 Hulp gevraagd</span>' + helperHtml(helpers) + '<button class="fqJoinBtn '+(joined?'joined':'')+'" type="button" data-task-join="'+esc(id)+'">'+(joined?'Joined':'Join')+'</button>';
+      if(old){
+        if(old.getAttribute('data-render-key') !== String(helpers.length)+'-'+joined){
+          old.innerHTML = html;
+          old.setAttribute('data-render-key', String(helpers.length)+'-'+joined);
+        }
+        return;
+      }
+      var body = card.querySelector('.fqBody') || card;
       var row = document.createElement('div');
       row.className = 'fqJoinRow';
-      row.innerHTML = '<span class="fqHelpState">👥 Hulp gevraagd</span>' + helperHtml(helpers) + '<button class="fqJoinBtn '+(joined?'joined':'')+'" type="button">'+(joined?'Joined':'Join')+'</button>';
-      row.querySelector('.fqJoinBtn').addEventListener('click', function(ev){
-        ev.preventDefault();
-        ev.stopPropagation();
-        if(joined) unjoinTask(id); else joinTask(id);
-      });
+      row.setAttribute('data-render-key', String(helpers.length)+'-'+joined);
+      row.innerHTML = html;
       body.appendChild(row);
     });
   }
@@ -267,9 +264,22 @@
   }
 
   function captureHelp(){
-    if(document.__sharedJoinableHelpCaptureV300b) return;
-    document.__sharedJoinableHelpCaptureV300b = true;
+    if(document.__sharedJoinableHelpCaptureV300c) return;
+    document.__sharedJoinableHelpCaptureV300c = true;
     document.addEventListener('click', function(ev){
+      var joinBtn = ev.target && ev.target.closest ? ev.target.closest('[data-task-join]') : null;
+      if(joinBtn){
+        ev.preventDefault();
+        ev.stopPropagation();
+        if(typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+        var id = joinBtn.getAttribute('data-task-join');
+        var task = listTasks().find(function(candidate){ return sameId(candidate, id); });
+        var me = member();
+        var joined = task && helpersOf(task).some(function(h){ return String(h.memberId) === String(me.memberId); });
+        if(joined) unjoinTask(id); else joinTask(id);
+        return;
+      }
+
       var btn = ev.target && ev.target.closest ? ev.target.closest('.fqHelpBtn') : null;
       if(!btn) return;
       var title = modalTitle();
@@ -292,23 +302,18 @@
     try {
       if(window.HouseholdRepository && window.HouseholdRepository.on && !window.__sharedJoinableRepoListener){
         window.__sharedJoinableRepoListener = true;
-        window.HouseholdRepository.on('tasks', function(){ setTimeout(function(){ refresh(); patchModal(); }, 60); });
+        window.HouseholdRepository.on('tasks', function(){ setTimeout(function(){ patchCards(); patchModal(); }, 120); });
       }
     } catch(e) {}
     try {
-      if(!window.__sharedJoinableDomListenerV300b){
-        window.__sharedJoinableDomListenerV300b = true;
-        window.addEventListener('familyapp:tasks-updated', function(){ schedulePatch(70); });
-        window.addEventListener('familyapp:active-member-changed', function(){ schedulePatch(70); });
+      if(!window.__sharedJoinableDomListenerV300c){
+        window.__sharedJoinableDomListenerV300c = true;
+        window.addEventListener('familyapp:tasks-updated', function(){ setTimeout(function(){ patchCards(); patchModal(); }, 120); });
+        window.addEventListener('familyapp:active-member-changed', function(){ setTimeout(function(){ patchCards(); patchModal(); }, 120); });
         document.addEventListener('click', function(ev){
           var t = ev.target;
-          if(t && t.closest && t.closest('.ttab,.task-tabs button,[role="tab"]')) setTimeout(function(){ patchCards(); patchModal(); }, 180);
-        }, true);
-        var root = document.getElementById('task-content') || document.body;
-        if(root && !root.__sharedJoinableObserverV300b){
-          root.__sharedJoinableObserverV300b = true;
-          new MutationObserver(function(){ schedulePatch(90); }).observe(root, { childList:true, subtree:true });
-        }
+          if(t && t.closest && t.closest('.ttab,.task-tabs button,[role="tab"]')) setTimeout(function(){ patchCards(); patchModal(); }, 220);
+        }, false);
       }
     } catch(e) {}
   }
@@ -334,7 +339,7 @@
   var timer = setInterval(function(){
     n++;
     install();
-    if(document.querySelector('.fqCard') || n > 70) clearInterval(timer);
+    if(document.querySelector('.fqCard') || n > 50) clearInterval(timer);
   }, 120);
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
