@@ -1,13 +1,15 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.404
+// APP MODULES v0.405
 // Stable bootstrap modules.
+// v0.299 MVP stabilization: custom task photo upload/override modules are
+// removed from bootflow. Tasks use automatic premium backgrounds for now.
 // Group Quest tab/modules removed; collaboration lives in normal tasks.
 // recipes.js v0.272 is self-contained — recipe helpers loaded separately.
 // ============================================================
 
 (function(){
-  var VERSION = '0.404';
+  var VERSION = '0.405';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -54,9 +56,6 @@
     { id: 'task-shared-joinable-state-js', src: 'src/modules/tasks/taskSharedJoinableState.js', group: 'tasks', critical: false },
     { id: 'task-remove-group-complete-cta-js', src: 'src/modules/tasks/taskRemoveGroupAndCompleteCta.js', group: 'tasks', critical: false },
     { id: 'task-detail-fullscreen-polish-js', src: 'src/modules/tasks/taskDetailFullscreenPolish.js', group: 'tasks', critical: false },
-    { id: 'task-create-photo-upload-js', src: 'src/modules/tasks/taskCreatePhotoUpload.js', group: 'tasks', critical: false },
-    { id: 'task-custom-photo-priority-js', src: 'src/modules/tasks/taskCustomPhotoPriority.js', group: 'tasks', critical: false },
-    { id: 'task-custom-image-save-fix-js', src: 'src/modules/tasks/taskCustomImageSaveFix.js', group: 'tasks', critical: false },
     { id: 'household-sync-test-panel-js', src: 'src/modules/tasks/householdSyncTestPanel.js', group: 'tasks', critical: false }
   ];
 
