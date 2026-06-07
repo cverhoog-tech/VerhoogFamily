@@ -1,10 +1,9 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.408
+// APP MODULES v0.409
 // Stable bootstrap modules.
-// v0.300g: source bridge merges joined state for overview cards.
-// v0.300f: overview repatch keeps joined/helper state visible after tabs.
-// v0.300e: stable help button handler loaded after shared join state.
+// v0.301: help/join MVP uses one single-store module. Older help/join
+// patch/bridge modules are removed from bootflow to stop state conflicts.
 // v0.299 MVP stabilization: custom task photo upload/override modules are
 // removed from bootflow. Tasks use automatic premium backgrounds for now.
 // Group Quest tab/modules removed; collaboration lives in normal tasks.
@@ -12,7 +11,7 @@
 // ============================================================
 
 (function(){
-  var VERSION = '0.408';
+  var VERSION = '0.409';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -56,10 +55,7 @@
     { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
     { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
     { id: 'task-joinable-help-merge-js', src: 'src/modules/tasks/taskJoinableHelpMerge.js', group: 'tasks', critical: false },
-    { id: 'task-shared-joinable-state-js', src: 'src/modules/tasks/taskSharedJoinableState.js', group: 'tasks', critical: false },
-    { id: 'task-help-button-stabilizer-js', src: 'src/modules/tasks/taskHelpButtonStabilizer.js', group: 'tasks', critical: false },
-    { id: 'task-join-overview-repatch-js', src: 'src/modules/tasks/taskJoinOverviewRepatch.js', group: 'tasks', critical: false },
-    { id: 'task-join-state-source-bridge-js', src: 'src/modules/tasks/taskJoinStateSourceBridge.js', group: 'tasks', critical: false },
+    { id: 'task-help-join-single-store-js', src: 'src/modules/tasks/taskHelpJoinSingleStore.js', group: 'tasks', critical: false },
     { id: 'task-remove-group-complete-cta-js', src: 'src/modules/tasks/taskRemoveGroupAndCompleteCta.js', group: 'tasks', critical: false },
     { id: 'task-detail-fullscreen-polish-js', src: 'src/modules/tasks/taskDetailFullscreenPolish.js', group: 'tasks', critical: false },
     { id: 'household-sync-test-panel-js', src: 'src/modules/tasks/householdSyncTestPanel.js', group: 'tasks', critical: false }
