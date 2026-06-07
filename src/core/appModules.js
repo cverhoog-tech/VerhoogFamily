@@ -1,7 +1,8 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.409
+// APP MODULES v0.410
 // Stable bootstrap modules.
+// v0.302d: load top home hero card background CSS after base styles.
 // v0.301: help/join MVP uses one single-store module. Older help/join
 // patch/bridge modules are removed from bootflow to stop state conflicts.
 // v0.299 MVP stabilization: custom task photo upload/override modules are
@@ -11,7 +12,7 @@
 // ============================================================
 
 (function(){
-  var VERSION = '0.409';
+  var VERSION = '0.410';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -22,6 +23,7 @@
     { id: 'mobile-viewport-lock-js', src: 'src/core/mobileViewportLock.js', group: 'core', critical: false },
     { id: 'modal-manager-js', src: 'src/core/modalManager.js', group: 'core', critical: false },
     { id: 'bottom-sheet-js', src: 'src/core/bottomSheet.js', group: 'core', critical: false },
+    { id: 'home-hero-card-background-loader-js', src: 'src/core/homeHeroCardBackgroundLoader.js', group: 'core', critical: false },
     { id: 'food-modules-repair-js', src: 'src/core/foodModulesRepair.js', group: 'core', critical: false },
     { id: 'food-add-bridge-js', src: 'src/core/foodAddBridge.js', group: 'core', critical: false },
     { id: 'food-shop-sheet-repair-js', src: 'src/core/foodShopSheetRepair.js', group: 'core', critical: false },
