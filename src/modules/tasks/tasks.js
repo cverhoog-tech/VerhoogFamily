@@ -7,7 +7,7 @@ function renderTasks() {
   var el=document.getElementById('task-content');if(!el)return;
   if(taskTab==='overzicht') {
     // Use v023 quest UI
-    if(window.__famV023 && typeof render === 'function') { render(true); }
+    if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){_r(true); }
   }
   else if(taskTab==='terugkerend') renderTasksTerugkerend(el);
   else if(taskTab==='week') renderTasksTerugkerend(el);
@@ -48,9 +48,7 @@ function deleteTask(id) {
 
 function renderTasksOverzicht(el) {
   // Redirected to v023 quest UI
-  if(window.__famV023 && typeof render === 'function') {
-    render(true);
-  }
+  if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){ _r(true); } }
 }
 
 function renderTasksTerugkerend(el) {
