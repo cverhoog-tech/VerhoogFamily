@@ -545,16 +545,16 @@ function create(){
   };
 }
 
-window.fqSetQType=function(t,id){
+function fqSetQType(t,id){
   window._qtype=t;
   document.querySelectorAll('.fqQTypeBtn').forEach(function(b){b.classList.remove('active');});
   var el=document.getElementById(id);if(el)el.classList.add('active');
-};
-window.fqSetQPrio=function(p,id){
+}
+function fqSetQPrio(p,id){
   window._qprio=p;
   document.querySelectorAll('.fqQPrioBtn').forEach(function(b){b.classList.remove('active');});
   var el=document.getElementById(id);if(el)el.classList.add('active');
-};
+}
 
 
 function langBtn(){
@@ -594,11 +594,14 @@ function run(){
   }
 }
 
-/* ── GLOBAL EXPORTS — navigation.js en tasks.js roepen deze aan ── */
+/* ── GLOBAL EXPORTS — navigation.js, tasks.js en inline onclick handlers ── */
 window.famRender=render;
 window.famDetail=detail;
 window.famCreate=create;
 window.famCloseModal=closeModal;
+window.showGQPopup=showGQPopup;
+window.fqSetQType=fqSetQType;
+window.fqSetQPrio=fqSetQPrio;
 
 document.addEventListener('DOMContentLoaded',function(){run();setTimeout(function(){render(true);},60);});
 window.addEventListener('load',function(){run();setTimeout(function(){render(true);},120);});
