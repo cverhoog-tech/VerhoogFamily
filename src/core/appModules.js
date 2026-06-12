@@ -1,18 +1,18 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.410
-// Stable bootstrap modules.
-// v0.302d: load top home hero card background CSS after base styles.
-// v0.301: help/join MVP uses one single-store module. Older help/join
-// patch/bridge modules are removed from bootflow to stop state conflicts.
-// v0.299 MVP stabilization: custom task photo upload/override modules are
-// removed from bootflow. Tasks use automatic premium backgrounds for now.
-// Group Quest tab/modules removed; collaboration lives in normal tasks.
-// recipes.js v0.272 is self-contained — recipe helpers loaded separately.
+// APP MODULES v0.411
+// v0.303 Stability Lock.
+// Keep the bootflow boring and predictable.
+//
+// Ownership rules:
+// - Task overview/detail/create/help/join MVP is owned by quest-overlay.js.
+// - quest.css owns task visual styling.
+// - homeHeroCardBackgrounds.css owns only the top Home hero card images.
+// - No extra help/join overlay, bridge or repatch modules are loaded.
 // ============================================================
 
 (function(){
-  var VERSION = '0.410';
+  var VERSION = '0.411';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -24,14 +24,17 @@
     { id: 'modal-manager-js', src: 'src/core/modalManager.js', group: 'core', critical: false },
     { id: 'bottom-sheet-js', src: 'src/core/bottomSheet.js', group: 'core', critical: false },
     { id: 'home-hero-card-background-loader-js', src: 'src/core/homeHeroCardBackgroundLoader.js', group: 'core', critical: false },
+
     { id: 'food-modules-repair-js', src: 'src/core/foodModulesRepair.js', group: 'core', critical: false },
     { id: 'food-add-bridge-js', src: 'src/core/foodAddBridge.js', group: 'core', critical: false },
     { id: 'food-shop-sheet-repair-js', src: 'src/core/foodShopSheetRepair.js', group: 'core', critical: false },
     { id: 'grocery-quick-add-modal-js', src: 'src/core/groceryQuickAddModal.js', group: 'food', critical: false },
+
     { id: 'live-sync-adapter-js', src: 'src/core/liveSyncAdapter.js', group: 'core', critical: false },
     { id: 'household-identity-js', src: 'src/core/householdIdentity.js', group: 'core', critical: false },
     { id: 'household-repository-js', src: 'src/core/householdRepository.js', group: 'core', critical: false },
     { id: 'reactive-household-state-js', src: 'src/core/reactiveHouseholdState.js', group: 'core', critical: false },
+
     { id: 'quest-engine-js', src: 'src/core/questEngine.js', group: 'quests', critical: false },
     { id: 'quest-adapter-js', src: 'src/core/questAdapter.js', group: 'quests', critical: false },
     { id: 'epic-hero-backgrounds-js', src: 'src/core/epicHeroBackgrounds.js', group: 'rendering', critical: false },
@@ -40,7 +43,6 @@
     { id: 'finance-native-tabs-js', src: 'src/modules/finance/financeNativeTabs.js', group: 'finance', critical: false },
     { id: 'savings-bottom-sheet-bridge-js', src: 'src/modules/finance/savingsBottomSheetBridge.js', group: 'finance', critical: false },
 
-    // recipes.js is self-contained (v0.272 refactor); helpers below patch MVP gaps
     { id: 'recipe-card-image-fix-js', src: 'src/modules/recipes/recipeCardImageFix.js', group: 'food', critical: false },
     { id: 'recipe-checklist-persistence-js', src: 'src/modules/recipes/recipeChecklistPersistence.js', group: 'food', critical: false },
     { id: 'recipe-link-import-js', src: 'src/modules/recipes/recipeLinkImport.js', group: 'food', critical: false },
@@ -55,9 +57,6 @@
     { id: 'recurring-task-repository-bridge-js', src: 'src/modules/tasks/recurringTaskRepositoryBridge.js', group: 'tasks', critical: false },
     { id: 'task-repository-render-bridge-js', src: 'src/modules/tasks/taskRepositoryRenderBridge.js', group: 'tasks', critical: false },
     { id: 'task-nav-native-css-js', src: 'src/modules/tasks/taskNavNativeCss.js', group: 'tasks', critical: false },
-    { id: 'quest-renderer-preview-js', src: 'src/modules/tasks/questRendererPreview.js', group: 'tasks', critical: false },
-    { id: 'task-joinable-help-merge-js', src: 'src/modules/tasks/taskJoinableHelpMerge.js', group: 'tasks', critical: false },
-    { id: 'task-help-join-single-store-js', src: 'src/modules/tasks/taskHelpJoinSingleStore.js', group: 'tasks', critical: false },
     { id: 'task-remove-group-complete-cta-js', src: 'src/modules/tasks/taskRemoveGroupAndCompleteCta.js', group: 'tasks', critical: false },
     { id: 'task-detail-fullscreen-polish-js', src: 'src/modules/tasks/taskDetailFullscreenPolish.js', group: 'tasks', critical: false },
     { id: 'household-sync-test-panel-js', src: 'src/modules/tasks/householdSyncTestPanel.js', group: 'tasks', critical: false }
