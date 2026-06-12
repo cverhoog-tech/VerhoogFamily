@@ -226,9 +226,10 @@ function _renderScreen(id) {
     document.querySelectorAll('.ttab').forEach(function(b){b.classList.remove('active');});
     var first=document.querySelector('.ttab');if(first)first.classList.add('active');
     setTimeout(function(){
-      if(window.__famV023 && typeof render === 'function') {
+      var famRenderFn = (typeof render === 'function') ? render : window.famRender;
+      if(window.__famV023 && typeof famRenderFn === 'function') {
         var r=document.getElementById('task-content')||document.querySelector('.task-content');
-        if(r){r.dataset.v023='';render(true);}
+        if(r){r.dataset.v023='';famRenderFn(true);}
       }
     }, 50);
   }
