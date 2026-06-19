@@ -137,8 +137,10 @@ function card(x){
   var prioBadge='<span class="fqBadge '+prioCls(prio)+'">'+prioLabel(prio)+'</span>';
   var actionBtn=(isRaid||isDung)?'<button class="fqStartBtn '+(isRaid?'raid':'dungeon')+'">'+(isRaid?'Start raid':'Start dungeon')+'</button>':'<div class="fqArrow">›</div>';
   var ppTag=x[13]?'<span class="fqMetaTag pp">👥 '+x[13]+'</span>':'';
+  var cardHelpBtn=x[9]?'':'<button class="fqCardHelpBtn" data-help="'+x[0]+'" title="'+L('askhelp')+'">👥</button>';
   return '<div class="fqCard '+(x[9]?'done ':'')+cls+'" data-id="'+x[0]+'">'+
     '<button class="fqDel" data-del="'+x[0]+'">✕</button>'+
+    cardHelpBtn+
     '<div class="fqImg" style="background-image:url('+x[7]+')">'+
       '<div class="fqChk">'+(x[9]?'✓':'')+'</div>'+
     '</div>'+
@@ -198,6 +200,8 @@ function render(force){
     e.onclick=function(ev){
       var delBtn=ev.target.closest('[data-del]');
       if(delBtn){ev.stopPropagation();data=data.filter(function(x){return x[0]!==delBtn.dataset.del;});save();r.dataset.v023='';render(true);return;}
+      var helpBtn=ev.target.closest('[data-help]');
+      if(helpBtn){ev.stopPropagation();var hx=data.find(function(x){return x[0]===helpBtn.dataset.help;});showGQPopup(hx?hx[2]:'');return;}
       var startBtn=ev.target.closest('.fqStartBtn');
       if(startBtn){ev.stopPropagation();detail(e.dataset.id);return;}
       detail(e.dataset.id);
