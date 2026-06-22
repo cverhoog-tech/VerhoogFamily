@@ -342,24 +342,65 @@ function editRec(id) {
 }
 
 function renderTasksPersoon(el) {
-  var people=['Shane','Esra'];
-  var html='<div style="padding:12px 0">';
-  people.forEach(function(person){
-    var tasks=taskData.filter(function(t){return t.who&&t.who.indexOf(person)>-1;});
-    var done=tasks.filter(function(t){return t.done;}).length;
-    var total=tasks.length;
-    var pct=total?Math.round(done/total*100):0;
-    var color=person==='Shane'?'#2d5a27':'#c0547a';
-    html+='<div style="padding:0 16px 16px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+person+'</div>'
-      +'<div style="font-size:12px;color:#888">'+done+'/'+total+' gedaan</div>'
-      +'</div>'
-      +'<div class="prog-bar" style="margin-bottom:12px"><div class="prog-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
-    tasks.forEach(function(t){html+=taskCardHTML(t);});
-    html+='</div>';
+  if(!el) return;
+  var raw = localStorage.getItem('fam_tasks_v023')||localStorage.getItem('fam_tasks_v022')||'[]';
+  var allTasks;
+  try { allTasks = JSON.parse(raw)||[]; } catch(e) { allTasks=[]; }
+
+  var people = ['Shane','Esra'];
+  var colors = {Shane:'#2563eb', Esra:'#ec4899'};
+  var icons  = {Shane:'SK', Esra:'ES'};
+
+  var html = '<div class="fq" style="padding-bottom:100px;">';
+
+  people.forEach(function(person) {
+    var tasks = allTasks.filter(function(x){ return x[5] && (x[5]==='Beiden' || x[5].indexOf(person)>-1); });
+    var done  = tasks.filter(function(x){ return x[9]; }).length;
+    var total = tasks.length;
+    var pct   = total ? Math.round(done/total*100) : 0;
+    var color = colors[person]||'#667085';
+    var icon  = icons[person]||person.slice(0,2).toUpperCase();
+
+    html += '<div style="padding:16px 16px 8px;">';
+    // Header persoon
+    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">';
+    html += '<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0;">'+icon+'</div>';
+    html += '<div style="flex:1;">';
+    html += '<div style="font-size:17px;font-weight:950;color:#111827;letter-spacing:-.3px;">'+person+'</div>';
+    html += '<div style="font-size:12px;color:#667085;font-weight:700;margin-top:1px;">'+done+' / '+total+' quests voltooid</div>';
+    html += '</div>';
+    html += '<div style="font-size:22px;font-weight:950;color:'+color+';">'+pct+'%</div>';
+    html += '</div>';
+
+    // Progress bar
+    html += '<div style="background:#edf0ec;border-radius:99px;height:7px;margin-bottom:14px;overflow:hidden;">';
+    html += '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:99px;transition:.4s;"></div>';
+    html += '</div>';
+
+    if(tasks.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:#9aa7bd;font-size:14px;font-weight:700;">Geen quests toegewezen</div>';
+    } else {
+      tasks.forEach(function(x) {
+        var isRaid=x[1]&&x[1].indexOf('RAID')>-1;
+        var isDung=x[1]&&x[1].indexOf('DUNGEON')>-1;
+        var cls=isRaid?'raid':(isDung?'dungeon':'');
+        var prio=x[12]||'laag';
+        var prioCls=prio==='hoog'?'hoog':(prio==='normaal'?'normaal':'laag');
+        html += '<div class="fqCard '+(x[9]?'done ':'')+cls+'" data-id="'+x[0]+'" style="margin-bottom:10px;cursor:pointer;" onclick="if(window.famDetail)famDetail(\''+x[0]+'\')">';
+        html += '<div class="fqImg" style="background-image:url('+x[7]+')"><div class="fqChk">'+(x[9]?'✓':'')+'</div></div>';
+        html += '<div class="fqBody">';
+        html += '<div class="fqBadges"><span class="fqBadge '+(isRaid?'raid':(isDung?'dungeon':'side'))+'">'+x[1]+'</span><span class="fqBadge '+prioCls+'">'+prio+'</span></div>';
+        html += '<div class="fqTitle">'+x[2]+'</div>';
+        html += '<div class="fqMeta"><span class="fqMetaTag">📅 '+(x[11]||x[4])+'</span><span class="fqMetaTag xp">'+x[6]+'</span></div>';
+        html += '</div><div class="fqArrow">›</div></div>';
+      });
+    }
+    html += '</div>';
+    // Scheiding tussen personen
+    html += '<div style="height:1px;background:#edf0ec;margin:0 16px 8px;"></div>';
   });
-  html+='</div>';
-  el.innerHTML=html;
+
+  html += '</div>';
+  el.innerHTML = html;
 }
 
