@@ -53,7 +53,58 @@
     </div>
   </div>
 
+
+  <!-- DEBUG PANEEL -->
+  <div id="fb-debug" style="position:fixed;bottom:0;left:0;right:0;background:#0f0f0f;color:#00ff88;font-family:monospace;font-size:11px;padding:10px 14px;max-height:40vh;overflow-y:auto;z-index:99999;display:none;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <b style="color:#fff;">🔍 Firebase Debug</b>
+      <button onclick="document.getElementById('fb-debug').style.display='none'" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:14px;">✕</button>
+    </div>
+    <div id="fb-debug-log"></div>
+  </div>
 </div>
+
+<script>
+// Onderschep console.error en console.log voor Firebase
+(function() {
+  var log = document.getElementById('fb-debug-log');
+  var panel = document.getElementById('fb-debug');
+  
+  function addLog(type, args) {
+    var msg = Array.from(args).map(function(a) {
+      try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
+    }).join(' ');
+    
+    // Toon altijd als het over Firebase gaat
+    if(msg.toLowerCase().indexOf('firebase') > -1 || msg.toLowerCase().indexOf('auth') > -1 || type === 'error') {
+      panel.style.display = 'block';
+      var line = document.createElement('div');
+      line.style.color = type === 'error' ? '#ff6b6b' : type === 'warn' ? '#ffcc00' : '#00ff88';
+      line.style.marginBottom = '4px';
+      line.style.wordBreak = 'break-all';
+      line.textContent = '[' + type.toUpperCase() + '] ' + msg;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  var _error = console.error.bind(console);
+  var _warn = console.warn.bind(console);
+  var _log = console.log.bind(console);
+  
+  console.error = function() { _error.apply(console, arguments); addLog('error', arguments); };
+  console.warn  = function() { _warn.apply(console, arguments);  addLog('warn', arguments); };
+  console.log   = function() { _log.apply(console, arguments);   addLog('log', arguments); };
+
+  window.onerror = function(msg, src, line, col, err) {
+    addLog('error', [msg + ' (' + src + ':' + line + ')']);
+  };
+  
+  window.addEventListener('unhandledrejection', function(e) {
+    addLog('error', ['Unhandled promise: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))]);
+  });
+})();
+</script>
 
 <script>
 (function() {
