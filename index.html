@@ -140,9 +140,27 @@ function completeSetup() {
   var err = document.getElementById('step2-error');
   if(!name) { err.textContent = 'Vul jouw naam in'; return; }
   if(!partner) { err.textContent = 'Vul de naam van je partner in'; return; }
+
+  // Opslaan in localStorage
   localStorage.setItem('familyapp-profile-name-v1', name);
   localStorage.setItem('familyapp-partner-name-v1', partner);
-  if(typeof onLoggedIn === 'function') onLoggedIn();
+
+  var btn = document.querySelector('#login-step-2 button');
+  if(btn) { btn.textContent = '⏳ Bezig...'; btn.disabled = true; }
+
+  // Gezin aanmaken in Firebase als fbUser bekend is
+  if(typeof setupNewFamily === 'function' && window.fbUser) {
+    setupNewFamily(name, partner)
+      .then(function() { if(typeof onLoggedIn === 'function') onLoggedIn(); })
+      .catch(function(e) {
+        if(err) err.textContent = 'Fout: ' + e.message;
+        if(btn) { btn.textContent = '✅ Start'; btn.disabled = false; }
+      });
+  } else {
+    // Geen Firebase — gewoon offline starten
+    if(typeof onLoggedIn === 'function') onLoggedIn();
+    else if(typeof initApp === 'function') { window._appStarted = true; initApp(); var ls=document.getElementById('login-screen'); if(ls) ls.style.display='none'; }
+  }
 }
 </script>
 
