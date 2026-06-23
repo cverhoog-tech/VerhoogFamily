@@ -146,8 +146,8 @@ var activityData = [
 ];
 var actNextId = 2;
 
-var myXP = 120;
-var partnerXPStore = 95;
+var myXP = parseInt(localStorage.getItem('fam_myxp_v1')||'120',10);
+var partnerXPStore = parseInt(localStorage.getItem('fam_partnerxp_v1')||'95',10);
 
 // Level thresholds — designed for ~1.5-2 year progression at normal use
 // ~150-300 XP/week = 7800-15600 XP/year
