@@ -48,8 +48,9 @@ var savedFbConfig = HARDCODED_FB_CONFIG;
 function initFirebase(config) {
   try {
     if(typeof firebase==='undefined') return false;
-    if(firebase.apps && firebase.apps.length) { try{firebase.apps[0].delete();}catch(e){} }
-    firebase.initializeApp(config);
+    if(!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(config);
+    }
     fbDb   = firebase.database();
     fbAuth = firebase.auth();
     try { fbMsg = firebase.messaging(); } catch(e){ fbMsg=null; }
