@@ -7,11 +7,8 @@ function renderTasks() {
   var el=document.getElementById('task-content');if(!el)return;
   if(taskTab==='overzicht') {
     // Use v023 quest UI
-    if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){_r(true); }
+    if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){_r(true);} }
   }
-  else if(taskTab==='terugkerend') renderTasksTerugkerend(el);
-  else if(taskTab==='week') renderTasksTerugkerend(el);
-  else if(taskTab==='vast') renderTasksTerugkerend(el);
   else if(taskTab==='persoon') renderTasksPersoon(el);
 }
 
