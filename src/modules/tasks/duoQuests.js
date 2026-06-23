@@ -238,6 +238,7 @@ function loadUserFamily(){
 
 function onLoggedIn(){
   hideLoginScreen();
+  if(typeof initApp === 'function') initApp();
   startFirebaseSync();
   setupPushNotifications();
   showToast('👋 Welkom '+myName+'!');
