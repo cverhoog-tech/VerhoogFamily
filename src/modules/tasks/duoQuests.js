@@ -237,6 +237,8 @@ function loadUserFamily(){
 }
 
 function onLoggedIn(){
+  if(window._appStarted) { startFirebaseSync(); return; }
+  window._appStarted = true;
   hideLoginScreen();
   if(typeof initApp === 'function') initApp();
   startFirebaseSync();
