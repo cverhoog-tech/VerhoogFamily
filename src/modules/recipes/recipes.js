@@ -1,661 +1,414 @@
 'use strict';
 // ============================================================
-// RECEPTEN
+// RECEPTEN MODULE v1.0
 // ============================================================
+(function () {
 
-var CAT_EMOJIS = {Ontbijt:'🥞',Lunch:'🥗',Diner:'🍽️',Snack:'🍿',Dessert:'🍰',Bakken:'🧁'};
+  var SEEDS = [
+    {name:'Lasagne',cat:'Diner',cuisine:'Italiaans',persons:4,time:60,emoji:'🍝',photo:'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80',ingredients:['500g gehakt','2 uien','2 teentjes knoflook','1 blik tomaten','Lasagne platen','500ml béchamelsaus','100g geraspte kaas','Olijfolie, zout, peper'],steps:['Verwarm oven op 180°C.','Bak gehakt met ui en knoflook.','Voeg tomaten toe, 15 min sudderen.','Laag voor laag: lasagne, vleessaus, béchamel.','Afsluiten met kaas, 40 min bakken.'],notes:'Lekker de volgende dag ook!'},
+    {name:'Shakshuka',cat:'Ontbijt',cuisine:'Midden-Oosten',persons:2,time:20,emoji:'🍳',photo:'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&q=80',ingredients:['4 eieren','1 blik tomaten','1 ui','1 paprika','Komijn, paprikapoeder','Feta optioneel'],steps:['Bak ui en paprika zacht.','Voeg tomaten en kruiden toe.','Maak kuiltjes en breek eieren erin.','Deksel op pan, 8-10 min.'],notes:'Lekker met knapperig brood'},
+    {name:'Bananenbrood',cat:'Bakken',cuisine:'Internationaal',persons:8,time:65,emoji:'🍌',photo:'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=800&q=80',ingredients:['3 rijpe bananen','200g bloem','100g suiker','2 eieren','80g boter','1 tl bakpoeder','Snuf zout'],steps:['Verwarm oven op 175°C.','Prak bananen fijn.','Meng alle ingrediënten.','In broodvorm 55 min bakken.'],notes:''},
+    {name:'Surinaamse roti met kip',cat:'Diner',cuisine:'Surinaams',persons:4,time:75,emoji:'🍛',photo:'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&q=80',ingredients:['4 rotiplaten','600g kipdijfilet','600g aardappelen','400g kousenband','4 eieren','2 uien','3 teentjes knoflook','2 el masala','1 tl komijn','Olie, zout, peper'],steps:['Kook eieren hard.','Bak ui en knoflook glazig.','Voeg kip en masala toe.','Stoof aardappelen gaar.','Serveer met roti.'],notes:'Sambal apart voor kinderen.'},
+    {name:'Pom met kip',cat:'Diner',cuisine:'Surinaams',persons:6,time:110,emoji:'🥘',photo:'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',ingredients:['1kg pomtayer','700g kip','2 uien','3 teentjes knoflook','Sap van 1 sinaasappel','Sap van 1 citroen','2 el suiker','Olie, zout, peper'],steps:['Marineer kip.','Bak kip met ui.','Meng pomtayer met citrus.','Laag voor laag in ovenschaal.','Bak 90 min op 180°C.'],notes:'Lekker met rijst en zuurgoed.'},
+    {name:'Saoto soep',cat:'Diner',cuisine:'Surinaams',persons:4,time:80,emoji:'🍲',photo:'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800&q=80',ingredients:['1 hele kip','2 liter water','1 ui','Laos, salam','Taugé','Gekookte eieren','Gebakken uitjes','Rijst','Selderij'],steps:['Trek bouillon van kip.','Pluk kip, breng op smaak.','Kook rijst en eieren.','Vul kommen en schenk bouillon erover.'],notes:'Sambal ketjap apart.'},
+    {name:'Nasi goreng',cat:'Diner',cuisine:'Indonesisch',persons:4,time:35,emoji:'🍚',photo:'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80',ingredients:['500g koude rijst','3 eieren','250g kip','2 sjalotten','3 teentjes knoflook','2 el ketjap manis','1 el sambal','Komkommer','Kroepoek'],steps:['Bak sjalot, knoflook en sambal.','Voeg kip toe en bak gaar.','Voeg rijst toe, roerbak op hoog vuur.','Bak eieren apart.','Serveer met komkommer en kroepoek.'],notes:'Koude rijst van gisteren werkt het best.'},
+    {name:'Rendang daging',cat:'Diner',cuisine:'Indonesisch',persons:6,time:180,emoji:'🥩',photo:'https://images.unsplash.com/photo-1625944525533-473f1a3d54e7?w=800&q=80',ingredients:['1kg runderriblappen','400ml kokosmelk','2 stengels citroengras','4 limoenblaadjes','2 uien','4 teentjes knoflook','Gember, laos','Komijn, koriander','Rode pepers'],steps:['Maak boemboe van kruiden.','Bak boemboe geurig.','Voeg vlees toe.','Voeg kokosmelk toe.','Stoof 2,5 uur tot dik en donker.'],notes:'Beter na een nacht rusten.'},
+    {name:'Sate ayam',cat:'Diner',cuisine:'Indonesisch',persons:4,time:50,emoji:'🍢',photo:'https://images.unsplash.com/photo-1529563021893-cc83c992d75d?w=800&q=80',ingredients:['600g kipdijfilet','3 el ketjap manis','2 teentjes knoflook','1 tl koriander','Pindasaus','Komkommer'],steps:['Marineer kip.','Rijg aan stokjes.','Grill gaar.','Serveer met pindasaus.'],notes:'Week houten stokjes vooraf.'},
+    {name:'Kofte met bulgur',cat:'Diner',cuisine:'Turks',persons:4,time:50,emoji:'🥙',photo:'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=800&q=80',ingredients:['600g rundergehakt','1 ui geraspt','2 teentjes knoflook','1 ei','1 tl komijn','1 tl paprika','250g bulgur','Tomaat, komkommer','Peterselie, citroen'],steps:['Meng gehakt met kruiden.','Vorm kleine kofte.','Maak bulgur salade.','Bak of grill kofte.','Serveer met yoghurt.'],notes:''},
+    {name:'Menemen',cat:'Ontbijt',cuisine:'Turks',persons:2,time:20,emoji:'🍳',photo:'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&q=80',ingredients:['4 eieren','3 tomaten','1 groene peper','1 tl pul biber','Peterselie','Olijfolie','Brood'],steps:['Fruit peper in olijfolie.','Voeg tomaat toe.','Roer eieren erdoor.','Laat romig stollen.','Serveer met brood.'],notes:'Zacht en sappig houden.'},
+    {name:'Lahmacun',cat:'Diner',cuisine:'Turks',persons:4,time:70,emoji:'🍕',photo:'https://images.unsplash.com/photo-1642784353782-096640cb7028?w=800&q=80',ingredients:['4 dunne wraps','300g gehakt','1 ui','1 tomaat','1 paprika','2 el tomatenpuree','Peterselie','Komijn, paprika'],steps:['Mix gehakt met groenten.','Smeer dun op wraps.','Bak heet in oven.','Serveer met citroen en sla.'],notes:'Rol op voor serveren.'},
+    {name:'Spaghetti carbonara',cat:'Diner',cuisine:'Italiaans',persons:4,time:25,emoji:'🍝',photo:'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=800&q=80',ingredients:['400g spaghetti','150g pancetta','3 eieren','80g Parmezaan','Zwarte peper','Zout'],steps:['Kook spaghetti al dente.','Bak pancetta krokant.','Klop eieren met kaas.','Meng pasta off heat met ei-mengsel.','Voeg pastawater toe tot romig.'],notes:'Geen room nodig.'},
+    {name:'Pizza margherita',cat:'Diner',cuisine:'Italiaans',persons:4,time:60,emoji:'🍕',photo:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',ingredients:['Pizzadeeg','Tomatensaus','Mozzarella','Basilicum','Olijfolie'],steps:['Verwarm oven maximaal.','Rol deeg dun.','Beleg met saus en mozzarella.','Bak krokant.','Garneer met basilicum.'],notes:''},
+    {name:'Boerenkool stamppot',cat:'Diner',cuisine:'Nederlands',persons:4,time:40,emoji:'🥬',photo:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',ingredients:['1kg aardappelen','500g boerenkool','1 rookworst','150ml melk','40g boter','Mosterd'],steps:['Kook aardappelen met boerenkool.','Warm rookworst.','Stamp met melk en boter.','Breng op smaak.','Serveer met rookworst.'],notes:'Extra lekker met spekjes.'},
+    {name:'Pannenkoeken',cat:'Diner',cuisine:'Nederlands',persons:4,time:35,emoji:'🥞',photo:'https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=800&q=80',ingredients:['250g bloem','2 eieren','500ml melk','Snuf zout','Boter','Stroop, poedersuiker'],steps:['Klop beslag glad.','Verhit boter.','Bak goudbruin aan beide kanten.','Serveer met stroop.'],notes:'Ideale gezinsmaaltijd.'},
+    {name:'Appeltaart',cat:'Bakken',cuisine:'Nederlands',persons:10,time:90,emoji:'🥧',photo:'https://images.unsplash.com/photo-1621743478914-cc8a86d7e9f2?w=800&q=80',ingredients:['300g bloem','200g boter','150g suiker','1 ei','1kg appels','Rozijnen','Kaneel'],steps:['Maak deeg.','Bekleed springvorm.','Vul met appel-kaneel mengsel.','Maak raster.','Bak 60 min op 175°C.'],notes:'Laat afkoelen voor mooie punten.'},
+    {name:'Erwtensoep',cat:'Diner',cuisine:'Nederlands',persons:6,time:120,emoji:'🥣',photo:'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',ingredients:['500g spliterwten','1 prei','1 winterpeen','1 knolselderij','1 rookworst','Speklap','Selderij'],steps:['Kook erwten met vlees.','Voeg groenten toe.','Kook tot dik.','Snijd vlees fijn.','Breng op smaak.'],notes:'De volgende dag nog beter.'}
+  ];
 
-var recipesData = [
-  {id:1, name:'Lasagne', cat:'Diner', persons:4, time:60, photo:null,
-   ingredients:['500g gehakt','2 uien','2 teentjes knoflook','1 blik tomaten (400g)','Lasagne platen','500ml béchamelsaus','100g geraspte kaas','Olijfolie, zout, peper'],
-   steps:['Verwarm oven op 180°C.','Bak gehakt met ui en knoflook.','Voeg tomaten toe, 15 min sudderen.','Laag voor laag opbouwen: lasagne, vleessaus, béchamel.','Afsluiten met kaas. 40 min bakken.'],
-   notes:'Heerlijk de volgende dag ook!'},
-  {id:2, name:'Shakshuka', cat:'Ontbijt', persons:2, time:20, photo:null,
-   ingredients:['4 eieren','1 blik tomaten','1 ui','1 paprika','Komijn, paprikapoeder','Feta (optioneel)'],
-   steps:['Bak ui en paprika zacht.','Voeg tomaten en kruiden toe.','Maak kuiltjes en breek eieren erin.','Deksel op pan, 8-10 min laten staan.'],
-   notes:'Lekker met knapperig brood'},
-  {id:3, name:'Bananenbrood', cat:'Bakken', persons:8, time:65, photo:null,
-   ingredients:['3 rijpe bananen','200g bloem','100g suiker','2 eieren','80g boter','1 tl bakpoeder','Snuf zout'],
-   steps:['Verwarm oven op 175°C.','Prak bananen fijn.','Meng alle ingrediënten.','In broodvorm 55 min bakken.'],
-   notes:''}
-];
-var recipeNextId = 4;
-var recipeCatFilter = 'all';
-var currentRecipeId = null;
-var checkedIngredients = {}; // {recipeId: Set of checked indices}
+  var FALLBACKS = [
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',
+    'https://images.unsplash.com/photo-1498579397066-22750a3cb424?w=800&q=80',
+    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
+    'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=800&q=80'
+  ];
 
-function renderRecipes() {
-  // Attach chip events
-  document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(c) {
-    c.onclick = function() {
-      document.querySelectorAll('#recipe-cat-chips .chip').forEach(function(x){x.classList.remove('active');});
-      c.classList.add('active');
-      recipeCatFilter = c.dataset.rcat;
-      renderRecipeGrid();
-    };
-  });
-  showRecipeListView();
-  renderRecipeGrid();
-}
+  var CAT_ICONS = {Ontbijt:'🥞',Lunch:'🥗',Diner:'🍽️',Snack:'🍿',Dessert:'🍰',Bakken:'🧁'};
+  var STORE_KEY = 'fam_recipes_v1';
+  var SEED_KEY  = 'fam_recipes_seeded_v1';
 
-function renderRecipeGrid() {
-  var grid = document.getElementById('recipe-grid');
-  if(!grid) return;
-  var data = recipeCatFilter==='all' ? recipesData : recipesData.filter(function(r){return r.cat===recipeCatFilter;});
-  if(!data.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--c-text2)">Nog geen recepten in deze categorie</div>';
-    return;
+  var R = [];
+  var checkedI = {};
+  var checkedS = {};
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) { var p = JSON.parse(raw); if (Array.isArray(p)) R = p; }
+    } catch(e) {}
+    window.recipesData = R;
   }
-  // Give #recipe-grid itself the grid layout
-  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px';
-  grid.innerHTML = data.map(function(r) {
-    var emoji = r.photo ? '' : (CAT_EMOJIS[r.cat] || '🍴');
-    var thumbContent = r.photo
-      ? '<img src="'+r.photo+'" style="width:100%;height:100%;object-fit:cover">'
-      : '<span style="font-size:44px">'+emoji+'</span>';
-    return '<div class="recipe-card" data-rid="'+r.id+'">'
-      +'<div class="recipe-card-thumb" style="background:var(--c-surface2)">'+thumbContent+'</div>'
-      +'<div class="recipe-card-body">'
-      +'<div class="recipe-card-name">'+r.name+'</div>'
-      +'<div class="recipe-card-meta">'
-      +'<span class="recipe-cat-badge">'+r.cat+'</span>'
-      +'<span>⏱ '+r.time+'m</span>'
-      +'<span>👥 '+r.persons+'p</span>'
-      +'</div></div></div>';
-  }).join('');
-  // Attach click events via JS (no inline onclick needed)
-  grid.querySelectorAll('[data-rid]').forEach(function(card) {
-    card.onclick = function() { openRecipeDetail(parseInt(card.dataset.rid)); };
-  });
-}
 
-function showRecipeListView() {
-  document.getElementById('recipe-list-view').style.display = 'block';
-  document.getElementById('recipe-detail-view').style.display = 'none';
-  document.getElementById('recipe-editor-view').style.display = 'none';
-  document.getElementById('recipe-import-view').style.display = 'none';
-}
+  function saveData() {
+    window.recipesData = R;
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(R)); } catch(e) {}
+    try { if (window.HouseholdRepository && window.HouseholdRepository.write) window.HouseholdRepository.write('recipes', R, {source:'recipes'}); } catch(e) {}
+  }
 
-function openRecipeDetail(id) {
-  currentRecipeId = id;
-  var r = recipesData.find(function(x){ return x.id === id; });
-  if(!r) { showToast('Recept niet gevonden'); return; }
-
-  // Ensure arrays exist
-  if(!Array.isArray(r.ingredients)) r.ingredients = [];
-  if(!Array.isArray(r.steps)) r.steps = [];
-  if(!checkedIngredients[id]) checkedIngredients[id] = new Set();
-
-  // Switch views
-  var listView   = document.getElementById('recipe-list-view');
-  var detailView = document.getElementById('recipe-detail-view');
-  var editorView = document.getElementById('recipe-editor-view');
-  var importView = document.getElementById('recipe-import-view');
-  if(listView)   listView.style.display   = 'none';
-  if(detailView) detailView.style.display = 'block';
-  if(editorView) editorView.style.display = 'none';
-  if(importView) importView.style.display = 'none';
-
-  // Wire top buttons
-  var editBtn = document.getElementById('recipe-edit-btn');
-  var delBtn  = document.getElementById('recipe-delete-btn');
-  if(editBtn) editBtn.onclick = function(){ openRecipeEditor(id); };
-  if(delBtn)  delBtn.onclick  = function(){
-    if(confirm('Recept "'+r.name+'" verwijderen?')) {
-      recipesData = recipesData.filter(function(x){ return x.id !== id; });
-      showRecipeListView(); renderRecipeGrid();
-    }
-  };
-
-  // ── HERO ──
-  var heroHtml = r.photo
-    ? '<div class="recipe-hero-wrap" style="width:100%;height:210px;overflow:hidden;position:relative">'
-      +'<img src="'+r.photo+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.style.opacity=\'.3\'">'
-      +'<button id="recipe-photo-btn" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">📷 Wijzigen</button>'
-      +'</div>'
-    : '<div class="recipe-hero-wrap" style="text-align:center;padding:28px 16px 12px;position:relative">'
-      +'<div style="font-size:64px;line-height:1">'+(CAT_EMOJIS[r.cat]||'🍴')+'</div>'
-      +'<button id="recipe-photo-btn" style="margin-top:10px;background:var(--c-surface);color:var(--c-text2);border:1px solid var(--c-border);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer">📷 Foto toevoegen</button>'
-      +'</div>';
-
-  // ── INGREDIENTS ──
-  var checked = checkedIngredients[id];
-  var ingsHtml = r.ingredients.length === 0
-    ? '<p class="recipe-ing-text" style="padding:10px 0">Geen ingrediënten opgegeven</p>'
-    : r.ingredients.map(function(ing, i){
-        var done = checked.has(i);
-        return '<label class="recipe-ing-label">'
-          +'<input type="checkbox" '+(done?'checked':'')+' data-recid="'+id+'" data-idx="'+i+'" style="display:none">'
-          +'<div class="recipe-ing-circle'+(done?' done':'')+'">'
-          +(done?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':'')
-          +'</div>'
-          +'<span class="recipe-ing-text'+(done?' done':'')+'">'+ing+'</span>'
-          +'</label>';
-      }).join('');
-
-  // ── STEPS ──
-  var stepsHtml = r.steps.length === 0
-    ? '<p class="recipe-step-text" style="padding:10px 0">Geen bereidingsstappen opgegeven</p>'
-    : r.steps.map(function(step, i){
-        return '<div class="recipe-step-row">'
-          +'<div class="recipe-step-num">'+(i+1)+'</div>'
-          +'<div class="recipe-step-text">'+step+'</div>'
-          +'</div>';
-      }).join('');
-
-  // ── RENDER ──
-  var dc = document.getElementById('recipe-detail-content');
-  if(!dc) return;
-
-  dc.innerHTML =
-    heroHtml
-    +'<div class="recipe-title-area">'
-    +'<h2>'+r.name+'</h2>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    +'<span class="recipe-tag">📂 '+r.cat+'</span>'
-    +'<span class="recipe-tag">⏱ '+r.time+' min</span>'
-    +'<span class="recipe-tag">👥 '+r.persons+' pers</span>'
-    +'</div></div>'
-    +'<div class="recipe-ings-wrap">'
-    +'<div class="recipe-section-header">Ingrediënten</div>'
-    +ingsHtml
-    +'<button class="recipe-shop-btn" id="to-shop-btn">🛒 Zet alles op boodschappenlijst</button>'
-    +'</div>'
-    +'<div class="recipe-steps-wrap">'
-    +'<div class="recipe-section-header">Bereiding</div>'
-    +stepsHtml
-    +'</div>'
-    +(r.notes
-      ? '<div class="recipe-notes-wrap"><div class="recipe-notes-label">💡 Notities</div>'
-        +'<div class="recipe-notes-body">'+r.notes+'</div></div>'
-      : '')
-    +'<div style="height:40px"></div>';
-
-  // ── EVENT LISTENERS (after innerHTML) ──
-  // Photo button
-  var pBtn = document.getElementById('recipe-photo-btn');
-  if(pBtn) pBtn.onclick = function(){ openRecipePhotoSheet(id); };
-
-  // Shop button
-  var sBtn = document.getElementById('to-shop-btn');
-  if(sBtn) sBtn.onclick = function(){ addRecipeToShop(id); };
-
-  // Ingredient checkboxes — use change event on label
-  dc.querySelectorAll('[data-recid]').forEach(function(inp){
-    inp.onchange = function(){
-      var rid = parseInt(inp.dataset.recid);
-      var idx = parseInt(inp.dataset.idx);
-      if(!checkedIngredients[rid]) checkedIngredients[rid] = new Set();
-      var s = checkedIngredients[rid];
-      if(s.has(idx)) s.delete(idx); else s.add(idx);
-      var done = s.has(idx);
-      var lbl    = inp.closest('label');
-      var circle = lbl ? lbl.querySelector('.recipe-ing-circle') : null;
-      var text   = lbl ? lbl.querySelector('.recipe-ing-text')   : null;
-      if(circle){
-        circle.classList.toggle('done', done);
-        circle.innerHTML = done
-          ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
-          : '';
-      }
-      if(text) text.classList.toggle('done', done);
-    };
-  });
-}
-
-
-function closeRecipeDetail() { showRecipeListView(); renderRecipeGrid(); }
-
-// ── PHOTO SHEET ──
-var photoSheetRecipeId = null;
-
-function openRecipePhotoSheet(id) {
-  photoSheetRecipeId = id;
-  document.getElementById('recipe-photo-overlay').style.display = 'block';
-  document.getElementById('recipe-photo-suggestions').innerHTML = '';
-  document.getElementById('recipe-photo-status').textContent = '';
-  document.getElementById('recipe-photo-url').value = '';
-
-  // Wire file input
-  var fileInp = document.getElementById('recipe-photo-file');
-  fileInp.onchange = function(e) {
-    var file = e.target.files[0];
-    if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      saveRecipePhoto(id, ev.target.result);
-      closeRecipePhotoSheet();
-    };
-    reader.readAsDataURL(file);
-    fileInp.value = '';
-  };
-}
-
-function closeRecipePhotoSheet() {
-  document.getElementById('recipe-photo-overlay').style.display = 'none';
-  photoSheetRecipeId = null;
-}
-
-function saveRecipePhotoUrl() {
-  var url = document.getElementById('recipe-photo-url').value.trim();
-  if(!url) return;
-  saveRecipePhoto(photoSheetRecipeId, url);
-  closeRecipePhotoSheet();
-}
-
-function saveRecipePhoto(id, src) {
-  var r = recipesData.find(function(x){return x.id===id;});
-  if(r) { r.photo = src; openRecipeDetail(id); renderRecipeGrid(); }
-}
-
-function removeRecipePhoto() {
-  var r = recipesData.find(function(x){return x.id===photoSheetRecipeId;});
-  if(r) { r.photo = null; openRecipeDetail(r.id); renderRecipeGrid(); }
-  closeRecipePhotoSheet();
-}
-
-function generateRecipePhoto() {
-  if(!checkApiKey()) return;
-  var r = recipesData.find(function(x){return x.id===photoSheetRecipeId;});
-  if(!r) return;
-  var statusEl = document.getElementById('recipe-photo-status');
-  var sugEl = document.getElementById('recipe-photo-suggestions');
-  statusEl.innerHTML = '<div style="display:flex;gap:4px;justify-content:center;align-items:center;padding:8px"><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div></div>AI zoekt fotos...';
-  sugEl.innerHTML = '';
-
-  // Use Gemini to get Unsplash search query for this dish
-  var photoPrompt = 'Geef mij een Unsplash zoekterm (1-3 woorden, Engels) voor het gerecht: "'+r.name+'". Geef ALLEEN de zoekterm terug, niets anders.';
-  callGemini(photoPrompt, null, 20)
-  .then(function(query){
-    var q = encodeURIComponent((query||r.name).trim().replace(/[^a-zA-Z0-9 ]/g,''));
-    var urls = [1,2,3].map(function(s){return 'https://source.unsplash.com/400x400/?'+q+',food&sig='+s;});
-    statusEl.textContent = 'Kies een foto:';
-    sugEl.innerHTML = urls.map(function(url) {
-      return '<div style="aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer" data-purl="'+encodeURIComponent(url)+'">'
-        +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">'
-        +'</div>';
-    }).join('');
-    sugEl.querySelectorAll('[data-purl]').forEach(function(el){
-      el.onclick=function(){pickAiPhoto(decodeURIComponent(el.dataset.purl));};
+  function seedData() {
+    try { if (localStorage.getItem(SEED_KEY)) return; } catch(e) {}
+    var names = {};
+    R.forEach(function(r){ names[r.name.toLowerCase()] = 1; });
+    SEEDS.forEach(function(s) {
+      if (names[s.name.toLowerCase()]) return;
+      var r = JSON.parse(JSON.stringify(s));
+      r.id = 'r' + Date.now() + Math.random().toString(36).slice(2,6);
+      R.push(r);
+      names[s.name.toLowerCase()] = 1;
     });
-  })
-  .catch(function(){
-    // Fallback zonder AI
-    var query = encodeURIComponent(r.name + ' food');
-    try {
-      var urls = JSON.parse(clean);
-      statusEl.textContent = 'Kies een foto:';
-      sugEl.innerHTML = urls.map(function(url) {
-        return '<div style="aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s" onclick="pickAiPhoto(\''+url.replace(/'/g,'%27')+'\')">'
-          +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.style.display=\'none\'">'
-          +'</div>';
-      }).join('');
-    } catch(e) {
-      // Fallback: use Unsplash source API which always works
-      var query = encodeURIComponent(r.name + ' food');
-      var fallbacks = [
-        'https://source.unsplash.com/400x400/?'+query+'&sig=1',
-        'https://source.unsplash.com/400x400/?'+query+'&sig=2',
-        'https://source.unsplash.com/400x400/?'+query+'&sig=3'
-      ];
-      statusEl.textContent = 'Kies een foto:';
-      sugEl.innerHTML = fallbacks.map(function(url) {
-        return '<div style="aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer" onclick="pickAiPhoto(\''+url+'\')">'
-          +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">'
-          +'</div>';
-      }).join('');
-    }
-  })
-  .catch(function(){
-    // Always fallback to Unsplash source
-    var query = encodeURIComponent((r.name||'food')+' dish food');
-    statusEl.textContent = 'Kies een foto:';
-    sugEl.innerHTML = [1,2,3].map(function(sig) {
-      var url = 'https://source.unsplash.com/400x400/?'+query+'&sig='+sig;
-      return '<div style="aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer" onclick="pickAiPhoto(\''+url+'\')">'
-        +'<img src="'+url+'" style="width:100%;height:100%;object-fit:cover">'
-        +'</div>';
+    saveData();
+    try { localStorage.setItem(SEED_KEY, '1'); } catch(e) {}
+  }
+
+  function newId() { return 'r' + Date.now() + Math.random().toString(36).slice(2,6); }
+
+  function getPhoto(r) {
+    return (r && r.photo) ? r.photo : FALLBACKS[Math.abs((r && r.name || '').length) % FALLBACKS.length];
+  }
+
+  function esc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function addCSS() {
+    if (document.getElementById('rcss1')) return;
+    var s = document.createElement('style');
+    s.id = 'rcss1';
+    s.textContent = [
+      '#rg{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px 100px}',
+      '#rs-wrap{padding:8px 14px 4px}',
+      '#rs-inp{width:100%;height:44px;border-radius:16px;border:1.5px solid var(--c-border,#e5e7eb);background:var(--c-surface,#fff);padding:0 14px;font-size:14px;font-weight:600;outline:none;box-sizing:border-box;-webkit-appearance:none;display:block}',
+      '.rc{border-radius:20px;overflow:hidden;cursor:pointer;position:relative;min-height:190px;background:#111}',
+      '.rc-img{position:absolute;inset:0;background-size:cover;background-position:center}',
+      '.rc-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.75)100%)}',
+      '.rc-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;background:#f3f4f0}',
+      '.rc-top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;gap:4px}',
+      '.rc-tag{background:rgba(255,255,255,.2);backdrop-filter:blur(6px);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:99px}',
+      '.rc-bot{position:absolute;bottom:10px;left:10px;right:10px;color:#fff}',
+      '.rc-name{font-size:15px;font-weight:900;line-height:1.15;text-shadow:0 1px 6px rgba(0,0,0,.5)}',
+      '.rc-sub{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}',
+      '.rc-sub span{background:rgba(255,255,255,.15);backdrop-filter:blur(4px);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}',
+      '#rd-hero{width:100%;height:200px;position:relative;overflow:hidden;background:var(--c-surface2,#f5f5f3);display:flex;align-items:center;justify-content:center;font-size:64px}',
+      '#rd-hero img{width:100%;height:100%;object-fit:cover;display:block}',
+      '.rd-photobtn{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:99px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer}',
+      '.rd-info{padding:16px 16px 8px}',
+      '.rd-info h2{margin:0 0 8px;font-size:20px;font-weight:900}',
+      '.rd-tags{display:flex;gap:6px;flex-wrap:wrap}',
+      '.rd-actions{padding:0 16px 8px;display:flex;gap:8px;flex-wrap:wrap}',
+      '.rd-btn{border:0;border-radius:99px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;background:var(--c-surface2,#f0f0ee);color:var(--c-text,#111)}',
+      '.rd-btn.pri{background:var(--c-primary,#3f7f2f);color:#fff}',
+      '.rd-btn.red{background:#fff0f0;color:#b00}',
+      '.rd-sec{background:var(--c-surface,#fff);border-radius:18px;margin:8px 14px;padding:14px;border:1px solid var(--c-border,#e5e7eb)}',
+      '.rd-sec-h{font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--c-text2,#888);margin-bottom:10px}',
+      '.rd-ing{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}',
+      '.rd-ing:last-child{border-bottom:0}',
+      '.rd-dot{width:22px;height:22px;min-width:22px;border-radius:50%;border:2px solid var(--c-border,#ccc);display:flex;align-items:center;justify-content:center;transition:.12s;flex-shrink:0;margin-top:1px}',
+      '.rd-dot.on{background:var(--c-primary,#3f7f2f);border-color:var(--c-primary,#3f7f2f)}',
+      '.rd-ing-txt{font-size:14px;line-height:1.4;flex:1;transition:.12s}',
+      '.rd-ing-txt.on{color:var(--c-text3,#aaa);text-decoration:line-through}',
+      '.rd-step{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border-radius:12px;border:1px solid var(--c-border,#e5e7eb);margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}',
+      '.rd-stepn{width:24px;height:24px;min-width:24px;border-radius:8px;background:var(--c-surface2,#f0f0ee);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:var(--c-text2,#888);flex-shrink:0}',
+      '.rd-step-txt{font-size:14px;line-height:1.4;flex:1;transition:.12s}',
+      '.rd-step-txt.on{color:var(--c-text3,#aaa);text-decoration:line-through}',
+      '.rd-shopbtn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:var(--c-primary,#3f7f2f);color:#fff;font-size:14px;font-weight:900;cursor:pointer}',
+      '.rd-notes{margin:8px 14px;padding:12px;background:var(--c-surface2,#f5f5f3);border-radius:14px;font-size:13px;line-height:1.5}',
+      '#r-addbtn{background:var(--c-primary,#3f7f2f);color:#fff;border:0;border-radius:99px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}',
+      '.r-empty{grid-column:1/-1;text-align:center;padding:40px;color:var(--c-text2,#888);font-size:14px}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  var currentFilter = 'all';
+  var currentSearch = '';
+
+  function renderList() {
+    console.log('[recipes] renderList start, R.length=', R.length);
+    addCSS();
+    var screen = document.getElementById('screen-recipes');
+    if (!screen) return;
+
+    var html = '<div id="recipe-list-view">';
+    html += '<div class="list-header"><h2>Recepten</h2><button id="r-addbtn">+ Recept</button></div>';
+    html += '<div id="rs-wrap"><input id="rs-inp" placeholder="Zoek recept, keuken..." autocomplete="off"></div>';
+    html += '<div class="chips" style="padding:4px 14px 10px">';
+    html += '<button class="chip' + (currentFilter === 'all' ? ' active' : '') + '" id="rf-all">Alle</button>';
+    html += '<button class="chip' + (currentFilter === 'Diner' ? ' active' : '') + '" id="rf-diner">Diner</button>';
+    html += '<button class="chip' + (currentFilter === 'Ontbijt' ? ' active' : '') + '" id="rf-ontbijt">Ontbijt</button>';
+    html += '<button class="chip' + (currentFilter === 'Lunch' ? ' active' : '') + '" id="rf-lunch">Lunch</button>';
+    html += '<button class="chip' + (currentFilter === 'Snack' ? ' active' : '') + '" id="rf-snack">Snack</button>';
+    html += '<button class="chip' + (currentFilter === 'Dessert' ? ' active' : '') + '" id="rf-dessert">Dessert</button>';
+    html += '<button class="chip' + (currentFilter === 'Bakken' ? ' active' : '') + '" id="rf-bakken">Bakken</button>';
+    html += '</div>';
+    html += '<div id="rg"></div>';
+    html += '</div>';
+    html += '<div id="recipe-detail-view" style="display:none"></div>';
+
+    screen.innerHTML = html;
+
+    // Wire up — all direct, no delegation, no tricks
+    document.getElementById('r-addbtn').onclick = function() { openEditor(null); };
+    document.getElementById('rs-inp').oninput = function() { currentSearch = this.value; renderGrid(); };
+    document.getElementById('rf-all').onclick    = function() { setFilter('all'); };
+    document.getElementById('rf-diner').onclick  = function() { setFilter('Diner'); };
+    document.getElementById('rf-ontbijt').onclick = function() { setFilter('Ontbijt'); };
+    document.getElementById('rf-lunch').onclick  = function() { setFilter('Lunch'); };
+    document.getElementById('rf-snack').onclick  = function() { setFilter('Snack'); };
+    document.getElementById('rf-dessert').onclick = function() { setFilter('Dessert'); };
+    document.getElementById('rf-bakken').onclick = function() { setFilter('Bakken'); };
+
+    renderGrid();
+  }
+
+  function setFilter(cat) {
+    currentFilter = cat;
+    renderList();
+  }
+
+  function renderGrid() {
+    var grid = document.getElementById('rg');
+    if (!grid) return;
+    var q = currentSearch.toLowerCase().trim();
+    var list = R.filter(function(r) {
+      if (currentFilter !== 'all' && r.cat !== currentFilter) return false;
+      if (!q) return true;
+      return (r.name + ' ' + (r.cuisine||'') + ' ' + r.cat + ' ' + (r.ingredients||[]).join(' ')).toLowerCase().indexOf(q) > -1;
+    });
+    if (!list.length) { grid.innerHTML = '<div class="r-empty">Geen recepten gevonden</div>'; return; }
+    grid.innerHTML = list.map(function(r) {
+      var p = getPhoto(r);
+      var e = r.emoji || CAT_ICONS[r.cat] || '🍴';
+      var id = esc(r.id);
+      return '<div class="rc" id="rc-' + id + '">'
+        + (p ? '<div class="rc-img" style="background-image:url(' + JSON.stringify(p) + ')"></div><div class="rc-ov"></div>' : '<div class="rc-emoji">' + e + '</div>')
+        + '<div class="rc-top"><span class="rc-tag">' + esc(r.cuisine||r.cat) + '</span><span class="rc-tag">⏱ ' + esc(r.time||20) + 'm</span></div>'
+        + '<div class="rc-bot"><div class="rc-name">' + esc(r.name) + '</div>'
+        + '<div class="rc-sub"><span>' + e + ' ' + esc(r.cat) + '</span><span>👥 ' + esc(r.persons||4) + 'p</span></div></div></div>';
     }).join('');
-  });
-}
-
-function pickAiPhoto(url) {
-  saveRecipePhoto(photoSheetRecipeId, decodeURIComponent(url.replace(/%27/g,"'")));
-  closeRecipePhotoSheet();
-  showToast('Foto opgeslagen ✓');
-}
-
-// Also add photo field to editor
-function addPhotoToEditor(id) {
-  document.getElementById('recipe-photo-file').click();
-}
-
-function toggleIngredient(recipeId, idx) {
-  if(!checkedIngredients[recipeId]) checkedIngredients[recipeId] = new Set();
-  var set = checkedIngredients[recipeId];
-  if(set.has(idx)) set.delete(idx); else set.add(idx);
-  openRecipeDetail(recipeId); // re-render
-}
-
-function addRecipeToShop(recipeId) {
-  var r = recipesData.find(function(x){return x.id===recipeId;});
-  if(!r) return;
-  var added = 0;
-  r.ingredients.forEach(function(ing) {
-    // Parse ingredient: "500g gehakt" -> name="gehakt", qty="500g"
-    var match = ing.match(/^([\d\/]+\s*(?:g|kg|ml|l|el|tl|stuk|stuks|blik|teen|teentjes|snuf|takje|tak)?\s+)/i);
-    var qty = match ? match[1].trim() : '1x';
-    var name = match ? ing.substring(match[0].length).trim() : ing;
-    // Don't add if already on list
-    var exists = shopData.some(function(s){return s.name.toLowerCase()===name.toLowerCase()&&!s.done;});
-    if(!exists) {
-      shopData.unshift({id:shopNextId++, name:name, qty:qty, cat:'Overig', who:myName, done:false, photo:null});
-      added++;
-    }
-  });
-  updateStats();
-  addActivity('🛒','#fff3dc',myName+' voegde '+added+' ingrediënten toe van "'+r.name+'"');
-  addNotif('🛒','#fff3dc','Ingrediënten toegevoegd!',added+' items van "'+r.name+'" staan nu op de lijst');
-  awardXP(2,'Recept naar lijst');
-  showToast(added+' ingrediënten toegevoegd aan boodschappen ✓');
-}
-
-function openRecipeEditor(id) {
-  document.getElementById('recipe-list-view').style.display = 'none';
-  document.getElementById('recipe-detail-view').style.display = 'none';
-  document.getElementById('recipe-editor-view').style.display = 'block';
-  document.getElementById('recipe-import-view').style.display = 'none';
-
-  var r = id ? recipesData.find(function(x){return x.id===id;}) : null;
-  currentRecipeId = id || null;
-  document.getElementById('recipe-editor-title').textContent = r ? 'Recept bewerken' : 'Nieuw recept';
-  document.getElementById('re-name').value = r ? r.name : '';
-  document.getElementById('re-cat').value = r ? r.cat : 'Diner';
-  document.getElementById('re-persons').value = r ? r.persons : 4;
-  document.getElementById('re-time').value = r ? r.time : 30;
-  document.getElementById('re-ingredients').value = r ? r.ingredients.join('\n') : '';
-  document.getElementById('re-steps').value = r ? r.steps.join('\n') : '';
-  document.getElementById('re-notes').value = r ? r.notes||'' : '';
-  setTimeout(attachIngredientAutocomplete, 100);
-  document.getElementById('re-photo-url').value = (r && r.photo && !r.photo.startsWith('data:')) ? r.photo : '';
-
-  // Photo preview
-  var preview = document.getElementById('re-photo-preview');
-  if(preview) {
-    if(r && r.photo) {
-      preview.innerHTML = '<img src="'+r.photo+'" style="width:100%;height:100%;object-fit:cover">';
-    } else {
-      preview.textContent = CAT_EMOJIS[r ? r.cat : 'Diner'] || '🍴';
-    }
+    list.forEach(function(r) {
+      var el = document.getElementById('rc-' + esc(r.id));
+      if (el) el.onclick = function() { renderDetail(r.id); };
+    });
   }
 
-  // File upload handler
-  var fileInp = document.getElementById('re-photo-file');
-  fileInp.onchange = function(e) {
-    var file = e.target.files[0]; if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      var preview2 = document.getElementById('re-photo-preview');
-      if(preview2) preview2.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover">';
-      fileInp._dataUrl = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-}
+  function renderDetail(id) {
+    var r = R.find(function(x) { return String(x.id) === String(id); });
+    if (!r) return;
+    if (!checkedI[id]) checkedI[id] = new Set();
+    if (!checkedS[id]) checkedS[id] = new Set();
+    var ci = checkedI[id];
+    var cs = checkedS[id];
+    var p = getPhoto(r);
+    var e = r.emoji || CAT_ICONS[r.cat] || '🍴';
+    var SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
-function saveRecipe() {
-  var name = document.getElementById('re-name').value.trim();
-  if(!name) { showToast('Vul een naam in'); return; }
+    var ings = (r.ingredients||[]).length ? (r.ingredients||[]).map(function(ing, i) {
+      var on = ci.has(i);
+      return '<div class="rd-ing" id="ri-' + i + '"><div class="rd-dot' + (on ? ' on' : '') + '">' + (on ? SVG : '') + '</div><div class="rd-ing-txt' + (on ? ' on' : '') + '">' + esc(ing) + '</div></div>';
+    }).join('') : '<p style="color:var(--c-text2);font-size:13px">Geen ingrediënten</p>';
 
-  // Determine photo: uploaded file takes priority, then URL field, then existing
-  var existingR = currentRecipeId ? recipesData.find(function(x){return x.id===currentRecipeId;}) : null;
-  var fileInp = document.getElementById('re-photo-file');
-  var urlInp = document.getElementById('re-photo-url');
-  var photo = (fileInp && fileInp._dataUrl) || (urlInp && urlInp.value.trim()) || (existingR && existingR.photo) || null;
-  if(fileInp) fileInp._dataUrl = null; // clear after use
+    var steps = (r.steps||[]).length ? (r.steps||[]).map(function(step, i) {
+      var on = cs.has(i);
+      return '<div class="rd-step" id="rs-' + i + '"><div class="rd-dot' + (on ? ' on' : '') + '">' + (on ? SVG : '') + '</div><div class="rd-stepn">' + (i+1) + '</div><div class="rd-step-txt' + (on ? ' on' : '') + '">' + esc(step) + '</div></div>';
+    }).join('') : '<p style="color:var(--c-text2);font-size:13px">Geen stappen</p>';
 
-  var r = {
-    id: currentRecipeId || recipeNextId++,
-    name: name,
-    cat: document.getElementById('re-cat').value,
-    persons: parseInt(document.getElementById('re-persons').value)||4,
-    time: parseInt(document.getElementById('re-time').value)||30,
-    ingredients: document.getElementById('re-ingredients').value.split('\n').map(function(s){return s.trim();}).filter(Boolean),
-    steps: document.getElementById('re-steps').value.split('\n').map(function(s){return s.trim();}).filter(Boolean),
-    notes: document.getElementById('re-notes').value.trim(),
-    photo: photo
-  };
-  if(currentRecipeId) {
-    var idx = recipesData.findIndex(function(x){return x.id===currentRecipeId;});
-    if(idx>-1) recipesData[idx]=r;
-  } else {
-    recipesData.unshift(r);
-    awardXP(4,'Recept aangemaakt');
-    addActivity('🍳','#fff3dc',myName+' maakte recept "'+r.name+'" aan');
+    var dv = document.getElementById('recipe-detail-view');
+    if (!dv) return;
+    dv.innerHTML = ''
+      + '<div class="list-header" style="padding:10px 14px 6px"><button id="rd-back" class="add-btn" style="background:var(--c-surface2);color:var(--c-text);box-shadow:none">← Terug</button></div>'
+      + '<div id="rd-hero">' + (p ? '<img src="' + esc(p) + '" onerror="this.style.display=\'none\'">' : e) + '<button class="rd-photobtn" id="rd-photobtn">📷 Foto</button></div>'
+      + '<div class="rd-info"><h2>' + esc(r.name) + '</h2><div class="rd-tags"><span class="recipe-tag">' + esc(r.cat) + '</span><span class="recipe-tag">⏱ ' + esc(r.time||20) + ' min</span><span class="recipe-tag">👥 ' + esc(r.persons||4) + ' pers</span>' + (r.cuisine ? '<span class="recipe-tag">🌍 ' + esc(r.cuisine) + '</span>' : '') + '</div></div>'
+      + '<div class="rd-actions"><button class="rd-btn pri" id="rd-edit">✏️ Bewerken</button><button class="rd-btn red" id="rd-del">🗑️ Verwijderen</button></div>'
+      + '<div class="rd-sec"><div class="rd-sec-h">Ingrediënten</div>' + ings + '<button class="rd-shopbtn" id="rd-shop">🛒 Alles op boodschappenlijst</button></div>'
+      + '<div class="rd-sec"><div class="rd-sec-h">Bereiding</div>' + steps + '</div>'
+      + (r.notes ? '<div class="rd-notes">💡 ' + esc(r.notes) + '</div>' : '')
+      + '<div style="height:50px"></div>';
+
+    // Wire buttons
+    document.getElementById('rd-back').onclick = function() { goBack(); };
+    document.getElementById('rd-photobtn').onclick = function() { openPhotoSheet(r); };
+    document.getElementById('rd-edit').onclick = function() { openEditor(r.id); };
+    document.getElementById('rd-del').onclick = function() { deleteRecipe(r.id); };
+    document.getElementById('rd-shop').onclick = function() { addToShop(r); };
+
+    // Wire ingredient checkboxes
+    (r.ingredients||[]).forEach(function(ing, i) {
+      var row = document.getElementById('ri-' + i);
+      if (!row) return;
+      row.onclick = function() {
+        ci.has(i) ? ci.delete(i) : ci.add(i);
+        var on = ci.has(i);
+        row.querySelector('.rd-dot').className = 'rd-dot' + (on ? ' on' : '');
+        row.querySelector('.rd-dot').innerHTML = on ? SVG : '';
+        row.querySelector('.rd-ing-txt').className = 'rd-ing-txt' + (on ? ' on' : '');
+      };
+    });
+
+    // Wire step checkboxes
+    (r.steps||[]).forEach(function(step, i) {
+      var row = document.getElementById('rs-' + i);
+      if (!row) return;
+      row.onclick = function() {
+        cs.has(i) ? cs.delete(i) : cs.add(i);
+        var on = cs.has(i);
+        row.querySelector('.rd-dot').className = 'rd-dot' + (on ? ' on' : '');
+        row.querySelector('.rd-dot').innerHTML = on ? SVG : '';
+        row.querySelector('.rd-step-txt').className = 'rd-step-txt' + (on ? ' on' : '');
+      };
+    });
+
+    document.getElementById('recipe-list-view').style.display = 'none';
+    dv.style.display = 'block';
   }
-  currentRecipeId = r.id;
-  showToast('Recept opgeslagen ✓');
-  openRecipeDetail(r.id);
-}
 
-function closeRecipeEditor() {
-  if(currentRecipeId) openRecipeDetail(currentRecipeId);
-  else showRecipeListView();
-}
+  function goBack() {
+    var dv = document.getElementById('recipe-detail-view');
+    var lv = document.getElementById('recipe-list-view');
+    if (dv) dv.style.display = 'none';
+    if (lv) lv.style.display = 'block';
+    renderGrid();
+  }
 
-function openRecipeImport() {
-  document.getElementById('recipe-list-view').style.display = 'none';
-  document.getElementById('recipe-detail-view').style.display = 'none';
-  document.getElementById('recipe-editor-view').style.display = 'none';
-  document.getElementById('recipe-import-view').style.display = 'block';
-  document.getElementById('recipe-import-status').textContent = '';
-  document.getElementById('recipe-url-inp').value = '';
-}
+  function deleteRecipe(id) {
+    var r = R.find(function(x) { return String(x.id) === String(id); });
+    if (!r || !confirm('Verwijder "' + r.name + '"?')) return;
+    R = R.filter(function(x) { return String(x.id) !== String(id); });
+    saveData();
+    if (typeof window.showToast === 'function') window.showToast('Verwijderd');
+    goBack();
+  }
 
-function closeRecipeImport() { showRecipeListView(); renderRecipeGrid(); }
+  function addToShop(r) {
+    if (!Array.isArray(window.shopData)) window.shopData = [];
+    if (!window.shopNextId) window.shopNextId = 1;
+    var added = 0;
+    (r.ingredients||[]).forEach(function(ing) {
+      var name = ing.replace(/^[\d\/,\.]+\s*(g|kg|ml|l|el|tl|stuks?|blik|teen|teentjes|snuf)?\s+/i, '').trim();
+      if (!name) name = ing;
+      var exists = window.shopData.some(function(s) { return s.name.toLowerCase() === name.toLowerCase() && !s.done; });
+      if (!exists) {
+        window.shopData.unshift({id: window.shopNextId++, name: name, qty: '1x', cat: 'Overig', who: window.myName || '', done: false, photo: null});
+        added++;
+      }
+    });
+    if (typeof window.updateStats === 'function') window.updateStats();
+    if (typeof window.showToast === 'function') window.showToast(added + ' ingrediënten toegevoegd ✓');
+  }
 
-function importRecipeFromUrl() {
-  if(!checkApiKey()) return;
-  var url = document.getElementById('recipe-url-inp').value.trim();
-  if(!url) { showToast('Vul een URL in'); return; }
-  var statusEl = document.getElementById('recipe-import-status');
-  statusEl.innerHTML = '<div style="display:flex;gap:6px;justify-content:center;align-items:center"><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div></div><div style="margin-top:6px">Recept ophalen via AI...</div>';
+  function openPhotoSheet(r) {
+    if (!window.BottomSheet) return;
+    window.BottomSheet.open({
+      title: '📷 Foto wijzigen',
+      html: '<div class="fam-modal-field"><label>Foto URL</label><input id="rp-url" value="' + esc(r.photo||'') + '"></div><div><button type="button" class="add-btn" id="rp-upbtn">📂 Upload</button><input type="file" accept="image/*" id="rp-file" style="display:none"></div>',
+      onOpen: function(ctx) {
+        var ub = ctx.modal.querySelector('#rp-upbtn');
+        var fi = ctx.modal.querySelector('#rp-file');
+        if (ub && fi) {
+          ub.onclick = function() { fi.click(); };
+          fi.onchange = function(e) {
+            var f = e.target.files[0]; if (!f) return;
+            var rd = new FileReader();
+            rd.onload = function(ev) { var u = ctx.modal.querySelector('#rp-url'); if (u) u.value = ev.target.result; };
+            rd.readAsDataURL(f);
+          };
+        }
+      },
+      actions: [
+        {label: 'Annuleren'},
+        {label: 'Opslaan', primary: true, onClick: function(ctx) {
+          var u = (ctx.modal.querySelector('#rp-url').value || '').trim();
+          r.photo = u || null; saveData();
+          if (typeof window.showToast === 'function') window.showToast('Foto opgeslagen ✓');
+          setTimeout(function() { renderDetail(r.id); }, 80);
+          return true;
+        }}
+      ]
+    });
+  }
 
-  var importPrompt = 'Analyseer deze recepten URL en geef het recept als JSON terug. URL: '+url+'\n\n'
-    +'Als je de pagina niet kan ophalen, maak dan een plausibel recept op basis van de URL naam.\n\n'
-    +'JSON formaat (ALLEEN JSON, geen markdown, geen uitleg):\n'
-    +'{"name":"...","cat":"Diner","persons":4,"time":30,'
-    +'"ingredients":["500g gehakt","2 uien"],'
-    +'"steps":["Stap 1...","Stap 2..."],'
-    +'"notes":"...",'
-    +'"photo":"https://source.unsplash.com/600x400/?GERECHT_NAAM+food"}\n\n'
-    +'Vervang GERECHT_NAAM met de echte naam (Engels, URL-encoded).\n'
-    +'Categorieën: Ontbijt, Lunch, Diner, Snack, Dessert, Bakken';
+  function openEditor(id) {
+    var r = id ? R.find(function(x) { return String(x.id) === String(id); }) : null;
+    if (!window.BottomSheet) return;
+    window.BottomSheet.open({
+      title: r ? '✏️ Bewerken' : '🍳 Nieuw recept',
+      html: '<div class="fam-modal-field"><label>Naam</label><input id="re-name" value="' + esc(r ? r.name : '') + '"></div>'
+        + '<div class="fam-modal-field"><label>Categorie</label><select id="re-cat"><option>Ontbijt</option><option>Lunch</option><option>Diner</option><option>Snack</option><option>Dessert</option><option>Bakken</option></select></div>'
+        + '<div class="fam-modal-field"><label>Keuken</label><input id="re-cuis" value="' + esc(r ? r.cuisine||'' : '') + '"></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="fam-modal-field"><label>Personen</label><input id="re-pers" type="number" value="' + esc(r ? r.persons : 4) + '"></div><div class="fam-modal-field"><label>Tijd (min)</label><input id="re-time" type="number" value="' + esc(r ? r.time : 30) + '"></div></div>'
+        + '<div class="fam-modal-field"><label>Ingrediënten (1 per regel)</label><textarea id="re-ings" rows="5">' + esc(r ? (r.ingredients||[]).join('\n') : '') + '</textarea></div>'
+        + '<div class="fam-modal-field"><label>Stappen (1 per regel)</label><textarea id="re-steps" rows="5">' + esc(r ? (r.steps||[]).join('\n') : '') + '</textarea></div>'
+        + '<div class="fam-modal-field"><label>Notities</label><textarea id="re-notes" rows="2">' + esc(r ? r.notes||'' : '') + '</textarea></div>',
+      onOpen: function(ctx) {
+        var cat = ctx.modal.querySelector('#re-cat');
+        if (cat && r) cat.value = r.cat || 'Diner';
+        var nm = ctx.modal.querySelector('#re-name');
+        if (nm) setTimeout(function() { nm.focus(); }, 80);
+      },
+      actions: [
+        {label: 'Annuleren'},
+        {label: 'Opslaan', primary: true, onClick: function(ctx) {
+          var m = ctx.modal;
+          var name = (m.querySelector('#re-name').value || '').trim();
+          if (!name) { if (typeof window.showToast === 'function') window.showToast('Naam verplicht'); return false; }
+          var ings = (m.querySelector('#re-ings').value || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+          if (!ings.length) { if (typeof window.showToast === 'function') window.showToast('Voeg minstens 1 ingrediënt toe'); return false; }
+          if (r) {
+            r.name = name; r.cat = m.querySelector('#re-cat').value;
+            r.cuisine = (m.querySelector('#re-cuis').value || '').trim();
+            r.persons = parseInt(m.querySelector('#re-pers').value) || 4;
+            r.time = parseInt(m.querySelector('#re-time').value) || 30;
+            r.ingredients = ings;
+            r.steps = (m.querySelector('#re-steps').value || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+            r.notes = m.querySelector('#re-notes').value || '';
+          } else {
+            r = {id: newId(), name: name, cat: m.querySelector('#re-cat').value,
+              cuisine: (m.querySelector('#re-cuis').value || '').trim(),
+              persons: parseInt(m.querySelector('#re-pers').value) || 4,
+              time: parseInt(m.querySelector('#re-time').value) || 30,
+              emoji: CAT_ICONS[m.querySelector('#re-cat').value] || '🍴',
+              photo: null, ingredients: ings,
+              steps: (m.querySelector('#re-steps').value || '').split('\n').map(function(s) { return s.trim(); }).filter(Boolean),
+              notes: m.querySelector('#re-notes').value || ''};
+            R.unshift(r);
+            if (typeof window.awardXP === 'function') window.awardXP(4, 'Recept aangemaakt');
+          }
+          saveData();
+          if (typeof window.showToast === 'function') window.showToast('Opgeslagen ✓');
+          setTimeout(function() { renderDetail(r.id); }, 80);
+          return true;
+        }}
+      ]
+    });
+  }
 
-  callGemini(importPrompt, null, 1200)
-  .then(function(text){
-    var clean = text.replace(/```json|```/g,'').trim();
+  function renderRecipes() {
     try {
-      var recipe = JSON.parse(clean);
-      recipe.id = recipeNextId++;
-      if(!recipe.name) throw new Error('Geen naam');
-      if(!recipe.photo) recipe.photo = null;
-      recipesData.unshift(recipe);
-      showRecipeListView();
-      renderRecipeGrid();
-      showToast('Recept "'+recipe.name+'" geïmporteerd! 🍳');
-      awardXP(5,'Recept geïmporteerd');
-      // Auto-open detail
-      setTimeout(function(){ openRecipeDetail(recipe.id); }, 300);
-    } catch(e) {
-      statusEl.textContent = '❌ Kon recept niet verwerken. Probeer een ander adres of voeg handmatig toe.';
+      loadData();
+      seedData();
+      renderList();
+    } catch(err) {
+      var screen = document.getElementById('screen-recipes');
+      if (screen) screen.innerHTML = '<div style="padding:20px;color:red;font-size:13px">FOUT: ' + err.message + '<br><pre>' + err.stack + '</pre></div>';
+      console.error('renderRecipes error:', err);
     }
-  })
-  .catch(function(){
-    statusEl.textContent = '❌ Verbindingsfout. Controleer je internetverbinding.';
-  });
-}
-
-// ============================================================
-// AI ASSISTENT (per scherm)
-// ============================================================
-
-var aiPanelOpen = false;
-var aiCurrentScreen = 'home';
-var aiMessages = [];
-var aiLoading = false;
-
-var AI_CONTEXTS = {
-  home:        {title:'🏠 Home Assistent', sub:'Tips over de app', chips:['Wat kan ik hier doen?','Toon mijn voortgang','Wat zijn quick tips?']},
-  tasks:       {title:'✅ Taken Assistent', sub:'Tips over taken & planning', chips:['Hoe plan ik slim?','Taakverdeling tips','Productiviteit boost']},
-  shop:        {title:'🛒 Boodschappen AI', sub:'Slimme boodschappen tips', chips:['Budget besparen tips','Gezonde alternatieven','Wat mis ik vaak?']},
-  notes:       {title:'📝 Notities Assistent', sub:'Tips over notities maken', chips:['Hoe organiseer ik goed?','Note-taking tips','Beste structuur voor recepten']},
-  feed:        {title:'📸 Feed Assistent', sub:'Tips voor gezinsberichten', chips:['Compliment ideeën','Hoe deel ik nieuws?','Leuke post ideeën']},
-  finance:     {title:'💰 Financieel Adviseur', sub:'Budgettips & inzichten', chips:['Bezuinigingstips','Spaarstrategie','Hoe verdeel ik kosten?']},
-  cal:         {title:'📅 Agenda Assistent', sub:'Planning & tijdbeheer', chips:['Weekplanning tips','Hoe plan ik activiteiten?','Herinneringen instellen']},
-  achievements:{title:'🏆 Gamification Coach', sub:'Level up tips', chips:['Hoe krijg ik meer XP?','Badges tips','Beste streak opbouwen']},
-  recipes:     {title:'🍳 Kookassistent', sub:'Recepten & kooktips', chips:['Wat kan ik maken?','Ingrediënten substituties','Gezonde aanpassingen']},
-  notif:       {title:'🔔 Meldingen Help', sub:'App meldingen', chips:['Wat betekent dit?','Notificatie tips']},
-  profile:     {title:'👤 Profiel Assistent', sub:'Personalisatie tips', chips:['Thema advies','XP strategie','App aanpassen']}
-};
-
-function toggleAiPanel() {
-  aiPanelOpen = !aiPanelOpen;
-  var panel = document.getElementById('ai-panel');
-  var fab = document.getElementById('ai-fab');
-  if(aiPanelOpen) {
-    panel.classList.add('open');
-    fab.classList.add('panel-open');
-    panel.style.display='flex';
-    updateAiContext();
-    setTimeout(function(){document.getElementById('ai-input').focus();},200);
-  } else {
-    panel.classList.remove('open');
-    fab.classList.remove('panel-open');
-    panel.style.display='none';
-  }
-}
-
-function updateAiContext() {
-  // Find current screen
-  var current = 'home';
-  document.querySelectorAll('.screen').forEach(function(s){
-    if(s.classList.contains('active')) current = s.id.replace('screen-','');
-  });
-  if(current === aiCurrentScreen && aiMessages.length > 0) return;
-  aiCurrentScreen = current;
-  aiMessages = [];
-
-  var ctx = AI_CONTEXTS[current] || AI_CONTEXTS.home;
-  var titleEl = document.getElementById('ai-panel-title');
-  var subEl = document.getElementById('ai-panel-sub');
-  if(titleEl) titleEl.textContent = ctx.title;
-  if(subEl) subEl.textContent = ctx.sub;
-
-  // Render welcome message
-  var msgs = document.getElementById('ai-messages');
-  if(msgs) {
-    msgs.innerHTML = '<div class="ai-msg ai-msg-ai">Hoi! Ik ben je '+ctx.title.replace(/^[^ ]+ /,'')+'. Wat kan ik voor je doen?</div>';
   }
 
-  // Quick chips
-  var chipsEl = document.getElementById('ai-quick-chips');
-  if(chipsEl) {
-    chipsEl.innerHTML = (ctx.chips||[]).map(function(chip) {
-      return '<button class="ai-quick-chip" onclick="sendAiChip(\''+chip.replace(/'/g,'&apos;')+'\')">' + chip + '</button>';
-    }).join('');
-  }
-}
+  window.renderRecipes     = renderRecipes;
+  window.openRecipeDetail  = function(id) { renderDetail(id); };
+  window.closeRecipeDetail = goBack;
+  window.renderRecipeGrid  = renderGrid;
+  window.recipesData       = R;
 
-function sendAiChip(text) {
-  document.getElementById('ai-input').value = text;
-  sendAiMessage();
-}
+  loadData();
+  seedData();
 
-function sendAiMessage() {
-  if(!checkApiKey()) return;
-  var inp = document.getElementById('ai-input');
-  var text = inp ? inp.value.trim() : '';
-  if(!text || aiLoading) return;
-  inp.value = '';
-
-  // Add user message to UI
-  var msgs = document.getElementById('ai-messages');
-  if(msgs) {
-    var userDiv = document.createElement('div');
-    userDiv.className = 'ai-msg ai-msg-user';
-    userDiv.textContent = text;
-    msgs.appendChild(userDiv);
-    // Typing indicator
-    var typingDiv = document.createElement('div');
-    typingDiv.className = 'ai-msg-typing';
-    typingDiv.id = 'ai-typing';
-    typingDiv.innerHTML = '<div class="ai-typing-dot"></div><div class="ai-typing-dot"></div><div class="ai-typing-dot"></div>';
-    msgs.appendChild(typingDiv);
-    msgs.scrollTop = msgs.scrollHeight;
-  }
-
-  aiMessages.push({role:'user', content:text});
-  aiLoading = true;
-  var sendBtn = document.getElementById('ai-send-btn');
-  if(sendBtn) sendBtn.style.opacity = '0.5';
-
-  // Build context
-  var ctx = AI_CONTEXTS[aiCurrentScreen] || AI_CONTEXTS.home;
-  var contextData = getScreenContextData(aiCurrentScreen);
-  var systemPrompt = 'Je bent een vriendelijke, korte en praktische AI assistent ingebouwd in een gezins-app genaamd FamilieApp voor Shane en Esra. '
-    + 'Je specialiteit op dit moment is: ' + ctx.title + '. '
-    + 'Huidige app data context: ' + contextData + '. '
-    + 'Geef ALTIJD korte, vriendelijke antwoorden in het Nederlands. Max 3-4 zinnen. Gebruik emoji\'s. Wees concreet en praktisch.';
-
-  callGemini(conversationPrompt, systemPrompt, 400)
-  .then(function(reply){
-    aiMessages.push({role:'assistant', content:reply});
-    var typing = document.getElementById('ai-typing');
-    if(typing) typing.remove();
-    var msgs2 = document.getElementById('ai-messages');
-    if(msgs2) {
-      var aiDiv = document.createElement('div');
-      aiDiv.className = 'ai-msg ai-msg-ai';
-      aiDiv.textContent = reply;
-      msgs2.appendChild(aiDiv);
-      msgs2.scrollTop = msgs2.scrollHeight;
-    }
-  })
-  .catch(function(e){
-    var typing = document.getElementById('ai-typing');
-    if(typing) typing.remove();
-    var msgs2 = document.getElementById('ai-messages');
-    if(msgs2) {
-      var errDiv = document.createElement('div');
-      errDiv.className = 'ai-msg ai-msg-ai';
-      var errMsg = e.message==='NO_KEY' ? '⚙️ Geen API key. Ga naar Profiel → Gemini API Key.' : '❌ Fout: '+e.message;
-      errDiv.textContent = errMsg;
-      msgs2.appendChild(errDiv);
-      msgs2.scrollTop = msgs2.scrollHeight;
-    }
-  })
-  .finally(function(){
-    aiLoading = false;
-    var sendBtn2 = document.getElementById('ai-send-btn');
-    if(sendBtn2) sendBtn2.style.opacity = '1';
-  });
-}
-
-function getScreenContextData(screen) {
-  try {
-    if(screen==='tasks') return 'Open taken: '+taskData.filter(function(t){return !t.done;}).length+', Vaste taken: '+recurData.length;
-    if(screen==='shop') return 'Items te kopen: '+shopData.filter(function(i){return !i.done;}).length;
-    if(screen==='finance') return 'Inkomen Shane: €'+inkomenShane.amount+', Esra: €'+inkomenEsra.amount+', Vaste lasten: €'+vasteLasten.reduce(function(s,l){return s+l.amount;},0);
-    if(screen==='recipes') return 'Recepten: '+recipesData.length+', Categorieën: '+[...new Set(recipesData.map(function(r){return r.cat;}))].join(', ');
-    if(screen==='achievements') return 'XP: '+myXP+', Level: '+getLevel(myXP)+', Badges: '+Object.keys(unlockedBadges).length+'/'+BADGES.length;
-    return 'Scherm: '+screen;
-  } catch(e) { return 'Scherm: '+screen; }
-}
-
-// Enter key in AI input
-document.addEventListener('DOMContentLoaded', function(){
-  var inp = document.getElementById('ai-input');
-  if(inp) inp.addEventListener('keydown', function(e){if(e.key==='Enter')sendAiMessage();});
-});
-
+})();

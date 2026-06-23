@@ -58,11 +58,34 @@ var skillsData = {Shane:{}, Esra:{}};
 ['Shane','Esra'].forEach(function(p){
   SKILL_DEFS.forEach(function(d){ skillsData[p][d.id]={xp:0,log:[]}; });
 });
-// Demo starter XP
-skillsData.Shane.vacuum.xp=145; skillsData.Shane.cooking.xp=210;
-skillsData.Shane.groceries.xp=90; skillsData.Shane.dishes.xp=55;
-skillsData.Esra.laundry.xp=180; skillsData.Esra.cooking.xp=290;
-skillsData.Esra.tidying.xp=120; skillsData.Esra.bathroom.xp=95;
+
+// Laad persistent data
+(function(){
+  var raw = localStorage.getItem('fam_skills_v1');
+  if(raw) {
+    try {
+      var saved = JSON.parse(raw);
+      ['Shane','Esra'].forEach(function(p){
+        if(saved[p]) {
+          SKILL_DEFS.forEach(function(d){
+            if(saved[p][d.id]) skillsData[p][d.id] = saved[p][d.id];
+          });
+        }
+      });
+    } catch(e){}
+  } else {
+    // Eerste keer — zet demo starter XP
+    skillsData.Shane.vacuum.xp=145; skillsData.Shane.cooking.xp=210;
+    skillsData.Shane.groceries.xp=90; skillsData.Shane.dishes.xp=55;
+    skillsData.Esra.laundry.xp=180; skillsData.Esra.cooking.xp=290;
+    skillsData.Esra.tidying.xp=120; skillsData.Esra.bathroom.xp=95;
+    saveSkills();
+  }
+})();
+
+function saveSkills() {
+  try { localStorage.setItem('fam_skills_v1', JSON.stringify(skillsData)); } catch(e){}
+}
 
 var skillsViewPerson = 'Shane';
 var skillsViewFilter = 'all';
@@ -185,6 +208,7 @@ function logSkill(person, skillId) {
   if(newLv>prevLv) showSkillLevelUp(person,def,newLv);
   else showToast(def.icon+' '+person+' deed '+def.name+'! +'+def.xpPerDo+' XP');
   addActivity(def.icon, def.color+'22', person+' deed '+def.name+' (Lv '+newLv+')');
+  saveSkills();
   renderSkills();
 }
 
@@ -411,6 +435,7 @@ function awardSkillXP(person, skillId) {
   if(newLv > prevLv) {
     showSkillLevelUp(person, def, newLv);
   }
+  saveSkills();
   trackWeeklyProgress('skills');
   checkAchievements();
 }

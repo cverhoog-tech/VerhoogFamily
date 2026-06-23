@@ -1,0 +1,16 @@
+/* v0.302c restore top home hero card backgrounds */
+.tasks-card,.tasks-card .card-inner{
+  background-image:linear-gradient(180deg,rgba(20,50,25,.10),rgba(0,0,0,.72)),url('https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=900&q=94&fm=webp')!important;
+  background-size:cover!important;
+  background-position:center!important;
+}
+.shop-card,.shop-card .card-inner{
+  background-image:linear-gradient(180deg,rgba(120,70,10,.10),rgba(0,0,0,.70)),url('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=94&fm=webp')!important;
+  background-size:cover!important;
+  background-position:center!important;
+}
+.feed-card,.feed-card .card-inner{
+  background-image:linear-gradient(180deg,rgba(90,35,70,.10),rgba(0,0,0,.72)),url('https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=94&fm=webp')!important;
+  background-size:cover!important;
+  background-position:center!important;
+}

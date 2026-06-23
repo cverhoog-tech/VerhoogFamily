@@ -243,6 +243,7 @@ function checkAchievements() {
 function awardXP(amount, label) {
   var prevLevel = getLevel(myXP);
   myXP += amount;
+  localStorage.setItem('fam_myxp_v1', String(myXP));
   var newLevel = getLevel(myXP);
   showXPPopup(amount, label);
   updateHomeXP();

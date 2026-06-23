@@ -58,6 +58,8 @@ body.famTask .screen,body.famTask .page,body.famTask main,body.famTask #task-con
 .fqCard.dungeon{background:linear-gradient(135deg,#1c1407,#4a2d00);border:none;box-shadow:0 16px 44px rgba(74,45,0,.36)}
 
 .fqDel{position:absolute;right:13px;top:13px;border:0;border-radius:99px;background:#fff0f0;color:#dc2626;font-weight:950;width:32px;height:32px;z-index:3;font-size:14px}
+.fqCardHelpBtn{position:absolute;right:53px;top:13px;border:0;border-radius:99px;background:#eef4ff;color:#2563eb;font-weight:950;width:32px;height:32px;z-index:3;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fqCard.raid .fqCardHelpBtn,.fqCard.dungeon .fqCardHelpBtn{background:rgba(255,255,255,.16);color:#fff}
 
 .fqImg{width:86px;min-width:86px;height:86px;border-radius:18px;background-size:cover;background-position:center;position:relative;overflow:hidden;box-shadow:0 6px 18px rgba(17,24,39,.18)}
 .fqChk{position:absolute;left:6px;top:6px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;color:var(--g);font-weight:950;font-size:14px;border:2px solid rgba(255,255,255,.9)}
@@ -176,7 +178,7 @@ body.famTask .screen,body.famTask .page,body.famTask main,body.famTask #task-con
 
 /* Create form */
 .fqQTypeBtn,.fqQPrioBtn{border:1.5px solid #edf0ec;border-radius:14px;padding:11px 8px;font-weight:900;font-size:13px;background:#fff;color:#697386;cursor:pointer;transition:.15s;font-family:inherit;}
-.fqQTypeBtn.active,.fqQPrioBtn.active{background:#edf8e9;color:#2a7a28;border-color:rgba(63,127,47,.35);}
+.fqQTypeBtn.active,.fqQPrioBtn.active{background:#2a7a28;color:#fff;border-color:#2a7a28;box-shadow:0 4px 14px rgba(42,122,40,.35);}
 .fqQTypeBtn:active,.fqQPrioBtn:active{transform:scale(.96);}
 /* Create form old */
 .fqForm label{display:block;font-size:12px;font-weight:900;color:#a9f59d;margin:14px 0 7px}

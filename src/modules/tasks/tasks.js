@@ -7,11 +7,8 @@ function renderTasks() {
   var el=document.getElementById('task-content');if(!el)return;
   if(taskTab==='overzicht') {
     // Use v023 quest UI
-    if(window.__famV023 && typeof render === 'function') { render(true); }
+    if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){_r(true);} }
   }
-  else if(taskTab==='terugkerend') renderTasksTerugkerend(el);
-  else if(taskTab==='week') renderTasksTerugkerend(el);
-  else if(taskTab==='vast') renderTasksTerugkerend(el);
   else if(taskTab==='persoon') renderTasksPersoon(el);
 }
 
@@ -48,9 +45,7 @@ function deleteTask(id) {
 
 function renderTasksOverzicht(el) {
   // Redirected to v023 quest UI
-  if(window.__famV023 && typeof render === 'function') {
-    render(true);
-  }
+  if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){ _r(true); } }
 }
 
 function renderTasksTerugkerend(el) {
@@ -344,24 +339,125 @@ function editRec(id) {
 }
 
 function renderTasksPersoon(el) {
-  var people=['Shane','Esra'];
-  var html='<div style="padding:12px 0">';
-  people.forEach(function(person){
-    var tasks=taskData.filter(function(t){return t.who&&t.who.indexOf(person)>-1;});
-    var done=tasks.filter(function(t){return t.done;}).length;
-    var total=tasks.length;
-    var pct=total?Math.round(done/total*100):0;
-    var color=person==='Shane'?'#2d5a27':'#c0547a';
-    html+='<div style="padding:0 16px 16px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+person+'</div>'
-      +'<div style="font-size:12px;color:#888">'+done+'/'+total+' gedaan</div>'
-      +'</div>'
-      +'<div class="prog-bar" style="margin-bottom:12px"><div class="prog-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
-    tasks.forEach(function(t){html+=taskCardHTML(t);});
-    html+='</div>';
+  if(!el) return;
+  var raw = localStorage.getItem('fam_tasks_v023')||localStorage.getItem('fam_tasks_v022')||'[]';
+  var allTasks; try { allTasks=JSON.parse(raw)||[]; } catch(e){ allTasks=[]; }
+
+  // Namen ophalen
+  var myName    = localStorage.getItem('familyapp-profile-name-v1')||'Shane';
+  var partName  = localStorage.getItem('familyapp-partner-name-v1')||'Esra';
+
+  // Avatars ophalen
+  function getAvatar(name) {
+    if(name.toLowerCase()===myName.toLowerCase()) {
+      var url = localStorage.getItem('familyapp-current-user-avatar-v1');
+      if(url) return url;
+    }
+    var stored = localStorage.getItem('fam_avatar_'+name.toLowerCase());
+    if(stored) return stored;
+    return null;
+  }
+
+  var accentColors = {};
+  accentColors[myName]   = '#2563eb';
+  accentColors[partName] = '#ec4899';
+
+  function xpFromString(xpStr) {
+    if(!xpStr) return 0;
+    var m = String(xpStr).match(/(\d+)/);
+    return m ? parseInt(m[1]) : 0;
+  }
+
+  function statsForPerson(name) {
+    var tasks = allTasks.filter(function(x){ return x[5]&&(x[5]==='Beiden'||x[5].indexOf(name)>-1); });
+    var done  = tasks.filter(function(x){ return x[9]; });
+    var open  = tasks.filter(function(x){ return !x[9]; });
+    var totalXP = done.reduce(function(sum,x){ return sum+xpFromString(x[6]); }, 0);
+    var raids   = tasks.filter(function(x){ return x[1]&&x[1].indexOf('RAID')>-1; }).length;
+    var dungeons= tasks.filter(function(x){ return x[1]&&x[1].indexOf('DUNGEON')>-1; }).length;
+    var pct     = tasks.length ? Math.round(done.length/tasks.length*100) : 0;
+    // Simpel level: elke 100xp = 1 level
+    var level   = Math.max(1, Math.floor(totalXP/100)+1);
+    return { tasks:tasks, done:done, open:open, totalXP:totalXP, raids:raids, dungeons:dungeons, pct:pct, level:level };
+  }
+
+  var people = [myName, partName];
+  var html = '<div class="fq" style="padding-bottom:100px;">';
+
+  people.forEach(function(person, pi) {
+    var s      = statsForPerson(person);
+    var color  = accentColors[person]||'#667085';
+    var avatarUrl = getAvatar(person);
+    var initials  = person.slice(0,2).toUpperCase();
+
+    html += '<div style="padding:18px 16px 12px;">';
+
+    // ── Hero header ──
+    html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">';
+    // Avatar
+    if(avatarUrl) {
+      html += '<img src="'+avatarUrl+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:50% 36%;border:2.5px solid '+color+';flex-shrink:0;" onerror="this.style.display=\'none\'">';
+    } else {
+      html += '<div style="width:56px;height:56px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;border:2.5px solid '+color+';">'+initials+'</div>';
+    }
+    // Naam + level
+    html += '<div style="flex:1;">';
+    html += '<div style="font-size:19px;font-weight:950;color:#111827;letter-spacing:-.3px;">'+person+'</div>';
+    html += '<div style="font-size:12px;color:'+color+';font-weight:800;margin-top:2px;">⚔️ Level '+s.level+' Avonturier</div>';
+    html += '</div>';
+    // XP badge
+    html += '<div style="background:'+color+';color:#fff;border-radius:12px;padding:8px 14px;text-align:center;flex-shrink:0;">';
+    html += '<div style="font-size:18px;font-weight:950;">'+s.totalXP+'</div>';
+    html += '<div style="font-size:10px;font-weight:800;opacity:.85;">XP</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // ── Progress bar ──
+    html += '<div style="background:#edf0ec;border-radius:99px;height:8px;margin-bottom:16px;overflow:hidden;">';
+    html += '<div style="height:100%;width:'+s.pct+'%;background:'+color+';border-radius:99px;transition:.4s;"></div>';
+    html += '</div>';
+
+    // ── Stat cards ──
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">';
+    var stats = [
+      {label:'Quests', val:s.tasks.length, icon:'📋'},
+      {label:'Voltooid', val:s.done.length, icon:'✅'},
+      {label:'Raids', val:s.raids, icon:'⚔️'},
+      {label:'Dungeons', val:s.dungeons, icon:'🏰'},
+    ];
+    stats.forEach(function(st) {
+      html += '<div style="background:#fff;border:1px solid #edf0ec;border-radius:14px;padding:10px 6px;text-align:center;box-shadow:0 2px 8px rgba(17,24,39,.04);">';
+      html += '<div style="font-size:18px;">'+st.icon+'</div>';
+      html += '<div style="font-size:17px;font-weight:950;color:#111827;margin-top:2px;">'+st.val+'</div>';
+      html += '<div style="font-size:10px;color:#9aa7bd;font-weight:700;margin-top:1px;">'+st.label+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // ── Open quests ──
+    if(s.open.length > 0) {
+      html += '<div style="font-size:13px;font-weight:900;color:#667085;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;">Open quests</div>';
+      s.open.forEach(function(x) {
+        var isRaid=x[1]&&x[1].indexOf('RAID')>-1;
+        var isDung=x[1]&&x[1].indexOf('DUNGEON')>-1;
+        var cls=isRaid?'raid':(isDung?'dungeon':'');
+        html += '<div class="fqCard '+cls+'" data-id="'+x[0]+'" style="margin-bottom:10px;cursor:pointer;" onclick="if(window.famDetail)famDetail(\''+x[0]+'\')">';
+        html += '<div class="fqImg" style="background-image:url('+x[7]+')"><div class="fqChk"></div></div>';
+        html += '<div class="fqBody">';
+        html += '<div class="fqBadges"><span class="fqBadge '+(isRaid?'raid':(isDung?'dungeon':'side'))+'">'+x[1]+'</span></div>';
+        html += '<div class="fqTitle">'+x[2]+'</div>';
+        html += '<div class="fqMeta"><span class="fqMetaTag">📅 '+(x[11]||x[4])+'</span><span class="fqMetaTag xp">'+x[6]+'</span></div>';
+        html += '</div><div class="fqArrow">›</div></div>';
+      });
+    } else {
+      html += '<div style="text-align:center;padding:16px;color:#9aa7bd;font-size:14px;font-weight:700;">🎉 Alle quests voltooid!</div>';
+    }
+
+    html += '</div>';
+    if(pi < people.length-1) html += '<div style="height:1px;background:#edf0ec;margin:0 16px 4px;"></div>';
   });
-  html+='</div>';
-  el.innerHTML=html;
+
+  html += '</div>';
+  el.innerHTML = html;
 }
 

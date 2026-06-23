@@ -3,7 +3,7 @@
 
 (function(){
 try{
-if(window.__famV023){return;} window.__famV023=1;
+window.__famV023=1;
 
 /* ── LANGUAGE ── */
 var lang=localStorage.getItem('fam_lang')||'nl';
@@ -137,8 +137,10 @@ function card(x){
   var prioBadge='<span class="fqBadge '+prioCls(prio)+'">'+prioLabel(prio)+'</span>';
   var actionBtn=(isRaid||isDung)?'<button class="fqStartBtn '+(isRaid?'raid':'dungeon')+'">'+(isRaid?'Start raid':'Start dungeon')+'</button>':'<div class="fqArrow">›</div>';
   var ppTag=x[13]?'<span class="fqMetaTag pp">👥 '+x[13]+'</span>':'';
+  var cardHelpBtn=x[9]?'':'<button class="fqCardHelpBtn" data-help="'+x[0]+'" title="'+L('askhelp')+'">👥</button>';
   return '<div class="fqCard '+(x[9]?'done ':'')+cls+'" data-id="'+x[0]+'">'+
     '<button class="fqDel" data-del="'+x[0]+'">✕</button>'+
+    cardHelpBtn+
     '<div class="fqImg" style="background-image:url('+x[7]+')">'+
       '<div class="fqChk">'+(x[9]?'✓':'')+'</div>'+
     '</div>'+
@@ -198,6 +200,8 @@ function render(force){
     e.onclick=function(ev){
       var delBtn=ev.target.closest('[data-del]');
       if(delBtn){ev.stopPropagation();data=data.filter(function(x){return x[0]!==delBtn.dataset.del;});save();r.dataset.v023='';render(true);return;}
+      var helpBtn=ev.target.closest('[data-help]');
+      if(helpBtn){ev.stopPropagation();var hx=data.find(function(x){return x[0]===helpBtn.dataset.help;});showGQPopup(hx?hx[2]:'');return;}
       var startBtn=ev.target.closest('.fqStartBtn');
       if(startBtn){ev.stopPropagation();detail(e.dataset.id);return;}
       detail(e.dataset.id);
@@ -545,16 +549,16 @@ function create(){
   };
 }
 
-window.fqSetQType=function(t,id){
+function fqSetQType(t,id){
   window._qtype=t;
   document.querySelectorAll('.fqQTypeBtn').forEach(function(b){b.classList.remove('active');});
   var el=document.getElementById(id);if(el)el.classList.add('active');
-};
-window.fqSetQPrio=function(p,id){
+}
+function fqSetQPrio(p,id){
   window._qprio=p;
   document.querySelectorAll('.fqQPrioBtn').forEach(function(b){b.classList.remove('active');});
   var el=document.getElementById(id);if(el)el.classList.add('active');
-};
+}
 
 
 function langBtn(){
@@ -593,6 +597,15 @@ function run(){
     }
   }
 }
+
+/* ── GLOBAL EXPORTS — navigation.js, tasks.js en inline onclick handlers ── */
+window.famRender=render;
+window.famDetail=detail;
+window.famCreate=create;
+window.famCloseModal=closeModal;
+window.showGQPopup=showGQPopup;
+window.fqSetQType=fqSetQType;
+window.fqSetQPrio=fqSetQPrio;
 
 document.addEventListener('DOMContentLoaded',function(){run();setTimeout(function(){render(true);},60);});
 window.addEventListener('load',function(){run();setTimeout(function(){render(true);},120);});
