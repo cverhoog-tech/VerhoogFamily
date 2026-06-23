@@ -121,12 +121,7 @@
 
 <script>
 (function() {
-  // Check of namen al opgeslagen zijn — zo ja direct inloggen
-  var saved = localStorage.getItem('familyapp-profile-name-v1');
-  if(saved) {
-    var ls = document.getElementById('login-screen');
-    if(ls) ls.style.display = 'none';
-  }
+  // Login screen alvast tonen — app start pas na alle scripts
 })();
 
 function loginStart() {
@@ -471,5 +466,24 @@ function loginStart() {
   <script src="src/modules/tasks/duoQuests.js"></script>
   <script src="src/modules/meals/meals.js"></script>
   <script src="src/modules/ytmusic/ytmusic.js"></script>
+
+<script>
+// ── APP BOOT — draait nadat alle scripts geladen zijn ──
+(function boot() {
+  var ls = document.getElementById('login-screen');
+
+  // Firebase onAuthStateChanged handelt login af via duoQuests.js
+  // Wacht 800ms — als Firebase auth nog niet heeft gereageerd, check localStorage
+  setTimeout(function() {
+    var savedName = localStorage.getItem('familyapp-profile-name-v1');
+    var loggedIn  = window._appStarted;
+    if(savedName && !loggedIn) {
+      // Namen bekend, geen Firebase auth nodig — direct starten
+      if(ls) ls.style.display = 'none';
+      if(typeof initApp === 'function') { window._appStarted = true; initApp(); }
+    }
+  }, 800);
+})();
+</script>
 </body>
 </html>
