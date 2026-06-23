@@ -120,28 +120,37 @@ function signInWithGoogle() {
 }
 
 function showNameSetupStep(user) {
-  // Switch to step 2
-  document.getElementById('login-step-1').style.display = 'none';
-  document.getElementById('login-step-2').style.display = 'block';
-
-  // Fill in Google name/photo
+  // Nieuwe logindesign: vul Google naam alvast in het naam-veld
   var displayName = user.displayName || '';
-  var firstName   = displayName.split(' ')[0] || '';
-  var av = document.getElementById('google-avatar-preview');
-  var nm = document.getElementById('google-name-preview');
-  var ni = document.getElementById('step2-name');
-
-  if(av) {
-    if(user.photoURL) {
-      av.innerHTML = '<img src="'+user.photoURL+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">';
-    } else {
-      av.textContent = (firstName.substring(0,2)||'?').toUpperCase();
-    }
+  var firstName = displayName.split(' ')[0] || '';
+  
+  // Sla avatar op uit Google
+  if(user.photoURL) {
+    localStorage.setItem('familyapp-current-user-avatar-v1', user.photoURL);
   }
-  if(nm) nm.textContent = displayName || user.email || '';
-  if(ni && firstName) ni.value = firstName;
-  setTimeout(function(){ if(ni) ni.focus(); }, 300);
+  
+  // Vul naam alvast in als die nog leeg is
+  var nameInput = document.getElementById('login-myname');
+  if(nameInput && !nameInput.value && firstName) {
+    nameInput.value = firstName;
+    nameInput.style.borderColor = 'rgba(99,211,113,.6)';
+  }
+
+  // Toon een bevestiging
+  var err = document.getElementById('login-error');
+  if(err) {
+    err.style.color = '#63d371';
+    err.textContent = '✅ Ingelogd als ' + (displayName || user.email) + ' — vul namen in en start!';
+  }
+
+  // Als namen al bekend zijn direct doorgaan
+  var savedName = localStorage.getItem('familyapp-profile-name-v1');
+  var savedPartner = localStorage.getItem('familyapp-partner-name-v1');
+  if(savedName && savedPartner) {
+    onLoggedIn();
+  }
 }
+
 
 function finishGoogleSetup() {
   var name    = (document.getElementById('step2-name')||{}).value||'';
