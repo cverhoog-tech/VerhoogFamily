@@ -246,7 +246,10 @@ function onLoggedIn(){
   if(window._appStarted) { startFirebaseSync(); return; }
   window._appStarted = true;
   hideLoginScreen();
-  if(typeof initApp === 'function') initApp();
+  // Start de app — renderNav + home screen
+  if(typeof renderNav === 'function') renderNav();
+  if(typeof showScreen === 'function') showScreen('home');
+  else if(typeof renderHome === 'function') renderHome();
   startFirebaseSync();
   setupPushNotifications();
   showToast('👋 Welkom '+myName+'!');
