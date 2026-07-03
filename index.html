@@ -495,7 +495,10 @@ function completeSetup() {
     if(savedName && !loggedIn) {
       // Namen bekend, geen Firebase auth nodig — direct starten
       if(ls) ls.style.display = 'none';
-      if(typeof initApp === 'function') { window._appStarted = true; initApp(); }
+      window._appStarted = true;
+      if(typeof renderNav === 'function') renderNav();
+      if(typeof showScreen === 'function') showScreen('home');
+      else if(typeof renderHome === 'function') renderHome();
     }
   }, 800);
 })();
