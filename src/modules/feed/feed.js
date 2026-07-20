@@ -171,12 +171,50 @@ function openFeedPhotoInNewTab(encodedUrl){
   if(url)window.open(url,'_blank','noopener');
 }
 
-function commentsHTML(p){var cs=p.comments||[];if(!p._showComments||!cs.length)return '';return '<div class="fs-comments">'+cs.map(function(c){return '<div class="fs-comment">'+avatarHTML(c.author,c.initials,c.color,'fs-comment-avatar')+'<div><b>'+escHtml(c.author)+'</b><span>'+escHtml(c.text)+'</span><small>'+escHtml(c.time||'nu')+' &nbsp; Beantwoorden &nbsp;♡ '+((c.likes||[]).length||0)+'</small></div></div>';}).join('')+'</div>';}
-function replyHTML(p){return '<div class="fs-reply">'+avatarHTML(myName,myInitials,myColor,'fs-reply-avatar')+'<div class="fs-input"><input id="cmt-inp-'+p.id+'" placeholder="Schrijf een reactie..."><button onclick="submitComment('+p.id+')">'+svgIcon('send')+'</button></div></div>';}
+function commentsHTML(p){var cs=p.comments||[];if(!p._showComments||!cs.length)return '';return '<div class="fs-comments">'+cs.map(function(c){
+  var gifHtml = c.gifUrl ? '<img src="'+c.gifUrl+'" style="max-width:200px;border-radius:12px;margin-top:6px;display:block;">' : '';
+  return '<div class="fs-comment">'+avatarHTML(c.author,c.initials,c.color,'fs-comment-avatar')+'<div><b>'+escHtml(c.author)+'</b>'+(c.text?'<span>'+escHtml(c.text)+'</span>':'')+gifHtml+'<small>'+escHtml(c.time||'nu')+' &nbsp; ♡ '+((c.likes||[]).length||0)+'</small></div></div>';
+}).join('')+'</div>';}
+function replyHTML(p){
+  var pid = String(p.id);
+  return '<div class="fs-reply">'+
+    avatarHTML(myName,myInitials,myColor,'fs-reply-avatar')+
+    '<div class="fs-input" style="flex:1;display:flex;flex-direction:column;gap:6px;">'+
+      '<div style="display:flex;gap:6px;align-items:center;">'+
+        '<input id="cmt-inp-'+pid+'" placeholder="Schrijf een reactie..." style="flex:1;" onkeydown="if(event.key===\'Enter\'){submitComment(\''+pid+'\');}">'+
+        '<button onclick="submitComment(\''+pid+'\')" style="flex-shrink:0;">'+svgIcon('send')+'</button>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px;">'+
+        '<button onclick="openGifPicker(\''+pid+'\')" style="background:#f3f4f6;border:none;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;">🎞️ GIF</button>'+
+      '</div>'+
+      '<div id="gif-preview-'+pid+'" style="display:none;"></div>'+
+    '</div>'+
+  '</div>';
+}
 
 function toggleLike(id){var p=feedData.find(function(x){return x.id===id;});if(!p)return;p.likes=p.likes||[];var i=p.likes.indexOf(myName);if(i>-1)p.likes.splice(i,1);else{p.likes.push(myName);if(typeof awardXP==='function')awardXP(1,'Like');}saveFeed();renderFeed();}
 function toggleComments(id){var p=feedData.find(function(x){return x.id===id;});if(!p)return;p._showComments=!p._showComments;renderFeed();setTimeout(function(){var inp=document.getElementById('cmt-inp-'+id);if(inp)inp.focus();},80);}
-function submitComment(id){var inp=document.getElementById('cmt-inp-'+id);if(!inp)return;var text=inp.value.trim();if(!text){inp.focus();return;}var p=feedData.find(function(x){return x.id===id;});if(!p)return;p.comments=p.comments||[];p.comments.push({author:profileName(),initials:myInitials,color:myColor,text:text,time:'nu',likes:[]});p._showComments=true;inp.value='';saveFeed();renderFeed();if(typeof addNotif==='function'&&p.author!==myName)addNotif('💬','#f3e8ff',myName+' reageerde op je post','"'+text+'"');}
+function submitComment(id){
+  id = String(id);
+  var inp = document.getElementById('cmt-inp-'+id);
+  if(!inp) return;
+  var text = inp.value.trim();
+  // Check ook voor gif
+  var gifPreview = document.getElementById('gif-preview-'+id);
+  var gifUrl = gifPreview && gifPreview.dataset.gifUrl;
+  if(!text && !gifUrl){ inp.focus(); return; }
+  var p = feedData.find(function(x){ return String(x.id)===id; });
+  if(!p) return;
+  p.comments = p.comments||[];
+  var comment = {author:profileName(),initials:myInitials,color:myColor,text:text||'',time:'nu',likes:[]};
+  if(gifUrl) comment.gifUrl = gifUrl;
+  p.comments.push(comment);
+  p._showComments = true;
+  inp.value = '';
+  if(gifPreview){ gifPreview.style.display='none'; gifPreview.dataset.gifUrl=''; gifPreview.innerHTML=''; }
+  saveFeed(); renderFeed();
+  if(typeof addNotif==='function'&&p.author!==myName) addNotif('💬','#f3e8ff',myName+' reageerde op je post', text||'[GIF]');
+}
 function deletePost(id){if(!confirm('Post verwijderen?'))return;feedData=feedData.filter(function(p){return p.id!==id;});saveFeed();renderFeed();if(typeof updateStats==='function')updateStats();}
 function toggleReaction(){}function toggleReactionPicker(){}
 function clearComposeMedia(){composeMediaDataUrl=null;composeMediaType='image';var prev=document.getElementById('compose-media-preview');var img=document.getElementById('compose-preview-img');if(prev)prev.style.display='none';if(img){img.src='';img.style.display='block';}var s=document.getElementById('sticker-preview-big');if(s)s.remove();}
@@ -206,4 +244,68 @@ if(!window.__familyAppFeedAvatarSyncV1){
       try { renderFeed(); } catch(e) {}
     }
   });
+}
+
+
+/* ── GIF PICKER ── */
+var _gifPickerId = null;
+function openGifPicker(postId) {
+  _gifPickerId = String(postId);
+  var existing = document.getElementById('gif-picker-modal');
+  if(existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'gif-picker-modal';
+  modal.style.cssText = 'position:fixed;bottom:0;left:0;right:0;top:0;z-index:10002;display:flex;flex-direction:column;background:#fff;';
+  modal.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #e5e7eb;">'+
+      '<button onclick="document.getElementById(\'gif-picker-modal\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#374151;">←</button>'+
+      '<input id="gif-search-inp" placeholder="Zoek GIFs..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:99px;padding:8px 14px;font-size:14px;font-family:inherit;outline:none;" oninput="searchGifs(this.value)">'+
+    '</div>'+
+    '<div id="gif-results" style="flex:1;overflow-y:auto;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>';
+  document.body.appendChild(modal);
+  document.getElementById('gif-search-inp').focus();
+  searchGifs('celebrate');
+}
+
+function searchGifs(query) {
+  var results = document.getElementById('gif-results');
+  if(!results) return;
+  if(!query || query.length < 2) return;
+  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#9ca3af;">Zoeken...</div>';
+
+  var apiKey = 'AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI'; // Tenor public demo key
+  var url = 'https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+apiKey+'&limit=20&media_filter=gif';
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!results) return;
+      results.innerHTML = '';
+      (data.results||[]).forEach(function(gif){
+        var gifUrl = gif.media_formats && gif.media_formats.gif && gif.media_formats.gif.url;
+        var thumbUrl = gif.media_formats && gif.media_formats.tinygif && gif.media_formats.tinygif.url || gifUrl;
+        if(!gifUrl) return;
+        var img = document.createElement('img');
+        img.src = thumbUrl;
+        img.style.cssText = 'width:100%;border-radius:12px;cursor:pointer;';
+        img.onclick = function(){ selectGif(gifUrl); };
+        results.appendChild(img);
+      });
+    })
+    .catch(function(){ results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#9ca3af;">Geen resultaten</div>'; });
+}
+
+function selectGif(gifUrl) {
+  document.getElementById('gif-picker-modal').remove();
+  if(!_gifPickerId) return;
+  var preview = document.getElementById('gif-preview-'+_gifPickerId);
+  if(preview){
+    preview.style.display = 'block';
+    preview.dataset.gifUrl = gifUrl;
+    preview.innerHTML = '<div style="position:relative;display:inline-block;">'+
+      '<img src="'+gifUrl+'" style="max-width:180px;border-radius:12px;margin-top:4px;">'+
+      '<button onclick="var p=document.getElementById(\'gif-preview-'+_gifPickerId+'\');p.style.display=\'none\';p.dataset.gifUrl=\'\';p.innerHTML=\'\'" '+
+        'style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;">✕</button>'+
+    '</div>';
+  }
 }
