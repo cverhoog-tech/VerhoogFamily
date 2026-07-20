@@ -442,48 +442,88 @@ function detail(id){
 function showGQPopup(questTitle){
   closeModal();
   var pop=document.getElementById('fqGQPop');
-  if(!pop){
-    pop=document.createElement('div');
-    pop.id='fqGQPop';
-    pop.className='fqGQPop';
-    document.body.appendChild(pop);
-  }
-  // overlay
+  if(!pop){ pop=document.createElement('div'); pop.id='fqGQPop'; document.body.appendChild(pop); }
   var ov=document.getElementById('fqGQOv');
-  if(!ov){ov=document.createElement('div');ov.id='fqGQOv';ov.className='fqGQOverlay';document.body.appendChild(ov);}
+  if(!ov){ ov=document.createElement('div'); ov.id='fqGQOv'; ov.className='fqGQOverlay'; document.body.appendChild(ov); }
 
-  pop.innerHTML=
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">'+
-      '<div style="width:36px;height:36px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:18px;">🛡️</div>'+
-      '<div><div class="fqGQTag">'+L('groupq')+'</div><div class="fqGQTitle">'+L('helpreq')+'</div></div>'+
-      '<button class="fqGQClose" style="margin-left:auto;">✕</button>'+
-    '</div>'+
-    '<div style="font-size:13px;color:var(--m);margin-bottom:3px;">Shane '+L('helpat')+'</div>'+
-    '<div class="fqGQQuest">'+questTitle+'</div>'+
-    '<div class="fqGQAvs">'+
-      '<div class="fqPav fqPav3" style="width:34px;height:34px;font-size:11px;">SH</div>'+
-      '<div class="fqPav fqPav1" style="width:34px;height:34px;font-size:11px;">SK</div>'+
-      '<span class="fqGQXP">'+L('xpboth')+'</span>'+
-    '</div>'+
-    '<div class="fqGQBtns">'+
-      '<button class="fqGQBtn no">'+L('decline')+'</button>'+
-      '<button class="fqGQBtn yes">'+L('accept')+'</button>'+
+  var myN = localStorage.getItem('familyapp-profile-name-v1')||'Shane';
+  var partN = localStorage.getItem('familyapp-partner-name-v1')||'Esra';
+  var myI = myN.substring(0,2).toUpperCase();
+  var ptI = partN.substring(0,2).toUpperCase();
+  var myAvUrl = localStorage.getItem('familyapp-current-user-avatar-v1')||'';
+  var ptAvUrl = localStorage.getItem('fam_avatar_'+partN.toLowerCase())||'';
+
+  function avHtml(url, initials, color) {
+    if(url) return '<img src="'+url+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;object-position:50% 20%;border:2.5px solid '+color+';">';
+    return '<div style="width:48px;height:48px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;">'+initials+'</div>';
+  }
+
+  pop.innerHTML =
+    '<div style="position:relative;overflow:hidden;">'+
+      // Achtergrond glow
+      '<div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(139,92,246,.25) 0%,transparent 70%);pointer-events:none;"></div>'+
+
+      // Header
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">'+
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+          '<div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px rgba(124,58,237,.4);">⚔️</div>'+
+          '<div>'+
+            '<div style="font-size:10px;font-weight:900;color:#7c3aed;text-transform:uppercase;letter-spacing:.8px;">Group Quest</div>'+
+            '<div style="font-size:17px;font-weight:950;color:#111827;letter-spacing:-.3px;">Hulp gevraagd!</div>'+
+          '</div>'+
+        '</div>'+
+        '<button class="fqGQClose" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;font-size:16px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;">✕</button>'+
+      '</div>'+
+
+      // Quest naam
+      '<div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1.5px solid #ddd6fe;border-radius:16px;padding:16px;margin-bottom:20px;">'+
+        '<div style="font-size:11px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">'+myN+' vraagt om hulp bij</div>'+
+        '<div style="font-size:17px;font-weight:950;color:#1e1b4b;letter-spacing:-.2px;">'+questTitle+'</div>'+
+      '</div>'+
+
+      // Avatars
+      '<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:20px;">'+
+        '<div style="text-align:center;">'+
+          avHtml(myAvUrl, myI, '#2563eb')+
+          '<div style="font-size:11px;font-weight:800;color:#374151;margin-top:6px;">'+myN+'</div>'+
+          '<div style="font-size:10px;color:#9ca3af;font-weight:600;">Vraagt hulp</div>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">'+
+          '<div style="font-size:22px;">🤝</div>'+
+          '<div style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border-radius:99px;padding:4px 12px;font-size:11px;font-weight:800;">+20 XP elk</div>'+
+        '</div>'+
+        '<div style="text-align:center;">'+
+          avHtml(ptAvUrl, ptI, '#ec4899')+
+          '<div style="font-size:11px;font-weight:800;color:#374151;margin-top:6px;">'+partN+'</div>'+
+          '<div style="font-size:10px;color:#9ca3af;font-weight:600;">Wordt gevraagd</div>'+
+        '</div>'+
+      '</div>'+
+
+      // Buttons
+      '<div style="display:flex;gap:10px;">'+
+        '<button class="fqGQNo" style="flex:1;padding:14px;border-radius:14px;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;font-size:15px;font-weight:700;cursor:pointer;">Weigeren</button>'+
+        '<button class="fqGQYes" style="flex:2;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 6px 20px rgba(124,58,237,.4);letter-spacing:-.2px;">⚔️ Accepteren</button>'+
+      '</div>'+
     '</div>';
 
-  requestAnimationFrame(function(){
-    pop.classList.add('open');
-    ov.classList.add('open');
-  });
+  // Styling popup
+  pop.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:24px 24px 0 0;padding:24px;z-index:10001;box-shadow:0 -8px 40px rgba(0,0,0,.15);max-width:480px;margin:0 auto;';
 
-  function closeGQ(){
-    pop.classList.remove('open');
-    ov.classList.remove('open');
-  }
-  A('.fqGQClose,.fqGQBtn',pop).forEach(function(b){b.onclick=closeGQ;});
-  ov.onclick=closeGQ;
+  // Events
+  pop.querySelector('.fqGQClose').onclick = function(){ pop.style.display='none'; ov.style.display='none'; };
+  pop.querySelector('.fqGQNo').onclick    = function(){ pop.style.display='none'; ov.style.display='none'; };
+  pop.querySelector('.fqGQYes').onclick   = function(){
+    pop.style.display='none'; ov.style.display='none';
+    if(typeof awardXP==='function') awardXP(20,'Group Quest geaccepteerd!');
+    if(typeof showToast==='function') showToast('⚔️ Quest geaccepteerd! +20 XP');
+  };
+
+  pop.style.display='block';
+  ov.style.display='block';
+  ov.onclick=function(){ pop.style.display='none'; ov.style.display='none'; };
 }
 
-/* ── CREATE QUEST ── */
+
 function create(){
   var m=modal(
     '<div class="fqPage">'+
