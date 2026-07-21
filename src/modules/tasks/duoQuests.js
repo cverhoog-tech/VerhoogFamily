@@ -66,6 +66,35 @@ function initFirebase(config) {
   } catch(e){ console.error('Firebase init:',e); showAuthError('Init fout: '+e.message); return false; }
 }
 
+
+function emailAuth() {
+  var email = (document.getElementById('auth-email')||{}).value || '';
+  var pass  = (document.getElementById('auth-pass')||{}).value  || '';
+  var err   = document.getElementById('login-error');
+  if(!email || !pass) { if(err) err.textContent = 'Vul e-mail en wachtwoord in'; return; }
+  if(!fbAuth) { if(err) err.textContent = 'Firebase niet verbonden'; return; }
+
+  var btn = document.querySelector('#login-step-1 button.green-btn, #login-step-1 .login-btn');
+  var loginBtn = document.querySelector('button[onclick="emailAuth()"]');
+  if(loginBtn) { loginBtn.textContent = '⏳ Bezig...'; loginBtn.disabled = true; }
+  if(err) err.textContent = '';
+
+  var isRegister = window._loginTab === 'register';
+  var action = isRegister
+    ? fbAuth.createUserWithEmailAndPassword(email, pass)
+    : fbAuth.signInWithEmailAndPassword(email, pass);
+
+  action.then(function(result) {
+    fbUser = result.user;
+    if(loginBtn) { loginBtn.textContent = isRegister ? 'Registreren' : 'Inloggen'; loginBtn.disabled = false; }
+    loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
+  }).catch(function(e) {
+    if(loginBtn) { loginBtn.textContent = isRegister ? 'Registreren' : 'Inloggen'; loginBtn.disabled = false; }
+    if(err) err.textContent = translateFbError(e);
+  });
+}
+
+
 function toggleFbConfig() {
   var p=document.getElementById('fb-config-panel');
   if(p) p.style.display=p.style.display==='none'?'block':'none';
