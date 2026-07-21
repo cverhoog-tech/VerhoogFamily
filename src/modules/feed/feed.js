@@ -256,56 +256,77 @@ function openGifPicker(postId) {
 
   var modal = document.createElement('div');
   modal.id = 'gif-picker-modal';
-  modal.style.cssText = 'position:fixed;bottom:0;left:0;right:0;top:0;z-index:10002;display:flex;flex-direction:column;background:#fff;';
+  modal.style.cssText = 'position:fixed;bottom:80px;left:8px;right:8px;z-index:10002;background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.25);overflow:hidden;display:flex;flex-direction:column;max-height:360px;';
   modal.innerHTML =
-    '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #e5e7eb;">'+
-      '<button onclick="document.getElementById(\'gif-picker-modal\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#374151;">←</button>'+
-      '<input id="gif-search-inp" placeholder="Zoek GIFs..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:99px;padding:8px 14px;font-size:14px;font-family:inherit;outline:none;" oninput="searchGifs(this.value)">'+
+    '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #f3f4f6;">'+
+      '<span style="font-size:16px;">🎞️</span>'+
+      '<input id="gif-search-inp" placeholder="Zoek GIFs..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:99px;padding:7px 12px;font-size:13px;font-family:inherit;outline:none;background:#f9fafb;" oninput="searchGifs(this.value)">'+
+      '<button onclick="document.getElementById('gif-picker-modal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;">✕</button>'+
     '</div>'+
-    '<div id="gif-results" style="flex:1;overflow-y:auto;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>';
+    '<div id="gif-results" style="flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>';
+
   document.body.appendChild(modal);
   document.getElementById('gif-search-inp').focus();
   searchGifs('celebrate');
+
+  // Sluit bij klik buiten
+  setTimeout(function(){
+    document.addEventListener('click', function closeGif(e){
+      var m = document.getElementById('gif-picker-modal');
+      if(m && !m.contains(e.target) && !e.target.closest('[onclick*="openGifPicker"]')){
+        m.remove();
+        document.removeEventListener('click', closeGif);
+      }
+    });
+  }, 100);
 }
 
 function searchGifs(query) {
   var results = document.getElementById('gif-results');
   if(!results) return;
   if(!query || query.length < 2) return;
-  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#9ca3af;">Zoeken...</div>';
+  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Zoeken...</div>';
 
-  var apiKey = 'AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI'; // Tenor public demo key
-  var url = 'https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+apiKey+'&limit=20&media_filter=gif';
+  var apiKey = 'AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI';
+  var url = 'https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+apiKey+'&limit=18&media_filter=gif';
   fetch(url)
     .then(function(r){ return r.json(); })
     .then(function(data){
+      results = document.getElementById('gif-results');
       if(!results) return;
       results.innerHTML = '';
       (data.results||[]).forEach(function(gif){
         var gifUrl = gif.media_formats && gif.media_formats.gif && gif.media_formats.gif.url;
-        var thumbUrl = gif.media_formats && gif.media_formats.tinygif && gif.media_formats.tinygif.url || gifUrl;
+        var thumbUrl = gif.media_formats && gif.media_formats.nanogif && gif.media_formats.nanogif.url || gifUrl;
         if(!gifUrl) return;
         var img = document.createElement('img');
         img.src = thumbUrl;
-        img.style.cssText = 'width:100%;border-radius:12px;cursor:pointer;';
+        img.style.cssText = 'width:100%;border-radius:8px;cursor:pointer;aspect-ratio:1;object-fit:cover;';
         img.onclick = function(){ selectGif(gifUrl); };
         results.appendChild(img);
       });
+      if(!data.results||!data.results.length){
+        results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Geen resultaten</div>';
+      }
     })
-    .catch(function(){ results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#9ca3af;">Geen resultaten</div>'; });
+    .catch(function(){
+      results = document.getElementById('gif-results');
+      if(results) results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Fout bij laden</div>';
+    });
 }
 
 function selectGif(gifUrl) {
-  document.getElementById('gif-picker-modal').remove();
+  var m = document.getElementById('gif-picker-modal');
+  if(m) m.remove();
   if(!_gifPickerId) return;
   var preview = document.getElementById('gif-preview-'+_gifPickerId);
   if(preview){
     preview.style.display = 'block';
     preview.dataset.gifUrl = gifUrl;
-    preview.innerHTML = '<div style="position:relative;display:inline-block;">'+
-      '<img src="'+gifUrl+'" style="max-width:180px;border-radius:12px;margin-top:4px;">'+
-      '<button onclick="var p=document.getElementById(\'gif-preview-'+_gifPickerId+'\');p.style.display=\'none\';p.dataset.gifUrl=\'\';p.innerHTML=\'\'" '+
-        'style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;">✕</button>'+
+    preview.innerHTML = '<div style="position:relative;display:inline-block;margin-top:4px;">'+
+      '<img src="'+gifUrl+'" style="max-width:160px;border-radius:10px;display:block;">'+
+      '<button onclick="var p=document.getElementById('gif-preview-'+_gifPickerId+'');p.style.display='none';p.dataset.gifUrl='';p.innerHTML=''" '+
+        'style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'+
     '</div>';
   }
 }
