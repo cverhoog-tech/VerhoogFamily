@@ -177,17 +177,17 @@ function commentsHTML(p){var cs=p.comments||[];if(!p._showComments||!cs.length)r
 }).join('')+'</div>';}
 function replyHTML(p){
   var pid = String(p.id);
-  return '<div class="fs-reply">'+
-    avatarHTML(myName,myInitials,myColor,'fs-reply-avatar')+
-    '<div class="fs-input" style="flex:1;display:flex;flex-direction:column;gap:6px;">'+
-      '<div style="display:flex;gap:6px;align-items:center;">'+
-        '<input id="cmt-inp-'+pid+'" placeholder="Schrijf een reactie..." style="flex:1;" onkeydown="if(event.key===\'Enter\'){submitComment(\''+pid+'\');}">'+
-        '<button onclick="submitComment(\''+pid+'\')" style="flex-shrink:0;">'+svgIcon('send')+'</button>'+
+  return '<div class="fs-reply" style="flex-direction:column;align-items:stretch;">'+
+    '<div style="display:flex;gap:8px;align-items:center;">'+
+      avatarHTML(myName,myInitials,myColor,'fs-reply-avatar')+
+      '<div class="fs-input" style="flex:1;">'+
+        '<input id="cmt-inp-'+pid+'" placeholder="Schrijf een reactie..." onkeydown="if(event.key===\'Enter\'){submitComment(\''+pid+'\');}">'+
+        '<button onclick="submitComment(\''+pid+'\')" >'+svgIcon('send')+'</button>'+
       '</div>'+
-      '<div style="display:flex;gap:6px;">'+
-        '<button onclick="openGifPicker(\''+pid+'\')" style="background:#f3f4f6;border:none;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;">🎞️ GIF</button>'+
-      '</div>'+
-      '<div id="gif-preview-'+pid+'" style="display:none;"></div>'+
+    '</div>'+
+    '<div id="gif-preview-'+pid+'" style="display:none;margin-left:44px;margin-top:4px;"></div>'+
+    '<div style="margin-left:44px;margin-top:6px;">'+
+      '<button onclick="openGifPicker(\''+pid+'\')" style="background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:99px;padding:5px 12px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;">🎞️ GIF</button>'+
     '</div>'+
   '</div>';
 }
