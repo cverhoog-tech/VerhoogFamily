@@ -14,6 +14,95 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+
+<script>
+// ── LOGIN FUNCTIES ──
+function showLoginTab(tab) {
+  var isLogin = tab === 'login';
+  var tl = document.getElementById('tab-login');
+  var tr = document.getElementById('tab-register');
+  var re = document.getElementById('register-extra');
+  var sb = document.getElementById('auth-submit-btn');
+  if(tl){ tl.style.background = isLogin ? 'var(--c-surface)' : 'transparent'; tl.style.color = isLogin ? 'var(--c-text)' : 'var(--c-text2)'; tl.style.boxShadow = isLogin ? '0 1px 3px rgba(0,0,0,.1)' : 'none'; }
+  if(tr){ tr.style.background = !isLogin ? 'var(--c-surface)' : 'transparent'; tr.style.color = !isLogin ? 'var(--c-text)' : 'var(--c-text2)'; tr.style.boxShadow = !isLogin ? '0 1px 3px rgba(0,0,0,.1)' : 'none'; }
+  if(re) re.style.display = isLogin ? 'none' : 'block';
+  if(sb) sb.textContent = isLogin ? 'Inloggen' : 'Account aanmaken';
+  window._loginTab = tab;
+}
+
+function offlineLogin() {
+  var ls = document.getElementById('login-screen');
+  if(ls) { ls.style.opacity='0'; ls.style.transition='opacity .3s'; setTimeout(function(){ ls.style.display='none'; }, 300); }
+  window._appStarted = true;
+  if(typeof renderNav === 'function') renderNav();
+  if(typeof showScreen === 'function') showScreen('home');
+}
+
+function submitAuth() {
+  var email   = (document.getElementById('auth-email')||{value:''}).value.trim();
+  var pass    = (document.getElementById('auth-password')||{value:''}).value.trim();
+  var name    = (document.getElementById('auth-name')||{value:''}).value.trim();
+  var partner = (document.getElementById('auth-partner')||{value:''}).value.trim();
+  var errEl   = document.getElementById('auth-error');
+  var btn     = document.getElementById('auth-submit-btn');
+  var isReg   = window._loginTab === 'register';
+
+  if(errEl){ errEl.style.display='none'; errEl.textContent=''; }
+  if(!email || !pass){ if(errEl){ errEl.textContent='Vul e-mail en wachtwoord in'; errEl.style.display='block'; } return; }
+  if(isReg && (!name || !partner)){ if(errEl){ errEl.textContent='Vul ook jouw naam en partner naam in'; errEl.style.display='block'; } return; }
+  if(btn){ btn.textContent='⏳ Bezig...'; btn.disabled=true; }
+
+  if(typeof fbAuth === 'undefined' || !fbAuth){
+    if(name) localStorage.setItem('familyapp-profile-name-v1', name);
+    if(partner) localStorage.setItem('familyapp-partner-name-v1', partner);
+    offlineLogin(); return;
+  }
+
+  var action = isReg
+    ? fbAuth.createUserWithEmailAndPassword(email, pass)
+    : fbAuth.signInWithEmailAndPassword(email, pass);
+
+  action.then(function(result){
+    if(btn){ btn.textContent = isReg ? 'Account aanmaken' : 'Inloggen'; btn.disabled=false; }
+    window.fbUser = result.user;
+    if(isReg && name && partner){
+      localStorage.setItem('familyapp-profile-name-v1', name);
+      localStorage.setItem('familyapp-partner-name-v1', partner);
+    }
+    if(typeof loadUserFamily === 'function'){
+      loadUserFamily().catch(function(){ if(typeof showNameSetupStep === 'function') showNameSetupStep(result.user); });
+    } else if(typeof onLoggedIn === 'function') onLoggedIn();
+  }).catch(function(e){
+    if(btn){ btn.textContent = isReg ? 'Account aanmaken' : 'Inloggen'; btn.disabled=false; }
+    var msg = e.code === 'auth/email-already-in-use' ? 'E-mail al in gebruik' :
+              e.code === 'auth/wrong-password' ? 'Verkeerd wachtwoord' :
+              e.code === 'auth/user-not-found' ? 'Geen account gevonden' :
+              e.code === 'auth/weak-password' ? 'Wachtwoord te kort (min. 6 tekens)' :
+              e.code === 'auth/invalid-email' ? 'Ongeldig e-mailadres' : e.message;
+    if(errEl){ errEl.textContent=msg; errEl.style.display='block'; }
+  });
+}
+
+function completeSetup() {
+  var name    = (document.getElementById('step2-name')||{value:''}).value.trim();
+  var partner = (document.getElementById('step2-partner')||{value:''}).value.trim();
+  var err     = document.getElementById('step2-error');
+  if(!name){ if(err) err.textContent='Vul jouw naam in'; return; }
+  if(!partner){ if(err) err.textContent='Vul de naam van je partner in'; return; }
+  localStorage.setItem('familyapp-profile-name-v1', name);
+  localStorage.setItem('familyapp-partner-name-v1', partner);
+  var btn = document.querySelector('#login-step-2 button[onclick="completeSetup()"]');
+  if(btn){ btn.textContent='⏳ Bezig...'; btn.disabled=true; }
+  if(typeof setupNewFamily === 'function' && window.fbUser){
+    setupNewFamily(name, partner)
+      .then(function(){ if(typeof onLoggedIn === 'function') onLoggedIn(); })
+      .catch(function(e){ if(err) err.textContent='Fout: '+e.message; if(btn){ btn.textContent='✅ Start'; btn.disabled=false; } });
+  } else {
+    if(typeof onLoggedIn === 'function') onLoggedIn();
+    else offlineLogin();
+  }
+}
+</script>
 </head>
 <body>
 
