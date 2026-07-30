@@ -156,6 +156,24 @@
       + '.psr-fill{height:100%;border-radius:999px}'
       + '.psr-pct{font-size:12px;font-weight:900;color:rgba(244,246,255,.7);flex-shrink:0;min-width:34px;text-align:right}'
 
+      // ── Week progress ──
+      + '.person-week-progress{display:flex;justify-content:space-between;gap:6px;background:rgba(255,255,255,.045);'
+        + 'border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 10px 10px;backdrop-filter:blur(10px)}'
+      + '.wp-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}'
+      + '.wp-bar-track{width:100%;max-width:22px;height:64px;border-radius:8px;background:rgba(255,255,255,.08);'
+        + 'display:flex;align-items:flex-end;overflow:hidden}'
+      + '.wp-bar-fill{width:100%;border-radius:8px;background:linear-gradient(180deg,#fde68a,#fbbf24);'
+        + 'box-shadow:0 0 10px rgba(251,191,36,.4);transition:height .5s ease}'
+      + '.wp-day-label{font-size:9.5px;font-weight:800;color:rgba(244,246,255,.5);text-transform:uppercase}'
+      + '.wp-val{font-size:10.5px;font-weight:900;color:#f4f6ff}'
+
+      // ── Badges ──
+      + '.person-badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}'
+      + '.badge-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);'
+        + 'border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 13px}'
+      + '.badge-chip-icon{font-size:15px;line-height:1}'
+      + '.badge-chip-label{font-size:11.5px;font-weight:800;color:#f4f6ff;white-space:nowrap}'
+
       // ── Divider spacing ──
       + '.ptp-section{margin-bottom:20px}'
       + '@media(min-width:480px){.task-person-page{margin:0}}';
@@ -213,6 +231,39 @@
     };
   }
 
+  // ── Week progress (Ma–Zo XP), gebaseerd op dezelfde quest-databron ──
+  function weekXpBreakdownFor(name) {
+    var raw = localStorage.getItem('fam_tasks_v023') || localStorage.getItem('fam_tasks_v022') || '[]';
+    var allTasks;
+    try { allTasks = JSON.parse(raw) || []; } catch (e) { allTasks = []; }
+
+    var tasks = allTasks.filter(function (x) {
+      return x[9] && x[5] && (x[5] === 'Beiden' || x[5].indexOf(name) > -1);
+    });
+
+    var now = new Date();
+    var dow = (now.getDay() + 6) % 7; // 0 = maandag
+    var weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - dow);
+    weekStart.setHours(0, 0, 0, 0);
+
+    var labels = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+    var totals = [0, 0, 0, 0, 0, 0, 0];
+
+    tasks.forEach(function (x) {
+      var raw2 = x[11] || x[4];
+      if (!raw2) return;
+      var d = new Date(String(raw2).replace(/^(\d{1,2})[\/\-](\d{1,2})/, '$1-$2'));
+      if (isNaN(d.getTime())) return;
+      d.setHours(0, 0, 0, 0);
+      var diffDays = Math.round((d - weekStart) / 86400000);
+      if (diffDays < 0 || diffDays > 6) return;
+      totals[diffDays] += xpFromString(x[6]);
+    });
+
+    return labels.map(function (l, i) { return { label: l, xp: totals[i] }; });
+  }
+
   function topSkillsFor(name) {
     if (typeof skillsData === 'undefined' || typeof SKILL_DEFS === 'undefined' || !skillsData[name]) return [];
     var rows = SKILL_DEFS.map(function (def) {
@@ -231,6 +282,20 @@
       if (r.who && r.who.indexOf(name) > -1) return Math.max(m, r.streak || 0);
       return m;
     }, 0);
+  }
+
+  // ── Badges — afgeleid van echte voortgangssignalen, geen afrekenlogica ──
+  function computeBadges(m) {
+    var badges = [];
+    if (m.streak >= 3) badges.push({ icon: '🔥', label: 'Streak Keeper' });
+    if (m.doneThisWeekCount >= 5) badges.push({ icon: '⚔️', label: 'Quest Finisher' });
+    var weekendXP = (m.weekBreakdown[5] ? m.weekBreakdown[5].xp : 0) + (m.weekBreakdown[6] ? m.weekBreakdown[6].xp : 0);
+    if (weekendXP > 0) badges.push({ icon: '🏆', label: 'Weekend Hero' });
+    if (m.skills && m.skills[0] && m.skills[0].pct >= 40) {
+      badges.push({ icon: m.skills[0].icon || '🧠', label: m.skills[0].name + ' Guardian' });
+    }
+    if (!badges.length) badges.push({ icon: '🌱', label: 'Nieuwe Avonturier' });
+    return badges;
   }
 
   function buildMembers() {
@@ -256,8 +321,10 @@
       var streak = maxStreakFor(name);
       var avatar = getAvatarFor(name, meName);
       var palette = PALETTES[i % PALETTES.length];
+      var skills = topSkillsFor(name);
+      var weekBreakdown = weekXpBreakdownFor(name);
 
-      return {
+      var member = {
         id: name.toLowerCase(),
         name: name,
         isMe: isMe,
@@ -275,8 +342,11 @@
         totalQuestXP: qs.totalXP,
         streak: streak,
         openTasks: qs.open,
-        skills: topSkillsFor(name)
+        skills: skills,
+        weekBreakdown: weekBreakdown
       };
+      member.badges = computeBadges(member);
+      return member;
     });
   }
 
@@ -415,6 +485,35 @@
     return html;
   }
 
+  function renderWeekProgress(m) {
+    var max = Math.max.apply(null, m.weekBreakdown.map(function (d) { return d.xp; })) || 1;
+    var html = '<div class="ptp-section">';
+    html += '<div class="ptp-section-title">📊 Week progress</div>';
+    html += '<div class="person-week-progress">';
+    m.weekBreakdown.forEach(function (d) {
+      var h = Math.round((d.xp / max) * 100);
+      html += '<div class="wp-col">';
+      html += '<div class="wp-bar-track"><div class="wp-bar-fill" style="height:' + (d.xp > 0 ? Math.max(h, 6) : 0) + '%"></div></div>';
+      html += '<div class="wp-day-label">' + d.label + '</div>';
+      html += '<div class="wp-val">' + d.xp + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderBadges(m) {
+    var html = '<div class="ptp-section">';
+    html += '<div class="ptp-section-title">🎖️ Badges</div>';
+    html += '<div class="person-badges">';
+    m.badges.forEach(function (b) {
+      html += '<div class="badge-chip"><span class="badge-chip-icon">' + b.icon + '</span>'
+        + '<span class="badge-chip-label">' + esc(b.label) + '</span></div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
   function render(el) {
     if (!el) return;
     injectStyles();
@@ -438,6 +537,8 @@
     html += renderContribution(members);
     html += renderOpenQuests(selected);
     html += renderTopSkills(selected);
+    html += renderWeekProgress(selected);
+    html += renderBadges(selected);
     html += '</div>';
 
     el.innerHTML = html;
