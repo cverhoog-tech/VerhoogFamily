@@ -1,0 +1,49 @@
+/* ============================================================
+   FAMILYAPP PREMIUM UI POLISH v0.263
+   Shared interaction language + navigation refinement
+   ============================================================ */
+:root{
+  --ui-touch:44px;
+  --ui-radius-sm:12px;
+  --ui-radius-md:16px;
+  --ui-radius-lg:22px;
+  --ui-shadow-soft:0 8px 28px rgba(25,42,24,.08);
+  --ui-shadow-float:0 14px 40px rgba(17,24,39,.14);
+  --ui-ring:0 0 0 3px color-mix(in srgb,var(--c-primary) 18%,transparent);
+}
+button{min-height:var(--ui-touch);touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:focus-visible,[role="button"]:focus-visible{outline:none;box-shadow:var(--ui-ring)}
+button:disabled{opacity:.48;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.add-btn,.sheet-btn,.profile-save,.unlock-card-btn,.recipe-shop-btn,.recipe-to-shop-btn{min-height:48px;border-radius:16px;letter-spacing:-.01em;box-shadow:0 9px 22px color-mix(in srgb,var(--c-primary) 20%,transparent);transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .16s ease,background .16s ease,filter .16s ease}
+@media (hover:hover){.add-btn:hover,.sheet-btn:hover,.profile-save:hover,.unlock-card-btn:hover,.recipe-shop-btn:hover,.recipe-to-shop-btn:hover{filter:brightness(1.035);transform:translateY(-1px);box-shadow:0 12px 28px color-mix(in srgb,var(--c-primary) 23%,transparent)}}
+.add-btn:active,.sheet-btn:active,.profile-save:active,.unlock-card-btn:active,.recipe-shop-btn:active,.recipe-to-shop-btn:active{transform:translateY(1px) scale(.985);box-shadow:0 4px 12px color-mix(in srgb,var(--c-primary) 16%,transparent)}
+.chip,.type-btn,.assignee-chip,.task-edit-btn,.cal-nav-btn,.ne-tbtn{min-height:40px;border-radius:13px;transition:transform .14s ease,background .14s ease,border-color .14s ease,color .14s ease,box-shadow .14s ease}
+.chip:active,.type-btn:active,.assignee-chip:active,.task-edit-btn:active,.cal-nav-btn:active,.ne-tbtn:active{transform:scale(.975)}
+.bottom-nav{height:calc(70px + env(safe-area-inset-bottom,0px));padding:5px 8px env(safe-area-inset-bottom,0px);align-items:stretch;background:color-mix(in srgb,var(--c-nav-bg) 92%,transparent)!important;border-top:1px solid color-mix(in srgb,var(--c-border) 80%,transparent)!important;box-shadow:0 -10px 34px rgba(17,24,39,.08);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);z-index:40}
+.nav-btn{position:relative;min-height:58px;border-radius:16px;gap:4px;padding:7px 3px 6px;color:var(--c-text2);transition:transform .14s ease,color .16s ease,background .16s ease}
+.nav-btn::before{content:"";position:absolute;inset:5px 4px;border-radius:14px;background:transparent;transform:scale(.82);opacity:0;transition:opacity .16s ease,transform .18s cubic-bezier(.2,.8,.2,1),background .16s ease;z-index:-1}
+.nav-btn.active{color:var(--c-primary)}
+.nav-btn.active::before{background:color-mix(in srgb,var(--c-primary) 10%,transparent);opacity:1;transform:scale(1)}
+.nav-btn:active{transform:scale(.95)}
+.nav-icon{width:23px;height:23px;display:flex;align-items:center;justify-content:center;line-height:1}
+.nav-icon svg,.more-icon svg,.nav-config-icon svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav-label{max-width:68px;font-size:10px;font-weight:650;letter-spacing:-.01em;color:inherit}
+.nav-center{overflow:visible}.nav-center::before{display:none}
+.nav-center-inner{width:48px;height:48px;margin-top:-18px;border:4px solid color-mix(in srgb,var(--c-nav-bg) 96%,transparent);background:linear-gradient(145deg,color-mix(in srgb,var(--c-primary) 82%,#fff),var(--c-primary-dark));box-shadow:0 9px 22px color-mix(in srgb,var(--c-primary) 30%,transparent),0 2px 6px rgba(0,0,0,.16);transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s ease}
+.nav-center.active .nav-center-inner{transform:translateY(-1px) scale(1.04);box-shadow:0 12px 28px color-mix(in srgb,var(--c-primary) 36%,transparent),0 3px 8px rgba(0,0,0,.15)}
+.nav-center .nav-label{margin-top:-1px}
+.more-menu{bottom:calc(70px + env(safe-area-inset-bottom,0px));padding:14px 14px 18px;background:color-mix(in srgb,var(--c-surface) 96%,transparent);border:1px solid color-mix(in srgb,var(--c-border) 82%,transparent);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -18px 48px rgba(17,24,39,.14);backdrop-filter:blur(26px) saturate(145%);-webkit-backdrop-filter:blur(26px) saturate(145%);transform:translate(-50%,12px) scale(.985);opacity:0;pointer-events:none;display:block;visibility:hidden;transition:opacity .18s ease,transform .22s cubic-bezier(.2,.8,.2,1),visibility 0s linear .22s;z-index:39}
+.more-menu.open{opacity:1;pointer-events:auto;visibility:visible;transform:translate(-50%,0) scale(1);transition:opacity .18s ease,transform .22s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.more-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.more-btn{min-height:76px;padding:10px 4px 8px;border:1px solid color-mix(in srgb,var(--c-border) 75%,transparent);border-radius:16px;background:linear-gradient(180deg,var(--c-surface),var(--c-surface2));color:var(--c-text2);gap:7px;box-shadow:0 3px 12px rgba(17,24,39,.035);transition:transform .14s ease,border-color .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}
+.more-btn .more-icon{width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--c-text)}
+.more-btn>span:last-child{font-size:10.5px;font-weight:650;line-height:1.15}
+.more-btn:active{transform:scale(.96);background:var(--c-primary-light);border-color:color-mix(in srgb,var(--c-primary) 28%,var(--c-border));color:var(--c-primary)}
+.more-btn:active .more-icon{color:var(--c-primary)}.more-btn.is-config{border-style:dashed}
+.nav-config-sheet{padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px));border-radius:28px 28px 0 0;box-shadow:0 -18px 50px rgba(17,24,39,.16)}
+.nav-config-title{font-size:19px;letter-spacing:-.02em}.nav-config-sub{font-size:13px;line-height:1.45}.nav-slot,.nav-option{min-height:64px}
+.screen{padding-bottom:calc(94px + env(safe-area-inset-bottom,0px))}
+.famLang{bottom:calc(env(safe-area-inset-bottom,0px) + 98px)!important}
+@media(max-width:380px){.bottom-nav{padding-left:4px;padding-right:4px}.nav-btn{border-radius:13px;padding-left:1px;padding-right:1px}.nav-label{font-size:9.5px;max-width:58px}.more-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (orientation:landscape) and (max-height:500px){.bottom-nav{height:calc(58px + env(safe-area-inset-bottom,0px));padding-top:2px}.nav-btn{min-height:50px}.nav-center-inner{width:40px;height:40px;margin-top:-10px}.more-menu{bottom:calc(58px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}}
+.header-notif{width:44px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:14px;color:var(--c-text2)}
