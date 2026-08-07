@@ -69,3 +69,19 @@ function attachSwipeDelete(el, onDelete) {
   document.addEventListener('DOMContentLoaded',polishNav);
   setTimeout(polishNav,0);
 })();
+
+// Persistent delegated click safety for the More menu.
+// This survives every renderNav()/innerHTML rebuild.
+(function installMoreMenuDelegation(){
+  if(window.__familyMoreMenuDelegation) return;
+  window.__familyMoreMenuDelegation=true;
+  document.addEventListener('click',function(e){
+    var item=e.target.closest&&e.target.closest('[data-goto-more]');
+    if(!item) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var target=item.getAttribute('data-goto-more');
+    if(target&&typeof showScreenMore==='function') showScreenMore(target);
+    else if(target&&typeof showScreen==='function') showScreen(target);
+  },true);
+})();
