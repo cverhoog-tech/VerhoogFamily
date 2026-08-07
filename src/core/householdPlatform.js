@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// FAMILYAPP HOUSEHOLD PLATFORM v2
+// FAMILYAPP HOUSEHOLD PLATFORM v2.1
 // Single source of truth for household create, join, resolve and presence.
 // ============================================================
 (function(){
-  if(window.__familyHouseholdPlatformV2) return;
-  window.__familyHouseholdPlatformV2=true;
+  if(window.__familyHouseholdPlatformV21) return;
+  window.__familyHouseholdPlatformV21=true;
 
   var VERSION=2, INVITE_TTL=7*24*60*60*1000, CLAIM_TTL=5*60*1000, presenceRef=null;
   function db(){try{return window.fbDb||(typeof fbDb!=='undefined'&&fbDb)||firebase.database();}catch(e){return null;}}
@@ -18,26 +18,36 @@
   function setGlobals(hid,name){window.fbFamilyId=hid;window.myName=name;try{fbFamilyId=hid;}catch(e){}try{myName=name;}catch(e){}try{myInitials=name.substring(0,2).toUpperCase();}catch(e){}}
   function memberRecord(u,role){var t=now();return{uid:u.uid,name:displayName(u),email:u.email||'',avatar:avatar(u),role:role||'adult',status:'active',joinedAt:t,updatedAt:t};}
   function slugCode(){var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',out='';if(window.crypto&&crypto.getRandomValues){var a=new Uint32Array(8);crypto.getRandomValues(a);for(var i=0;i<8;i++)out+=chars[a[i]%chars.length];}else for(var j=0;j<8;j++)out+=chars[Math.floor(Math.random()*chars.length)];return out.slice(0,4)+'-'+out.slice(4);}
-  function readableError(err){var code=err&&err.code||'',msg=err&&err.message||'';if(code==='PERMISSION_DENIED'||code==='permission-denied'||/permission_denied/i.test(msg))return new Error('Firebase blokkeert het aanmaken van het gezin. De database-regels moeten eerst worden bijgewerkt.');return err instanceof Error?err:new Error(msg||'Er ging iets mis.');}
+  function readableError(err){var code=err&&err.code||'',msg=err&&err.message||'';if(code==='PERMISSION_DENIED'||code==='permission-denied'||/permission_denied/i.test(msg))return new Error('Firebase blokkeert deze stap. Controleer of de nieuwste database-regels succesvol zijn gedeployed.');return err instanceof Error?err:new Error(msg||'Er ging iets mis.');}
 
   function createHousehold(opts){
     opts=opts||{};var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));
     var hid=householdId();if(!hid)return Promise.reject(new Error('Kon geen gezins-ID maken'));
     var name=safe(opts.name)||displayName(u)+' Family',member=memberRecord(u,'owner'),t=now();
-    // Phase 1 is atomic and contains only non-overlapping paths. Security rules
-    // explicitly allow the authenticated owner to bootstrap this first member.
-    var bootstrap={};
-    bootstrap['families/'+hid+'/meta']={id:hid,name:name,ownerUid:u.uid,version:VERSION,createdAt:t,updatedAt:t};
-    bootstrap['families/'+hid+'/members/'+u.uid]=member;
-    return d.ref().update(bootstrap).then(function(){
-      // Phase 2 links the already-valid active membership to the user account.
+    var meta={id:hid,name:name,ownerUid:u.uid,version:VERSION,createdAt:t,updatedAt:t};
+
+    // Step 1: create only household metadata. Rules explicitly permit an
+    // authenticated user to create meta when ownerUid === auth.uid.
+    return d.ref('families/'+hid+'/meta').set(meta).then(function(){
+      // Step 2: now that meta exists, bootstrap the first owner membership.
+      // The membership rule can safely verify meta.ownerUid === auth.uid.
+      return d.ref('families/'+hid+'/members/'+u.uid).set(member);
+    }).then(function(){
+      // Step 3: only after an active membership exists, link the household to
+      // the account. User validators can now verify that membership.
       var links={};
       links['users/'+u.uid+'/familyId']=hid;
       links['users/'+u.uid+'/activeHouseholdId']=hid;
       links['users/'+u.uid+'/name']=member.name;
       links['users/'+u.uid+'/households/'+hid]={role:'owner',status:'active',joinedAt:member.joinedAt};
       return d.ref().update(links);
-    }).then(function(){setGlobals(hid,member.name);startPresence(hid);return{id:hid,name:name,role:'owner'};}).catch(function(err){throw readableError(err);});
+    }).then(function(){
+      setGlobals(hid,member.name);startPresence(hid);return{id:hid,name:name,role:'owner'};
+    }).catch(function(err){
+      // Do not delete anything automatically: partial bootstrap data is safer
+      // to inspect/recover than a destructive cleanup during onboarding.
+      throw readableError(err);
+    });
   }
 
   function resolveHousehold(){
@@ -80,10 +90,10 @@
   function showInviteManager(){var hid=window.fbFamilyId;if(!hid)return;var el=overlay('<div class="hh-mark">🤝</div><h2>Nodig iemand uit</h2><p>Maak een eenmalige code. De uitnodiging verloopt na 7 dagen.</p><button class="hh-primary" id="hh-invite">Maak uitnodigingscode</button><div id="hh-result"></div><button class="hh-back" id="hh-close">Nu niet</button>');el.querySelector('#hh-close').onclick=closeOverlay;el.querySelector('#hh-invite').onclick=function(){var b=this;b.disabled=true;createInvite('adult').then(function(code){b.style.display='none';el.querySelector('#hh-result').innerHTML='<div class="hh-code">'+code+'</div><div class="hh-copy">Deel deze code persoonlijk met je gezinslid</div>';}).catch(function(e){b.disabled=false;el.querySelector('#hh-result').innerHTML='<div class="hh-error">'+((e&&e.message)||'Kon geen code maken')+'</div>';});};}
 
   function installOverrides(){
-    if(typeof window.loadUserFamily==='function'&&!window.loadUserFamily.__householdV2){var load=function(){return resolveHousehold();};load.__householdV2=true;window.loadUserFamily=load;try{loadUserFamily=load;}catch(e){}}
-    if(typeof window.setupNewFamily==='function'&&!window.setupNewFamily.__householdV2){var create=function(name){return createHousehold({name:safe(name)||displayName(user())+' Family'});};create.__householdV2=true;window.setupNewFamily=create;try{setupNewFamily=create;}catch(e){}}
-    if(typeof window.showNameSetupStep==='function'&&!window.showNameSetupStep.__householdV2){var setup=function(){showChooser();};setup.__householdV2=true;window.showNameSetupStep=setup;try{showNameSetupStep=setup;}catch(e){}}
-    if(typeof window.showScreen==='function'&&!window.showScreen.__householdPresenceV2){var orig=window.showScreen,wrapped=function(name){var r=orig.apply(this,arguments);setPresenceArea(name);return r;};wrapped.__householdPresenceV2=true;window.showScreen=wrapped;try{showScreen=wrapped;}catch(e){}}
+    if(typeof window.loadUserFamily==='function'&&!window.loadUserFamily.__householdV21){var load=function(){return resolveHousehold();};load.__householdV21=true;window.loadUserFamily=load;try{loadUserFamily=load;}catch(e){}}
+    if(typeof window.setupNewFamily==='function'&&!window.setupNewFamily.__householdV21){var create=function(name){return createHousehold({name:safe(name)||displayName(user())+' Family'});};create.__householdV21=true;window.setupNewFamily=create;try{setupNewFamily=create;}catch(e){}}
+    if(typeof window.showNameSetupStep==='function'&&!window.showNameSetupStep.__householdV21){var setup=function(){showChooser();};setup.__householdV21=true;window.showNameSetupStep=setup;try{showNameSetupStep=setup;}catch(e){}}
+    if(typeof window.showScreen==='function'&&!window.showScreen.__householdPresenceV21){var orig=window.showScreen,wrapped=function(name){var r=orig.apply(this,arguments);setPresenceArea(name);return r;};wrapped.__householdPresenceV21=true;window.showScreen=wrapped;try{showScreen=wrapped;}catch(e){}}
   }
   function boot(){var tries=0,t=setInterval(function(){tries++;installOverrides();if(tries>80)clearInterval(t);},100);setTimeout(installOverrides,0);}
   window.FamilyHousehold={version:VERSION,create:createHousehold,resolve:resolveHousehold,createInvite:createInvite,inspectInvite:inspectInvite,join:joinHousehold,showChooser:showChooser,showInviteManager:showInviteManager,startPresence:startPresence};
