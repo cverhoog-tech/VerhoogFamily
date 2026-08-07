@@ -1,18 +1,12 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.411
+// APP MODULES v0.412
 // v0.303 Stability Lock.
 // Keep the bootflow boring and predictable.
-//
-// Ownership rules:
-// - Task overview/detail/create/help/join MVP is owned by quest-overlay.js.
-// - quest.css owns task visual styling.
-// - homeHeroCardBackgrounds.css owns only the top Home hero card images.
-// - No extra help/join overlay, bridge or repatch modules are loaded.
 // ============================================================
 
 (function(){
-  var VERSION = '0.411';
+  var VERSION = '0.412';
   var loaded = {};
   var failed = {};
   var booting = false;
@@ -33,6 +27,7 @@
     { id: 'live-sync-adapter-js', src: 'src/core/liveSyncAdapter.js', group: 'core', critical: false },
     { id: 'household-identity-js', src: 'src/core/householdIdentity.js', group: 'core', critical: false },
     { id: 'household-repository-js', src: 'src/core/householdRepository.js', group: 'core', critical: false },
+    { id: 'family-data-store-js', src: 'src/core/familyDataStore.js', group: 'core', critical: false },
     { id: 'reactive-household-state-js', src: 'src/core/reactiveHouseholdState.js', group: 'core', critical: false },
 
     { id: 'quest-engine-js', src: 'src/core/questEngine.js', group: 'quests', critical: false },
