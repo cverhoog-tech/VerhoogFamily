@@ -1,0 +1,49 @@
+/* FamilyApp Person tab premium polish v3 — mobile-first reference proportions */
+#screen-tasks:has(.task-person-page) .task-person-page{padding:10px 14px 108px!important;margin:0 -16px!important;background:radial-gradient(95% 70% at 18% 5%,rgba(92,45,190,.22),transparent 56%),linear-gradient(180deg,#090b15 0%,#080914 100%)!important}
+#screen-tasks:has(.task-person-page) .task-tabs{padding:8px 12px 9px!important;gap:5px!important;border-bottom:1px solid rgba(255,255,255,.055)}
+#screen-tasks:has(.task-person-page) .ttab{min-height:50px!important;padding:7px 10px!important;border-radius:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:1 1 0!important;font-size:12px!important;letter-spacing:-.02em}
+#screen-tasks:has(.task-person-page) .ttab.active{background:linear-gradient(180deg,rgba(103,48,205,.26),rgba(74,25,162,.44))!important;border:1px solid rgba(139,92,246,.38)!important;box-shadow:inset 0 -2px 0 rgba(139,92,246,.5),0 7px 20px rgba(83,35,174,.18)!important}
+#screen-tasks:has(.task-person-page) .ttab-trade{flex:0 0 44px!important;width:44px!important;height:44px!important;min-height:44px!important;border-radius:14px!important}
+.task-person-page .ptp-label{font-size:15px!important;margin:4px 1px 10px!important;letter-spacing:-.01em}
+.task-person-page .ptp-section{margin-bottom:16px!important}
+.task-person-page .member-selector{gap:9px!important;padding:1px 1px 8px!important;margin-bottom:10px!important;align-items:flex-start}
+.task-person-page .member-card{width:66px!important;padding:5px 3px 6px!important;border-radius:15px!important;position:relative}
+.task-person-page .member-card-active{background:linear-gradient(180deg,rgba(111,57,215,.28),rgba(83,35,173,.15))!important;border:1px solid rgba(154,105,255,.58)!important;box-shadow:0 0 0 1px rgba(111,57,215,.13),0 7px 20px rgba(73,31,151,.2)}
+.task-person-page .member-card-avatar,.task-person-page .member-card-avatar-fallback{width:50px!important;height:50px!important;margin-bottom:4px!important;border-width:2px!important}
+.task-person-page .member-card-name{font-size:11.5px!important;line-height:1.15!important}
+.task-person-page .member-card-level{font-size:9.5px!important;margin-top:2px!important}
+.task-person-page .member-card-add{width:62px!important;padding-top:5px!important}
+.task-person-page .member-card-add-icon{width:50px!important;height:50px!important;margin-bottom:4px!important;font-size:20px!important;background:rgba(255,255,255,.025)}
+.task-person-page .member-hero-card{min-height:238px!important;border-radius:22px!important;margin:0 0 13px!important;padding:15px 15px 14px 44%!important;justify-content:center!important;border:1px solid rgba(176,143,255,.18)!important;box-shadow:0 15px 38px rgba(0,0,0,.32),0 0 28px var(--ptp-glow)!important;background-color:#111323!important}
+.task-person-page .member-hero-card>.family-person-hero-img{width:45%!important;right:auto!important;object-position:50% 25%!important;mask-image:linear-gradient(90deg,#000 0%,#000 70%,transparent 100%);-webkit-mask-image:linear-gradient(90deg,#000 0%,#000 70%,transparent 100%)}
+.task-person-page .member-hero-card>.family-person-hero-shade{background:linear-gradient(90deg,rgba(7,8,15,.02) 0%,rgba(8,9,17,.1) 32%,rgba(8,9,17,.92) 52%,rgba(8,9,17,.98) 100%)!important}
+.task-person-page .member-hero-card::after{background:linear-gradient(180deg,rgba(7,8,15,0) 35%,rgba(7,8,15,.42) 100%)!important;z-index:1}
+.task-person-page .member-hero-content{z-index:3!important;width:100%}
+.task-person-page .member-hero-name{font-size:22px!important;line-height:1.05!important;letter-spacing:-.04em!important}
+.task-person-page .member-hero-title{font-size:12px!important;margin-top:4px!important;color:#b991ff!important}
+.task-person-page .member-hero-lvl-badge{top:14px!important;right:14px!important;width:50px!important;height:50px!important;z-index:4!important}
+.task-person-page .member-hero-lvl-num{font-size:16px!important}
+.task-person-page .member-hero-stats-row{margin-top:14px!important;padding-top:12px!important;border-top:1px solid rgba(255,255,255,.08)}
+.task-person-page .mh-stat-col{padding:0 7px!important}
+.task-person-page .mh-stat-lbl{font-size:9.5px!important;margin-bottom:2px!important}
+.task-person-page .mh-stat-val{font-size:14px!important}
+.task-person-page .mh-stat-sub{font-size:8.5px!important;white-space:normal!important;line-height:1.15}
+.task-person-page .member-hero-progress-bar{height:6px!important;margin-top:13px!important}
+.task-person-page .member-hero-progress-caption{font-size:9.5px!important;margin-top:5px!important}
+.task-person-page .person-stat-grid{gap:7px!important;margin-bottom:16px!important}
+.task-person-page .person-stat-card{min-width:0!important;border-radius:15px!important;padding:10px 3px 9px!important;background:linear-gradient(180deg,rgba(255,255,255,.052),rgba(255,255,255,.025))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.task-person-page .psc-icon-wrap{width:29px!important;height:29px!important;margin-bottom:5px!important;font-size:13px!important}
+.task-person-page .psc-val{font-size:16px!important}
+.task-person-page .psc-lbl{font-size:8px!important;line-height:1.1!important;letter-spacing:.015em!important;white-space:normal!important}
+.task-person-page .ptp-row-header{margin:1px 1px 8px!important}
+.task-person-page .ptp-see-all{font-size:11.5px!important;color:#a875ff!important}
+.task-person-page .person-task-list{gap:0!important;border:1px solid rgba(255,255,255,.085);border-radius:18px!important;overflow:hidden;background:rgba(255,255,255,.025)}
+.task-person-page .person-task-card{min-height:67px!important;border:0!important;border-radius:0!important;padding:10px 11px!important;background:transparent!important;gap:10px!important}
+.task-person-page .person-task-card+.person-task-card{border-top:1px solid rgba(255,255,255,.075)!important}
+.task-person-page .ptc-icon-sq{width:39px!important;height:39px!important;border-radius:10px!important;font-size:16px!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.task-person-page .ptc-title{font-size:13px!important;letter-spacing:-.01em}
+.task-person-page .ptc-cat{font-size:10px!important;margin-top:2px!important}
+.task-person-page .ptc-xp{font-size:11.5px!important}
+.task-person-page .ptc-day{font-size:9.5px!important}
+.task-person-page .ptc-check{width:22px!important;height:22px!important}
+@media(max-width:390px){.task-person-page .member-selector{gap:6px!important}.task-person-page .member-card{width:61px!important}.task-person-page .member-card-avatar,.task-person-page .member-card-avatar-fallback,.task-person-page .member-card-add-icon{width:47px!important;height:47px!important}.task-person-page .member-hero-card{min-height:228px!important;padding-left:42%!important}.task-person-page .member-hero-card>.family-person-hero-img{width:44%!important}.task-person-page .mh-stat-col{padding:0 5px!important}.task-person-page .mh-stat-val{font-size:13px!important}.task-person-page .psc-lbl{font-size:7.5px!important}}
