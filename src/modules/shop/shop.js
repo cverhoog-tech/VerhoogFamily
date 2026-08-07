@@ -102,6 +102,32 @@ function renderShop() {
   if(typeof wireShopAddButton === 'function') wireShopAddButton();
 }
 
+// ── Duidelijke visuele feedback: highlight het net toegevoegde item ──
+(function ensureShopAddedStyle(){
+  if(document.getElementById('shop-added-style')) return;
+  var css = document.createElement('style');
+  css.id = 'shop-added-style';
+  css.textContent =
+    '.shop-item.shop-item-added{animation:shopItemAddedPop .8s cubic-bezier(.22,.9,.28,1)}'+
+    '@keyframes shopItemAddedPop{'+
+      '0%{opacity:0;transform:translateY(-10px) scale(.95);box-shadow:0 0 0 0 rgba(63,127,47,.4)}'+
+      '45%{opacity:1;transform:translateY(0) scale(1.025);box-shadow:0 0 0 10px rgba(63,127,47,.14)}'+
+      '100%{opacity:1;transform:none;box-shadow:0 0 0 0 rgba(63,127,47,0)}'+
+    '}';
+  document.head.appendChild(css);
+})();
+
+function highlightShopItem(id){
+  if(id === undefined || id === null) return;
+  var el = document.getElementById('si-'+id);
+  if(!el) return;
+  el.classList.remove('shop-item-added');
+  void el.offsetWidth; // force reflow so the animation restarts reliably
+  el.classList.add('shop-item-added');
+  setTimeout(function(){ el.classList.remove('shop-item-added'); }, 850);
+}
+window.highlightShopItem = highlightShopItem;
+
 function shopItemHTML(item) {
   return '<div class="shop-item" id="si-'+item.id+'">'
     +'<div class="check-circle '+(item.done?'done':'')+'" id="shck-'+item.id+'" onclick="toggleShop('+item.id+')" style="cursor:pointer;flex-shrink:0">'
@@ -151,4 +177,3 @@ function resetShop() {
   renderShop();
   if(typeof showToast === 'function') showToast('Gekochte items geleegd ↺');
 }
-
