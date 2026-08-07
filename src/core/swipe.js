@@ -139,3 +139,13 @@ function attachSwipeDelete(el, onDelete) {
   script.defer=true;
   document.head.appendChild(script);
 })();
+
+// Vercel-hosted mobile Google auth must not rely on Firebase redirect storage.
+(function loadGoogleAuthMobileFix(){
+  if(window.__familyGoogleAuthMobileFixLoader) return;
+  window.__familyGoogleAuthMobileFixLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/googleAuthMobileFix.js?v=1';
+  script.defer=true;
+  document.head.appendChild(script);
+})();
