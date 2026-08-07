@@ -129,7 +129,7 @@
       '.member-hero-card>.family-person-hero-shade{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(7,8,15,.02) 0%,rgba(7,8,15,.16) 35%,rgba(9,7,20,.94) 100%)}',
       '.member-hero-card>.member-hero-lvl-badge,.member-hero-card>.member-hero-content{z-index:2}',
       '.member-card-avatar{background:#171827}',
-      '.home-hero-avatar,.fs-compose-avatar,.fs-avatar,.feed-avatar,.feed-cmt-avatar,.profile-avatar,.premium-avatar{overflow:hidden}',
+      '.home-hero-avatar,.fs-compose-avatar,.fs-avatar,.feed-avatar,.feed-cmt-avatar,.profile-avatar,.premium-avatar,#hdr-avatar{overflow:hidden}',
       '#screen-tasks .task-person-page{max-width:100%;overflow-x:hidden}',
       '#screen-tasks .member-selector{max-width:100%}'
     ].join('\n');
@@ -203,6 +203,10 @@
     var avatar = document.querySelector('.home-hero-avatar');
     if(avatar) injectIntoCircle(avatar, currentProfileName());
   }
+  function patchHeader(){
+    var avatar = document.getElementById('hdr-avatar');
+    if(avatar) injectIntoCircle(avatar, currentProfileName());
+  }
   function patchProfile(){
     var img = document.querySelector('.profile-main-avatar');
     if(img) setImg(img, currentProfileName(), activeLegacyAvatar());
@@ -236,6 +240,7 @@
   function refresh(){
     installIdentityResolvers();
     ensureCss();
+    patchHeader();
     patchProfile();
     patchHome();
     patchFeed();
