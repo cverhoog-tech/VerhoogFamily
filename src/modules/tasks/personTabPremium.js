@@ -12,7 +12,7 @@
 // ============================================================
 
 (function () {
-  var VERSION = '2.0';
+  var VERSION = '2.1';
 
   // ── Paletten per gezinslid (val terug op gradient als er geen avatarfoto is) ──
   var PALETTES = [
@@ -177,7 +177,9 @@
   }
 
   // ── Helpers die bestaande app-state/logica hergebruiken ──
-  function getAvatarFor(name, myNameLocal) {
+  // roleFallback: 'vader' voor jou (index 0), 'moeder' voor partner (index 1) —
+  // gebruikt window.RPG_PORTRAITS als er nog geen eigen foto is ingesteld.
+  function getAvatarFor(name, myNameLocal, roleFallback) {
     try {
       if (name.toLowerCase() === myNameLocal.toLowerCase()) {
         var url = localStorage.getItem('familyapp-current-user-avatar-v1');
@@ -186,6 +188,10 @@
       var stored = localStorage.getItem('fam_avatar_' + name.toLowerCase());
       if (stored) return stored;
     } catch (e) {}
+    if (roleFallback && typeof window.RPG_PORTRAITS !== 'undefined'
+      && window.RPG_PORTRAITS[roleFallback] && window.RPG_PORTRAITS[roleFallback][0]) {
+      return window.RPG_PORTRAITS[roleFallback][0];
+    }
     return null;
   }
 
@@ -252,7 +258,8 @@
 
       var qs = questStatsFor(name);
       var streak = maxStreakFor(name);
-      var avatar = getAvatarFor(name, meName);
+      var roleFallback = i === 0 ? 'vader' : (i === 1 ? 'moeder' : null);
+      var avatar = getAvatarFor(name, meName, roleFallback);
       var palette = PALETTES[i % PALETTES.length];
 
       return {
