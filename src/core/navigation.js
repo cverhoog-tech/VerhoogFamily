@@ -23,7 +23,8 @@ var ALL_SCREENS = [
   {id:'templates',     icon:'📋', label:'Templates'},
 ];
 
-var navSlots = ['home','tasks','notes','more'];
+// Fixed primary mobile ribbon: Home · Boodschappen · Feed (+) · Taken · Meer
+var navSlots = ['home','shop','tasks','more'];
 var navConfigEditSlot = null;
 
 function renderNav() {
