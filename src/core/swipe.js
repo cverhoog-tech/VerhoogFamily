@@ -70,82 +70,44 @@ function attachSwipeDelete(el, onDelete) {
   setTimeout(polishNav,0);
 })();
 
-// Persistent delegated click safety for the More menu.
-// This survives every renderNav()/innerHTML rebuild.
 (function installMoreMenuDelegation(){
   if(window.__familyMoreMenuDelegation) return;
   window.__familyMoreMenuDelegation=true;
   document.addEventListener('click',function(e){
     var item=e.target.closest&&e.target.closest('[data-goto-more]');
     if(!item) return;
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault();e.stopPropagation();
     var target=item.getAttribute('data-goto-more');
     if(target&&typeof showScreenMore==='function') showScreenMore(target);
     else if(target&&typeof showScreen==='function') showScreen(target);
   },true);
 })();
 
-// ============================================================
-// MOBILE ZOOM LOCK
-// Keep the app at 1:1 scale and prevent pinch/double-tap zoom on mobile.
-// ============================================================
 (function installMobileZoomLock(){
-  if(window.__familyMobileZoomLock) return;
-  window.__familyMobileZoomLock=true;
-
+  if(window.__familyMobileZoomLock) return;window.__familyMobileZoomLock=true;
   var viewport=document.querySelector('meta[name="viewport"]');
-  if(!viewport){
-    viewport=document.createElement('meta');
-    viewport.name='viewport';
-    document.head.appendChild(viewport);
-  }
+  if(!viewport){viewport=document.createElement('meta');viewport.name='viewport';document.head.appendChild(viewport);}
   viewport.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
-
-  ['gesturestart','gesturechange','gestureend'].forEach(function(type){
-    document.addEventListener(type,function(e){e.preventDefault();},{passive:false});
-  });
-
-  document.addEventListener('touchmove',function(e){
-    if(e.touches&&e.touches.length>1) e.preventDefault();
-  },{passive:false});
-
-  var lastTouchEnd=0;
-  document.addEventListener('touchend',function(e){
-    var now=Date.now();
-    if(now-lastTouchEnd<=300) e.preventDefault();
-    lastTouchEnd=now;
-  },{passive:false});
+  ['gesturestart','gesturechange','gestureend'].forEach(function(type){document.addEventListener(type,function(e){e.preventDefault();},{passive:false});});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
+  var lastTouchEnd=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-lastTouchEnd<=300)e.preventDefault();lastTouchEnd=n;},{passive:false});
 })();
 
-// Navigation must never remain locked when a screen renderer throws.
 (function installNavBusyRecovery(){
-  if(window.__familyNavBusyRecovery) return;
-  window.__familyNavBusyRecovery=true;
-  window.addEventListener('error',function(){
-    if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
-  });
-  window.addEventListener('unhandledrejection',function(){
-    if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
-  });
+  if(window.__familyNavBusyRecovery) return;window.__familyNavBusyRecovery=true;
+  window.addEventListener('error',function(){if(typeof _navBusy!=='undefined'&&_navBusy)_navBusy=false;});
+  window.addEventListener('unhandledrejection',function(){if(typeof _navBusy!=='undefined'&&_navBusy)_navBusy=false;});
 })();
 
-// Load the isolated grocery feedback + recipe thumbnail repair on every real app entrypoint.
-(function loadMobileUxFixes(){
-  if(window.__familyMobileUxFixLoader) return;
-  window.__familyMobileUxFixLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/mobileUxFixes.js?v=1';
-  script.defer=true;
-  document.head.appendChild(script);
-})();
+(function loadMobileUxFixes(){if(window.__familyMobileUxFixLoader)return;window.__familyMobileUxFixLoader=true;var s=document.createElement('script');s.src='src/core/mobileUxFixes.js?v=1';s.defer=true;document.head.appendChild(s);})();
+(function loadGoogleAuthMobileFix(){if(window.__familyGoogleAuthMobileFixLoader)return;window.__familyGoogleAuthMobileFixLoader=true;var s=document.createElement('script');s.src='src/core/googleAuthMobileFix.js?v=1';s.defer=true;document.head.appendChild(s);})();
 
-// Vercel-hosted mobile Google auth must not rely on Firebase redirect storage.
-(function loadGoogleAuthMobileFix(){
-  if(window.__familyGoogleAuthMobileFixLoader) return;
-  window.__familyGoogleAuthMobileFixLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/googleAuthMobileFix.js?v=1';
-  script.defer=true;
-  document.head.appendChild(script);
+// Shared household memberships, invites and realtime presence.
+(function loadHouseholdPlatform(){
+  if(window.__familyHouseholdPlatformLoader) return;
+  window.__familyHouseholdPlatformLoader=true;
+  var s=document.createElement('script');
+  s.src='src/core/householdPlatform.js?v=1';
+  s.defer=true;
+  document.head.appendChild(s);
 })();
