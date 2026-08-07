@@ -1,7 +1,6 @@
 'use strict';
 // ============================================================
 // APP MODULES v0.423
-// Household onboarding is owned exclusively by householdPlatform.js.
 // ============================================================
 (function(){
   var VERSION='0.423',loaded={},failed={},booting=false,booted=false;
@@ -18,6 +17,7 @@
     {id:'live-sync-adapter-js',src:'src/core/liveSyncAdapter.js',group:'core',critical:false},
     {id:'household-identity-js',src:'src/core/householdIdentity.js',group:'core',critical:false},
     {id:'household-repository-js',src:'src/core/householdRepository.js',group:'core',critical:false},
+    {id:'google-auth-mobile-v2-js',src:'src/core/googleAuthMobileFix.js?v=20260808-2',group:'core',critical:false},
     {id:'family-data-store-js',src:'src/core/familyDataStore.js',group:'core',critical:false},
     {id:'shopping-lists-js',src:'src/modules/shop/shoppingLists.js',group:'food',critical:false},
     {id:'reactive-household-state-js',src:'src/core/reactiveHouseholdState.js',group:'core',critical:false},
