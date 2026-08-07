@@ -85,3 +85,35 @@ function attachSwipeDelete(el, onDelete) {
     else if(target&&typeof showScreen==='function') showScreen(target);
   },true);
 })();
+
+// ============================================================
+// MOBILE ZOOM LOCK
+// Keep the app at 1:1 scale and prevent pinch/double-tap zoom on mobile.
+// ============================================================
+(function installMobileZoomLock(){
+  if(window.__familyMobileZoomLock) return;
+  window.__familyMobileZoomLock=true;
+
+  var viewport=document.querySelector('meta[name="viewport"]');
+  if(!viewport){
+    viewport=document.createElement('meta');
+    viewport.name='viewport';
+    document.head.appendChild(viewport);
+  }
+  viewport.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
+
+  ['gesturestart','gesturechange','gestureend'].forEach(function(type){
+    document.addEventListener(type,function(e){e.preventDefault();},{passive:false});
+  });
+
+  document.addEventListener('touchmove',function(e){
+    if(e.touches&&e.touches.length>1) e.preventDefault();
+  },{passive:false});
+
+  var lastTouchEnd=0;
+  document.addEventListener('touchend',function(e){
+    var now=Date.now();
+    if(now-lastTouchEnd<=300) e.preventDefault();
+    lastTouchEnd=now;
+  },{passive:false});
+})();
