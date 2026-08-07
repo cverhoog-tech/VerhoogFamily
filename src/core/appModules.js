@@ -1,9 +1,10 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.422
+// APP MODULES v0.423
+// Household onboarding is owned exclusively by householdPlatform.js.
 // ============================================================
 (function(){
-  var VERSION='0.422',loaded={},failed={},booting=false,booted=false;
+  var VERSION='0.423',loaded={},failed={},booting=false,booted=false;
   var registry=[
     {id:'remove-music-module-js',src:'src/core/removeMusicModule.js',group:'core',critical:false},
     {id:'mobile-viewport-lock-js',src:'src/core/mobileViewportLock.js',group:'core',critical:false},
@@ -17,8 +18,6 @@
     {id:'live-sync-adapter-js',src:'src/core/liveSyncAdapter.js',group:'core',critical:false},
     {id:'household-identity-js',src:'src/core/householdIdentity.js',group:'core',critical:false},
     {id:'household-repository-js',src:'src/core/householdRepository.js',group:'core',critical:false},
-    {id:'household-beta1-provisioning-js',src:'src/core/householdBeta1Provisioning.js',group:'core',critical:false},
-    {id:'household-account-recovery-js',src:'src/core/householdAccountRecovery.js',group:'core',critical:false},
     {id:'family-data-store-js',src:'src/core/familyDataStore.js',group:'core',critical:false},
     {id:'shopping-lists-js',src:'src/modules/shop/shoppingLists.js',group:'food',critical:false},
     {id:'reactive-household-state-js',src:'src/core/reactiveHouseholdState.js',group:'core',critical:false},
