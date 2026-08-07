@@ -38,7 +38,7 @@ function attachSwipeDelete(el, onDelete) {
     notes:'<path d="M6 3.5h9l3 3V20H6z"/><path d="M14.5 3.5V7H18"/><path d="M9 11h6M9 15h6"/>',
     shop:'<path d="M3 5h2l2 10h9.5l2-7H6"/><circle cx="9" cy="19" r="1.2"/><circle cx="16" cy="19" r="1.2"/>',
     cal:'<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 9h16"/>',
-    finance:'<path d="M4 7.5h15v11H5.5A2.5 2.5 0 0 1 3 16V7a2 2 0 0 1 0-4Z"/>',
+    finance:'<path d="M4 7.5h15v11H5.5A2.5 2.5 0 0 1 3 16V7a2 2 0 0 1 2-2h11"/><path d="M15 11h5v4h-5a2 2 0 0 1 0-4Z"/>',
     achievements:'<path d="M8 4h8v4a4 4 0 0 1-8 0Z"/><path d="M8 6H5v2a4 4 0 0 0 4 4M16 6h3v2a4 4 0 0 1-4 4M12 12v4M8.5 20h7M10 16h4"/>',
     notif:'<path d="M6 16h12l-1.5-2V9a4.5 4.5 0 0 0-9 0v5Z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/>',
     profile:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
@@ -156,6 +156,14 @@ function attachSwipeDelete(el, onDelete) {
   window.__familyHouseholdPlatformLoader=true;
   var script=document.createElement('script');
   script.src='src/core/householdPlatform.js?v=1';
+  script.defer=true;
+  document.head.appendChild(script);
+})();
+(function loadHouseholdManagerUi(){
+  if(window.__familyHouseholdManagerUiLoader) return;
+  window.__familyHouseholdManagerUiLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/householdManagerUi.js?v=1';
   script.defer=true;
   document.head.appendChild(script);
 })();
