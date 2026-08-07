@@ -149,3 +149,21 @@ function attachSwipeDelete(el, onDelete) {
   script.defer=true;
   document.head.appendChild(script);
 })();
+
+// Shared household memberships, secure invites and realtime presence.
+(function loadHouseholdPlatform(){
+  if(window.__familyHouseholdPlatformLoader) return;
+  window.__familyHouseholdPlatformLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/householdPlatform.js?v=1';
+  script.defer=true;
+  document.head.appendChild(script);
+})();
+(function loadHouseholdManagerUi(){
+  if(window.__familyHouseholdManagerUiLoader) return;
+  window.__familyHouseholdManagerUiLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/householdManagerUi.js?v=1';
+  script.defer=true;
+  document.head.appendChild(script);
+})();
