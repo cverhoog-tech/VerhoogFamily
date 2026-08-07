@@ -117,3 +117,15 @@ function attachSwipeDelete(el, onDelete) {
     lastTouchEnd=now;
   },{passive:false});
 })();
+
+// Navigation must never remain locked when a screen renderer throws.
+(function installNavBusyRecovery(){
+  if(window.__familyNavBusyRecovery) return;
+  window.__familyNavBusyRecovery=true;
+  window.addEventListener('error',function(){
+    if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
+  });
+  window.addEventListener('unhandledrejection',function(){
+    if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
+  });
+})();
