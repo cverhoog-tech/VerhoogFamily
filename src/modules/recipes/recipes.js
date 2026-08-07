@@ -89,7 +89,8 @@
       '#rs-wrap{padding:8px 14px 4px}',
       '#rs-inp{width:100%;height:44px;border-radius:16px;border:1.5px solid var(--c-border,#e5e7eb);background:var(--c-surface,#fff);padding:0 14px;font-size:14px;font-weight:600;outline:none;box-sizing:border-box;-webkit-appearance:none;display:block}',
       '.rc{border-radius:20px;overflow:hidden;cursor:pointer;position:relative;min-height:190px;background:#111}',
-      '.rc-img{position:absolute;inset:0;background-size:cover;background-position:center}',
+      '.rc-img{position:absolute;inset:0;overflow:hidden}',
+      '.rc-img img{width:100%;height:100%;object-fit:cover;display:block}',
       '.rc-ov{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,.75)100%)}',
       '.rc-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;background:#f3f4f0}',
       '.rc-top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;gap:4px}',
@@ -189,7 +190,7 @@
       var e = r.emoji || CAT_ICONS[r.cat] || '🍴';
       var id = esc(r.id);
       return '<div class="rc" id="rc-' + id + '">'
-        + (p ? '<div class="rc-img" style="background-image:url(' + JSON.stringify(p) + ')"></div><div class="rc-ov"></div>' : '<div class="rc-emoji">' + e + '</div>')
+        + (p ? '<div class="rc-img"><img src="' + esc(p) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + esc(FALLBACKS[0]) + '\';"></div><div class="rc-ov"></div>' : '<div class="rc-emoji">' + e + '</div>')
         + '<div class="rc-top"><span class="rc-tag">' + esc(r.cuisine||r.cat) + '</span><span class="rc-tag">⏱ ' + esc(r.time||20) + 'm</span></div>'
         + '<div class="rc-bot"><div class="rc-name">' + esc(r.name) + '</div>'
         + '<div class="rc-sub"><span>' + e + ' ' + esc(r.cat) + '</span><span>👥 ' + esc(r.persons||4) + 'p</span></div></div></div>';
