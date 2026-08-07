@@ -80,14 +80,16 @@
       + '.ptp-see-all{font-size:12.5px;font-weight:800;color:#fbbf24;cursor:pointer}'
       + '.ptp-section{margin-bottom:20px}'
 
-      // ── Tab-balk restylen naar de paarse pil-look uit de referentie ──
-      + '.task-tabs{background:#0b0e1a;display:flex;align-items:center;gap:4px;padding:10px 12px 6px;overflow-x:auto;scrollbar-width:none}'
-      + '.task-tabs::-webkit-scrollbar{display:none}'
-      + '.ttab{background:transparent;border:none;color:rgba(244,246,255,.5);font-size:13px;font-weight:800;'
+      // ── Tab-balk restylen naar de paarse pil-look, MAAR alleen wanneer de
+      // Persoon-tab actief is (:has(.task-person-page)) — zo blijft Overzicht
+      // gewoon de originele thema-afhankelijke balk uit app.css houden.
+      + '#screen-tasks:has(.task-person-page) .task-tabs{background:#0b0e1a;display:flex;align-items:center;gap:4px;padding:10px 12px 6px;overflow-x:auto;scrollbar-width:none}'
+      + '#screen-tasks:has(.task-person-page) .task-tabs::-webkit-scrollbar{display:none}'
+      + '#screen-tasks:has(.task-person-page) .ttab{background:transparent;border:none;color:rgba(244,246,255,.5);font-size:13px;font-weight:800;'
         + 'padding:9px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}'
-      + '.ttab.active{background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;'
+      + '#screen-tasks:has(.task-person-page) .ttab.active{background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;'
         + 'box-shadow:0 6px 18px rgba(109,40,217,.4)}'
-      + '.ttab-trade{margin-left:auto;background:rgba(255,255,255,.06)!important;color:#fde68a!important;'
+      + '#screen-tasks:has(.task-person-page) .ttab-trade{margin-left:auto;background:rgba(255,255,255,.06)!important;color:#fde68a!important;'
         + 'border-radius:50%!important;width:34px;height:34px;padding:0!important;flex-shrink:0;'
         + 'display:flex;align-items:center;justify-content:center;font-size:15px}'
 
