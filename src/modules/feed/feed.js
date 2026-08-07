@@ -23,6 +23,54 @@ var feedData = JSON.parse(localStorage.getItem('fam_feed_v2') || 'null') || [
   {id:3,type:'agenda',author:'Esra',initials:'ES',color:'#efe8ff',text:'heeft een afspraak toegevoegd',title:'Tandarts - Emma',subtitle:'Morgen om 14:30',time:'2u',likes:['Shane','Sophie','Mark'],comments:[],_showComments:true}
 ];
 
+// ── Eenmalige seed van placeholder-posts, zodat de tijdlijn niet leeg aanvoelt.
+// Draait maar één keer per apparaat (via localStorage-vlag), en voegt geen
+// duplicaten toe bij volgende keren openen. Esra's posts gebruiken automatisch
+// haar eigen avatar/foto via avatarHTML()/stableAvatarUrl() verderop in dit bestand.
+var FEED_SEED_FLAG = 'fam_feed_seeded_v1';
+function seedPlaceholderFeedPosts(){
+  try {
+    if (localStorage.getItem(FEED_SEED_FLAG)) return;
+    var placeholders = [
+      {
+        id: feedNextId++, type:'post', author:'Esra', initials:'ES', color:'#fce7f3',
+        text:'Boodschappen gedaan voor het hele weekend, koelkast weer helemaal vol! 🛒🥦',
+        time:'3 uur geleden', likes:['Shane'], comments:[],
+        media:['https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=90&fm=webp'],
+        _showComments:false
+      },
+      {
+        id: feedNextId++, type:'post', author:'Esra', initials:'ES', color:'#fce7f3',
+        text:'Lekkere pastasalade gemaakt voor bij de lunch morgen 🍝☀️',
+        time:'1 dag geleden', likes:['Shane'],
+        comments:[{author:'Shane',initials:'SH',color:'#eaf7e5',text:'Ziet er heerlijk uit! 😍',time:'23 uur geleden',likes:[]}],
+        media:['https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=700&q=90&fm=webp'],
+        _showComments:true
+      },
+      {
+        id: feedNextId++, type:'task', author:'Esra', initials:'ES', color:'#fce7f3',
+        text:'heeft een taak afgerond', title:'Wasmachine leeghalen', reward:'+15 punten',
+        time:'2 dagen geleden', likes:['Shane'], comments:[]
+      },
+      {
+        id: feedNextId++, type:'agenda', author:'Esra', initials:'ES', color:'#fce7f3',
+        text:'heeft een afspraak toegevoegd', title:'Ouderavond school', subtitle:'Donderdag om 19:00',
+        time:'2 dagen geleden', likes:[], comments:[]
+      },
+      {
+        id: feedNextId++, type:'post', author:'Shane', initials:'SH', color:'#eaf7e5',
+        text:'Samen een potje gebowld met de kids 🎳', time:'3 dagen geleden', likes:['Esra'],
+        comments:[], media:['https://images.unsplash.com/photo-1538511424657-1b562244b1cf?auto=format&fit=crop&w=700&q=90&fm=webp'],
+        _showComments:false
+      }
+    ];
+    feedData = feedData.concat(placeholders);
+    saveFeed();
+    localStorage.setItem(FEED_SEED_FLAG, '1');
+  } catch(e) {}
+}
+seedPlaceholderFeedPosts();
+
 function saveFeed(){try{localStorage.setItem('fam_feed_v2',JSON.stringify(feedData));}catch(e){}}
 function escHtml(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function myPhotoUrl(){try{return firebase.auth().currentUser && firebase.auth().currentUser.photoURL;}catch(e){return null;}}
@@ -261,7 +309,7 @@ function openGifPicker(postId) {
     '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #f3f4f6;">'+
       '<span style="font-size:16px;">🎞️</span>'+
       '<input id="gif-search-inp" placeholder="Zoek GIFs..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:99px;padding:7px 12px;font-size:13px;font-family:inherit;outline:none;background:#f9fafb;" oninput="searchGifs(this.value)">'+
-      '<button onclick="document.getElementById('gif-picker-modal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;">✕</button>'+
+      '<button onclick="document.getElementById(\'gif-picker-modal\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;">✕</button>'+
     '</div>'+
     '<div id="gif-results" style="flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"></div>';
 
@@ -325,7 +373,7 @@ function selectGif(gifUrl) {
     preview.dataset.gifUrl = gifUrl;
     preview.innerHTML = '<div style="position:relative;display:inline-block;margin-top:4px;">'+
       '<img src="'+gifUrl+'" style="max-width:160px;border-radius:10px;display:block;">'+
-      '<button onclick="var p=document.getElementById('gif-preview-'+_gifPickerId+'');p.style.display='none';p.dataset.gifUrl='';p.innerHTML=''" '+
+      '<button onclick="var p=document.getElementById(\'gif-preview-'+_gifPickerId+'\');p.style.display=\'none\';p.dataset.gifUrl=\'\';p.innerHTML=\'\'" '+
         'style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'+
     '</div>';
   }
