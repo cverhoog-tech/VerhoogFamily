@@ -129,3 +129,13 @@ function attachSwipeDelete(el, onDelete) {
     if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
   });
 })();
+
+// Load the isolated grocery feedback + recipe thumbnail repair on every real app entrypoint.
+(function loadMobileUxFixes(){
+  if(window.__familyMobileUxFixLoader) return;
+  window.__familyMobileUxFixLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/mobileUxFixes.js?v=1';
+  script.defer=true;
+  document.head.appendChild(script);
+})();
