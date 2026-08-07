@@ -249,7 +249,30 @@ function _renderScreen(id) {
 }
 
 function showScreenMore(id){closeMore();showScreen(id);}
-function toggleMore(){document.getElementById('more-menu').classList.toggle('open');}
-function closeMore(){document.getElementById('more-menu').classList.remove('open');}
+function toggleMore(){
+  var menu=document.getElementById('more-menu');
+  if(menu)menu.classList.toggle('open');
+}
+function closeMore(){
+  var menu=document.getElementById('more-menu');
+  if(menu)menu.classList.remove('open');
+}
 
-
+// Close the More menu on a true outside tap/click. Capture phase ensures the
+// menu closes before an underlying control can react; when the menu was open,
+// that outside interaction is consumed to prevent accidental navigation/actions.
+(function installMoreOutsideDismiss(){
+  if(window.__familyMoreOutsideDismiss)return;
+  window.__familyMoreOutsideDismiss=true;
+  function dismiss(e){
+    var menu=document.getElementById('more-menu');
+    if(!menu||!menu.classList.contains('open'))return;
+    var moreBtn=document.getElementById('nav-more-btn');
+    var target=e.target;
+    if(menu.contains(target)||(moreBtn&&moreBtn.contains(target)))return;
+    closeMore();
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  document.addEventListener('pointerdown',dismiss,true);
+})();
