@@ -49,3 +49,8 @@ button:disabled{opacity:.48;cursor:not-allowed;transform:none!important;box-shad
 @media(max-width:380px){.bottom-nav{padding-left:4px;padding-right:4px}.nav-btn{border-radius:13px;padding-left:1px;padding-right:1px}.nav-label{font-size:9.5px;max-width:58px}.more-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (orientation:landscape) and (max-height:500px){.bottom-nav{height:calc(58px + env(safe-area-inset-bottom,0px));padding-top:2px}.nav-btn{min-height:50px}.nav-center-inner{width:40px;height:40px;margin-top:-10px}.more-menu{bottom:calc(58px + env(safe-area-inset-bottom,0px))}.screen{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}}
 .header-notif{width:44px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:14px;color:var(--c-text2)}
+
+/* Home-specific corrections: global button touch size must not stretch carousel dots. */
+#screen-home .carousel-dots button{min-width:10px!important;min-height:10px!important;width:10px!important;height:10px!important;max-width:10px!important;max-height:10px!important;aspect-ratio:1/1!important;}
+/* Music is no longer part of Home. Keep legacy handler available elsewhere without showing the CTA. */
+#screen-home button[onclick*="openYouTubeMusic"]{display:none!important;}
