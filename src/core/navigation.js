@@ -36,7 +36,7 @@ function renderNav() {
     if(i===2){
       // Center — Feed
       var active = currentScreen==='feed';
-      html += '<button class="nav-btn nav-center'+(active?' active':'')+'" id="nav-feed-btn">'
+      html += '<button class="nav-btn nav-center'+(active?' active':'')+'" id="nav-feed-btn" onclick="showScreen(\'feed\')">'
         +'<div class="nav-center-inner">'
         +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4">'
         +'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
@@ -250,7 +250,5 @@ function _renderScreen(id) {
 function showScreenMore(id){closeMore();showScreen(id);}
 function toggleMore(){document.getElementById('more-menu').classList.toggle('open');}
 function closeMore(){document.getElementById('more-menu').classList.remove('open');}
-
-
 
 
