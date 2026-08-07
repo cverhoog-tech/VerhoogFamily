@@ -4,7 +4,8 @@ const path = require('path');
 module.exports = async function handler(req, res) {
   try {
     const htmlPath = path.join(process.cwd(), 'index.html');
-    const html = fs.readFileSync(htmlPath, 'utf-8');
+    let html = fs.readFileSync(htmlPath, 'utf-8');
+    html = html.replace('</body>', '<script src="src/core/mobileUxFixes.js"></script></body>');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, max-age=0');
     res.status(200).send(html);
