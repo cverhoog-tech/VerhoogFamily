@@ -182,8 +182,9 @@
     ensureState();
     var v = valuesFrom(modal);
     if(!v.name) return true;
+    var newId = window.shopNextId++;
     window.shopData.unshift({
-      id: window.shopNextId++,
+      id: newId,
       name: v.name,
       qty: v.qty,
       cat: v.cat,
@@ -196,6 +197,9 @@
     if(typeof window.updateStats === 'function') window.updateStats();
     if(typeof window.addActivity === 'function') window.addActivity('🛒','#fff3dc',(window.myName || 'Gezin')+' voegde "'+v.name+'" toe');
     if(typeof window.showToast === 'function') window.showToast('Boodschap toegevoegd ✓');
+    if(typeof window.highlightShopItem === 'function'){
+      requestAnimationFrame(function(){ window.highlightShopItem(newId); });
+    }
     return true;
   }
 
