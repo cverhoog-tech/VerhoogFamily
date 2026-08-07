@@ -1,0 +1,51 @@
+name: Deploy Firebase Database Rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - database.rules.json
+      - firebase.json
+      - .github/workflows/deploy-firebase-rules.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-database-rules-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-rules:
+    name: Deploy Realtime Database rules
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate rules JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('database.rules.json','utf8')); console.log('database.rules.json is valid JSON')"
+
+      - name: Write Firebase service account credentials
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Missing GitHub secret FIREBASE_SERVICE_ACCOUNT"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Deploy Realtime Database rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: npx --yes firebase-tools@latest deploy --only database --project verhoog-family --non-interactive
