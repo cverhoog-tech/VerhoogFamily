@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.426
+// APP MODULES v0.427
 // ============================================================
 (function(){
-  var VERSION='0.426',loaded={},failed={},booting=false,booted=false;
+  var VERSION='0.427',loaded={},failed={},booting=false,booted=false;
   var registry=[
     {id:'remove-music-module-js',src:'src/core/removeMusicModule.js',group:'core',critical:false},
     {id:'mobile-viewport-lock-js',src:'src/core/mobileViewportLock.js',group:'core',critical:false},
@@ -21,7 +21,7 @@
     {id:'family-data-store-js',src:'src/core/familyDataStore.js',group:'core',critical:false},
     {id:'account-progression-v11-js',src:'src/core/progressionEngine.js?v=11',group:'core',critical:false},
     {id:'account-progression-unlocks-v1-js',src:'src/core/progressionUnlocks.js?v=1',group:'core',critical:false},
-    {id:'skills-account-progression-ui-v1-js',src:'src/modules/skills/skillsProgressionBridge.js?v=1',group:'core',critical:false},
+    {id:'skills-account-progression-ui-v2-js',src:'src/modules/skills/skillsProgressionBridge.js?v=2',group:'core',critical:false},
     {id:'shopping-lists-js',src:'src/modules/shop/shoppingLists.js',group:'food',critical:false},
     {id:'reactive-household-state-js',src:'src/core/reactiveHouseholdState.js',group:'core',critical:false},
     {id:'quest-engine-js',src:'src/core/questEngine.js',group:'quests',critical:false},
