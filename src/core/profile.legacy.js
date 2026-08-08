@@ -3,33 +3,47 @@
 // PROFIEL BRIDGE
 // Koppelt de oude renderProfile()-aanroep vanuit navigation.js
 // aan de nieuwe ProfileScreen.target.js module.
+// Also bootstraps the account progression stack because this file is loaded
+// directly by index.html on every app start.
 // ============================================================
 
 var _profileMounted = false;
 
-// Identity/avatar bootstrap. Keep this here because profile.legacy.js is loaded
-// early by index.html on every app start. The bridge itself remains additive,
-// so existing screens can keep their current renderers while sharing one avatar source.
-(function bootstrapAvatarIdentity(){
-  function load(src, done){
-    if(document.querySelector('script[src="' + src + '"]')) { if(done) done(); return; }
-    var s = document.createElement('script');
-    s.src = src;
-    s.onload = function(){ if(done) done(); };
-    s.onerror = function(){ console.warn('[AvatarIdentity] Kon script niet laden:', src); };
+(function bootstrapSharedIdentityAndProgression(){
+  var loaded={};
+  function load(src,done){
+    if(loaded[src]){if(done)done();return;}
+    var existing=[].slice.call(document.scripts||[]).find(function(s){return (s.getAttribute('src')||'').split('?')[0]===src.split('?')[0];});
+    if(existing){loaded[src]=true;if(done)done();return;}
+    var s=document.createElement('script');s.src=src;s.async=false;
+    s.onload=function(){loaded[src]=true;if(done)done();};
+    s.onerror=function(){console.warn('[FamilyBootstrap] Kon script niet laden:',src);if(done)done();};
     document.head.appendChild(s);
   }
-  function loadBridge(){ load('/src/core/avatarIdentityBridge.js'); }
-  if(window.HouseholdIdentity) loadBridge();
-  else load('/src/core/householdIdentity.js', loadBridge);
+  function series(items,done){var i=0;function next(){if(i>=items.length){if(done)done();return;}load(items[i++],next);}next();}
+
+  // Identity is needed everywhere and remains the canonical avatar resolver.
+  series(['/src/core/householdIdentity.js','/src/core/avatarIdentityBridge.js'],function(){
+    if(window.FamilyAvatarIdentity&&typeof FamilyAvatarIdentity.sync==='function')FamilyAvatarIdentity.sync();
+  });
+
+  // appModules.js is currently not referenced by index.html. Load only the
+  // progression dependencies here so we do not duplicate every app module.
+  series([
+    '/src/core/householdRepository.js?v=progression-bootstrap-1',
+    '/src/core/familyDataStore.js?v=progression-bootstrap-1',
+    '/src/core/progressionEngine.js?v=12',
+    '/src/core/progressionUnlocks.js?v=2',
+    '/src/modules/skills/skillsProgressionBridge.js?v=3'
+  ],function(){
+    try{if(window.SkillsProgressionBridge&&typeof SkillsProgressionBridge.repair==='function')SkillsProgressionBridge.repair();}catch(e){}
+  });
 })();
 
 function renderProfile() {
-  // Zoek de legacy container op in de HTML
   var container = document.getElementById('screen-profile');
   if (!container) return;
 
-  // Laad CSS éénmalig
   if (!document.querySelector('link[href*="profile.target.css"]')) {
     var link = document.createElement('link');
     link.rel  = 'stylesheet';
@@ -37,7 +51,6 @@ function renderProfile() {
     document.head.appendChild(link);
   }
 
-  // Importeer en render de nieuwe module
   import('/src/modules/profile/ProfileScreen.target.js')
     .then(function(mod) {
       mod.renderProfileScreen(container);
@@ -49,12 +62,10 @@ function renderProfile() {
     });
 }
 
-// Header avatar — wordt aangeroepen vanuit saveName() in het oude systeem
 function updateHeaderAvatar() {
   var av = document.getElementById('hdr-avatar');
   if (!av) return;
 
-  // Prefer the central identity resolver once it is available.
   if(window.HouseholdIdentity && typeof window.HouseholdIdentity.getActiveAvatar === 'function') {
     var centralUrl = window.HouseholdIdentity.getActiveAvatar();
     if(centralUrl) {
@@ -63,7 +74,6 @@ function updateHeaderAvatar() {
     }
   }
 
-  // Legacy fallback while the identity scripts are still loading.
   import('/src/modules/profile/avatarStore.js')
     .then(function(store) {
       var url = store.getCurrentAvatarUrl();
@@ -78,11 +88,10 @@ function updateHeaderAvatar() {
     });
 }
 
-// Luister naar avatar-wijzigingen vanuit de nieuwe module
-window.addEventListener('familyapp:avatar-updated', function(e) {
+window.addEventListener('familyapp:avatar-updated', function() {
   updateHeaderAvatar();
   if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
-  // Als het profielscherm open is, re-render het
+  if(window.SkillsProgressionBridge&&typeof SkillsProgressionBridge.repair==='function')SkillsProgressionBridge.repair();
   if (_profileMounted) {
     var container = document.getElementById('screen-profile');
     if (container && container.classList.contains('active')) {
