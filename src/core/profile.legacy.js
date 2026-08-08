@@ -22,21 +22,20 @@ var _profileMounted = false;
   }
   function series(items,done){var i=0;function next(){if(i>=items.length){if(done)done();return;}load(items[i++],next);}next();}
 
-  // Identity is needed everywhere and remains the canonical avatar resolver.
   series(['/src/core/householdIdentity.js','/src/core/avatarIdentityBridge.js'],function(){
     if(window.FamilyAvatarIdentity&&typeof FamilyAvatarIdentity.sync==='function')FamilyAvatarIdentity.sync();
   });
 
-  // appModules.js is currently not referenced by index.html. Load only the
-  // progression dependencies here so we do not duplicate every app module.
   series([
     '/src/core/householdRepository.js?v=progression-bootstrap-1',
     '/src/core/familyDataStore.js?v=progression-bootstrap-1',
     '/src/core/progressionEngine.js?v=12',
     '/src/core/progressionUnlocks.js?v=2',
-    '/src/modules/skills/skillsProgressionBridge.js?v=3'
+    '/src/modules/skills/skillsProgressionBridge.js?v=3',
+    '/src/modules/tasks/taskMutationRepositoryBridge.js?v=336'
   ],function(){
     try{if(window.SkillsProgressionBridge&&typeof SkillsProgressionBridge.repair==='function')SkillsProgressionBridge.repair();}catch(e){}
+    try{if(window.TaskMutationRepositoryBridge&&typeof TaskMutationRepositoryBridge.boot==='function')TaskMutationRepositoryBridge.boot();}catch(e){}
   });
 })();
 
