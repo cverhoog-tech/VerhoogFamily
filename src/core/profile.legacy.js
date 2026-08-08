@@ -3,8 +3,7 @@
 // PROFIEL BRIDGE
 // Koppelt de oude renderProfile()-aanroep vanuit navigation.js
 // aan de nieuwe ProfileScreen.target.js module.
-// Also bootstraps the account progression stack because this file is loaded
-// directly by index.html on every app start.
+// Also bootstraps shared account progression and premium Person UI layers.
 // ============================================================
 
 var _profileMounted = false;
@@ -32,10 +31,12 @@ var _profileMounted = false;
     '/src/core/progressionEngine.js?v=12',
     '/src/core/progressionUnlocks.js?v=2',
     '/src/modules/skills/skillsProgressionBridge.js?v=3',
-    '/src/modules/tasks/taskMutationRepositoryBridge.js?v=336'
+    '/src/modules/tasks/taskMutationRepositoryBridge.js?v=336',
+    '/src/modules/tasks/personHeroFantasyPolish.js?v=1'
   ],function(){
     try{if(window.SkillsProgressionBridge&&typeof SkillsProgressionBridge.repair==='function')SkillsProgressionBridge.repair();}catch(e){}
     try{if(window.TaskMutationRepositoryBridge&&typeof TaskMutationRepositoryBridge.boot==='function')TaskMutationRepositoryBridge.boot();}catch(e){}
+    try{if(window.PersonHeroFantasyPolish&&typeof PersonHeroFantasyPolish.refresh==='function')PersonHeroFantasyPolish.refresh();}catch(e){}
   });
 })();
 
@@ -91,6 +92,7 @@ window.addEventListener('familyapp:avatar-updated', function() {
   updateHeaderAvatar();
   if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   if(window.SkillsProgressionBridge&&typeof SkillsProgressionBridge.repair==='function')SkillsProgressionBridge.repair();
+  if(window.PersonHeroFantasyPolish&&typeof PersonHeroFantasyPolish.refresh==='function')PersonHeroFantasyPolish.refresh();
   if (_profileMounted) {
     var container = document.getElementById('screen-profile');
     if (container && container.classList.contains('active')) {
