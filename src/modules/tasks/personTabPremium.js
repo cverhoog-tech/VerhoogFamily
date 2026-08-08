@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// PERSOON TAB — PREMIUM RPG CHARACTER SHEET (v3)
+// PERSOON TAB — PREMIUM RPG CHARACTER SHEET (v3.1)
 // ============================================================
 // Enige authoritative renderer voor de Persoon-tab. Bouwt de DOM
 // zelf op (geen CSS/DOM-patchlagen erbovenop) en gebruikt uitsluitend
@@ -11,15 +11,26 @@
 //   - unlockedBadges (src/modules/achievements/achievements.js)
 // Geen hardcoded demo-statistieken. Ontbrekende data → nette 0-state.
 //
+// v3.1 — avatars lopen nu via de centrale unified-avatar-laag i.p.v.
+// rechtstreeks localStorage: window.FamilyAvatarIdentity.resolveAvatar()
+// → window.HouseholdIdentity.resolveAvatar() → bestaande localStorage-
+// fallback → RPG-preset per rol. Broken images vallen netjes terug op
+// initialen i.p.v. een lege cirkel, en de tab luistert op
+// familyapp:avatar-updated / familyapp:household-members-updated /
+// familyapp:active-member-updated om zichzelf te herrenderen.
+//
 // Achtergrond van de hero-kaart is een puur CSS "landscape" fallback,
 // aangesloten via de CSS variabele --ptp-hero-bg. Zodra er een schone
 // landscape-asset (zonder UI/personage) beschikbaar is, kan die in één
 // regel aangesloten worden:
 //   document.documentElement.style.setProperty('--ptp-hero-bg', "url('...pad...') center/cover no-repeat");
+// getHeroBackgroundFor() checkt daarnaast op een eventuele toekomstige
+// member/profiel-achtergrond-property — er wordt nooit een demo-
+// afbeelding of naam-specifieke achtergrond hardcoded.
 // ============================================================
 
 (function () {
-  var VERSION = '3.0';
+  var VERSION = '3.1';
 
   // ── Paletten per gezinslid (accentkleur voor selector/glow) ──
   var PALETTES = [
@@ -213,7 +224,50 @@
   }
 
   // ── Data helpers (bestaande app-state) ──
+
+  // Echte household member (indien HouseholdIdentity geladen is) — geeft
+  // toegang tot het genormaliseerde member-object i.p.v. alleen de naam.
+  function householdMemberFor(name) {
+    try {
+      if (window.HouseholdIdentity && typeof window.HouseholdIdentity.getMember === 'function') {
+        return window.HouseholdIdentity.getMember(name) || null;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  // Laatste redmiddel: RPG-preset per rol (vader/moeder), zoals voorheen.
+  function rpgPresetFor(roleFallback) {
+    if (roleFallback && typeof window.RPG_PORTRAITS !== 'undefined'
+      && window.RPG_PORTRAITS[roleFallback] && window.RPG_PORTRAITS[roleFallback][0]) {
+      return window.RPG_PORTRAITS[roleFallback][0];
+    }
+    return null;
+  }
+
+  // Avatar-resolutievolgorde:
+  //   1. window.FamilyAvatarIdentity.resolveAvatar(member || naam)  — centrale unified-avatar-laag
+  //   2. window.HouseholdIdentity.resolveAvatar(member || naam)     — (wordt door de bridge hierop geïnstalleerd)
+  //   3. bestaande localStorage-fallback (eigen avatar / fam_avatar_<naam>)
+  //   4. bestaande RPG-preset per rol (vader/moeder)
   function getAvatarFor(name, myNameLocal, roleFallback) {
+    var member = householdMemberFor(name);
+    var subject = member || name;
+
+    try {
+      if (window.FamilyAvatarIdentity && typeof window.FamilyAvatarIdentity.resolveAvatar === 'function') {
+        var a1 = window.FamilyAvatarIdentity.resolveAvatar(subject);
+        if (a1) return a1;
+      }
+    } catch (e) {}
+
+    try {
+      if (window.HouseholdIdentity && typeof window.HouseholdIdentity.resolveAvatar === 'function') {
+        var a2 = window.HouseholdIdentity.resolveAvatar(subject);
+        if (a2) return a2;
+      }
+    } catch (e) {}
+
     try {
       if (name.toLowerCase() === myNameLocal.toLowerCase()) {
         var url = localStorage.getItem('familyapp-current-user-avatar-v1');
@@ -222,10 +276,33 @@
       var stored = localStorage.getItem('fam_avatar_' + name.toLowerCase());
       if (stored) return stored;
     } catch (e) {}
-    if (roleFallback && typeof window.RPG_PORTRAITS !== 'undefined'
-      && window.RPG_PORTRAITS[roleFallback] && window.RPG_PORTRAITS[roleFallback][0]) {
-      return window.RPG_PORTRAITS[roleFallback][0];
+
+    return rpgPresetFor(roleFallback);
+  }
+
+  // ── Hero-achtergrond resolver (future-proof, geen fabricated data) ──
+  // Volgorde: bestaande member/profile hero-achtergrond-property (indien
+  // die ooit toegevoegd wordt aan HouseholdIdentity-members) → centraal
+  // opgeslagen profiel-achtergrond in app-state → null (CSS-gradient blijft
+  // dan gewoon staan via --ptp-hero-bg). Nooit hardcoded op naam, nooit
+  // demo-afbeeldingen.
+  function getHeroBackgroundFor(m) {
+    var member = householdMemberFor(m.name);
+    if (member) {
+      var direct = member.heroBackground || member.background || member.bannerUrl
+        || member.backgroundUrl || member.profileBackground || member.heroImage;
+      if (direct) return direct;
     }
+    try {
+      if (window.HouseholdIdentity && typeof window.HouseholdIdentity.getHeroBackground === 'function') {
+        var fromIdentity = window.HouseholdIdentity.getHeroBackground(m.id);
+        if (fromIdentity) return fromIdentity;
+      }
+    } catch (e) {}
+    try {
+      var stored = localStorage.getItem('familyapp-hero-bg-' + m.id);
+      if (stored) return stored;
+    } catch (e) {}
     return null;
   }
 
@@ -338,7 +415,7 @@
         + 'style="' + (active ? '--ptp-accent:' + m.palette.accent + ';--ptp-glow:' + m.palette.glow + ';' : '') + '" '
         + 'data-person="' + esc(m.id) + '">';
       html += m.avatar
-        ? '<img class="member-card-avatar" src="' + esc(m.avatar) + '" onerror="this.style.display=\'none\'">'
+        ? '<img class="member-card-avatar" data-avatar-name="' + esc(m.name) + '" src="' + esc(m.avatar) + '">'
         : '<div class="member-card-avatar-fallback" style="background:' + m.palette.accent + '">' + esc(m.initials) + '</div>';
       html += '<div class="member-card-name">' + esc(m.name) + '</div>';
       html += '<div class="member-card-level">Level ' + m.level + '</div>';
@@ -352,11 +429,14 @@
   function renderHero(m) {
     var pct = m.nextXP > m.prevXP ? Math.max(0, Math.min(100, Math.round((m.xp - m.prevXP) / (m.nextXP - m.prevXP) * 100))) : 100;
     var avatarHtml = m.avatar
-      ? '<img class="ptp-avatar" src="' + esc(m.avatar) + '" alt="">'
+      ? '<img class="ptp-avatar" data-avatar-name="' + esc(m.name) + '" src="' + esc(m.avatar) + '" alt="">'
       : '<div class="ptp-avatar ptp-avatar-fallback" style="background:' + m.palette.accent + '">' + esc(m.initials) + '</div>';
 
+    var heroBg = getHeroBackgroundFor(m);
+    var heroBgStyle = heroBg ? ' style="background-image:url(' + esc(heroBg) + ')"' : '';
+
     var html = '<div class="ptp-hero">';
-    html += '<div class="ptp-hero-visual">';
+    html += '<div class="ptp-hero-visual"' + heroBgStyle + '>';
     html += '<div class="ptp-hero-profile">';
     html += avatarHtml;
     html += '<div class="ptp-copy">';
@@ -447,6 +527,63 @@
     return html;
   }
 
+  // ── Broken-image fallback ──
+  // Bij een broken avatar-URL: eerst opnieuw de centrale resolver/preset
+  // proberen, en pas als ook dát faalt de <img> vervangen door een
+  // zichtbare initialen-cirkel (nooit een lege/onzichtbare cirkel).
+  function bindAvatarFallback(img, member) {
+    if (!img || img.__ptpFallbackBound) return;
+    img.__ptpFallbackBound = true;
+    var stage = 0;
+    img.addEventListener('error', function onErr() {
+      stage++;
+      if (stage === 1) {
+        var retry = null;
+        try {
+          if (window.FamilyAvatarIdentity && typeof window.FamilyAvatarIdentity.resolveAvatar === 'function') {
+            retry = window.FamilyAvatarIdentity.resolveAvatar(householdMemberFor(member.name) || member.name);
+          }
+        } catch (e) {}
+        if (!retry) retry = rpgPresetFor(member.isMe ? 'vader' : 'moeder');
+        if (retry && retry !== img.getAttribute('src')) { img.setAttribute('src', retry); return; }
+      }
+      // Definitief: vervang de <img> door een zichtbare initialen-cirkel
+      var isHero = img.classList.contains('ptp-avatar');
+      var fallback = document.createElement('div');
+      fallback.className = img.className + ' ptp-avatar-fallback member-card-avatar-fallback';
+      fallback.style.background = member.palette.accent;
+      fallback.textContent = member.initials;
+      if (img.parentNode) img.parentNode.replaceChild(fallback, img);
+      void isHero;
+    });
+  }
+
+  function bindAvatarFallbacks(el, members) {
+    var byName = {};
+    members.forEach(function (m) { byName[m.name] = m; });
+    el.querySelectorAll('img[data-avatar-name]').forEach(function (img) {
+      var m = byName[img.getAttribute('data-avatar-name')];
+      if (m) bindAvatarFallback(img, m);
+    });
+  }
+
+  // ── Live avatar-updates ──
+  // Herrender de Persoon-tab (of ververs alleen de avatars) zodra de
+  // centrale avatarlaag meldt dat er iets gewijzigd is. Listener wordt
+  // maar één keer gebonden.
+  function bindAvatarEvents() {
+    if (window.__ptpAvatarEventsBound) return;
+    window.__ptpAvatarEventsBound = true;
+    var refresh = function () {
+      var page = document.querySelector('.task-person-page');
+      var target = document.getElementById('task-content');
+      if (page && target) render(target);
+    };
+    window.addEventListener('familyapp:avatar-updated', refresh);
+    window.addEventListener('familyapp:household-members-updated', refresh);
+    window.addEventListener('familyapp:active-member-updated', refresh);
+  }
+
   // ── Hoofdrender ──
   function render(el) {
     if (!el) return;
@@ -476,6 +613,9 @@
         render(el);
       });
     });
+
+    bindAvatarFallbacks(el, members);
+    bindAvatarEvents();
   }
 
   // ── Override van de bestaande renderer (tasks.js) ──
