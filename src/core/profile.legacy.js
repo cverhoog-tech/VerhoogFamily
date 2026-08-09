@@ -21,8 +21,15 @@ var _profileMounted = false;
   }
   function series(items,done){var i=0;function next(){if(i>=items.length){if(done)done();return;}load(items[i++],next);}next();}
 
-  series(['/src/core/householdIdentity.js','/src/core/avatarIdentityBridge.js','/src/core/householdIdentityFirebaseBridge.js?v=1'],function(){
+  series([
+    '/src/core/householdIdentity.js',
+    '/src/core/avatarIdentityBridge.js',
+    '/src/core/householdIdentityFirebaseBridge.js?v=1',
+    '/src/modules/tasks/personPresenceUi.js?v=1'
+  ],function(){
     if(window.FamilyAvatarIdentity&&typeof FamilyAvatarIdentity.sync==='function')FamilyAvatarIdentity.sync();
+    if(window.HouseholdIdentityFirebaseBridge&&typeof window.HouseholdIdentityFirebaseBridge.sync==='function')window.HouseholdIdentityFirebaseBridge.sync();
+    if(window.PersonPresenceUi&&typeof window.PersonPresenceUi.refresh==='function')window.PersonPresenceUi.refresh();
   });
 
   series([
