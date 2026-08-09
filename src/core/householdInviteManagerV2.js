@@ -1,0 +1,18 @@
+'use strict';
+(function(){
+  if(window.__householdInviteManagerV2)return;
+  window.__householdInviteManagerV2=true;
+
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+  function close(){var el=document.getElementById('household-onboarding');if(el)el.remove();}
+  function css(){if(document.getElementById('household-invite-v2-css'))return;var s=document.createElement('style');s.id='household-invite-v2-css';s.textContent='.hh-invite-list{display:grid;gap:10px;margin:14px 0}.hh-invite-item{padding:14px;border-radius:15px;background:#0e0f1b;border:1px solid rgba(255,255,255,.08)}.hh-invite-code{font-size:22px;letter-spacing:.1em;font-weight:900}.hh-invite-meta{font-size:11px;color:#aaa9bd;margin-top:5px}.hh-invite-note{font-size:12px;color:#a78bfa;text-align:center;margin:10px 0 4px}';document.head.appendChild(s);}
+  function overlay(){css();close();var el=document.createElement('div');el.id='household-onboarding';el.className='hh-overlay';el.innerHTML='<div class="hh-card"><div class="hh-mark">🤝</div><h2>Gezinsleden uitnodigen</h2><p>Maak voor ieder gezinslid een eigen uitnodigingscode. Elke code is 7 dagen geldig en kan één keer succesvol worden gebruikt.</p><button class="hh-primary" id="hh-new-invite">Nieuwe uitnodigingscode</button><div class="hh-error" id="hh-invite-error"></div><div class="hh-invite-list" id="hh-invite-list"></div><div class="hh-invite-note">Je kunt meerdere uitnodigingen tegelijk actief hebben.</div><button class="hh-back" id="hh-close">Sluiten</button></div>';document.body.appendChild(el);return el;}
+  function fmt(ts){try{return new Date(Number(ts)).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return'';}}
+  function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
+  function hid(){return window.fbFamilyId||null;}
+  function renderInvites(el){var d=db(),familyId=hid(),list=el.querySelector('#hh-invite-list');if(!d||!familyId||!list)return;d.ref('invites').orderByChild('householdId').equalTo(familyId).once('value').then(function(s){var rows=[];s.forEach(function(c){var v=c.val()||{};if(v.status==='active'&&Number(v.expiresAt||0)>Date.now()&&Number(v.uses||0)<Number(v.maxUses||1))rows.push(v);});rows.sort(function(a,b){return Number(b.createdAt||0)-Number(a.createdAt||0);});list.innerHTML=rows.length?rows.map(function(v){return '<div class="hh-invite-item"><div class="hh-invite-code">'+esc(v.code)+'</div><div class="hh-invite-meta">Geldig t/m '+esc(fmt(v.expiresAt))+' · nog niet gebruikt</div></div>';}).join(''):'<div class="hh-invite-meta">Nog geen actieve uitnodigingscodes.</div>';}).catch(function(){list.innerHTML='';});}
+  function show(){if(!window.FamilyHousehold||typeof window.FamilyHousehold.createInvite!=='function')return;var el=overlay(),button=el.querySelector('#hh-new-invite'),error=el.querySelector('#hh-invite-error');el.querySelector('#hh-close').onclick=close;button.onclick=function(){button.disabled=true;error.textContent='';window.FamilyHousehold.createInvite('adult').then(function(){button.disabled=false;renderInvites(el);}).catch(function(e){button.disabled=false;error.textContent=e&&e.message||'Kon geen uitnodiging maken';});};renderInvites(el);}
+  function install(){if(!window.FamilyHousehold)return false;window.FamilyHousehold.showInviteManager=show;return true;}
+  var tries=0,t=setInterval(function(){tries++;if(install()||tries>100)clearInterval(t);},100);setTimeout(install,0);
+  window.HouseholdInviteManagerV2={show:show,install:install};
+})();
