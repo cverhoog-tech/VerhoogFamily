@@ -98,7 +98,19 @@
           if(!cur||cur.status!=='active'||cur.expiresAt<now()||(cur.uses||0)>=(cur.maxUses||1))return;
           cur.uses=(cur.uses||0)+1;if(cur.uses>=cur.maxUses)cur.status='used';cur.usedBy=u.uid;cur.usedAt=now();return cur;
         }).then(function(r){
-          if(!r.committed)throw new Error('Deze uitnodiging is al gebruikt');
+          if(!r.committed){
+            // Don't guess. Re-read the invite and report the real reason the write didn't
+            // commit, so a genuine "already used" is distinguishable from a rules/permission
+            // problem (which would show the code as still active/unused despite the failure).
+            return d.ref('invites/'+code).once('value').then(function(s2){
+              var cur=s2.val();
+              if(!cur)throw new Error('Deze code bestaat niet (typfout? controleer de streepjes).');
+              if(cur.status==='active'&&(cur.uses||0)<(cur.maxUses||1)&&cur.expiresAt>=now())throw new Error('De code is nog geldig maar kon niet verwerkt worden (mogelijk een tijdelijk verbindings- of rechtenprobleem). Probeer het nog eens.');
+              if(cur.status!=='active')throw new Error('Deze code is al gebruikt'+(cur.usedAt?(' op '+new Date(cur.usedAt).toLocaleString('nl-NL')):'')+'.');
+              if(cur.expiresAt<now())throw new Error('Deze code is verlopen.');
+              throw new Error('Deze code is niet meer geldig.');
+            });
+          }
           return completeMembership(hid,role,code).catch(function(err){
             // The code is now marked used, but the join itself did not finish. Revert the code back
             // to active so it is not permanently burned by a partial failure; the person can retry
