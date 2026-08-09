@@ -21,7 +21,7 @@ var _profileMounted = false;
   }
   function series(items,done){var i=0;function next(){if(i>=items.length){if(done)done();return;}load(items[i++],next);}next();}
 
-  series(['/src/core/householdIdentity.js','/src/core/avatarIdentityBridge.js'],function(){
+  series(['/src/core/householdIdentity.js','/src/core/avatarIdentityBridge.js','/src/core/householdIdentityFirebaseBridge.js?v=1'],function(){
     if(window.FamilyAvatarIdentity&&typeof FamilyAvatarIdentity.sync==='function')FamilyAvatarIdentity.sync();
   });
 
