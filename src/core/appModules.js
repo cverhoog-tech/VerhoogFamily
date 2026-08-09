@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// APP MODULES v0.427
+// APP MODULES v0.428
 // ============================================================
 (function(){
-  var VERSION='0.427',loaded={},failed={},booting=false,booted=false;
+  var VERSION='0.428',loaded={},failed={},booting=false,booted=false;
   var registry=[
     {id:'remove-music-module-js',src:'src/core/removeMusicModule.js',group:'core',critical:false},
     {id:'mobile-viewport-lock-js',src:'src/core/mobileViewportLock.js',group:'core',critical:false},
@@ -27,6 +27,9 @@
     {id:'quest-engine-js',src:'src/core/questEngine.js',group:'quests',critical:false},
     {id:'quest-adapter-js',src:'src/core/questAdapter.js',group:'quests',critical:false},
     {id:'epic-hero-backgrounds-js',src:'src/core/epicHeroBackgrounds.js',group:'rendering',critical:false},
+    {id:'person-hero-shane-bg-js',src:'src/assets/hero-backgrounds/shane-hero-bg.js',group:'rendering',critical:false},
+    {id:'person-hero-esra-bg-js',src:'src/assets/hero-backgrounds/esra-hero-bg.js',group:'rendering',critical:false},
+    {id:'person-hero-background-assets-js',src:'src/core/personHeroBackgroundAssets.js',group:'rendering',critical:false},
     {id:'quest-renderer-js',src:'src/core/questRenderer.js',group:'rendering',critical:false},
     {id:'finance-native-tabs-js',src:'src/modules/finance/financeNativeTabs.js',group:'finance',critical:false},
     {id:'savings-bottom-sheet-bridge-js',src:'src/modules/finance/savingsBottomSheetBridge.js',group:'finance',critical:false},
