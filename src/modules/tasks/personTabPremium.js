@@ -19,14 +19,12 @@
 // familyapp:avatar-updated / familyapp:household-members-updated /
 // familyapp:active-member-updated om zichzelf te herrenderen.
 //
-// Achtergrond van de hero-kaart is een puur CSS "landscape" fallback,
-// aangesloten via de CSS variabele --ptp-hero-bg. Zodra er een schone
-// landscape-asset (zonder UI/personage) beschikbaar is, kan die in één
-// regel aangesloten worden:
-//   document.documentElement.style.setProperty('--ptp-hero-bg', "url('...pad...') center/cover no-repeat");
-// getHeroBackgroundFor() checkt daarnaast op een eventuele toekomstige
-// member/profiel-achtergrond-property — er wordt nooit een demo-
-// afbeelding of naam-specifieke achtergrond hardcoded.
+// Achtergrond van de hero-kaart: eerst member/profiel-eigen achtergrond
+// (indien ooit toegevoegd), dan een per-gezinslid opgeslagen override in
+// localStorage, dan de vaste Shane/Esra fantasy-landschap-fallback
+// (window.HERO_BG_SHANE / window.HERO_BG_ESRA, geladen via gewone
+// <script>-tags in index.html — synchroon beschikbaar bij eerste render),
+// en pas als allerlaatste redmiddel de pure CSS-gradient via --ptp-hero-bg.
 // ============================================================
 
 (function () {
@@ -280,12 +278,14 @@
     return rpgPresetFor(roleFallback);
   }
 
-  // ── Hero-achtergrond resolver (future-proof, geen fabricated data) ──
+  // ── Hero-achtergrond resolver ──
   // Volgorde: bestaande member/profile hero-achtergrond-property (indien
   // die ooit toegevoegd wordt aan HouseholdIdentity-members) → centraal
-  // opgeslagen profiel-achtergrond in app-state → null (CSS-gradient blijft
-  // dan gewoon staan via --ptp-hero-bg). Nooit hardcoded op naam, nooit
-  // demo-afbeeldingen.
+  // opgeslagen profiel-achtergrond in app-state → per-lid override in
+  // localStorage → vaste Shane/Esra fantasy-landschap-fallback (via
+  // window.HERO_BG_SHANE / window.HERO_BG_ESRA, rechtstreeks geladen als
+  // <script> in index.html) → null (CSS-gradient blijft dan staan via
+  // --ptp-hero-bg). Nooit hardcoded op naam bóven de expliciete overrides.
   function getHeroBackgroundFor(m) {
     var member = householdMemberFor(m.name);
     if (member) {
@@ -302,6 +302,16 @@
     try {
       var stored = localStorage.getItem('familyapp-hero-bg-' + m.id);
       if (stored) return stored;
+    } catch (e) {}
+    // Vaste fantasy-landschap-fallback per gezinslid (laatste redmiddel vóór
+    // de CSS-gradient). Geladen als gewone <script>-tags in index.html
+    // (window.HERO_BG_SHANE / window.HERO_BG_ESRA), vóór dit script — dus
+    // altijd synchroon beschikbaar bij de eerste render. Geen AppModules-
+    // bridge en geen localStorage-duplicatie nodig.
+    try {
+      var DEFAULT_HERO_BACKGROUNDS = { shane: window.HERO_BG_SHANE, esra: window.HERO_BG_ESRA };
+      var defaultBg = DEFAULT_HERO_BACKGROUNDS[String(m.id).toLowerCase()];
+      if (defaultBg) return defaultBg;
     } catch (e) {}
     return null;
   }
