@@ -24,8 +24,10 @@ var _profileMounted = false;
   function loadPresence(){
     load('/src/core/householdIdentityFirebaseBridge.js?v=1',function(){
       load('/src/modules/tasks/personPresenceUi.js?v=1',function(){
-        try{if(window.HouseholdIdentityFirebaseBridge)window.HouseholdIdentityFirebaseBridge.sync();}catch(e){}
-        try{if(window.PersonPresenceUi)window.PersonPresenceUi.refresh();}catch(e){}
+        load('/src/core/householdInviteManagerV2.js?v=2',function(){
+          try{if(window.HouseholdIdentityFirebaseBridge)window.HouseholdIdentityFirebaseBridge.sync();}catch(e){}
+          try{if(window.PersonPresenceUi)window.PersonPresenceUi.refresh();}catch(e){}
+        });
       });
     });
   }
