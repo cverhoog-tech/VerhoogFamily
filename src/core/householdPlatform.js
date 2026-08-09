@@ -94,31 +94,38 @@
       }
       return inspectInvite(code).then(function(info){
         var inv=info.invite,hid=inv.householdId,role=inv.role||'adult';
-        return d.ref('invites/'+code).transaction(function(cur){
-          if(!cur||cur.status!=='active'||cur.expiresAt<now()||(cur.uses||0)>=(cur.maxUses||1))return;
-          cur.uses=(cur.uses||0)+1;if(cur.uses>=cur.maxUses)cur.status='used';cur.usedBy=u.uid;cur.usedAt=now();return cur;
-        }).then(function(r){
-          if(!r.committed){
-            // Don't guess. Re-read the invite and report the real reason the write didn't
-            // commit, so a genuine "already used" is distinguishable from a rules/permission
-            // problem (which would show the code as still active/unused despite the failure).
-            return d.ref('invites/'+code).once('value').then(function(s2){
-              var cur=s2.val();
-              if(!cur)throw new Error('Deze code bestaat niet (typfout? controleer de streepjes).');
-              if(cur.status==='active'&&(cur.uses||0)<(cur.maxUses||1)&&cur.expiresAt>=now())throw new Error('De code is nog geldig maar kon niet verwerkt worden (mogelijk een tijdelijk verbindings- of rechtenprobleem). Probeer het nog eens.');
-              if(cur.status!=='active')throw new Error('Deze code is al gebruikt'+(cur.usedAt?(' op '+new Date(cur.usedAt).toLocaleString('nl-NL')):'')+'.');
-              if(cur.expiresAt<now())throw new Error('Deze code is verlopen.');
-              throw new Error('Deze code is niet meer geldig.');
-            });
-          }
+        var nextUses=(inv.uses||0)+1;
+        var updated={code:inv.code,householdId:inv.householdId,createdBy:inv.createdBy,role:inv.role,createdAt:inv.createdAt,expiresAt:inv.expiresAt,maxUses:inv.maxUses,uses:nextUses,status:nextUses>=(inv.maxUses||1)?'used':'active',usedBy:u.uid,usedAt:now()};
+        // Plain conditional write instead of .transaction(): a Firebase transaction that gets
+        // rejected by security rules just resolves with committed:false after silently retrying,
+        // which hides the real reason. A direct .set() rejects with the actual Firebase error
+        // (e.g. PERMISSION_DENIED) so a rules problem is never mistaken for "already used" again.
+        return d.ref('invites/'+code).set(updated).then(function(){
           return completeMembership(hid,role,code).catch(function(err){
             // The code is now marked used, but the join itself did not finish. Revert the code back
             // to active so it is not permanently burned by a partial failure; the person can retry
             // with the same code (or the join will resume idempotently via the branch above).
-            return d.ref('invites/'+code).transaction(function(cur){
-              if(!cur||cur.usedBy!==u.uid)return;
-              cur.uses=Math.max(0,(cur.uses||1)-1);cur.status='active';cur.usedBy=null;cur.usedAt=null;return cur;
-            }).catch(function(){}).then(function(){throw err;});
+            return d.ref('invites/'+code).set(inv).catch(function(){}).then(function(){throw err;});
+          });
+        }).catch(function(err){
+          if(err&&err.__familyHandled)throw err;
+          var code2=err&&(err.code||err.name)||'', msg=err&&err.message||String(err);
+          return d.ref('invites/'+code).once('value').then(function(s2){
+            var cur=s2.val();
+            var e2;
+            if(cur&&cur.status==='used'&&cur.usedBy!==u.uid){
+              // Someone else genuinely won the race for this code — real "already used".
+              e2=new Error('Deze code is al gebruikt'+(cur.usedAt?(' op '+new Date(cur.usedAt).toLocaleString('nl-NL')):'')+'.');
+            }else{
+              // Code is still unclaimed but the write was denied — this is a rules/permission
+              // problem, not a genuine reuse. Include the raw Firebase error so it's diagnosable.
+              e2=new Error('De uitnodiging is nog geldig, maar de database weigerde de schrijfactie (rechtenprobleem, niet "al gebruikt"). Technische melding: '+code2+(code2&&msg?' — ':'')+msg);
+            }
+            e2.__familyHandled=true;throw e2;
+          }).catch(function(inner){
+            if(inner&&inner.__familyHandled)throw inner;
+            var e3=new Error('Kon de uitnodiging niet verwerken. Technische melding: '+code2+(code2&&msg?' — ':'')+msg);
+            e3.__familyHandled=true;throw e3;
           });
         });
       });
