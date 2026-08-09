@@ -159,7 +159,7 @@ function attachSwipeDelete(el, onDelete) {
   if(window.__familyHouseholdPlatformLoader) return;
   window.__familyHouseholdPlatformLoader=true;
   var script=document.createElement('script');
-  script.src='src/core/householdPlatform.js?v=3';
+  script.src='src/core/householdPlatform.js?v=4';
   script.async=false;
   script.defer=true;
   document.head.appendChild(script);
