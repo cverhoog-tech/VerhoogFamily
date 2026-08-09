@@ -1,0 +1,169 @@
+'use strict';
+// ============================================================
+// HOUSEHOLD IDENTITY <-> FIREBASE BRIDGE v1.0
+// ============================================================
+// FamilyHousehold remains authoritative for authenticated household
+// membership. HouseholdIdentity remains the compatibility API used by
+// existing UI. This bridge mirrors the active Firebase household members
+// into HouseholdIdentity once both layers are available.
+// ============================================================
+(function(){
+  if(window.__householdIdentityFirebaseBridgeV1) return;
+  window.__householdIdentityFirebaseBridgeV1 = true;
+
+  var VERSION = '1.0';
+  var membersRef = null;
+  var presenceRef = null;
+  var currentHouseholdId = null;
+  var lastMembers = {};
+  var lastPresence = {};
+  var bootTimer = null;
+
+  function db(){
+    try { return window.fbDb || (window.firebase && firebase.database && firebase.database()) || null; }
+    catch(e){ return null; }
+  }
+
+  function authUser(){
+    try { return window.fbUser || (window.firebase && firebase.auth && firebase.auth().currentUser) || null; }
+    catch(e){ return null; }
+  }
+
+  function householdId(){ return window.fbFamilyId || null; }
+
+  function detach(){
+    try { if(membersRef) membersRef.off(); } catch(e) {}
+    try { if(presenceRef) presenceRef.off(); } catch(e) {}
+    membersRef = null;
+    presenceRef = null;
+    currentHouseholdId = null;
+    lastMembers = {};
+    lastPresence = {};
+  }
+
+  function normalizedMembers(){
+    var result = [];
+    Object.keys(lastMembers || {}).forEach(function(uid){
+      var raw = lastMembers[uid];
+      if(!raw || raw.status === 'removed' || raw.status === 'inactive') return;
+      var presence = (lastPresence && lastPresence[uid]) || {};
+      var name = raw.name || raw.displayName || (raw.email ? raw.email.split('@')[0] : 'Gezinslid');
+      result.push({
+        id: uid,
+        uid: uid,
+        accountId: uid,
+        authUid: uid,
+        name: name,
+        displayName: raw.displayName || name,
+        initials: raw.initials,
+        avatar: raw.avatar || raw.avatarUrl || raw.photoURL || '',
+        role: raw.role || 'member',
+        status: raw.status || 'active',
+        onlineStatus: presence.online ? 'online' : 'offline',
+        lastSeen: presence.lastSeen || null,
+        area: presence.area || '',
+        joinedAt: raw.joinedAt || null,
+        createdAt: raw.joinedAt || raw.createdAt || null,
+        updatedAt: raw.updatedAt || presence.lastSeen || Date.now()
+      });
+    });
+    return result;
+  }
+
+  function apply(){
+    if(!window.HouseholdIdentity || typeof window.HouseholdIdentity.saveMembers !== 'function') return false;
+    var members = normalizedMembers();
+    if(!members.length) return false;
+
+    // Existing UI consumes HouseholdIdentity; replace its prototype/default
+    // member list only after real authenticated Firebase membership exists.
+    window.HouseholdIdentity.saveMembers(members);
+
+    var u = authUser();
+    if(u){
+      var mine = members.find(function(member){ return member.accountId === u.uid || member.id === u.uid; });
+      if(mine){
+        try {
+          if(typeof window.HouseholdIdentity.setActiveMember === 'function') {
+            window.HouseholdIdentity.setActiveMember(mine.id);
+          }
+        } catch(e) {}
+        try {
+          window.myName = mine.name;
+          if(typeof myName !== 'undefined') myName = mine.name;
+          window.myInitials = mine.initials || mine.name.slice(0,2).toUpperCase();
+          if(typeof myInitials !== 'undefined') myInitials = window.myInitials;
+        } catch(e) {}
+
+        // Temporary compatibility for the current two-adult UI. Do not make
+        // this a new source of truth; it only mirrors the other active member.
+        var partner = members.find(function(member){ return member.id !== mine.id; });
+        if(partner){
+          try {
+            window.partnerName = partner.name;
+            if(typeof partnerName !== 'undefined') partnerName = partner.name;
+          } catch(e) {}
+        }
+      }
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('familyapp:household-identity-synced', {
+        detail: { householdId: currentHouseholdId, members: members }
+      }));
+    } catch(e) {}
+    return true;
+  }
+
+  function attach(hid){
+    var d = db();
+    if(!d || !hid) return false;
+    if(currentHouseholdId === hid && membersRef) return true;
+    detach();
+    currentHouseholdId = hid;
+    membersRef = d.ref('families/' + hid + '/members');
+    presenceRef = d.ref('families/' + hid + '/presence');
+    membersRef.on('value', function(snapshot){ lastMembers = snapshot.val() || {}; apply(); });
+    presenceRef.on('value', function(snapshot){ lastPresence = snapshot.val() || {}; apply(); });
+    return true;
+  }
+
+  function sync(){
+    var d = db(), u = authUser(), hid = householdId();
+    if(!d || !u || !hid || !window.HouseholdIdentity) return false;
+    attach(hid);
+    return apply();
+  }
+
+  function boot(){
+    if(bootTimer) return;
+    var tries = 0;
+    bootTimer = setInterval(function(){
+      tries++;
+      if(sync() || tries > 120){
+        clearInterval(bootTimer);
+        bootTimer = null;
+      }
+    }, 250);
+    setTimeout(sync, 0);
+  }
+
+  window.addEventListener('familyapp:household-members-updated', function(e){
+    // Ignore our own mirror updates; Firebase remains authoritative here.
+    if(e && e.detail && Array.isArray(e.detail) && currentHouseholdId) return;
+    setTimeout(sync, 0);
+  });
+  window.addEventListener('focus', sync);
+  window.addEventListener('online', sync);
+
+  window.HouseholdIdentityFirebaseBridge = {
+    version: VERSION,
+    sync: sync,
+    apply: apply,
+    detach: detach,
+    status: function(){ return { householdId: currentHouseholdId, attached: !!membersRef, memberCount: Object.keys(lastMembers || {}).length }; }
+  };
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
