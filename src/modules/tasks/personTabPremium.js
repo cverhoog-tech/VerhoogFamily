@@ -124,10 +124,6 @@
         + 'background-image:var(--ptp-hero-bg);background-size:cover;background-position:center}'
       + '.ptp-hero-visual::before{content:"";position:absolute;inset:0;pointer-events:none;'
         + 'background:linear-gradient(180deg,rgba(7,9,18,.03) 0%,rgba(7,8,16,.10) 34%,rgba(5,6,12,.62) 72%,rgba(5,6,12,.95) 100%)}'
-      // Silhouet "bergen" laagje voor diepte — puur CSS, geen bestand nodig
-      + '.ptp-hero-visual::after{content:"";position:absolute;left:-8%;right:-8%;bottom:20%;height:38%;pointer-events:none;opacity:.85;'
-        + 'background:linear-gradient(158deg,transparent 0 36%,rgba(19,24,42,.85) 37% 45%,transparent 46%),'
-        + 'linear-gradient(202deg,transparent 0 41%,rgba(11,16,31,.9) 42% 53%,transparent 54%)}'
       + '.ptp-hero-profile{position:relative;z-index:2;display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;width:100%;align-items:end}'
       + '.ptp-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;background:#171528;'
         + 'border:4px solid #cdbdff;box-shadow:0 0 0 4px rgba(124,58,237,.22),0 14px 32px rgba(0,0,0,.46)}'
