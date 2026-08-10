@@ -308,12 +308,22 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 .shop-col-head.done-head{background:var(--c-primary-light);color:var(--c-primary)}
 .shop-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 7px;font-size:10px;flex-shrink:0}
 .reset-btn{background:none;border:none;font-size:16px;line-height:1;font-weight:700;color:#2d5a27;padding:0 2px;flex-shrink:0}
-.shop-item{padding:10px 10px;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;gap:8px}
+/* Items truly align row-for-row between the two columns only if every row
+   has the exact same height in both. overflow-wrap:break-word let a long
+   product name wrap onto a second line, making just that one row taller in
+   whichever column it happened to be in — since #shop-open and #shop-done
+   are independent lists, that single taller row then pushed every row below
+   it in that column out of alignment with the other column. Fixing the row
+   to a single line with ellipsis truncation (instead of wrapping) guarantees
+   every row is exactly 56px in both columns, so item 1/2/3/... always start
+   at the same y in "Te kopen" and "Gekocht" regardless of list length or
+   text length. */
+.shop-item{height:56px;box-sizing:border-box;padding:10px 10px;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;gap:8px}
 .shop-emoji{width:36px;height:36px;border-radius:10px;background:var(--c-surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.shop-info{flex:1;min-width:0}
-.shop-name{font-size:13px;font-weight:600;color:var(--c-text);overflow-wrap:break-word}
+.shop-info{flex:1;min-width:0;overflow:hidden}
+.shop-name{font-size:13px;font-weight:600;color:var(--c-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shop-name.done{text-decoration:line-through;color:var(--c-text3)}
-.shop-qty{font-size:11px;color:var(--c-text2);overflow-wrap:break-word}
+.shop-qty{font-size:11px;color:var(--c-text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shop-del{background:none;border:none;color:#ddd;font-size:15px;padding:4px}
 .shop-photo-btn{background:none;border:none;font-size:10px;color:#2d5a27;font-weight:700;position:absolute;bottom:-1px;right:-1px;background:#2d5a27;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center}
 
