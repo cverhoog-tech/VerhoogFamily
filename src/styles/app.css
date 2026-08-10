@@ -280,17 +280,30 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 .task-content{padding:12px 0;background:var(--c-bg)}
 
 /* ── BOODSCHAPPEN ── */
+/* Equal-height columns: #screen-shop gets a fixed height (viewport minus the
+   54px app header and 64px bottom nav, same convention .screen already used
+   as min-height) and becomes a flex column. list-header (and the optional
+   shopping-listbar list-switcher some households have) keep their natural
+   height; .shop-cols is the flex:1 remainder, so its own height is always
+   fixed/equal regardless of item count instead of growing with content. */
+#screen-shop.active{display:flex;flex-direction:column;height:calc(100vh - 54px - 64px);padding-bottom:0}
 /* grid-template-columns used to be a bare "1fr 1fr". Grid items default to
    min-width:auto, so a track can still grow past its "fair" 1fr share to fit
    its content's min-content width. .done-head carries more content (badge +
    reset button) than .open-head (badge only), so "Gekocht" was silently
-   pulling wider than 50% on every render, even with empty lists. minmax(0,1fr)
-   pins both tracks to an exact 50/50 split and lets the content inside
-   truncate/shrink instead of resizing the column. */
-.shop-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:200px;background:var(--c-bg)}
-.shop-col{min-width:0;border-right:.5px solid var(--c-border)}
+   pulling wider than 50% on every render, even with empty lists. Flexbox with
+   flex:1 on both columns (and min-width:0 so neither can be pushed wider by
+   its own content) keeps that exact 50/50 split, and flex:1 on .shop-cols
+   itself makes it fill exactly the remaining #screen-shop height so both
+   columns are always exactly as tall as each other too. */
+.shop-cols{display:flex;flex:1;min-height:0;background:var(--c-bg)}
+.shop-col{display:flex;flex-direction:column;flex:1 1 0;min-width:0;min-height:0;border-right:.5px solid var(--c-border)}
 .shop-col:last-child{border-right:none}
-.shop-col-head{min-height:34px;padding:8px 12px;font-size:11px;font-weight:700;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:54px;z-index:5}
+.shop-col-head{flex:0 0 auto;min-height:34px;padding:8px 12px;font-size:11px;font-weight:700;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;z-index:5}
+/* The item list itself is the scrolling region within each column, not the
+   whole page, so long lists scroll internally while both headers and both
+   column bottoms stay aligned. */
+#shop-open,#shop-done{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .shop-col-head.open-head{background:var(--c-surface2);color:var(--c-text2)}
 .shop-col-head.done-head{background:var(--c-primary-light);color:var(--c-primary)}
 .shop-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 7px;font-size:10px;flex-shrink:0}
@@ -912,6 +925,7 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 
   .add-sheet, .nav-config-sheet { max-width: 100% !important; max-height: 92vh; }
   .screen { min-height: calc(100vh - 44px - 52px); padding-bottom: 60px; }
+  #screen-shop.active { height: calc(100vh - 44px - 52px); padding-bottom: 0; }
   .fin-tabs, .task-tabs { position: relative; top: 0; }
 
   #home-bg         { height: 160px; }
