@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// SHARED TASK DATA FOUNDATION v1
+// SHARED TASK DATA FOUNDATION v1.1
 // Firebase shared/tasks is authoritative for household tasks.
 // window.taskData remains a compatibility projection for existing UI/progression code.
 // ============================================================
@@ -11,27 +11,38 @@
   var started=false;
   var unsubscribe=null;
   var seeded=false;
-  var legacySyncDisabled=false;
+  var lastShared={};
+  var hasSharedSnapshot=false;
+  var legacyRootRef=null;
+  var legacyRootHandler=null;
+  var legacyRootHouseholdId=null;
+  var legacySyncTimer=null;
 
   function uid(){
     try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}
   }
   function now(){return Date.now();}
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-  function taskKey(id){return String(id===undefined||id===null?'task_'+now():id).replace(/[.#$\[\]\/]/g,'_');}
+  function legacyId(){return (Date.now()*1000)+Math.floor(Math.random()*1000);}
+  function safeKey(v){return String(v===undefined||v===null?'task_'+now():v).replace(/[.#$\[\]\/]/g,'_');}
   function rows(value){
     if(!value) return [];
     if(Array.isArray(value)) return value.filter(Boolean);
     return Object.keys(value).map(function(key){
       var row=value[key];
       if(!row||typeof row!=='object') return null;
-      if(row.id===undefined||row.id===null) row.id=key;
-      return row;
+      var copy=clone(row)||{};
+      if(copy.id===undefined||copy.id===null) copy.id=key;
+      if(!copy._key) copy._key=key;
+      return copy;
     }).filter(Boolean);
   }
   function members(){
     try{
-      if(window.FamilyHousehold&&typeof window.FamilyHousehold.getMembers==='function') return window.FamilyHousehold.getMembers()||[];
+      if(window.HouseholdIdentityFirebaseBridge&&typeof window.HouseholdIdentityFirebaseBridge.getMembers==='function'){
+        var live=window.HouseholdIdentityFirebaseBridge.getMembers();
+        if(live&&live.length) return live;
+      }
       if(window.HouseholdIdentity&&typeof window.HouseholdIdentity.getMembers==='function') return window.HouseholdIdentity.getMembers()||[];
     }catch(e){}
     return [];
@@ -44,7 +55,7 @@
   }
   function normalize(task){
     var out=clone(task||{})||{};
-    if(out.id===undefined||out.id===null) out.id='task_'+now();
+    if(out.id===undefined||out.id===null) out.id=legacyId();
     var assigned={};
     if(out.assignedToUids&&typeof out.assignedToUids==='object'&&!Array.isArray(out.assignedToUids)){
       Object.keys(out.assignedToUids).forEach(function(k){if(out.assignedToUids[k]) assigned[k]=true;});
@@ -63,6 +74,18 @@
     out.updatedAt=now();
     return out;
   }
+  function fds(){return window.FamilyDataStore||null;}
+  function ready(){return !!(fds()&&window.fbFamilyId&&uid());}
+  function makeRecordKey(){
+    var store=fds();
+    return store&&typeof store.makeId==='function'?store.makeId('task'):'task_'+now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  }
+  function localTask(id){return (window.taskData||[]).find(function(t){return String(t.id)===String(id);})||null;}
+  function recordKeyFor(taskOrId){
+    if(taskOrId&&typeof taskOrId==='object') return taskOrId._key||safeKey(taskOrId.id);
+    var task=localTask(taskOrId);
+    return task&&task._key?task._key:safeKey(taskOrId);
+  }
   function persistLocalProjection(){
     try{
       if(window.AppState&&typeof window.AppState.get==='function'){
@@ -79,61 +102,94 @@
   function publishProjection(next,source){
     window.taskData=rows(next);
     persistLocalProjection();
-    window.dispatchEvent(new CustomEvent('familyapp:tasks-updated',{detail:{source:source||'shared',count:window.taskData.length}}));
+    try{window.dispatchEvent(new CustomEvent('familyapp:tasks-updated',{detail:{source:source||'shared',count:window.taskData.length}}));}catch(e){}
     try{
       if(typeof window._currentScreen!=='undefined'&&window._currentScreen==='tasks'&&typeof window.renderTasks==='function') window.renderTasks();
       if(typeof window.updateStats==='function') window.updateStats();
     }catch(e){}
   }
-  function fds(){return window.FamilyDataStore||null;}
-  function ready(){return !!(fds()&&window.fbFamilyId&&uid());}
   function write(task){
     var row=normalize(task);
     if(!ready()) return Promise.reject(new Error('Shared task store is not ready'));
-    return fds().writeSharedRecord(COLLECTION,taskKey(row.id),row).then(function(){return row;});
+    if(!row._key){row.id=legacyId();row._key=makeRecordKey();}
+    return fds().writeSharedRecord(COLLECTION,row._key,row).then(function(){return row;});
   }
   function update(id,patch){
     if(!ready()) return Promise.reject(new Error('Shared task store is not ready'));
+    var current=localTask(id);
+    var key=recordKeyFor(current||id);
+    var fallback=current?normalize(current):{id:id,_key:key,createdByUid:uid(),createdAt:now()};
     var next=clone(patch||{})||{};
     next.updatedAt=now();
-    return fds().mutateSharedRecord(COLLECTION,taskKey(id),function(current){
-      var row=current&&typeof current==='object'?current:{};
+    return fds().mutateSharedRecord(COLLECTION,key,function(server){
+      var row=server&&typeof server==='object'?server:clone(fallback)||{};
       Object.keys(next).forEach(function(k){row[k]=next[k];});
-      if(row.done&& !row.completedByUid) row.completedByUid=uid();
+      row._key=key;
+      if(row.done&&!row.completedByUid) row.completedByUid=uid();
       if(!row.done){row.completedByUid=null;row.completedAt=null;}
       if(row.done&&!row.completedAt) row.completedAt=now();
       return normalize(row);
-    });
+    },fallback);
   }
   function remove(id){
     if(!ready()) return Promise.reject(new Error('Shared task store is not ready'));
-    return fds().writeSharedRecord(COLLECTION,taskKey(id),null);
+    return fds().writeSharedRecord(COLLECTION,recordKeyFor(id),null);
   }
   function seedLegacyIfNeeded(snapshot){
     if(seeded||rows(snapshot).length||!Array.isArray(window.taskData)||!window.taskData.length||!ready()) return Promise.resolve(false);
     seeded=true;
-    var writes=window.taskData.map(function(task){return write(task);});
-    return Promise.all(writes).then(function(){return true;}).catch(function(e){seeded=false;throw e;});
+    return Promise.all(window.taskData.map(function(task){return write(task);})).then(function(){return true;}).catch(function(e){seeded=false;throw e;});
+  }
+  function arrToLegacyObj(arr){
+    var out={};
+    (arr||[]).forEach(function(item,i){if(item)out[(item.id!==undefined?'id_'+item.id:'i_'+i)]=item;});
+    return out;
   }
   function disableLegacyTaskFirebaseSync(){
-    if(legacySyncDisabled||typeof window.syncToFirebase!=='function') return;
-    legacySyncDisabled=true;
-    var original=window.syncToFirebase;
+    if(typeof window.syncToFirebase!=='function'||window.syncToFirebase.__sharedTasksOwnTasks) return false;
     window.syncToFirebase=function(){
-      var before=window.taskData;
-      try{window.taskData=[];return original.apply(this,arguments);}finally{window.taskData=before;}
+      if(!window.fbDb||!window.fbFamilyId||window.offlineMode) return;
+      clearTimeout(legacySyncTimer);
+      legacySyncTimer=setTimeout(function(){
+        var currentUid=uid()||'anon';
+        var updatePayload={
+          shop:arrToLegacyObj(window.shopData),
+          cal:arrToLegacyObj(window.calData),
+          feed:arrToLegacyObj(window.feedData),
+          trans:arrToLegacyObj(window.transData),
+          savingsGoals:arrToLegacyObj(window.savingsGoals),
+          extraIncome:arrToLegacyObj(window.extraIncome),
+          vasteLasten:arrToLegacyObj(window.vasteLasten),
+          recurData:arrToLegacyObj(window.recurData)
+        };
+        window.fbDb.ref('families/'+window.fbFamilyId).update(updatePayload);
+        window.fbDb.ref('families/'+window.fbFamilyId+'/members/'+currentUid).update({xp:Number(window.myXP||0),name:window.myName||'Gezinslid',lastSeen:Date.now()});
+      },800);
     };
     window.syncToFirebase.__sharedTasksOwnTasks=true;
+    return true;
+  }
+  function attachLegacyRootGuard(){
+    if(!window.fbDb||!window.fbFamilyId) return false;
+    if(legacyRootRef&&legacyRootHouseholdId===window.fbFamilyId) return true;
+    if(legacyRootRef&&legacyRootHandler){try{legacyRootRef.off('value',legacyRootHandler);}catch(e){}}
+    legacyRootHouseholdId=window.fbFamilyId;
+    legacyRootRef=window.fbDb.ref('families/'+window.fbFamilyId);
+    legacyRootHandler=function(){
+      if(!hasSharedSnapshot) return;
+      setTimeout(function(){if(hasSharedSnapshot) publishProjection(lastShared,'shared-authority-guard');},0);
+    };
+    legacyRootRef.on('value',legacyRootHandler);
+    return true;
   }
   function installMutationBridges(){
     if(typeof window.toggleTask==='function'&&!window.toggleTask.__sharedTasks){
       var oldToggle=window.toggleTask;
       window.toggleTask=function(id){
-        var task=(window.taskData||[]).find(function(t){return String(t.id)===String(id);});
-        var before=task?!!task.done:null;
+        var task=localTask(id),before=task?!!task.done:null;
         var result=oldToggle.apply(this,arguments);
-        var after=(window.taskData||[]).find(function(t){return String(t.id)===String(id);});
-        if(after&&before!==!!after.done) update(id,{done:!!after.done,completedByUid:after.done?uid():null,completedAt:after.done?now():null}).catch(console.warn);
+        var after=localTask(id);
+        if(after&&before!==!!after.done) update(id,{done:!!after.done,completedByUid:after.done?uid():null,completedAt:after.done?now():null}).catch(function(e){console.warn('[TaskSharedData] toggle sync failed',e);});
         return result;
       };
       window.toggleTask.__sharedTasks=true;
@@ -141,34 +197,49 @@
     if(typeof window.deleteTask==='function'&&!window.deleteTask.__sharedTasks){
       var oldDelete=window.deleteTask;
       window.deleteTask=function(id){
+        var key=recordKeyFor(id);
         var result=oldDelete.apply(this,arguments);
-        remove(id).catch(console.warn);
+        if(ready()) fds().writeSharedRecord(COLLECTION,key,null).catch(function(e){console.warn('[TaskSharedData] delete sync failed',e);});
         return result;
       };
       window.deleteTask.__sharedTasks=true;
     }
+    return true;
+  }
+  function installGuards(){
+    disableLegacyTaskFirebaseSync();
+    installMutationBridges();
+    attachLegacyRootGuard();
   }
   function start(){
     if(started||!ready()) return false;
     started=true;
-    disableLegacyTaskFirebaseSync();
-    installMutationBridges();
+    installGuards();
     unsubscribe=fds().subscribeShared(COLLECTION,function(value){
-      seedLegacyIfNeeded(value).catch(console.warn);
-      if(rows(value).length||seeded) publishProjection(value,'firebase');
-    });
+      var list=rows(value);
+      if(list.length){
+        lastShared=value||{};
+        hasSharedSnapshot=true;
+        publishProjection(lastShared,'firebase');
+        return;
+      }
+      if(Array.isArray(window.taskData)&&window.taskData.length&&!seeded){
+        seedLegacyIfNeeded(value).catch(function(e){console.warn('[TaskSharedData] legacy seed failed',e);});
+        return;
+      }
+      lastShared=value||{};
+      hasSharedSnapshot=true;
+      publishProjection(lastShared,'firebase-empty');
+    },{});
     return true;
   }
   function ensureStart(){
-    if(start()) return;
-    var tries=0;
-    var timer=setInterval(function(){
-      tries++;
-      if(start()||tries>80) clearInterval(timer);
-    },250);
+    start();
+    installGuards();
   }
 
   window.TaskSharedData={
+    version:'1.1',
     start:start,
     create:write,
     update:update,
@@ -176,10 +247,18 @@
     normalize:normalize,
     members:members,
     memberUidByName:memberUidByName,
-    status:function(){return{started:started,ready:ready(),uid:uid(),householdId:window.fbFamilyId||null,count:Array.isArray(window.taskData)?window.taskData.length:0};}
+    newLegacyId:legacyId,
+    makeRecordKey:makeRecordKey,
+    status:function(){return{started:started,ready:ready(),uid:uid(),householdId:window.fbFamilyId||null,count:Array.isArray(window.taskData)?window.taskData.length:0,sharedSnapshot:hasSharedSnapshot};}
   };
 
   window.addEventListener('familyapp:household-changed',ensureStart);
+  window.addEventListener('familyapp:household-identity-synced',ensureStart);
   window.addEventListener('load',ensureStart);
+  var bootTries=0,bootTimer=setInterval(function(){
+    bootTries++;
+    ensureStart();
+    if(bootTries>120&&started&&window.syncToFirebase&&window.syncToFirebase.__sharedTasksOwnTasks&&window.toggleTask&&window.toggleTask.__sharedTasks){clearInterval(bootTimer);}
+  },250);
   setTimeout(ensureStart,0);
 })();
