@@ -59,3 +59,36 @@
   window.addEventListener('familyapp:household-identity-synced',function(){if(window.currentAddType==='task'&&window.taskTypeMode!=='herhalend'){var row=document.querySelector('.task-uid-assignees');if(row)row.outerHTML=assigneeHtml();}});
   setTimeout(ensureInstall,0);
 })();
+
+// Integration guard for consumers of TaskSharedData.update(). FamilyDataStore
+// intentionally returns {mode,value}; task UI consumers need the saved task itself.
+// Completion initiated through the new shared popup also receives the same legacy
+// XP/activity side effects as toggleTask(), without double-awarding legacy toggles.
+(function installTaskSharedUpdateContract(){
+  if(window.__taskSharedUpdateContractV1) return;
+  window.__taskSharedUpdateContractV1=true;
+  function install(){
+    var api=window.TaskSharedData;
+    if(!api||typeof api.update!=='function')return false;
+    if(api.update.__returnsSavedTask)return true;
+    var rawUpdate=api.update;
+    api.update=function(id,patch){
+      var before=(window.taskData||[]).find(function(t){return String(t.id)===String(id);});
+      var wasDone=before?!!before.done:false;
+      return rawUpdate.apply(api,arguments).then(function(result){
+        var saved=result&&result.value&&typeof result.value==='object'?result.value:result;
+        var isDone=saved&&typeof saved==='object'?!!saved.done:!!(patch&&patch.done);
+        if(!wasDone&&isDone){
+          try{if(typeof window.awardXP==='function')window.awardXP(4,'Taak');}catch(e){}
+          try{if(typeof window.addActivity==='function')window.addActivity('✅','#e8f5e3',(window.myName||'Gezinslid')+' voltooide "'+((saved&&saved.title)||(before&&before.title)||'Taak')+'"');}catch(e){}
+        }
+        return saved;
+      });
+    };
+    api.update.__returnsSavedTask=true;
+    return true;
+  }
+  if(!install()){
+    var tries=0,timer=setInterval(function(){tries++;if(install()||tries>80)clearInterval(timer);},50);
+  }
+})();
