@@ -58,48 +58,34 @@
       pendingWrites:pendingWrites(),
       localShopDataCount:Array.isArray(window.shopData)?window.shopData.length:null
     };
-    snapshotShared(function(sharedSnapshot){
-      out.firebaseSharedShoppingListsSnapshot=sharedSnapshot;
-      cb(out);
-    });
+    snapshotShared(function(sharedSnapshot){out.firebaseSharedShoppingListsSnapshot=sharedSnapshot;cb(out);});
   }
 
   function renderPanel(data){
     var id='shopping-sync-diag-panel';
-    var old=document.getElementById(id);
-    if(old) old.remove();
+    var old=document.getElementById(id);if(old) old.remove();
     var pre=JSON.stringify(data,null,2).replace(/</g,'&lt;');
-    var el=document.createElement('div');
-    el.id=id;
+    var el=document.createElement('div');el.id=id;
     el.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(5,6,12,.96);color:#e5e7eb;overflow:auto;padding:16px;font:11px/1.4 monospace;';
-    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
-      '<b style="font-size:14px;color:#fff">Shopping Sync Diagnostics</b>'+
-      '<button id="shopping-sync-diag-close" style="border:0;border-radius:10px;background:#334155;color:#fff;padding:8px 12px;font-weight:800">Sluiten</button></div>'+
-      '<pre style="white-space:pre-wrap;word-break:break-all">'+pre+'</pre>';
-    document.body.appendChild(el);
-    document.getElementById('shopping-sync-diag-close').onclick=function(){el.remove();};
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:14px;color:#fff">Shopping Sync Diagnostics</b><button id="shopping-sync-diag-close" style="border:0;border-radius:10px;background:#334155;color:#fff;padding:8px 12px;font-weight:800">Sluiten</button></div><pre style="white-space:pre-wrap;word-break:break-all">'+pre+'</pre>';
+    document.body.appendChild(el);document.getElementById('shopping-sync-diag-close').onclick=function(){el.remove();};
   }
 
-  window.debugShoppingSync=function(){
-    collect(function(data){
-      console.log('[debugShoppingSync]', data);
-      renderPanel(data);
-    });
-    return 'Verzamelen…';
-  };
-
+  window.debugShoppingSync=function(){collect(function(data){console.log('[debugShoppingSync]',data);renderPanel(data);});return 'Verzamelen…';};
   console.log('[shoppingSyncDiagnostics] loaded ('+BUILD+'). Run window.debugShoppingSync() to inspect.');
 })();
 
-// Ordered bootstrap hook for the shared task foundation. This file is already loaded
-// after FamilyDataStore in the production runtime, so it is a safe temporary entrypoint
-// while the task migration is isolated on its feature branch.
-(function loadSharedTaskFoundation(){
-  if(window.__familySharedTasksLoader) return;
-  window.__familySharedTasksLoader=true;
+function loadOrderedTaskModule(flag,src){
+  if(window[flag]) return;
+  window[flag]=true;
   var script=document.createElement('script');
-  script.src='src/modules/tasks/taskSharedData.js?v=1';
+  script.src=src;
   script.async=false;
   script.defer=true;
   document.head.appendChild(script);
-})();
+}
+
+// Shared task data must load after FamilyDataStore.
+loadOrderedTaskModule('__familySharedTasksLoader','src/modules/tasks/taskSharedData.js?v=2');
+// UID create bridge waits for the classic addSheet globals before installing itself.
+loadOrderedTaskModule('__familyTaskUidCreateLoader','src/modules/tasks/taskUidCreateBridge.js?v=1');
