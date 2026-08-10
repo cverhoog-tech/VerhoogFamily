@@ -19,8 +19,3 @@
   window.debugShoppingSync=function(){collect(function(data){console.log('[debugShoppingSync]',data);renderPanel(data);});return'Verzamelen…';};
   console.log('[shoppingSyncDiagnostics] loaded ('+BUILD+'). Run window.debugShoppingSync() to inspect.');
 })();
-function loadOrderedTaskModule(flag,src){if(window[flag])return;window[flag]=true;var script=document.createElement('script');script.src=src;script.async=false;script.defer=true;document.head.appendChild(script);}
-loadOrderedTaskModule('__familySharedTasksLoader','src/modules/tasks/taskSharedData.js?v=2');
-loadOrderedTaskModule('__familyTaskUidCreateLoader','src/modules/tasks/taskUidCreateBridge.js?v=1');
-loadOrderedTaskModule('__familyTaskPersonCompatibilityLoader','src/modules/tasks/taskPersonCompatibility.js?v=1');
-loadOrderedTaskModule('__familyTaskCompactViewLoader','src/modules/tasks/taskCompactView.js?v=1');
