@@ -90,3 +90,16 @@
 
   console.log('[shoppingSyncDiagnostics] loaded ('+BUILD+'). Run window.debugShoppingSync() to inspect.');
 })();
+
+// Ordered bootstrap hook for the shared task foundation. This file is already loaded
+// after FamilyDataStore in the production runtime, so it is a safe temporary entrypoint
+// while the task migration is isolated on its feature branch.
+(function loadSharedTaskFoundation(){
+  if(window.__familySharedTasksLoader) return;
+  window.__familySharedTasksLoader=true;
+  var script=document.createElement('script');
+  script.src='src/modules/tasks/taskSharedData.js?v=1';
+  script.async=false;
+  script.defer=true;
+  document.head.appendChild(script);
+})();
