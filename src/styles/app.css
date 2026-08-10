@@ -280,20 +280,27 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 .task-content{padding:12px 0;background:var(--c-bg)}
 
 /* ── BOODSCHAPPEN ── */
-.shop-cols{display:grid;grid-template-columns:1fr 1fr;min-height:200px;background:var(--c-bg)}
-.shop-col{border-right:.5px solid var(--c-border)}
+/* grid-template-columns used to be a bare "1fr 1fr". Grid items default to
+   min-width:auto, so a track can still grow past its "fair" 1fr share to fit
+   its content's min-content width. .done-head carries more content (badge +
+   reset button) than .open-head (badge only), so "Gekocht" was silently
+   pulling wider than 50% on every render, even with empty lists. minmax(0,1fr)
+   pins both tracks to an exact 50/50 split and lets the content inside
+   truncate/shrink instead of resizing the column. */
+.shop-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:200px;background:var(--c-bg)}
+.shop-col{min-width:0;border-right:.5px solid var(--c-border)}
 .shop-col:last-child{border-right:none}
-.shop-col-head{padding:8px 12px;font-size:11px;font-weight:700;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:54px;z-index:5}
+.shop-col-head{min-height:34px;padding:8px 12px;font-size:11px;font-weight:700;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:54px;z-index:5}
 .shop-col-head.open-head{background:var(--c-surface2);color:var(--c-text2)}
 .shop-col-head.done-head{background:var(--c-primary-light);color:var(--c-primary)}
-.shop-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 7px;font-size:10px}
-.reset-btn{background:none;border:none;font-size:16px;font-weight:700;color:#2d5a27;padding:0 2px}
+.shop-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 7px;font-size:10px;flex-shrink:0}
+.reset-btn{background:none;border:none;font-size:16px;line-height:1;font-weight:700;color:#2d5a27;padding:0 2px;flex-shrink:0}
 .shop-item{padding:10px 10px;border-bottom:.5px solid var(--c-border);display:flex;align-items:center;gap:8px}
 .shop-emoji{width:36px;height:36px;border-radius:10px;background:var(--c-surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .shop-info{flex:1;min-width:0}
-.shop-name{font-size:13px;font-weight:600;color:var(--c-text)}
+.shop-name{font-size:13px;font-weight:600;color:var(--c-text);overflow-wrap:break-word}
 .shop-name.done{text-decoration:line-through;color:var(--c-text3)}
-.shop-qty{font-size:11px;color:var(--c-text2)}
+.shop-qty{font-size:11px;color:var(--c-text2);overflow-wrap:break-word}
 .shop-del{background:none;border:none;color:#ddd;font-size:15px;padding:4px}
 .shop-photo-btn{background:none;border:none;font-size:10px;color:#2d5a27;font-weight:700;position:absolute;bottom:-1px;right:-1px;background:#2d5a27;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center}
 
@@ -1493,9 +1500,9 @@ body{background:#fff!important;}
   inset:0!important;
   background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.54))!important;
 }
-#screen-home .recipes-slide .slide-bg{background-image:url('familieapp_white_assets/recipes_background.png')!important;}
-#screen-home .agenda-slide .slide-bg{background-image:url('familieapp_white_assets/agenda_background.png')!important;}
-#screen-home .meals-slide .slide-bg{background-image:url('familieapp_white_assets/meals_background.png')!important;}
+#screen-home .recipes-slide .slide-bg{background-image:url('../assets/home-carousel/recipes-hero.webp')!important;}
+#screen-home .agenda-slide .slide-bg{background-image:url('../assets/home-carousel/agenda-hero.webp')!important;}
+#screen-home .meals-slide .slide-bg{background-image:url('../assets/home-carousel/outdoor-cooking-hero.webp')!important;}
 #screen-home .home-slide .slide-content{
   position:relative!important;
   z-index:1!important;
