@@ -173,3 +173,40 @@ function attachSwipeDelete(el, onDelete) {
   script.defer=true;
   document.head.appendChild(script);
 })();
+
+// ROOT CAUSE FIX (shopping realtime sync): FamilyDataStore and ShoppingLists were only ever
+// referenced from src/core/appModules.js, a registry with no <script> tag anywhere in index.html
+// and no other loader. Neither module executed in production, so window.FamilyDataStore and
+// window.ShoppingLists never existed. groceryQuickAddModal.js's add flow silently fell back to its
+// localStorage-only branch on every device, and shop.js's toggle/delete never got rebound to
+// Firebase-backed handlers (ShoppingLists.installLegacyBridges never ran). Two phones therefore
+// only ever saw their own local mutations — this is the actual root cause of the shopping list bug.
+// Loading these two modules here (after household identity, same ordered/async=false pattern as
+// above) makes them live for the first time.
+(function loadFamilyDataStore(){
+  if(window.__familyDataStoreLoader) return;
+  window.__familyDataStoreLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/familyDataStore.js?v=1';
+  script.async=false;
+  script.defer=true;
+  document.head.appendChild(script);
+})();
+(function loadShoppingLists(){
+  if(window.__familyShoppingListsLoader) return;
+  window.__familyShoppingListsLoader=true;
+  var script=document.createElement('script');
+  script.src='src/modules/shop/shoppingLists.js?v=1';
+  script.async=false;
+  script.defer=true;
+  document.head.appendChild(script);
+})();
+(function loadShoppingSyncDiagnostics(){
+  if(window.__familyShoppingSyncDiagnosticsLoader) return;
+  window.__familyShoppingSyncDiagnosticsLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/shoppingSyncDiagnostics.js?v=1';
+  script.async=false;
+  script.defer=true;
+  document.head.appendChild(script);
+})();
