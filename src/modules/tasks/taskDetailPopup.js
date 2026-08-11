@@ -22,6 +22,15 @@
   var closeTimer = null;
   var prevBodyOverflow = null;
   var scrollLockActive = false; // true from the first open() of a session until finalizeCleanup() runs
+  // ---- shared Task Card: create mode -------------------------------------
+  // The same overlay/card/CSS this file already owns is reused for creating
+  // a new task. 'mode' picks which face renders; 'draftTask' is an in-memory
+  // task-shaped object that only touches TaskSharedData once the person taps
+  // "Taak aanmaken" — never written to Firebase or localStorage before that.
+  var mode = null; // 'detail' | 'create'
+  var draftTask = null;
+  var assigneePickerOpen = false;
+  var catPickerOpen = false;
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
@@ -89,6 +98,10 @@
   function categorySvg(cat,size){
     return '<svg viewBox="0 0 24 24" width="'+(size||26)+'" height="'+(size||26)+'" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(CATEGORY_ICON_PATH[cat]||CATEGORY_ICON_PATH.quest)+'</svg>';
   }
+  // Create-mode category picker: same category set iconCategory()/CATEGORY_ACCENT
+  // already understand, just exposed as tappable chips. No new category system.
+  var CATEGORY_ORDER=['quest','laundry','cleaning','kitchen','groceries','admin','family','garden'];
+  var CATEGORY_LABEL={laundry:'Wasgoed',cleaning:'Schoonmaak',kitchen:'Keuken',groceries:'Boodschappen',admin:'Administratie',family:'Gezin',garden:'Tuin',quest:'Quest'};
   // small keyword-based icon for individual subtask rows (basket / drawer / appliance / generic)
   var SUB_ICON_PATHS={
     basket:'<path d="M3 9h18l-1.6 9.2A2 2 0 0 1 17.4 20H6.6a2 2 0 0 1-2-1.8L3 9Z"/><path d="M7 9V7a5 5 0 0 1 10 0v2"/>',
@@ -187,6 +200,18 @@
     if(typeof window.renderTasks==='function')window.renderTasks();
     if(typeof window.updateStats==='function')window.updateStats();
     if(cb)cb(task);
+  }
+
+  // Local date (not UTC) in YYYY-MM-DD, so "today" in create mode matches the
+  // person's own calendar day regardless of timezone offset.
+  function todayIso(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+  // Fresh in-memory draft for create mode. Assignee defaults to the current
+  // user only (mirrors taskUidCreateBridge.reset()) — UID-based, never a name.
+  function makeDraftTask(){
+    var assigned={};
+    var me=currentUid();
+    if(me) assigned[me]=true;
+    return {title:'',desc:'',category:null,date:todayIso(),time:'',prio:'laag',recurrence:'once',assignedToUids:assigned,subtasks:[]};
   }
 
   function injectStyles(){
@@ -321,7 +346,16 @@
       '.tdp-save{width:40px;height:40px;min-width:40px;min-height:40px;aspect-ratio:1/1;flex:0 0 auto;flex-shrink:0;box-sizing:border-box;border-radius:12px;border:1.5px solid var(--tdp-border-soft);background:var(--tdp-surface);color:var(--tdp-gold);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;appearance:none;padding:0}'+
       '.tdp-cta{flex:1;border:none;border-radius:12px;padding:10px 8px;font-size:12px;font-weight:800;cursor:pointer;background:var(--tdp-surface-2);color:var(--tdp-text2);display:flex;align-items:center;justify-content:center;gap:6px}'+
       '.tdp-cta.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;box-shadow:0 3px 10px rgba(124,58,237,.22)}'+
-      '.tdp-cta.done-state{background:var(--tdp-surface);color:var(--tdp-purple);border:1.5px solid var(--tdp-purple);box-shadow:none}';
+      '.tdp-cta.done-state{background:var(--tdp-surface);color:var(--tdp-purple);border:1.5px solid var(--tdp-purple);box-shadow:none}'+
+
+      // ---- create mode only — same card, a handful of interactive fields ----
+      '.tdp-title-input{width:100%;border:none;border-bottom:1.5px dashed var(--tdp-border,rgba(180,138,60,.45));background:transparent;font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:16px;color:var(--tdp-text);margin:3px 0 5px;padding:2px 0 4px;outline:none}'+
+      '.tdp-title-input::placeholder{color:var(--tdp-text2);font-weight:600;font-style:italic}'+
+      '.tdp-assignee-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;cursor:pointer}'+
+      '.tdp-inline-date,.tdp-inline-select{border:1.5px solid var(--tdp-border-soft);border-radius:8px;padding:2px 6px;font-size:10.5px;font-family:inherit;background:var(--tdp-surface-2);color:var(--tdp-text);outline:none;max-width:120px}'+
+      '.tdp-cat-trigger{cursor:pointer}'+
+      '.tdp-sub-text[data-sub-edit]{cursor:pointer}'+
+      '.tdp-create-empty-person{font-size:12.5px;font-weight:800;color:var(--tdp-text2);font-style:italic}';
     document.head.appendChild(s);
   }
 
@@ -344,6 +378,7 @@
     prevBodyOverflow=null;
     scrollLockActive=false;
     openId=null;helpPickerOpen=false;detailsOpen=false;
+    mode=null;draftTask=null;assigneePickerOpen=false;catPickerOpen=false;
   }
 
   function close(){
@@ -354,6 +389,7 @@
       if(closeTimer){clearTimeout(closeTimer);closeTimer=null;}
       openId=null;helpPickerOpen=false;detailsOpen=false;
       scrollLockActive=false;prevBodyOverflow=null;
+      mode=null;draftTask=null;assigneePickerOpen=false;catPickerOpen=false;
       return;
     }
     ov.classList.remove('open');
@@ -369,6 +405,7 @@
   }
 
   function render(){
+    if(mode==='create'){renderCreate();return;}
     var task=findTask(openId);
     if(!task){close();return;}
     injectStyles();
@@ -580,6 +617,270 @@
     if(bookmarkBtn)bookmarkBtn.onclick=function(){if(typeof window.showToast==='function')window.showToast('Opgeslagen');};
   }
 
+  // ============================================================
+  // CREATE MODE — same overlay/card/CSS as render()/bind() above, a
+  // different body. Nothing here writes to Firebase until saveCreate()
+  // succeeds; until then draftTask lives only in memory.
+  // ============================================================
+  function renderCreate(){
+    injectStyles();
+    var ov=overlayEl();
+    var draft=draftTask||(draftTask=makeDraftTask());
+    var cat=draft.category||iconCategory(draft);
+    var accent=CATEGORY_ACCENT[cat]||CATEGORY_ACCENT.quest;
+    var totalXp=xpNumber(draft);
+
+    var mList=members();
+    var chosen=mList.filter(function(m){var id=m.uid||m.id;return id&&draft.assignedToUids[id];});
+    var avatarsHtml=chosen.length?chosen.map(function(m){
+      var u=avatarUrlFor(m);
+      return u?'<img class="tdp-person-avatar" src="'+esc(u)+'">':'<div class="tdp-person-avatar">'+esc(initials(m.displayName||m.name))+'</div>';
+    }).join(''):'<div class="tdp-person-avatar">?</div>';
+    var chosenNames=chosen.map(function(m){return m.displayName||m.name||'Gezinslid';}).join(', ');
+
+    var assigneePickHtml=assigneePickerOpen?(
+      '<div class="tdp-member-pick">'+(mList.length?mList.map(function(m){
+        var id=m.uid||m.id;
+        return '<button class="tdp-member-chip'+(draft.assignedToUids[id]?' active':'')+'" data-assignee-toggle="'+esc(id)+'">'+esc(m.displayName||m.name||'Gezinslid')+'</button>';
+      }).join(''):'<div style="font-size:12px;color:var(--tdp-text2)">Gezinsleden worden geladen…</div>')+'</div>'
+    ):'';
+
+    var catPickHtml=catPickerOpen?(
+      '<div class="tdp-member-pick">'+CATEGORY_ORDER.map(function(c){
+        return '<button class="tdp-member-chip'+(cat===c?' active':'')+'" data-cat-pick="'+c+'">'+esc(CATEGORY_LABEL[c])+'</button>';
+      }).join('')+'</div>'
+    ):'';
+
+    var subs=draft.subtasks||[];
+    // Checkboxes render disabled/always-empty: there is no "progress" yet for
+    // a task that doesn't exist. Add/edit/delete stay active — see report.
+    var subsHtml=subs.map(function(s){
+      return '<div class="tdp-sub" data-sub="'+esc(s.id)+'">'+
+        '<button class="tdp-sub-chk" disabled></button>'+
+        '<span class="tdp-sub-icon" style="background:'+accent+'1f;color:'+accent+'">'+subIcon(s.title)+'</span>'+
+        '<span class="tdp-sub-text" data-sub-edit="'+esc(s.id)+'">'+esc(s.title)+'</span>'+
+        '<button class="tdp-sub-accent" data-sub-del="'+esc(s.id)+'" title="Verwijderen">✦</button>'+
+      '</div>';
+    }).join('');
+
+    var detailsHtml=detailsOpen?(
+      '<div class="tdp-box" style="padding-top:10px">'+
+        '<div class="tdp-edit-field"><label class="tdp-edit-label">Beschrijving</label><textarea class="tdp-edit-textarea" id="tdp-create-desc" rows="2" placeholder="Extra notitie…">'+esc(draft.desc||'')+'</textarea></div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+          '<div class="tdp-edit-field" style="flex:1;min-width:80px"><label class="tdp-edit-label">Tijd</label><input class="tdp-edit-input" type="time" id="tdp-create-time" value="'+esc(draft.time||'')+'"></div>'+
+          '<div class="tdp-edit-field" style="flex:1;min-width:100px"><label class="tdp-edit-label">Prioriteit</label><select class="tdp-edit-select" id="tdp-create-prio">'+
+            ['laag','normaal','hoog'].map(function(p){return '<option value="'+p+'"'+((draft.prio||'laag')===p?' selected':'')+'>'+prioLabel(p)+'</option>';}).join('')+
+          '</select></div>'+
+        '</div>'+
+      '</div>'
+    ):'';
+
+    var html =
+      '<div class="tdp-card" role="dialog" aria-modal="true">'+
+        '<div class="tdp-hero" style="'+heroFallbackStyle(draft)+'">'+
+          '<button class="tdp-close" id="tdp-close-btn">'+uiIcon('close',12)+'</button>'+
+          '<div class="tdp-xp-ribbon"><span class="tdp-xp-num">+'+totalXp+'</span><span class="tdp-xp-lbl">XP</span></div>'+
+        '</div>'+
+        '<div class="tdp-body">'+
+          '<div class="tdp-icon-ring tdp-cat-trigger" id="tdp-cat-trigger"><i class="n"></i><i class="s"></i><i class="e"></i><i class="w"></i>'+
+            '<div class="tdp-icon-inner" style="background:'+accent+'22;color:'+accent+'">'+categorySvg(cat,20)+'</div>'+
+          '</div>'+
+          '<input class="tdp-title-input" id="tdp-create-title" placeholder="Taaknaam…" value="'+esc(draft.title)+'" maxlength="80">'+
+          catPickHtml+
+          '<div class="tdp-person">'+
+            '<div class="tdp-assignee-row" id="tdp-assignee-trigger">'+avatarsHtml+'</div>'+
+            '<div>'+
+              '<div class="tdp-person-name">'+(chosenNames?esc(chosenNames):'<span class="tdp-create-empty-person">Kies gezinslid(en)</span>')+'</div>'+
+              '<div class="tdp-person-meta">'+
+                '<span>'+uiIcon('calendar',11)+'<input type="date" class="tdp-inline-date" id="tdp-create-date" value="'+esc(draft.date||'')+'"></span>'+
+                '<em>•</em>'+
+                '<span>'+uiIcon('shield',11)+'<select class="tdp-inline-select" id="tdp-create-recurrence">'+
+                  ['once','daily','weekly','monthly'].map(function(r){return '<option value="'+r+'"'+(draft.recurrence===r?' selected':'')+'>'+frequencyLabel({recurrence:r})+'</option>';}).join('')+
+                '</select></span>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          assigneePickHtml+
+          '<div class="tdp-divider"><span>◆</span></div>'+
+          '<div class="tdp-progress-head"><span class="tdp-progress-label">Subtaken</span></div>'+
+          '<div class="tdp-hint"><span>Voeg stappen toe die deze taak samen vormen.</span></div>'+
+          (subs.length?(
+            '<div class="tdp-box"><div id="tdp-sub-list" style="padding-top:4px">'+subsHtml+'</div><button class="tdp-sub-add" id="tdp-sub-add-btn">+ Subtaak toevoegen</button></div>'
+          ):(
+            '<div class="tdp-box"><div class="tdp-empty-row"><span>Geen subtaken</span><button class="tdp-empty-add" id="tdp-sub-add-btn">+ Subtaak</button></div></div>'
+          ))+
+          detailsHtml+
+          '<div class="tdp-footer">'+
+            '<button class="tdp-cta" id="tdp-cancel-btn" style="flex:1">Annuleren</button>'+
+            '<button class="tdp-cta active" id="tdp-create-save-btn" style="flex:1">'+uiIcon('check',12)+'Taak aanmaken</button>'+
+          '</div>'+
+          '<button class="tdp-more" id="tdp-more-btn">'+(detailsOpen?'Minder details ⌃':'Meer details ⌄')+'</button>'+
+        '</div>'+
+      '</div>';
+
+    ov.innerHTML=html;
+    ov.style.pointerEvents='';
+    requestAnimationFrame(function(){ov.classList.add('open');});
+    document.body.style.overflow='hidden';
+    bindCreate(ov,draft);
+  }
+
+  // Reads whatever is currently in the DOM inputs back into draftTask before
+  // any action that triggers a re-render (toggling a picker, adding a
+  // subtask, opening "Meer details"), so nothing the person already typed
+  // is lost — the same class of gotcha the detail-mode edit form accepts,
+  // avoided here since it's cheap to do for a handful of fields.
+  function syncCreateFields(){
+    if(!draftTask)return;
+    var t=document.getElementById('tdp-create-title');if(t)draftTask.title=t.value;
+    var d=document.getElementById('tdp-create-date');if(d)draftTask.date=d.value;
+    var r=document.getElementById('tdp-create-recurrence');if(r)draftTask.recurrence=r.value;
+    var de=document.getElementById('tdp-create-desc');if(de)draftTask.desc=de.value;
+    var ti=document.getElementById('tdp-create-time');if(ti)draftTask.time=ti.value;
+    var pr=document.getElementById('tdp-create-prio');if(pr)draftTask.prio=pr.value;
+  }
+
+  function cancelCreate(){close();}
+
+  function bindCreate(ov,draft){
+    ov.onclick=function(e){if(e.target===ov)cancelCreate();};
+    var closeBtn=document.getElementById('tdp-close-btn');if(closeBtn)closeBtn.onclick=cancelCreate;
+    var cancelBtn=document.getElementById('tdp-cancel-btn');if(cancelBtn)cancelBtn.onclick=cancelCreate;
+    var moreBtn=document.getElementById('tdp-more-btn');if(moreBtn)moreBtn.onclick=function(){syncCreateFields();detailsOpen=!detailsOpen;renderCreate();};
+
+    var titleInput=document.getElementById('tdp-create-title');
+    if(titleInput)titleInput.oninput=function(){draft.title=titleInput.value;};
+
+    var dateInput=document.getElementById('tdp-create-date');
+    if(dateInput)dateInput.onchange=function(){draft.date=dateInput.value;};
+    var recSelect=document.getElementById('tdp-create-recurrence');
+    if(recSelect)recSelect.onchange=function(){draft.recurrence=recSelect.value;};
+
+    var catTrigger=document.getElementById('tdp-cat-trigger');
+    if(catTrigger)catTrigger.onclick=function(){syncCreateFields();catPickerOpen=!catPickerOpen;assigneePickerOpen=false;renderCreate();};
+    document.querySelectorAll('[data-cat-pick]').forEach(function(btn){
+      btn.onclick=function(){syncCreateFields();draft.category=btn.getAttribute('data-cat-pick');catPickerOpen=false;renderCreate();};
+    });
+
+    var assigneeTrigger=document.getElementById('tdp-assignee-trigger');
+    if(assigneeTrigger)assigneeTrigger.onclick=function(){syncCreateFields();assigneePickerOpen=!assigneePickerOpen;catPickerOpen=false;renderCreate();};
+    document.querySelectorAll('[data-assignee-toggle]').forEach(function(btn){
+      btn.onclick=function(){
+        syncCreateFields();
+        var id=btn.getAttribute('data-assignee-toggle');
+        if(draft.assignedToUids[id])delete draft.assignedToUids[id];else draft.assignedToUids[id]=true;
+        renderCreate();
+      };
+    });
+
+    document.querySelectorAll('[data-sub-edit]').forEach(function(span){
+      span.onclick=function(){
+        var id=span.getAttribute('data-sub-edit');
+        var sub=draft.subtasks.find(function(s){return s.id===id;});
+        if(!sub)return;
+        var next=(prompt('Naam van de subtaak?',sub.title)||'').trim();
+        if(!next)return;
+        syncCreateFields();
+        sub.title=next;
+        renderCreate();
+      };
+    });
+    document.querySelectorAll('[data-sub-del]').forEach(function(btn){
+      btn.onclick=function(){
+        syncCreateFields();
+        var id=btn.getAttribute('data-sub-del');
+        draft.subtasks=draft.subtasks.filter(function(s){return s.id!==id;});
+        renderCreate();
+      };
+    });
+    var addBtn=document.getElementById('tdp-sub-add-btn');
+    if(addBtn)addBtn.onclick=function(){
+      var title=(prompt('Naam van de subtaak?')||'').trim();
+      if(!title)return;
+      syncCreateFields();
+      var id='sub_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      draft.subtasks.push({id:id,title:title,done:false});
+      renderCreate();
+    };
+
+    if(detailsOpen){
+      var descEl=document.getElementById('tdp-create-desc');if(descEl)descEl.oninput=function(){draft.desc=descEl.value;};
+      var timeEl=document.getElementById('tdp-create-time');if(timeEl)timeEl.onchange=function(){draft.time=timeEl.value;};
+      var prioEl=document.getElementById('tdp-create-prio');if(prioEl)prioEl.onchange=function(){draft.prio=prioEl.value;};
+    }
+
+    var saveBtn=document.getElementById('tdp-create-save-btn');
+    if(saveBtn)saveBtn.onclick=function(){
+      syncCreateFields();
+      saveCreate(draft,saveBtn);
+    };
+  }
+
+  // Saves through the same authoritative path as everything else in this
+  // file: TaskSharedData.create() → families/{householdId}/shared/tasks/{id}.
+  // No second Firebase writer, no localStorage-only fallback for new tasks.
+  function saveCreate(draft,btnEl){
+    var title=String(draft.title||'').trim();
+    if(!title){
+      var titleInput=document.getElementById('tdp-create-title');
+      if(titleInput)titleInput.focus();
+      if(typeof window.showToast==='function')window.showToast('Geef de taak een naam');
+      return;
+    }
+    if(!Object.keys(draft.assignedToUids||{}).length){
+      var me=currentUid();
+      if(me)draft.assignedToUids[me]=true;
+    }
+    if(!Object.keys(draft.assignedToUids||{}).length){
+      if(typeof window.showToast==='function')window.showToast('Kies minimaal één gezinslid');
+      return;
+    }
+    if(!window.TaskSharedData||typeof window.TaskSharedData.create!=='function'){
+      if(typeof window.showToast==='function')window.showToast('Taak kon niet worden opgeslagen');
+      return;
+    }
+    var names=[];
+    members().forEach(function(m){var id=m.uid||m.id;if(id&&draft.assignedToUids[id])names.push(m.displayName||m.name||'Gezinslid');});
+    var payload={
+      title:title,
+      desc:draft.desc||'',
+      description:draft.desc||'',
+      category:draft.category||null,
+      who:names,
+      assignedToUids:draft.assignedToUids,
+      createdByUid:currentUid(),
+      date:draft.date||'',
+      time:draft.time||'',
+      prio:draft.prio||'laag',
+      recurrence:draft.recurrence||'once',
+      subtasks:draft.subtasks||[],
+      done:false
+    };
+    if(btnEl){btnEl.disabled=true;btnEl.style.opacity='.6';}
+    window.TaskSharedData.create(payload).then(function(saved){
+      if(!Array.isArray(window.taskData))window.taskData=[];
+      if(!window.taskData.some(function(t){return String(t.id)===String(saved.id);}))window.taskData.unshift(saved);
+      try{
+        if(window.AppState&&typeof window.AppState.save==='function')window.AppState.save();
+        if(typeof window.renderTasks==='function')window.renderTasks();
+        if(typeof window.updateStats==='function')window.updateStats();
+      }catch(e){}
+      // Same legacy activity/notification hooks the old addSheet-based create
+      // flow used (see taskUidCreateBridge.js) — display-only, not part of
+      // the shared-task authority.
+      try{
+        if(typeof window.addActivity==='function')window.addActivity('📋','#f0ede8',(window.myName||'Gezinslid')+' maakte taak "'+title+'" aan');
+        if(typeof window.addNotif==='function')window.addNotif('📋','#f0ede8','Nieuwe taak',title);
+      }catch(e){}
+      if(typeof window.showToast==='function')window.showToast('Taak aangemaakt ✓');
+      close();
+    }).catch(function(err){
+      console.warn('[TaskDetailPopup] create failed',err);
+      if(btnEl){btnEl.disabled=false;btnEl.style.opacity='';}
+      if(typeof window.showToast==='function')window.showToast('Taak kon niet worden opgeslagen');
+    });
+  }
+
   function open(id){
     // Cancel any pending close cleanup and drop a stale overlay node
     // immediately, so opening the popup again right after closing it
@@ -596,9 +897,29 @@
       prevBodyOverflow=document.body.style.overflow||'';
       scrollLockActive=true;
     }
+    mode='detail';
     openId=id;helpPickerOpen=false;detailsOpen=false;
+    assigneePickerOpen=false;catPickerOpen=false;
     render();
   }
 
-  window.TaskDetailPopup={open:open,close:close,isOpen:function(){return !!openId;}};
+  // Opens the same overlay/card in create mode. Mirrors open()'s lifecycle
+  // handling exactly (stale-overlay cleanup, scroll-lock capture) so the
+  // freeze-fix and scroll-lock guarantees hold for this entrypoint too.
+  function openCreate(){
+    if(closeTimer){clearTimeout(closeTimer);closeTimer=null;}
+    var stale=document.getElementById('tdp-overlay');
+    if(stale&&stale.parentNode)stale.parentNode.removeChild(stale);
+    if(!scrollLockActive){
+      prevBodyOverflow=document.body.style.overflow||'';
+      scrollLockActive=true;
+    }
+    mode='create';
+    openId=null;helpPickerOpen=false;detailsOpen=false;
+    assigneePickerOpen=false;catPickerOpen=false;
+    draftTask=makeDraftTask();
+    render();
+  }
+
+  window.TaskDetailPopup={open:open,close:close,openCreate:openCreate,isOpen:function(){return !!openId||!!mode;}};
 })();
