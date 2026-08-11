@@ -206,6 +206,36 @@ input,select,textarea{font-family:var(--font);background:var(--c-input-bg);color
 .quick-date{flex:1;padding:6px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-surface);font-size:11px;color:var(--c-text2);transition:all .15s}
 .quick-date:active{background:var(--c-primary-light);color:var(--c-primary)}
 
+/* ── ADD SHEET · TASK (premium RPG restyle, scoped — shop/cal/trans/etc keep the default look) ── */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cormorant+Garamond:wght@600;700&display=swap');
+.add-sheet.sheet-task{background:#fbf7ee;border:1.5px solid rgba(180,138,60,.38);border-radius:24px 24px 0 0;box-shadow:0 -10px 40px rgba(20,10,40,.18)}
+[data-theme*="dark"] .add-sheet.sheet-task{background:#120e1f;border-color:#c89a4c;box-shadow:0 0 0 1px rgba(234,197,94,.08),0 -10px 44px rgba(0,0,0,.5)}
+.add-sheet.sheet-task .sheet-handle{background:rgba(180,138,60,.4)}
+[data-theme*="dark"] .add-sheet.sheet-task .sheet-handle{background:rgba(234,197,94,.32)}
+.add-sheet.sheet-task .sheet-title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:23px;color:#241f1a;display:flex;align-items:center;gap:8px}
+.add-sheet.sheet-task .sheet-title:before{content:"◆";font-size:11px;color:#a9761f}
+[data-theme*="dark"] .add-sheet.sheet-task .sheet-title{color:#f5efe0}
+[data-theme*="dark"] .add-sheet.sheet-task .sheet-title:before{color:#e2b659}
+.add-sheet.sheet-task .field label{font-family:"Cinzel",Georgia,serif;font-size:10px;font-weight:700;color:#a9761f;letter-spacing:1.1px}
+[data-theme*="dark"] .add-sheet.sheet-task .field label{color:#e2b659}
+.add-sheet.sheet-task .field input,.add-sheet.sheet-task .field select,.add-sheet.sheet-task .field textarea{border:1.5px solid #efe7d6;border-radius:14px;padding:10px 12px;font-size:13.5px;background:#ffffff;color:#241f1a}
+.add-sheet.sheet-task .field input:focus,.add-sheet.sheet-task .field select:focus,.add-sheet.sheet-task .field textarea:focus{border-color:#6d28d9}
+[data-theme*="dark"] .add-sheet.sheet-task .field input,[data-theme*="dark"] .add-sheet.sheet-task .field select,[data-theme*="dark"] .add-sheet.sheet-task .field textarea{background:#1f1a38;border-color:rgba(234,197,94,.16);color:#f5efe0}
+[data-theme*="dark"] .add-sheet.sheet-task .field input:focus,[data-theme*="dark"] .add-sheet.sheet-task .field select:focus,[data-theme*="dark"] .add-sheet.sheet-task .field textarea:focus{border-color:#a78bfa}
+.add-sheet.sheet-task .type-btn,.add-sheet.sheet-task .assignee-chip{border:1.5px solid #efe7d6;border-radius:13px;background:#ffffff;color:#8c8271;font-weight:700}
+.add-sheet.sheet-task .type-btn.active,.add-sheet.sheet-task .assignee-chip.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:transparent;color:#fff}
+[data-theme*="dark"] .add-sheet.sheet-task .type-btn,[data-theme*="dark"] .add-sheet.sheet-task .assignee-chip{background:#1a1530;border-color:rgba(234,197,94,.16);color:#b3a6d6}
+[data-theme*="dark"] .add-sheet.sheet-task .type-btn.active,[data-theme*="dark"] .add-sheet.sheet-task .assignee-chip.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff}
+.add-sheet.sheet-task .day-pill{width:32px;height:32px;border:1.5px solid #efe7d6;background:#ffffff;color:#8c8271;font-weight:800}
+.add-sheet.sheet-task .day-pill.active{background:#7c3aed;border-color:#7c3aed;color:#fff}
+[data-theme*="dark"] .add-sheet.sheet-task .day-pill{background:#1a1530;border-color:rgba(234,197,94,.16);color:#b3a6d6}
+[data-theme*="dark"] .add-sheet.sheet-task .day-pill.active{background:#a78bfa;border-color:#a78bfa;color:#1a1530}
+.add-sheet.sheet-task .quick-date{border:1.5px solid #efe7d6;background:#ffffff;color:#8c8271;border-radius:10px;font-weight:700}
+.add-sheet.sheet-task .quick-date:active{background:rgba(124,58,237,.12);color:#6d28d9;border-color:#6d28d9}
+[data-theme*="dark"] .add-sheet.sheet-task .quick-date{background:#1a1530;border-color:rgba(234,197,94,.16);color:#b3a6d6}
+.add-sheet.sheet-task .sheet-btn{background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:14px;font-size:14.5px;font-weight:800;padding:13px;box-shadow:0 8px 20px rgba(124,58,237,.28)}
+.add-sheet.sheet-task .sheet-btn:active{background:linear-gradient(135deg,#6d28d9,#4338ca);transform:scale(.99)}
+
 /* ── LIST HEADER ── */
 .list-header{padding:16px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .list-header h2{font-size:22px;font-weight:800;color:var(--c-text);font-family:var(--font-display)}
