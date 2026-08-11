@@ -1,10 +1,12 @@
 'use strict';
 // ============================================================
-// TASK DETAIL POPUP v2.1 (compact home companion — premium RPG redesign)
+// TASK DETAIL POPUP v2.2 (compact home companion — premium RPG redesign)
 // Visual reproduction of the light/dark reference screenshots, density-
-// corrected in a follow-up pass so scale/compactness match the reference
-// (hero, header, progress, subtask rows, Hulp Nodig, footer, edit panel
-// all tightened — see commit message for exact dimension deltas).
+// corrected and then polished so it reads as a compact premium mobile
+// card rather than a "web modal with RPG styling" — see commit message
+// for the exact list of fixes (hero/badge/title further reduced, all
+// system emoji replaced with inline SVGs, oversized Hulp Nodig button
+// fixed, green Heropenen removed, completed-task subtasks read-only).
 // All mutations (subtasks, notes, help, edit, delete, complete) go
 // through TaskSharedData so they stay authoritative in
 // families/{householdId}/shared/tasks/{taskId}. Does not touch the
@@ -100,6 +102,21 @@
     return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+SUB_ICON_PATHS[key]+'</svg>';
   }
 
+  var UI_ICON_PATHS={
+    close:'<path d="M6 6l12 12M18 6 6 18"/>',
+    check:'<path d="M5 13l4 4L19 7"/>',
+    lock:'<rect x="5" y="10.5" width="14" height="9" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    reopen:'<path d="M4 4.5V9h4.5"/><path d="M4.7 9A7.5 7.5 0 1 1 6 15"/>',
+    calendar:'<rect x="4" y="5.5" width="16" height="15" rx="2.3"/><path d="M4 10h16M8 3.3v4M16 3.3v4"/>',
+    shield:'<path d="M12 3.2 18.5 6v5.3c0 4.3-2.8 7.1-6.5 8.5-3.7-1.4-6.5-4.2-6.5-8.5V6L12 3.2Z"/>',
+    link:'<circle cx="9" cy="12" r="4.6"/><circle cx="15" cy="12" r="4.6"/>',
+    bookmark:'<path d="M7 4.2h10a1 1 0 0 1 1 1V20l-6-4-6 4V5.2a1 1 0 0 1 1-1Z"/>',
+    trash:'<path d="M5 7h14M10 7V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2M7 7l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12"/>'
+  };
+  function uiIcon(name,size){
+    return '<svg viewBox="0 0 24 24" width="'+(size||14)+'" height="'+(size||14)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">'+(UI_ICON_PATHS[name]||'')+'</svg>';
+  }
+
   function heroImageUrl(task){
     try{if(window.TaskModel&&typeof window.TaskModel.getImage==='function'){var v=window.TaskModel.getImage(task);if(v)return v;}}catch(e){}
     return task.heroImage||task.img||task.imageUrl||task.image||task.photo||task.cover||'';
@@ -168,7 +185,7 @@
       '[data-theme*="dark"] .tdp-card{--tdp-bg:#120e1f;--tdp-surface:#1a1530;--tdp-surface-2:#1f1a38;--tdp-border:#c89a4c;--tdp-border-soft:rgba(234,197,94,.16);--tdp-text:#f5efe0;--tdp-text2:#b3a6d6;--tdp-purple:#a78bfa;--tdp-purple-2:#c4b5fd;--tdp-gold:#e2b659;--tdp-gold-strong:#f4c86a;'+
         'box-shadow:0 0 0 1px rgba(234,197,94,.08),0 30px 90px rgba(0,0,0,.6)}'+
 
-      '.tdp-hero{position:relative;height:150px;border-radius:22px 22px 0 0;background-size:cover;background-position:center;overflow:hidden;background-color:var(--tdp-surface-2)}'+
+      '.tdp-hero{position:relative;height:130px;border-radius:22px 22px 0 0;background-size:cover;background-position:center;overflow:hidden;background-color:var(--tdp-surface-2)}'+
       '.tdp-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.16),rgba(0,0,0,.08) 40%,rgba(0,0,0,.34));pointer-events:none}'+
       '.tdp-close{position:absolute;top:11px;left:11px;width:29px;height:29px;border-radius:50%;background:rgba(255,255,255,.92);border:1.5px solid rgba(255,255,255,.6);font-size:12px;color:#241f1a;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 3px 9px rgba(0,0,0,.2)}'+
       '[data-theme*="dark"] .tdp-close{background:rgba(20,15,36,.85);border-color:rgba(234,197,94,.4);color:#f3ecff}'+
@@ -181,13 +198,13 @@
       '[data-theme*="dark"] .tdp-xp-ribbon .tdp-xp-lbl{color:#eab308;border-top-color:rgba(234,179,8,.3)}'+
 
       '.tdp-body{padding:0 15px 16px;position:relative}'+
-      '.tdp-icon-ring{width:62px;height:62px;aspect-ratio:1/1;flex-shrink:0;border-radius:50%;background:var(--tdp-surface);border:2.5px solid var(--tdp-surface);box-shadow:0 0 0 2px var(--tdp-border,rgba(180,138,60,.55)),0 6px 14px rgba(0,0,0,.16);margin-top:-31px;position:relative;z-index:2;display:flex;align-items:center;justify-content:center}'+
-      '[data-theme*="dark"] .tdp-icon-ring{box-shadow:0 0 0 2px #caa153,0 0 16px rgba(234,179,8,.2),0 6px 18px rgba(0,0,0,.4)}'+
-      '.tdp-icon-ring i{position:absolute;width:5px;height:5px;background:var(--tdp-gold);border-radius:1.2px;transform:rotate(45deg);opacity:.85}'+
-      '.tdp-icon-ring i.n{top:-2.5px;left:50%;margin-left:-2.5px}.tdp-icon-ring i.s{bottom:-2.5px;left:50%;margin-left:-2.5px}.tdp-icon-ring i.e{right:-2.5px;top:50%;margin-top:-2.5px}.tdp-icon-ring i.w{left:-2.5px;top:50%;margin-top:-2.5px}'+
-      '.tdp-icon-inner{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center}'+
+      '.tdp-icon-ring{width:52px;height:52px;aspect-ratio:1/1;flex-shrink:0;border-radius:50%;background:var(--tdp-surface);border:2px solid var(--tdp-surface);box-shadow:0 0 0 2px var(--tdp-border,rgba(180,138,60,.55)),0 5px 12px rgba(0,0,0,.16);margin-top:-24px;position:relative;z-index:2;display:flex;align-items:center;justify-content:center}'+
+      '[data-theme*="dark"] .tdp-icon-ring{box-shadow:0 0 0 2px #caa153,0 0 14px rgba(234,179,8,.2),0 5px 16px rgba(0,0,0,.4)}'+
+      '.tdp-icon-ring i{position:absolute;width:4.5px;height:4.5px;background:var(--tdp-gold);border-radius:1px;transform:rotate(45deg);opacity:.85}'+
+      '.tdp-icon-ring i.n{top:-2px;left:50%;margin-left:-2.25px}.tdp-icon-ring i.s{bottom:-2px;left:50%;margin-left:-2.25px}.tdp-icon-ring i.e{right:-2px;top:50%;margin-top:-2.25px}.tdp-icon-ring i.w{left:-2px;top:50%;margin-top:-2.25px}'+
+      '.tdp-icon-inner{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center}'+
 
-      '.tdp-title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:20px;color:var(--tdp-text);margin:6px 0 7px;letter-spacing:.1px;line-height:1.15}'+
+      '.tdp-title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:17px;color:var(--tdp-text);margin:4px 0 6px;letter-spacing:.1px;line-height:1.1}'+
 
       '.tdp-person{display:flex;align-items:center;gap:8px;margin-bottom:10px}'+
       '.tdp-person-avatar{width:28px;height:28px;aspect-ratio:1/1;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;object-fit:cover;border:1.5px solid var(--tdp-surface);box-shadow:0 0 0 1.5px var(--tdp-border-soft)}'+
@@ -228,6 +245,11 @@
       '.tdp-sub.done .tdp-sub-text{text-decoration:line-through;color:var(--tdp-text2)}'+
       '.tdp-sub-accent{background:none;border:none;color:var(--tdp-gold);opacity:.55;font-size:12px;cursor:pointer;padding:5px;flex-shrink:0}'+
       '.tdp-sub-add{width:100%;margin:5px 0 8px;background:none;border:1.5px dashed var(--tdp-border,rgba(180,138,60,.45));border-radius:11px;padding:7px;font-size:11.5px;font-weight:800;color:var(--tdp-purple);cursor:pointer}'+
+      '.tdp-empty-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px}'+
+      '.tdp-empty-row span{font-size:11.5px;color:var(--tdp-text2)}'+
+      '.tdp-empty-add{flex-shrink:0;background:none;border:1.5px dashed var(--tdp-border,rgba(180,138,60,.5));border-radius:99px;padding:5px 12px;font-size:11px;font-weight:800;color:var(--tdp-purple);cursor:pointer;display:flex;align-items:center;gap:4px}'+
+      '.tdp-sub.readonly .tdp-sub-chk{cursor:default;opacity:.75}'+
+      '.tdp-sub.readonly .tdp-sub-accent{display:none}'+
 
       '.tdp-help-box{position:relative;background:var(--tdp-surface);border:1.5px solid var(--tdp-border,rgba(180,138,60,.5));border-radius:15px;padding:9px 11px;margin-bottom:12px;box-shadow:0 6px 16px rgba(20,10,40,.05)}'+
       '[data-theme*="dark"] .tdp-help-box{box-shadow:0 0 16px rgba(234,179,8,.07),0 6px 20px rgba(0,0,0,.3)}'+
@@ -236,7 +258,7 @@
       '.tdp-help-text{flex:1;min-width:110px}'+
       '.tdp-help-title{font-family:"Cinzel",Georgia,serif;font-size:9.5px;font-weight:700;color:var(--tdp-gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}'+
       '.tdp-help-sub{font-size:10.5px;color:var(--tdp-text2);line-height:1.25}'+
-      '.tdp-help-btn{flex-shrink:0;border:1.5px solid var(--tdp-purple);border-radius:10px;padding:7px 11px;font-size:11.5px;font-weight:800;background:transparent;color:var(--tdp-purple);cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}'+
+      '.tdp-help-btn{flex-shrink:0;align-self:center;width:auto;max-width:none;border:1.5px solid var(--tdp-purple);border-radius:10px;padding:7px 12px;font-size:11.5px;font-weight:800;background:transparent;color:var(--tdp-purple);cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}'+
       '[data-theme*="dark"] .tdp-help-btn{background:rgba(167,139,250,.08)}'+
       '.tdp-member-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;width:100%}'+
       '.tdp-member-chip{border:1.5px solid var(--tdp-border-soft);background:var(--tdp-surface-2);border-radius:99px;padding:6px 11px;font-size:11.5px;font-weight:800;color:var(--tdp-text);cursor:pointer}'+
@@ -254,13 +276,13 @@
       '.tdp-note-form{display:flex;gap:6px;margin-top:7px}'+
       '.tdp-note-input{flex:1;border:1.5px solid var(--tdp-border-soft);border-radius:10px;padding:7px 9px;font-size:12px;font-family:inherit;outline:none;background:var(--tdp-surface-2);color:var(--tdp-text)}'+
       '.tdp-note-send{border:none;background:var(--tdp-purple);color:#fff;border-radius:10px;padding:0 12px;font-weight:900;font-size:12px;cursor:pointer}'+
-      '.tdp-del-btn{width:100%;background:none;border:none;color:#dc2626;font-size:11.5px;font-weight:800;padding:10px 0 3px;cursor:pointer}'+
+      '.tdp-del-btn{width:100%;background:none;border:none;color:#dc2626;font-size:11.5px;font-weight:800;padding:10px 0 3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}'+
 
       '.tdp-footer{display:flex;gap:8px;margin-top:2px}'+
       '.tdp-save{width:44px;height:44px;flex-shrink:0;border-radius:13px;border:1.5px solid var(--tdp-border-soft);background:var(--tdp-surface);color:var(--tdp-gold);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}'+
       '.tdp-cta{flex:1;border:none;border-radius:13px;padding:11px 8px;font-size:12.5px;font-weight:900;cursor:pointer;background:var(--tdp-surface-2);color:var(--tdp-text2);display:flex;align-items:center;justify-content:center;gap:6px}'+
       '.tdp-cta.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;box-shadow:0 5px 14px rgba(124,58,237,.28)}'+
-      '.tdp-cta.done-state{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff}';
+      '.tdp-cta.done-state{background:var(--tdp-surface);color:var(--tdp-purple);border:1.5px solid var(--tdp-purple);box-shadow:none}';
     document.head.appendChild(s);
   }
 
@@ -299,12 +321,13 @@
       progressSegs=subs.map(function(s){return '<div class="tdp-progress-seg'+(s.done?' done':'')+'"></div>';}).join('');
     }
 
+    var isDone = !!task.done;
     var subsHtml=subs.map(function(s){
-      return '<div class="tdp-sub'+(s.done?' done':'')+'" data-sub="'+esc(s.id)+'">'+
-        '<button class="tdp-sub-chk'+(s.done?' done':'')+'" data-sub-toggle="'+esc(s.id)+'">'+(s.done?'✓':'')+'</button>'+
+      return '<div class="tdp-sub'+(s.done?' done':'')+(isDone?' readonly':'')+'" data-sub="'+esc(s.id)+'">'+
+        '<button class="tdp-sub-chk'+(s.done?' done':'')+'"'+(isDone?'':' data-sub-toggle="'+esc(s.id)+'"')+(isDone?' disabled':'')+'>'+(s.done?uiIcon('check',11):'')+'</button>'+
         '<span class="tdp-sub-icon" style="background:'+accent+'1f;color:'+accent+'">'+subIcon(s.title)+'</span>'+
         '<span class="tdp-sub-text">'+esc(s.title)+'</span>'+
-        '<button class="tdp-sub-accent" data-sub-del="'+esc(s.id)+'" title="Verwijderen">✦</button>'+
+        (isDone?'':'<button class="tdp-sub-accent" data-sub-del="'+esc(s.id)+'" title="Verwijderen">✦</button>')+
       '</div>';
     }).join('');
 
@@ -318,7 +341,8 @@
     var helpChips=helpableMembers.length?helpableMembers.map(function(m){var id=m.uid||m.id;return '<button class="tdp-member-chip" data-help-pick="'+esc(id)+'">'+esc(m.displayName||m.name||'Gezinslid')+'</button>';}).join(''):'<div style="font-size:12px;color:var(--tdp-text2)">Geen andere gezinsleden gevonden.</div>';
 
     var ctaState = allSubsDone ? (task.done?'active done-state':'active') : '';
-    var ctaLabel = allSubsDone ? (task.done?'↩ Heropenen':'✓ Voltooien') : '🔒 Voltooi eerst alle stappen';
+    var ctaIcon = allSubsDone ? uiIcon(task.done?'reopen':'check',13) : uiIcon('lock',13);
+    var ctaText = allSubsDone ? (task.done?'Heropenen':'Voltooien') : 'Voltooi eerst alle stappen';
 
     var detailsHtml = detailsOpen ? (
       '<div class="tdp-box" style="padding-top:10px">'+
@@ -336,14 +360,14 @@
         '<div style="display:flex;gap:8px;margin-top:11px">'+
           '<button class="tdp-cta active" id="tdp-save-edit" style="flex:1;padding:9px">Wijzigingen opslaan</button>'+
         '</div>'+
-        '<button class="tdp-del-btn" id="tdp-delete-btn">🗑 Taak verwijderen</button>'+
+        '<button class="tdp-del-btn" id="tdp-delete-btn">'+uiIcon('trash',13)+' Taak verwijderen</button>'+
       '</div>'
     ) : '';
 
     var html =
       '<div class="tdp-card" role="dialog" aria-modal="true">'+
         '<div class="tdp-hero" style="'+(heroImg?('background-image:url('+esc(heroImg)+')'):heroFallbackStyle(task))+'">'+
-          '<button class="tdp-close" id="tdp-close-btn">✕</button>'+
+          '<button class="tdp-close" id="tdp-close-btn">'+uiIcon('close',13)+'</button>'+
           '<div class="tdp-xp-ribbon"><span class="tdp-xp-num">+'+totalXp+'</span><span class="tdp-xp-lbl">XP</span></div>'+
         '</div>'+
         '<div class="tdp-body">'+
@@ -355,7 +379,7 @@
             (mainAvatarUrl?'<img class="tdp-person-avatar" src="'+esc(mainAvatarUrl)+'">':'<div class="tdp-person-avatar">'+esc(initials(mainPerson?mainPerson.name:'?'))+'</div>')+
             '<div>'+
               '<div class="tdp-person-name">'+esc(people.map(function(p){return p.name;}).join(', ')||'Niet toegewezen')+'</div>'+
-              '<div class="tdp-person-meta"><span>📅 '+esc(dateTimeLabel(task))+'</span><em>•</em><span>🛡 '+esc(frequencyLabel(task))+'</span></div>'+
+              '<div class="tdp-person-meta"><span>'+uiIcon('calendar',12)+esc(dateTimeLabel(task))+'</span><em>•</em><span>'+uiIcon('shield',12)+esc(frequencyLabel(task))+'</span></div>'+
             '</div>'+
           '</div>'+
           '<div class="tdp-divider"><span>◆</span></div>'+
@@ -363,23 +387,23 @@
           (subs.length?(
             '<div class="tdp-progress-row"><div class="tdp-progress-track">'+progressSegs+'</div><div class="tdp-xp-shield"><b>'+totalXp+'</b><small>XP</small></div></div>'+
             '<div class="tdp-hint"><span>Vink alle stappen aan om deze taak te voltooien.</span></div>'+
-            '<div class="tdp-box"><div id="tdp-sub-list" style="padding-top:4px">'+subsHtml+'</div><button class="tdp-sub-add" id="tdp-sub-add-btn">+ Subtaak toevoegen</button></div>'
+            '<div class="tdp-box"><div id="tdp-sub-list" style="padding-top:4px">'+subsHtml+'</div>'+(isDone?'':'<button class="tdp-sub-add" id="tdp-sub-add-btn">+ Subtaak toevoegen</button>')+'</div>'
           ):(
-            '<div class="tdp-box" style="padding:10px 13px 12px"><div style="font-size:11.5px;color:var(--tdp-text2);margin-bottom:6px">Deze taak heeft nog geen subtaken.</div><button class="tdp-sub-add" id="tdp-sub-add-btn" style="margin:0">+ Subtaak toevoegen</button></div>'
+            '<div class="tdp-box"><div class="tdp-empty-row"><span>Geen subtaken</span>'+(isDone?'':'<button class="tdp-empty-add" id="tdp-sub-add-btn">+ Subtaak</button>')+'</div></div>'
           ))+
           '<div class="tdp-help-box">'+
             '<div class="tdp-help-row">'+
               '<div class="tdp-help-shield">'+categorySvg('family',15)+'</div>'+
               '<div class="tdp-help-text"><div class="tdp-help-title">Hulp nodig?</div><div class="tdp-help-sub">Vraag iemand uit je party om te helpen en deel de taak samen.</div></div>'+
-              '<button class="tdp-help-btn" id="tdp-help-btn">🤝 Hulp vragen</button>'+
+              '<button class="tdp-help-btn" id="tdp-help-btn">'+uiIcon('link',13)+'Hulp vragen</button>'+
               (helpPickerOpen?('<div class="tdp-member-pick">'+helpChips+'</div>'):'')+
               (task.helpRequested?'<div class="tdp-help-status">Hulp gevraagd aan '+esc(memberName(task.helpRequestedForUid))+'</div>':'')+
             '</div>'+
           '</div>'+
           detailsHtml+
           '<div class="tdp-footer">'+
-            '<button class="tdp-save" title="Opslaan" id="tdp-bookmark-btn">🔖</button>'+
-            '<button class="tdp-cta '+ctaState+'" id="tdp-complete-btn" '+(allSubsDone?'':'disabled')+'>'+ctaLabel+'</button>'+
+            '<button class="tdp-save" title="Opslaan" id="tdp-bookmark-btn">'+uiIcon('bookmark',16)+'</button>'+
+            '<button class="tdp-cta '+ctaState+'" id="tdp-complete-btn" '+(allSubsDone?'':'disabled')+'>'+ctaIcon+ctaText+'</button>'+
           '</div>'+
           '<button class="tdp-more" id="tdp-more-btn">'+(detailsOpen?'Minder details ⌃':'Meer details ⌄')+'</button>'+
         '</div>'+
@@ -400,7 +424,7 @@
       btn.onclick=function(){
         var id=btn.getAttribute('data-sub-toggle');
         var next=subs.map(function(s){return s.id===id?Object.assign({},s,{done:!s.done}):s;});
-        patch(task.id,{subtasks:next});
+        patch(task.id,{subtasks:next},function(){render();});
       };
     });
     document.querySelectorAll('[data-sub-del]').forEach(function(btn){
@@ -437,7 +461,7 @@
           // kept as-is per scope — see report for details.
           try{if(typeof window.addActivity==='function')window.addActivity('🤝','#efe9fb',currentName()+' vraagt hulp bij "'+task.title+'"');}catch(e){}
           try{if(typeof window.addNotif==='function')window.addNotif('🤝','#efe9fb','Hulp gevraagd',currentName()+' vraagt hulp bij "'+task.title+'"');}catch(e){}
-          if(typeof window.showToast==='function')window.showToast('Hulp gevraagd aan '+memberName(targetUid)+' 🤝');
+          if(typeof window.showToast==='function')window.showToast('Hulp gevraagd aan '+memberName(targetUid));
         });
       };
     });
@@ -480,7 +504,7 @@
     }
 
     var bookmarkBtn=document.getElementById('tdp-bookmark-btn');
-    if(bookmarkBtn)bookmarkBtn.onclick=function(){if(typeof window.showToast==='function')window.showToast('Opgeslagen 🔖');};
+    if(bookmarkBtn)bookmarkBtn.onclick=function(){if(typeof window.showToast==='function')window.showToast('Opgeslagen');};
   }
 
   function open(id){
