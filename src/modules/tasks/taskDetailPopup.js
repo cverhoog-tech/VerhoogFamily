@@ -291,8 +291,14 @@
       '.tdp-help-text{flex:1;min-width:0}'+
       '.tdp-help-title{font-family:"Cinzel",Georgia,serif;font-size:9px;font-weight:700;color:var(--tdp-gold);letter-spacing:.9px;text-transform:uppercase;margin-bottom:2px}'+
       '.tdp-help-sub{font-size:10px;color:var(--tdp-text2);line-height:1.22}'+
-      '.tdp-help-btn{flex-shrink:0;align-self:center;width:auto;max-width:none;border:1.4px solid var(--tdp-purple);border-radius:10px;padding:6px 10px;font-size:10.5px;font-weight:800;background:transparent;color:var(--tdp-purple);cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}'+
-      '[data-theme*="dark"] .tdp-help-btn{background:rgba(167,139,250,.07);border-color:var(--tdp-purple-2)}'+
+      // Scoped selector (#tdp-overlay .tdp-help-row .tdp-help-btn) rather than
+      // the bare .tdp-help-btn class: raises specificity above any generic
+      // app-wide button rule (e.g. .screen button, .add-sheet button, .btn)
+      // so this control can never again be silently overridden into a full
+      // solid-purple tile. flex:0 0 auto is explicit (not just flex-shrink)
+      // so no flex ancestor can stretch it either. No visual values changed.
+      '#tdp-overlay .tdp-help-row .tdp-help-btn{flex:0 0 auto;flex-shrink:0;align-self:center;width:auto;max-width:max-content;border:1.4px solid var(--tdp-purple);border-radius:10px;padding:6px 10px;font-size:10.5px;font-weight:800;background:transparent;color:var(--tdp-purple);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}'+
+      '[data-theme*="dark"] #tdp-overlay .tdp-help-row .tdp-help-btn{background:rgba(167,139,250,.07);border-color:var(--tdp-purple-2)}'+
       '.tdp-member-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;width:100%}'+
       '.tdp-member-chip{border:1.5px solid var(--tdp-border-soft);background:var(--tdp-surface-2);border-radius:99px;padding:5px 10px;font-size:11px;font-weight:800;color:var(--tdp-text);cursor:pointer}'+
       '.tdp-help-status{margin-top:7px;font-size:10.5px;font-weight:800;color:var(--tdp-purple);width:100%}'+
