@@ -19,6 +19,9 @@
   var openId = null;
   var helpPickerOpen = false;
   var detailsOpen = false;
+  var closeTimer = null;
+  var prevBodyOverflow = null;
+  var scrollLockActive = false; // true from the first open() of a session until finalizeCleanup() runs
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
@@ -174,8 +177,8 @@
     s.textContent =
       '@import url(\'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap\');'+
 
-      '.tdp-overlay{position:fixed;inset:0;background:rgba(8,6,16,.62);z-index:9500;display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transition:opacity .22s;box-sizing:border-box}'+
-      '.tdp-overlay.open{opacity:1}'+
+      '.tdp-overlay{position:fixed;inset:0;background:rgba(8,6,16,.62);z-index:9500;display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;pointer-events:none;transition:opacity .22s;box-sizing:border-box}'+
+      '.tdp-overlay.open{opacity:1;pointer-events:auto}'+
 
       '.tdp-card{--tdp-bg:#fbf7ee;--tdp-surface:#ffffff;--tdp-surface-2:#f7f2e5;--tdp-border:rgba(180,138,60,.32);--tdp-border-soft:#efe7d6;--tdp-text:#241f1a;--tdp-text2:#8c8271;--tdp-purple:#6d28d9;--tdp-purple-2:#a855f7;--tdp-gold:#a9761f;--tdp-gold-strong:#8a621a;'+
         'width:100%;max-width:400px;max-height:calc(100dvh - 28px);overflow-y:auto;-webkit-overflow-scrolling:touch;'+
@@ -292,11 +295,41 @@
     return el;
   }
 
+  // Fully removes any overlay node and restores document state. Idempotent —
+  // safe to call multiple times (e.g. close() invoked twice in a row, or a
+  // stale overlay left over from a previous open/close cycle that was
+  // interrupted). This is the ONLY place that clears body scroll-lock state,
+  // so every close path (X button, backdrop click, re-open) converges here.
+  function finalizeCleanup(){
+    if(closeTimer){clearTimeout(closeTimer);closeTimer=null;}
+    var ov=document.getElementById('tdp-overlay');
+    if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);
+    document.body.style.overflow = prevBodyOverflow===null ? '' : prevBodyOverflow;
+    prevBodyOverflow=null;
+    scrollLockActive=false;
+    openId=null;helpPickerOpen=false;detailsOpen=false;
+  }
+
   function close(){
     var ov=document.getElementById('tdp-overlay');
-    if(ov){ov.classList.remove('open');setTimeout(function(){ov.innerHTML='';},220);}
-    openId=null;helpPickerOpen=false;detailsOpen=false;
-    document.body.style.overflow='';
+    if(!ov){
+      // Already closed / no overlay in the DOM — nothing to animate, but
+      // still reset in-memory state so a stray close() call is a safe no-op.
+      if(closeTimer){clearTimeout(closeTimer);closeTimer=null;}
+      openId=null;helpPickerOpen=false;detailsOpen=false;
+      scrollLockActive=false;prevBodyOverflow=null;
+      return;
+    }
+    ov.classList.remove('open');
+    // Belt-and-suspenders: kill pointer interaction on the overlay the
+    // instant close() runs, synchronously, rather than waiting on the fade
+    // transition or the removal timeout. This is what prevents the app from
+    // freezing if the 220ms fade is ever interrupted (route change, iOS
+    // backgrounding the tab, rapid re-open, etc.) — the invisible overlay
+    // can no longer intercept touches even if it lingers in the DOM.
+    ov.style.pointerEvents='none';
+    if(closeTimer)clearTimeout(closeTimer);
+    closeTimer=setTimeout(finalizeCleanup,220);
   }
 
   function render(){
@@ -410,6 +443,10 @@
       '</div>';
 
     ov.innerHTML=html;
+    // Overlay may have been left with pointer-events:none by a close() that
+    // got interrupted by a fast re-open (see open()); make sure it is
+    // interactive again now that we're actively rendering it open.
+    ov.style.pointerEvents='';
     requestAnimationFrame(function(){ov.classList.add('open');});
     document.body.style.overflow='hidden';
     bind(ov,task,subs);
@@ -508,6 +545,21 @@
   }
 
   function open(id){
+    // Cancel any pending close cleanup and drop a stale overlay node
+    // immediately, so opening the popup again right after closing it
+    // (e.g. tapping another task fast) always starts from a clean DOM
+    // state instead of racing the 220ms removal timer.
+    if(closeTimer){clearTimeout(closeTimer);closeTimer=null;}
+    var stale=document.getElementById('tdp-overlay');
+    if(stale&&stale.parentNode)stale.parentNode.removeChild(stale);
+    // Only capture the pre-popup overflow value once per open/close session.
+    // A rapid re-open (close() pending, then open() again before its cleanup
+    // timer fires) must NOT re-capture 'hidden' as if it were the original
+    // value — that would permanently strand body scroll locked.
+    if(!scrollLockActive){
+      prevBodyOverflow=document.body.style.overflow||'';
+      scrollLockActive=true;
+    }
     openId=id;helpPickerOpen=false;detailsOpen=false;
     render();
   }
