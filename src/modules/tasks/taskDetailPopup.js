@@ -379,6 +379,8 @@
     scrollLockActive=false;
     openId=null;helpPickerOpen=false;detailsOpen=false;
     mode=null;draftTask=null;assigneePickerOpen=false;catPickerOpen=false;
+    // TEMP: drop any lingering create-debug panel once the popup is fully closed.
+    if(typeof hideCreateDebugPanel==='function')hideCreateDebugPanel();
   }
 
   function close(){
@@ -816,6 +818,109 @@
     };
   }
 
+  // ---- TEMP ON-SCREEN CREATE-DEBUG PANEL ----------------------------------
+  // Diagnostic-only, added to make the real saveCreate() failure reason
+  // visible directly on a phone without a Mac/remote inspector. Purely
+  // additive: does not touch save/create/readiness/household logic, and
+  // only ever renders when saveCreate()'s existing .catch() fires. Uses the
+  // exact same runtime reads as the [DIAG] console logs so there is one
+  // single source of truth, not two competing analyses. Remove this block
+  // (and its 3 call sites below) once the real root cause is confirmed.
+  function buildCreateDebugSnapshot(err){
+    var tsStatus=(window.TaskSharedData&&typeof window.TaskSharedData.status==='function')?window.TaskSharedData.status():null;
+    var fdsStatus=(window.FamilyDataStore&&typeof window.FamilyDataStore.status==='function')?window.FamilyDataStore.status():null;
+    var tdpScript=document.querySelector('script[src*="taskDetailPopup.js"]');
+    var readinessScript=document.querySelector('script[src*="taskCreateReadinessFix.js"]');
+    var fbUserUid=null;try{fbUserUid=(window.fbUser&&window.fbUser.uid)||null;}catch(e){}
+    var authCurrentUid=null;try{authCurrentUid=(window.firebase&&firebase.auth&&firebase.auth().currentUser&&firebase.auth().currentUser.uid)||null;}catch(e){}
+    return {
+      readinessFixInstalled:!!window.__taskCreateReadinessFix,
+      createWrapped:!!(window.TaskSharedData&&window.TaskSharedData.create&&window.TaskSharedData.create.__resolvesHouseholdContext),
+      'ts.ready':tsStatus?tsStatus.ready:null,
+      'ts.started':tsStatus?tsStatus.started:null,
+      'ts.uid':tsStatus?tsStatus.uid:null,
+      'ts.householdId':tsStatus?tsStatus.householdId:null,
+      'fds.onlineReady':fdsStatus?fdsStatus.onlineReady:null,
+      'fds.userId':fdsStatus?fdsStatus.userId:null,
+      'fds.familyId':fdsStatus?fdsStatus.familyId:null,
+      fbFamilyId:window.fbFamilyId||null,
+      'fbUser.uid':fbUserUid,
+      'auth.currentUser.uid':authCurrentUid,
+      offlineMode:!!window.offlineMode,
+      pathname:(window.location&&window.location.pathname)||null,
+      taskDetailPopupScriptSrc:tdpScript?tdpScript.getAttribute('src'):null,
+      readinessFixScriptTagPresent:!!readinessScript,
+      readinessFixScriptSrc:readinessScript?readinessScript.getAttribute('src'):null,
+      'error.name':(err&&err.name)||null,
+      'error.code':(err&&err.code)||null,
+      'error.message':(err&&err.message)||null
+    };
+  }
+  function createDebugText(diag){
+    return 'CREATE DEBUG\n'+Object.keys(diag).map(function(k){
+      var v=diag[k];v=(v===null||v===undefined)?'null':String(v);
+      return k+': '+v;
+    }).join('\n');
+  }
+  function createDebugFallbackCopy(text){
+    var copied=false;
+    try{
+      var ta=document.createElement('textarea');
+      ta.value=text;
+      ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+      document.body.appendChild(ta);
+      ta.focus();ta.select();ta.setSelectionRange(0,text.length);
+      try{copied=document.execCommand('copy');}catch(e){copied=false;}
+      document.body.removeChild(ta);
+    }catch(e){copied=false;}
+    if(!copied){try{prompt('Kopieer debug tekst (selecteer + kopieer):',text);}catch(e){}}
+    return copied;
+  }
+  function hideCreateDebugPanel(){
+    var el=document.getElementById('tdp-create-debug');
+    if(el&&el.parentNode)el.parentNode.removeChild(el);
+  }
+  function showCreateDebugPanel(diag){
+    hideCreateDebugPanel();
+    var el=document.createElement('div');
+    el.id='tdp-create-debug';
+    el.style.cssText='position:fixed;left:10px;right:10px;top:max(10px,env(safe-area-inset-top));z-index:12060;background:#1a1530;color:#f5efe0;border:1.5px solid #e2b659;border-radius:14px;padding:10px 12px;font:11px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",monospace;box-shadow:0 10px 30px rgba(0,0,0,.5);max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
+    var rows=Object.keys(diag).map(function(k){
+      var v=diag[k];v=(v===null||v===undefined)?'null':String(v);
+      return '<div style="display:flex;gap:6px;padding:1px 0"><span style="color:#e2b659;flex-shrink:0;min-width:150px">'+esc(k)+':</span><span style="word-break:break-word">'+esc(v)+'</span></div>';
+    }).join('');
+    el.innerHTML=
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
+        '<b style="font-family:inherit;letter-spacing:.5px;color:#f4c86a">CREATE DEBUG</b>'+
+        '<button id="tdp-debug-close" style="background:none;border:none;color:#f5efe0;font-size:16px;line-height:1;cursor:pointer;padding:2px 4px">✕</button>'+
+      '</div>'+
+      rows+
+      '<div style="display:flex;gap:8px;margin-top:8px">'+
+        '<button id="tdp-debug-copy" style="flex:1;background:#e2b659;color:#241f1a;border:none;border-radius:8px;padding:7px;font-weight:800;font-size:11px;cursor:pointer">Kopieer debug</button>'+
+      '</div>'+
+      '<div id="tdp-debug-copy-status" style="margin-top:5px;font-size:10px;color:#b3a6d6;text-align:center"></div>';
+    document.body.appendChild(el);
+    var closeBtn=document.getElementById('tdp-debug-close');
+    if(closeBtn)closeBtn.onclick=hideCreateDebugPanel;
+    var copyBtn=document.getElementById('tdp-debug-copy');
+    var statusEl=document.getElementById('tdp-debug-copy-status');
+    if(copyBtn)copyBtn.onclick=function(){
+      var text=createDebugText(diag);
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){
+          if(statusEl)statusEl.textContent='Gekopieerd ✓';
+        }).catch(function(){
+          var ok=createDebugFallbackCopy(text);
+          if(statusEl)statusEl.textContent=ok?'Gekopieerd ✓':'Zie promptvenster';
+        });
+      }else{
+        var ok=createDebugFallbackCopy(text);
+        if(statusEl)statusEl.textContent=ok?'Gekopieerd ✓':'Zie promptvenster';
+      }
+    };
+  }
+
   // Saves through the same authoritative path as everything else in this
   // file: TaskSharedData.create() → families/{householdId}/shared/tasks/{id}.
   // No second Firebase writer, no localStorage-only fallback for new tasks.
@@ -888,6 +993,7 @@
         if(typeof window.addNotif==='function')window.addNotif('📋','#f0ede8','Nieuwe taak',title);
       }catch(e){}
       if(typeof window.showToast==='function')window.showToast('Taak aangemaakt ✓');
+      hideCreateDebugPanel();
       close();
     }).catch(function(err){
       var __diagOnFail={
@@ -909,6 +1015,10 @@
       try{JSON.stringify(payload);}catch(jsonErr){console.warn('[TaskDetailPopup][DIAG] payload is not JSON-safe',jsonErr);}
       if(btnEl){btnEl.disabled=false;btnEl.style.opacity='';}
       if(typeof window.showToast==='function')window.showToast('Taak kon niet worden opgeslagen');
+      // TEMP ON-SCREEN DEBUG PANEL: same runtime reads as the [DIAG] console
+      // logs above, just also rendered above the popup for on-device testing
+      // without a remote inspector. See report.
+      showCreateDebugPanel(buildCreateDebugSnapshot(err));
     });
   }
 
@@ -949,6 +1059,8 @@
     openId=null;helpPickerOpen=false;detailsOpen=false;
     assigneePickerOpen=false;catPickerOpen=false;
     draftTask=makeDraftTask();
+    // TEMP: don't carry a stale create-debug panel into a fresh create session.
+    if(typeof hideCreateDebugPanel==='function')hideCreateDebugPanel();
     render();
   }
 
