@@ -44,6 +44,11 @@ function addNotif(icon, bg, title, body) {
 }
 
 function showToast(msg) {
+  if(msg==='Taak kon niet worden opgeslagen'){
+    var authUid=null;
+    try{authUid=(window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){}
+    if(!authUid) msg='Log in om gedeelde taken op te slaan';
+  }
   var t=document.createElement('div');
   t.className='toast';t.textContent=msg;
   // Toasts are feedback, so they must remain visible above task/detail overlays
