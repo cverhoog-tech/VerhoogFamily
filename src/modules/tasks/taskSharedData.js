@@ -110,9 +110,27 @@
   }
   function write(task){
     var row=normalize(task);
-    if(!ready()) return Promise.reject(new Error('Shared task store is not ready'));
+    if(!ready()){
+      // TEMP DIAGNOSTIC (see report — remove once root cause is confirmed on device):
+      // this is the only place TaskSharedData.create()/write() can reject on its
+      // own, so log exactly which readiness precondition was missing.
+      console.warn('[TaskSharedData][DIAG] create() rejected: store not ready',{
+        hasFamilyDataStore:!!fds(),
+        fbFamilyId:window.fbFamilyId||null,
+        uid:uid(),
+        started:started
+      });
+      return Promise.reject(new Error('Shared task store is not ready'));
+    }
     if(!row._key){row.id=legacyId();row._key=makeRecordKey();}
-    return fds().writeSharedRecord(COLLECTION,row._key,row).then(function(){return row;});
+    return fds().writeSharedRecord(COLLECTION,row._key,row).then(function(writeResult){
+      // TEMP DIAGNOSTIC: writeSharedRecord() never rejects (see familyDataStore.js
+      // writePath) — it resolves with {mode:'firebase'|'local'|'local-pending', ...}.
+      // A generic create-failure toast can therefore NEVER originate from this call;
+      // log the actual mode so a silent local/local-pending write is visible.
+      console.log('[TaskSharedData][DIAG] writeSharedRecord() resolved',writeResult);
+      return row;
+    });
   }
   function update(id,patch){
     if(!ready()) return Promise.reject(new Error('Shared task store is not ready'));
