@@ -58,7 +58,10 @@
     var inner=document.querySelector('.tdp-icon-inner');
     if(!inner)return;
     var cat=selectedCreateCat()||activeDetailCat||'quest';
-    inner.innerHTML=svg(cat,20,1.65);
+    var old=inner.querySelector('svg');
+    if(!old||old.getAttribute('data-rpg-cat')!==cat){
+      inner.innerHTML=svg(cat,20,1.65).replace('<svg ','<svg data-rpg-cat="'+cat+'" ');
+    }
     document.querySelectorAll('[data-cat-pick]').forEach(function(btn){
       var c=btn.getAttribute('data-cat-pick')||'quest';
       if(!btn.querySelector('.tdp-cat-glyph')){
