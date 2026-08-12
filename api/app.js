@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
     // TaskSharedData/Firebase authority to report ready before create().
     html = html.replace(
       '<script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>',
-      '<script src="src/modules/tasks/taskCreateReadinessFix.js?v=1"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>\n  <script src="src/modules/tasks/taskCategoryIcons.js?v=1"></script>\n  <script src="src/modules/tasks/partyQuestInvites.js?v=2"></script>'
+      '<script src="src/modules/tasks/taskCreateReadinessFix.js?v=1"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>\n  <script src="src/modules/tasks/taskCategoryIcons.js?v=1"></script>\n  <script src="src/modules/tasks/taskHeroTemplates.js?v=1"></script>\n  <script src="src/modules/tasks/partyQuestInvites.js?v=2"></script>'
     );
     html = html.replace('</body>', '<script src="src/core/mobileUxFixes.js"></script></body>');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
