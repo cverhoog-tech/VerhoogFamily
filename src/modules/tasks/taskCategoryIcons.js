@@ -38,6 +38,19 @@
     return '<svg viewBox="0 0 24 24" width="'+size+'" height="'+size+'" fill="none" stroke="currentColor" stroke-width="'+(strokeWidth||1.7)+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+PATHS[cat]+'</svg>';
   }
 
+  function compactCat(node){
+    var cls=String(node.className||'');
+    var m=cls.match(/tch-icon--(laundry|cleaning|kitchen|groceries|admin|family|garden|quest)/);
+    return m?m[1]:'quest';
+  }
+  function patchCompact(){
+    document.querySelectorAll('.tch-icon').forEach(function(node){
+      var cat=compactCat(node),old=node.querySelector('svg');
+      if(old&&old.getAttribute('data-rpg-cat')===cat)return;
+      node.innerHTML=svg(cat,14,1.65).replace('<svg ','<svg data-rpg-cat="'+cat+'" ');
+    });
+  }
+
   var activeDetailCat=null;
   function taskById(id){return (window.taskData||[]).find(function(t){return String(t.id)===String(id);})||null;}
   function selectedCreateCat(){var x=document.querySelector('[data-cat-pick].active');return x&&x.getAttribute('data-cat-pick');}
@@ -45,8 +58,7 @@
     var inner=document.querySelector('.tdp-icon-inner');
     if(!inner)return;
     var cat=selectedCreateCat()||activeDetailCat||'quest';
-    var old=inner.querySelector('svg');
-    if(old)old.outerHTML=svg(cat,20,1.65);else inner.innerHTML=svg(cat,20,1.65);
+    inner.innerHTML=svg(cat,20,1.65);
     document.querySelectorAll('[data-cat-pick]').forEach(function(btn){
       var c=btn.getAttribute('data-cat-pick')||'quest';
       if(!btn.querySelector('.tdp-cat-glyph')){
@@ -65,12 +77,12 @@
     return true;
   }
 
-  var observer=new MutationObserver(function(){if(document.querySelector('.tdp-overlay'))patchPopup();});
+  var observer=new MutationObserver(function(){patchCompact();if(document.querySelector('.tdp-overlay'))patchPopup();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
   hookPopup();
+  patchCompact();
   var tries=0,timer=setInterval(function(){tries++;if(hookPopup()||tries>40)clearInterval(timer);},100);
 
-  window.TaskCategoryIcons={paths:PATHS,accents:ACCENTS,detect:detect,svg:svg,patchPopup:patchPopup};
-  if(window.TaskCompactHome&&typeof window.TaskCompactHome.render==='function')setTimeout(function(){window.TaskCompactHome.render();},0);
+  window.TaskCategoryIcons={paths:PATHS,accents:ACCENTS,detect:detect,svg:svg,patchCompact:patchCompact,patchPopup:patchPopup};
   window.dispatchEvent(new CustomEvent('familyapp:task-icons-ready'));
 })();
