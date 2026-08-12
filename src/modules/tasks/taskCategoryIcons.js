@@ -23,6 +23,7 @@
 
   var ACCENTS={laundry:'#0284c7',cleaning:'#7c3aed',kitchen:'#0d9488',groceries:'#059669',admin:'#6366f1',family:'#db2777',garden:'#65a30d',travel:'#2563eb',dropoff:'#c2410c',pickup:'#0891b2',quest:'#7c3aed'};
   var KNOWN={quest:1,laundry:1,cleaning:1,kitchen:1,groceries:1,admin:1,family:1,garden:1,travel:1,dropoff:1,pickup:1};
+  var EXTRA_CATEGORIES=[['travel','Reizen'],['dropoff','Wegbrengen'],['pickup','Ophalen']];
 
   function infer(raw){
     raw=String(raw||'').toLowerCase();
@@ -74,9 +75,33 @@
   var activeDetailCat=null;
   function selectedCreateCat(){var x=document.querySelector('[data-cat-pick].active');return x&&x.getAttribute('data-cat-pick');}
   function createTitleCat(){var x=document.getElementById('tdp-create-title');return x?infer(x.value):'quest';}
+
+  function ensureExtraCategoryButtons(){
+    var pick=document.querySelector('.tdp-member-pick');
+    if(!pick||!pick.querySelector('[data-cat-pick]'))return;
+    EXTRA_CATEGORIES.forEach(function(pair){
+      var cat=pair[0],label=pair[1];
+      if(pick.querySelector('[data-cat-pick="'+cat+'"]'))return;
+      var proxy=pick.querySelector('[data-cat-pick="quest"]')||pick.querySelector('[data-cat-pick]');
+      if(!proxy||typeof proxy.onclick!=='function')return;
+      var btn=document.createElement('button');
+      btn.className='tdp-member-chip';
+      btn.setAttribute('data-cat-pick',cat);
+      btn.textContent=label;
+      btn.onclick=function(){
+        var old=proxy.getAttribute('data-cat-pick');
+        proxy.setAttribute('data-cat-pick',cat);
+        proxy.onclick();
+        proxy.setAttribute('data-cat-pick',old);
+      };
+      pick.appendChild(btn);
+    });
+  }
+
   function patchPopup(){
     var inner=document.querySelector('.tdp-icon-inner');
     if(!inner)return;
+    ensureExtraCategoryButtons();
     var selected=selectedCreateCat();
     var cat=(selected&&selected!=='quest')?selected:(createTitleCat()!=='quest'?createTitleCat():(activeDetailCat||selected||'quest'));
     var old=inner.querySelector('svg');
