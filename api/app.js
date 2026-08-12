@@ -5,13 +5,12 @@ module.exports = async function handler(req, res) {
   try {
     const htmlPath = path.join(process.cwd(), 'index.html');
     let html = fs.readFileSync(htmlPath, 'utf-8');
-    // Keep the canonical Task Card bundle fresh on mobile Safari and install
-    // the task-create readiness bridge immediately before it. The bridge does
-    // not introduce a second writer; it only waits for the existing
-    // TaskSharedData/Firebase authority to report ready before create().
+    // Keep the canonical Task Card bundle fresh on mobile Safari. Task create
+    // goes directly through TaskSharedData again; no runtime wrapper intercepts
+    // the proven create/save path.
     html = html.replace(
       '<script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>',
-      '<script src="src/modules/tasks/taskCreateReadinessFix.js?v=1"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>'
+      '<script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>'
     );
     html = html.replace('</body>', '<script src="src/core/mobileUxFixes.js"></script></body>');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
