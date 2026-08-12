@@ -46,6 +46,9 @@ function addNotif(icon, bg, title, body) {
 function showToast(msg) {
   var t=document.createElement('div');
   t.className='toast';t.textContent=msg;
+  // Toasts are feedback, so they must remain visible above task/detail overlays
+  // and other modal layers. The task overlay currently lives at z-index 9500.
+  t.style.zIndex='12050';
   document.body.appendChild(t);
   setTimeout(function(){t.remove();},2000);
 }
