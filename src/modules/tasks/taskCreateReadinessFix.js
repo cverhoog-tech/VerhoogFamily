@@ -116,16 +116,6 @@
       if(typeof shared.start==='function') shared.start();
       var status=typeof shared.status==='function'?shared.status():null;
       if(status&&status.ready) return status;
-      // TEMP DIAGNOSTIC (see report — remove once root cause is confirmed on
-      // device): this is the wrapper's own reject path, distinct from
-      // TaskSharedData.write()'s "not ready" reject. Both currently surface
-      // as the same generic toast in taskDetailPopup.js, so log which one
-      // actually fired and why readiness was still false here.
-      console.warn('[TaskCreateReadinessFix][DIAG] not ready after household resolve',{
-        status:status,
-        fbFamilyId:window.fbFamilyId||null,
-        hasFamilyDataStore:!!window.FamilyDataStore
-      });
       throw new Error('Shared task store niet ready na household resolve');
     });
   }
