@@ -857,6 +857,21 @@
       done:false
     };
     if(btnEl){btnEl.disabled=true;btnEl.style.opacity='.6';}
+    // TEMP DIAGNOSTIC (see report — remove once root cause is confirmed on
+    // device): the .catch() below previously discarded the real reject
+    // reason behind one generic toast. This captures the exact readiness/
+    // identity state at the moment of the call and, on failure, the full
+    // error object — console-only, the user-facing toast stays generic.
+    var __diagAtCall={
+      readinessFixInstalled:!!window.__taskCreateReadinessFix,
+      createWrapped:!!(window.TaskSharedData&&window.TaskSharedData.create&&window.TaskSharedData.create.__resolvesHouseholdContext),
+      taskSharedStatus:(window.TaskSharedData&&typeof window.TaskSharedData.status==='function')?window.TaskSharedData.status():null,
+      familyDataStoreStatus:(window.FamilyDataStore&&typeof window.FamilyDataStore.status==='function')?window.FamilyDataStore.status():null,
+      fbFamilyId:window.fbFamilyId||null,
+      firebaseUid:currentUid(),
+      offlineMode:!!window.offlineMode
+    };
+    console.log('[TaskDetailPopup][DIAG] create() call state',__diagAtCall);
     window.TaskSharedData.create(payload).then(function(saved){
       if(!Array.isArray(window.taskData))window.taskData=[];
       if(!window.taskData.some(function(t){return String(t.id)===String(saved.id);}))window.taskData.unshift(saved);
@@ -875,7 +890,23 @@
       if(typeof window.showToast==='function')window.showToast('Taak aangemaakt ✓');
       close();
     }).catch(function(err){
+      var __diagOnFail={
+        readinessFixInstalled:__diagAtCall.readinessFixInstalled,
+        createWrapped:__diagAtCall.createWrapped,
+        taskSharedStatus:(window.TaskSharedData&&typeof window.TaskSharedData.status==='function')?window.TaskSharedData.status():null,
+        familyDataStoreStatus:(window.FamilyDataStore&&typeof window.FamilyDataStore.status==='function')?window.FamilyDataStore.status():null,
+        fbFamilyId:window.fbFamilyId||null,
+        firebaseUid:currentUid(),
+        offlineMode:!!window.offlineMode,
+        payload:payload,
+        errorName:err&&err.name,
+        errorCode:err&&err.code,
+        errorMessage:err&&err.message,
+        errorStack:err&&err.stack
+      };
       console.warn('[TaskDetailPopup] create failed',err);
+      console.warn('[TaskDetailPopup][DIAG] create() failure state',__diagOnFail);
+      try{JSON.stringify(payload);}catch(jsonErr){console.warn('[TaskDetailPopup][DIAG] payload is not JSON-safe',jsonErr);}
       if(btnEl){btnEl.disabled=false;btnEl.style.opacity='';}
       if(typeof window.showToast==='function')window.showToast('Taak kon niet worden opgeslagen');
     });
