@@ -117,6 +117,8 @@ function openAdd(type) {
   document.getElementById('sheet-title').textContent = sheet.title;
   document.getElementById('sheet-fields').innerHTML = sheet.build();
   document.getElementById('add-overlay').classList.add('open');
+  var addSheetEl = document.querySelector('#add-overlay .add-sheet');
+  if(addSheetEl) addSheetEl.classList.toggle('sheet-task', type === 'task');
   setTimeout(function(){
     var f=document.getElementById('f1');if(f)f.focus();
     if(currentAddType==='shop') attachShopAutocomplete();

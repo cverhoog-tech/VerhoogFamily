@@ -10,6 +10,7 @@ function renderTasks() {
     if(window.__famV023) { var _r=typeof render==='function'?render:window.famRender; if(_r){_r(true);} }
   }
   else if(taskTab==='persoon') renderTasksPersoon(el);
+  else if(taskTab==='compact') { if(window.TaskCompactHome) window.TaskCompactHome.render(el); }
 }
 
 function setTaskTab(tab, btn) {
@@ -460,4 +461,3 @@ function renderTasksPersoon(el) {
   html += '</div>';
   el.innerHTML = html;
 }
-

@@ -327,6 +327,7 @@ function completeSetup() {
 <div class="screen" id="screen-tasks">
   <div class="task-tabs">
     <button class="ttab active" onclick="setTaskTab('overzicht',this)">Overzicht</button>
+    <button class="ttab" onclick="setTaskTab('compact',this)">Compact</button>
     <button class="ttab" onclick="setTaskTab('persoon',this)">Persoon</button>
     <button class="ttab ttab-trade" onclick="openTradeSheet()" title="Taak ruilen">🤝</button>
   </div>
@@ -1047,6 +1048,13 @@ function completeSetup() {
   <script src="src/modules/tasks/tasks.js"></script>
   <script src="src/modules/tasks/templates.js"></script>
   <script src="src/modules/tasks/quest-overlay.js"></script>
+  <script src="src/core/familyDataStore.js"></script>
+  <script src="src/modules/tasks/taskModel.js"></script>
+  <script src="src/modules/tasks/taskSharedData.js"></script>
+  <script src="src/modules/tasks/taskPersonCompatibility.js"></script>
+  <script src="src/modules/tasks/taskUidCreateBridge.js"></script>
+  <script src="src/modules/tasks/taskCompactHome.js"></script>
+  <script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>
   <script src="src/modules/shop/shop.js"></script>
   <script src="src/modules/notes/notes.js"></script>
   <script src="src/modules/feed/feed.js"></script>

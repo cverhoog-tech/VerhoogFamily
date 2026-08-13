@@ -35,7 +35,6 @@ function renderNav() {
 
   for(var i=0;i<5;i++){
     if(i===2){
-      // Center — Feed
       var active = currentScreen==='feed';
       html += '<button class="nav-btn nav-center'+(active?' active':'')+'" id="nav-feed-btn" onclick="showScreen(\'feed\')">'
         +'<div class="nav-center-inner">'
@@ -67,7 +66,6 @@ function renderNav() {
 
   nav.innerHTML = html;
 
-  // Attach events
   nav.querySelectorAll('[data-goto]').forEach(function(btn){
     btn.onclick = function(){ showScreen(btn.dataset.goto); };
   });
@@ -76,7 +74,6 @@ function renderNav() {
   var moreBtn = document.getElementById('nav-more-btn');
   if(moreBtn) moreBtn.onclick = function(){ toggleMore(); };
 
-  // More menu
   var navIds = navSlots.filter(function(s){return s!=='more';});
   navIds.push('feed');
   var moreScreens = ALL_SCREENS.filter(function(s){return navIds.indexOf(s.id)===-1;});
@@ -97,9 +94,7 @@ function renderNav() {
   }
 }
 
-
 function attachNavDelegation() {
-  // Now handled directly in renderNav() — this is kept for backwards compat
   renderNav();
 }
 
@@ -166,18 +161,15 @@ function clearNavSlot(idx){navSlots[idx]='more';renderNavConfig();renderNav();}
 
 var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates'};
 
-// ── NAVIGATION STATE ──
 var _currentScreen = 'home';
 var _navBusy = false;
 var _pendingScreen = null;
 
 function showScreen(id) {
   if(id === _currentScreen && !_navBusy) {
-    // Already here — just re-render if needed
     _renderScreen(id);
     return;
   }
-  // If a nav is in progress, queue this one
   if(_navBusy) { _pendingScreen = id; return; }
 
   _navBusy = true;
@@ -187,24 +179,20 @@ function showScreen(id) {
   var next = document.getElementById('screen-'+id);
   if(!next) { _navBusy = false; return; }
 
-  // Update header & nav instantly
   document.getElementById('hdr-title').textContent = screenTitles[id]||'FamilieApp';
   closeMore();
   visitedScreens.add(id);
   _currentScreen = id;
   renderNav();
 
-  // Switch screens — show next immediately, hide prev
   document.querySelectorAll('.screen').forEach(function(s){
     s.classList.remove('active');
   });
   next.classList.add('active');
 
-  // Render content via RAF so the CSS paint happens first
   requestAnimationFrame(function(){
     _renderScreen(id);
     _navBusy = false;
-    // Handle any queued navigation
     if(_pendingScreen) {
       var queued = _pendingScreen;
       _pendingScreen = null;
@@ -212,7 +200,6 @@ function showScreen(id) {
     }
   });
 
-  // AI panel context update
   if(typeof aiPanelOpen !== 'undefined' && aiPanelOpen) {
     aiCurrentScreen = '';
     updateAiContext();
@@ -222,17 +209,31 @@ function showScreen(id) {
 function _renderScreen(id) {
   if(id==='home')         renderHome();
   else if(id==='tasks')   {
-    // Always reset to overzicht + use v023 UI
-    taskTab='overzicht';
-    document.querySelectorAll('.ttab').forEach(function(b){b.classList.remove('active');});
-    var first=document.querySelector('.ttab');if(first)first.classList.add('active');
-    setTimeout(function(){
-      var famRenderFn = (typeof render === 'function') ? render : window.famRender;
-      if(window.__famV023 && typeof famRenderFn === 'function') {
-        var r=document.getElementById('task-content')||document.querySelector('.task-content');
-        if(r){r.dataset.v023='';famRenderFn(true);}
-      }
-    }, 50);
+    // Preserve the currently selected task view on re-renders. The old code
+    // forced every tasks render back to "overzicht", which meant a Firebase
+    // update after creating a task could throw the user out of Compact even
+    // though the create popup itself had completed successfully.
+    var validTaskTabs={overzicht:true,persoon:true,compact:true};
+    if(!validTaskTabs[taskTab]) taskTab='overzicht';
+    document.querySelectorAll('.ttab').forEach(function(b){
+      var tab=(b.getAttribute('data-tab')||b.dataset&&b.dataset.tab||'').toLowerCase();
+      var text=(b.textContent||'').toLowerCase();
+      var matches=tab===taskTab || (taskTab==='compact'&&text.indexOf('compact')>-1) || (taskTab==='persoon'&&text.indexOf('persoon')>-1) || (taskTab==='overzicht'&&text.indexOf('overzicht')>-1);
+      b.classList.toggle('active',!!matches);
+    });
+    if(taskTab==='compact'&&window.TaskCompactHome&&typeof window.TaskCompactHome.render==='function'){
+      window.TaskCompactHome.render(document.getElementById('task-content'));
+    } else if(taskTab==='persoon'&&typeof renderTasks==='function') {
+      renderTasks();
+    } else {
+      setTimeout(function(){
+        var famRenderFn = (typeof render === 'function') ? render : window.famRender;
+        if(window.__famV023 && typeof famRenderFn === 'function') {
+          var r=document.getElementById('task-content')||document.querySelector('.task-content');
+          if(r){r.dataset.v023='';famRenderFn(true);}
+        }
+      }, 50);
+    }
   }
   else if(id==='shop')    renderShop();
   else if(id==='notes')   renderNotes();
@@ -258,9 +259,6 @@ function closeMore(){
   if(menu)menu.classList.remove('open');
 }
 
-// Close the More menu on a true outside tap/click. Capture phase ensures the
-// menu closes before an underlying control can react; when the menu was open,
-// that outside interaction is consumed to prevent accidental navigation/actions.
 (function installMoreOutsideDismiss(){
   if(window.__familyMoreOutsideDismiss)return;
   window.__familyMoreOutsideDismiss=true;
