@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// TASK HERO TEMPLATES v5
+// TASK HERO TEMPLATES v6
 // Visual-only hero asset layer for Task Detail/Create popup cards.
 // Existing task/category keys remain stable; title keywords can select
 // a more specific hero variant without migrating persisted task data.
 // ============================================================
 (function(){
-  if(window.__taskHeroTemplatesV5)return;
-  window.__taskHeroTemplatesV5=true;
+  if(window.__taskHeroTemplatesV6)return;
+  window.__taskHeroTemplatesV6=true;
 
   var activeTaskId=null;
   var activeCreate=true;
@@ -21,7 +21,7 @@
     kitchen:{key:'kitchen',label:'Keuken',image:ASSET_BASE+'kitchen.webp',position:'center 54%',style:'radial-gradient(120% 135% at 82% 0%,rgba(59,205,190,.52),transparent 58%),linear-gradient(135deg,#17695f 0%,#142c2c 72%)'},
     groceries:{key:'groceries',label:'Boodschappen',image:ASSET_BASE+'market.webp',position:'center 55%',style:'radial-gradient(120% 135% at 82% 0%,rgba(92,206,126,.5),transparent 58%),linear-gradient(135deg,#2b6b48 0%,#183126 72%)'},
     pantry:{key:'pantry',label:'Voorraad',image:ASSET_BASE+'market.webp',position:'center 55%',style:'radial-gradient(120% 135% at 82% 0%,rgba(230,170,65,.48),transparent 58%),linear-gradient(135deg,#74511f 0%,#302319 72%)'},
-    admin:{key:'admin',label:'Administratie',position:'center',style:'radial-gradient(120% 135% at 82% 0%,rgba(120,134,255,.48),transparent 58%),linear-gradient(135deg,#394b87 0%,#1b223f 72%)'},
+    admin:{key:'admin',label:'Administratie',image:ASSET_BASE+'quest-adventure.webp',position:'center 48%',style:'radial-gradient(120% 135% at 82% 0%,rgba(120,134,255,.48),transparent 58%),linear-gradient(135deg,#394b87 0%,#1b223f 72%)'},
     family:{key:'family',label:'Gezin',image:ASSET_BASE+'cozy-home.webp',position:'center 54%',style:'radial-gradient(120% 135% at 82% 0%,rgba(240,111,165,.48),transparent 58%),linear-gradient(135deg,#8c3e66 0%,#392035 72%)'},
     garden:{key:'garden',label:'Tuin',image:ASSET_BASE+'garden.webp',position:'center 55%',style:'radial-gradient(120% 135% at 82% 0%,rgba(139,201,92,.5),transparent 58%),linear-gradient(135deg,#496b34 0%,#1f321d 72%)'},
     travel:{key:'travel',label:'Reizen',image:ASSET_BASE+'travel.webp',position:'center 56%',style:'radial-gradient(120% 135% at 82% 0%,rgba(86,155,255,.55),transparent 58%),linear-gradient(135deg,#2e5a99 0%,#172a47 72%)'},
@@ -29,9 +29,6 @@
     pickup:{key:'pickup',label:'Ophalen',image:ASSET_BASE+'travel.webp',position:'center 56%',style:'radial-gradient(120% 135% at 82% 0%,rgba(65,205,218,.52),transparent 58%),linear-gradient(135deg,#1d7382 0%,#18333a 72%)'}
   };
 
-  // These semantic hero variants intentionally map onto the current stable
-  // asset set. Replacing their image paths with the final generated assets
-  // later does not require changing task data or category keys.
   var VARIANTS={
     dishwashing:{key:'dishwashing',template:'kitchen'},
     cooking:{key:'cooking',template:'kitchen'},
@@ -112,11 +109,11 @@
   }
   function hook(){
     var api=window.TaskDetailPopup;if(!api)return false;
-    if(api.__heroTemplatesHookedV5)return true;
+    if(api.__heroTemplatesHookedV6)return true;
     var open=api.open,create=api.openCreate;
     if(typeof open==='function')api.open=function(id){activeCreate=false;activeCreateCat=null;activeTaskId=id;var r=open.apply(this,arguments);setTimeout(apply,0);return r;};
     if(typeof create==='function')api.openCreate=function(){activeCreate=true;activeTaskId=null;activeCreateCat=null;var r=create.apply(this,arguments);setTimeout(apply,0);return r;};
-    api.__heroTemplatesHookedV5=true;return true;
+    api.__heroTemplatesHookedV6=true;return true;
   }
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')setTimeout(apply,0);});
   document.addEventListener('click',function(e){
