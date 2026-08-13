@@ -27,7 +27,7 @@
   function decorate(){var b=document.getElementById('tch-party-quest');if(!b||!active.length)return;var h=b.querySelector('b'),s=b.querySelector('small');if(h)h.textContent=active.length===1?'1 actieve Party Quest':active.length+' actieve Party Quests';if(s)s.textContent='Tik voor overzicht en beheer';}
   function eventPayload(message){return {id:String(Date.now())+'-'+currentUid(),actorUid:currentUid(),message:message,time:firebase.database.ServerValue.TIMESTAMP};}
   function leave(q){var me=currentUid(),mine=invitees(q)[me];if(!mine)return;var message=(mine.name||'Een gezinslid')+' heeft “'+(q.questTitle||'Party Quest')+'” verlaten';var updates={};updates['invitees/'+me+'/status']='declined';updates['invitees/'+me+'/respondedAt']=firebase.database.ServerValue.TIMESTAMP;updates.updatedAt=firebase.database.ServerValue.TIMESTAMP;updates.lastEvent=eventPayload(message);firebase.database().ref('families/'+familyId()+'/partyQuests/'+q.id).update(updates).then(function(){toast('Je hebt “'+(q.questTitle||'Party Quest')+'” verlaten');});}
-  function end(q){var message=(q.inviterName||'De maker')+' heeft “'+(q.questTitle||'Party Quest')+'” beëindigd';firebase.database().ref('families/'+familyId()+'/partyQuests/'+q.id).update({status:'completed',endedAt:firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP,lastEvent:eventPayload(message)}).then(function(){toast('Party Quest beëindigd');});}
+  function end(q){var message=(q.inviterName||'De maker')+' heeft “'+(q.questTitle||'Party Quest')+'” beëindigd';return firebase.database().ref('families/'+familyId()+'/partyQuests/'+q.id).update({status:'completed',endedAt:firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP,lastEvent:eventPayload(message)}).then(function(){toast('Party Quest beëindigd');});}
   function open(){
     if(!active.length){var stale=document.getElementById('party-quest-active-view');if(stale)stale.remove();return false;}
     var old=document.getElementById('party-quest-active-view');if(old)old.remove();var me=currentUid();var e=document.createElement('div');e.id='party-quest-active-view';e.style.cssText='position:fixed;inset:0;z-index:10120;background:rgba(8,7,15,.68);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:16px';
@@ -41,6 +41,6 @@
   function start(){try{if(!familyId()||!currentUid())return false;firebase.database().ref('families/'+familyId()+'/partyQuests').on('value',function(s){refresh(s.val()||{});});return true;}catch(e){return false;}}
   document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('#tch-party-quest');if(!b||!active.length)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();open();},true);
   hookDetail();hookQueue();
-  window.PartyQuestActiveView={open:open,list:function(){return active.slice();},start:start};
+  window.PartyQuestActiveView={open:open,list:function(){return active.slice();},start:start,endQuest:end};
   var tries=0,t=setInterval(function(){tries++;if(start()||tries>80)clearInterval(t);},250);
 })();
