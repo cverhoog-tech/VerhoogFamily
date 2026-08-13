@@ -1,15 +1,16 @@
 'use strict';
 // ============================================================
-// TASK HERO TEMPLATES v2
+// TASK HERO TEMPLATES v3
 // Visual-only hero asset layer for Task Detail/Create popup cards.
 // Real per-task images remain authoritative; category assets are fallback.
 // ============================================================
 (function(){
-  if(window.__taskHeroTemplatesV2)return;
-  window.__taskHeroTemplatesV2=true;
+  if(window.__taskHeroTemplatesV3)return;
+  window.__taskHeroTemplatesV3=true;
 
   var activeTaskId=null;
   var activeCreate=true;
+  var activeCreateCat=null;
   var ASSET_BASE='src/assets/task-heroes/';
   var TEMPLATES={
     quest:{key:'quest',label:'Avontuur',image:ASSET_BASE+'quest-adventure.webp',position:'center 55%',style:'radial-gradient(120% 140% at 78% -10%,rgba(172,120,255,.55),transparent 58%),linear-gradient(135deg,#3b2368 0%,#171126 72%)'},
@@ -43,7 +44,8 @@
   }
   function selectedCreateCategory(){
     var b=document.querySelector('[data-cat-pick].active,[data-extra-cat].active');
-    return b&&(b.getAttribute('data-cat-pick')||b.getAttribute('data-extra-cat'));
+    var dom=b&&(b.getAttribute('data-cat-pick')||b.getAttribute('data-extra-cat'));
+    return dom||activeCreateCat;
   }
   function createTitle(){var x=document.getElementById('tdp-create-title');return x&&x.value||'';}
   function category(){
@@ -56,7 +58,6 @@
     var hero=document.querySelector('#tdp-overlay .tdp-hero');if(!hero)return;
     var cat=category(),tpl=TEMPLATES[cat]||TEMPLATES.quest;
     var inline=hero.style.backgroundImage||'';
-    // Never replace an explicit per-task/user image rendered by the popup.
     if(/url\(/i.test(inline)&&!isOwnAsset(inline)){
       hero.removeAttribute('data-task-hero-template');
       return;
@@ -70,14 +71,19 @@
   }
   function hook(){
     var api=window.TaskDetailPopup;if(!api)return false;
-    if(api.__heroTemplatesHookedV2)return true;
+    if(api.__heroTemplatesHookedV3)return true;
     var open=api.open,create=api.openCreate;
-    if(typeof open==='function')api.open=function(id){activeCreate=false;activeTaskId=id;var r=open.apply(this,arguments);setTimeout(apply,0);return r;};
-    if(typeof create==='function')api.openCreate=function(){activeCreate=true;activeTaskId=null;var r=create.apply(this,arguments);setTimeout(apply,0);return r;};
-    api.__heroTemplatesHookedV2=true;return true;
+    if(typeof open==='function')api.open=function(id){activeCreate=false;activeCreateCat=null;activeTaskId=id;var r=open.apply(this,arguments);setTimeout(apply,0);return r;};
+    if(typeof create==='function')api.openCreate=function(){activeCreate=true;activeTaskId=null;activeCreateCat=null;var r=create.apply(this,arguments);setTimeout(apply,0);return r;};
+    api.__heroTemplatesHookedV3=true;return true;
   }
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')setTimeout(apply,0);});
-  document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-cat-pick],[data-extra-cat]');if(b)setTimeout(apply,0);},true);
+  document.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest&&e.target.closest('[data-cat-pick],[data-extra-cat]');
+    if(!b)return;
+    var cat=b.getAttribute('data-cat-pick')||b.getAttribute('data-extra-cat');
+    if(cat&&TEMPLATES[cat]){activeCreateCat=cat;setTimeout(apply,0);}
+  },true);
   var observer=new MutationObserver(function(muts){
     for(var i=0;i<muts.length;i++){
       if(muts[i].addedNodes&&muts[i].addedNodes.length&&document.querySelector('#tdp-overlay .tdp-hero')){apply();break;}
