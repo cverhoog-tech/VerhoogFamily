@@ -1,12 +1,12 @@
 'use strict';
 (function(){
-  if(window.__partyQuestActiveViewV4)return;
-  window.__partyQuestActiveViewV4=true;
-  var active=[],seenEvents={},openTaskId=null,reopenQueue=false;
+  if(window.__partyQuestActiveViewV5)return;
+  window.__partyQuestActiveViewV5=true;
+  var active=[],seenEvents={},openTaskId=null,reopenQueue=false,endedLocal={};
   function currentUid(){try{var u=window.fbUser||(window.fbAuth&&window.fbAuth.currentUser)||firebase.auth().currentUser;return u&&u.uid||null;}catch(e){return null;}}
   function familyId(){return window.fbFamilyId||null;}
   function invitees(q){return q&&q.invitees&&typeof q.invitees==='object'?q.invitees:{};}
-  function relevant(q){var me=currentUid(),mine=invitees(q)[me];return q&&q.status==='active'&&(q.inviterUid===me||(mine&&mine.status==='active'));}
+  function relevant(q){var me=currentUid(),mine=invitees(q)[me];return q&&q.status==='active'&&!endedLocal[q.id]&&(q.inviterUid===me||(mine&&mine.status==='active'));}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function toast(m){if(typeof window.showToast==='function')window.showToast(m);}
   function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
@@ -18,7 +18,7 @@
   function participantNames(q){return participantRows(q).map(function(p){return p.name;});}
   function avatarStack(q,cls){return participantRows(q).map(function(p){var u=avatarOf(p.uid),n=p.name||nameOf(p.uid);return u?'<img class="'+cls+'" src="'+esc(u)+'" alt="'+esc(n)+'">':'<span class="'+cls+'" title="'+esc(n)+'">'+esc(initials(n))+'</span>';}).join('');}
   function refresh(rows){
-    var all=Object.keys(rows||{}).map(function(k){var q=rows[k];if(q&&!q.id)q.id=k;return q;});
+    var all=Object.keys(rows||{}).map(function(k){var q=rows[k];if(q&&!q.id)q.id=k;if(q&&q.status!=='active')delete endedLocal[q.id];return q;});
     all.forEach(function(q){var ev=q&&q.lastEvent;if(!ev||!ev.id)return;if(!seenEvents[q.id]){seenEvents[q.id]=ev.id;return;}if(seenEvents[q.id]===ev.id)return;seenEvents[q.id]=ev.id;if(ev.actorUid!==currentUid()&&relevant(q))toast(ev.message||'Party Quest bijgewerkt');});
     active=all.filter(relevant).sort(function(a,b){return Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0);});decorate();decorateDetail();
     var openEl=document.getElementById('party-quest-active-view');
@@ -27,7 +27,15 @@
   function decorate(){var b=document.getElementById('tch-party-quest');if(!b||!active.length)return;var h=b.querySelector('b'),s=b.querySelector('small');if(h)h.textContent=active.length===1?'1 actieve Party Quest':active.length+' actieve Party Quests';if(s)s.textContent='Tik voor overzicht en beheer';}
   function eventPayload(message){return {id:String(Date.now())+'-'+currentUid(),actorUid:currentUid(),message:message,time:firebase.database.ServerValue.TIMESTAMP};}
   function leave(q){var me=currentUid(),mine=invitees(q)[me];if(!mine)return;var message=(mine.name||'Een gezinslid')+' heeft “'+(q.questTitle||'Party Quest')+'” verlaten';var updates={};updates['invitees/'+me+'/status']='declined';updates['invitees/'+me+'/respondedAt']=firebase.database.ServerValue.TIMESTAMP;updates.updatedAt=firebase.database.ServerValue.TIMESTAMP;updates.lastEvent=eventPayload(message);firebase.database().ref('families/'+familyId()+'/partyQuests/'+q.id).update(updates).then(function(){toast('Je hebt “'+(q.questTitle||'Party Quest')+'” verlaten');});}
-  function end(q){var message=(q.inviterName||'De maker')+' heeft “'+(q.questTitle||'Party Quest')+'” beëindigd';return firebase.database().ref('families/'+familyId()+'/partyQuests/'+q.id).update({status:'completed',endedAt:firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP,lastEvent:eventPayload(message)}).then(function(){toast('Party Quest beëindigd');});}
+  function end(q){
+    if(!q||endedLocal[q.id])return Promise.resolve(false);
+    endedLocal[q.id]=true;
+    active=active.filter(function(x){return String(x.id)!==String(q.id);});
+    decorate();decorateDetail();
+    var openEl=document.getElementById('party-quest-active-view');if(openEl){if(active.length)open();else openEl.remove();}
+    var message=(q.inviterName||'De maker')+' heeft “'+(q.questTitle||'Party Quest')+'” beëindigd';
+    return firebase.database().ref('families/'+familyId()+'/partyQuests/'+q.id).update({status:'completed',endedAt:firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP,lastEvent:eventPayload(message)}).then(function(){toast('Party Quest beëindigd');return true;}).catch(function(err){delete endedLocal[q.id];throw err;});
+  }
   function open(){
     if(!active.length){var stale=document.getElementById('party-quest-active-view');if(stale)stale.remove();return false;}
     var old=document.getElementById('party-quest-active-view');if(old)old.remove();var me=currentUid();var e=document.createElement('div');e.id='party-quest-active-view';e.style.cssText='position:fixed;inset:0;z-index:10120;background:rgba(8,7,15,.68);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:16px';
