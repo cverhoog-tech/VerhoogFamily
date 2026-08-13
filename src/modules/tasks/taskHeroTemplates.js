@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// TASK HERO TEMPLATES v3
+// TASK HERO TEMPLATES v4
 // Visual-only hero asset layer for Task Detail/Create popup cards.
 // Real per-task images remain authoritative; category assets are fallback.
 // ============================================================
 (function(){
-  if(window.__taskHeroTemplatesV3)return;
-  window.__taskHeroTemplatesV3=true;
+  if(window.__taskHeroTemplatesV4)return;
+  window.__taskHeroTemplatesV4=true;
 
   var activeTaskId=null;
   var activeCreate=true;
@@ -18,6 +18,7 @@
     cleaning:{key:'cleaning',label:'Schoonmaak',image:ASSET_BASE+'cozy-home.webp',position:'center 54%',style:'radial-gradient(120% 135% at 82% 0%,rgba(191,132,255,.5),transparent 58%),linear-gradient(135deg,#5a357a 0%,#211b36 72%)'},
     kitchen:{key:'kitchen',label:'Keuken',image:ASSET_BASE+'kitchen.webp',position:'center 54%',style:'radial-gradient(120% 135% at 82% 0%,rgba(59,205,190,.52),transparent 58%),linear-gradient(135deg,#17695f 0%,#142c2c 72%)'},
     groceries:{key:'groceries',label:'Boodschappen',image:ASSET_BASE+'market.webp',position:'center 55%',style:'radial-gradient(120% 135% at 82% 0%,rgba(92,206,126,.5),transparent 58%),linear-gradient(135deg,#2b6b48 0%,#183126 72%)'},
+    pantry:{key:'pantry',label:'Voorraad',image:ASSET_BASE+'market.webp',position:'center 55%',style:'radial-gradient(120% 135% at 82% 0%,rgba(217,119,6,.48),transparent 58%),linear-gradient(135deg,#7a4b1e 0%,#332214 72%)'},
     admin:{key:'admin',label:'Administratie',position:'center',style:'radial-gradient(120% 135% at 82% 0%,rgba(120,134,255,.48),transparent 58%),linear-gradient(135deg,#394b87 0%,#1b223f 72%)'},
     family:{key:'family',label:'Gezin',image:ASSET_BASE+'cozy-home.webp',position:'center 54%',style:'radial-gradient(120% 135% at 82% 0%,rgba(240,111,165,.48),transparent 58%),linear-gradient(135deg,#8c3e66 0%,#392035 72%)'},
     garden:{key:'garden',label:'Tuin',image:ASSET_BASE+'garden.webp',position:'center 55%',style:'radial-gradient(120% 135% at 82% 0%,rgba(139,201,92,.5),transparent 58%),linear-gradient(135deg,#496b34 0%,#1f321d 72%)'},
@@ -36,6 +37,7 @@
     if(/was|laundry|kleding/.test(raw))return'laundry';
     if(/stof|schoon|clean|dweil|badkamer|toilet/.test(raw))return'cleaning';
     if(/vaat|keuken|kitchen|koken/.test(raw))return'kitchen';
+    if(/voorraad|pantry|voorraadkast|kast aanvullen|voorraad aanvullen|organiseren|snack|snacks|snoep|chips|lekkers|lekkere dingen/.test(raw))return'pantry';
     if(/bood|supermarkt|grocer/.test(raw))return'groceries';
     if(/admin|contract|rekening|factuur|bank/.test(raw))return'admin';
     if(/kind|speel|family|gezin/.test(raw))return'family';
@@ -71,11 +73,11 @@
   }
   function hook(){
     var api=window.TaskDetailPopup;if(!api)return false;
-    if(api.__heroTemplatesHookedV3)return true;
+    if(api.__heroTemplatesHookedV4)return true;
     var open=api.open,create=api.openCreate;
     if(typeof open==='function')api.open=function(id){activeCreate=false;activeCreateCat=null;activeTaskId=id;var r=open.apply(this,arguments);setTimeout(apply,0);return r;};
     if(typeof create==='function')api.openCreate=function(){activeCreate=true;activeTaskId=null;activeCreateCat=null;var r=create.apply(this,arguments);setTimeout(apply,0);return r;};
-    api.__heroTemplatesHookedV3=true;return true;
+    api.__heroTemplatesHookedV4=true;return true;
   }
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')setTimeout(apply,0);});
   document.addEventListener('click',function(e){
