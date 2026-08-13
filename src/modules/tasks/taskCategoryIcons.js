@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// TASK CATEGORY ICONS v1
+// TASK CATEGORY ICONS v2
 // Shared premium fantasy/RPG glyph language for Compact + task card.
 // Visual-only: no task data, Firebase, UID or completion behavior changes.
 // ============================================================
@@ -73,7 +73,12 @@
   }
 
   var activeDetailCat=null;
-  function selectedCreateCat(){var x=document.querySelector('[data-cat-pick].active');return x&&x.getAttribute('data-cat-pick');}
+  var activeCreateCat=null;
+  function selectedCreateCat(){
+    var x=document.querySelector('[data-cat-pick].active');
+    var dom=x&&x.getAttribute('data-cat-pick');
+    return dom||activeCreateCat;
+  }
   function createTitleCat(){var x=document.getElementById('tdp-create-title');return x?infer(x.value):'quest';}
 
   function ensureExtraCategoryButtons(){
@@ -103,7 +108,7 @@
     if(!inner)return;
     ensureExtraCategoryButtons();
     var selected=selectedCreateCat();
-    var cat=(selected&&selected!=='quest')?selected:(createTitleCat()!=='quest'?createTitleCat():(activeDetailCat||selected||'quest'));
+    var cat=selected||(createTitleCat()!=='quest'?createTitleCat():(activeDetailCat||'quest'));
     var old=inner.querySelector('svg');
     if(!old||old.getAttribute('data-rpg-cat')!==cat){
       inner.innerHTML=svg(cat,20,1.65).replace('<svg ','<svg data-rpg-cat="'+cat+'" ');
@@ -120,12 +125,18 @@
   function hookPopup(){
     if(!window.TaskDetailPopup||window.TaskDetailPopup.__categoryIconsHooked)return false;
     var api=window.TaskDetailPopup,rawOpen=api.open,rawCreate=api.openCreate;
-    if(typeof rawOpen==='function')api.open=function(id){activeDetailCat=detect(taskById(id));var r=rawOpen.apply(this,arguments);setTimeout(patchPopup,0);return r;};
-    if(typeof rawCreate==='function')api.openCreate=function(){activeDetailCat='quest';var r=rawCreate.apply(this,arguments);setTimeout(patchPopup,0);return r;};
+    if(typeof rawOpen==='function')api.open=function(id){activeCreateCat=null;activeDetailCat=detect(taskById(id));var r=rawOpen.apply(this,arguments);setTimeout(patchPopup,0);return r;};
+    if(typeof rawCreate==='function')api.openCreate=function(){activeDetailCat='quest';activeCreateCat=null;var r=rawCreate.apply(this,arguments);setTimeout(patchPopup,0);return r;};
     api.__categoryIconsHooked=true;
     return true;
   }
 
+  document.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest&&e.target.closest('[data-cat-pick]');
+    if(!b)return;
+    var cat=b.getAttribute('data-cat-pick');
+    if(cat&&KNOWN[cat]){activeCreateCat=cat;setTimeout(patchPopup,0);}
+  },true);
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')patchPopup();});
   var observer=new MutationObserver(function(){patchCompact();if(document.querySelector('.tdp-overlay'))patchPopup();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
