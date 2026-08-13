@@ -1,7 +1,7 @@
 'use strict';
 (function(){
-  if(window.__taskSwapUiV1)return;
-  window.__taskSwapUiV1=true;
+  if(window.__taskSwapUiV2)return;
+  window.__taskSwapUiV2=true;
   var currentTaskId=null,modalId='task-swap-ui-modal';
   function uid(){try{var u=window.fbUser||(window.fbAuth&&window.fbAuth.currentUser)||firebase.auth().currentUser;return u&&u.uid||null;}catch(e){return null;}}
   function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
@@ -16,8 +16,16 @@
   function avatarHtml(id){var u=avatarOf(id),n=nameOf(id);return u?'<img class="tsu-avatar" src="'+esc(u)+'" alt="'+esc(n)+'">':'<span class="tsu-avatar">'+esc(initials(n))+'</span>';}
   function close(){var e=document.getElementById(modalId);if(e)e.remove();}
   function open(taskId){currentTaskId=taskId||currentTaskId;var t=task(currentTaskId),me=uid();if(!t||!me)return;ensureCss();close();var list=members().filter(function(m){var id=String(m.uid||m.id||'');return id&&id!==String(me)&&!isAssigned(t,id);});var e=document.createElement('div');e.id=modalId;e.className='tsu-overlay';e.innerHTML='<div class="tsu-card"><div class="tsu-head"><div class="tsu-crest">⇄</div><div><h3>Taak ruilen</h3><p>Vraag een ander partylid om deze taak van je over te nemen.</p></div></div><div class="tsu-focus"><small>Quest</small><b>'+esc(t.title||'Taak')+'</b></div><div class="tsu-list">'+list.map(function(m){var id=String(m.uid||m.id);return '<button class="tsu-person" data-swap-target="'+esc(id)+'">'+avatarHtml(id)+'<span><b>'+esc(nameOf(id))+'</b><small>Stuur ruilverzoek</small></span><span class="tsu-arrow">›</span></button>';}).join('')+'</div><div class="tsu-actions"><button class="tsu-btn tsu-muted" data-close>Annuleren</button></div></div>';document.body.appendChild(e);e.onclick=function(ev){if(ev.target===e)close();};e.querySelector('[data-close]').onclick=close;e.querySelectorAll('[data-swap-target]').forEach(function(b){b.onclick=function(){var target=b.getAttribute('data-swap-target');window.dispatchEvent(new CustomEvent('familyapp:task-swap-target-selected',{detail:{taskId:String(t.id),targetUid:target}}));};});}
-  function decorate(){var overlay=document.getElementById('tdp-overlay'),hero=overlay&&overlay.querySelector('.tdp-hero');if(!hero||!currentTaskId)return;var old=hero.querySelector('.tsu-trigger');if(old)old.remove();var t=task(currentTaskId);if(!t||t.done||!isAssigned(t,uid()))return;var b=document.createElement('button');b.type='button';b.className='tsu-trigger';b.setAttribute('aria-label','Taak ruilen');b.title='Taak ruilen';b.textContent='⇄';b.onclick=function(e){e.preventDefault();e.stopPropagation();open(currentTaskId);};hero.appendChild(b);}
+  function decorate(){
+    var overlay=document.getElementById('tdp-overlay'),hero=overlay&&overlay.querySelector('.tdp-hero');
+    if(!hero||!currentTaskId)return;
+    var t=task(currentTaskId),existing=hero.querySelector('.tsu-trigger');
+    if(!t||t.done||!isAssigned(t,uid())){if(existing)existing.remove();return;}
+    if(existing&&String(existing.getAttribute('data-task-id'))===String(currentTaskId))return;
+    if(existing)existing.remove();
+    var b=document.createElement('button');b.type='button';b.className='tsu-trigger';b.setAttribute('data-task-id',String(currentTaskId));b.setAttribute('aria-label','Taak ruilen');b.title='Taak ruilen';b.textContent='⇄';b.onclick=function(e){e.preventDefault();e.stopPropagation();open(currentTaskId);};hero.appendChild(b);
+  }
   var tries=0,timer=setInterval(function(){tries++;if(window.TaskDetailPopup&&typeof TaskDetailPopup.open==='function'&&!TaskDetailPopup.open.__swapUiWrapped){var raw=TaskDetailPopup.open;TaskDetailPopup.open=function(id){currentTaskId=id;var r=raw.apply(this,arguments);setTimeout(decorate,0);setTimeout(decorate,100);return r;};TaskDetailPopup.open.__swapUiWrapped=true;clearInterval(timer);}else if(tries>100)clearInterval(timer);},100);
-  var mo=new MutationObserver(function(){if(currentTaskId)setTimeout(decorate,0);});if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+  window.addEventListener('familyapp:tasks-updated',function(){setTimeout(decorate,0);});
   window.TaskSwapUi={open:open,close:close,currentTask:function(){return currentTaskId;}};
 })();
