@@ -2,7 +2,7 @@
 // ============================================================
 // CALENDAR BOOTSTRAP
 // Preserve the legacy agenda/finance runtime, then layer the
-// household-scoped shared/live calendar adapter on top.
+// household-scoped shared/live calendar adapter and premium UI on top.
 // ============================================================
 (function(){
   function load(src, done){
@@ -15,6 +15,8 @@
   }
 
   load('src/modules/calendar/calendarLegacy.js?v=1', function(){
-    load('src/modules/calendar/calendarSharedLive.js?v=1');
+    load('src/modules/calendar/calendarSharedLive.js?v=1', function(){
+      load('src/modules/calendar/calendarPremiumUi.js?v=2');
+    });
   });
 })();
