@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FAMILY DATA STORE v1.4
+// FAMILY DATA STORE v1.4.1
 // Firebase UID/household scoped persistence boundary.
 // localStorage is cache/offline fallback, never household identity authority.
 // ============================================================
 (function(){
   if(window.FamilyDataStore)return;
-  var VERSION='1.4.0',CACHE_PREFIX='familyapp_data_v1_',listeners={},subscriptions={};
-  var SHARED={shoppingLists:'shoppingLists',recipes:'recipes',notes:'notes',notifications:'notifications'};
+  var VERSION='1.4.1',CACHE_PREFIX='familyapp_data_v1_',listeners={},subscriptions={};
+  var SHARED={shoppingLists:'shoppingLists',recipes:'recipes',mealPlans:'mealPlans',notes:'notes',notifications:'notifications'};
   var PRIVATE={shoppingLists:'shoppingLists',notes:'notes',progression:'progression',preferences:'preferences'};
   function now(){return Date.now();}
   function parse(v,f){try{return v?JSON.parse(v):f;}catch(e){return f;}}
@@ -28,9 +28,6 @@
   function pendingKey(){return CACHE_PREFIX+'pending_writes';}
   function pending(){try{return parse(localStorage.getItem(pendingKey()),[]);}catch(e){return[];}}
   function markPending(scope,c,value,path){var key=[scope,c,(path||[]).join('/')||'*'].join(':'),list=pending().filter(function(x){return [x.scope,x.collection,(x.path||[]).join('/')||'*'].join(':')!==key;});list.push({scope:scope,collection:c,path:path||[],value:value,uid:uid(),familyId:scope==='shared'?familyId():null,at:now()});try{localStorage.setItem(pendingKey(),JSON.stringify(list));}catch(e){}}
-  // When Firebase is reachable it is authoritative, including an empty/missing node.
-  // Returning stale local cache for an online null snapshot can split two devices into
-  // different phantom shared states, so an empty online read now overwrites the cache too.
   function read(scope,c,f){var cached=readCache(scope,c,f),ref=rootRef(scope,c);if(!ref||!onlineReady(scope))return Promise.resolve(cached);return ref.once('value').then(function(s){var v=s.val();if(v==null){v=clone(f);writeCache(scope,c,v);emit(scope,c,v,'firebase-empty');return v;}writeCache(scope,c,v);emit(scope,c,v,'firebase');return v;}).catch(function(){return cached;});}
   function write(scope,c,v,o){o=o||{};writeCache(scope,c,v);emit(scope,c,v,'local');var ref=rootRef(scope,c);if(!ref||!onlineReady(scope)||o.localOnly){if(!o.localOnly)markPending(scope,c,v,[]);return Promise.resolve({mode:'local',value:v});}return ref.set(v).then(function(){return{mode:'firebase',value:v};}).catch(function(e){markPending(scope,c,v,[]);return{mode:'local-pending',value:v,error:e};});}
   function writePath(scope,c,path,v,o){o=o||{};path=Array.isArray(path)?path:[path];var current=readCache(scope,c,{})||{},next=setPath(current,path,v);writeCache(scope,c,next);emit(scope,c,next,'local-path');var ref=rootRef(scope,c);if(ref)path.forEach(function(seg){ref=ref.child(String(seg));});if(!ref||!onlineReady(scope)||o.localOnly){if(!o.localOnly)markPending(scope,c,v,path);return Promise.resolve({mode:'local',value:v});}return ref.set(v==null?null:v).then(function(){return{mode:'firebase',value:v};}).catch(function(e){markPending(scope,c,v,path);return{mode:'local-pending',value:v,error:e};});}
