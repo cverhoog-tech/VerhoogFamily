@@ -37,12 +37,20 @@ function addActivity(icon, bg, text) {
   if(el) renderActivityList();
 }
 
+// Temporary facade only for legacy producers that have not yet been classified.
+// NotificationStore itself contains no legacy API; new code must use NotificationEvents.
 function addNotif(icon, bg, title, body) {
   if(!window.NotificationStore){
     console.error('[addNotif] NotificationStore is niet geladen');
     return Promise.reject(new Error('NotificationStore niet beschikbaar'));
   }
-  return NotificationStore.legacy(icon,bg,title,body).catch(function(err){
+  return NotificationStore.publishSelf('system.message',{
+    icon:icon||'🔔',
+    bg:bg||'#ede9fe',
+    title:title||'Melding',
+    body:body||'',
+    data:{legacyProducer:true}
+  }).catch(function(err){
     console.error('[addNotif] NotificationStore write mislukt',err);
     throw err;
   });
