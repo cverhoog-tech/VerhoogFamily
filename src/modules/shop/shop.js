@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v0.355
+// BOODSCHAPPEN v0.356
 // Grocery add flow + shopping receipt finance bridge.
 // ============================================================
 
@@ -121,7 +121,7 @@ function renderShop() {
 
 function highlightShopItem(id){
   if(id === undefined || id === null) return;
-  var el = document.getElementById('si-'+id);
+  var el = document.getElementById('si-'+String(id).replace(/[^a-zA-Z0-9_-]/g,'_'));
   if(!el) return;
   el.classList.remove('shop-item-added');
   void el.offsetWidth;
@@ -131,8 +131,11 @@ function highlightShopItem(id){
 window.highlightShopItem = highlightShopItem;
 
 function shopItemHTML(item) {
-  return '<div class="shop-item" id="si-'+item.id+'">'
-    +'<div class="check-circle '+(item.done?'done':'')+'" id="shck-'+item.id+'" onclick="toggleShop('+item.id+')" style="cursor:pointer;flex-shrink:0">'
+  var stableKey=String(item&&item._key?item._key:item.id);
+  var domKey=stableKey.replace(/[^a-zA-Z0-9_-]/g,'_');
+  var jsKey=JSON.stringify(stableKey);
+  return '<div class="shop-item" id="si-'+domKey+'">'
+    +'<div class="check-circle '+(item.done?'done':'')+'" id="shck-'+domKey+'" onclick="toggleShop('+jsKey+')" style="cursor:pointer;flex-shrink:0">'
     +(item.done?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'')
     +'</div>'
     +'<div class="shop-emoji">'+((item.photo&&!String(item.photo).startsWith('http'))?item.photo:'📦')+'</div>'
@@ -140,7 +143,7 @@ function shopItemHTML(item) {
     +'<div class="shop-name'+(item.done?' done':'')+'">'+item.name+'</div>'
     +'<div class="shop-qty">'+item.qty+' · '+item.cat+'</div>'
     +'</div>'
-    +'<button class="shop-del" onclick="deleteShop('+item.id+')">✕</button>'
+    +'<button class="shop-del" onclick="deleteShop('+jsKey+')">✕</button>'
     +'</div>';
 }
 
@@ -152,8 +155,9 @@ function persistShopState(operation){
 }
 
 function toggleShop(id) {
-  var item=shopData.find(function(i){return i.id===id;});if(!item)return;
-  var el=document.getElementById('shck-'+id);
+  var item=shopData.find(function(i){return String(i._key||i.id)===String(id);});if(!item)return;
+  var domKey=String(item._key||item.id).replace(/[^a-zA-Z0-9_-]/g,'_');
+  var el=document.getElementById('shck-'+domKey);
   item.done=!item.done;
   persistShopState('toggleShop');
   if(el){
@@ -169,7 +173,7 @@ function toggleShop(id) {
 }
 
 function deleteShop(id) {
-  var i=shopData.findIndex(function(x){return x.id===id;});
+  var i=shopData.findIndex(function(x){return String(x._key||x.id)===String(id);});
   if(i>-1){shopData.splice(i,1);persistShopState('deleteShop');renderShop();}
 }
 
