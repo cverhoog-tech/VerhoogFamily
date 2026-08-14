@@ -1,14 +1,15 @@
 'use strict';
 // ============================================================
-// NOTIFICATION STORE v1.3.0
+// NOTIFICATION STORE v1.4.0
 // Single household-scoped source of truth for in-app notification events.
 // Persistence is owned by FamilyDataStore at families/{householdId}/shared/notifications.
 // Domain modules publish typed events; presentation and delivery are separate concerns.
+// Runtime dependency loading is owned exclusively by the central bootstrap.
 // ============================================================
 (function(){
   if(window.NotificationStore)return;
 
-  var VERSION='1.3.0';
+  var VERSION='1.4.0';
   var COLLECTION='notifications';
   var records={};
   var listeners=[];
@@ -98,13 +99,4 @@
   window.addEventListener('focus',identityReady);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',identityReady);else identityReady();
   window.addEventListener('load',identityReady);
-
-  // Runtime companions are separate modules with separate responsibilities.
-  function loadCompanion(id,src,done){
-    if(document.getElementById(id)){if(done)done();return;}
-    var s=document.createElement('script');s.id=id;s.src=src;s.async=false;s.onload=function(){if(done)done();};s.onerror=function(){console.error('[NotificationStore] failed to load',src);if(done)done();};document.head.appendChild(s);
-  }
-  loadCompanion('notification-events-runtime','src/core/notificationEvents.js?v=2',function(){
-    loadCompanion('notification-delivery-runtime','src/core/notificationDelivery.js?v=3');
-  });
 })();
