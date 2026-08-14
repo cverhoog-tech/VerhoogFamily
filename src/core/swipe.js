@@ -70,8 +70,6 @@ function attachSwipeDelete(el, onDelete) {
   setTimeout(polishNav,0);
 })();
 
-// Persistent delegated click safety for the More menu.
-// This survives every renderNav()/innerHTML rebuild.
 (function installMoreMenuDelegation(){
   if(window.__familyMoreMenuDelegation) return;
   window.__familyMoreMenuDelegation=true;
@@ -86,128 +84,90 @@ function attachSwipeDelete(el, onDelete) {
   },true);
 })();
 
-// ============================================================
-// MOBILE ZOOM LOCK
-// Keep the app at 1:1 scale and prevent pinch/double-tap zoom on mobile.
-// ============================================================
 (function installMobileZoomLock(){
   if(window.__familyMobileZoomLock) return;
   window.__familyMobileZoomLock=true;
-
   var viewport=document.querySelector('meta[name="viewport"]');
-  if(!viewport){
-    viewport=document.createElement('meta');
-    viewport.name='viewport';
-    document.head.appendChild(viewport);
-  }
+  if(!viewport){viewport=document.createElement('meta');viewport.name='viewport';document.head.appendChild(viewport);}
   viewport.setAttribute('content','width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
-
-  ['gesturestart','gesturechange','gestureend'].forEach(function(type){
-    document.addEventListener(type,function(e){e.preventDefault();},{passive:false});
-  });
-
-  document.addEventListener('touchmove',function(e){
-    if(e.touches&&e.touches.length>1) e.preventDefault();
-  },{passive:false});
-
+  ['gesturestart','gesturechange','gestureend'].forEach(function(type){document.addEventListener(type,function(e){e.preventDefault();},{passive:false});});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
   var lastTouchEnd=0;
-  document.addEventListener('touchend',function(e){
-    var now=Date.now();
-    if(now-lastTouchEnd<=300) e.preventDefault();
-    lastTouchEnd=now;
-  },{passive:false});
+  document.addEventListener('touchend',function(e){var now=Date.now();if(now-lastTouchEnd<=300)e.preventDefault();lastTouchEnd=now;},{passive:false});
 })();
 
-// Navigation must never remain locked when a screen renderer throws.
 (function installNavBusyRecovery(){
   if(window.__familyNavBusyRecovery) return;
   window.__familyNavBusyRecovery=true;
-  window.addEventListener('error',function(){
-    if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
-  });
-  window.addEventListener('unhandledrejection',function(){
-    if(typeof _navBusy!=='undefined'&&_navBusy) _navBusy=false;
-  });
+  window.addEventListener('error',function(){if(typeof _navBusy!=='undefined'&&_navBusy)_navBusy=false;});
+  window.addEventListener('unhandledrejection',function(){if(typeof _navBusy!=='undefined'&&_navBusy)_navBusy=false;});
 })();
 
-// Load the isolated grocery feedback + recipe thumbnail repair on every real app entrypoint.
 (function loadMobileUxFixes(){
   if(window.__familyMobileUxFixLoader) return;
   window.__familyMobileUxFixLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/mobileUxFixes.js?v=1';
-  script.defer=true;
-  document.head.appendChild(script);
+  var script=document.createElement('script');script.src='src/core/mobileUxFixes.js?v=1';script.defer=true;document.head.appendChild(script);
 })();
-
-// Vercel-hosted mobile Google auth must not rely on Firebase redirect storage.
 (function loadGoogleAuthMobileFix(){
   if(window.__familyGoogleAuthMobileFixLoader) return;
   window.__familyGoogleAuthMobileFixLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/googleAuthMobileFix.js?v=1';
-  script.defer=true;
-  document.head.appendChild(script);
+  var script=document.createElement('script');script.src='src/core/googleAuthMobileFix.js?v=1';script.defer=true;document.head.appendChild(script);
 })();
-
-// Shared household memberships, secure invites and realtime presence.
-// Note: dynamically-created <script> elements are treated as async by the browser unless
-// `async` is explicitly set to false — setting only `.defer` has no effect on them and gives
-// no ordering guarantee relative to other scripts (e.g. duoQuests.js, which defines the
-// loadUserFamily/setupNewFamily fallbacks this module overrides).
 (function loadHouseholdPlatform(){
   if(window.__familyHouseholdPlatformLoader) return;
   window.__familyHouseholdPlatformLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/householdPlatform.js?v=4';
-  script.async=false;
-  script.defer=true;
-  document.head.appendChild(script);
+  var script=document.createElement('script');script.src='src/core/householdPlatform.js?v=4';script.async=false;script.defer=true;document.head.appendChild(script);
 })();
 (function loadHouseholdManagerUi(){
   if(window.__familyHouseholdManagerUiLoader) return;
   window.__familyHouseholdManagerUiLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/householdManagerUi.js?v=1';
-  script.async=false;
-  script.defer=true;
-  document.head.appendChild(script);
+  var script=document.createElement('script');script.src='src/core/householdManagerUi.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
 })();
 
-// Shared data infrastructure. FamilyDataStore owns the persistence boundary.
+// Ordered notification runtime. Each layer has one responsibility:
+// persistence -> domain event API -> incoming presentation -> task transition projection.
 (function loadFamilyDataStore(){
   if(window.__familyDataStoreLoader) return;
   window.__familyDataStoreLoader=true;
   var script=document.createElement('script');
-  script.src='src/core/familyDataStore.js?v=1';
-  script.async=false;
-  script.defer=true;
+  script.src='src/core/familyDataStore.js?v=1';script.async=false;script.defer=true;
+  script.onload=function(){loadNotificationStore();};
   document.head.appendChild(script);
 })();
-(function loadNotificationStore(){
+function loadNotificationStore(){
   if(window.__familyNotificationStoreLoader) return;
   window.__familyNotificationStoreLoader=true;
   var script=document.createElement('script');
-  script.src='src/core/notificationStore.js?v=1';
-  script.async=false;
-  script.defer=true;
+  script.src='src/core/notificationStore.js?v=2';script.async=false;script.defer=true;
+  script.onload=function(){loadNotificationEvents();};
   document.head.appendChild(script);
-})();
+}
+function loadNotificationEvents(){
+  if(window.__familyNotificationEventsLoader) return;
+  window.__familyNotificationEventsLoader=true;
+  var script=document.createElement('script');
+  script.src='src/core/notificationEvents.js?v=2';script.async=false;script.defer=true;
+  script.onload=function(){loadNotificationDelivery();loadTaskNotificationProjector();};
+  document.head.appendChild(script);
+}
+function loadNotificationDelivery(){
+  if(window.__familyNotificationDeliveryLoader) return;
+  window.__familyNotificationDeliveryLoader=true;
+  var script=document.createElement('script');script.src='src/core/notificationDelivery.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
+}
+function loadTaskNotificationProjector(){
+  if(window.__familyTaskNotificationProjectorLoader) return;
+  window.__familyTaskNotificationProjectorLoader=true;
+  var script=document.createElement('script');script.src='src/modules/tasks/taskNotificationProjector.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
+}
+
 (function loadShoppingLists(){
   if(window.__familyShoppingListsLoader) return;
   window.__familyShoppingListsLoader=true;
-  var script=document.createElement('script');
-  script.src='src/modules/shop/shoppingLists.js?v=1';
-  script.async=false;
-  script.defer=true;
-  document.head.appendChild(script);
+  var script=document.createElement('script');script.src='src/modules/shop/shoppingLists.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
 })();
 (function loadShoppingSyncDiagnostics(){
   if(window.__familyShoppingSyncDiagnosticsLoader) return;
   window.__familyShoppingSyncDiagnosticsLoader=true;
-  var script=document.createElement('script');
-  script.src='src/core/shoppingSyncDiagnostics.js?v=1';
-  script.async=false;
-  script.defer=true;
-  document.head.appendChild(script);
+  var script=document.createElement('script');script.src='src/core/shoppingSyncDiagnostics.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
 })();
