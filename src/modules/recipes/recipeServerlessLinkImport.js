@@ -2,7 +2,10 @@
 // ============================================================
 // RECIPE SERVERLESS LINK IMPORT v0.502
 // One URL import flow -> parsed draft -> review -> RecipeStore.
-// Single owner of #r-import-link-btn. Uses ModalManager directly.
+// Single owner of #r-import-link-btn's *behaviour* (recipes.js owns its
+// markup/rendering). Uses ModalManager directly. Requires
+// src/core/modalManager.js and src/modules/recipes/recipeSharedLive.js
+// (RecipeStore) to be loaded before this file in index.html.
 // ============================================================
 (function(){
   var BTN_ID='r-import-link-btn',STYLE_ID='recipe-serverless-link-import-style';
@@ -20,8 +23,13 @@
   function readPreview(m,original){var cat=m.querySelector('#rli-cat').value||'Diner',photo=(m.querySelector('#rli-photo').value||'').trim();return{name:(m.querySelector('#rli-name').value||'').trim(),cat:cat,cuisine:(m.querySelector('#rli-cuisine').value||'').trim(),persons:parseInt(m.querySelector('#rli-persons').value,10)||4,time:parseInt(m.querySelector('#rli-time').value,10)||30,emoji:ICONS[cat]||'🍴',photo:photo||null,imageMode:photo?'custom':'preset',heroPreset:cat.toLowerCase(),ingredients:(m.querySelector('#rli-ingredients').value||'').split('\n').map(function(x){return x.trim();}).filter(Boolean),steps:(m.querySelector('#rli-steps').value||'').split('\n').map(function(x){return x.trim();}).filter(Boolean),notes:m.querySelector('#rli-notes').value||'',sourceProvider:original.sourceProvider||'generic',sourceUrl:original.sourceUrl||''};}
   function openPreview(recipe){return modalOpen({title:'✅ Controleer recept',html:previewHtml(recipe),actions:[{label:'Annuleren'},{label:'Opslaan',primary:true,keepOpen:true,onClick:function(ctx){var draft=readPreview(ctx.modal,recipe);if(!draft.name||!draft.ingredients.length){if(window.showToast)showToast('Naam en ingrediënten zijn verplicht');return false;}if(!window.RecipeStore||typeof RecipeStore.create!=='function'){if(window.showToast)showToast('Receptopslag niet beschikbaar');return false;}var btn=ctx.modal.querySelector('.fam-modal-primary');if(btn)btn.disabled=true;RecipeStore.create(draft).then(function(res){var saved=res.recipe||draft;if(window.awardXP)awardXP(5,'Recept geïmporteerd');if(window.showToast)showToast('Recept geïmporteerd ✓');ctx.close();if(window.renderRecipes)renderRecipes();setTimeout(function(){if(window.openRecipeDetail)openRecipeDetail(saved.id);},80);}).catch(function(err){if(btn)btn.disabled=false;if(window.showToast)showToast(err&&err.message||'Opslaan mislukt');});return false;}}]});}
   function openImportSheet(){addStyle();return modalOpen({title:'🔗 Recept via link',html:'<div class="rli-note">Plak één receptenlink. FamilyApp leest de receptdata, daarna krijg je altijd eerst een controle-preview.</div><div class="fam-modal-field"><label>Receptlink</label><input id="rli-url" placeholder="https://..." inputmode="url"></div><div class="rli-status" id="rli-status"></div>',actions:[{label:'Annuleren'},{label:'Importeren',primary:true,keepOpen:true,onClick:function(ctx){var input=ctx.modal.querySelector('#rli-url'),status=ctx.modal.querySelector('#rli-status'),url=input?input.value.trim():'';if(!validUrl(url)){status.textContent='Plak een geldige http(s) link.';return false;}var btn=ctx.modal.querySelector('.fam-modal-primary');if(btn)btn.disabled=true;importUrl(url,function(v){status.textContent=v;}).then(function(recipe){if(btn)btn.disabled=false;ctx.close();setTimeout(function(){openPreview(recipe);},230);});return false;}}]});}
-  function patch(){addStyle();var btn=document.getElementById(BTN_ID);if(!btn)return false;btn.onclick=function(ev){if(ev){ev.preventDefault();ev.stopPropagation();}openImportSheet();};btn.textContent='🔗 Importeren';btn.title='Recept importeren via link';return true;}
-  function installDelegatedClick(){if(document.__recipeImportDelegatedClick502)return;document.__recipeImportDelegatedClick502=true;document.addEventListener('click',function(ev){var target=ev.target&&ev.target.closest?ev.target.closest('#'+BTN_ID):null;if(!target)return;ev.preventDefault();ev.stopPropagation();openImportSheet();},true);}
-  function boot(){installDelegatedClick();patch();var screen=document.getElementById('screen-recipes');if(screen&&!screen.__serverlessRecipeImport502){screen.__serverlessRecipeImport502=true;new MutationObserver(patch).observe(screen,{childList:true,subtree:true});}}
-  var n=0,t=setInterval(function(){n++;boot();if(patch()||n>40)clearInterval(t);},150);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();window.RecipeServerlessLinkImport={version:'0.502',boot:boot,open:openImportSheet};
+  // Single owner of #r-import-link-btn's click behaviour. recipes.js owns
+  // rendering (markup + label + styling) and calls boot() itself directly
+  // after every renderList(), since that's the one place the button's
+  // markup is (re)created — see recipes.js. That direct call site is
+  // reliable on its own, so no delegated document listener, no
+  // MutationObserver and no setInterval polling are needed here.
+  function patch(){addStyle();var btn=document.getElementById(BTN_ID);if(!btn)return false;btn.onclick=function(ev){if(ev)ev.preventDefault();openImportSheet();};return true;}
+  function boot(){patch();}
+  window.RecipeServerlessLinkImport={version:'0.502',boot:boot,open:openImportSheet};
 })();
