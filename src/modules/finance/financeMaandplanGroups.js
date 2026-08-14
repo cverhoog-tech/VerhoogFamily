@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FINANCE MAANDPLAN GROUPS v1.0.1
+// FINANCE MAANDPLAN GROUPS v1.0.2
 // Presentation-only grouping of the three operational month-plan areas:
 // 1. Transactions, 2. One-off bills, 3. Fixed costs.
 // Existing FinanceStore data + legacy actions remain authoritative.
 // ============================================================
 (function(){
   if(window.FinanceMaandplanGroups)return;
-  var VERSION='1.0.1';
+  var VERSION='1.0.2';
   var STORAGE_KEY='familyapp_finance_maandplan_groups_v1';
   var originalRender=null;
 
@@ -25,14 +25,14 @@
     var s=document.createElement('style');s.id='finance-maandplan-groups-style';s.textContent=[
       '.mp-groups{padding:12px 14px 22px;display:flex;flex-direction:column;gap:10px}',
       '.mp-group{background:var(--c-surface);border:1px solid var(--c-border);border-radius:18px;overflow:hidden;box-shadow:0 3px 12px rgba(17,24,39,.035)}',
-      '.mp-group-toggle{width:100%;display:flex;align-items:center;gap:11px;border:0;background:var(--c-surface);color:var(--c-text);padding:13px 14px;min-height:62px;text-align:left;cursor:pointer}',
+      '.mp-group-toggle{width:100%;display:flex;align-items:center;gap:11px;border:0;background:var(--c-surface);color:var(--c-text);padding:13px 14px;min-height:66px;text-align:left;cursor:pointer}',
       '.mp-group-toggle:active{transform:none}',
       '.mp-group-icon{width:38px;height:38px;border-radius:12px;background:var(--c-surface2);display:grid;place-items:center;font-size:18px;flex:0 0 auto}',
-      '.mp-group-copy{flex:1;min-width:0}',
-      '.mp-group-title{font-size:14px;font-weight:900;line-height:1.2}',
-      '.mp-group-sub{font-size:10.5px;color:var(--c-text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-      '.mp-group-total{font-size:13px;font-weight:900;white-space:nowrap;margin-left:5px}',
-      '.mp-group-chevron{width:25px;height:25px;border-radius:9px;background:var(--c-surface2);display:grid;place-items:center;color:var(--c-text2);font-size:15px;font-weight:900;transition:transform .18s ease}',
+      '.mp-group-copy{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.15}',
+      '.mp-group-title{display:block;font-size:14px;font-weight:900;line-height:1.2;color:var(--c-text)}',
+      '.mp-group-sub{display:block;font-size:10.5px;font-weight:500;color:var(--c-text3,var(--c-text2));margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}',
+      '.mp-group-total{font-size:13px;font-weight:900;white-space:nowrap;margin-left:5px;align-self:center}',
+      '.mp-group-chevron{width:25px;height:25px;border-radius:9px;background:var(--c-surface2);display:grid;place-items:center;color:var(--c-text2);font-size:15px;font-weight:900;transition:transform .18s ease;align-self:center}',
       '.mp-group.collapsed .mp-group-chevron{transform:rotate(-90deg)}',
       '.mp-group-body{border-top:1px solid var(--c-border);background:var(--c-bg)}',
       '.mp-group.collapsed .mp-group-body{display:none}',
@@ -109,9 +109,6 @@
     var fixed=directHeader(panel,/^Vaste lasten\b/);
     if(!one||!fixed)return false;
 
-    // FinanceMaandplanPriority should already place one-off before fixed.
-    // Normalize safely when needed by moving ONLY the one-off block, never
-    // the fixed node itself. This avoids Safari insertBefore edge cases.
     var children=Array.prototype.slice.call(panel.children);
     if(children.indexOf(one)>children.indexOf(fixed)){
       var oneBlock=collectRange(one,null);
@@ -124,16 +121,18 @@
     fixed=directHeader(panel,/^Vaste lasten\b/);
     if(!one||!fixed)return false;
 
-    var oneNodes=collectRange(one,fixed);
-    var fixedNodes=collectRange(fixed,null);
+    // The outer group headers now own the hierarchy, so do not move the old
+    // duplicate section titles into the group bodies.
+    var oneNodes=collectRange(one.nextSibling,fixed);
+    var fixedNodes=collectRange(fixed.nextSibling,null);
 
-    // Insert the stable groups container BEFORE moving any legacy nodes.
-    // The reference node is therefore guaranteed to still belong to panel.
     var groups=document.createElement('div');groups.className='mp-groups';
     panel.insertBefore(groups,one);
 
-    // tx can live anywhere above/below the details; moving it after the
-    // groups container exists no longer invalidates our insertion reference.
+    // Remove legacy duplicate headings after the stable group container exists.
+    if(one.parentNode===panel)panel.removeChild(one);
+    if(fixed.parentNode===panel)panel.removeChild(fixed);
+
     var st=readState(),sum=summary();
     groups.appendChild(makeGroup('transactions','💳','Transacties',sum.transactions.sub,sum.transactions.total?'- '+euro(sum.transactions.total):euro(0),[tx],st));
     groups.appendChild(makeGroup('oneoff','🧾','Eenmalige rekeningen',sum.oneoff.sub,sum.oneoff.total?'- '+euro(sum.oneoff.total):euro(0),oneNodes,st));
