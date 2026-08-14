@@ -1,15 +1,25 @@
 'use strict';
 // ============================================================
-// FINANCE CONTROLS v1.0.0
+// FINANCE CONTROLS v1.0.1
 // Premium destructive reset entry point for household finance only.
 // ============================================================
 (function(){
   if(window.FinanceControls)return;
-  function ensureStyles(){if(document.getElementById('finance-controls-style'))return;var s=document.createElement('style');s.id='finance-controls-style';s.textContent='.finance-reset-card{margin:18px 0 6px;padding:16px;border:1px solid rgba(220,38,38,.16);background:linear-gradient(180deg,var(--c-surface),rgba(254,242,242,.7));border-radius:20px}.finance-reset-title{font-size:15px;font-weight:950;color:var(--c-text);margin-bottom:4px}.finance-reset-copy{font-size:12px;line-height:1.5;color:var(--c-text2);margin-bottom:12px}.finance-reset-btn{width:100%;border:1px solid rgba(220,38,38,.22);background:rgba(220,38,38,.07);color:#b91c1c;border-radius:14px;padding:11px 12px;font-size:13px;font-weight:900}.finance-reset-note{font-size:10px;color:var(--c-text3);margin-top:8px;text-align:center}';document.head.appendChild(s);}
-  function ensureCard(){ensureStyles();var panel=document.getElementById('fin-maandplan');if(!panel)return;var card=document.getElementById('finance-reset-card');if(!card){card=document.createElement('div');card.id='finance-reset-card';card.className='finance-reset-card';card.innerHTML='<div class="finance-reset-title">Verse start</div><div class="finance-reset-copy">Wis alleen jullie financiële gegevens: maandplan, vaste lasten, inkomsten, transacties en spaardoelen. Andere FamilyApp-modules blijven onaangeraakt.</div><button class="finance-reset-btn" id="finance-reset-btn">Financiën opnieuw beginnen</button><div class="finance-reset-note">Deze wijziging synchroniseert met het hele gezin.</div>';panel.appendChild(card);card.querySelector('#finance-reset-btn').onclick=openConfirm;}}
+  function ensureStyles(){if(document.getElementById('finance-controls-style'))return;var s=document.createElement('style');s.id='finance-controls-style';s.textContent='.finance-reset-card{margin:0 0 14px;padding:14px 15px;border:1px solid rgba(220,38,38,.14);background:linear-gradient(180deg,var(--c-surface),rgba(254,242,242,.72));border-radius:18px;box-shadow:0 4px 14px rgba(17,24,39,.035)}.finance-reset-head{display:flex;align-items:center;gap:10px}.finance-reset-icon{width:36px;height:36px;border-radius:12px;background:rgba(220,38,38,.08);display:grid;place-items:center;flex:0 0 auto}.finance-reset-copywrap{min-width:0;flex:1}.finance-reset-title{font-size:14px;font-weight:950;color:var(--c-text);margin-bottom:2px}.finance-reset-copy{font-size:11.5px;line-height:1.4;color:var(--c-text2)}.finance-reset-btn{margin-top:11px;width:100%;border:1px solid rgba(220,38,38,.22);background:rgba(220,38,38,.07);color:#b91c1c;border-radius:13px;padding:10px 12px;font-size:12.5px;font-weight:900}.finance-reset-note{font-size:9.5px;color:var(--c-text3);margin-top:7px;text-align:center}';document.head.appendChild(s);}
+  function ensureCard(){
+    ensureStyles();
+    var panel=document.getElementById('fin-maandplan');if(!panel)return;
+    var card=document.getElementById('finance-reset-card');
+    if(!card){
+      card=document.createElement('div');card.id='finance-reset-card';card.className='finance-reset-card';
+      card.innerHTML='<div class="finance-reset-head"><div class="finance-reset-icon">↺</div><div class="finance-reset-copywrap"><div class="finance-reset-title">Verse start</div><div class="finance-reset-copy">Begin opnieuw met jullie financiële administratie zonder andere FamilyApp-data te wissen.</div></div></div><button class="finance-reset-btn" id="finance-reset-btn">Financiën opnieuw beginnen</button><div class="finance-reset-note">Wist maandplan, vaste lasten, inkomsten, transacties en spaardoelen · realtime voor het gezin</div>';
+      card.querySelector('#finance-reset-btn').onclick=openConfirm;
+    }
+    if(panel.firstChild!==card)panel.insertBefore(card,panel.firstChild);
+  }
   function openConfirm(){var run=function(){if(!window.FinanceStore)return;if(window.ModalManager){ModalManager.confirm({title:'Verse start voor Financiën?',text:'Alle financiële gegevens van dit gezin worden gewist. Taken, agenda, recepten, boodschappen en progression blijven behouden.',confirmLabel:'Ja, wis financiën',cancelLabel:'Annuleren',onConfirm:function(){FinanceStore.resetAll().then(function(){if(window.showToast)showToast('Financiën zijn opnieuw gestart ✓');setTimeout(ensureCard,80);});}});}else if(confirm('Alle financiële gegevens wissen?')){FinanceStore.resetAll();}};if(window.ModalManager)return run();var s=document.createElement('script');s.src='src/core/modalManager.js';s.onload=run;document.body.appendChild(s);}
-  function boot(){ensureCard();[200,700,1500].forEach(function(d){setTimeout(ensureCard,d);});}
+  function boot(){ensureCard();}
   window.addEventListener('familyapp:finance:changed',function(){setTimeout(ensureCard,0);});
-  window.FinanceControls={version:'1.0.0',boot:boot,ensureCard:ensureCard};
+  window.FinanceControls={version:'1.0.1',boot:boot,ensureCard:ensureCard};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
