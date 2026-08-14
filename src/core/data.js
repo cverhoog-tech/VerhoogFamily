@@ -98,8 +98,12 @@ var vasteLasten = [
   {id:'vl5',name:'Sportschool',amount:30,cat:'Gezondheid',day:10,who:'Shane',paid:{}}
 ];
 var vlNextId = 6;
-var mpYear = 2026;
-var mpMonth = 4;
+// Initial fallback only, used for the brief moment before FinanceStore has
+// booted. enterFinanceScreen() (calendarLegacy.js) re-derives this from
+// new Date() every time the user navigates into Financiën — never hardcode
+// a specific month/year here.
+var mpYear = new Date().getFullYear();
+var mpMonth = new Date().getMonth();
 var samenBetaler = 'Beiden';
 var inkomenShane = {label:'Salaris',amount:2800};
 var inkomenEsra  = {label:'Salaris',amount:2400};
@@ -192,4 +196,3 @@ var neImgHistory = {};
 var neDrawOnImg = null;
 var neBlockNextId = 1;
 var neNoteColor = 'yellow';
-
