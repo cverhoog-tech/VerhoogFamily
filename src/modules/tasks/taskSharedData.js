@@ -156,11 +156,9 @@
           shop:arrToLegacyObj(window.shopData),
           cal:arrToLegacyObj(window.calData),
           feed:arrToLegacyObj(window.feedData),
-          trans:arrToLegacyObj(window.transData),
-          savingsGoals:arrToLegacyObj(window.savingsGoals),
-          extraIncome:arrToLegacyObj(window.extraIncome),
-          vasteLasten:arrToLegacyObj(window.vasteLasten),
           recurData:arrToLegacyObj(window.recurData)
+          // trans/savingsGoals/extraIncome/vasteLasten intentionally excluded
+          // — owned exclusively by FinanceStore now.
         };
         window.fbDb.ref('families/'+window.fbFamilyId).update(updatePayload);
         window.fbDb.ref('families/'+window.fbFamilyId+'/members/'+currentUid).update({xp:Number(window.myXP||0),name:window.myName||'Gezinslid',lastSeen:Date.now()});
