@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FINANCE STORE v1.0.1
+// FINANCE STORE v1.0.2
 // Household-scoped source of truth for FamilyApp finance.
 // Mirrors the legacy finance globals so the existing UI can migrate
 // without maintaining a second persistence model.
 // ============================================================
 (function(){
   if(window.FinanceStore)return;
-  var VERSION='1.0.1',COLLECTION='finance',booted=false,sub=null,state=null,wrapping=false;
+  var VERSION='1.0.2',COLLECTION='finance',booted=false,sub=null,state=null,wrapping=false,deleteWrapped=false;
   function store(){return window.FamilyDataStore;}
   function status(){return store()&&store().status?store().status():{};}
   function ready(){var s=status();return !!(s.userId&&s.familyId);}
@@ -43,7 +43,8 @@
   function resetAll(){var next=emptyState();next.meta.resetAt=now();next.meta.resetBy=uid();return write(next);}
   function initialize(){if(!ready()||!store())return Promise.resolve(false);return store().readShared(COLLECTION,null).then(function(existing){if(existing&&existing.initialized)return existing;var first=fromGlobals();return store().writeShared(COLLECTION,first).then(function(){return first;});}).then(function(initial){apply(initial);if(sub)sub();sub=store().subscribeShared(COLLECTION,function(v){if(v&&v.initialized)apply(v);},emptyState());return true;});}
   function wrapLegacySave(){if(wrapping||typeof window.saveItem!=='function')return;wrapping=true;var original=window.saveItem;if(original.__financeStoreWrapped)return;var wrapped=function(){var type=window.currentAddType,result=original.apply(this,arguments);if(['trans','extraincome','vastlast','savings_tx','savings_goal','spaar_vanuit_budget'].indexOf(type)>=0)setTimeout(saveLegacy,0);return result;};wrapped.__financeStoreWrapped=true;window.saveItem=wrapped;}
-  function boot(){if(booted)return true;if(!ready()||!store())return false;booted=true;initialize();wrapLegacySave();return true;}
+  function wrapLegacyDeletes(){if(deleteWrapped||typeof window.deleteSavingsGoal!=='function')return;deleteWrapped=true;var original=window.deleteSavingsGoal;window.deleteSavingsGoal=function(){var result=original.apply(this,arguments);setTimeout(saveLegacy,0);return result;};}
+  function boot(){if(booted)return true;if(!ready()||!store())return false;booted=true;initialize();wrapLegacySave();wrapLegacyDeletes();return true;}
   function bootWhenReady(){if(boot())return;var tries=0,t=setInterval(function(){tries++;if(boot()||tries>300)clearInterval(t);},100);}
   window.FinanceStore={version:VERSION,boot:boot,get:function(){return clone(state||emptyState());},saveLegacy:saveLegacy,upsertSourceTransaction:upsertSourceTransaction,resetAll:resetAll};
   window.addEventListener('familyapp:household-members-updated',function(){if(!booted)bootWhenReady();});
