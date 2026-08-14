@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// NOTIFICATION STORE v1.2.0
+// NOTIFICATION STORE v1.3.0
 // Single household-scoped source of truth for in-app notification events.
 // Persistence is owned by FamilyDataStore at families/{householdId}/shared/notifications.
 // Domain modules publish typed events; presentation and delivery are separate concerns.
@@ -8,7 +8,7 @@
 (function(){
   if(window.NotificationStore)return;
 
-  var VERSION='1.2.0';
+  var VERSION='1.3.0';
   var COLLECTION='notifications';
   var records={};
   var listeners=[];
@@ -78,7 +78,6 @@
   function publishSelf(type,payload){payload=Object.assign({},payload||{},{type:type,audience:audienceSelf()});return publish(payload);}
   function publishHousehold(type,payload){payload=Object.assign({},payload||{},{type:type,audience:audienceHousehold()});return publish(payload);}
   function publishToUids(type,uids,payload){payload=Object.assign({},payload||{},{type:type,audience:audienceUids(uids)});return publish(payload);}
-  function legacy(icon,bg,title,body){return publishSelf('system.message',{icon:icon||'🔔',bg:bg||'#ede9fe',title:title||'Melding',body:body||'',data:{legacy:true}});}
   function list(){ensureSubscription();return sortedVisible().map(clone);}
   function unreadCount(){return sortedVisible().filter(function(e){return!isRead(e);}).length;}
   function markRead(id){var me=uid();if(!me||!records[id]||!window.FamilyDataStore)return Promise.resolve(false);records[id].readBy=Object.assign({},records[id].readBy||{});records[id].readBy[me]=now();records[id].updatedAt=now();emit({source:'local-read',id:id});return FamilyDataStore.writeSharedPath(COLLECTION,[id,'readBy',me],records[id].readBy[me]).then(function(){return true;});}
@@ -89,7 +88,7 @@
   function registerType(type){if(type&&typeof type==='string')TYPES[type]=true;}
   function status(){return{version:VERSION,familyId:familyId(),uid:uid(),subscribedFamilyId:subscribedFamilyId,count:Object.keys(records).length,visible:sortedVisible().length,unread:unreadCount(),subscribed:!!unsubscribe};}
 
-  window.NotificationStore={version:VERSION,types:TYPES,status:status,ensureSubscription:ensureSubscription,registerType:registerType,publish:publish,publishSelf:publishSelf,publishHousehold:publishHousehold,publishToUids:publishToUids,legacy:legacy,list:list,unreadCount:unreadCount,markRead:markRead,markAllRead:markAllRead,dismiss:dismiss,clearVisible:clearVisible,subscribe:subscribe,isRead:isRead};
+  window.NotificationStore={version:VERSION,types:TYPES,status:status,ensureSubscription:ensureSubscription,registerType:registerType,publish:publish,publishSelf:publishSelf,publishHousehold:publishHousehold,publishToUids:publishToUids,list:list,unreadCount:unreadCount,markRead:markRead,markAllRead:markAllRead,dismiss:dismiss,clearVisible:clearVisible,subscribe:subscribe,isRead:isRead};
 
   function identityReady(){ensureSubscription();}
   window.addEventListener('familyapp:household-members-updated',identityReady);
