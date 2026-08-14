@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CALENDAR SHARED LIVE v1.2
+// CALENDAR SHARED LIVE v1.3
 // Household-scoped Firebase agenda via FamilyDataStore.
 // Data-sync/CRUD layer only: UI renderers remain owned by calendar UI modules.
 // Emits local mutation events so external calendar integrations can sync
@@ -57,14 +57,14 @@
     var originalSave=window.saveItem;
     function wrappedSaveItem(){
       if(window.currentAddType!=='cal')return originalSave.apply(this,arguments);
-      var title=((document.getElementById('f1')||{}).value||'').trim(),date=((document.getElementById('f2')||{}).value||'').trim(),time=((document.getElementById('f3')||{}).value||'').trim();
+      var title=((document.getElementById('f1')||{}).value||'').trim(),date=((document.getElementById('f2')||{}).value||'').trim(),time=((document.getElementById('f3')||{}).value||'').trim(),description=((document.getElementById('cal-description')||{}).value||'').trim();
       if(!title){if(window.showToast)showToast('Vul een titel in');return;}if(!date){if(window.showToast)showToast('Kies een datum');return;}
       var u=currentUser(),target=null,mode='create';
       if(state.editingId!==null){
         var existing=(window.calData||[]).find(function(e){return String(e.id)===String(state.editingId);});
-        if(existing){existing.title=title;existing.date=date;existing.time=time;existing.updatedAt=now();existing.updatedBy=u&&u.uid?u.uid:'unknown';target=existing;mode='update';}
+        if(existing){existing.title=title;existing.date=date;existing.time=time;existing.description=description;existing.updatedAt=now();existing.updatedBy=u&&u.uid?u.uid:'unknown';target=existing;mode='update';}
       } else {
-        target={id:makeId(),title:title,date:date,time:time,color:'#2d5a27',createdAt:now(),createdBy:u&&u.uid?u.uid:'unknown'};
+        target={id:makeId(),title:title,date:date,time:time,description:description,color:'#2d5a27',createdAt:now(),createdBy:u&&u.uid?u.uid:'unknown'};
         window.calData.push(target);
       }
       state.editingId=null;write();render();if(window.closeAdd)closeAdd();if(window.showToast)showToast('Afspraak opgeslagen ✓');
@@ -80,7 +80,7 @@
       var old=(window.calData||[]).find(function(e){return String(e.id)===String(id);})||null;
       window.calData=(window.calData||[]).filter(function(e){return String(e.id)!==String(id);});write();render();emitLocal('delete',old);
     };
-    window.openCalEdit=function(id){var event=(window.calData||[]).find(function(e){return String(e.id)===String(id);});if(!event||event._imported||typeof window.openAdd!=='function')return;state.editingId=event.id;window.openAdd('cal');var st=document.getElementById('sheet-title');if(st)st.textContent='Afspraak bewerken';var btn=document.querySelector('#add-overlay .sheet-btn');if(btn)btn.textContent='Opslaan';var f1=document.getElementById('f1');if(f1)f1.value=event.title||'';var f2=document.getElementById('f2');if(f2)f2.value=event.date||'';var f3=document.getElementById('f3');if(f3)f3.value=event.time||'';};
+    window.openCalEdit=function(id){var event=(window.calData||[]).find(function(e){return String(e.id)===String(id);});if(!event||event._imported||typeof window.openAdd!=='function')return;state.editingId=event.id;window.openAdd('cal');var st=document.getElementById('sheet-title');if(st)st.textContent='Afspraak bewerken';var btn=document.querySelector('#add-overlay .sheet-btn');if(btn)btn.textContent='Opslaan';var f1=document.getElementById('f1');if(f1)f1.value=event.title||'';var f2=document.getElementById('f2');if(f2)f2.value=event.date||'';var f3=document.getElementById('f3');if(f3)f3.value=event.time||'';var f4=document.getElementById('cal-description');if(f4)f4.value=event.description||'';};
 
     var originalOpen=window.openAdd;
     if(typeof originalOpen==='function'&&!originalOpen.__calendarSharedWrapped){var wrappedOpen=function(type){if(type==='cal'&&state.editingId===null)state.editingId=null;var result=originalOpen.apply(this,arguments);if(type==='cal'&&state.editingId===null){var btn=document.querySelector('#add-overlay .sheet-btn');if(btn)btn.textContent='Toevoegen';}return result;};wrappedOpen.__calendarSharedWrapped=true;window.openAdd=wrappedOpen;}
@@ -97,6 +97,6 @@
   }
 
   window.addEventListener('focus',initializeAndSubscribe);window.addEventListener('online',initializeAndSubscribe);window.addEventListener('familyapp:household-members-updated',initializeAndSubscribe);
-  window.CalendarSharedLive={version:'1.2.0',sync:initializeAndSubscribe,save:write,status:function(){return{attached:state.attached,familyId:familyId(),editingId:state.editingId,count:(window.calData||[]).length};}};
+  window.CalendarSharedLive={version:'1.3.0',sync:initializeAndSubscribe,save:write,status:function(){return{attached:state.attached,familyId:familyId(),editingId:state.editingId,count:(window.calData||[]).length};}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
