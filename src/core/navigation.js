@@ -238,7 +238,7 @@ function _renderScreen(id) {
     if(typeof calYear!=='undefined')calYear=now.getFullYear();
     renderCal();
   }
-  else if(id==='finance') renderFinance();
+  else if(id==='finance') { if(typeof enterFinanceScreen==='function') enterFinanceScreen(); else renderFinance(); }
   else if(id==='notif')   renderNotifs();
   else if(id==='achievements') renderAch();
   else if(id==='recipes') renderRecipes();
