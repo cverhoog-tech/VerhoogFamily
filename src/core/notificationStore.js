@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// NOTIFICATION STORE v1.1.0
+// NOTIFICATION STORE v1.2.0
 // Single household-scoped source of truth for in-app notification events.
 // Persistence is owned by FamilyDataStore at families/{householdId}/shared/notifications.
 // Domain modules publish typed events; presentation and delivery are separate concerns.
@@ -8,7 +8,7 @@
 (function(){
   if(window.NotificationStore)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var COLLECTION='notifications';
   var records={};
   var listeners=[];
@@ -43,10 +43,8 @@
   function canSee(event){var id=uid();if(!event||!id)return false;if(event.dismissedBy&&event.dismissedBy[id])return false;var a=event.audience||{kind:'household'};if(a.kind==='household')return true;if(a.kind==='uids')return Array.isArray(a.uids)&&a.uids.map(String).indexOf(String(id))>-1;return false;}
   function sortedVisible(){return Object.keys(records).map(function(k){return records[k];}).filter(canSee).sort(function(a,b){var d=(Number(b.createdAt)||0)-(Number(a.createdAt)||0);if(d)return d;return String(b.id||'').localeCompare(String(a.id||''));});}
   function isRead(event){var id=uid();return !!(id&&event&&event.readBy&&event.readBy[id]);}
-  function formatRelative(ts){var diff=Math.max(0,now()-(Number(ts)||now()));if(diff<60000)return'Zojuist';if(diff<3600000)return Math.max(1,Math.floor(diff/60000))+' min geleden';if(diff<86400000)return Math.floor(diff/3600000)+' uur geleden';if(diff<604800000)return Math.floor(diff/86400000)+' d geleden';try{return new Date(ts).toLocaleDateString('nl-NL',{day:'numeric',month:'short'});}catch(e){return'';}}
-  function legacyProjection(event){return{id:event.id,icon:event.icon||'🔔',bg:event.bg||'#ede9fe',title:event.title||'Melding',body:event.body||'',time:formatRelative(event.createdAt),read:isRead(event),type:event.type,createdAt:event.createdAt,actor:event.actor||null,entity:event.entity||null};}
-  function mirrorLegacy(){window.notifData=sortedVisible().map(legacyProjection);var dot=document.getElementById('notif-dot');if(dot)dot.style.display=unreadCount()?'block':'none';}
-  function emit(meta){mirrorLegacy();var list=sortedVisible();listeners.slice().forEach(function(fn){try{fn(list,meta||{});}catch(e){console.error('[NotificationStore listener]',e);}});try{window.dispatchEvent(new CustomEvent('familyapp:notifications-changed',{detail:{items:list,meta:meta||{},unread:unreadCount()}}));}catch(e){}}
+  function updateUnreadIndicator(){var dot=document.getElementById('notif-dot');if(dot)dot.style.display=unreadCount()?'block':'none';}
+  function emit(meta){updateUnreadIndicator();var list=sortedVisible();listeners.slice().forEach(function(fn){try{fn(list,meta||{});}catch(e){console.error('[NotificationStore listener]',e);}});try{window.dispatchEvent(new CustomEvent('familyapp:notifications-changed',{detail:{items:list,meta:meta||{},unread:unreadCount()}}));}catch(e){}}
   function detectIncoming(previous,allowLive){var me=uid(),fresh=[];if(!me||!allowLive)return fresh;Object.keys(records).forEach(function(id){var e=records[id];if(previous[id]||!canSee(e)||isRead(e))return;if(e.actor&&String(e.actor.uid||'')===String(me))return;var created=Number(e.createdAt)||0;if(created&&created<subscriptionStartedAt-5000)return;fresh.push(e);});return fresh.sort(function(a,b){return(Number(a.createdAt)||0)-(Number(b.createdAt)||0);});}
 
   function detachSubscription(){if(unsubscribe){try{unsubscribe();}catch(e){}}unsubscribe=null;subscribedFamilyId=null;subscriptionStartedAt=0;firstSnapshotForSubscription=true;records={};}
