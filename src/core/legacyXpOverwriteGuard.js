@@ -16,11 +16,9 @@
           shop:arrToObj(window.shopData),
           cal:arrToObj(window.calData),
           feed:arrToObj(window.feedData),
-          trans:arrToObj(window.transData),
-          savingsGoals:arrToObj(window.savingsGoals),
-          extraIncome:arrToObj(window.extraIncome),
-          vasteLasten:arrToObj(window.vasteLasten),
           recurData:arrToObj(window.recurData)
+          // trans/savingsGoals/extraIncome/vasteLasten intentionally excluded
+          // — owned exclusively by FinanceStore now.
         };
         window.fbDb.ref('families/'+window.fbFamilyId).update(updatePayload);
         var me=uid();
