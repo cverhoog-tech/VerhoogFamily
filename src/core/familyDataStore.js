@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FAMILY DATA STORE v1.4.1
+// FAMILY DATA STORE v1.4.2
 // Firebase UID/household scoped persistence boundary.
 // localStorage is cache/offline fallback, never household identity authority.
 // ============================================================
 (function(){
   if(window.FamilyDataStore)return;
-  var VERSION='1.4.1',CACHE_PREFIX='familyapp_data_v1_',listeners={},subscriptions={};
-  var SHARED={shoppingLists:'shoppingLists',recipes:'recipes',mealPlans:'mealPlans',notes:'notes',notifications:'notifications'};
+  var VERSION='1.4.2',CACHE_PREFIX='familyapp_data_v1_',listeners={},subscriptions={};
+  var SHARED={shoppingLists:'shoppingLists',recipes:'recipes',mealPlans:'mealPlans',notes:'notes',notifications:'notifications',finance:'finance'};
   var PRIVATE={shoppingLists:'shoppingLists',notes:'notes',progression:'progression',preferences:'preferences'};
   function now(){return Date.now();}
   function parse(v,f){try{return v?JSON.parse(v):f;}catch(e){return f;}}
