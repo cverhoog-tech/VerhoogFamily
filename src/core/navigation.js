@@ -57,8 +57,7 @@ function renderNav() {
           var isActive = currentScreen===slotId;
           html += '<button class="nav-btn'+(isActive?' active':'')+'" data-goto="'+slotId+'">'
             +'<span class="nav-icon">'+sc.icon+'</span>'
-            +'<span class="nav-label">'+sc.label+'</span>'
-            +'</button>';
+            +'<span class="nav-label">'+sc.label+'</span></button>';
         }
       }
     }
@@ -209,10 +208,6 @@ function showScreen(id) {
 function _renderScreen(id) {
   if(id==='home')         renderHome();
   else if(id==='tasks')   {
-    // Preserve the currently selected task view on re-renders. The old code
-    // forced every tasks render back to "overzicht", which meant a Firebase
-    // update after creating a task could throw the user out of Compact even
-    // though the create popup itself had completed successfully.
     var validTaskTabs={overzicht:true,persoon:true,compact:true};
     if(!validTaskTabs[taskTab]) taskTab='overzicht';
     document.querySelectorAll('.ttab').forEach(function(b){
@@ -237,7 +232,12 @@ function _renderScreen(id) {
   }
   else if(id==='shop')    renderShop();
   else if(id==='notes')   renderNotes();
-  else if(id==='cal')     renderCal();
+  else if(id==='cal')     {
+    var now=new Date();
+    if(typeof calMonth!=='undefined')calMonth=now.getMonth();
+    if(typeof calYear!=='undefined')calYear=now.getFullYear();
+    renderCal();
+  }
   else if(id==='finance') renderFinance();
   else if(id==='notif')   renderNotifs();
   else if(id==='achievements') renderAch();
