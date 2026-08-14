@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// NOTIFICATION DOMAIN EVENTS v1.2.0
+// NOTIFICATION DOMAIN EVENTS v1.3.0
 // Stable domain API for notification-worthy FamilyApp events.
 // Domain modules never construct Firebase paths or audience structures.
 // ============================================================
 (function(){
   if(window.NotificationEvents)return;
 
-  var VERSION='1.2.0';
+  var VERSION='1.3.0';
 
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function members(){
@@ -103,6 +103,20 @@
       entity:entity('partyQuest',quest&&(quest.id||quest._key)),data:{questId:String(quest&&quest.id||''),questTaskId:String(quest&&quest.questId||''),action:'completed'}
     });
   }
+  function financeSavingsUpdated(goal,transaction){
+    if(!goal)return Promise.reject(new Error('Spaardoel ontbreekt'));
+    transaction=transaction||{};
+    var type=transaction.type==='withdrawal'?'withdrawal':'deposit';
+    var amount=Math.abs(Number(transaction.amount)||0);
+    var who=transaction.who||window.myName||'Een gezinslid';
+    var recipients=otherMemberUids();
+    return publishTo('finance.savings.updated',recipients,{
+      icon:type==='deposit'?'💰':'📤',bg:'#dbeafe',tone:'finance',title:String(goal.icon||'🎯')+' '+String(goal.name||'Spaardoel'),
+      body:String(who)+' '+(type==='deposit'?'zette € ':'nam € ')+amount.toFixed(0)+(type==='deposit'?' opzij':' op')+(transaction.note?' — '+String(transaction.note):''),
+      entity:entity('savingsGoal',goal.id),
+      data:{goalId:String(goal.id||''),transactionType:type,amount:amount,who:String(who),date:String(transaction.date||''),note:String(transaction.note||'')}
+    });
+  }
 
   window.NotificationEvents={
     version:VERSION,
@@ -115,6 +129,7 @@
     taskSwapResolved:taskSwapResolved,
     partyQuestCreated:partyQuestCreated,
     partyQuestJoined:partyQuestJoined,
-    partyQuestCompleted:partyQuestCompleted
+    partyQuestCompleted:partyQuestCompleted,
+    financeSavingsUpdated:financeSavingsUpdated
   };
 })();
