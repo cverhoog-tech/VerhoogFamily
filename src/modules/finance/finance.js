@@ -99,15 +99,15 @@ function renderSparenOverview(el) {
   el.querySelectorAll('[data-goalid]').forEach(function(card){
     card.onclick = function(e){
       if(e.target.closest('[data-deposit]')||e.target.closest('[data-withdraw]')) return;
-      savingsViewGoal = parseInt(card.dataset.goalid);
+      savingsViewGoal = card.dataset.goalid;
       renderSparen();
     };
   });
   el.querySelectorAll('[data-deposit]').forEach(function(btn){
-    btn.onclick = function(e){ e.stopPropagation(); openSavingsSheet(parseInt(btn.dataset.deposit),'deposit'); };
+    btn.onclick = function(e){ e.stopPropagation(); openSavingsSheet(btn.dataset.deposit,'deposit'); };
   });
   el.querySelectorAll('[data-withdraw]').forEach(function(btn){
-    btn.onclick = function(e){ e.stopPropagation(); openSavingsSheet(parseInt(btn.dataset.withdraw),'withdrawal'); };
+    btn.onclick = function(e){ e.stopPropagation(); openSavingsSheet(btn.dataset.withdraw,'withdrawal'); };
   });
 }
 
@@ -125,8 +125,8 @@ function renderSparenDetail(el, goalId) {
   var html = '<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:.5px solid var(--c-border);position:sticky;top:54px;background:var(--c-surface);z-index:5">'
     +'<button onclick="savingsViewGoal=null;renderSparen()" style="background:none;border:none;font-size:14px;font-weight:600;color:var(--c-primary);cursor:pointer">← Terug</button>'
     +'<div style="flex:1;font-size:16px;font-weight:800;color:var(--c-text)">'+g.icon+' '+g.name+'</div>'
-    +'<button onclick="openSavingsGoalSheet('+g.id+')" style="background:none;border:none;font-size:14px;color:var(--c-text2);cursor:pointer">✏️</button>'
-    +'<button onclick="deleteSavingsGoal('+g.id+')" style="background:none;border:none;font-size:14px;color:#dc2626;cursor:pointer">🗑</button>'
+    +'<button onclick="openSavingsGoalSheet(\''+g.id+'\')" style="background:none;border:none;font-size:14px;color:var(--c-text2);cursor:pointer">✏️</button>'
+    +'<button onclick="deleteSavingsGoal(\''+g.id+'\')" style="background:none;border:none;font-size:14px;color:#dc2626;cursor:pointer">🗑</button>'
     +'</div>';
 
   // Hero card
@@ -157,20 +157,20 @@ function renderSparenDetail(el, goalId) {
 
   // Action buttons
   html += '<div style="display:flex;gap:8px;padding:0 16px 16px">'
-    +'<button onclick="openSavingsSheet('+g.id+',\'deposit\')" style="flex:2;background:var(--c-primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">+ Storting toevoegen</button>'
-    +'<button onclick="openSavingsSheet('+g.id+',\'withdrawal\')" style="flex:1;background:var(--c-surface2);color:var(--c-text2);border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer">− Opname</button>'
+    +'<button onclick="openSavingsSheet(\''+g.id+'\',\'deposit\')" style="flex:2;background:var(--c-primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">+ Storting toevoegen</button>'
+    +'<button onclick="openSavingsSheet(\''+g.id+'\',\'withdrawal\')" style="flex:1;background:var(--c-surface2);color:var(--c-text2);border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer">− Opname</button>'
     +'</div>';
 
   html += renderSavingsChart(g);
 
   // Transaction log
   html += '<div style="padding:0 16px 4px;font-size:11px;font-weight:700;color:var(--c-text2);text-transform:uppercase;letter-spacing:.5px">Transactielogboek</div>';
-  var sortedLog = (g.log||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+  var sortedLog = window.FinanceStore ? FinanceStore.sortTransactions(g.log||[]) : (g.log||[]).slice();
   if(!sortedLog.length) {
     html += '<div style="text-align:center;padding:20px;color:var(--c-text2);font-size:13px">Nog geen transacties</div>';
   } else {
     html += '<div>';
-    sortedLog.forEach(function(l, idx){
+    sortedLog.forEach(function(l){
       var isDeposit = l.type==='deposit';
       var whoColor = l.who==='Shane'?'var(--c-primary)':'var(--c-partner)';
       html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--c-border);background:var(--c-surface)">'
@@ -180,7 +180,7 @@ function renderSparenDetail(el, goalId) {
         +'<div style="font-size:11px;color:var(--c-text2);margin-top:2px">'+formatDate(l.date)+' · <span style="font-weight:700;color:'+whoColor+'">'+l.who+'</span></div>'
         +'</div>'
         +'<div style="font-size:15px;font-weight:800;color:'+(isDeposit?'#16a34a':'#dc2626')+'">'+(isDeposit?'+':'-')+'€ '+l.amount.toFixed(0)+'</div>'
-        +'<button data-dellog="'+idx+'" style="background:none;border:none;color:var(--c-text3);font-size:13px;padding:4px;cursor:pointer">✕</button>'
+        +'<button data-dellog="'+l.id+'" style="background:none;border:none;color:var(--c-text3);font-size:13px;padding:4px;cursor:pointer">✕</button>'
         +'</div>';
     });
     html += '</div>';
@@ -189,21 +189,12 @@ function renderSparenDetail(el, goalId) {
 
   el.innerHTML = html;
 
-  // Delete log entries
+  // Delete log entries — routed through FinanceStore by the entry's stable
+  // id (no more array-index math, which breaks the moment the list re-sorts).
   el.querySelectorAll('[data-dellog]').forEach(function(btn){
     btn.onclick = function(){
-      var origIdx = sortedLog.length - 1 - parseInt(btn.dataset.dellog);
-      // Find in original log
-      var entry = sortedLog[parseInt(btn.dataset.dellog)];
-      var li = g.log.indexOf(entry);
-      if(li>-1){
-        // Reverse the amount
-        if(entry.type==='deposit') g.saved -= entry.amount;
-        else g.saved += entry.amount;
-        g.saved = Math.max(0, g.saved);
-        g.log.splice(li,1);
-        renderSparen();
-      }
+      if(!window.FinanceStore) return;
+      FinanceStore.deleteSavingsLogEntry(g.id, btn.dataset.dellog);
     };
   });
 }
@@ -241,8 +232,9 @@ function openSavingsSheet(goalId, type) {
 }
 
 function saveSavingsTransaction() {
+  if(!window.FinanceStore) return;
   var overlay = document.getElementById('add-overlay');
-  var goalId = parseInt(overlay.dataset.svGoal);
+  var goalId = overlay.dataset.svGoal;
   var type   = overlay.dataset.svType;
   var g = savingsGoals.find(function(x){return x.id===goalId;});
   if(!g) { closeAdd(); return; }
@@ -261,26 +253,21 @@ function saveSavingsTransaction() {
     return;
   }
 
-  g.log.push({date:date, amount:amount, type:type, note:note, who:who});
-  if(type==='deposit')    g.saved += amount;
-  else                    g.saved  = Math.max(0, g.saved - amount);
+  FinanceStore.addSavingsTransaction(goalId, {date:date, amount:amount, type:type, note:note, who:who}).then(function(){
+    closeAdd();
+    var typeLabel = type==='deposit'?'stortte':'nam op';
+    addActivity('💰','#dbeafe', who+' '+typeLabel+' € '+amount.toFixed(0)+' bij "'+g.name+'"');
+    addNotif('💰','#dbeafe', g.icon+' '+g.name, who+' '+(type==='deposit'?'+':'-')+'€ '+amount.toFixed(0)+' — '+note);
 
-  closeAdd();
+    var projectedSaved = type==='deposit' ? g.saved+amount : Math.max(0, g.saved-amount);
+    if(projectedSaved >= g.target) {
+      queueUnlock({icon:g.icon, type:'🎯 Spaardoel bereikt!', title:g.name, desc:'€ '+g.target.toLocaleString('nl-NL')+' gespaard!', who:who, confetti:true});
+      awardXP(25, 'Spaardoel bereikt');
+    }
 
-  // Activity & notification
-  var typeLabel = type==='deposit'?'stortte':'nam op';
-  addActivity('💰','#dbeafe', who+' '+typeLabel+' € '+amount.toFixed(0)+' bij "'+g.name+'"');
-  addNotif('💰','#dbeafe', g.icon+' '+g.name, who+' '+(type==='deposit'?'+':'-')+'€ '+amount.toFixed(0)+' — '+note);
-
-  // Reached goal?
-  if(g.saved >= g.target) {
-    queueUnlock({icon:g.icon, type:'🎯 Spaardoel bereikt!', title:g.name, desc:'€ '+g.target.toLocaleString('nl-NL')+' gespaard!', who:who, confetti:true});
-    awardXP(25, 'Spaardoel bereikt');
-  }
-
-  awardXP(2, 'Spaartransactie');
-  renderSparen();
-  showToast((type==='deposit'?'💰 Storting':'📤 Opname')+' van € '+amount.toFixed(0)+' geregistreerd');
+    awardXP(2, 'Spaartransactie');
+    showToast((type==='deposit'?'💰 Storting':'📤 Opname')+' van € '+amount.toFixed(0)+' geregistreerd');
+  });
 }
 
 function openSavingsGoalSheet(editId) {
@@ -323,8 +310,9 @@ function openSavingsGoalSheet(editId) {
 }
 
 function saveSavingsGoal() {
+  if(!window.FinanceStore) return;
   var overlay = document.getElementById('add-overlay');
-  var editId = overlay.dataset.sgEdit ? parseInt(overlay.dataset.sgEdit) : null;
+  var editId = overlay.dataset.sgEdit || null;
   var name = (document.getElementById('sg-name')||{}).value||'';
   var target = parseFloat((document.getElementById('sg-target')||{}).value)||0;
   var iconBtn = document.querySelector('[data-ic][style*="var(--c-primary)"]');
@@ -334,25 +322,26 @@ function saveSavingsGoal() {
 
   if(!name || target<=0) { showToast('Vul naam en doelbedrag in'); return; }
 
-  if(editId) {
-    var g = savingsGoals.find(function(x){return x.id===editId;});
-    if(g){ g.name=name; g.target=target; g.icon=icon; g.color=color; }
-  } else {
-    savingsGoals.push({id:savingsNextId++, name:name, icon:icon, target:target, saved:0, who:'Beiden', color:color, log:[]});
-    addActivity('🎯','#dbeafe', myName+' maakte spaardoel "'+name+'" aan (€ '+target+')');
-    awardXP(5,'Spaardoel aangemaakt');
-  }
-  closeAdd();
-  renderSparen();
-  showToast((editId?'Doel opgeslagen':'Spaardoel aangemaakt')+' ✓');
+  var write = editId
+    ? FinanceStore.updateSavingsGoal(editId, {name:name, target:target, icon:icon, color:color})
+    : FinanceStore.addSavingsGoal({name:name, icon:icon, target:target, who:'Beiden', color:color}).then(function(){
+        addActivity('🎯','#dbeafe', myName+' maakte spaardoel "'+name+'" aan (€ '+target+')');
+        awardXP(5,'Spaardoel aangemaakt');
+      });
+
+  write.then(function(){
+    closeAdd();
+    showToast((editId?'Doel opgeslagen':'Spaardoel aangemaakt')+' ✓');
+  });
 }
 
 function deleteSavingsGoal(id) {
+  if(!window.FinanceStore) return;
   if(!confirm('Spaardoel verwijderen?')) return;
-  savingsGoals = savingsGoals.filter(function(g){return g.id!==id;});
-  savingsViewGoal = null;
-  renderSparen();
-  showToast('Doel verwijderd');
+  FinanceStore.deleteSavingsGoal(id).then(function(){
+    savingsViewGoal = null;
+    showToast('Doel verwijderd');
+  });
 }
 
 
@@ -374,4 +363,3 @@ function renderNotifs(){
 }
 
 function clearNotifs(){notifData=[];renderNotifs();showToast('Meldingen geleegd');}
-
