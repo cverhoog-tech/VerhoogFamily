@@ -1,15 +1,20 @@
 'use strict';
-// SHOPPING LISTS v0.424 - UID/household scoped realtime lists.
+// SHOPPING LISTS v0.425 - UID/household scoped realtime lists.
 (function(){
   if(window.ShoppingLists)return;
-  var VERSION='0.424',COLLECTION='shoppingLists',PREF_KEY='familyapp_active_shopping_list_v1',sharedLists={},privateLists={},activeKey=null,booted=false,originalRender=null,originalToggle=null,originalDelete=null,originalReset=null;
+  var VERSION='0.425',COLLECTION='shoppingLists',PREF_KEY='familyapp_active_shopping_list_v1',sharedLists={},privateLists={},activeKey=null,booted=false,originalRender=null,originalToggle=null,originalDelete=null,originalReset=null;
   function store(){return window.FamilyDataStore;}function status(){return store()&&store().status?store().status():{};}function uid(){return status().userId||null;}function ready(){var s=status();return !!(s.userId&&s.familyId);}function now(){return Date.now();}function itemMap(v){return store()&&store().itemMap?store().itemMap(v):{};}function itemArray(v){var m=itemMap(v);return Object.keys(m).map(function(k){return Object.assign({},m[k],{_key:k});}).sort(function(a,b){return Number(b.createdAt||0)-Number(a.createdAt||0);});}function normalizeList(x){if(!x)return x;var y=Object.assign({},x);y.items=itemMap(y.items);return y;}
   function all(){var out=[];Object.keys(sharedLists||{}).forEach(function(id){if(sharedLists[id])out.push({scope:'shared',list:normalizeList(sharedLists[id]),key:'shared:'+id});});Object.keys(privateLists||{}).forEach(function(id){if(privateLists[id])out.push({scope:'private',list:normalizeList(privateLists[id]),key:'private:'+id});});return out.sort(function(a,b){return Number(b.list.updatedAt||0)-Number(a.list.updatedAt||0);});}
   function active(){var rows=all(),f=rows.find(function(x){return x.key===activeKey;})||rows.find(function(x){return x.scope==='shared';})||rows[0]||null;if(f&&f.key!==activeKey){activeKey=f.key;try{localStorage.setItem(PREF_KEY,activeKey);}catch(e){}}return f;}
   function setActive(key,rerender){activeKey=key;try{localStorage.setItem(PREF_KEY,key);}catch(e){}applyActive(rerender!==false);}
   function applyActive(rerender){var row=active();if(!row)return;window.shopData=itemArray(row.list.items);window.shopNextId=Math.max.apply(null,window.shopData.map(function(i){return Number(i.id)||0;}).concat([0]))+1;renderSwitcher();if(rerender&&typeof originalRender==='function')originalRender();}
   function scopeFn(row,sn,pn){return row.scope==='shared'?store()[sn]:store()[pn];}function pathMutation(row,path,value){var fn=scopeFn(row,'writeSharedPath','writePrivatePath');return fn.call(store(),COLLECTION,[row.list.id].concat(path),value);}function touch(row){return Promise.all([pathMutation(row,['updatedAt'],now()),pathMutation(row,['updatedBy'],uid())]);}
-  function findKey(row,id){var items=itemMap(row.list.items),keys=Object.keys(items);for(var i=0;i<keys.length;i++){if(String(keys[i])===String(id)||String(items[keys[i]].id)===String(id))return keys[i];}return null;}
+  function findKey(row,id){
+    var items=itemMap(row.list.items),candidate=String(id==null?'':id);
+    if(candidate&&items[candidate])return candidate;
+    var matches=Object.keys(items).filter(function(k){return items[k]&&String(items[k].id)===candidate;});
+    return matches.length===1?matches[0]:null;
+  }
   function addItem(item){var row=active();if(!row||!store())return Promise.resolve(false);var key=item._key||store().makeId('item'),record=Object.assign({},item,{_key:key,createdAt:item.createdAt||now(),updatedAt:now(),updatedBy:uid()});return pathMutation(row,['items',key],record).then(function(){return touch(row);}).then(function(){return record;});}
   function toggleItem(id){var row=active();if(!row)return Promise.resolve(false);var key=findKey(row,id);if(!key)return Promise.resolve(false);var fn=scopeFn(row,'transactSharedPath','transactPrivatePath');return fn.call(store(),COLLECTION,[row.list.id,'items',key],function(item){if(!item)return item;item.done=!item.done;item.updatedAt=now();item.updatedBy=uid();return item;},null).then(function(r){touch(row);return r;});}
   function deleteItem(id){var row=active();if(!row)return Promise.resolve(false);var key=findKey(row,id);return key?pathMutation(row,['items',key],null).then(function(){return touch(row);}):Promise.resolve(false);}function clearDone(){var row=active();if(!row)return Promise.resolve(false);var items=itemMap(row.list.items),jobs=[];Object.keys(items).forEach(function(k){if(items[k]&&items[k].done)jobs.push(pathMutation(row,['items',k],null));});return Promise.all(jobs).then(function(){return touch(row);});}
