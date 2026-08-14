@@ -311,10 +311,11 @@ function startFirebaseSync(){
     if(data.shop         && objToArr(data.shop).length)         shopData     =objToArr(data.shop);
     if(data.cal          && objToArr(data.cal).length)          calData      =objToArr(data.cal);
     if(data.feed         && objToArr(data.feed).length)         feedData     =objToArr(data.feed);
-    if(data.trans        && objToArr(data.trans).length)        transData    =objToArr(data.trans);
-    if(data.savingsGoals && objToArr(data.savingsGoals).length) savingsGoals =objToArr(data.savingsGoals);
-    if(data.extraIncome  && objToArr(data.extraIncome).length)  extraIncome  =objToArr(data.extraIncome);
-    if(data.vasteLasten  && objToArr(data.vasteLasten).length)  vasteLasten  =objToArr(data.vasteLasten);
+    // trans/savingsGoals/extraIncome/vasteLasten intentionally NOT mirrored
+    // from this legacy flat path anymore — FinanceStore (families/{id}/
+    // shared/finance) is the sole source of truth for finance data. Mirroring
+    // it here too could silently restore stale/pre-reset data on any
+    // unrelated family-root change (task edit, chat post, etc.).
     if(data.recurData    && objToArr(data.recurData).length)    recurData    =objToArr(data.recurData);
 
     if(data.members) Object.values(data.members).forEach(function(m){
@@ -342,8 +343,11 @@ function syncToFirebase(){
     var uid=fbUser?fbUser.uid:'anon';
     fbDb.ref('families/'+fbFamilyId).update({
       tasks:arrToObj(taskData),shop:arrToObj(shopData),cal:arrToObj(calData),
-      feed:arrToObj(feedData),trans:arrToObj(transData),savingsGoals:arrToObj(savingsGoals),
-      extraIncome:arrToObj(extraIncome),vasteLasten:arrToObj(vasteLasten),recurData:arrToObj(recurData)
+      feed:arrToObj(feedData),recurData:arrToObj(recurData)
+      // trans/savingsGoals/extraIncome/vasteLasten intentionally excluded:
+      // FinanceStore (families/{id}/shared/finance) is now the sole owner
+      // of finance data. Mirroring it here too would recreate a second,
+      // racing write path for the exact bug this was built to fix.
     });
     fbDb.ref('families/'+fbFamilyId+'/members/'+uid).update({xp:myXP,name:myName,lastSeen:Date.now()});
   },800);
@@ -438,6 +442,5 @@ function initApp() {
     checkDailyBonus();
   }, 400);
 }
-
 
 
