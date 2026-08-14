@@ -1,178 +1,97 @@
 'use strict';
 // ============================================================
-// RECIPE SHARED LIVE v1.0
-// Household-scoped Firebase recipes via FamilyDataStore.
-// Firebase is authoritative; fam_recipes_v1 remains cache/legacy compatibility.
+// RECIPE STORE + SHARED LIVE v2.0
+// Shared household recipes via FamilyDataStore.
+// Record-level writes prevent unrelated recipes overwriting each other.
 // ============================================================
 (function(){
-  if(window.__recipeSharedLiveV1) return;
-  window.__recipeSharedLiveV1 = true;
+  if(window.RecipeStore && window.RecipeStore.version === '2.0.0') return;
 
-  var COLLECTION = 'recipes';
-  var STORE_KEY = 'fam_recipes_v1';
-  var SEED_KEY = 'fam_recipes_seeded_v1';
-  var state = { attached:false, applying:false, unsubscribe:null, repoOff:null, bootTimer:null };
+  var VERSION='2.0.0', COLLECTION='recipes', LEGACY_KEY='fam_recipes_v1', SEED_KEY='fam_recipes_seeded_v1';
+  var state={attached:false,ready:false,items:{},unsubscribe:null,booting:null,listeners:[]};
 
-  function now(){ return Date.now(); }
-  function currentUser(){
-    try { return window.fbUser || (window.firebase && firebase.auth && firebase.auth().currentUser) || null; }
-    catch(e){ return null; }
-  }
-  function familyId(){ return window.fbFamilyId || null; }
-  function ready(){
-    return !!(window.FamilyDataStore && typeof window.FamilyDataStore.subscribeShared === 'function' && familyId() && currentUser() && Array.isArray(window.recipesData));
-  }
-  function clone(v){ try { return JSON.parse(JSON.stringify(v)); } catch(e){ return []; } }
-  function recipeKey(id, index){
-    var raw = id == null || id === '' ? ('legacy_' + index) : String(id);
-    return 'id_' + raw.replace(/[.#$\[\]\/]/g,'_');
-  }
-  function ensureIds(recipes){
-    var uid = currentUser() && currentUser().uid ? currentUser().uid : 'legacy';
-    return (recipes || []).filter(Boolean).map(function(recipe, index){
-      var r = Object.assign({}, recipe);
-      if(r.id == null || r.id === '') r.id = 'r_' + uid.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,20) + '_' + now().toString(36) + '_' + index;
-      return r;
-    });
-  }
-  function itemsFromArray(recipes){
-    var out = {};
-    ensureIds(recipes).forEach(function(recipe, index){ out[recipeKey(recipe.id, index)] = recipe; });
-    return out;
-  }
-  function arrayFromValue(value){
-    if(Array.isArray(value)) return ensureIds(value);
-    var items = value && value.items && typeof value.items === 'object' ? value.items : {};
-    return ensureIds(Object.keys(items).map(function(key){ return items[key]; }).filter(Boolean));
-  }
-  function payload(recipes, meta){
-    var u = currentUser();
-    var out = {
-      schemaVersion:1,
-      initialized:true,
-      items:itemsFromArray(recipes),
-      updatedAt:now(),
-      updatedBy:u && u.uid ? u.uid : 'unknown'
-    };
-    if(meta) Object.keys(meta).forEach(function(k){ out[k] = meta[k]; });
-    return out;
-  }
-  function writeLegacyCache(recipes){
-    var list = ensureIds(recipes);
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch(e){}
-    // Once household data exists, never let per-device seed state append recipes again.
-    try { localStorage.setItem(SEED_KEY, '1'); } catch(e){}
-    try {
-      if(window.HouseholdRepository && typeof window.HouseholdRepository.write === 'function'){
-        window.HouseholdRepository.write('recipes', list, { silent:true, source:'recipeSharedLive' });
-      }
-    } catch(e){}
-    window.recipesData = list;
-    return list;
-  }
-  function renderIfActive(){
-    var screen = document.getElementById('screen-recipes');
-    if(!screen) return;
-    var active = screen.classList.contains('active') || screen.style.display === 'block' || screen.offsetParent !== null;
-    if(active && typeof window.renderRecipes === 'function'){
-      try { window.renderRecipes(); } catch(e){ console.warn('[RecipeSharedLive] render failed', e); }
+  function now(){return Date.now();}
+  function ds(){return window.FamilyDataStore||null;}
+  function userId(){try{return ds()&&ds().status().userId||null;}catch(e){return null;}}
+  function familyId(){try{return ds()&&ds().status().familyId||window.fbFamilyId||null;}catch(e){return window.fbFamilyId||null;}}
+  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
+  function keyFor(id){return 'id_'+String(id||'').replace(/[.#$\[\]\/]/g,'_');}
+  function newId(){var s=ds();return s&&s.makeId?s.makeId('recipe'):('recipe_'+now().toString(36)+'_'+Math.random().toString(36).slice(2,7));}
+
+  function normalizeIngredient(value,index){
+    if(value&&typeof value==='object'){
+      var raw=String(value.rawText||value.text||value.name||'').trim();
+      return {id:String(value.id||('ing_'+index)),name:String(value.name||raw).trim(),quantity:String(value.quantity||'').trim(),unit:String(value.unit||'').trim(),rawText:raw||String(value.name||'').trim()};
     }
+    var text=String(value||'').trim();
+    return {id:'ing_'+index,name:text,quantity:'',unit:'',rawText:text};
   }
-  function write(recipes, meta){
-    if(state.applying || !ready()) return Promise.resolve(false);
-    var list = ensureIds(Array.isArray(recipes) ? recipes : window.recipesData || []);
-    writeLegacyCache(list);
-    return window.FamilyDataStore.writeShared(COLLECTION, payload(list, meta)).then(function(result){ return result; });
+  function normalizeRecipe(input,existing){
+    input=input||{};existing=existing||{};
+    var id=String(input.id||existing.id||newId());
+    var cat=String(input.cat||existing.cat||'Diner');
+    var ingredients=Array.isArray(input.ingredients)?input.ingredients:(Array.isArray(existing.ingredients)?existing.ingredients:[]);
+    return {
+      id:id,
+      name:String(input.name!=null?input.name:(existing.name||'')).trim(),
+      cat:cat,
+      cuisine:String(input.cuisine!=null?input.cuisine:(existing.cuisine||'')).trim(),
+      persons:Math.max(1,parseInt(input.persons!=null?input.persons:existing.persons,10)||4),
+      time:Math.max(0,parseInt(input.time!=null?input.time:existing.time,10)||0),
+      emoji:String(input.emoji||existing.emoji||''),
+      photo:input.photo!==undefined?(input.photo||null):(existing.photo||null),
+      imageMode:String(input.imageMode||existing.imageMode||(input.photo||existing.photo?'custom':'preset')),
+      heroPreset:String(input.heroPreset||existing.heroPreset||cat.toLowerCase()),
+      ingredients:ingredients.map(normalizeIngredient).filter(function(x){return x.rawText||x.name;}),
+      steps:(Array.isArray(input.steps)?input.steps:(existing.steps||[])).map(function(x){return String(x||'').trim();}).filter(Boolean),
+      notes:String(input.notes!=null?input.notes:(existing.notes||'')).trim(),
+      sourceProvider:String(input.sourceProvider||existing.sourceProvider||'manual'),
+      sourceUrl:String(input.sourceUrl||existing.sourceUrl||''),
+      createdAt:existing.createdAt||input.createdAt||now(),
+      createdBy:existing.createdBy||input.createdBy||userId(),
+      updatedAt:now(),
+      updatedBy:userId()
+    };
   }
-  function legacyFirebaseRead(){
-    try {
-      var db = window.fbDb || (window.firebase && firebase.database && firebase.database());
-      var fid = familyId();
-      if(!db || !fid) return Promise.resolve([]);
-      return db.ref('families/' + fid + '/recipes').once('value').then(function(snapshot){
-        var raw = snapshot.val();
-        if(!raw) return [];
-        if(Array.isArray(raw)) return raw.filter(Boolean);
-        if(raw.items && typeof raw.items === 'object') return Object.keys(raw.items).map(function(k){ return raw.items[k]; }).filter(Boolean);
-        if(typeof raw === 'object') return Object.keys(raw).map(function(k){ return raw[k]; }).filter(function(v){ return v && typeof v === 'object'; });
-        return [];
-      }).catch(function(){ return []; });
-    } catch(e){ return Promise.resolve([]); }
+  function list(){return Object.keys(state.items).map(function(k){return state.items[k];}).filter(Boolean).sort(function(a,b){return (b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);});}
+  function get(id){var wanted=String(id||''),keys=Object.keys(state.items);for(var i=0;i<keys.length;i++){var r=state.items[keys[i]];if(r&&String(r.id)===wanted)return r;}return null;}
+  function fromPayload(value){
+    var raw=value&&value.items&&typeof value.items==='object'?value.items:{};var out={};
+    Object.keys(raw).forEach(function(k){var r=raw[k];if(!r)return;var n=normalizeRecipe(r,r);n.updatedAt=r.updatedAt||n.updatedAt;out[keyFor(n.id)]=n;});
+    return out;
   }
-  function seedSource(){
-    if(Array.isArray(window.recipesData) && window.recipesData.length) return clone(window.recipesData);
-    try {
-      var raw = localStorage.getItem(STORE_KEY), parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch(e){ return []; }
+  function cache(){var rows=list();window.recipesData=rows;try{localStorage.setItem(LEGACY_KEY,JSON.stringify(rows));localStorage.setItem(SEED_KEY,'1');}catch(e){}return rows;}
+  function render(){var screen=document.getElementById('screen-recipes');if(!screen)return;var active=screen.classList.contains('active')||screen.style.display==='block'||screen.offsetParent!==null;if(active&&typeof window.renderRecipes==='function')try{window.renderRecipes();}catch(e){}}
+  function emit(meta){var rows=cache();state.listeners.slice().forEach(function(fn){try{fn(rows,meta||{});}catch(e){}});try{window.dispatchEvent(new CustomEvent('familyapp:recipes-synced',{detail:{familyId:familyId(),recipes:rows.slice(),meta:meta||{}}}));}catch(e){}render();}
+  function subscribe(cb){if(typeof cb!=='function')return function(){};state.listeners.push(cb);try{cb(list(),{source:'current'});}catch(e){}return function(){state.listeners=state.listeners.filter(function(fn){return fn!==cb;});};}
+
+  function legacyLocal(){try{var raw=localStorage.getItem(LEGACY_KEY),parsed=raw?JSON.parse(raw):[];return Array.isArray(parsed)?parsed:[];}catch(e){return[];}}
+  function legacyFirebase(){
+    try{var db=window.fbDb||(window.firebase&&firebase.database&&firebase.database()),fid=familyId();if(!db||!fid)return Promise.resolve([]);return db.ref('families/'+fid+'/recipes').once('value').then(function(s){var raw=s.val();if(!raw)return[];if(Array.isArray(raw))return raw.filter(Boolean);if(raw.items&&typeof raw.items==='object')return Object.keys(raw.items).map(function(k){return raw.items[k];}).filter(Boolean);if(typeof raw==='object')return Object.keys(raw).map(function(k){return raw[k];}).filter(function(v){return v&&typeof v==='object';});return[];}).catch(function(){return[];});}catch(e){return Promise.resolve([]);}
   }
-  function initializeAndSubscribe(){
-    if(state.attached || !ready()) return false;
-    state.attached = true;
-    window.FamilyDataStore.readShared(COLLECTION, null).then(function(existing){
-      if(existing && existing.initialized) return existing;
-      // Support a short-lived/shared array shape if an earlier bridge already wrote one.
-      if(Array.isArray(existing) && existing.length){
-        var migratedArray = payload(existing, { migratedAt:now(), migratedFrom:'shared-recipes-array' });
-        return window.FamilyDataStore.writeShared(COLLECTION, migratedArray).then(function(){ return migratedArray; });
-      }
-      return legacyFirebaseRead().then(function(legacy){
-        var local = seedSource();
-        var seed = legacy.length ? legacy : local;
-        var first = payload(seed, {
-          migratedAt:now(),
-          migratedFrom:legacy.length ? 'families/{householdId}/recipes' : (local.length ? 'fam_recipes_v1' : 'empty')
-        });
-        return window.FamilyDataStore.writeShared(COLLECTION, first).then(function(){ return first; });
-      });
-    }).then(function(){
-      state.unsubscribe = window.FamilyDataStore.subscribeShared(COLLECTION, function(value){
-        if(!value || (!value.initialized && !Array.isArray(value))) return;
-        state.applying = true;
-        var list = arrayFromValue(value);
-        writeLegacyCache(list);
-        state.applying = false;
-        renderIfActive();
-        try { window.dispatchEvent(new CustomEvent('familyapp:recipes-synced', { detail:{ familyId:familyId(), recipes:list.slice() } })); } catch(e){}
-      }, {schemaVersion:1,initialized:true,items:{}});
-    }).catch(function(err){
-      state.attached = false;
-      console.error('[RecipeSharedLive] init failed', err);
-    });
-    return true;
+  function initialPayload(recipes,source){var items={};(recipes||[]).forEach(function(r){var n=normalizeRecipe(r,r);items[keyFor(n.id)]=n;});return{schemaVersion:2,initialized:true,items:items,migratedAt:now(),migratedFrom:source,updatedAt:now(),updatedBy:userId()};}
+  function ensureInitialized(existing){
+    var s=ds();if(existing&&existing.initialized)return Promise.resolve(existing);
+    if(Array.isArray(existing)&&existing.length){var a=initialPayload(existing,'shared-recipes-array');return s.writeShared(COLLECTION,a).then(function(){return a;});}
+    return legacyFirebase().then(function(remote){var local=legacyLocal(),seed=remote.length?remote:local,src=remote.length?'families/{householdId}/recipes':(local.length?LEGACY_KEY:'empty');var p=initialPayload(seed,src);return s.writeShared(COLLECTION,p).then(function(){return p;});});
   }
-  function attachLegacyWriteBridge(){
-    if(state.repoOff || !window.HouseholdRepository || typeof window.HouseholdRepository.on !== 'function') return false;
-    state.repoOff = window.HouseholdRepository.on('recipes', function(event){
-      if(state.applying) return;
-      var value = event && event.value;
-      if(!Array.isArray(value)) return;
-      write(value, { source:'recipes-ui' }).catch(function(err){ console.error('[RecipeSharedLive] write failed', err); });
-    });
-    return true;
+  function attach(){
+    var s=ds();if(!s||state.attached||!familyId()||!userId())return false;state.attached=true;
+    state.unsubscribe=s.subscribeShared(COLLECTION,function(value,meta){if(!value||!value.initialized)return;state.items=fromPayload(value);state.ready=true;emit(meta||{source:'firebase'});},{schemaVersion:2,initialized:true,items:{}});return true;
   }
   function boot(){
-    if(state.bootTimer) return;
-    var tries = 0;
-    state.bootTimer = setInterval(function(){
-      tries++;
-      attachLegacyWriteBridge();
-      initializeAndSubscribe();
-      if((state.attached && state.repoOff) || tries > 240){ clearInterval(state.bootTimer); state.bootTimer = null; }
-    },250);
-    attachLegacyWriteBridge();
-    initializeAndSubscribe();
+    if(state.booting)return state.booting;var s=ds();if(!s||!familyId()||!userId())return Promise.resolve(status());
+    state.booting=s.readShared(COLLECTION,null).then(ensureInitialized).then(function(value){state.items=fromPayload(value);state.ready=true;emit({source:'boot'});attach();return status();}).catch(function(err){console.error('[RecipeStore] boot failed',err);return status();}).then(function(v){state.booting=null;return v;});return state.booting;
   }
+  function create(input){var s=ds();if(!s)return Promise.reject(new Error('FamilyDataStore unavailable'));var r=normalizeRecipe(input||{},null);if(!r.name)return Promise.reject(new Error('Recipe name required'));var k=keyFor(r.id);return s.writeSharedPath(COLLECTION,['items',k],r).then(function(result){state.items[k]=r;emit({source:'create'});return{recipe:clone(r),result:result};});}
+  function upsert(input){var old=get(input&&input.id);if(!old)return create(input);var s=ds(),r=normalizeRecipe(input,old),k=keyFor(r.id);return s.writeSharedPath(COLLECTION,['items',k],r).then(function(result){state.items[k]=r;emit({source:'upsert'});return{recipe:clone(r),result:result};});}
+  function remove(id){var s=ds(),old=get(id);if(!s)return Promise.reject(new Error('FamilyDataStore unavailable'));if(!old)return Promise.resolve({removed:false});var k=keyFor(old.id);return s.writeSharedPath(COLLECTION,['items',k],null).then(function(result){delete state.items[k];emit({source:'remove'});return{removed:true,recipe:clone(old),result:result};});}
+  function status(){return{version:VERSION,ready:state.ready,attached:state.attached,count:list().length,familyId:familyId(),userId:userId()};}
 
-  window.addEventListener('focus', initializeAndSubscribe);
-  window.addEventListener('online', initializeAndSubscribe);
-  window.addEventListener('familyapp:household-members-updated', initializeAndSubscribe);
-  window.RecipeSharedLive = {
-    version:'1.0.0',
-    sync:initializeAndSubscribe,
-    save:function(){ return write(window.recipesData || [], { source:'manual' }); },
-    status:function(){ return { attached:state.attached, familyId:familyId(), count:Array.isArray(window.recipesData) ? window.recipesData.length : 0 }; }
-  };
+  window.RecipeStore={version:VERSION,boot:boot,ready:function(){return state.ready;},list:list,get:get,subscribe:subscribe,create:create,upsert:upsert,remove:remove,normalizeRecipe:normalizeRecipe,status:status};
+  window.RecipeSharedLive={version:VERSION,sync:boot,save:function(){return Promise.resolve({deprecated:true,reason:'Use RecipeStore record-level mutations'});},status:status};
 
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  function start(){var tries=0,t=setInterval(function(){tries++;if(ds()&&familyId()&&userId()){clearInterval(t);boot();}else if(tries>240)clearInterval(t);},250);boot();}
+  window.addEventListener('online',boot);window.addEventListener('focus',boot);window.addEventListener('familyapp:household-members-updated',boot);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
