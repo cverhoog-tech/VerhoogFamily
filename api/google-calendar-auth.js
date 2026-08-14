@@ -1,7 +1,8 @@
 'use strict';
 const crypto=require('crypto');
 
-function secret(){return process.env.GOOGLE_CALENDAR_TOKEN_SECRET||'';}
+function env(name){return String(process.env[name]||'').trim();}
+function secret(){return env('GOOGLE_CALENDAR_TOKEN_SECRET');}
 function sign(value){return crypto.createHmac('sha256',secret()).update(value).digest('base64url');}
 function statePayload(returnTo,nonce){
   const body=Buffer.from(JSON.stringify({returnTo:returnTo||'/',exp:Date.now()+10*60*1000,nonce:nonce})).toString('base64url');
@@ -18,12 +19,13 @@ function safeReturnTo(v){
 }
 
 module.exports=async function handler(req,res){
-  const clientId=process.env.GOOGLE_CALENDAR_CLIENT_ID;
-  if(!clientId||!process.env.GOOGLE_CALENDAR_CLIENT_SECRET||!secret()){
+  const clientId=env('GOOGLE_CALENDAR_CLIENT_ID');
+  const clientSecret=env('GOOGLE_CALENDAR_CLIENT_SECRET');
+  if(!clientId||!clientSecret||!secret()){
     return res.status(503).json({error:'GOOGLE_CALENDAR_NOT_CONFIGURED'});
   }
   const nonce=crypto.randomBytes(18).toString('base64url');
-  const redirectUri=process.env.GOOGLE_CALENDAR_REDIRECT_URI||(origin(req)+'/api/google-calendar-callback');
+  const redirectUri=env('GOOGLE_CALENDAR_REDIRECT_URI')||(origin(req)+'/api/google-calendar-callback');
   const params=new URLSearchParams({
     client_id:clientId,
     redirect_uri:redirectUri,
