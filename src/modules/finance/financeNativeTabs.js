@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// FINANCE NATIVE TABS v0.345
-// Stable finance tabbar + fallback renderers for missing legacy tabs.
+// FINANCE NATIVE TABS v0.346
+// Stable finance tabbar + shared finance runtime bootstrap.
 // ============================================================
 
 (function(){
-  var VERSION = '0.345';
+  var VERSION = '0.346';
   var STYLE_ID = 'finance-native-tabs-style';
   var NAV_ID = 'finance-native-tabs';
   var activeTab = 'maandplan';
@@ -18,6 +18,8 @@
 
   function money(n){ return '€ '+Number(n || 0).toLocaleString('nl-NL', { maximumFractionDigits: 0 }); }
   function arr(name){ return Array.isArray(window[name]) ? window[name] : []; }
+  function loadScriptOnce(id,src,ready,done){if(ready&&ready()){if(done)done();return;}var old=document.getElementById(id);if(old){if(done)setTimeout(done,80);return;}var s=document.createElement('script');s.id=id;s.src=src;s.onload=function(){if(done)done();};s.onerror=function(){console.warn('[FinanceNativeTabs] failed to load',src);if(done)done();};document.body.appendChild(s);}
+  function loadFinanceLayer(){loadScriptOnce('finance-store-js','src/modules/finance/financeStore.js',function(){return !!window.FinanceStore;},function(){if(window.FinanceStore&&FinanceStore.boot)FinanceStore.boot();loadScriptOnce('finance-controls-js','src/modules/finance/financeControls.js',function(){return !!window.FinanceControls;},function(){if(window.FinanceControls&&FinanceControls.boot)FinanceControls.boot();});});}
 
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
@@ -131,6 +133,7 @@
       if(activeTab === 'trans') renderTransactionsFallback();
       if(activeTab === 'analyse') renderAnalysisFallback();
     }
+    if(window.FinanceControls&&FinanceControls.ensureCard)setTimeout(FinanceControls.ensureCard,0);
   }
 
   function activate(tab){
@@ -167,8 +170,8 @@
   function overrideLegacySetFinTab(){ window.setFinTab = function(tab){ activate(tab); }; }
 
   function boot(){
-    ensureStyles(); buildNav(); overrideLegacySetFinTab();
-    [100,300,800,1500,2500].forEach(function(delay){ setTimeout(function(){ ensureStyles(); buildNav(); overrideLegacySetFinTab(); }, delay); });
+    loadFinanceLayer();ensureStyles(); buildNav(); overrideLegacySetFinTab();
+    [100,300,800,1500,2500].forEach(function(delay){ setTimeout(function(){ loadFinanceLayer();ensureStyles(); buildNav(); overrideLegacySetFinTab(); }, delay); });
   }
 
   window.FinanceNativeTabs = { version: VERSION, boot: boot, activate: activate, buildNav: buildNav };
