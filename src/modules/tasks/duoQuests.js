@@ -25,7 +25,8 @@ saveItem=function(){
 };
 
 // ============================================================
-// FIREBASE — AUTH + SYNC + PUSH
+// FIREBASE — AUTH + SYNC
+// Notification events are owned by NotificationStore, not this module.
 // ============================================================
 
 var fb = null; var fbDb = null; var fbAuth = null; var fbMsg = null;
@@ -54,7 +55,6 @@ function initFirebase(config) {
     fbDb   = firebase.database();
     fbAuth = firebase.auth();
     try { fbMsg = firebase.messaging(); } catch(e){ fbMsg=null; }
-    // Check redirect result (mobiel Google login)
     fbAuth.getRedirectResult().then(function(result) {
       if(result && result.user) {
         fbUser = result.user;
@@ -65,7 +65,6 @@ function initFirebase(config) {
   return true;
   } catch(e){ console.error('Firebase init:',e); showAuthError('Init fout: '+e.message); return false; }
 }
-
 
 function emailAuth() {
   var email = (document.getElementById('auth-email')||{}).value || '';
@@ -93,7 +92,6 @@ function emailAuth() {
     if(err) err.textContent = translateFbError(e);
   });
 }
-
 
 function toggleFbConfig() {
   var p=document.getElementById('fb-config-panel');
@@ -128,7 +126,6 @@ function signInWithGoogle() {
   provider.addScope('profile');
   provider.addScope('email');
 
-  // Gebruik redirect op mobiel (Safari blokkeert popups)
   var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   if(isMobile) {
     fbAuth.signInWithRedirect(provider);
@@ -146,14 +143,11 @@ function signInWithGoogle() {
   }
 }
 
-
 function showNameSetupStep(user) {
-  // Sla Google avatar op
   if(user && user.photoURL) {
     localStorage.setItem('familyapp-current-user-avatar-v1', user.photoURL);
   }
 
-  // Als namen al bekend zijn — direct doorgaan
   var savedName    = localStorage.getItem('familyapp-profile-name-v1');
   var savedPartner = localStorage.getItem('familyapp-partner-name-v1');
   if(savedName && savedPartner) {
@@ -161,13 +155,11 @@ function showNameSetupStep(user) {
     return;
   }
 
-  // Stap 2 tonen voor naamsetup
   var s1 = document.getElementById('login-step-1');
   var s2 = document.getElementById('login-step-2');
   if(s1) s1.style.display = 'none';
   if(s2) s2.style.display = 'block';
 
-  // Prefill naam uit Google
   var displayName = (user && user.displayName) || '';
   var firstName   = displayName.split(' ')[0] || '';
   var av = document.getElementById('google-avatar-preview');
@@ -185,7 +177,6 @@ function showNameSetupStep(user) {
   if(ni && firstName) ni.value = firstName;
 }
 
-
 function finishGoogleSetup() {
   var name    = (document.getElementById('step2-name')||{}).value||'';
   var partner = (document.getElementById('step2-partner')||{}).value||'';
@@ -198,15 +189,11 @@ function finishGoogleSetup() {
   name = name.trim();
   partner = partner.trim() || 'Partner';
 
-  // Update Firebase Auth profile
   fbUser.updateProfile({displayName: name}).catch(function(){});
-
-  // Create family in database
   setupNewFamily(name, partner).then(onLoggedIn).catch(function(e) {
     if(errEl) { errEl.textContent='Fout: '+e.message; errEl.style.display='block'; }
   });
 }
-
 
 function submitAuth() {
   var email=(document.getElementById('auth-email')||{}).value||'';
@@ -271,33 +258,29 @@ function loadUserFamily(){
 }
 
 function onLoggedIn(){
-  if(window._appStarted) { startFirebaseSync(); return; }
+  if(window._appStarted) { startFirebaseSync(); if(window.NotificationStore)NotificationStore.ensureSubscription(); return; }
   window._appStarted = true;
   hideLoginScreen();
-  // Start de app — renderNav + home screen
   if(typeof renderNav === 'function') renderNav();
   if(typeof showScreen === 'function') showScreen('home');
   else if(typeof renderHome === 'function') renderHome();
   startFirebaseSync();
+  if(window.NotificationStore)NotificationStore.ensureSubscription();
   setupPushNotifications();
   showToast('👋 Welkom '+myName+'!');
 }
 
 function hideLoginScreen(){
-  // Verwijder de CSS die alles verbergt
   var preloginCss = document.getElementById('prelogin-css');
   if(preloginCss) preloginCss.remove();
-  // Verberg login scherm
   var ls = document.getElementById('login-screen');
   if(ls) ls.style.display = 'none';
-  // Render de app
   renderNav();
   renderHome();
   renderNotifs();
   updateHomeXP();
   setTimeout(function(){ checkAchievements(); checkDailyBonus(); }, 400);
 }
-
 
 var _fbSyncActive=false;
 function startFirebaseSync(){
@@ -306,16 +289,10 @@ function startFirebaseSync(){
   var ref=fbDb.ref('families/'+fbFamilyId);
   ref.on('value',function(snap){
     var data=snap.val(); if(!data) return;
-    // Only overwrite local data if Firebase has actual content (not empty)
     if(data.tasks        && objToArr(data.tasks).length)        taskData     =objToArr(data.tasks);
     if(data.shop         && objToArr(data.shop).length)         shopData     =objToArr(data.shop);
     if(data.cal          && objToArr(data.cal).length)          calData      =objToArr(data.cal);
     if(data.feed         && objToArr(data.feed).length)         feedData     =objToArr(data.feed);
-    // trans/savingsGoals/extraIncome/vasteLasten intentionally NOT mirrored
-    // from this legacy flat path anymore — FinanceStore (families/{id}/
-    // shared/finance) is the sole source of truth for finance data. Mirroring
-    // it here too could silently restore stale/pre-reset data on any
-    // unrelated family-root change (task edit, chat post, etc.).
     if(data.recurData    && objToArr(data.recurData).length)    recurData    =objToArr(data.recurData);
 
     if(data.members) Object.values(data.members).forEach(function(m){
@@ -324,11 +301,6 @@ function startFirebaseSync(){
     });
     _renderScreen(_currentScreen);
     updateHomeXP();
-  });
-  // Listen for partner push messages
-  fbDb.ref('families/'+fbFamilyId+'/push').on('child_added',function(snap){
-    var n=snap.val();
-    if(n&&n.to===myName&&!n.seen){showPushBanner(n);snap.ref.update({seen:true});}
   });
 }
 
@@ -344,38 +316,13 @@ function syncToFirebase(){
     fbDb.ref('families/'+fbFamilyId).update({
       tasks:arrToObj(taskData),shop:arrToObj(shopData),cal:arrToObj(calData),
       feed:arrToObj(feedData),recurData:arrToObj(recurData)
-      // trans/savingsGoals/extraIncome/vasteLasten intentionally excluded:
-      // FinanceStore (families/{id}/shared/finance) is now the sole owner
-      // of finance data. Mirroring it here too would recreate a second,
-      // racing write path for the exact bug this was built to fix.
     });
     fbDb.ref('families/'+fbFamilyId+'/members/'+uid).update({xp:myXP,name:myName,lastSeen:Date.now()});
   },800);
 }
 
-function sendPushToPartner(title,body,icon){
-  if(!fbDb||!fbFamilyId||offlineMode) return;
-  fbDb.ref('families/'+fbFamilyId+'/push').push({
-    to:partnerName,from:myName,title:title,body:body,icon:icon||'🔔',time:Date.now(),seen:false
-  });
-}
-
-function showPushBanner(n){
-  var el=document.createElement('div');
-  el.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:400;'
-    +'background:var(--c-surface);border-radius:14px;padding:12px 16px;box-shadow:0 4px 20px rgba(0,0,0,.2);'
-    +'display:flex;align-items:center;gap:10px;min-width:240px;max-width:90%;'
-    +'animation:achSlideIn .3s ease;cursor:pointer;border-left:4px solid var(--c-primary)';
-  el.innerHTML='<div style="font-size:22px">'+(n.icon||'🔔')+'</div>'
-    +'<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--c-text)">'+n.title+'</div>'
-    +'<div style="font-size:11px;color:var(--c-text2)">'+n.body+'</div></div>'
-    +'<div style="font-size:10px;color:var(--c-text3)">'+n.from+'</div>';
-  el.onclick=function(){el.remove();};
-  document.body.appendChild(el);
-  setTimeout(function(){if(el.parentNode){el.style.animation='achSlideOut .3s ease forwards';setTimeout(function(){el.remove();},300);}},5000);
-  addNotif(n.icon||'🔔','#ede9fe',n.title,n.body);
-}
-
+// Device-token registration is delivery infrastructure only. Notification
+// event creation, recipients, read state and realtime sync live in NotificationStore.
 function setupPushNotifications(){
   if(!fbMsg) return;
   try {
@@ -388,16 +335,9 @@ function setupPushNotifications(){
   } catch(e){}
 }
 
-// Hook sync into key actions
+// Hook sync into XP only; notification writes are not coupled to this legacy sync.
 var _oadXP=awardXP;
 awardXP=function(a,r){_oadXP(a,r);syncToFirebase();};
-
-var _oanotif=addNotif;
-addNotif=function(icon,bg,title,body){
-  _oanotif(icon,bg,title,body);
-  sendPushToPartner(title,body,icon);
-  syncToFirebase();
-};
 
 function logoutUser(){ document.body.classList.remove('logged-in');
   if(fbAuth) fbAuth.signOut().catch(function(){});
@@ -406,7 +346,6 @@ function logoutUser(){ document.body.classList.remove('logged-in');
   if(ls){ls.style.display='flex';ls.style.animation='fadeIn .3s ease';}
 }
 
-// Always init Firebase with hardcoded config
 if(typeof firebase !== 'undefined') {
   var _fbOk = initFirebase(HARDCODED_FB_CONFIG);
   if(_fbOk) {
@@ -419,7 +358,6 @@ if(typeof firebase !== 'undefined') {
           if(ls) ls.style.display='flex';
         });
       } else {
-        // Not logged in — make sure login screen is visible
         var ls=document.getElementById('login-screen');
         if(ls) ls.style.display='flex';
       }
@@ -427,8 +365,6 @@ if(typeof firebase !== 'undefined') {
   }
 }
 
-
-// App init runs ONLY after login
 function initApp() {
   renderNav();
   attachNavDelegation();
@@ -442,5 +378,4 @@ function initApp() {
     checkDailyBonus();
   }, 400);
 }
-
 
