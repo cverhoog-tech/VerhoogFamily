@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// SHOPPING LIST SERVICE v1.0
+// SHOPPING LIST SERVICE v1.1
 // Domain command layer for targeted list mutations.
 // Appends records to an existing list without replacing its contents.
 // ============================================================
 (function(){
-  if(window.ShoppingListService) return;
-  var VERSION='1.0.0', COLLECTION='shoppingLists';
+  if(window.ShoppingListService && window.ShoppingListService.version==='1.1.0') return;
+  var VERSION='1.1.0', COLLECTION='shoppingLists';
 
   function store(){ return window.FamilyDataStore || null; }
   function now(){ return Date.now(); }
@@ -23,8 +23,7 @@
   }
   function getList(key){
     var parsed=parseKey(key); if(!parsed) return null;
-    var row=listRows().find(function(x){return x&&x.key===parsed.key;});
-    return row||null;
+    return listRows().find(function(x){return x&&x.key===parsed.key;})||null;
   }
   function writer(scope){
     if(!store()) return null;
@@ -64,21 +63,35 @@
       var key=st.makeId('item');
       added.push(Object.assign({},clean,{_key:key,createdAt:now(),createdBy:uid(),updatedAt:now(),updatedBy:uid()}));
     });
-    var jobs=added.map(function(record){
-      return fn.call(st,COLLECTION,[row.list.id,'items',record._key],record);
-    });
+    var jobs=added.map(function(record){return fn.call(st,COLLECTION,[row.list.id,'items',record._key],record);});
     return Promise.all(jobs).then(function(){
+      if(!added.length) return null;
       return Promise.all([
         fn.call(st,COLLECTION,[row.list.id,'updatedAt'],now()),
         fn.call(st,COLLECTION,[row.list.id,'updatedBy'],uid())
       ]);
     }).then(function(){ return {listKey:listKey,added:added,skipped:skipped}; });
   }
+  function ingredientText(ingredient){
+    if(ingredient&&typeof ingredient==='object') return String(ingredient.rawText||ingredient.text||ingredient.name||'').trim();
+    return String(ingredient||'').trim();
+  }
+  function ingredientItem(ingredient,recipe){
+    var text=ingredientText(ingredient); if(!text) return null;
+    var parsed=null;
+    try{if(window.RecipeGroceryParser&&typeof window.RecipeGroceryParser.parse==='function')parsed=window.RecipeGroceryParser.parse(text);}catch(e){}
+    var qty=ingredient&&typeof ingredient==='object'&&ingredient.quantity ? String(ingredient.quantity)+(ingredient.unit?' '+ingredient.unit:'') : '';
+    return {
+      name:parsed&&parsed.name?parsed.name:(ingredient&&typeof ingredient==='object'&&ingredient.name?ingredient.name:text),
+      qty:qty||(parsed&&parsed.qty)||'1x',
+      cat:(parsed&&parsed.cat)||'Overig',
+      photo:(parsed&&parsed.photo)||null,
+      source:'recipe',sourceRecipeId:recipe.id||null,sourceRecipeName:recipe.name||null
+    };
+  }
   function appendRecipeIngredients(listKey, recipe, options){
     if(!recipe) return Promise.reject(new Error('Recept ontbreekt'));
-    var items=(recipe.ingredients||[]).map(function(ingredient){
-      return {name:String(ingredient||'').trim(),qty:'1x',cat:'Overig',source:'recipe',sourceRecipeId:recipe.id||null,sourceRecipeName:recipe.name||null};
-    }).filter(function(x){return !!x.name;});
+    var items=(recipe.ingredients||[]).map(function(ingredient){return ingredientItem(ingredient,recipe);}).filter(Boolean);
     return appendItems(listKey,items,Object.assign({dedupe:true},options||{}));
   }
 
