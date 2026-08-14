@@ -250,6 +250,18 @@ function setFinTab(tab, btn) {
   renderFinance();
 }
 
+// Called every time the user navigates INTO the Financiën screen (nav tap),
+// as opposed to switching tabs while already there (setFinTab). Always
+// resets the maandplan view to the real current calendar month — never
+// hardcoded, always derived from new Date() at the moment of entry.
+function enterFinanceScreen(){
+  var d = new Date();
+  mpMonth = d.getMonth();
+  mpYear = d.getFullYear();
+  if(window.FinanceStore && typeof FinanceStore.boot === 'function') FinanceStore.boot();
+  renderFinance();
+}
+
 function renderFinance(){
   try {
     if(finTab==='maandplan')renderMaandplan();
@@ -478,7 +490,7 @@ function renderMaandplan(){
     +'</div></div>';
 
   if(monthEenmalig.length) {
-    monthEenmalig.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(e){
+    (window.FinanceStore?FinanceStore.sortTransactions(monthEenmalig):monthEenmalig.slice()).forEach(function(e){
       var isNeg = e.amount < 0;
       var icon  = catIcns[e.cat] || (isNeg ? '💸' : '💰');
       var whoColor = e.who==='Shane'?'var(--c-primary)':'var(--c-partner)';
@@ -490,7 +502,7 @@ function renderMaandplan(){
         +'</div>'
         +'<div style="font-size:15px;font-weight:800;color:'+(isNeg?'#dc2626':'#16a34a')+'">'
         +(isNeg?'-':'+')+'€ '+Math.abs(e.amount).toFixed(0)+'</div>'
-        +'<button onclick="deleteExtraIncome('+e.id+')" style="background:none;border:none;color:var(--c-text3);font-size:14px;padding:4px;cursor:pointer">✕</button>'
+        +'<button onclick="deleteExtraIncome(\''+e.id+'\')" style="background:none;border:none;color:var(--c-text3);font-size:14px;padding:4px;cursor:pointer">✕</button>'
         +'</div>';
     });
   } else {
@@ -568,8 +580,9 @@ function openSparenVanuitBudget() {
 }
 
 function saveSparenVanuitBudget() {
+  if(!window.FinanceStore){ closeAdd(); return; }
   var amount  = parseFloat((document.getElementById('svb-amount')||{}).value)||0;
-  var goalId  = parseInt((document.getElementById('svb-goal')||{}).value)||0;
+  var goalId  = (document.getElementById('svb-goal')||{}).value||'';
   var note    = (document.getElementById('svb-note')||{}).value||'Opzij gezet vanuit maandplan';
   var whoBtn  = document.querySelector('[data-svbwho].active');
   var who     = whoBtn ? whoBtn.dataset.svbwho : myName;
@@ -579,65 +592,46 @@ function saveSparenVanuitBudget() {
   var goal = savingsGoals.find(function(g){return g.id===goalId;});
   if(!goal) { showToast('Kies een spaardoel'); return; }
 
-  // Add to savings goal log with special tag so we can undo it
-  var logEntry = {
-    date: date,
-    amount: amount,
-    type: 'deposit',
-    note: note,
-    who: who,
-    _fromBudget: true,          // tag: came from maandplan
-    _budgetRef: Date.now()      // unique ref for undo
-  };
-  goal.log.push(logEntry);
-  goal.saved += amount;
-
-  // Also register as eenmalige afschrijving in the maandplan so it shows in budget
-  var em = {
-    id: extraIncNextId++,
-    name: '🏦 '+goal.icon+' '+goal.name,
-    amount: -amount,
-    cat: 'Sparen',
-    date: date,
-    who: who,
-    _savingsGoalId: goalId,
-    _savingsBudgetRef: logEntry._budgetRef
-  };
-  extraIncome.unshift(em);
-
-  closeAdd();
-  renderFinance();
-  showToast('💚 € '+amount.toFixed(0)+' opzij gezet voor "'+goal.name+'"');
-  addActivity('🏦','#dbeafe', who+' zette € '+amount.toFixed(0)+' opzij voor "'+goal.name+'"');
-  addNotif('🏦','#dbeafe','Bedrag opzij gezet', '€ '+amount.toFixed(0)+' → '+goal.icon+' '+goal.name);
-
-  // Check goal completion
-  if(goal.saved >= goal.target) {
-    queueUnlock({icon:goal.icon, type:'🎯 Spaardoel bereikt!', title:goal.name, desc:'€ '+goal.target.toLocaleString('nl-NL')+' gespaard!', who:who, confetti:true});
-    awardXP(25,'Spaardoel bereikt');
-  }
+  // Add a deposit to the savings goal log, then link a matching eenmalige
+  // afschrijving in the maandplan by that log entry's stable id — both
+  // writes go through the same FinanceStore boundary, so there is nothing
+  // left to keep in sync manually.
+  FinanceStore.addSavingsTransaction(goalId, {amount:amount, type:'deposit', note:note, who:who, date:date, _fromBudget:true}).then(function(logEntry){
+    return FinanceStore.addExtraIncome({
+      name: '🏦 '+goal.icon+' '+goal.name,
+      amount: -amount,
+      cat: 'Sparen',
+      date: date,
+      who: who,
+      _savingsGoalId: goalId,
+      _savingsBudgetRef: logEntry.id
+    }).then(function(){ return logEntry; });
+  }).then(function(){
+    closeAdd();
+    showToast('💚 € '+amount.toFixed(0)+' opzij gezet voor "'+goal.name+'"');
+    addActivity('🏦','#dbeafe', who+' zette € '+amount.toFixed(0)+' opzij voor "'+goal.name+'"');
+    addNotif('🏦','#dbeafe','Bedrag opzij gezet', '€ '+amount.toFixed(0)+' → '+goal.icon+' '+goal.name);
+    if((goal.saved||0)+amount >= goal.target) {
+      queueUnlock({icon:goal.icon, type:'🎯 Spaardoel bereikt!', title:goal.name, desc:'€ '+goal.target.toLocaleString('nl-NL')+' gespaard!', who:who, confetti:true});
+      awardXP(25,'Spaardoel bereikt');
+    }
+  });
 }
 
-// Undo a budget-linked savings entry (called from maandplan eenmalig list ✕)
-var _origDeleteExtraIncome = deleteExtraIncome;
-deleteExtraIncome = function(id) {
-  var em = extraIncome.find(function(e){return e.id===id;});
-  if(em && em._savingsGoalId && em._savingsBudgetRef) {
-    // Also reverse the savings goal entry
-    var goal = savingsGoals.find(function(g){return g.id===em._savingsGoalId;});
-    if(goal) {
-      var li = goal.log.findIndex(function(l){return l._budgetRef===em._savingsBudgetRef;});
-      if(li > -1) {
-        goal.saved = Math.max(0, goal.saved - goal.log[li].amount);
-        goal.log.splice(li, 1);
-        showToast('↩️ Spaarboeking ook ongedaan gemaakt in "'+goal.name+'"');
-      }
+// Deleting an eenmalige afschrijving that came from "opzij zetten" also
+// reverses the linked savings-goal log entry, via the shared FinanceStore
+// write boundary (both writes go to the same 'finance' collection).
+function deleteExtraIncome(id) {
+  if(!window.FinanceStore)return;
+  FinanceStore.deleteExtraIncome(id).then(function(em){
+    if(em && em._savingsGoalId && em._savingsBudgetRef) {
+      return FinanceStore.deleteSavingsLogEntry(em._savingsGoalId, em._savingsBudgetRef).then(function(){
+        var goal = savingsGoals.find(function(g){return g.id===em._savingsGoalId;});
+        showToast('↩️ Spaarboeking ook ongedaan gemaakt in "'+(goal?goal.name:'spaardoel')+'"');
+      });
     }
-  }
-  var i = extraIncome.findIndex(function(e){return e.id===id;});
-  if(i > -1) extraIncome.splice(i, 1);
-  renderFinance();
-};
+  });
+}
 
 function openEenmalig(direction) {
   // direction: 1 = bijschrijving (income), -1 = afschrijving (expense)
@@ -681,12 +675,13 @@ function saveEenmalig() {
   var whoBtn = document.querySelector('[data-emwho].active');
   var who    = whoBtn ? whoBtn.dataset.emwho : myName;
   if(!name || amount<=0){showToast('Vul naam en bedrag in');return;}
-  extraIncome.unshift({id:extraIncNextId++, name:name, amount:amount*dir, cat:cat, date:date, who:who});
-  awardXP(2,'Eenmalig');
-  addActivity(dir>0?'💚':'🔴','#f3f4f6',who+(dir>0?' ontving':' betaalde')+' € '+amount.toFixed(0)+' ('+name+')');
-  closeAdd();
-  renderFinance();
-  showToast((dir>0?'💚 Bijschrijving':'🔴 Afschrijving')+' van € '+amount.toFixed(0)+' toegevoegd');
+  if(!window.FinanceStore){ closeAdd(); return; }
+  FinanceStore.addExtraIncome({name:name, amount:amount*dir, cat:cat, date:date, who:who}).then(function(){
+    awardXP(2,'Eenmalig');
+    addActivity(dir>0?'💚':'🔴','#f3f4f6',who+(dir>0?' ontving':' betaalde')+' € '+amount.toFixed(0)+' ('+name+')');
+    closeAdd();
+    showToast((dir>0?'💚 Bijschrijving':'🔴 Afschrijving')+' van € '+amount.toFixed(0)+' toegevoegd');
+  });
 }
 
 var mpEditIncome = null; // 'Shane' | 'Esra' | null
@@ -694,24 +689,26 @@ var mpEditIncome = null; // 'Shane' | 'Esra' | null
 function editMpIncome(person) { mpEditIncome=person; renderFinance(); }
 function cancelMpIncome() { mpEditIncome=null; renderFinance(); }
 function saveMpIncome(person) {
-  if(person==='Shane') {
-    var lbl=document.getElementById('mp-inc-shane-label');
-    var amt=document.getElementById('mp-inc-shane-amt');
-    if(lbl) inkomenShane.label=lbl.value.trim()||inkomenShane.label;
-    if(amt) inkomenShane.amount=Math.max(0,parseInt(amt.value)||0);
-  } else {
-    var lbl=document.getElementById('mp-inc-esra-label');
-    var amt=document.getElementById('mp-inc-esra-amt');
-    if(lbl) inkomenEsra.label=lbl.value.trim()||inkomenEsra.label;
-    if(amt) inkomenEsra.amount=Math.max(0,parseInt(amt.value)||0);
-  }
-  mpEditIncome=null;
-  renderFinance();
-  showToast('Inkomen opgeslagen ✓');
-  awardXP(2,'Inkomen bijgesteld');
+  if(!window.FinanceStore)return;
+  var slot = person==='Shane' ? 'primary' : 'partner';
+  var current = person==='Shane' ? inkomenShane : inkomenEsra;
+  var lbl = document.getElementById(person==='Shane'?'mp-inc-shane-label':'mp-inc-esra-label');
+  var amt = document.getElementById(person==='Shane'?'mp-inc-shane-amt':'mp-inc-esra-amt');
+  var patch = {
+    label: lbl ? (lbl.value.trim()||current.label) : current.label,
+    amount: amt ? Math.max(0,parseInt(amt.value)||0) : current.amount
+  };
+  FinanceStore.setIncome(slot, patch).then(function(){
+    mpEditIncome=null;
+    showToast('Inkomen opgeslagen ✓');
+    awardXP(2,'Inkomen bijgesteld');
+  });
 }
 
-function setSamen(v){samenBetaler=v;renderFinance();}
+function setSamen(v){
+  if(!window.FinanceStore)return;
+  FinanceStore.setSamenBetaler(v);
+}
 function changeMp(d){
   mpMonth+=d;
   if(mpMonth<0){mpMonth=11;mpYear--;}
@@ -722,21 +719,21 @@ function changeMp(d){
 
 
 function toggleLast(id){
-  var l=vasteLasten.find(function(x){return x.id===id;});if(!l)return;
+  var l=vasteLasten.find(function(x){return x.id===id;});if(!l||!window.FinanceStore)return;
   var ym=mpKey(mpYear,mpMonth);
   var el=document.getElementById('mpck-'+id);
-  if((l.paid||{})[ym]){delete (l.paid||{})[ym];}
-  else{
-    (l.paid||{})[ym]=true;
-    addNotif('✅','#e8f5e3',l.name+' betaald','€ '+l.amount);
-    if(el)spawnParticles(el);
-  }
-  renderFinance();
+  var willBePaid=!(l.paid||{})[ym];
+  FinanceStore.toggleVasteLastPaid(id, ym).then(function(){
+    if(willBePaid){
+      addNotif('✅','#e8f5e3',l.name+' betaald','€ '+l.amount);
+      if(el)spawnParticles(el);
+    }
+  });
 }
 
 function deleteLast(id){
-  var i=vasteLasten.findIndex(function(x){return x.id===id;});
-  if(i>-1){vasteLasten.splice(i,1);renderFinance();}
+  if(!window.FinanceStore)return;
+  FinanceStore.deleteVasteLast(id);
 }
 
 
@@ -747,8 +744,9 @@ function renderTrans(){
   var el=document.getElementById('fin-trans');if(!el)return;
 
   // Filter controls
-  var cats = [...new Set(transData.map(function(t){return t.cat;}))].sort();
-  var filtered = transData.filter(function(t){
+  var sortedTrans = window.FinanceStore ? FinanceStore.sortTransactions(transData) : transData.slice();
+  var cats = [...new Set(sortedTrans.map(function(t){return t.cat;}))].sort();
+  var filtered = sortedTrans.filter(function(t){
     if(transFilter.who!=='all' && t.who!==transFilter.who) return false;
     if(transFilter.cat!=='all' && t.cat!==transFilter.cat) return false;
     if(transFilter.period!=='all'){
@@ -810,7 +808,7 @@ function renderTrans(){
         +'</div>'
         +'<div style="font-size:15px;font-weight:700;color:'+(isNeg?'#dc2626':'#16a34a')+'">'
         +(isNeg?'-':'+')+'€ '+Math.abs(t.amount).toFixed(2)+'</div>'
-        +'<button onclick="deleteTrans('+t.id+')" style="background:none;border:none;color:var(--c-text3);font-size:14px;padding:4px;cursor:pointer">✕</button>'
+        +'<button onclick="deleteTrans(\''+t.id+'\')" style="background:none;border:none;color:var(--c-text3);font-size:14px;padding:4px;cursor:pointer">✕</button>'
         +'</div>';
     }).join('')
     +(filtered.length===0?'<div style="text-align:center;padding:30px;color:var(--c-text2)">Geen transacties gevonden</div>':'')
@@ -821,8 +819,8 @@ function renderTrans(){
 }
 
 function deleteTrans(id){
-  var i=transData.findIndex(function(t){return t.id===id;});
-  if(i>-1){transData.splice(i,1);renderTrans();}
+  if(!window.FinanceStore)return;
+  FinanceStore.deleteTransaction(id);
 }
 
 // ── ANALYSE ──
@@ -1139,7 +1137,7 @@ function renderExtraIncome(){
     +'<div style="font-size:11px;font-weight:700;color:var(--c-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Overzicht</div>'
     +'</div>'
     +'<div>'
-    +extraIncome.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(e){
+    +(window.FinanceStore?FinanceStore.sortTransactions(extraIncome):extraIncome.slice()).map(function(e){
       var icon=catIcons[e.cat]||'💰';
       var whoColor=e.who==='Shane'?'var(--c-primary)':'var(--c-partner)';
       return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--c-border);background:var(--c-surface)">'
@@ -1149,7 +1147,7 @@ function renderExtraIncome(){
         +'<div style="font-size:11px;color:var(--c-text2);margin-top:2px">'+e.cat+' · '+formatDate(e.date)+' · <span style="font-weight:700;color:'+whoColor+'">'+e.who+'</span></div>'
         +'</div>'
         +'<div style="font-size:17px;font-weight:800;color:#16a34a">+€ '+e.amount.toLocaleString('nl-NL')+'</div>'
-        +'<button onclick="deleteExtraIncome('+e.id+')" style="background:none;border:none;color:var(--c-text3);font-size:14px;padding:4px;cursor:pointer">✕</button>'
+        +'<button onclick="deleteExtraIncome(\''+e.id+'\')" style="background:none;border:none;color:var(--c-text3);font-size:14px;padding:4px;cursor:pointer">✕</button>'
         +'</div>';
     }).join('')
     +(extraIncome.length===0?'<div style="text-align:center;padding:30px;color:var(--c-text2)">Nog geen extra inkomsten</div>':'')
@@ -1158,9 +1156,3 @@ function renderExtraIncome(){
     +'<button onclick="openAdd(\'extraincome\')" style="width:100%;background:var(--c-primary);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:700;cursor:pointer">+ Extra inkomen toevoegen</button>'
     +'</div>';
 }
-
-function deleteExtraIncome(id){
-  var i=extraIncome.findIndex(function(e){return e.id===id;});
-  if(i>-1){extraIncome.splice(i,1);renderExtraIncome();}
-}
-
