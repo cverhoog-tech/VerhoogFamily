@@ -1,9 +1,10 @@
 'use strict';
 (function(){
-  var VERSION='0.500',KEY='familyapp_food_meal_plan_v001',STYLE='meal-planner-bottom-sheet-style';
+  var VERSION='0.501',KEY='familyapp_food_meal_plan_v001',STYLE='meal-planner-bottom-sheet-style';
   function parse(v,f){try{return v?JSON.parse(v):f;}catch(e){return f;}}
   function ensure(){if(!Array.isArray(window.mealPlanData))window.mealPlanData=parse(localStorage.getItem(KEY),[]);window.mealPlanNextId=Math.max.apply(null,window.mealPlanData.map(function(x){return Number(x.id)||0;}).concat([0]))+1;}
-  function save(){ensure();try{localStorage.setItem(KEY,JSON.stringify(window.mealPlanData));}catch(e){}try{if(window.HouseholdRepository&&HouseholdRepository.write)HouseholdRepository.write('mealPlan',window.mealPlanData,{source:'mealPlannerBottomSheetBridge',version:VERSION});}catch(e){}}
+  function emitChanged(){try{window.dispatchEvent(new CustomEvent('familyapp:meals:changed',{detail:{items:(window.mealPlanData||[]).slice(),source:'mealPlannerBottomSheetBridge'}}));}catch(e){}if(typeof window.renderCal==='function')try{window.renderCal();}catch(e){}}
+  function save(){ensure();try{localStorage.setItem(KEY,JSON.stringify(window.mealPlanData));}catch(e){}try{if(window.HouseholdRepository&&HouseholdRepository.write)HouseholdRepository.write('mealPlan',window.mealPlanData,{source:'mealPlannerBottomSheetBridge',version:VERSION});}catch(e){}emitChanged();}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function today(){return new Date().toISOString().slice(0,10);}
   function recipes(){return window.RecipeStore&&RecipeStore.list?RecipeStore.list():(Array.isArray(window.recipesData)?window.recipesData:[]);}
@@ -16,6 +17,6 @@
   function screen(){return document.getElementById('screen-meals')||document.getElementById('screen-food')||document.getElementById('screen-mealplanner');}
   function renderFallback(){ensure();var s=screen();if(!s)return;var node=document.getElementById('meal-plan-list')||s.querySelector('.meal-list,.meals-list,.content-body');if(!node)return;var old=document.getElementById('meal-plan-native-list');if(old)old.remove();var w=document.createElement('div');w.id='meal-plan-native-list';w.innerHTML=window.mealPlanData.slice(0,20).map(function(m){return '<div class="meal-plan-card"><b>'+esc(m.title)+'</b><div style="font-size:12px;color:var(--c-text2,#777);margin-top:3px">'+esc(m.date)+' · '+esc(label(m.mealType||'dinner'))+' · '+esc(m.persons||4)+' personen</div></div>';}).join('');node.appendChild(w);}
   function installButton(){var s=screen();if(!s)return;css();var h=s.querySelector('.list-header,.section-header,.module-header')||s,b=document.getElementById('meal-plan-native-btn');if(!b){b=document.createElement('button');b.id='meal-plan-native-btn';b.className='meal-plan-native-btn';b.textContent='+ Maaltijd';h.appendChild(b);}b.onclick=function(){return openMealPlanner();};}
-  function boot(){ensure();installButton();renderFallback();}
+  function boot(){ensure();installButton();renderFallback();emitChanged();}
   window.MealPlannerBottomSheetBridge={version:VERSION,boot:boot,openMealPlanner:openMealPlanner,openForRecipe:openForRecipe,installButton:installButton,renderFallback:renderFallback};window.openMealPlanner=openMealPlanner;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
