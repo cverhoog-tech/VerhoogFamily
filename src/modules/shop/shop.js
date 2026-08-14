@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v0.356
+// BOODSCHAPPEN v0.357
 // Grocery add flow + shopping receipt finance bridge.
 // ============================================================
 
@@ -133,9 +133,9 @@ window.highlightShopItem = highlightShopItem;
 function shopItemHTML(item) {
   var stableKey=String(item&&item._key?item._key:item.id);
   var domKey=stableKey.replace(/[^a-zA-Z0-9_-]/g,'_');
-  var jsKey=JSON.stringify(stableKey);
+  var attrKey=stableKey.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return '<div class="shop-item" id="si-'+domKey+'">'
-    +'<div class="check-circle '+(item.done?'done':'')+'" id="shck-'+domKey+'" onclick="toggleShop('+jsKey+')" style="cursor:pointer;flex-shrink:0">'
+    +'<div class="check-circle '+(item.done?'done':'')+'" id="shck-'+domKey+'" onclick="toggleShop(\''+attrKey+'\')" style="cursor:pointer;flex-shrink:0">'
     +(item.done?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'')
     +'</div>'
     +'<div class="shop-emoji">'+((item.photo&&!String(item.photo).startsWith('http'))?item.photo:'📦')+'</div>'
@@ -143,7 +143,7 @@ function shopItemHTML(item) {
     +'<div class="shop-name'+(item.done?' done':'')+'">'+item.name+'</div>'
     +'<div class="shop-qty">'+item.qty+' · '+item.cat+'</div>'
     +'</div>'
-    +'<button class="shop-del" onclick="deleteShop('+jsKey+')">✕</button>'
+    +'<button class="shop-del" onclick="deleteShop(\''+attrKey+'\')">✕</button>'
     +'</div>';
 }
 
