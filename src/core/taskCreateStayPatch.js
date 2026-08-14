@@ -53,7 +53,6 @@
       taskData.unshift({id:taskNextId++, title:val, who:who, date:date, done:false, prio:prio});
       persistWithoutReset();
       if(typeof addActivity === 'function') addActivity('📋','#f0ede8',myName+' maakte taak "'+val+'" aan');
-      if(typeof addNotif === 'function') addNotif('📋','#f0ede8','Nieuwe taak',''+val);
     } else {
       var who2 = [];
       if(wieRShane) who2.push('Shane');
