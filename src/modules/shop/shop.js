@@ -1,7 +1,7 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v0.354
-// Grocery add flow loads ModalManager + BottomSheet deterministically.
+// BOODSCHAPPEN v0.355
+// Grocery add flow + shopping receipt finance bridge.
 // ============================================================
 
 (function(){
@@ -33,8 +33,10 @@
       .then(function(){ return loadScriptOnce('modal-manager-js', 'src/core/modalManager.js', function(){ return !!window.ModalManager; }); })
       .then(function(){ return loadScriptOnce('bottom-sheet-js', 'src/core/bottomSheet.js', function(){ return !!window.BottomSheet; }); })
       .then(function(){ return loadScriptOnce('grocery-quick-add-modal-js', 'src/core/groceryQuickAddModal.js', function(){ return !!window.GroceryQuickAddModal; }); })
+      .then(function(){ return loadScriptOnce('shopping-receipt-finance-js', 'src/modules/shop/shoppingReceiptFinance.js', function(){ return !!window.ShoppingReceiptFinance; }); })
       .then(function(){
         if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
+        if(window.ShoppingReceiptFinance && typeof window.ShoppingReceiptFinance.render === 'function') window.ShoppingReceiptFinance.render();
       });
     return loadingPromise;
   }
@@ -77,7 +79,7 @@
   function bootShopAdd(){
     ensureGroceryAddStack();
     wireShopAddButton();
-    [100, 300, 800, 1500, 2500].forEach(function(delay){ setTimeout(wireShopAddButton, delay); });
+    [100, 300, 800, 1500, 2500].forEach(function(delay){ setTimeout(function(){wireShopAddButton();if(window.ShoppingReceiptFinance&&ShoppingReceiptFinance.render)ShoppingReceiptFinance.render();}, delay); });
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootShopAdd);
@@ -100,9 +102,9 @@ function renderShop() {
   doneEl.innerHTML=done.map(shopItemHTML).join('');
   if(typeof updateStats === 'function') updateStats();
   if(typeof wireShopAddButton === 'function') wireShopAddButton();
+  if(window.ShoppingReceiptFinance&&typeof ShoppingReceiptFinance.render==='function')setTimeout(ShoppingReceiptFinance.render,0);
 }
 
-// ── Duidelijke visuele feedback: highlight het net toegevoegde item ──
 (function ensureShopAddedStyle(){
   if(document.getElementById('shop-added-style')) return;
   var css = document.createElement('style');
@@ -122,7 +124,7 @@ function highlightShopItem(id){
   var el = document.getElementById('si-'+id);
   if(!el) return;
   el.classList.remove('shop-item-added');
-  void el.offsetWidth; // force reflow so the animation restarts reliably
+  void el.offsetWidth;
   el.classList.add('shop-item-added');
   setTimeout(function(){ el.classList.remove('shop-item-added'); }, 850);
 }
