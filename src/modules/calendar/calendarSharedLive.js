@@ -1,8 +1,10 @@
 'use strict';
 // ============================================================
-// CALENDAR SHARED LIVE v1.1
+// CALENDAR SHARED LIVE v1.2
 // Household-scoped Firebase agenda via FamilyDataStore.
 // Data-sync/CRUD layer only: UI renderers remain owned by calendar UI modules.
+// Emits local mutation events so external calendar integrations can sync
+// without reacting to Firebase snapshots from other household devices.
 // ============================================================
 (function(){
   if(window.__calendarSharedLiveV1)return;
@@ -24,6 +26,10 @@
   function saveLocal(){try{if(window.AppState&&typeof AppState.set==='function')AppState.set('cal',window.calData);else if(window.AppState&&typeof AppState.save==='function')AppState.save();}catch(e){console.warn('[CalendarSharedLive] local cache save failed',e);}}
   function render(){try{if(typeof window.renderCal==='function')window.renderCal();}catch(e){}try{if(typeof window.updateStats==='function')window.updateStats();}catch(e){}}
   function write(){if(state.applying||!ready())return Promise.resolve(false);saveLocal();return FamilyDataStore.writeShared(COLLECTION,payload(window.calData||[]));}
+  function emitLocal(type,event){
+    if(!event)return;
+    try{window.dispatchEvent(new CustomEvent('familyapp:calendar-local-mutation',{detail:{type:type,event:clone(event),userId:(currentUser()&&currentUser().uid)||null,familyId:familyId()}}));}catch(e){}
+  }
 
   function legacyFirebaseRead(){try{var db=window.fbDb||(window.firebase&&firebase.database&&firebase.database()),fid=familyId();if(!db||!fid)return Promise.resolve([]);return db.ref('families/'+fid+'/cal').once('value').then(function(s){var raw=s.val();if(!raw)return[];if(Array.isArray(raw))return raw.filter(Boolean);if(typeof raw==='object')return Object.keys(raw).map(function(k){return raw[k];}).filter(Boolean);return[];}).catch(function(){return[];});}catch(e){return Promise.resolve([]);}}
 
@@ -53,10 +59,16 @@
       if(window.currentAddType!=='cal')return originalSave.apply(this,arguments);
       var title=((document.getElementById('f1')||{}).value||'').trim(),date=((document.getElementById('f2')||{}).value||'').trim(),time=((document.getElementById('f3')||{}).value||'').trim();
       if(!title){if(window.showToast)showToast('Vul een titel in');return;}if(!date){if(window.showToast)showToast('Kies een datum');return;}
-      var u=currentUser();
-      if(state.editingId!==null){var existing=(window.calData||[]).find(function(e){return String(e.id)===String(state.editingId);});if(existing){existing.title=title;existing.date=date;existing.time=time;existing.updatedAt=now();existing.updatedBy=u&&u.uid?u.uid:'unknown';}}
-      else window.calData.push({id:makeId(),title:title,date:date,time:time,color:'#2d5a27',createdAt:now(),createdBy:u&&u.uid?u.uid:'unknown'});
+      var u=currentUser(),target=null,mode='create';
+      if(state.editingId!==null){
+        var existing=(window.calData||[]).find(function(e){return String(e.id)===String(state.editingId);});
+        if(existing){existing.title=title;existing.date=date;existing.time=time;existing.updatedAt=now();existing.updatedBy=u&&u.uid?u.uid:'unknown';target=existing;mode='update';}
+      } else {
+        target={id:makeId(),title:title,date:date,time:time,color:'#2d5a27',createdAt:now(),createdBy:u&&u.uid?u.uid:'unknown'};
+        window.calData.push(target);
+      }
       state.editingId=null;write();render();if(window.closeAdd)closeAdd();if(window.showToast)showToast('Afspraak opgeslagen ✓');
+      emitLocal(mode,target);
     }
     wrappedSaveItem.__calendarSharedWrapped=true;window.saveItem=wrappedSaveItem;
     if(typeof window.closeAdd==='function'&&!window.closeAdd.__calendarSharedWrapped){var originalClose=window.closeAdd,wrappedClose=function(){state.editingId=null;return originalClose.apply(this,arguments);};wrappedClose.__calendarSharedWrapped=true;window.closeAdd=wrappedClose;}
@@ -64,7 +76,10 @@
   }
 
   function patchCalendarCrud(){
-    window.deleteCalEvent=function(id){window.calData=(window.calData||[]).filter(function(e){return String(e.id)!==String(id);});write();render();};
+    window.deleteCalEvent=function(id){
+      var old=(window.calData||[]).find(function(e){return String(e.id)===String(id);})||null;
+      window.calData=(window.calData||[]).filter(function(e){return String(e.id)!==String(id);});write();render();emitLocal('delete',old);
+    };
     window.openCalEdit=function(id){var event=(window.calData||[]).find(function(e){return String(e.id)===String(id);});if(!event||event._imported||typeof window.openAdd!=='function')return;state.editingId=event.id;window.openAdd('cal');var st=document.getElementById('sheet-title');if(st)st.textContent='Afspraak bewerken';var btn=document.querySelector('#add-overlay .sheet-btn');if(btn)btn.textContent='Opslaan';var f1=document.getElementById('f1');if(f1)f1.value=event.title||'';var f2=document.getElementById('f2');if(f2)f2.value=event.date||'';var f3=document.getElementById('f3');if(f3)f3.value=event.time||'';};
 
     var originalOpen=window.openAdd;
@@ -82,6 +97,6 @@
   }
 
   window.addEventListener('focus',initializeAndSubscribe);window.addEventListener('online',initializeAndSubscribe);window.addEventListener('familyapp:household-members-updated',initializeAndSubscribe);
-  window.CalendarSharedLive={version:'1.1.0',sync:initializeAndSubscribe,save:write,status:function(){return{attached:state.attached,familyId:familyId(),editingId:state.editingId,count:(window.calData||[]).length};}};
+  window.CalendarSharedLive={version:'1.2.0',sync:initializeAndSubscribe,save:write,status:function(){return{attached:state.attached,familyId:familyId(),editingId:state.editingId,count:(window.calData||[]).length};}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
