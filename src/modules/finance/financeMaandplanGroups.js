@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FINANCE MAANDPLAN GROUPS v1.0.2
+// FINANCE MAANDPLAN GROUPS v1.0.3
 // Presentation-only grouping of the three operational month-plan areas:
 // 1. Transactions, 2. One-off bills, 3. Fixed costs.
 // Existing FinanceStore data + legacy actions remain authoritative.
 // ============================================================
 (function(){
   if(window.FinanceMaandplanGroups)return;
-  var VERSION='1.0.2';
+  var VERSION='1.0.3';
   var STORAGE_KEY='familyapp_finance_maandplan_groups_v1';
   var originalRender=null;
 
@@ -69,7 +69,7 @@
     var fixedTotal=fixed.reduce(function(s,t){return s+Math.abs(Number(t&&t.amount)||0);},0);
     return {
       transactions:{count:tx.length,total:txOut,sub:tx.length+' transactie'+(tx.length===1?'':'s')+' deze maand'},
-      oneoff:{count:one.length,total:oneOut,sub:one.length+' eenmalige post'+(one.length===1?'':'en')+' deze maand'},
+      oneoff:{count:one.length,total:oneOut,sub:one.length+' incidentele post'+(one.length===1?'':'en')+' deze maand'},
       fixed:{count:fixed.length,total:fixedTotal,sub:fixed.length+' vaste '+(fixed.length===1?'last':'lasten')}
     };
   }
@@ -121,15 +121,15 @@
     fixed=directHeader(panel,/^Vaste lasten\b/);
     if(!one||!fixed)return false;
 
-    // The outer group headers now own the hierarchy, so do not move the old
-    // duplicate section titles into the group bodies.
-    var oneNodes=collectRange(one.nextSibling,fixed);
-    var fixedNodes=collectRange(fixed.nextSibling,null);
+    // One-off bills are driven only by the legacy extraIncome/one-off section.
+    // The transaction summary card is intentionally excluded even when its
+    // DOM position happens to sit between the legacy section headers.
+    var oneNodes=collectRange(one.nextSibling,fixed).filter(function(n){return n!==tx && !(n.id==='mp-transactions-summary');});
+    var fixedNodes=collectRange(fixed.nextSibling,null).filter(function(n){return n!==tx && !(n.id==='mp-transactions-summary');});
 
     var groups=document.createElement('div');groups.className='mp-groups';
     panel.insertBefore(groups,one);
 
-    // Remove legacy duplicate headings after the stable group container exists.
     if(one.parentNode===panel)panel.removeChild(one);
     if(fixed.parentNode===panel)panel.removeChild(fixed);
 
