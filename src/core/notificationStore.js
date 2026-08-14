@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// NOTIFICATION STORE v1.0.1
+// NOTIFICATION STORE v1.1.0
 // Single household-scoped source of truth for in-app notification events.
 // Persistence is owned by FamilyDataStore at families/{householdId}/shared/notifications.
 // Domain modules publish typed events; presentation and delivery are separate concerns.
@@ -8,12 +8,14 @@
 (function(){
   if(window.NotificationStore)return;
 
-  var VERSION='1.0.1';
+  var VERSION='1.1.0';
   var COLLECTION='notifications';
   var records={};
   var listeners=[];
   var unsubscribe=null;
   var subscribedFamilyId=null;
+  var subscriptionStartedAt=0;
+  var firstSnapshotForSubscription=true;
 
   var TYPES={
     'system.message':true,
@@ -38,23 +40,31 @@
   function audienceSelf(){var id=uid();return{kind:'uids',uids:id?[id]:[]};}
   function audienceHousehold(){return{kind:'household'};}
   function audienceUids(ids){return{kind:'uids',uids:Array.from(new Set((ids||[]).filter(Boolean).map(String)))};}
-  function canSee(event){var id=uid();if(!event||!id)return false;if(event.dismissedBy&&event.dismissedBy[id])return false;var a=event.audience||{kind:'household'};if(a.kind==='household')return true;if(a.kind==='uids')return Array.isArray(a.uids)&&a.uids.indexOf(id)>-1;return false;}
+  function canSee(event){var id=uid();if(!event||!id)return false;if(event.dismissedBy&&event.dismissedBy[id])return false;var a=event.audience||{kind:'household'};if(a.kind==='household')return true;if(a.kind==='uids')return Array.isArray(a.uids)&&a.uids.map(String).indexOf(String(id))>-1;return false;}
   function sortedVisible(){return Object.keys(records).map(function(k){return records[k];}).filter(canSee).sort(function(a,b){var d=(Number(b.createdAt)||0)-(Number(a.createdAt)||0);if(d)return d;return String(b.id||'').localeCompare(String(a.id||''));});}
   function isRead(event){var id=uid();return !!(id&&event&&event.readBy&&event.readBy[id]);}
   function formatRelative(ts){var diff=Math.max(0,now()-(Number(ts)||now()));if(diff<60000)return'Zojuist';if(diff<3600000)return Math.max(1,Math.floor(diff/60000))+' min geleden';if(diff<86400000)return Math.floor(diff/3600000)+' uur geleden';if(diff<604800000)return Math.floor(diff/86400000)+' d geleden';try{return new Date(ts).toLocaleDateString('nl-NL',{day:'numeric',month:'short'});}catch(e){return'';}}
   function legacyProjection(event){return{id:event.id,icon:event.icon||'🔔',bg:event.bg||'#ede9fe',title:event.title||'Melding',body:event.body||'',time:formatRelative(event.createdAt),read:isRead(event),type:event.type,createdAt:event.createdAt,actor:event.actor||null,entity:event.entity||null};}
   function mirrorLegacy(){window.notifData=sortedVisible().map(legacyProjection);var dot=document.getElementById('notif-dot');if(dot)dot.style.display=unreadCount()?'block':'none';}
   function emit(meta){mirrorLegacy();var list=sortedVisible();listeners.slice().forEach(function(fn){try{fn(list,meta||{});}catch(e){console.error('[NotificationStore listener]',e);}});try{window.dispatchEvent(new CustomEvent('familyapp:notifications-changed',{detail:{items:list,meta:meta||{},unread:unreadCount()}}));}catch(e){}}
-  function detectIncoming(previous){var me=uid(),fresh=[];if(!me)return fresh;Object.keys(records).forEach(function(id){var e=records[id];if(previous[id]||!canSee(e)||isRead(e))return;if(e.actor&&e.actor.uid===me)return;fresh.push(e);});return fresh.sort(function(a,b){return(Number(a.createdAt)||0)-(Number(b.createdAt)||0);});}
+  function detectIncoming(previous,allowLive){var me=uid(),fresh=[];if(!me||!allowLive)return fresh;Object.keys(records).forEach(function(id){var e=records[id];if(previous[id]||!canSee(e)||isRead(e))return;if(e.actor&&String(e.actor.uid||'')===String(me))return;var created=Number(e.createdAt)||0;if(created&&created<subscriptionStartedAt-5000)return;fresh.push(e);});return fresh.sort(function(a,b){return(Number(a.createdAt)||0)-(Number(b.createdAt)||0);});}
+
+  function detachSubscription(){if(unsubscribe){try{unsubscribe();}catch(e){}}unsubscribe=null;subscribedFamilyId=null;subscriptionStartedAt=0;firstSnapshotForSubscription=true;records={};}
   function ensureSubscription(){
     if(!window.FamilyDataStore)return false;
-    var f=familyId();if(!f)return false;
+    var f=familyId(),me=uid();if(!f||!me)return false;
     if(unsubscribe&&subscribedFamilyId===f)return true;
-    if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
+    if(unsubscribe)detachSubscription();
     subscribedFamilyId=f;
+    subscriptionStartedAt=now();
+    firstSnapshotForSubscription=true;
     unsubscribe=FamilyDataStore.subscribeShared(COLLECTION,function(value,meta){
-      var previous=records;records=normalizeMap(value);var incoming=detectIncoming(previous);
-      emit({source:meta&&meta.source||'shared',incoming:incoming});
+      var previous=records;
+      records=normalizeMap(value);
+      var isInitial=firstSnapshotForSubscription;
+      firstSnapshotForSubscription=false;
+      var incoming=detectIncoming(previous,!isInitial);
+      emit({source:meta&&meta.source||'shared',incoming:incoming,initial:isInitial});
       incoming.forEach(function(event){try{window.dispatchEvent(new CustomEvent('familyapp:notification-received',{detail:{event:event}}));}catch(e){}});
     },{});
     return true;
@@ -79,21 +89,25 @@
   function clearVisible(){var visible=sortedVisible();return visible.reduce(function(chain,e){return chain.then(function(){return dismiss(e.id);});},Promise.resolve()).then(function(){return visible.length;});}
   function subscribe(fn){if(typeof fn!=='function')return function(){};listeners.push(fn);ensureSubscription();fn(list(),{source:'subscribe'});return function(){listeners=listeners.filter(function(x){return x!==fn;});};}
   function registerType(type){if(type&&typeof type==='string')TYPES[type]=true;}
-  function status(){return{version:VERSION,familyId:familyId(),uid:uid(),subscribedFamilyId:subscribedFamilyId,count:Object.keys(records).length,visible:sortedVisible().length,unread:unreadCount()};}
+  function status(){return{version:VERSION,familyId:familyId(),uid:uid(),subscribedFamilyId:subscribedFamilyId,count:Object.keys(records).length,visible:sortedVisible().length,unread:unreadCount(),subscribed:!!unsubscribe};}
 
   window.NotificationStore={version:VERSION,types:TYPES,status:status,ensureSubscription:ensureSubscription,registerType:registerType,publish:publish,publishSelf:publishSelf,publishHousehold:publishHousehold,publishToUids:publishToUids,legacy:legacy,list:list,unreadCount:unreadCount,markRead:markRead,markAllRead:markAllRead,dismiss:dismiss,clearVisible:clearVisible,subscribe:subscribe,isRead:isRead};
 
-  window.addEventListener('familyapp:household-members-updated',ensureSubscription);
-  window.addEventListener('familyapp:data:shared:notifications',function(){ensureSubscription();});
+  function identityReady(){ensureSubscription();}
+  window.addEventListener('familyapp:household-members-updated',identityReady);
+  window.addEventListener('familyapp:household-changed',identityReady);
+  window.addEventListener('familyapp:household-identity-synced',identityReady);
+  window.addEventListener('familyapp:data:shared:notifications',identityReady);
+  window.addEventListener('focus',identityReady);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',identityReady);else identityReady();
+  window.addEventListener('load',identityReady);
 
   // Runtime companions are separate modules with separate responsibilities.
-  // Loading them here guarantees store -> domain API -> delivery ordering in
-  // the current script-loader architecture without dependency polling.
   function loadCompanion(id,src,done){
     if(document.getElementById(id)){if(done)done();return;}
     var s=document.createElement('script');s.id=id;s.src=src;s.async=false;s.onload=function(){if(done)done();};s.onerror=function(){console.error('[NotificationStore] failed to load',src);if(done)done();};document.head.appendChild(s);
   }
-  loadCompanion('notification-events-runtime','src/core/notificationEvents.js?v=1',function(){
-    loadCompanion('notification-delivery-runtime','src/core/notificationDelivery.js?v=1');
+  loadCompanion('notification-events-runtime','src/core/notificationEvents.js?v=2',function(){
+    loadCompanion('notification-delivery-runtime','src/core/notificationDelivery.js?v=3');
   });
 })();
