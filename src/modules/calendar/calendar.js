@@ -15,13 +15,16 @@
   }
 
   load('src/modules/finance/financeStore.js?v=3', function(){
-    load('src/modules/finance/financeRuntimeShell.js?v=1', function(){
+    load('src/modules/finance/financeRuntimeShell.js?v=2', function(){
       load('src/modules/calendar/calendarLegacy.js?v=3', function(){
-        if(window.FinanceRuntimeShell&&FinanceRuntimeShell.ensure)FinanceRuntimeShell.ensure();
-        load('src/modules/calendar/calendarSharedLive.js?v=2', function(){
-          load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
-            load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-              load('src/modules/calendar/calendarGoogleSync.js?v=1');
+        load('src/modules/finance/financeMaandplanPriority.js?v=1', function(){
+          if(window.FinanceRuntimeShell&&FinanceRuntimeShell.ensure)FinanceRuntimeShell.ensure();
+          if(window.FinanceMaandplanPriority&&FinanceMaandplanPriority.install)FinanceMaandplanPriority.install();
+          load('src/modules/calendar/calendarSharedLive.js?v=2', function(){
+            load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
+              load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                load('src/modules/calendar/calendarGoogleSync.js?v=1');
+              });
             });
           });
         });
