@@ -1,13 +1,14 @@
 'use strict';
 // ============================================================
-// PARTY QUEST NOTIFICATION PROJECTOR v1.0.0
+// PARTY QUEST NOTIFICATION PROJECTOR v1.1.0
 // Read-only observer over the existing UID-based partyQuests store.
-// Converts invite/join/complete transitions into typed NotificationEvents.
+// Converts invite/join/complete transitions into typed NotificationEvents and
+// publishes a single read-model update event for task presentation.
 // ============================================================
 (function(){
   if(window.PartyQuestNotificationProjector)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var ref=null,handler=null,householdId=null,snapshot={},initialized=false;
 
   function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
@@ -16,10 +17,15 @@
   function map(value){var out={};Object.keys(value||{}).forEach(function(k){var q=value[k];if(q)out[k]=Object.assign({id:q.id||k},q);});return out;}
   function invitees(q){return q&&q.invitees&&typeof q.invitees==='object'?q.invitees:{};}
   function safe(p){if(p&&typeof p.catch==='function')p.catch(function(e){console.warn('[PartyQuestNotificationProjector]',e);});}
+  function publishReadModel(next){
+    try{
+      window.dispatchEvent(new CustomEvent('familyapp:party-quests-updated',{detail:{source:'firebase',householdId:householdId,quests:Object.keys(next||{}).map(function(k){return next[k];})}}));
+    }catch(e){}
+  }
 
   function project(next){
     var me=uid();
-    if(!initialized){snapshot=next;initialized=true;return;}
+    if(!initialized){snapshot=next;initialized=true;publishReadModel(next);return;}
     Object.keys(next).forEach(function(k){
       var q=next[k],prev=snapshot[k]||null;
       if(!q||!window.NotificationEvents)return;
@@ -41,6 +47,7 @@
       }
     });
     snapshot=next;
+    publishReadModel(next);
   }
 
   function stop(){if(ref&&handler)try{ref.off('value',handler);}catch(e){}ref=null;handler=null;householdId=null;snapshot={};initialized=false;}
@@ -58,5 +65,6 @@
   window.PartyQuestNotificationProjector={version:VERSION,start:start,stop:stop,status:function(){return{version:VERSION,started:!!ref,householdId:householdId,tracked:Object.keys(snapshot).length};}};
   window.addEventListener('familyapp:household-members-updated',start);
   window.addEventListener('familyapp:household-changed',start);
+  window.addEventListener('familyapp:household-identity-synced',start);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
