@@ -170,7 +170,6 @@ function saveItem() {
       taskData.unshift(createdTask);
       persistTasksFromAddSheet('createTask', createdTask.id);
       addActivity('📋','#f0ede8',myName+' maakte taak "'+val+'" aan');
-      addNotif('📋','#f0ede8','Nieuwe taak',''+val);
       renderTasks(); updateStats();
     } else {
       var who2 = [];
@@ -210,7 +209,7 @@ function saveItem() {
   }
   else if(currentAddType==='cal') { var date2 = (document.getElementById('f2')||{}).value||''; var time  = (document.getElementById('f3')||{}).value||''; calData.push({id:calNextId++,title:val,date:date2,time:time,color:'#2d5a27'}); renderCal(); addActivity('📅','#dbeafe',myName+' voegde afspraak "'+val+'" toe'); }
   else if(currentAddType==='trans') { var amount = parseFloat((document.getElementById('f2')||{}).value)||0; var cat  = (document.getElementById('f3')||{}).value||'Overig'; var date = (document.getElementById('f4')||{}).value||todayStr(); if(amount>0 && window.FinanceStore) { FinanceStore.addTransaction({name:val,cat:cat,amount:transTypeSign*amount,who:transWho,date:date}).then(function(){ addActivity('💸','#f0ede8',myName+' voegde transactie "'+val+'" toe'); }); } }
-  else if(currentAddType==='extraincome') { var amount2 = parseFloat((document.getElementById('f2')||{}).value)||0; var cat2  = (document.getElementById('f3')||{}).value||'Overig'; var date3 = (document.getElementById('f4')||{}).value||todayStr(); if(amount2>0 && window.FinanceStore) { FinanceStore.addExtraIncome({name:val,amount:amount2,who:extraWho,cat:cat2,date:date3}).then(function(){ addActivity('🎁','#e8f5e3',myName+' voegde extra inkomen "'+val+'" toe (€ '+amount2+')'); addNotif('🎁','#e8f5e3','Extra inkomen!',val+' · € '+amount2); awardXP(3,'Extra inkomen'); }); } }
+  else if(currentAddType==='extraincome') { var amount2 = parseFloat((document.getElementById('f2')||{}).value)||0; var cat2  = (document.getElementById('f3')||{}).value||'Overig'; var date3 = (document.getElementById('f4')||{}).value||todayStr(); if(amount2>0 && window.FinanceStore) { FinanceStore.addExtraIncome({name:val,amount:amount2,who:extraWho,cat:cat2,date:date3}).then(function(){ addActivity('🎁','#e8f5e3',myName+' voegde extra inkomen "'+val+'" toe (€ '+amount2+')'); awardXP(3,'Extra inkomen'); }); } }
   else if(currentAddType==='vastlast') { var amount3 = parseFloat((document.getElementById('f2')||{}).value)||0; var day    = parseInt((document.getElementById('f3')||{}).value)||1; var who3   = (document.getElementById('f4')||{}).value||'Samen'; if(window.FinanceStore) FinanceStore.addVasteLast({name:val,amount:amount3,cat:'Overig',day:day,who:who3}); }
 
   if(currentAddType==='trade'){submitTrade();return;}
