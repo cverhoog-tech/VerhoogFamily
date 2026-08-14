@@ -38,9 +38,14 @@ function addActivity(icon, bg, text) {
 }
 
 function addNotif(icon, bg, title, body) {
-  notifData.unshift({id:notifNextId++,icon:icon,bg:bg,title:title,body:body,time:'Zojuist',read:false});
-  var dot=document.getElementById('notif-dot');
-  if(dot) dot.style.display='block';
+  if(!window.NotificationStore){
+    console.error('[addNotif] NotificationStore is niet geladen');
+    return Promise.reject(new Error('NotificationStore niet beschikbaar'));
+  }
+  return NotificationStore.legacy(icon,bg,title,body).catch(function(err){
+    console.error('[addNotif] NotificationStore write mislukt',err);
+    throw err;
+  });
 }
 
 function showToast(msg) {
