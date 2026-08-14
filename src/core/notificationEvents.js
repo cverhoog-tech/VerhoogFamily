@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// NOTIFICATION DOMAIN EVENTS v1.0.0
+// NOTIFICATION DOMAIN EVENTS v1.1.0
 // Stable domain API for notification-worthy FamilyApp events.
 // Domain modules never construct Firebase paths or audience structures.
 // ============================================================
 (function(){
   if(window.NotificationEvents)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function members(){
@@ -40,14 +40,15 @@
   }
   function publishHousehold(type,payload){return requireStore().publishHousehold(type,payload);}
 
-  function taskHelpRequested(task){
+  function taskHelpRequested(task,targetUid){
     if(!task)return Promise.reject(new Error('Taak ontbreekt'));
-    var recipients=otherMemberUids();
+    var recipients=targetUid?[String(targetUid)]:otherMemberUids();
+    recipients=recipients.filter(function(id){return id&&id!==currentUid();});
     return publishTo('task.help.requested',recipients,{
       icon:'👥',bg:'#dbeafe',tone:'action',title:'Hulp gevraagd',
       body:(window.myName||'Een gezinslid')+' vraagt hulp bij “'+String(task.title||task.name||'taak')+'”.',
       entity:entity('task',task.id||task._key),
-      data:{taskId:String(task.id||''),taskKey:String(task._key||''),action:'help'}
+      data:{taskId:String(task.id||''),taskKey:String(task._key||''),targetUid:targetUid?String(targetUid):'',action:'help'}
     });
   }
   function taskHelpJoined(task,requesterUid){
@@ -57,7 +58,7 @@
       icon:'🤝',bg:'#dcfce7',tone:'success',title:'Hulp onderweg',
       body:(window.myName||'Een gezinslid')+' helpt mee met “'+String(task.title||task.name||'taak')+'”.',
       entity:entity('task',task.id||task._key),
-      data:{taskId:String(task.id||''),taskKey:String(task._key||''),action:'helpJoined'}
+      data:{taskId:String(task.id||''),taskKey:String(task._key||''),requesterUid:requesterUid?String(requesterUid):'',action:'helpJoined'}
     });
   }
   function taskSwapRequested(task,targetUid){
