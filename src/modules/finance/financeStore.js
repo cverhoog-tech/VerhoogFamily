@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FINANCE STORE v1.0.0
+// FINANCE STORE v1.0.1
 // Household-scoped source of truth for FamilyApp finance.
 // Mirrors the legacy finance globals so the existing UI can migrate
 // without maintaining a second persistence model.
 // ============================================================
 (function(){
   if(window.FinanceStore)return;
-  var VERSION='1.0.0',COLLECTION='finance',booted=false,sub=null,state=null,wrapping=false;
+  var VERSION='1.0.1',COLLECTION='finance',booted=false,sub=null,state=null,wrapping=false;
   function store(){return window.FamilyDataStore;}
   function status(){return store()&&store().status?store().status():{};}
   function ready(){var s=status();return !!(s.userId&&s.familyId);}
@@ -24,7 +24,22 @@
   function write(next){next=normalize(next);next.meta.updatedAt=now();next.meta.updatedBy=uid();state=next;apply(next);return store().writeShared(COLLECTION,next);}
   function saveLegacy(){if(!ready())return Promise.resolve(false);var next=fromGlobals();if(state&&state.meta)next.meta=Object.assign({},state.meta,next.meta);return write(next);}
   function transactionKey(sourceType,sourceId){return String(sourceType||'manual')+':'+String(sourceId||'');}
-  function upsertSourceTransaction(o){o=o||{};if(!o.sourceType||!o.sourceId)return Promise.reject(new Error('source required'));var next=normalize(state||emptyState()),key=transactionKey(o.sourceType,o.sourceId),idx=next.transactions.findIndex(function(t){return t&&t.sourceKey===key;});var old=idx>=0?next.transactions[idx]:null,record=Object.assign({},old||{},o.transaction||{}, {id:(old&&old.id)||('fin_'+now().toString(36)+'_'+Math.random().toString(36).slice(2,7)),sourceType:o.sourceType,sourceId:String(o.sourceId),sourceKey:key,updatedAt:now(),updatedBy:uid()});if(!record.date)record.date=today();if(idx>=0)next.transactions[idx]=record;else next.transactions.unshift(record);return write(next).then(function(){return clone(record);});}
+  function upsertSourceTransaction(o){
+    o=o||{};if(!o.sourceType||!o.sourceId)return Promise.reject(new Error('source required'));
+    var key=transactionKey(o.sourceType,o.sourceId),sourceType=o.sourceType,sourceId=String(o.sourceId),incoming=clone(o.transaction||{}),actor=uid(),stamp=now(),fallback=(state&&state.transactions)||[];
+    return store().transactSharedPath(COLLECTION,['transactions'],function(list){
+      list=Array.isArray(list)?list:[];
+      var idx=list.findIndex(function(t){return t&&t.sourceKey===key;}),old=idx>=0?list[idx]:null;
+      var record=Object.assign({},old||{},incoming,{id:(old&&old.id)||('fin_'+stamp.toString(36)+'_'+Math.random().toString(36).slice(2,7)),sourceType:sourceType,sourceId:sourceId,sourceKey:key,updatedAt:stamp,updatedBy:actor});
+      if(!record.date)record.date=today();
+      if(idx>=0)list[idx]=record;else list.unshift(record);
+      return list;
+    },fallback).then(function(result){
+      var list=result&&Array.isArray(result.value)?result.value:[];
+      var record=list.find(function(t){return t&&t.sourceKey===key;})||null;
+      return record?clone(record):null;
+    });
+  }
   function resetAll(){var next=emptyState();next.meta.resetAt=now();next.meta.resetBy=uid();return write(next);}
   function initialize(){if(!ready()||!store())return Promise.resolve(false);return store().readShared(COLLECTION,null).then(function(existing){if(existing&&existing.initialized)return existing;var first=fromGlobals();return store().writeShared(COLLECTION,first).then(function(){return first;});}).then(function(initial){apply(initial);if(sub)sub();sub=store().subscribeShared(COLLECTION,function(v){if(v&&v.initialized)apply(v);},emptyState());return true;});}
   function wrapLegacySave(){if(wrapping||typeof window.saveItem!=='function')return;wrapping=true;var original=window.saveItem;if(original.__financeStoreWrapped)return;var wrapped=function(){var type=window.currentAddType,result=original.apply(this,arguments);if(['trans','extraincome','vastlast','savings_tx','savings_goal','spaar_vanuit_budget'].indexOf(type)>=0)setTimeout(saveLegacy,0);return result;};wrapped.__financeStoreWrapped=true;window.saveItem=wrapped;}
