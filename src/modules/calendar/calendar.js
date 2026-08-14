@@ -19,7 +19,7 @@
       load('src/modules/calendar/calendarLegacy.js?v=3', function(){
         load('src/modules/finance/financeMaandplanPriority.js?v=1', function(){
           load('src/modules/finance/financeTransactionsPremiumUi.js?v=1', function(){
-            load('src/modules/finance/financeMaandplanGroups.js?v=2', function(){
+            load('src/modules/finance/financeMaandplanGroups.js?v=3', function(){
               if(window.FinanceRuntimeShell&&FinanceRuntimeShell.ensure)FinanceRuntimeShell.ensure();
               if(window.FinanceMaandplanPriority&&FinanceMaandplanPriority.install)FinanceMaandplanPriority.install();
               if(window.FinanceTransactionsPremiumUi&&FinanceTransactionsPremiumUi.install)FinanceTransactionsPremiumUi.install();
