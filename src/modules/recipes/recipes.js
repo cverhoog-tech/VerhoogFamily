@@ -23,6 +23,12 @@
       '#rg{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px 100px}',
       '#rs-wrap{padding:8px 14px 4px}',
       '#rs-inp{width:100%;height:44px;border-radius:16px;border:1.5px solid var(--c-border,#e5e7eb);background:var(--c-surface,#fff);padding:0 14px;font-size:14px;font-weight:600;outline:none;box-sizing:border-box}',
+      '.r-import-card{margin:8px 14px 10px;padding:12px 13px;border:1px solid rgba(169,118,31,.24);border-radius:17px;background:linear-gradient(135deg,rgba(250,244,226,.92),rgba(255,255,255,.96));display:flex;align-items:center;gap:11px;box-shadow:0 5px 16px rgba(91,67,24,.06)}',
+      '[data-theme*="dark"] .r-import-card{background:linear-gradient(135deg,rgba(54,42,25,.94),rgba(31,28,24,.98));border-color:rgba(215,174,92,.28)}',
+      '.r-import-glyph{width:38px;height:38px;min-width:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(169,118,31,.12);font-size:18px}',
+      '.r-import-copy{min-width:0;flex:1}.r-import-title{font-size:12.5px;font-weight:900;color:var(--c-text,#1d2430)}.r-import-sub{font-size:10.5px;line-height:1.35;color:var(--c-text2,#788195);margin-top:2px}',
+      '#r-import-link-btn{border:0;border-radius:99px;padding:9px 12px;background:linear-gradient(135deg,#b8872e,#8d6720);color:#fff;font-size:11.5px;font-weight:900;white-space:nowrap;cursor:pointer;box-shadow:0 5px 12px rgba(141,103,32,.18)}',
+      '#rep-close-btn.rep-close{width:36px!important;height:36px!important;min-width:36px!important;max-width:36px!important;min-height:36px!important;max-height:36px!important;aspect-ratio:1/1!important;box-sizing:border-box!important;flex:0 0 36px!important;border-radius:50%!important;padding:0!important;line-height:1!important}',
       '.rc{border-radius:20px;overflow:hidden;cursor:pointer;position:relative;min-height:190px;background:#17181c}',
       '.rc-img{position:absolute;inset:0;overflow:hidden}.rc-img img{width:100%;height:100%;object-fit:cover;display:block}',
       '.rc-ov{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,12,20,.04) 20%,rgba(8,10,16,.82) 100%)}',
@@ -46,9 +52,9 @@
 
   function renderList(){
     syncFromStore();addCSS();var screen=document.getElementById('screen-recipes');if(!screen)return;
-    screen.innerHTML='<div id="recipe-list-view"><div class="list-header"><h2>Recepten</h2><button id="r-addbtn">+ Recept</button></div><div id="rs-wrap"><input id="rs-inp" placeholder="Zoek recept, keuken..." autocomplete="off"></div><div class="chips" style="padding:4px 14px 10px"><button class="chip" id="rf-all">Alle</button><button class="chip" id="rf-diner">Diner</button><button class="chip" id="rf-ontbijt">Ontbijt</button><button class="chip" id="rf-lunch">Lunch</button><button class="chip" id="rf-snack">Snack</button><button class="chip" id="rf-dessert">Dessert</button><button class="chip" id="rf-bakken">Bakken</button></div><div id="rg"></div></div><div id="recipe-detail-view" style="display:none"></div>';
+    screen.innerHTML='<div id="recipe-list-view"><div class="list-header"><h2>Recepten</h2><button id="r-addbtn">+ Recept</button></div><div id="rs-wrap"><input id="rs-inp" placeholder="Zoek recept, keuken..." autocomplete="off"></div><div class="r-import-card"><div class="r-import-glyph">🔗</div><div class="r-import-copy"><div class="r-import-title">Recept van een website</div><div class="r-import-sub">Plak een receptenlink en controleer het recept vóór opslaan.</div></div><button type="button" id="r-import-link-btn">Importeren</button></div><div class="chips" style="padding:4px 14px 10px"><button class="chip" id="rf-all">Alle</button><button class="chip" id="rf-diner">Diner</button><button class="chip" id="rf-ontbijt">Ontbijt</button><button class="chip" id="rf-lunch">Lunch</button><button class="chip" id="rf-snack">Snack</button><button class="chip" id="rf-dessert">Dessert</button><button class="chip" id="rf-bakken">Bakken</button></div><div id="rg"></div></div><div id="recipe-detail-view" style="display:none"></div>';
     [['all','rf-all'],['Diner','rf-diner'],['Ontbijt','rf-ontbijt'],['Lunch','rf-lunch'],['Snack','rf-snack'],['Dessert','rf-dessert'],['Bakken','rf-bakken']].forEach(function(x){var b=document.getElementById(x[1]);if(b){if(currentFilter===x[0])b.classList.add('active');b.onclick=function(){currentFilter=x[0];renderList();};}});
-    document.getElementById('r-addbtn').onclick=function(){openEditor(null);};var q=document.getElementById('rs-inp');q.value=currentSearch;q.oninput=function(){currentSearch=this.value;renderGrid();};renderGrid();
+    document.getElementById('r-addbtn').onclick=function(){openEditor(null);};var q=document.getElementById('rs-inp');q.value=currentSearch;q.oninput=function(){currentSearch=this.value;renderGrid();};if(window.RecipeServerlessLinkImport&&typeof RecipeServerlessLinkImport.boot==='function')RecipeServerlessLinkImport.boot();renderGrid();
   }
 
   function renderGrid(){
