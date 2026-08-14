@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// FINANCE MAANDPLAN GROUPS v1.0.0
+// FINANCE MAANDPLAN GROUPS v1.0.1
 // Presentation-only grouping of the three operational month-plan areas:
 // 1. Transactions, 2. One-off bills, 3. Fixed costs.
 // Existing FinanceStore data + legacy actions remain authoritative.
 // ============================================================
 (function(){
   if(window.FinanceMaandplanGroups)return;
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var STORAGE_KEY='familyapp_finance_maandplan_groups_v1';
   var originalRender=null;
 
@@ -79,7 +79,7 @@
     var toggle=document.createElement('button');toggle.type='button';toggle.className='mp-group-toggle';toggle.setAttribute('aria-expanded',state[key]?'true':'false');
     toggle.innerHTML='<span class="mp-group-icon">'+icon+'</span><span class="mp-group-copy"><span class="mp-group-title">'+title+'</span><span class="mp-group-sub">'+sub+'</span></span><span class="mp-group-total">'+total+'</span><span class="mp-group-chevron">⌄</span>';
     var body=document.createElement('div');body.className='mp-group-body';
-    nodes.forEach(function(n){body.appendChild(n);});
+    nodes.forEach(function(n){if(n)body.appendChild(n);});
     classifyButtons(body);
     toggle.onclick=function(){
       state[key]=!state[key];saveState(state);group.classList.toggle('collapsed',!state[key]);toggle.setAttribute('aria-expanded',state[key]?'true':'false');
@@ -101,11 +101,7 @@
     ensureStyles();
     var panel=document.getElementById('fin-maandplan');if(!panel)return false;
     var old=panel.querySelector(':scope > .mp-groups');
-    if(old){
-      // A fresh legacy render replaces panel.innerHTML, so normally no old wrapper exists.
-      // If apply() is called twice without a render, keep the current structure untouched.
-      return true;
-    }
+    if(old)return true;
 
     var tx=document.getElementById('mp-transactions-summary');
     if(!tx||tx.parentNode!==panel)return false;
@@ -113,32 +109,35 @@
     var fixed=directHeader(panel,/^Vaste lasten\b/);
     if(!one||!fixed)return false;
 
-    // FinanceMaandplanPriority guarantees one-off before fixed. If another
-    // renderer changed that, normalize it before collecting the blocks.
+    // FinanceMaandplanPriority should already place one-off before fixed.
+    // Normalize safely when needed by moving ONLY the one-off block, never
+    // the fixed node itself. This avoids Safari insertBefore edge cases.
     var children=Array.prototype.slice.call(panel.children);
     if(children.indexOf(one)>children.indexOf(fixed)){
-      var moving=collectRange(one,null);moving.forEach(function(n){panel.insertBefore(n,fixed);});
+      var oneBlock=collectRange(one,null);
+      var fixedIndex=oneBlock.indexOf(fixed);
+      if(fixedIndex>=0)oneBlock=oneBlock.slice(0,fixedIndex);
+      oneBlock.forEach(function(n){if(n&&n.parentNode===panel)panel.insertBefore(n,fixed);});
     }
-
-    // Remove the transaction card first so it cannot accidentally become
-    // part of either legacy detail range.
-    var anchor=tx;
-    var placeholder=document.createComment('maandplan-groups-anchor');
-    panel.insertBefore(placeholder,anchor);panel.removeChild(tx);
 
     one=directHeader(panel,/^Eenmalig deze maand\b/);
     fixed=directHeader(panel,/^Vaste lasten\b/);
+    if(!one||!fixed)return false;
+
     var oneNodes=collectRange(one,fixed);
     var fixedNodes=collectRange(fixed,null);
 
-    // The three operational categories replace the loose legacy blocks at a
-    // single stable location. Income/overview content above remains intact.
+    // Insert the stable groups container BEFORE moving any legacy nodes.
+    // The reference node is therefore guaranteed to still belong to panel.
     var groups=document.createElement('div');groups.className='mp-groups';
+    panel.insertBefore(groups,one);
+
+    // tx can live anywhere above/below the details; moving it after the
+    // groups container exists no longer invalidates our insertion reference.
     var st=readState(),sum=summary();
     groups.appendChild(makeGroup('transactions','💳','Transacties',sum.transactions.sub,sum.transactions.total?'- '+euro(sum.transactions.total):euro(0),[tx],st));
     groups.appendChild(makeGroup('oneoff','🧾','Eenmalige rekeningen',sum.oneoff.sub,sum.oneoff.total?'- '+euro(sum.oneoff.total):euro(0),oneNodes,st));
     groups.appendChild(makeGroup('fixed','🏠','Vaste lasten',sum.fixed.sub,sum.fixed.total?'- '+euro(sum.fixed.total):euro(0),fixedNodes,st));
-    panel.insertBefore(groups,placeholder);panel.removeChild(placeholder);
     return true;
   }
 
