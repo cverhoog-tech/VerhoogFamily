@@ -125,7 +125,7 @@ function attachSwipeDelete(el, onDelete) {
 })();
 
 // Ordered notification runtime. Each layer has one responsibility:
-// persistence -> domain event API -> incoming presentation -> task transition projection.
+// persistence -> domain event API -> incoming presentation -> state projectors.
 (function loadFamilyDataStore(){
   if(window.__familyDataStoreLoader) return;
   window.__familyDataStoreLoader=true;
@@ -146,8 +146,13 @@ function loadNotificationEvents(){
   if(window.__familyNotificationEventsLoader) return;
   window.__familyNotificationEventsLoader=true;
   var script=document.createElement('script');
-  script.src='src/core/notificationEvents.js?v=2';script.async=false;script.defer=true;
-  script.onload=function(){loadNotificationDelivery();loadTaskNotificationProjector();};
+  script.src='src/core/notificationEvents.js?v=3';script.async=false;script.defer=true;
+  script.onload=function(){
+    loadNotificationDelivery();
+    loadTaskNotificationProjector();
+    loadTaskSwapNotificationProjector();
+    loadPartyQuestNotificationProjector();
+  };
   document.head.appendChild(script);
 }
 function loadNotificationDelivery(){
@@ -159,6 +164,16 @@ function loadTaskNotificationProjector(){
   if(window.__familyTaskNotificationProjectorLoader) return;
   window.__familyTaskNotificationProjectorLoader=true;
   var script=document.createElement('script');script.src='src/modules/tasks/taskNotificationProjector.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
+}
+function loadTaskSwapNotificationProjector(){
+  if(window.__familyTaskSwapNotificationProjectorLoader) return;
+  window.__familyTaskSwapNotificationProjectorLoader=true;
+  var script=document.createElement('script');script.src='src/modules/tasks/taskSwapNotificationProjector.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
+}
+function loadPartyQuestNotificationProjector(){
+  if(window.__familyPartyQuestNotificationProjectorLoader) return;
+  window.__familyPartyQuestNotificationProjectorLoader=true;
+  var script=document.createElement('script');script.src='src/modules/tasks/partyQuestNotificationProjector.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);
 }
 
 (function loadShoppingLists(){
