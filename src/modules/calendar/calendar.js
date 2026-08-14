@@ -14,7 +14,7 @@
     document.head.appendChild(s);
   }
 
-  load('src/modules/calendar/calendarLegacy.js?v=1', function(){
+  load('src/modules/calendar/calendarLegacy.js?v=2', function(){
     load('src/modules/calendar/calendarSharedLive.js?v=2', function(){
       load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
         load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
