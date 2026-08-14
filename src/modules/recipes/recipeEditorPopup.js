@@ -74,24 +74,39 @@
       '.rep-overlay{position:fixed;inset:0;background:rgba(8,6,16,.62);z-index:9500;display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;pointer-events:none;transition:opacity .22s;box-sizing:border-box}'+
       '.rep-overlay.open{opacity:1;pointer-events:auto}'+
 
-      '.rep-card{--rep-bg:#fbf7ee;--rep-surface:#ffffff;--rep-surface-2:#f7f2e5;--rep-border:rgba(180,138,60,.32);--rep-border-soft:#efe7d6;--rep-text:#241f1a;--rep-text2:#8c8271;--rep-gold:#a9761f;'+
+      '.rep-card{--rep-bg:#fbf7ee;--rep-bg-rgb:251,247,238;--rep-surface:#ffffff;--rep-surface-2:#f7f2e5;--rep-border:rgba(180,138,60,.32);--rep-border-soft:#efe7d6;--rep-text:#241f1a;--rep-text2:#8c8271;--rep-gold:#a9761f;'+
         'width:100%;max-width:400px;max-height:92vh;overflow-y:auto;background:var(--rep-bg);color:var(--rep-text);border-radius:22px;border:1.5px solid var(--rep-border);'+
         'box-shadow:0 24px 60px rgba(20,10,0,.28);transform:translateY(10px) scale(.98);transition:transform .22s}'+
       '.rep-overlay.open .rep-card{transform:translateY(0) scale(1)}'+
-      '[data-theme*="dark"] .rep-card{--rep-bg:#1c1710;--rep-surface:#241d13;--rep-surface-2:#2a2216;--rep-border:#c89a4c;--rep-border-soft:rgba(234,197,94,.16);--rep-text:#f5efe0;--rep-text2:#c9bda0}'+
+      '[data-theme*="dark"] .rep-card{--rep-bg:#1c1710;--rep-bg-rgb:28,23,16;--rep-surface:#241d13;--rep-surface-2:#2a2216;--rep-border:#c89a4c;--rep-border-soft:rgba(234,197,94,.16);--rep-text:#f5efe0;--rep-text2:#c9bda0}'+
 
       '.rep-hero{position:relative;height:150px;background-size:cover;background-position:center;overflow:hidden}'+
-      '.rep-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}'+
-      '.rep-hero-shade{position:absolute;inset:0;pointer-events:none;'+
-        'background:linear-gradient(180deg,rgba(0,0,0,.08) 0%,rgba(0,0,0,.06) 35%,rgba(10,6,4,.72) 100%),linear-gradient(180deg,rgba(0,0,0,.18),transparent 40%)}'+
+      '.rep-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}'+
+      // Readability shade: keeps title/subtitle legible against any preset
+      // gradient or uploaded photo. Same treatment for both — this layer
+      // never reads draft.imageMode, it just sits on top of whichever
+      // background-image/background-color the hero currently has.
+      '.rep-hero-shade{position:absolute;inset:0;pointer-events:none;z-index:1;'+
+        'background:linear-gradient(180deg,rgba(0,0,0,.10) 0%,rgba(0,0,0,.08) 28%,rgba(18,10,6,.20) 58%,rgba(18,10,6,.54) 82%,rgba(18,10,6,.74) 100%)}'+
+      // Soft edge/corner vignette — takes the hard rectangular feel off the
+      // top and bottom of the hero without affecting readability.
+      '.rep-hero:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;'+
+        'background:radial-gradient(120% 85% at 50% 0%,rgba(255,255,255,.08),transparent 60%),radial-gradient(130% 100% at 50% 100%,rgba(0,0,0,.10),transparent 68%)}'+
+      // Bottom wash: melts the hero into the card body colour instead of
+      // ending in a hard rule. Uses --rep-bg-rgb so it always matches the
+      // card's own background (light/dark), and the strongest part of the
+      // fade is confined to a thin band right at the seam so it never
+      // washes out the title/subtitle sitting just above it.
+      '.rep-hero:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:56px;pointer-events:none;z-index:1;'+
+        'background:linear-gradient(to bottom,rgba(var(--rep-bg-rgb),0) 0%,rgba(var(--rep-bg-rgb),.10) 46%,rgba(var(--rep-bg-rgb),.32) 66%,rgba(var(--rep-bg-rgb),.7) 84%,rgba(var(--rep-bg-rgb),1) 100%)}'+
 
       '.rep-close{position:absolute;top:9px;left:9px;width:27px;height:27px;border-radius:50%;background:rgba(20,15,10,.4);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,.4);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;-webkit-appearance:none;appearance:none;padding:0}'+
       '.rep-photo-remove{position:absolute;top:9px;right:9px;z-index:3;background:rgba(20,15,10,.5);backdrop-filter:blur(6px);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:99px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer}'+
 
       '.rep-hero-content{position:absolute;left:14px;right:14px;bottom:12px;z-index:2}'+
       '.rep-badge{display:inline-block;font-family:"Cinzel",Georgia,serif;font-size:9px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:3px 9px;margin-bottom:6px}'+
-      '.rep-hero-title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:22px;color:#fff;line-height:1.12;text-shadow:0 2px 10px rgba(0,0,0,.5);word-break:break-word}'+
-      '.rep-hero-sub{display:inline-block;margin-top:5px;font-size:11.5px;font-weight:700;color:#fff;opacity:.9;text-shadow:0 1px 6px rgba(0,0,0,.5)}'+
+      '.rep-hero-title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:22px;color:#fff;line-height:1.12;text-shadow:0 1px 3px rgba(0,0,0,.85),0 2px 12px rgba(0,0,0,.5);word-break:break-word}'+
+      '.rep-hero-sub{display:inline-block;margin-top:5px;font-size:11.5px;font-weight:700;color:#fff;opacity:.95;text-shadow:0 1px 2px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.5)}'+
 
       '.rep-body{padding:14px 15px 15px}'+
       '.rep-divider{display:flex;align-items:center;gap:8px;margin:2px 0 12px;color:var(--rep-gold);opacity:.6}'+
