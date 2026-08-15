@@ -5,7 +5,8 @@
   var COLLECTION='activityEvents';
   var TYPES=Object.freeze({TASK_CREATED:'task.created',TASK_COMPLETED:'task.completed',MEAL_PLANNED:'meal.planned',GROCERY_RECEIPT_UPLOADED:'grocery.receipt_uploaded'});
   var VISIBLE={};Object.keys(TYPES).forEach(function(k){VISIBLE[TYPES[k]]=true;});
-  var state={started:false,attached:false,events:[],unsubscribe:null,lastError:null,timer:null};
+  var state={started:false,attached:false,events:[],unsubscribe:null,lastError:null,timer:null,tries:0};
+  var MAX_BOOT_TRIES=240;
 
   function fds(){return window.FamilyDataStore||null;}
   function uid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
@@ -30,18 +31,24 @@
   function taskRow(result,fallback){return result&&result.value&&typeof result.value==='object'?result.value:(result&&typeof result==='object'&&!result.mode?result:fallback||null);}
   function wrapTasks(){if(!window.TaskSharedData||TaskSharedData.__activityWrapped)return false;var rawCreate=TaskSharedData.create,rawUpdate=TaskSharedData.update;
     if(typeof rawCreate==='function')TaskSharedData.create=function(task){return Promise.resolve(rawCreate.apply(this,arguments)).then(function(result){var row=taskRow(result,task)||task,key=row&&row._key||row&&row.id;if(key)publish({type:TYPES.TASK_CREATED,dedupeKey:'task:'+key+':created',source:{module:'tasks',entityType:'task',entityId:String(key)},payload:{taskTitle:taskTitle(row),xpEarned:taskXp(row),difficulty:row&&row.priority||null}}).catch(function(e){console.warn('[HouseholdActivity] task.created',e);});return result;});};
-    if(typeof rawUpdate==='function')TaskSharedData.update=function(id,patch){patch=patch||{};return Promise.resolve(rawUpdate.apply(this,arguments)).then(function(result){var local=(window.taskData||[]).find(function(t){return String(t.id)===String(id);}),row=taskRow(result,local);if(patch.done===true&&row&&row.done){var key=row._key||row.id||id,completionId=patch.completedAt||row.completedAt||row.updatedAt||now();publish({type:TYPES.TASK_COMPLETED,dedupeKey:'task:'+key+':completion:'+completionId,occurredAt:row.completedAt||completionId,source:{module:'tasks',entityType:'task',entityId:String(key)},payload:{taskTitle:taskTitle(row),xpEarned:taskXp(row),difficulty:row.priority||null}}).catch(function(e){console.warn('[HouseholdActivity] task.completed',e);});}return result;});};
-    TaskSharedData.__activityWrapped=true;return true;}
+    if(typeof rawUpdate==='function')TaskSharedData.update=function(id,patch){patch=patch||{};return Promise.resolve(rawUpdate.apply(this,arguments)).then(function(result){var local=(window.taskData||[]).find(function(t){return String(t.id)===String(id);}),row=taskRow(result,local);if(patch.done===true&&row&&row.done){var key=row._key||row.id||id,completionId=patch.completedAt||row.completedAt||row.updatedAt||now();publish({type:TYPES.TASK_COMPLETED,dedupeKey:'task:'+key+':completion:'+completionId,occurredAt:row.completedAt||completionId,source:{module:'tasks',entityType:'task',entityId:String(key)},payload:{taskTitle:taskTitle(row),xpEarned:taskXp(row),difficulty:row.priority||null}}).catch(function(e){console.warn('[HouseholdActivity] task.completed',e);});}return result;});};TaskSharedData.__activityWrapped=true;return true;}
 
-  // MealPlanStore is the Firebase-authoritative meal domain store. Publish only
-  // after replaceSlot has completed successfully; never derive feed activity
-  // from the legacy local HouseholdRepository mirror.
   function wrapMeals(){if(!window.MealPlanStore||MealPlanStore.__activityWrapped||typeof MealPlanStore.replaceSlot!=='function')return false;var raw=MealPlanStore.replaceSlot;MealPlanStore.replaceSlot=function(input){return Promise.resolve(raw.apply(this,arguments)).then(function(result){var record=result&&result.record?result.record:(input||{}),id=record.id||((record.date||input.date)+':'+(record.mealType||input.mealType||'dinner'));publish({type:TYPES.MEAL_PLANNED,dedupeKey:'meal:'+id+':planned:'+String(record.updatedAt||record.createdAt||now()),occurredAt:record.updatedAt||record.createdAt||now(),source:{module:'meals',entityType:'mealPlan',entityId:String(id)},payload:{mealName:record.title||'Maaltijd',plannedDate:record.date||input.date,slot:record.mealType||input.mealType||'dinner',recipeId:record.recipeId||input.recipeId||null}}).catch(function(e){console.warn('[HouseholdActivity] meal.planned',e);});return result;});};MealPlanStore.__activityWrapped=true;return true;}
 
   function wrapReceiptFinance(){if(!window.FinanceStore||FinanceStore.__activityWrapped||typeof FinanceStore.upsertSourceTransaction!=='function')return false;var raw=FinanceStore.upsertSourceTransaction;FinanceStore.upsertSourceTransaction=function(config){return Promise.resolve(raw.apply(this,arguments)).then(function(record){if(config&&config.sourceType==='shoppingReceipt'){var tx=config.transaction||{},sourceId=config.sourceId||record&&record.sourceId||record&&record.id;if(sourceId)publish({type:TYPES.GROCERY_RECEIPT_UPLOADED,dedupeKey:'receipt:'+sourceId+':uploaded',source:{module:'shop',entityType:'shoppingReceipt',entityId:String(sourceId)},payload:{shoppingListName:tx.shoppingListName||'Boodschappen',itemCount:Array.isArray(tx.shoppingItemNames)?tx.shoppingItemNames.length:null}}).catch(function(e){console.warn('[HouseholdActivity] grocery.receipt_uploaded',e);});}return record;});};FinanceStore.__activityWrapped=true;return true;}
 
-  function ensure(){start();wrapTasks();wrapMeals();wrapReceiptFinance();}
-  state.timer=setInterval(function(){ensure();if(state.started&&window.TaskSharedData&&TaskSharedData.__activityWrapped&&window.MealPlanStore&&MealPlanStore.__activityWrapped&&window.FinanceStore&&FinanceStore.__activityWrapped){clearInterval(state.timer);state.timer=null;}},300);
-  window.addEventListener('familyapp:household-changed',ensure);window.addEventListener('familyapp:household-identity-synced',ensure);window.addEventListener('familyapp:auth-ready',ensure);window.addEventListener('familyapp:modules:ready',ensure);window.addEventListener('load',ensure,{once:true});Promise.resolve().then(ensure);
-  window.HouseholdActivity={version:'1.1.0',TYPES:TYPES,start:start,publish:publish,getEvents:function(){return state.events.slice();},shouldPublishToFeed:shouldPublishToFeed,resolveMember:member,actorName:actorName,status:function(){return{started:state.started,attached:state.attached,ready:ready(),householdId:hid(),uid:uid(),count:state.events.length,lastError:state.lastError,bridges:{tasks:!!(window.TaskSharedData&&TaskSharedData.__activityWrapped),meals:!!(window.MealPlanStore&&MealPlanStore.__activityWrapped),receipt:!!(window.FinanceStore&&FinanceStore.__activityWrapped)}};}};
+  function allBridgesReady(){return !!(window.TaskSharedData&&TaskSharedData.__activityWrapped&&window.MealPlanStore&&MealPlanStore.__activityWrapped&&window.FinanceStore&&FinanceStore.__activityWrapped);}
+  function ensure(){start();wrapTasks();wrapMeals();wrapReceiptFinance();return allBridgesReady();}
+  function stopPolling(){if(state.timer){clearInterval(state.timer);state.timer=null;}}
+  function ensurePolling(){
+    if(ensure()){stopPolling();return;}
+    if(state.timer)return;
+    state.tries=0;
+    state.timer=setInterval(function(){state.tries++;if(ensure()||state.tries>=MAX_BOOT_TRIES)stopPolling();},250);
+  }
+  function wake(){ensurePolling();}
+  ['familyapp:household-changed','familyapp:household-identity-synced','familyapp:auth-ready','familyapp:modules:ready','familyapp:meals:changed'].forEach(function(name){window.addEventListener(name,wake);});
+  window.addEventListener('focus',wake);window.addEventListener('online',wake);window.addEventListener('load',wake,{once:true});Promise.resolve().then(wake);
+
+  window.HouseholdActivity={version:'1.2.0',TYPES:TYPES,start:start,publish:publish,getEvents:function(){return state.events.slice();},shouldPublishToFeed:shouldPublishToFeed,resolveMember:member,actorName:actorName,status:function(){return{started:state.started,attached:state.attached,ready:ready(),householdId:hid(),uid:uid(),count:state.events.length,lastError:state.lastError,bootstrapPolling:!!state.timer,bridges:{tasks:!!(window.TaskSharedData&&TaskSharedData.__activityWrapped),meals:!!(window.MealPlanStore&&MealPlanStore.__activityWrapped),receipt:!!(window.FinanceStore&&FinanceStore.__activityWrapped)}};}};
 })();
