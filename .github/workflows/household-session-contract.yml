@@ -7,8 +7,11 @@ on:
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'api/app.js'
+      - 'database.rules.json'
+      - 'firebase.json'
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
+      - 'tests/database-rules-removed-member.test.mjs'
       - '.github/workflows/household-session-contract.yml'
   push:
     branches:
@@ -19,8 +22,11 @@ on:
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'api/app.js'
+      - 'database.rules.json'
+      - 'firebase.json'
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
+      - 'tests/database-rules-removed-member.test.mjs'
       - '.github/workflows/household-session-contract.yml'
 
 permissions:
@@ -29,7 +35,7 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,7 +48,12 @@ jobs:
           node --check src/core/householdPlatform.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
+          node --check tests/database-rules-removed-member.test.mjs
       - name: Household isolation contract
         run: node tests/household-session-contract.test.js
       - name: Household account-switch behavior
         run: node tests/household-session-behavior.test.js
+      - name: Install Firebase rules test tooling
+        run: npm install --no-save --no-package-lock firebase@12 @firebase/rules-unit-testing@5 firebase-tools@14
+      - name: Removed-member Realtime Database rules
+        run: npx firebase emulators:exec --only database --project demo-familyapp-household-isolation "node tests/database-rules-removed-member.test.mjs"
