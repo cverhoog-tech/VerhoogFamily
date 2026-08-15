@@ -15,10 +15,12 @@
         var updatePayload={
           shop:arrToObj(window.shopData),
           cal:arrToObj(window.calData),
-          feed:arrToObj(window.feedData),
           recurData:arrToObj(window.recurData)
           // trans/savingsGoals/extraIncome/vasteLasten intentionally excluded
           // — owned exclusively by FinanceStore now.
+          // feed intentionally excluded — owned exclusively by FeedSharedData
+          // at shared/feedPosts now; this orphan families/{id}/feed path is
+          // retired to stop it racing with the real Feed data.
         };
         window.fbDb.ref('families/'+window.fbFamilyId).update(updatePayload);
         var me=uid();
