@@ -29,6 +29,8 @@
     if(task){
       if(task.assignedToUids&&typeof task.assignedToUids==='object')Object.keys(task.assignedToUids).forEach(function(id){if(task.assignedToUids[id])blocked[String(id)]=true;});
       if(task.assignedToUid)blocked[String(task.assignedToUid)]=true;
+      var ownerUid=task.createdByUid||task.ownerUid||null;
+      if(ownerUid)blocked[String(ownerUid)]=true;
     }
     Object.keys(sourceRows||{}).forEach(function(k){
       var q=sourceRows[k];if(!isLive(q)||String(q.questId||'')!==String(taskId))return;
@@ -171,5 +173,5 @@
   document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('#tch-party-quest');if(!b)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();if(pendingList.length)incomingQueue(pendingList);else current?showStatus(current):chooseQuests();},true);
   window.addEventListener('familyapp:tasks-updated',function(){setTimeout(decorate,0);});window.addEventListener('familyapp:household-members-updated',function(){setTimeout(start,0);});
   var tries=0,t=setInterval(function(){tries++;if(start()||tries>80)clearInterval(t);},250);
-  window.PartyQuestInvites={version:'5.0',start:start,open:function(){if(pendingList.length)incomingQueue(pendingList);else current?showStatus(current):chooseQuests();},current:function(){return current;},pending:function(){return pendingList.slice();},getById:getById,revokeInvite:revokeInvite,respond:respond};
+  window.PartyQuestInvites={version:'5.1',start:start,open:function(){if(pendingList.length)incomingQueue(pendingList);else current?showStatus(current):chooseQuests();},current:function(){return current;},pending:function(){return pendingList.slice();},getById:getById,revokeInvite:revokeInvite,respond:respond};
 })();
