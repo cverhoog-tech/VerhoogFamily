@@ -39,6 +39,10 @@ function toast(message) {
   el._timer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
+function getUiScale() {
+  return window.FamilyUiScale ? window.FamilyUiScale.get() : 100;
+}
+
 function bindProfileActions(container) {
   const nameInput = container.querySelector('[data-profile-name]');
   const partnerInput = container.querySelector('[data-partner-name]');
@@ -53,6 +57,15 @@ function bindProfileActions(container) {
       toast('Profiel opgeslagen');
     };
   }
+
+  container.querySelectorAll('[data-ui-scale]').forEach((button) => {
+    button.onclick = () => {
+      if (!window.FamilyUiScale) return;
+      const scale = window.FamilyUiScale.set(button.dataset.uiScale);
+      renderProfileScreen(container);
+      toast(`UI schaal ingesteld op ${scale}%`);
+    };
+  });
 
   const uploadBtn = container.querySelector('[data-upload-avatar]');
   if (uploadBtn) uploadBtn.onclick = () => fileInput.click();
@@ -149,6 +162,7 @@ export function renderProfileScreen(container, options = {}) {
     ? animeAvatarCollection
     : animeAvatarCollection.filter((item) => item.category === activeCategory);
   const mainObjectPosition = avatarMeta.objectPosition || '50% 36%';
+  const uiScale = getUiScale();
 
   const popupHtml = `
     <div class="profile-avatar-popup ${options.keepAvatarPopupOpen ? 'show' : ''}">
@@ -185,6 +199,19 @@ export function renderProfileScreen(container, options = {}) {
           <button data-upload-avatar>⇧ Upload foto</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
+      </section>
+
+      <section class="profile-card" style="padding:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
+          <div>
+            <h2 style="margin:0 0 4px">UI schaal</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Vergroot of verklein de volledige app. De keuze blijft bewaard op dit apparaat.</p>
+          </div>
+          <strong style="font-size:14px;color:var(--c-primary);white-space:nowrap">${uiScale}%</strong>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+          ${[90,100,110,120].map((scale) => `<button type="button" data-ui-scale="${scale}" style="min-height:42px;border-radius:12px;border:1.5px solid ${scale === uiScale ? 'var(--c-primary)' : 'var(--c-border)'};background:${scale === uiScale ? 'var(--c-primary-light)' : 'var(--c-surface2)'};color:${scale === uiScale ? 'var(--c-primary)' : 'var(--c-text2)'};font-size:12px;font-weight:800">${scale}%</button>`).join('')}
+        </div>
       </section>
 
       <section class="profile-card profile-settings-card">
