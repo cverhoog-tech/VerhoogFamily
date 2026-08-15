@@ -1,110 +1,38 @@
 'use strict';
-// ============================================================
-// RECIPE STORE + SHARED LIVE v2.1
-// Shared household recipes via FamilyDataStore.
-// Record-level writes prevent unrelated recipes overwriting each other.
-// Large inline image payloads are rejected until persistent image storage exists.
-// ============================================================
+// RECIPE STORE + SHARED LIVE v3.0 - HouseholdContext authoritative.
 (function(){
-  if(window.RecipeStore && window.RecipeStore.version === '2.1.0') return;
-
-  var VERSION='2.1.0', COLLECTION='recipes', LEGACY_KEY='fam_recipes_v1', SEED_KEY='fam_recipes_seeded_v1';
-  var MAX_INLINE_PHOTO_CHARS=180000;
-  var state={attached:false,ready:false,items:{},unsubscribe:null,booting:null,listeners:[]};
-
-  function now(){return Date.now();}
-  function ds(){return window.FamilyDataStore||null;}
-  function userId(){try{return ds()&&ds().status().userId||null;}catch(e){return null;}}
-  function familyId(){try{return ds()&&ds().status().familyId||window.fbFamilyId||null;}catch(e){return window.fbFamilyId||null;}}
-  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-  function keyFor(id){return 'id_'+String(id||'').replace(/[.#$\[\]\/]/g,'_');}
+  if(window.RecipeStore&&window.RecipeStore.version==='3.0.0')return;
+  var VERSION='3.0.0',COLLECTION='recipes',LEGACY_KEY='fam_recipes_v1',SEED_KEY='fam_recipes_seeded_v1',MAX_INLINE_PHOTO_CHARS=180000;
+  var state={attached:false,ready:false,items:{},unsubscribe:null,booting:null,listeners:[],token:null};
+  function now(){return Date.now();}function ds(){return window.FamilyDataStore||null;}function hc(){return window.HouseholdContext||null;}
+  function captureReady(){var c=hc();if(!c)throw new Error('HOUSEHOLD_CONTEXT_UNAVAILABLE');var uid=c.requireUser(),householdId=c.requireHousehold();c.assertContext({uid:uid,householdId:householdId,requireReady:true});return{uid:uid,householdId:householdId};}
+  function same(t){return!!(t&&hc()&&hc().isCurrent(t));}function assertToken(t){if(!same(t)){var e=new Error('RECIPE_CONTEXT_CHANGED');e.code='RECIPE_CONTEXT_CHANGED';throw e;}return t;}
+  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}function keyFor(id){return'id_'+String(id||'').replace(/[.#$\[\]\/]/g,'_');}
   function newId(){var s=ds();return s&&s.makeId?s.makeId('recipe'):('recipe_'+now().toString(36)+'_'+Math.random().toString(36).slice(2,7));}
-  function isInlinePhoto(v){return typeof v==='string'&&/^data:image\//i.test(v);}
-  function validatePhoto(v){
-    if(v==null||v==='')return null;
-    var text=String(v);
-    if(isInlinePhoto(text)&&text.length>MAX_INLINE_PHOTO_CHARS){
-      var err=new Error('Recipe photo is too large for inline storage');
-      err.code='RECIPE_PHOTO_TOO_LARGE';
-      throw err;
-    }
-    return text;
-  }
-
-  function normalizeIngredient(value,index){
-    if(value&&typeof value==='object'){
-      var raw=String(value.rawText||value.text||value.name||'').trim();
-      return {id:String(value.id||('ing_'+index)),name:String(value.name||raw).trim(),quantity:String(value.quantity||'').trim(),unit:String(value.unit||'').trim(),rawText:raw||String(value.name||'').trim()};
-    }
-    var text=String(value||'').trim();
-    return {id:'ing_'+index,name:text,quantity:'',unit:'',rawText:text};
-  }
-  function normalizeRecipe(input,existing){
-    input=input||{};existing=existing||{};
-    var id=String(input.id||existing.id||newId());
-    var cat=String(input.cat||existing.cat||'Diner');
-    var ingredients=Array.isArray(input.ingredients)?input.ingredients:(Array.isArray(existing.ingredients)?existing.ingredients:[]);
-    return {
-      id:id,
-      name:String(input.name!=null?input.name:(existing.name||'')).trim(),
-      cat:cat,
-      cuisine:String(input.cuisine!=null?input.cuisine:(existing.cuisine||'')).trim(),
-      persons:Math.max(1,parseInt(input.persons!=null?input.persons:existing.persons,10)||4),
-      time:Math.max(0,parseInt(input.time!=null?input.time:existing.time,10)||0),
-      emoji:String(input.emoji||existing.emoji||''),
-      photo:input.photo!==undefined?validatePhoto(input.photo||null):validatePhoto(existing.photo||null),
-      imageMode:String(input.imageMode||existing.imageMode||(input.photo||existing.photo?'custom':'preset')),
-      heroPreset:String(input.heroPreset||existing.heroPreset||cat.toLowerCase()),
-      ingredients:ingredients.map(normalizeIngredient).filter(function(x){return x.rawText||x.name;}),
-      steps:(Array.isArray(input.steps)?input.steps:(existing.steps||[])).map(function(x){return String(x||'').trim();}).filter(Boolean),
-      notes:String(input.notes!=null?input.notes:(existing.notes||'')).trim(),
-      sourceProvider:String(input.sourceProvider||existing.sourceProvider||'manual'),
-      sourceUrl:String(input.sourceUrl||existing.sourceUrl||''),
-      createdAt:existing.createdAt||input.createdAt||now(),
-      createdBy:existing.createdBy||input.createdBy||userId(),
-      updatedAt:now(),
-      updatedBy:userId()
-    };
-  }
-  function list(){return Object.keys(state.items).map(function(k){return state.items[k];}).filter(Boolean).sort(function(a,b){return (b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);});}
-  function get(id){var wanted=String(id||''),keys=Object.keys(state.items);for(var i=0;i<keys.length;i++){var r=state.items[keys[i]];if(r&&String(r.id)===wanted)return r;}return null;}
-  function fromPayload(value){
-    var raw=value&&value.items&&typeof value.items==='object'?value.items:{};var out={};
-    Object.keys(raw).forEach(function(k){var r=raw[k];if(!r)return;try{var n=normalizeRecipe(r,r);n.updatedAt=r.updatedAt||n.updatedAt;out[keyFor(n.id)]=n;}catch(e){console.warn('[RecipeStore] skipped oversized legacy inline photo for recipe',r&&r.id,e&&e.code);var safe=Object.assign({},r,{photo:null,imageMode:'preset'});var n2=normalizeRecipe(safe,safe);n2.updatedAt=r.updatedAt||n2.updatedAt;out[keyFor(n2.id)]=n2;}});
-    return out;
-  }
+  function isInlinePhoto(v){return typeof v==='string'&&/^data:image\//i.test(v);}function validatePhoto(v){if(v==null||v==='')return null;var text=String(v);if(isInlinePhoto(text)&&text.length>MAX_INLINE_PHOTO_CHARS){var e=new Error('Recipe photo is too large for inline storage');e.code='RECIPE_PHOTO_TOO_LARGE';throw e;}return text;}
+  function normalizeIngredient(v,i){if(v&&typeof v==='object'){var raw=String(v.rawText||v.text||v.name||'').trim();return{id:String(v.id||('ing_'+i)),name:String(v.name||raw).trim(),quantity:String(v.quantity||'').trim(),unit:String(v.unit||'').trim(),rawText:raw||String(v.name||'').trim()};}var text=String(v||'').trim();return{id:'ing_'+i,name:text,quantity:'',unit:'',rawText:text};}
+  function normalizeRecipe(input,existing,token){input=input||{};existing=existing||{};token=token||captureReady();var id=String(input.id||existing.id||newId()),cat=String(input.cat||existing.cat||'Diner'),ings=Array.isArray(input.ingredients)?input.ingredients:(Array.isArray(existing.ingredients)?existing.ingredients:[]);return{id:id,name:String(input.name!=null?input.name:(existing.name||'')).trim(),cat:cat,cuisine:String(input.cuisine!=null?input.cuisine:(existing.cuisine||'')).trim(),persons:Math.max(1,parseInt(input.persons!=null?input.persons:existing.persons,10)||4),time:Math.max(0,parseInt(input.time!=null?input.time:existing.time,10)||0),emoji:String(input.emoji||existing.emoji||''),photo:input.photo!==undefined?validatePhoto(input.photo||null):validatePhoto(existing.photo||null),imageMode:String(input.imageMode||existing.imageMode||(input.photo||existing.photo?'custom':'preset')),heroPreset:String(input.heroPreset||existing.heroPreset||cat.toLowerCase()),ingredients:ings.map(normalizeIngredient).filter(function(x){return x.rawText||x.name;}),steps:(Array.isArray(input.steps)?input.steps:(existing.steps||[])).map(function(x){return String(x||'').trim();}).filter(Boolean),notes:String(input.notes!=null?input.notes:(existing.notes||'')).trim(),sourceProvider:String(input.sourceProvider||existing.sourceProvider||'manual'),sourceUrl:String(input.sourceUrl||existing.sourceUrl||''),householdId:token.householdId,createdAt:existing.createdAt||input.createdAt||now(),createdBy:existing.createdBy||input.createdBy||token.uid,updatedAt:now(),updatedBy:token.uid};}
+  function list(){return Object.keys(state.items).map(function(k){return state.items[k];}).filter(Boolean).sort(function(a,b){return(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);});}function get(id){var w=String(id||''),ks=Object.keys(state.items);for(var i=0;i<ks.length;i++){var r=state.items[ks[i]];if(r&&String(r.id)===w)return r;}return null;}
+  function fromPayload(value,token){var raw=value&&value.items&&typeof value.items==='object'?value.items:{},out={};Object.keys(raw).forEach(function(k){var r=raw[k];if(!r)return;try{var n=normalizeRecipe(r,r,token);n.updatedAt=r.updatedAt||n.updatedAt;n.updatedBy=r.updatedBy||n.updatedBy;n.householdId=r.householdId||token.householdId;out[keyFor(n.id)]=n;}catch(e){var safe=Object.assign({},r,{photo:null,imageMode:'preset'}),n2=normalizeRecipe(safe,safe,token);n2.updatedAt=r.updatedAt||n2.updatedAt;out[keyFor(n2.id)]=n2;}});return out;}
   function cache(){var rows=list();window.recipesData=rows;try{localStorage.setItem(LEGACY_KEY,JSON.stringify(rows));localStorage.setItem(SEED_KEY,'1');}catch(e){}return rows;}
   function render(){var screen=document.getElementById('screen-recipes');if(!screen)return;var active=screen.classList.contains('active')||screen.style.display==='block'||screen.offsetParent!==null;if(active&&typeof window.renderRecipes==='function')try{window.renderRecipes();}catch(e){}}
-  function emit(meta){var rows=cache();state.listeners.slice().forEach(function(fn){try{fn(rows,meta||{});}catch(e){}});try{window.dispatchEvent(new CustomEvent('familyapp:recipes-synced',{detail:{familyId:familyId(),recipes:rows.slice(),meta:meta||{}}}));}catch(e){}render();}
+  function emit(meta,token){if(token&&!same(token))return;var rows=cache();state.listeners.slice().forEach(function(fn){try{fn(rows,meta||{});}catch(e){}});try{window.dispatchEvent(new CustomEvent('familyapp:recipes-synced',{detail:{familyId:token&&token.householdId||null,userId:token&&token.uid||null,recipes:rows.slice(),meta:meta||{}}}));}catch(e){}render();}
   function subscribe(cb){if(typeof cb!=='function')return function(){};state.listeners.push(cb);try{cb(list(),{source:'current'});}catch(e){}return function(){state.listeners=state.listeners.filter(function(fn){return fn!==cb;});};}
-
-  function legacyLocal(){try{var raw=localStorage.getItem(LEGACY_KEY),parsed=raw?JSON.parse(raw):[];return Array.isArray(parsed)?parsed:[];}catch(e){return[];}}
-  function legacyFirebase(){
-    try{var db=window.fbDb||(window.firebase&&firebase.database&&firebase.database()),fid=familyId();if(!db||!fid)return Promise.resolve([]);return db.ref('families/'+fid+'/recipes').once('value').then(function(s){var raw=s.val();if(!raw)return[];if(Array.isArray(raw))return raw.filter(Boolean);if(raw.items&&typeof raw.items==='object')return Object.keys(raw.items).map(function(k){return raw.items[k];}).filter(Boolean);if(typeof raw==='object')return Object.keys(raw).map(function(k){return raw[k];}).filter(function(v){return v&&typeof v==='object';});return[];}).catch(function(){return[];});}catch(e){return Promise.resolve([]);}
-  }
-  function initialPayload(recipes,source){var items={};(recipes||[]).forEach(function(r){try{var n=normalizeRecipe(r,r);items[keyFor(n.id)]=n;}catch(e){var safe=Object.assign({},r,{photo:null,imageMode:'preset'});var n2=normalizeRecipe(safe,safe);items[keyFor(n2.id)]=n2;}});return{schemaVersion:2,initialized:true,items:items,migratedAt:now(),migratedFrom:source,updatedAt:now(),updatedBy:userId()};}
-  function ensureInitialized(existing){
-    var s=ds();if(existing&&existing.initialized)return Promise.resolve(existing);
-    if(Array.isArray(existing)&&existing.length){var a=initialPayload(existing,'shared-recipes-array');return s.writeShared(COLLECTION,a).then(function(){return a;});}
-    return legacyFirebase().then(function(remote){var local=legacyLocal(),seed=remote.length?remote:local,src=remote.length?'families/{householdId}/recipes':(local.length?LEGACY_KEY:'empty');var p=initialPayload(seed,src);return s.writeShared(COLLECTION,p).then(function(){return p;});});
-  }
-  function attach(){
-    var s=ds();if(!s||state.attached||!familyId()||!userId())return false;state.attached=true;
-    state.unsubscribe=s.subscribeShared(COLLECTION,function(value,meta){if(!value||!value.initialized)return;state.items=fromPayload(value);state.ready=true;emit(meta||{source:'firebase'});},{schemaVersion:2,initialized:true,items:{}});return true;
-  }
-  function boot(){
-    if(state.booting)return state.booting;var s=ds();if(!s||!familyId()||!userId())return Promise.resolve(status());
-    state.booting=s.readShared(COLLECTION,null).then(ensureInitialized).then(function(value){state.items=fromPayload(value);state.ready=true;emit({source:'boot'});attach();return status();}).catch(function(err){console.error('[RecipeStore] boot failed',err);return status();}).then(function(v){state.booting=null;return v;});return state.booting;
-  }
-  function create(input){var s=ds();if(!s)return Promise.reject(new Error('FamilyDataStore unavailable'));var r;try{r=normalizeRecipe(input||{},null);}catch(e){return Promise.reject(e);}if(!r.name)return Promise.reject(new Error('Recipe name required'));var k=keyFor(r.id);return s.writeSharedPath(COLLECTION,['items',k],r).then(function(result){state.items[k]=r;emit({source:'create'});return{recipe:clone(r),result:result};});}
-  function upsert(input){var old=get(input&&input.id);if(!old)return create(input);var s=ds(),r;try{r=normalizeRecipe(input,old);}catch(e){return Promise.reject(e);}var k=keyFor(r.id);return s.writeSharedPath(COLLECTION,['items',k],r).then(function(result){state.items[k]=r;emit({source:'upsert'});return{recipe:clone(r),result:result};});}
-  function remove(id){var s=ds(),old=get(id);if(!s)return Promise.reject(new Error('FamilyDataStore unavailable'));if(!old)return Promise.resolve({removed:false});var k=keyFor(old.id);return s.writeSharedPath(COLLECTION,['items',k],null).then(function(result){delete state.items[k];emit({source:'remove'});return{removed:true,recipe:clone(old),result:result};});}
-  function status(){return{version:VERSION,ready:state.ready,attached:state.attached,count:list().length,familyId:familyId(),userId:userId(),maxInlinePhotoChars:MAX_INLINE_PHOTO_CHARS};}
-
-  window.RecipeStore={version:VERSION,boot:boot,ready:function(){return state.ready;},list:list,get:get,subscribe:subscribe,create:create,upsert:upsert,remove:remove,normalizeRecipe:normalizeRecipe,status:status};
-  window.RecipeSharedLive={version:VERSION,sync:boot,save:function(){return Promise.resolve({deprecated:true,reason:'Use RecipeStore record-level mutations'});},status:status};
-
-  function start(){var tries=0,t=setInterval(function(){tries++;if(ds()&&familyId()&&userId()){clearInterval(t);boot();}else if(tries>240)clearInterval(t);},250);boot();}
-  window.addEventListener('online',boot);window.addEventListener('focus',boot);window.addEventListener('familyapp:household-members-updated',boot);
+  function legacyLocal(){try{var raw=localStorage.getItem(LEGACY_KEY),p=raw?JSON.parse(raw):[];return Array.isArray(p)?p:[];}catch(e){return[];}}
+  function legacyFirebase(token){try{assertToken(token);var db=window.fbDb||(window.firebase&&firebase.database&&firebase.database());if(!db)return Promise.resolve([]);return db.ref('families/'+token.householdId+'/recipes').once('value').then(function(s){assertToken(token);var raw=s.val();if(!raw)return[];if(Array.isArray(raw))return raw.filter(Boolean);if(raw.items&&typeof raw.items==='object')return Object.keys(raw.items).map(function(k){return raw.items[k];}).filter(Boolean);if(typeof raw==='object')return Object.keys(raw).map(function(k){return raw[k];}).filter(function(v){return v&&typeof v==='object';});return[];});}catch(e){return Promise.reject(e);}}
+  function initialPayload(rows,source,token){var items={};(rows||[]).forEach(function(r){try{var n=normalizeRecipe(r,r,token);items[keyFor(n.id)]=n;}catch(e){var safe=Object.assign({},r,{photo:null,imageMode:'preset'}),n2=normalizeRecipe(safe,safe,token);items[keyFor(n2.id)]=n2;}});return{schemaVersion:3,initialized:true,items:items,migratedAt:now(),migratedFrom:source,updatedAt:now(),updatedBy:token.uid,householdId:token.householdId};}
+  function ensureInitialized(existing,token){assertToken(token);var s=ds();if(existing&&existing.initialized)return Promise.resolve(existing);if(Array.isArray(existing)&&existing.length){var a=initialPayload(existing,'shared-recipes-array',token);return s.writeShared(COLLECTION,a).then(function(){assertToken(token);return a;});}return legacyFirebase(token).then(function(remote){assertToken(token);var local=legacyLocal(),seed=remote.length?remote:local,src=remote.length?'families/{householdId}/recipes':(local.length?LEGACY_KEY:'empty'),p=initialPayload(seed,src,token);return s.writeShared(COLLECTION,p).then(function(){assertToken(token);return p;});});}
+  function stop(){if(state.unsubscribe)try{state.unsubscribe();}catch(e){}state.unsubscribe=null;state.attached=false;state.ready=false;state.booting=null;state.token=null;state.items={};window.recipesData=[];render();}
+  function attach(token){var s=ds();assertToken(token);if(!s||state.attached)return false;state.attached=true;state.unsubscribe=s.subscribeShared(COLLECTION,function(value,meta){if(!same(token)||!value||!value.initialized)return;state.items=fromPayload(value,token);state.ready=true;emit(meta||{source:'firebase'},token);},{schemaVersion:3,initialized:true,items:{}});return true;}
+  function boot(){var token;try{token=captureReady();}catch(e){return Promise.resolve(status());}if(state.attached&&state.token&&same(state.token))return Promise.resolve(status());if(state.booting&&state.token&&same(state.token))return state.booting;stop();state.token=token;var s=ds();state.booting=s.readShared(COLLECTION,null).then(function(v){return ensureInitialized(v,token);}).then(function(v){assertToken(token);state.items=fromPayload(v,token);state.ready=true;emit({source:'boot'},token);attach(token);return status();}).catch(function(err){if(!(err&&err.code==='RECIPE_CONTEXT_CHANGED'))console.error('[RecipeStore] boot failed',err);return status();}).then(function(v){if(state.token===token)state.booting=null;return v;});return state.booting;}
+  function create(input){var token=captureReady(),s=ds(),r;try{r=normalizeRecipe(input||{},null,token);}catch(e){return Promise.reject(e);}if(!r.name)return Promise.reject(new Error('Recipe name required'));var k=keyFor(r.id);assertToken(token);return s.writeSharedPath(COLLECTION,['items',k],r).then(function(result){assertToken(token);state.items[k]=r;emit({source:'create'},token);return{recipe:clone(r),result:result};});}
+  function upsert(input){var token=captureReady(),old=get(input&&input.id);if(!old)return create(input);var s=ds(),r;try{r=normalizeRecipe(input,old,token);}catch(e){return Promise.reject(e);}var k=keyFor(r.id);assertToken(token);return s.writeSharedPath(COLLECTION,['items',k],r).then(function(result){assertToken(token);state.items[k]=r;emit({source:'upsert'},token);return{recipe:clone(r),result:result};});}
+  function remove(id){var token=captureReady(),s=ds(),old=get(id);if(!old)return Promise.resolve({removed:false});var k=keyFor(old.id);assertToken(token);return s.writeSharedPath(COLLECTION,['items',k],null).then(function(result){assertToken(token);delete state.items[k];emit({source:'remove'},token);return{removed:true,recipe:clone(old),result:result};});}
+  function status(){return{version:VERSION,ready:state.ready,attached:state.attached,count:list().length,context:state.token?Object.assign({},state.token):null,maxInlinePhotoChars:MAX_INLINE_PHOTO_CHARS};}
+  function rebind(){stop();boot();}
+  window.RecipeStore={version:VERSION,boot:boot,stop:stop,rebind:rebind,ready:function(){return state.ready;},list:list,get:get,subscribe:subscribe,create:create,upsert:upsert,remove:remove,normalizeRecipe:function(input,existing){return normalizeRecipe(input,existing,captureReady());},status:status};
+  window.RecipeSharedLive={version:VERSION,sync:boot,stop:stop,status:status,save:function(){return Promise.resolve({deprecated:true,reason:'Use RecipeStore record-level mutations'});}};
+  function start(){var tries=0,t=setInterval(function(){tries++;if(ds()&&hc()){boot().then(function(){if(state.attached)clearInterval(t);});}if(tries>240)clearInterval(t);},250);boot();}
+  window.addEventListener('online',boot);window.addEventListener('focus',boot);window.addEventListener('familyapp:household-context-changed',rebind);window.addEventListener('familyapp:session:cleared',stop);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
