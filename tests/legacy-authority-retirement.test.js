@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('fs');const vm=require('vm');const assert=require('assert');
+const code=fs.readFileSync('src/core/legacyAuthorityRetirement.js','utf8');
+const removed=[];let stopped=0;
+const storage={removeItem:(k)=>removed.push(k),getItem:()=>null,setItem:()=>{}};
+const listeners={};
+const sandbox={console,localStorage:storage,document:{readyState:'complete',addEventListener:()=>{}},window:{HouseholdContext:{current:()=>({uid:'u1',householdId:'h1'})},HouseholdSessionHardening:{stopFirebaseSync:()=>{stopped++;}},addEventListener:(n,fn)=>{listeners[n]=fn;}},setTimeout,clearTimeout};
+sandbox.window.window=sandbox.window;sandbox.window.localStorage=storage;sandbox.window.document=sandbox.document;
+vm.createContext(sandbox);vm.runInContext(code,sandbox);
+const svc=sandbox.window.LegacyAuthorityRetirement;assert(svc,'retirement service should install');
+assert.equal(stopped,1,'existing root listener must be detached');
+assert.equal(sandbox.window.startFirebaseSync(),false);assert.equal(sandbox.window.syncToFirebase(),false);
+assert(sandbox.window.startFirebaseSync.__legacyAuthorityRetired);assert(sandbox.window.syncToFirebase.__legacyAuthorityRetired);
+['familyapp-profile-name-v1','familyapp-partner-name-v1','familyapp-current-user-avatar-v1','familyapp-current-user-avatar-id-v1'].forEach((k)=>assert(removed.includes(k),'global key should be removed: '+k));
+assert.deepEqual(JSON.parse(JSON.stringify(svc.status().context)),{uid:'u1',householdId:'h1'});
+console.log('legacy authority retirement: ok');
