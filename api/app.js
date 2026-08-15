@@ -27,13 +27,15 @@ module.exports = async function handler(req, res) {
     // Canonical household runtime. Load after duoQuests so the production
     // household platform can replace the legacy single-family auth helpers,
     // then harden the resulting auth/session lifecycle against stale listeners
-    // and account/household switches.
+    // and account/household switches. The final guard keeps pre-platform family
+    // migration explicit without weakening modern active-membership checks.
     html = html.replace(
       '<script src="src/modules/tasks/duoQuests.js"></script>',
       '<script src="src/modules/tasks/duoQuests.js"></script>\n'
       + '  <script src="src/core/householdPlatform.js?v=2"></script>\n'
       + '  <script src="src/core/householdIdentityFirebaseBridge.js?v=4"></script>\n'
-      + '  <script src="src/core/householdSessionHardening.js?v=1"></script>'
+      + '  <script src="src/core/householdSessionHardening.js?v=1"></script>\n'
+      + '  <script src="src/core/householdLegacyMigrationGuard.js?v=1"></script>'
     );
 
     html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>');
