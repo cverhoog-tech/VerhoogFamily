@@ -10,7 +10,7 @@
 
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function taskByEvent(event){var id=event&&event.data&&(event.data.taskId||event.data.taskKey)||(event&&event.entity&&event.entity.id)||'';return (window.taskData||[]).find(function(t){return String(t.id||t._key)===String(id);})||null;}
-  function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'));}
+  function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'||event.type==='partyQuest.created'));}
   function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
   function markRead(event){return window.NotificationStore&&event&&event.id?NotificationStore.markRead(event.id):Promise.resolve();}
 
@@ -34,13 +34,28 @@
     return PartyQuestInvites.revokeInvite(questId,inviteeUid).then(function(){return markRead(event);});
   }
 
-  function run(event){
+  // Accept/decline a received Party Quest invite from the notification
+  // center. Reuses PartyQuestInvites.getById()/respond() — the same
+  // transaction-backed domain action the auto-popup and Taken-overview
+  // party card already use — so there is a single invitation state and a
+  // single acceptance/decline code path regardless of which UI triggered it.
+  function respondPartyQuestInvite(event,status){
+    var questId=event&&event.data&&event.data.questId;
+    if(!questId)return Promise.reject(new Error('Uitnodigingsgegevens ontbreken'));
+    if(!window.PartyQuestInvites||typeof PartyQuestInvites.getById!=='function'||typeof PartyQuestInvites.respond!=='function')return Promise.reject(new Error('Party Quest service is nog niet klaar'));
+    var quest=PartyQuestInvites.getById(questId);
+    if(!quest)return Promise.reject(new Error('Uitnodiging is niet meer actief'));
+    return PartyQuestInvites.respond(quest,status).then(function(){return markRead(event);});
+  }
+
+  function run(event,action){
     if(!event)return Promise.resolve(false);
     if(event.type==='task.help.requested')return acceptTaskHelp(event).then(function(){return true;});
     if(event.type==='partyQuest.invitation.sent')return revokePartyInvitation(event).then(function(){return true;});
+    if(event.type==='partyQuest.created')return respondPartyQuestInvite(event,action==='decline'?'declined':'active').then(function(){return true;});
     return markRead(event).then(function(){return false;});
   }
   function byId(id){if(!window.NotificationStore)return null;return NotificationStore.list().find(function(n){return String(n.id)===String(id);})||null;}
 
-  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,byId:byId};
+  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,byId:byId};
 })();
