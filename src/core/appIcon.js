@@ -5,8 +5,8 @@
 
 var FAMILYAPP_APP_ICONS = Object.freeze({
   favicon: '/assets/app-icons/icon-32.png',
-  appleTouch: '/assets/app-icons/apple-touch-icon.png',
-  preview: '/assets/app-icons/icon-192.png'
+  appleTouch: '/assets/app-icons/apple-touch-icon-v3.png',
+  preview: '/assets/app-icons/icon-192-v3.png'
 });
 
 function ensureHeadLink(id, rel, href, sizes) {
