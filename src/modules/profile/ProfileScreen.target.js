@@ -43,6 +43,79 @@ function getUiScale() {
   return window.FamilyUiScale ? window.FamilyUiScale.get() : 100;
 }
 
+function getInstallState() {
+  return window.FamilyAppInstall
+    ? window.FamilyAppInstall.getState()
+    : { status: 'browser', installed: false, ios: false, canPrompt: false };
+}
+
+function installCardMarkup(state) {
+  if (state.installed) {
+    return `
+      <section class="profile-card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <h2 style="margin:0 0 3px">FamilyApp geïnstalleerd</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Je gebruikt FamilyApp al vanaf je beginscherm.</p>
+          </div>
+          <span style="font-size:18px;color:var(--c-primary);font-weight:900">✓</span>
+        </div>
+      </section>`;
+  }
+
+  const copy = state.ios
+    ? 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.'
+    : 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.';
+
+  return `
+    <section class="profile-card" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
+        <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,.10)">
+        <div style="min-width:0">
+          <h2 style="margin:0 0 4px">FamilyApp op beginscherm</h2>
+          <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${copy}</p>
+        </div>
+      </div>
+      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? 'Hoe zet ik hem op mijn beginscherm?' : 'Installeer FamilyApp'}</button>
+    </section>`;
+}
+
+function instructionModalMarkup(state) {
+  const iosSteps = `
+    <div style="display:grid;gap:10px;margin-top:14px">
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</strong><span>Tik onderin Safari op de <b>deelknop</b>.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>Kies <b>Zet op beginscherm</b>.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>Tik op <b>Voeg toe</b>. Daarna opent FamilyApp als losse app.</span></div>
+    </div>`;
+
+  const browserSteps = `
+    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies <b>App installeren</b> of <b>Toevoegen aan beginscherm</b>.</p>`;
+
+  return `
+    <div class="profile-install-overlay" data-install-overlay style="position:fixed;inset:0;z-index:10020;background:rgba(15,23,42,.42);display:flex;align-items:flex-end;justify-content:center;padding:0">
+      <div style="width:100%;max-width:480px;background:var(--c-surface);border-radius:24px 24px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(0,0,0,.2)">
+        <div style="width:42px;height:4px;border-radius:999px;background:var(--c-border);margin:0 auto 16px"></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px">
+          <div><h2 style="margin:0 0 3px;font-size:18px">Zet FamilyApp op je beginscherm</h2><p style="margin:0;color:var(--c-text2);font-size:12px">Eenmalig instellen, daarna open je hem als app.</p></div>
+        </div>
+        ${state.ios ? iosSteps : browserSteps}
+        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">Begrepen</button>
+      </div>
+    </div>`;
+}
+
+function showInstallInstructions(state) {
+  const existing = document.querySelector('[data-install-overlay]');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', instructionModalMarkup(state));
+  const overlay = document.querySelector('[data-install-overlay]');
+  const close = overlay && overlay.querySelector('[data-close-install-overlay]');
+  if (close) close.onclick = () => overlay.remove();
+  if (overlay) overlay.onclick = (event) => { if (event.target === overlay) overlay.remove(); };
+}
+
 function bindProfileActions(container) {
   const nameInput = container.querySelector('[data-profile-name]');
   const partnerInput = container.querySelector('[data-partner-name]');
@@ -66,6 +139,21 @@ function bindProfileActions(container) {
       toast(`UI schaal ingesteld op ${scale}%`);
     };
   });
+
+  const installButton = container.querySelector('[data-install-familyapp]');
+  if (installButton) {
+    installButton.onclick = async () => {
+      const state = getInstallState();
+      if (!window.FamilyAppInstall) {
+        showInstallInstructions(state);
+        return;
+      }
+      const result = await window.FamilyAppInstall.install();
+      if (result.outcome === 'instructions') showInstallInstructions(getInstallState());
+      else if (result.outcome === 'accepted') toast('FamilyApp wordt geïnstalleerd');
+      else if (result.outcome === 'installed') toast('FamilyApp is al geïnstalleerd');
+    };
+  }
 
   const uploadBtn = container.querySelector('[data-upload-avatar]');
   if (uploadBtn) uploadBtn.onclick = () => fileInput.click();
@@ -163,6 +251,7 @@ export function renderProfileScreen(container, options = {}) {
     : animeAvatarCollection.filter((item) => item.category === activeCategory);
   const mainObjectPosition = avatarMeta.objectPosition || '50% 36%';
   const uiScale = getUiScale();
+  const installState = getInstallState();
 
   const popupHtml = `
     <div class="profile-avatar-popup ${options.keepAvatarPopupOpen ? 'show' : ''}">
@@ -201,6 +290,8 @@ export function renderProfileScreen(container, options = {}) {
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
       </section>
 
+      ${installCardMarkup(installState)}
+
       <section class="profile-card" style="padding:16px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
           <div>
@@ -224,3 +315,8 @@ export function renderProfileScreen(container, options = {}) {
   `;
   bindProfileActions(container);
 }
+
+window.addEventListener('familyapp:pwa-install-state', () => {
+  const container = document.getElementById('screen-profile');
+  if (container && container.classList.contains('active')) renderProfileScreen(container);
+});
