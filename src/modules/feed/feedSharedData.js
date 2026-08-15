@@ -14,7 +14,12 @@
 
   var COLLECTION='feedPosts';
   var LEGACY_COLLECTION='feed';
-  var started=false,hasSnapshot=false,migrating=false;
+  var started=false,attached=false,hasSnapshot=false,migrating=false,lastError=null;
+
+  // Sparse, dev-facing trace of the create -> write -> snapshot -> render
+  // pipeline. Not spammy: one line per meaningful transition, so a broken
+  // link in the chain is easy to spot in the console without noise.
+  function trace(label,detail){try{console.log('[FeedSharedData]',label,detail!==undefined?detail:'');}catch(e){}}
 
   function uid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function now(){return Date.now();}
@@ -63,7 +68,7 @@
 
   function publishProjection(value,source){
     window.feedData=rows(value);
-    try{if(typeof window.saveFeedCache==='function')window.saveFeedCache();}catch(e){}
+    trace('snapshot received',{source:source,count:window.feedData.length});
     try{window.dispatchEvent(new CustomEvent('familyapp:feed-updated',{detail:{source:source||'shared',count:window.feedData.length}}));}catch(e){}
     try{
       var screen=document.getElementById('screen-feed');
@@ -111,7 +116,9 @@
   function start(){
     if(started||!ready())return false;
     started=true;
+    trace('start()',{uid:uid(),householdId:window.fbFamilyId});
     fds().subscribeShared(COLLECTION,function(value){
+      attached=true;
       hasSnapshot=true;
       publishProjection(value,'firebase');
     },{});
@@ -126,7 +133,7 @@
   function keyFor(post){return post&&(post._key||String(post.id));}
 
   function createPost(data){
-    if(!ready())return Promise.reject(new Error('Feed opslag is nog niet gereed'));
+    if(!ready()){lastError='not-ready';return Promise.reject(new Error('Feed opslag is nog niet gereed'));}
     var me=uid(),name=myDisplayName(),key=makeId('post'),ts=now();
     var row={
       id:key,type:'post',authorUid:me,authorDisplayName:name,author:name,
@@ -135,7 +142,16 @@
       linkedEntity:(data&&data.linkedEntity)||null,
       createdAt:ts,updatedAt:ts,likes:{},comments:{}
     };
-    return fds().writeSharedRecord(COLLECTION,key,row).then(function(){return row;});
+    trace('createPost begin',key);
+    return fds().writeSharedRecord(COLLECTION,key,row).then(function(){
+      trace('writeSharedRecord success',key);
+      lastError=null;
+      return row;
+    }).catch(function(e){
+      trace('writeSharedRecord FAILED',key+' '+(e&&e.message));
+      lastError=(e&&e.message)||String(e);
+      throw e;
+    });
   }
 
   function canDelete(post){
@@ -171,7 +187,17 @@
   }
 
   function getPosts(){return window.feedData||[];}
-  function status(){return{started:started,ready:ready(),uid:uid(),householdId:window.fbFamilyId||null,count:(window.feedData||[]).length,hasSnapshot:hasSnapshot};}
+  function status(){return{
+    started:started,
+    ready:ready(),
+    attached:attached,
+    subscribed:attached,
+    uid:uid(),
+    householdId:window.fbFamilyId||null,
+    count:(window.feedData||[]).length,
+    hasSnapshot:hasSnapshot,
+    lastError:lastError
+  };}
 
   window.FeedSharedData={
     version:'1.0.0',start:start,createPost:createPost,deletePost:deletePost,
