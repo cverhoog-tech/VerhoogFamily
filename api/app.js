@@ -49,12 +49,16 @@ module.exports = async function handler(req, res) {
       '<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>'
     );
 
-    // Feed UI still lives in feed.js, but persistence is household-scoped and
-    // realtime through FeedSharedLive. Load this after feed.js has defined the
-    // existing renderer/mutation functions.
+    // Feed persistence is record-based and owned by FeedSharedData
+    // (families/{householdId}/shared/feedPosts/{postId}) — every create/
+    // delete/like/comment writes only the path it owns, never the whole
+    // collection. Load it before feed.js so window.FeedSharedData exists by
+    // the time the UI's mutation handlers can be invoked. The old
+    // feedSharedLive.js patch-and-poll layer (whole-array overwrites) is
+    // retired and no longer served.
     html = html.replace(
       '<script src="src/modules/feed/feed.js"></script>',
-      '<script src="src/modules/feed/feed.js?v=2"></script>\n  <script src="src/modules/feed/feedSharedLive.js?v=1"></script>'
+      '<script src="src/modules/feed/feedSharedData.js?v=1"></script>\n  <script src="src/modules/feed/feed.js?v=3"></script>'
     );
 
     // Load these last so no older integration can restore retired renderers or
