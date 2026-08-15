@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - agent/household-auth-hardening
     paths:
       - 'src/core/householdSessionHardening.js'
       - 'src/core/householdIdentityFirebaseBridge.js'
