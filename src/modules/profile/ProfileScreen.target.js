@@ -192,11 +192,6 @@ export function renderProfileScreen(container, options = {}) {
         <button data-profile-row="Privacy"><span>▣</span><b>Privacy</b><em>›</em></button>
         <button data-profile-row="Meldingen"><span>♧</span><b>Meldingen</b><em>›</em></button>
       </section>
-
-      <section class="profile-card profile-api-card">
-        <h3>✨ Google Gemini API key</h3>
-        <p>Gratis — geen creditcard nodig.<br>Haal je key op via <strong>aistudio.google.com/apikey</strong></p>
-      </section>
     </section>
     ${popupHtml}
   `;
