@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// PARTY QUEST NOTIFICATION PROJECTOR v1.1.0
+// PARTY QUEST NOTIFICATION PROJECTOR v1.2.0
 // Read-only observer over the existing UID-based partyQuests store.
 // Converts invite/join/complete transitions into typed NotificationEvents and
 // publishes a single read-model update event for task presentation.
@@ -8,7 +8,7 @@
 (function(){
   if(window.PartyQuestNotificationProjector)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var ref=null,handler=null,householdId=null,snapshot={},initialized=false;
 
   function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
@@ -18,9 +18,7 @@
   function invitees(q){return q&&q.invitees&&typeof q.invitees==='object'?q.invitees:{};}
   function safe(p){if(p&&typeof p.catch==='function')p.catch(function(e){console.warn('[PartyQuestNotificationProjector]',e);});}
   function publishReadModel(next){
-    try{
-      window.dispatchEvent(new CustomEvent('familyapp:party-quests-updated',{detail:{source:'firebase',householdId:householdId,quests:Object.keys(next||{}).map(function(k){return next[k];})}}));
-    }catch(e){}
+    try{window.dispatchEvent(new CustomEvent('familyapp:party-quests-updated',{detail:{source:'firebase',householdId:householdId,quests:Object.keys(next||{}).map(function(k){return next[k];})}}));}catch(e){}
   }
 
   function project(next){
@@ -31,8 +29,11 @@
       if(!q||!window.NotificationEvents)return;
 
       if(!prev&&String(q.inviterUid||'')===String(me)){
-        var targets=Object.keys(invitees(q)).filter(function(id){return invitees(q)[id]&&invitees(q)[id].status!=='declined';});
+        var targets=Object.keys(invitees(q)).filter(function(id){return invitees(q)[id]&&invitees(q)[id].status==='pending';});
         safe(NotificationEvents.partyQuestCreated(q,targets));
+        targets.forEach(function(targetUid){
+          if(NotificationEvents.partyQuestInvitationSent)safe(NotificationEvents.partyQuestInvitationSent(q,targetUid));
+        });
       }
 
       if(prev){
@@ -40,10 +41,7 @@
         if(afterMine&&String(q.inviterUid||'')!==String(me)&&(!beforeMine||beforeMine.status!==afterMine.status)&&afterMine.status==='active'){
           safe(NotificationEvents.partyQuestJoined(q,q.inviterUid));
         }
-
-        if(prev.status!==q.status&&q.status==='completed'&&String(q.inviterUid||'')===String(me)){
-          safe(NotificationEvents.partyQuestCompleted(q));
-        }
+        if(prev.status!==q.status&&q.status==='completed'&&String(q.inviterUid||'')===String(me))safe(NotificationEvents.partyQuestCompleted(q));
       }
     });
     snapshot=next;
