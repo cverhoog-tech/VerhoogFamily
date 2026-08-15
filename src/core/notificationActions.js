@@ -1,16 +1,14 @@
 'use strict';
 // ============================================================
-// NOTIFICATION ACTIONS v2.1.0
+// NOTIFICATION ACTIONS v2.2.0
 // Presentation-agnostic action service for actionable notification events.
 // NotificationCenter and NotificationDelivery own all DOM and interaction UI.
 // ============================================================
 (function(){
   if(window.NotificationActions)return;
-  var VERSION='2.1.0';
+  var VERSION='2.2.0';
 
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
-  function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
-  function member(uid){return members().find(function(m){return String(m.uid||m.id)===String(uid);})||null;}
   function taskByEvent(event){var id=event&&event.data&&(event.data.taskId||event.data.taskKey)||(event&&event.entity&&event.entity.id)||'';return (window.taskData||[]).find(function(t){return String(t.id||t._key)===String(id);})||null;}
   function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'));}
   function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
@@ -20,15 +18,12 @@
     var me=currentUid(),task=taskByEvent(event);
     if(!me)return Promise.reject(new Error('Niet ingelogd'));
     if(!task)return Promise.reject(new Error('Taak niet gevonden'));
-    if(!task.helpRequested)return Promise.reject(new Error('De hulpvraag is niet meer actief'));
-    if(!window.TaskSharedData||typeof TaskSharedData.update!=='function')return Promise.reject(new Error('Taakdata is nog niet klaar'));
-    var helpers=Array.isArray(task.helpers)?task.helpers.slice():[];
-    var exists=helpers.some(function(h){return String(h&&(h.uid||h.memberId||h.id)||'')===String(me);});
-    if(!exists){var m=member(me)||{},name=m.displayName||m.name||(window.myName||'Gezinslid');helpers.push({uid:me,memberId:me,name:name,initials:String(name).trim().split(/\s+/).map(function(p){return p.charAt(0);}).join('').slice(0,2).toUpperCase(),joinedAt:Date.now()});}
-    return TaskSharedData.update(task.id||task._key,{helpers:helpers}).then(function(saved){
+    if(!window.TaskSharedData||typeof TaskSharedData.joinHelp!=='function')return Promise.reject(new Error('Taakdata is nog niet klaar'));
+    var existed=Array.isArray(task.helpers)&&task.helpers.some(function(h){return String(h&&(h.uid||h.memberId||h.id)||'')===String(me);});
+    return TaskSharedData.joinHelp(task.id||task._key).then(function(saved){
       var requester=task.helpRequestedByUid||task.createdByUid||null;
-      if(!exists&&window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,requester).catch(function(){});
-      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(exists?'Je helpt al mee ✓':'Je bent aan de quest toegevoegd 🤝');return saved;});
+      if(!existed&&window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,requester).catch(function(){});
+      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(existed?'Je helpt al mee ✓':'Je bent aan de quest toegevoegd 🤝');return saved;});
     });
   }
 
