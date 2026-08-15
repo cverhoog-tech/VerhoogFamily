@@ -10,11 +10,9 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/modules/tasks/taskSharedData.js"></script>','<script src="src/modules/tasks/taskSharedData.js?v=3"></script>\n  <script src="src/modules/tasks/taskContextBoundary.js?v=1"></script>');
     html = html.replace('<script src="src/modules/tasks/personTabPremium.js"></script>','<script src="src/modules/tasks/personDashboardService.js?v=2"></script>\n  <script src="src/modules/tasks/personTabPremium.js?v=44"></script>');
     html = html.replace('<link rel="stylesheet" href="src/styles/quest.css">','<link rel="stylesheet" href="src/styles/quest.css">\n  <link rel="stylesheet" href="src/styles/personTabLayoutFix.css?v=2">\n  <link rel="stylesheet" href="src/styles/taskDetailControlFix.css?v=1">');
-    html = html.replace('<script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>','<script src="src/modules/tasks/taskCreateReadinessFix.js?v=3"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>\n  <script src="src/modules/tasks/taskCompactPrimary.js?v=1"></script>\n  <script src="src/modules/tasks/taskSwapRequests.js?v=2"></script>\n  <script src="src/modules/tasks/taskCategoryIcons.js?v=3"></script>\n  <script src="src/modules/tasks/taskHeroTemplates.js?v=6"></script>\n  <script src="src/core/progressionUidBridge.js?v=2"></script>\n  <script src="src/core/legacyXpOverwriteGuard.js?v=1"></script>\n  <script src="src/modules/achievements/achievementUidBridge.js?v=1"></script>\n  <script src="src/modules/tasks/taskRewardBridge.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestActiveView.js?v=5"></script>\n  <script src="src/modules/tasks/partyQuestCompletionReward.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestContextService.js?v=1"></script>\n  <script src="src/modules/tasks/partyQuestContextUi.js?v=1"></script>\n  <script src="src/modules/tasks/taskCompactLifecycle.js?v=1"></script>\n  <script src="src/modules/tasks/taskXpViewSync.js?v=1"></script>');
+    html = html.replace('<script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>','<script src="src/modules/tasks/taskCreateReadinessFix.js?v=3"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>\n  <script src="src/modules/tasks/taskCompactPrimary.js?v=1"></script>\n  <script src="src/modules/tasks/taskSwapRequests.js?v=2"></script>\n  <script src="src/modules/tasks/taskCategoryIcons.js?v=3"></script>\n  <script src="src/modules/tasks/taskHeroTemplates.js?v=6"></script>\n  <script src="src/core/progressionUidBridge.js?v=2"></script>\n  <script src="src/core/legacyXpOverwriteGuard.js?v=1"></script>\n  <script src="src/modules/achievements/achievementUidBridge.js?v=1"></script>\n  <script src="src/modules/tasks/taskRewardBridge.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestContextService.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestActiveContextView.js?v=1"></script>\n  <script src="src/modules/tasks/partyQuestCompletionReward.js?v=3"></script>\n  <script src="src/modules/tasks/partyQuestContextUi.js?v=1"></script>\n  <script src="src/modules/tasks/taskCompactLifecycle.js?v=1"></script>\n  <script src="src/modules/tasks/taskXpViewSync.js?v=1"></script>');
     html = html.replace('<script src="src/modules/achievements/achievements.js"></script>','<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>');
 
-    // Canonical Feed runtime: social post persistence -> renderer -> transient
-    // interaction state -> immutable household activity -> activity presentation.
     html = html.replace(
       '<script src="src/modules/feed/feed.js"></script>',
       '<script src="src/modules/feed/feedSharedData.js?v=4"></script>\n'
@@ -24,10 +22,6 @@ module.exports = async function handler(req, res) {
       + '  <script src="src/modules/feed/feedActivityPresentation.js?v=5"></script>'
     );
 
-    // Canonical household runtime. Load after duoQuests so HouseholdPlatform is
-    // the identity/membership authority and the hardening layer can replace the
-    // legacy auth/session lifecycle with context-safe listener cleanup.
-    // HouseholdContext + FamilyDataContract load last as the module-facing contract.
     html = html.replace(
       '<script src="src/modules/tasks/duoQuests.js"></script>',
       '<script src="src/modules/tasks/duoQuests.js"></script>\n'
