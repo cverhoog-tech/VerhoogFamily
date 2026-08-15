@@ -9,12 +9,20 @@
   window.__taskOverviewCanonicalV2=true;
 
   function taskEl(){ return document.getElementById('task-content'); }
+  function applyLifecycle(){
+    try{
+      if(window.TaskCompactLifecycle&&typeof window.TaskCompactLifecycle.apply==='function'){
+        window.TaskCompactLifecycle.apply(taskEl());
+      }
+    }catch(e){}
+  }
 
   function renderCompact(){
     try { window.taskTab='compact'; if(typeof taskTab!=='undefined') taskTab='compact'; } catch(e) {}
     var el=taskEl();
     if(el && window.TaskCompactHome && typeof window.TaskCompactHome.render==='function') {
       window.TaskCompactHome.render(el);
+      applyLifecycle();
       return true;
     }
     return false;

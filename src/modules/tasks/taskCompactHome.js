@@ -8,7 +8,7 @@
 (function(){
   if(window.__taskCompactHomeV22)return;
   window.__taskCompactHomeV22=true;
-  var state={range:'today',personUid:'all',sortDesc:false,expanded:{Vandaag:true,Morgen:true,Later:true},picker:false};
+  var state={range:'today',personUid:'all',sortDesc:false,expanded:{Verlopen:true,Vandaag:true,Morgen:true,Later:true,Voltooid:true},picker:false};
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
@@ -44,7 +44,17 @@
     Object.keys(inv).forEach(function(uid){var x=inv[uid];if(x&&x.status==='active')add(uid,x.name);});
     return out;
   }
-  function group(t){if(!t.date)return'Later';var d=new Date(t.date+'T00:00:00'),now=new Date();now.setHours(0,0,0,0);var diff=Math.round((d-now)/86400000);if(diff<=0)return'Vandaag';if(diff===1)return'Morgen';return'Later';}
+  function dayDiff(t){if(!t||!t.date)return null;var d=new Date(t.date+'T00:00:00'),now=new Date();now.setHours(0,0,0,0);return Math.round((d-now)/86400000);}
+  // Verlopen/Voltooid are first-class buckets computed here, at render time,
+  // from the same data every other group uses. Earlier this branch grouped
+  // tasks into Vandaag/Morgen/Later only and had a separate post-render layer
+  // (TaskCompactLifecycle) move overdue/done rows into extra DOM sections
+  // after the fact. That broke whenever a collapsed section had no rows in
+  // the DOM to move (section() only renders a group's rows when it is open),
+  // so "Verlopen" could silently lose its tasks depending on toggle state.
+  // Doing it here removes that failure mode entirely: every task always
+  // lands in exactly one deterministic bucket, regardless of collapse state.
+  function group(t){if(t.done)return'Voltooid';var diff=dayDiff(t);if(diff===null)return'Later';if(diff<0)return'Verlopen';if(diff===0)return'Vandaag';if(diff===1)return'Morgen';return'Later';}
   function withinRange(t){if(state.range==='all')return true;if(!t.date)return state.range==='all';var d=new Date(t.date+'T00:00:00'),now=new Date();now.setHours(0,0,0,0);var diff=Math.round((d-now)/86400000);if(state.range==='today')return diff<=0;return diff>=0&&diff<=7;}
   function xp(t){var m=String(t.xp||t.xpReward||('+'+(t.xpAmount||20)+' XP')).match(/(\d+)/);return m?parseInt(m[1],10):20;}
   function levelInfo(){var total=(Number(window.myXP)||0)+(Number(window.partnerXP)||0),need=200;return{level:Math.max(1,Math.floor(total/need)+1),into:total%need,need:need,streak:Number(window.currentStreak||window.streakCount||0)||0};}
@@ -55,19 +65,22 @@
   function personAvatars(people,limit){return people.slice(0,limit||3).map(function(p){var u=p.member&&avatar(p.member);return u?'<img class="tch-avatar" src="'+esc(u)+'" alt="'+esc(p.name)+'">':'<span class="tch-avatar">'+esc(initials(p.name))+'</span>';}).join('');}
   function header(){var lv=levelInfo(),pct=Math.round(lv.into/lv.need*100),ms=members();var av=ms.slice(0,4).map(function(m){var u=avatar(m),n=m.displayName||m.name||'Gezinslid';return u?'<img class="tch-party-avatar" src="'+esc(u)+'" alt="'+esc(n)+'">':'<span class="tch-party-avatar">'+esc(initials(n))+'</span>';}).join('');return'<section class="tch-header"><div class="tch-shield"><span style="position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;white-space:nowrap"><b style="margin:0;font-size:26px;line-height:1">'+lv.level+'</b><small style="margin:0;font-size:7px;line-height:1;letter-spacing:.7px">LEVEL</small></span></div><div class="tch-header-mid"><div class="tch-kicker">JOUW AVONTUUR</div><div class="tch-xp-row"><b>'+lv.into+'</b> / '+lv.need+' XP</div><div class="tch-xp-bar"><i class="tch-xp-fill" style="width:'+pct+'%"></i></div><div class="tch-streak">🔥 '+lv.streak+' dagen streak</div></div><div class="tch-party"><div class="tch-party-avatars">'+av+'</div><div class="tch-party-label">PARTY · '+ms.length+'</div></div></section>';}
   function filterBar(){var ms=members(),selected=state.personUid==='all'?null:member(state.personUid);var picker=state.picker?'<div class="tch-person-menu"><button data-person="all" class="'+(state.personUid==='all'?'active':'')+'">Alle personen</button>'+ms.map(function(m){var id=m.uid||m.id;return'<button data-person="'+esc(id)+'" class="'+(state.personUid===id?'active':'')+'">'+esc(m.displayName||m.name||'Gezinslid')+'</button>';}).join('')+'</div>':'';return'<div class="tch-filter-wrap"><div class="tch-filters">'+[['today','Vandaag'],['week','Deze week'],['all','Alles']].map(function(x){return'<button class="tch-chip '+(state.range===x[0]?'active':'')+'" data-range="'+x[0]+'">'+x[1]+'</button>';}).join('')+'<button class="tch-chip tch-person-trigger" id="tch-person-btn">👤 '+esc(selected?(selected.displayName||selected.name):'Alle personen')+'⌄</button><button class="tch-sort-btn" id="tch-sort-btn">'+(state.sortDesc?'↓':'↑')+'</button></div>'+picker+'</div>';}
-  function row(t){
+  function row(t,groupName){
     var normalPeople=assignees(t),q=partyQuestForTask(t),people=q?partyParticipants(q):normalPeople;
     var subs=Array.isArray(t.subtasks)?t.subtasks:[],done=subs.filter(function(s){return s&&s.done;}).length,cat=iconCategory(t);
     var avatars=personAvatars(people,3);
-    var meta=[dateMeta(t),q?('Party · '+(people.map(function(p){return p.name;}).join(', ')||'Groepsquest')):(normalPeople.map(function(p){return p.name;}).join(', ')||'Niet toegewezen')];
+    var dateText=groupName==='Voltooid'?'Voltooid':groupName==='Verlopen'?(function(){var days=Math.abs(dayDiff(t)||0);return'Verlopen · '+days+' '+(days===1?'dag':'dagen');})():dateMeta(t);
+    var meta=[dateText,q?('Party · '+(people.map(function(p){return p.name;}).join(', ')||'Groepsquest')):(normalPeople.map(function(p){return p.name;}).join(', ')||'Niet toegewezen')];
     if(subs.length)meta.push(done+'/'+subs.length+' stappen');
+    var overdueBadge=groupName==='Verlopen'?'<span class="tch-overdue-badge">VERLOPEN</span>':'';
     return'<article class="tch-row '+(t.done?'is-done ':'')+(q?'is-party':'')+'" data-task-id="'+esc(t.id)+'">'
       +'<button class="tch-check '+(t.done?'done':'')+'" data-quick-toggle="'+esc(t.id)+'">'+(t.done?'✓':'')+'</button>'
       +'<div class="tch-icon tch-icon--'+cat+'">'+iconSvg(cat)+'</div>'
-      +'<div class="tch-main"><div class="tch-name">'+esc(t.title||'Taak')+(q?'<span class="tch-party-tag">⚔ PARTY QUEST</span>':'')+'</div><div class="tch-meta">'+meta.map(function(x){return'<span>'+esc(x)+'</span>';}).join('<i>•</i>')+'</div></div>'
+      +'<div class="tch-main"><div class="tch-name">'+esc(t.title||'Taak')+overdueBadge+(q?'<span class="tch-party-tag">⚔ PARTY QUEST</span>':'')+'</div><div class="tch-meta">'+meta.map(function(x){return'<span>'+esc(x)+'</span>';}).join('<i>•</i>')+'</div></div>'
       +'<div class="tch-avatars">'+avatars+'</div><div class="tch-reward">+'+xp(t)+'<small>XP</small></div><div class="tch-chevron">›</div></article>';
   }
-  function section(name,list){var open=!!state.expanded[name];return'<section class="tch-group"><button class="tch-group-head" data-group-toggle="'+name+'"><span><b>'+name+'</b><em>'+list.length+' '+(list.length===1?'taak':'taken')+'</em></span><span class="tch-group-right"><span class="tch-group-add" data-quick-add="1">+ Taak</span><i>'+(open?'⌃':'⌄')+'</i></span></button>'+(open?(list.length?'<div class="tch-list">'+list.map(row).join('')+'</div>':'<div class="tch-empty">Geen quests in deze categorie.</div>'):'')+'</section>';}
+  function clearCompletedButton(){return'<span class="tch-group-add tch-clear-completed" data-clear-completed="1">Opschonen</span>';}
+  function section(name,list){var open=!!state.expanded[name];var extraCls=name==='Verlopen'?' tch-overdue-group':name==='Voltooid'?' tch-completed-group':'';var addBtn=name==='Voltooid'?clearCompletedButton():'<span class="tch-group-add" data-quick-add="1">+ Taak</span>';return'<section class="tch-group'+extraCls+'" data-life-group="'+name+'"><button class="tch-group-head" data-group-toggle="'+name+'"><span><b>'+name+'</b><em>'+list.length+' '+(list.length===1?'taak':'taken')+'</em></span><span class="tch-group-right">'+addBtn+'<i>'+(open?'⌃':'⌄')+'</i></span></button>'+(open?(list.length?'<div class="tch-list">'+list.map(function(t){return row(t,name);}).join('')+'</div>':'<div class="tch-empty">Geen quests in deze categorie.</div>'):'')+'</section>';}
   function loadingBody(){return'<div class="tch-loading"><div class="tch-loading-label">Taken synchroniseren…</div><div class="tch-skel"></div><div class="tch-skel"></div><div class="tch-skel"></div></div>';}
   function render(el){
     if(!el)el=document.getElementById('task-content');if(!el)return;
@@ -80,8 +93,8 @@
     var all=real.filter(withinRange);
     if(state.personUid!=='all')all=all.filter(function(t){var q=partyQuestForTask(t);if(q)return partyParticipants(q).some(function(p){return String(p.uid)===String(state.personUid);});return t.assignedToUids&&t.assignedToUids[state.personUid];});
     all.sort(function(a,b){var x=String(a.date||'9999'),y=String(b.date||'9999'),c=x.localeCompare(y);return state.sortDesc?-c:c;});
-    var g={Vandaag:[],Morgen:[],Later:[]};all.forEach(function(t){g[group(t)].push(t);});
-    el.innerHTML='<div class="tch-page"'+(window.__taskVisualPolishV11?'':' style="visibility:hidden"')+'><div class="tch-page-title"><div><span>QUEST LOG</span><h2>Taken</h2></div><button class="tch-add-top" data-quick-add="1">＋</button></div>'+header()+filterBar()+section('Vandaag',g.Vandaag)+section('Morgen',g.Morgen)+section('Later',g.Later)+'<button class="tch-party-card" id="tch-party-quest"><span class="tch-party-icon">⚔️</span><span><b>Party Quests</b><small>Werk samen en verdien bonus XP</small></span><i>›</i></button></div>';
+    var g={Verlopen:[],Vandaag:[],Morgen:[],Later:[],Voltooid:[]};all.forEach(function(t){g[group(t)].push(t);});
+    el.innerHTML='<div class="tch-page"'+(window.__taskVisualPolishV11?'':' style="visibility:hidden"')+'><div class="tch-page-title"><div><span>QUEST LOG</span><h2>Taken</h2></div><button class="tch-add-top" data-quick-add="1">＋</button></div>'+header()+filterBar()+section('Verlopen',g.Verlopen)+section('Vandaag',g.Vandaag)+section('Morgen',g.Morgen)+section('Later',g.Later)+section('Voltooid',g.Voltooid)+'<button class="tch-party-card" id="tch-party-quest"><span class="tch-party-icon">⚔️</span><span><b>Party Quests</b><small>Werk samen en verdien bonus XP</small></span><i>›</i></button></div>';
     bind(el);
   }
   function bind(el){
@@ -89,8 +102,9 @@
     var p=document.getElementById('tch-person-btn');if(p)p.onclick=function(){state.picker=!state.picker;render(el);};
     el.querySelectorAll('[data-person]').forEach(function(b){b.onclick=function(){state.personUid=b.dataset.person;state.picker=false;render(el);};});
     var sort=document.getElementById('tch-sort-btn');if(sort)sort.onclick=function(){state.sortDesc=!state.sortDesc;render(el);};
-    el.querySelectorAll('[data-group-toggle]').forEach(function(h){h.onclick=function(e){if(e.target.closest('[data-quick-add]'))return;var n=h.dataset.groupToggle;state.expanded[n]=!state.expanded[n];render(el);};});
+    el.querySelectorAll('[data-group-toggle]').forEach(function(h){h.onclick=function(e){if(e.target.closest('[data-quick-add]')||e.target.closest('[data-clear-completed]'))return;var n=h.dataset.groupToggle;state.expanded[n]=!state.expanded[n];render(el);};});
     el.querySelectorAll('[data-quick-add]').forEach(function(b){b.onclick=function(e){e.stopPropagation();if(window.TaskDetailPopup&&typeof window.TaskDetailPopup.openCreate==='function')window.TaskDetailPopup.openCreate();};});
+    el.querySelectorAll('[data-clear-completed]').forEach(function(b){b.onclick=function(e){e.stopPropagation();e.preventDefault();var done=realTasks().filter(function(t){return t&&t.done;});if(!done.length)return;if(!confirm('Alle '+done.length+' voltooide taken verwijderen?'))return;if(typeof window.deleteTask!=='function'){if(typeof window.showToast==='function')showToast('Opschonen is nog niet beschikbaar');return;}done.forEach(function(t){window.deleteTask(t.id);});if(typeof window.showToast==='function')showToast(done.length+' voltooide '+(done.length===1?'taak verwijderd':'taken verwijderd'));};});
     el.querySelectorAll('[data-quick-toggle]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var id=b.dataset.quickToggle,t=realTasks().find(function(x){return String(x.id)===String(id);}),subs=t&&Array.isArray(t.subtasks)?t.subtasks:[];if(subs.length&&!t.done&&!subs.every(function(s){return s.done;})){if(window.TaskDetailPopup)TaskDetailPopup.open(id);if(typeof window.showToast==='function')showToast('Voltooi eerst alle stappen');return;}if(typeof window.toggleTask==='function')window.toggleTask(id);};});
     el.querySelectorAll('[data-task-id]').forEach(function(r){r.onclick=function(e){if(e.target.closest('[data-quick-toggle]'))return;if(window.TaskDetailPopup)TaskDetailPopup.open(r.dataset.taskId);};});
     var party=document.getElementById('tch-party-quest');if(party)party.onclick=function(){if(window.PartyQuestActiveView&&PartyQuestActiveView.open)PartyQuestActiveView.open();else if(typeof window.showGQPopup==='function')showGQPopup('Groepsquest');};

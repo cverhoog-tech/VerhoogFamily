@@ -357,9 +357,13 @@ function renderMaandplan(){
     }).reduce(function(ss,l){return ss+l.amount;},0);
   },0);
 
-  var totaalInkomen = inkomenShane.amount + inkomenEsra.amount + eenmaligIn;
-  var totaalUit     = totalLasten + eenmaligOut + maandSparen;
-  var vrijBesteedbaar = totaalInkomen - totaalUit;
+  // FinanceStore.monthlySummary is the sole owner of this calculation (it
+  // also accounts for shopping/receipt transactions); fall back to a local
+  // estimate only if the store isn't ready yet.
+  var summary = (window.FinanceStore && typeof FinanceStore.monthlySummary === 'function') ? FinanceStore.monthlySummary(mpYear, mpMonth) : null;
+  var totaalInkomen = summary ? summary.totalIncome : (inkomenShane.amount + inkomenEsra.amount + eenmaligIn);
+  var totaalUit     = summary ? summary.totalExpenses : (totalLasten + eenmaligOut + maandSparen);
+  var vrijBesteedbaar = summary ? summary.disposable : (totaalInkomen - totaalUit);
 
   html+='<div style="background:var(--c-surface);margin:0;border-bottom:.5px solid var(--c-border)">'
     // Grote "Vrij besteedbaar" hero
@@ -535,13 +539,19 @@ function openSparenVanuitBudget() {
     return;
   }
 
-  // Calculate how much is free this month
-  var ymStr = mpYear+'-'+(mpMonth+1<10?'0':'')+(mpMonth+1);
-  var eenmaligIn  = extraIncome.filter(function(e){return e.date&&e.date.substring(0,7)===ymStr&&e.amount>0;}).reduce(function(s,e){return s+e.amount;},0);
-  var eenmaligOut = extraIncome.filter(function(e){return e.date&&e.date.substring(0,7)===ymStr&&e.amount<0;}).reduce(function(s,e){return s+Math.abs(e.amount);},0);
-  var maandSparen = savingsGoals.reduce(function(s,g){return s+(g.log||[]).filter(function(l){return l.date&&l.date.substring(0,7)===ymStr&&l.type==='deposit';}).reduce(function(ss,l){return ss+l.amount;},0);},0);
-  var totalLasten = vasteLasten.reduce(function(s,l){return s+l.amount;},0);
-  var vrij = (inkomenShane.amount+inkomenEsra.amount+eenmaligIn-eenmaligOut-totalLasten-maandSparen);
+  // Calculate how much is free this month. FinanceStore.monthlySummary is the
+  // sole owner of this calculation (it also accounts for shopping/receipt
+  // transactions); only fall back to a local estimate if the store isn't
+  // ready yet, so this sheet never shows a different number than Maandplan.
+  var summary = (window.FinanceStore && typeof FinanceStore.monthlySummary === 'function') ? FinanceStore.monthlySummary(mpYear, mpMonth) : null;
+  var vrij = summary ? summary.disposable : (function(){
+    var ymStr = mpYear+'-'+(mpMonth+1<10?'0':'')+(mpMonth+1);
+    var eenmaligIn  = extraIncome.filter(function(e){return e.date&&e.date.substring(0,7)===ymStr&&e.amount>0;}).reduce(function(s,e){return s+e.amount;},0);
+    var eenmaligOut = extraIncome.filter(function(e){return e.date&&e.date.substring(0,7)===ymStr&&e.amount<0;}).reduce(function(s,e){return s+Math.abs(e.amount);},0);
+    var maandSparen = savingsGoals.reduce(function(s,g){return s+(g.log||[]).filter(function(l){return l.date&&l.date.substring(0,7)===ymStr&&l.type==='deposit';}).reduce(function(ss,l){return ss+l.amount;},0);},0);
+    var totalLasten = vasteLasten.reduce(function(s,l){return s+l.amount;},0);
+    return (inkomenShane.amount+inkomenEsra.amount+eenmaligIn-eenmaligOut-totalLasten-maandSparen);
+  })();
 
   currentAddType = 'spaar_vanuit_budget';
   document.getElementById('sheet-title').textContent = '🏦 Bedrag opzij zetten';
