@@ -7,12 +7,14 @@ on:
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'src/core/householdInviteLifecycle.js'
+      - 'src/core/householdContext.js'
       - 'src/core/familyDataStore.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
+      - 'tests/household-context-contract.test.js'
       - 'tests/family-data-store-pending-context.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
@@ -21,17 +23,20 @@ on:
     branches:
       - main
       - agent/household-auth-hardening
+      - agent/household-context-foundation
     paths:
       - 'src/core/householdSessionHardening.js'
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'src/core/householdInviteLifecycle.js'
+      - 'src/core/householdContext.js'
       - 'src/core/familyDataStore.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
+      - 'tests/household-context-contract.test.js'
       - 'tests/family-data-store-pending-context.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
@@ -55,9 +60,11 @@ jobs:
           node --check src/core/householdIdentityFirebaseBridge.js
           node --check src/core/householdPlatform.js
           node --check src/core/householdInviteLifecycle.js
+          node --check src/core/householdContext.js
           node --check src/core/familyDataStore.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
+          node --check tests/household-context-contract.test.js
           node --check tests/family-data-store-pending-context.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
@@ -65,6 +72,8 @@ jobs:
         run: node tests/household-session-contract.test.js
       - name: Household account-switch behavior
         run: node tests/household-session-behavior.test.js
+      - name: Household context contract
+        run: node tests/household-context-contract.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
