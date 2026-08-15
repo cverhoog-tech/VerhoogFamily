@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v0.357
+// BOODSCHAPPEN v0.358
 // Grocery add flow + shopping receipt finance bridge.
 // ============================================================
 
@@ -32,7 +32,8 @@
     loadingPromise = Promise.resolve()
       .then(function(){ return loadScriptOnce('modal-manager-js', 'src/core/modalManager.js', function(){ return !!window.ModalManager; }); })
       .then(function(){ return loadScriptOnce('bottom-sheet-js', 'src/core/bottomSheet.js', function(){ return !!window.BottomSheet; }); })
-      .then(function(){ return loadScriptOnce('grocery-quick-add-modal-js', 'src/core/groceryQuickAddModal.js', function(){ return !!window.GroceryQuickAddModal; }); })
+      .then(function(){ return loadScriptOnce('grocery-product-classifier-js', 'src/modules/shop/groceryProductClassifier.js?v=1', function(){ return !!window.GroceryProductClassifier; }); })
+      .then(function(){ return loadScriptOnce('grocery-quick-add-modal-js', 'src/core/groceryQuickAddModal.js?v=2', function(){ return !!window.GroceryQuickAddModal; }); })
       .then(function(){ return loadScriptOnce('shopping-receipt-finance-js', 'src/modules/shop/shoppingReceiptFinance.js?v=3', function(){ return !!window.ShoppingReceiptFinance; }); })
       .then(function(){
         if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
