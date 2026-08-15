@@ -18,8 +18,8 @@ assert(!producers.includes('amount:'),'Receipt activity producer must not publis
 assert(!producers.includes('total:'),'Receipt activity producer must not publish total');
 assert(feed.includes('HouseholdActivity')||feed.includes('ActivityService'),'Feed must consume activity service rather than produce events');
 assert(!feed.includes('.publish('),'Feed presentation must not publish activity events');
-const serviceIndex=loader.indexOf('src/platform/activity/householdActivity.js?v=6');
-const producerIndex=loader.indexOf('src/platform/activity/activityDomainProducers.js?v=1');
-const feedIndex=loader.indexOf('src/modules/feed/feedActivityPresentation.js?v=5');
+const serviceIndex=loader.indexOf('src/platform/activity/householdActivity.js');
+const producerIndex=loader.indexOf('src/platform/activity/activityDomainProducers.js');
+const feedIndex=loader.indexOf('src/modules/feed/feedActivityPresentation.js');
 assert(serviceIndex>=0&&producerIndex>serviceIndex&&feedIndex>producerIndex,'Loader order must be ActivityService -> producers -> Feed presentation');
 console.log('activity-context-adoption: ok');
