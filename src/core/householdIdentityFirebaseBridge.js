@@ -6,6 +6,7 @@
   var membersRef = null;
   var presenceRef = null;
   var currentHouseholdId = null;
+  var currentUid = null;
   var lastMembers = {};
   var lastPresence = {};
   var bootTimer = null;
@@ -17,10 +18,24 @@
   function householdId(){ return window.fbFamilyId || null; }
   function initials(name){ return String(name || '?').split(/\s+/).filter(Boolean).map(function(part){ return part[0]; }).join('').slice(0,2).toUpperCase() || '?'; }
 
-  function detach(){
+  function notify(members){ subscribers.slice().forEach(function(fn){ try { fn((members||[]).slice()); } catch(e){ console.warn('[HouseholdIdentityFirebaseBridge] subscriber failed', e); } }); }
+
+  function detach(options){
+    options=options||{};
+    var hadState=!!(membersRef||presenceRef||currentHouseholdId||currentUid||Object.keys(lastMembers||{}).length||Object.keys(lastPresence||{}).length);
     try { if(membersRef) membersRef.off(); } catch(e){}
     try { if(presenceRef) presenceRef.off(); } catch(e){}
-    membersRef = null; presenceRef = null; currentHouseholdId = null; lastMembers = {}; lastPresence = {};
+    membersRef = null;
+    presenceRef = null;
+    currentHouseholdId = null;
+    currentUid = null;
+    lastMembers = {};
+    lastPresence = {};
+    migrationInFlight=false;
+    if(hadState && options.notify !== false) notify([]);
+    try {
+      if(hadState) window.dispatchEvent(new CustomEvent('familyapp:household-identity-detached',{detail:{reason:options.reason||'context-cleared'}}));
+    } catch(e){}
   }
 
   function normalizedMembers(){
@@ -41,14 +56,17 @@
     });
   }
 
-  function notify(members){ subscribers.slice().forEach(function(fn){ try { fn(members.slice()); } catch(e){ console.warn('[HouseholdIdentityFirebaseBridge] subscriber failed', e); } }); }
-
   function mirrorAuthoritativeOwnProfile(members){
     var u = authUser();
     if(!u) return;
     var mine = (members || []).find(function(member){ return member.uid === u.uid; });
     if(!mine) return;
     try {
+      var nameKey='familyapp-profile-v2:'+u.uid+':name';
+      var avatarKey='familyapp-profile-v2:'+u.uid+':avatar';
+      if(mine.name && localStorage.getItem(nameKey)!==mine.name) localStorage.setItem(nameKey,mine.name);
+      if(mine.avatar && localStorage.getItem(avatarKey)!==mine.avatar) localStorage.setItem(avatarKey,mine.avatar);
+      // Compatibility mirror only for the currently authenticated UID.
       if(mine.name && localStorage.getItem('familyapp-profile-name-v1') !== mine.name) localStorage.setItem('familyapp-profile-name-v1', mine.name);
       if(mine.avatar && localStorage.getItem('familyapp-current-user-avatar-v1') !== mine.avatar) localStorage.setItem('familyapp-current-user-avatar-v1', mine.avatar);
     } catch(e){}
@@ -70,27 +88,47 @@
       }
     }
     notify(members);
-    try { window.dispatchEvent(new CustomEvent('familyapp:household-identity-synced', { detail:{ householdId:currentHouseholdId, members:members } })); } catch(e){}
+    try { window.dispatchEvent(new CustomEvent('familyapp:household-identity-synced', { detail:{ householdId:currentHouseholdId, uid:currentUid, members:members } })); } catch(e){}
     return members.length > 0;
   }
 
-  function attach(hid){
+  function attach(hid,uid){
     var d = db();
-    if(!d || !hid) return false;
-    if(currentHouseholdId === hid && membersRef) return true;
-    detach(); currentHouseholdId = hid;
+    if(!d || !hid || !uid) return false;
+    if(currentHouseholdId === hid && currentUid===uid && membersRef) return true;
+    detach({reason:'context-switch'});
+    currentHouseholdId = hid;
+    currentUid = uid;
     membersRef = d.ref('families/' + hid + '/members');
     presenceRef = d.ref('families/' + hid + '/presence');
-    membersRef.on('value', function(snapshot){ lastMembers = snapshot.val() || {}; apply(); migrateOwnLegacyProfileOnce(); });
-    presenceRef.on('value', function(snapshot){ lastPresence = snapshot.val() || {}; apply(); });
+    membersRef.on('value', function(snapshot){
+      if(householdId()!==hid || !authUser() || authUser().uid!==uid){ detach({reason:'stale-member-callback'}); return; }
+      lastMembers = snapshot.val() || {}; apply(); migrateOwnLegacyProfileOnce();
+    });
+    presenceRef.on('value', function(snapshot){
+      if(householdId()!==hid || !authUser() || authUser().uid!==uid){ detach({reason:'stale-presence-callback'}); return; }
+      lastPresence = snapshot.val() || {}; apply();
+    });
     return true;
   }
 
-  function sync(){ var d=db(), u=authUser(), hid=householdId(); if(!d || !u || !hid) return false; attach(hid); apply(); return true; }
+  function sync(){
+    var d=db(), u=authUser(), hid=householdId();
+    if(!d || !u || !hid){
+      detach({reason:!u?'auth-missing':(!hid?'household-missing':'database-missing')});
+      return false;
+    }
+    if((currentUid && currentUid!==u.uid) || (currentHouseholdId && currentHouseholdId!==hid)) detach({reason:'context-switch'});
+    attach(hid,u.uid);
+    apply();
+    return true;
+  }
 
   function updateOwnMemberProfile(patch){
     var d=db(), u=authUser(), hid=householdId();
     if(!d || !u || !hid || !patch) return Promise.resolve(false);
+    if(currentUid && currentUid!==u.uid) return Promise.resolve(false);
+    if(currentHouseholdId && currentHouseholdId!==hid) return Promise.resolve(false);
     var clean = {};
     if(typeof patch.name === 'string' && patch.name.trim()) clean.name = patch.name.trim();
     if(typeof patch.avatar === 'string' && patch.avatar) clean.avatar = patch.avatar;
@@ -100,13 +138,22 @@
   }
 
   function legacyOwnProfile(){
-    var result = {};
-    try { var name=localStorage.getItem('familyapp-profile-name-v1'), avatar=localStorage.getItem('familyapp-current-user-avatar-v1'); if(name && name.trim()) result.name=name.trim(); if(avatar) result.avatar=avatar; } catch(e){}
+    var result = {},u=authUser();
+    if(!u) return result;
+    try {
+      var uidName=localStorage.getItem('familyapp-profile-v2:'+u.uid+':name');
+      var uidAvatar=localStorage.getItem('familyapp-profile-v2:'+u.uid+':avatar');
+      var name=uidName||localStorage.getItem('familyapp-profile-name-v1');
+      var avatar=uidAvatar||localStorage.getItem('familyapp-current-user-avatar-v1');
+      if(name && name.trim()) result.name=name.trim();
+      if(avatar) result.avatar=avatar;
+    } catch(e){}
     return result;
   }
   function migrationKey(hid,uid){ return 'familyapp-firebase-member-profile-migrated-v2:' + hid + ':' + uid; }
   function migrateOwnLegacyProfileOnce(){
     var u=authUser(), hid=householdId(); if(!u || !hid || migrationInFlight) return;
+    if(currentUid!==u.uid || currentHouseholdId!==hid) return;
     var key=migrationKey(hid,u.uid); try { if(localStorage.getItem(key) === '1') return; } catch(e){}
     var legacy=legacyOwnProfile(), server=(lastMembers&&lastMembers[u.uid])||{}, patch={};
     // One-way migration only fills fields that Firebase does not already own.
@@ -131,12 +178,13 @@
 
   window.addEventListener('focus',sync);
   window.addEventListener('online',sync);
+  window.addEventListener('familyapp:session:cleared',function(){ detach({reason:'session-cleared'}); });
   window.addEventListener('familyapp:avatar-updated',function(e){ var detail=(e&&e.detail)||{}, url=detail.url||''; if(url) updateOwnMemberProfile({avatar:url}).catch(function(err){ console.warn('[HouseholdIdentityFirebaseBridge] avatar sync failed',err); }); });
 
   window.HouseholdIdentityFirebaseBridge = {
-    version:'3.0', sync:sync, apply:apply, detach:detach, getMembers:function(){ return normalizedMembers(); },
+    version:'3.1', sync:sync, apply:apply, detach:detach, getMembers:function(){ return normalizedMembers(); },
     getCurrentUid:function(){ var u=authUser(); return u ? u.uid : null; }, subscribe:subscribe, updateOwnMemberProfile:updateOwnMemberProfile,
-    status:function(){ return { householdId:currentHouseholdId, attached:!!membersRef, memberCount:Object.keys(lastMembers||{}).length }; }
+    status:function(){ return { householdId:currentHouseholdId, uid:currentUid, attached:!!membersRef, memberCount:Object.keys(lastMembers||{}).length }; }
   };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
