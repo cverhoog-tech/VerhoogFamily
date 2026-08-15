@@ -14,28 +14,12 @@ on:
       - 'src/core/groceryQuickAddModal.js'
       - 'src/modules/tasks/**'
       - 'src/modules/shop/**'
-      - 'src/modules/calendar/calendarSharedLive.js'
-      - 'src/modules/calendar/calendarGoogleSync.js'
-      - 'src/modules/calendar/calendarMealPlanIntegration.js'
+      - 'src/modules/calendar/**'
+      - 'src/modules/recipes/**'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
-      - 'tests/household-session-contract.test.js'
-      - 'tests/household-session-behavior.test.js'
-      - 'tests/household-context-contract.test.js'
-      - 'tests/family-data-contract.test.js'
-      - 'tests/family-data-store-pending-context.test.js'
-      - 'tests/task-context-boundary.test.js'
-      - 'tests/task-context-adoption.test.js'
-      - 'tests/task-shared-context-rebind.test.js'
-      - 'tests/party-quest-context-service.test.js'
-      - 'tests/party-quest-context-adoption.test.js'
-      - 'tests/shopping-context-rebind.test.js'
-      - 'tests/shopping-context-adoption.test.js'
-      - 'tests/calendar-context-rebind.test.js'
-      - 'tests/calendar-context-adoption.test.js'
-      - 'tests/database-rules-removed-member.test.mjs'
-      - 'tests/database-rules-invite-lifecycle.test.mjs'
+      - 'tests/**'
       - '.github/workflows/household-session-contract.yml'
   push:
     branches:
@@ -54,28 +38,12 @@ on:
       - 'src/core/groceryQuickAddModal.js'
       - 'src/modules/tasks/**'
       - 'src/modules/shop/**'
-      - 'src/modules/calendar/calendarSharedLive.js'
-      - 'src/modules/calendar/calendarGoogleSync.js'
-      - 'src/modules/calendar/calendarMealPlanIntegration.js'
+      - 'src/modules/calendar/**'
+      - 'src/modules/recipes/**'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
-      - 'tests/household-session-contract.test.js'
-      - 'tests/household-session-behavior.test.js'
-      - 'tests/household-context-contract.test.js'
-      - 'tests/family-data-contract.test.js'
-      - 'tests/family-data-store-pending-context.test.js'
-      - 'tests/task-context-boundary.test.js'
-      - 'tests/task-context-adoption.test.js'
-      - 'tests/task-shared-context-rebind.test.js'
-      - 'tests/party-quest-context-service.test.js'
-      - 'tests/party-quest-context-adoption.test.js'
-      - 'tests/shopping-context-rebind.test.js'
-      - 'tests/shopping-context-adoption.test.js'
-      - 'tests/calendar-context-rebind.test.js'
-      - 'tests/calendar-context-adoption.test.js'
-      - 'tests/database-rules-removed-member.test.mjs'
-      - 'tests/database-rules-invite-lifecycle.test.mjs'
+      - 'tests/**'
       - '.github/workflows/household-session-contract.yml'
 
 permissions:
@@ -116,6 +84,11 @@ jobs:
           node --check src/modules/calendar/calendarSharedLive.js
           node --check src/modules/calendar/calendarGoogleSync.js
           node --check src/modules/calendar/calendarMealPlanIntegration.js
+          node --check src/modules/recipes/recipeSharedLive.js
+          node --check src/modules/recipes/recipeManageAndImageBridge.js
+          node --check src/modules/recipes/recipeEditorPopup.js
+          node --check src/modules/recipes/recipeLinkImport.js
+          node --check src/modules/recipes/recipes.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/household-context-contract.test.js
@@ -130,6 +103,8 @@ jobs:
           node --check tests/shopping-context-adoption.test.js
           node --check tests/calendar-context-rebind.test.js
           node --check tests/calendar-context-adoption.test.js
+          node --check tests/recipe-context-rebind.test.js
+          node --check tests/recipe-context-adoption.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -158,6 +133,10 @@ jobs:
         run: node tests/calendar-context-rebind.test.js
       - name: Calendar context adoption
         run: node tests/calendar-context-adoption.test.js
+      - name: Recipe context rebind
+        run: node tests/recipe-context-rebind.test.js
+      - name: Recipe context adoption
+        run: node tests/recipe-context-adoption.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
