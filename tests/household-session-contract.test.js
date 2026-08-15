@@ -33,9 +33,9 @@ must(session,/familyapp-profile-v2:/,'UID-scoped profile cache exists');
 must(bridge,/familyapp-profile-v2:/,'identity bridge uses UID-scoped profile cache');
 
 // Identity bridge must detach when auth/household context disappears or switches.
-must(bridge,/if\(!d \|\| !u \|\| !hid\)\s*\{[\s\S]*?detach\(\{reason:/,'identity sync detaches when context is missing');
-must(bridge,/currentUid&&currentUid!==u\.uid/,'identity bridge checks UID context switch');
-must(bridge,/currentHouseholdId&&currentHouseholdId!==hid/,'identity bridge checks household context switch');
+must(bridge,/if\(!d\s*\|\|\s*!u\s*\|\|\s*!hid\)\s*\{[\s\S]*?detach\(\{reason:/,'identity sync detaches when context is missing');
+must(bridge,/currentUid\s*&&\s*currentUid\s*!==\s*u\.uid/,'identity bridge checks UID context switch');
+must(bridge,/currentHouseholdId\s*&&\s*currentHouseholdId\s*!==\s*hid/,'identity bridge checks household context switch');
 must(bridge,/stale-member-callback/,'member callbacks reject stale context');
 must(bridge,/stale-presence-callback/,'presence callbacks reject stale context');
 must(bridge,/familyapp:session:cleared/,'identity bridge listens for session teardown');
