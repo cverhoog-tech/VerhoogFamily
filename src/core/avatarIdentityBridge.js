@@ -2,7 +2,7 @@
 // ============================================================
 // FAMILYAPP AVATAR IDENTITY BRIDGE v2
 // Presentation-only avatar resolver backed by ProfileContextService.
-// No legacy name/localStorage identity authority and no Firebase writes.
+// No legacy name/browser-storage identity authority and no Firebase writes.
 // ============================================================
 (function(){
   if(window.__familyAvatarIdentityBridgeV2)return;
