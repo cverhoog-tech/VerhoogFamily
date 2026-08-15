@@ -6,6 +6,7 @@ on:
       - 'src/core/householdSessionHardening.js'
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
+      - 'src/core/householdInviteLifecycle.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -22,6 +23,7 @@ on:
       - 'src/core/householdSessionHardening.js'
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
+      - 'src/core/householdInviteLifecycle.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -48,6 +50,7 @@ jobs:
           node --check src/core/householdSessionHardening.js
           node --check src/core/householdIdentityFirebaseBridge.js
           node --check src/core/householdPlatform.js
+          node --check src/core/householdInviteLifecycle.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/database-rules-removed-member.test.mjs
