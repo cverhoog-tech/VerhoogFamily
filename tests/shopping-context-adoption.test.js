@@ -6,6 +6,7 @@ function read(p){return fs.readFileSync(p,'utf8');}
 const lists=read('src/modules/shop/shoppingLists.js');
 const shop=read('src/modules/shop/shop.js');
 const add=read('src/core/foodAddBridge.js');
+const quick=read('src/core/groceryQuickAddModal.js');
 const service=read('src/modules/shop/shoppingListService.js');
 const receipt=read('src/modules/shop/shoppingReceiptFinance.js');
 
@@ -18,6 +19,11 @@ assert(!shop.includes("HouseholdRepository.write('groceries'"),'shop.js must not
 assert(!add.includes('localStorage.setItem('),'FoodAddBridge must not persist shopping authority');
 assert(!add.includes("HouseholdRepository.write('groceries'"),'FoodAddBridge must not write legacy groceries authority');
 assert(add.includes('ShoppingLists'),'FoodAddBridge must delegate to ShoppingLists');
+assert(quick.includes('ShoppingLists.addItem'),'Quick Add must delegate to ShoppingLists');
+assert(quick.includes('HouseholdContext'),'Quick Add must capture household context');
+assert(quick.includes('GroceryProductClassifier'),'Quick Add must use the central classifier');
+assert(!quick.includes('localStorage.setItem('),'Quick Add must not persist shopping authority');
+assert(!quick.includes("HouseholdRepository.write('groceries'"),'Quick Add must not write legacy groceries authority');
 assert(service.includes('HouseholdContext'),'ShoppingListService must capture household context');
 assert(service.includes('SHOPPING_CONTEXT_CHANGED'),'ShoppingListService must reject stale commands');
 assert(receipt.includes('HouseholdContext'),'shopping receipt must capture household context');
