@@ -25,37 +25,69 @@
       '.nc-actions{display:flex;gap:7px;margin-top:9px}',
       '.nc-action{border:0;border-radius:10px;padding:8px 11px;background:var(--c-primary);color:#fff;font-size:11px;font-weight:900;cursor:pointer;touch-action:manipulation}',
       '.nc-action.is-danger{background:#7f1d1d}',
-      '.nc-dot{width:7px;height:7px;border-radius:50%;background:var(--c-primary);flex:0 0 auto;margin-top:7px}'
+      '.nc-dot{width:7px;height:7px;border-radius:50%;background:var(--c-primary);flex:0 0 auto;margin-top:7px}',
+      '.nc-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:9.5px;font-weight:900;letter-spacing:.3px;margin-top:5px}',
+      '.nc-pill.is-open{background:#fef3c7;color:#92400e}',
+      '.nc-pill.is-success{background:#dcfce7;color:#166534}',
+      '.nc-pill.is-muted{background:var(--c-surface2);color:var(--c-text2)}',
+      '.nc-detail-overlay{position:fixed;inset:0;z-index:9600;background:rgba(8,7,15,.5);display:flex;align-items:flex-end;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .18s}',
+      '.nc-detail-overlay.open{opacity:1;pointer-events:auto}',
+      '.nc-detail-card{width:min(400px,100%);border-radius:20px;background:var(--c-surface);border:1.5px solid var(--c-border);box-shadow:0 20px 50px rgba(20,10,40,.25);padding:16px;transform:translateY(14px);transition:transform .2s}',
+      '.nc-detail-overlay.open .nc-detail-card{transform:translateY(0)}',
+      '.nc-detail-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}',
+      '.nc-detail-title{font-size:14px;font-weight:900;color:var(--c-text)}',
+      '.nc-detail-status{font-size:10.5px;font-weight:800;color:var(--c-primary);margin-top:2px;text-transform:uppercase;letter-spacing:.4px}',
+      '.nc-detail-close{margin-left:auto;background:none;border:0;font-size:14px;color:var(--c-text2);cursor:pointer;padding:4px}',
+      '.nc-detail-body{font-size:13px;color:var(--c-text2);line-height:1.45;margin-bottom:12px}',
+      '.nc-detail-actions{display:flex;gap:8px}',
+      '.nc-detail-btn{flex:1;border:0;border-radius:12px;padding:11px;font-size:12.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff}',
+      '.nc-detail-btn.is-danger{background:#7f1d1d;color:#fff}'
     ].join('\n');document.head.appendChild(s);
   }
-  function isPartyInviteStillPending(n){
-    var questId=n&&n.data&&n.data.questId,uid=me();
-    if(!questId||!uid||!window.PartyQuestInvites||typeof PartyQuestInvites.getById!=='function')return false;
-    var q=PartyQuestInvites.getById(questId),inv=q&&q.invitees&&q.invitees[uid];
-    return !!(inv&&inv.status==='pending');
+  function pillClassFor(state){
+    if(state.actions&&state.actions.length)return'is-open';
+    var s=String(state.statusLabel||'');
+    if(/Geaccepteerd|helpt al mee/i.test(s))return'is-success';
+    if(/Geweigerd|Ingetrokken|niet meer|Al ingetrokken|niet gevonden/i.test(s))return'is-muted';
+    return'';
+  }
+  // Tapping a card opens a small detail sheet with the real status
+  // (open/geaccepteerd/geweigerd/ingetrokken/niet meer actief) and, if
+  // still applicable, the matching action(s) — instead of the card being a
+  // dead end besides mark-read.
+  function closeDetail(){var o=document.getElementById('nc-detail-popover');if(o){o.classList.remove('open');setTimeout(function(){if(o.parentNode)o.parentNode.removeChild(o);},160);}document.removeEventListener('keydown',detailEsc,true);}
+  function detailEsc(e){if(e.key==='Escape')closeDetail();}
+  function openDetail(n){
+    var stale=document.getElementById('nc-detail-popover');if(stale&&stale.parentNode)stale.parentNode.removeChild(stale);
+    var state=window.NotificationActions&&NotificationActions.describeStatus?NotificationActions.describeStatus(n):{statusLabel:'',detail:n.body||'',actions:[]};
+    var actionsHtml=state.actions&&state.actions.length?('<div class="nc-detail-actions">'+state.actions.map(function(a){return '<button type="button" class="nc-detail-btn'+(a.cls?' '+a.cls:'')+'" data-detail-action="'+esc(a.action)+'">'+esc(a.label)+'</button>';}).join('')+'</div>'):'';
+    var o=document.createElement('div');o.id='nc-detail-popover';o.className='nc-detail-overlay';
+    o.innerHTML='<div class="nc-detail-card"><div class="nc-detail-head"><div class="nc-icon" style="background:'+esc(n.bg||'#ede9fe')+'">'+iconHtml(n)+'</div><div style="flex:1;min-width:0"><div class="nc-detail-title">'+esc(n.title||'Melding')+'</div>'+(state.statusLabel?'<div class="nc-detail-status">'+esc(state.statusLabel)+'</div>':'')+'</div><button type="button" class="nc-detail-close" data-detail-close="1">✕</button></div><div class="nc-detail-body">'+esc(state.detail||n.body||'')+'</div>'+actionsHtml+'</div>';
+    document.body.appendChild(o);
+    o.onclick=function(e){if(e.target===o)closeDetail();};
+    o.querySelector('[data-detail-close]').onclick=closeDetail;
+    o.querySelectorAll('[data-detail-action]').forEach(function(btn){
+      btn.onclick=function(){
+        var action=btn.getAttribute('data-detail-action');
+        Array.prototype.forEach.call(o.querySelectorAll('[data-detail-action]'),function(b){b.disabled=true;});
+        NotificationActions.run(n,action).then(function(){closeDetail();render();}).catch(function(err){Array.prototype.forEach.call(o.querySelectorAll('[data-detail-action]'),function(b){b.disabled=false;});if(typeof window.showToast==='function')window.showToast((err&&err.message)||'Actie mislukt');});
+      };
+    });
+    requestAnimationFrame(function(){o.classList.add('open');});
+    document.addEventListener('keydown',detailEsc,true);
+    if(window.NotificationStore&&n.id)NotificationStore.markRead(n.id).then(render);
   }
   function itemHtml(n){
     var uid=me(),read=!!(uid&&n.readBy&&n.readBy[uid]);
-    var actionable=!!(window.NotificationActions&&NotificationActions.isActionable&&NotificationActions.isActionable(n));
-    var isPartyInvite=n.type==='partyQuest.created',pendingInvite=isPartyInvite&&isPartyInviteStillPending(n);
-    var label=actionable&&!isPartyInvite&&NotificationActions.actionLabel?NotificationActions.actionLabel(n):'Openen';
+    var state=window.NotificationActions&&NotificationActions.describeStatus?NotificationActions.describeStatus(n):{statusLabel:'',detail:'',actions:[]};
+    var pillCls=pillClassFor(state);
     var actor=n.actor&&n.actor.name?esc(n.actor.name)+' · ':'';
     var time=n.createdAt?new Date(n.createdAt).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    var danger=n.type==='partyQuest.invitation.sent';
-    var actionsHtml='';
-    if(isPartyInvite&&pendingInvite){
-      // Two explicit actions instead of the generic single-button model:
-      // this is the same accept/decline pair the auto-popup and Taken
-      // party card use (PartyQuestInvites.respond), just also reachable
-      // from the notification the invitee actually receives.
-      actionsHtml='<div class="nc-actions"><button type="button" class="nc-action is-danger" data-notif-action="decline">Weigeren</button><button type="button" class="nc-action" data-notif-action="accept">Accepteren</button></div>';
-    }else if(actionable){
-      actionsHtml='<div class="nc-actions"><button type="button" class="nc-action'+(danger?' is-danger':'')+'" data-notif-action="run">'+esc(label)+'</button></div>';
-    }
     return '<article class="nc-item'+(read?' is-read':'')+'" data-notif-id="'+esc(n.id)+'">'
       +'<div class="nc-icon" style="background:'+esc(n.bg||'#ede9fe')+'">'+iconHtml(n)+'</div>'
-      +'<div class="nc-copy"><div class="nc-title">'+esc(n.title||'Melding')+'</div><div class="nc-body">'+esc(n.body||'')+'</div><div class="nc-meta">'+actor+esc(time)+'</div>'
-      +actionsHtml+'</div>'
+      +'<div class="nc-copy"><div class="nc-title">'+esc(n.title||'Melding')+'</div><div class="nc-body">'+esc(n.body||'')+'</div>'
+      +(state.statusLabel?'<span class="nc-pill'+(pillCls?' '+pillCls:'')+'">'+esc(state.statusLabel)+'</span>':'')
+      +'<div class="nc-meta">'+actor+esc(time)+'</div></div>'
       +(!read?'<span class="nc-dot"></span>':'')+'</article>';
   }
   function render(){
@@ -68,15 +100,11 @@
   function install(){
     ensureStyles();window.renderNotifs=render;window.clearNotifs=function(){return window.NotificationStore?NotificationStore.markAllRead().then(render):Promise.resolve();};
     document.addEventListener('click',function(ev){
-      var btn=ev.target&&ev.target.closest&&ev.target.closest('#notif-list [data-notif-action]');
-      if(btn){
-        var row=btn.closest('[data-notif-id]');var event=window.NotificationActions&&NotificationActions.byId?NotificationActions.byId(row&&row.getAttribute('data-notif-id')):null;
-        ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();if(!event)return;
-        var action=btn.getAttribute('data-notif-action');
-        btn.disabled=true;
-        NotificationActions.run(event,action).then(render).catch(function(err){console.warn('[NotificationCenter]',err);btn.disabled=false;if(typeof window.showToast==='function')window.showToast((err&&err.message)||'Actie uitvoeren mislukt');});return;
-      }
-      var row=ev.target&&ev.target.closest&&ev.target.closest('#notif-list [data-notif-id]');if(row&&window.NotificationStore)NotificationStore.markRead(row.getAttribute('data-notif-id')).then(render);
+      var row=ev.target&&ev.target.closest&&ev.target.closest('#notif-list [data-notif-id]');
+      if(!row)return;
+      var event=window.NotificationActions&&NotificationActions.byId?NotificationActions.byId(row.getAttribute('data-notif-id')):null;
+      if(!event)return;
+      openDetail(event);
     },true);
     window.addEventListener('familyapp:notifications-changed',render);
     window.addEventListener('familyapp:party-quests-updated',render);
