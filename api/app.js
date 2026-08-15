@@ -55,10 +55,11 @@ module.exports = async function handler(req, res) {
     // collection. Load it before feed.js so window.FeedSharedData exists by
     // the time the UI's mutation handlers can be invoked. The old
     // feedSharedLive.js patch-and-poll layer (whole-array overwrites) is
-    // retired and no longer served.
+    // retired and no longer served. Version bumped to force a fresh deploy
+    // and rule out a stale Vercel production build serving pre-rewrite code.
     html = html.replace(
       '<script src="src/modules/feed/feed.js"></script>',
-      '<script src="src/modules/feed/feedSharedData.js?v=1"></script>\n  <script src="src/modules/feed/feed.js?v=3"></script>'
+      '<script src="src/modules/feed/feedSharedData.js?v=2"></script>\n  <script src="src/modules/feed/feed.js?v=4"></script>'
     );
 
     // Load these last so no older integration can restore retired renderers or
