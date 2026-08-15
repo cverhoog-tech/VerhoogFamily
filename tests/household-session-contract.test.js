@@ -11,32 +11,34 @@ const bridge=read('src/core/householdIdentityFirebaseBridge.js');
 const app=read('api/app.js');
 
 // Session lifecycle must explicitly own and detach the legacy household listener.
-must(session,/syncRef\.off\('value',syncHandler\)/,'legacy family value listener is detached');
-must(session,/currentUid\(\)!==uid\s*\|\|\s*currentHousehold\(\)!==hid/,'late family callbacks are context-guarded');
-must(session,/stopBoundContext\(/,'old bound context has a dedicated cleanup path');
-must(session,/clearRuntimeState\(\)/,'shared runtime state is cleared on auth/session teardown');
+must(session,/syncRef\s*&&\s*syncHandler[\s\S]*syncRef\.off\('value',syncHandler\)/,'legacy family value listener is detached');
+must(session,/if\(uid\(\)!==currentUid\|\|hid\(\)!==currentHid\)/,'late family callbacks are context-guarded');
+must(session,/function stopBoundContext\(/,'old bound context has a dedicated cleanup path');
+must(session,/function clearSharedRuntime\(/,'shared runtime state is cleared on auth/session teardown');
 
 // Logout/account-switch must clean identity + presence context.
 must(session,/detachIdentity\(\)/,'identity bridge detached during session cleanup');
-must(session,/stopPresence\(/,'presence cleanup exists');
+must(session,/stopPresence\(context\)/,'presence cleanup participates in bound-context cleanup');
 must(session,/auth-account-switch/,'account switch cleanup is explicit');
 must(session,/auth-signed-out/,'signed-out cleanup is explicit');
 
 // Modern households require an active membership; stale pointers are removed.
 must(session,/member\.status\s*!==\s*'active'/,'active membership gate exists');
 must(session,/HOUSEHOLD_ACCESS_REVOKED/,'revoked membership has explicit error state');
-must(session,/activeHouseholdId'\]=null|activeHouseholdId.*null/,'stale active household pointer is cleared');
+must(session,/activeHouseholdId'\]\s*=\s*null/,'stale active household pointer is cleared');
+must(session,/familyId'\]\s*=\s*null/,'stale legacy household pointer is cleared');
 
 // Authenticated profile cache must be UID scoped.
 must(session,/familyapp-profile-v2:/,'UID-scoped profile cache exists');
 must(bridge,/familyapp-profile-v2:/,'identity bridge uses UID-scoped profile cache');
 
 // Identity bridge must detach when auth/household context disappears or switches.
-must(bridge,/if\(!d \|\| !u \|\| !hid\)\s*\{[\s\S]*detach\(/,'identity sync detaches when context is missing');
-must(bridge,/currentUid\s*!==\s*u\.uid|currentUid&&currentUid!==u\.uid/,'identity bridge checks UID context switch');
-must(bridge,/currentHouseholdId\s*!==\s*hid|currentHouseholdId&&currentHouseholdId!==hid/,'identity bridge checks household context switch');
+must(bridge,/if\(!d \|\| !u \|\| !hid\)\s*\{[\s\S]*?detach\(\{reason:/,'identity sync detaches when context is missing');
+must(bridge,/currentUid&&currentUid!==u\.uid/,'identity bridge checks UID context switch');
+must(bridge,/currentHouseholdId&&currentHouseholdId!==hid/,'identity bridge checks household context switch');
 must(bridge,/stale-member-callback/,'member callbacks reject stale context');
 must(bridge,/stale-presence-callback/,'presence callbacks reject stale context');
+must(bridge,/familyapp:session:cleared/,'identity bridge listens for session teardown');
 
 // Vercel app loader must load canonical household runtime after legacy auth module.
 const duoIndex=app.indexOf('src/modules/tasks/duoQuests.js');
