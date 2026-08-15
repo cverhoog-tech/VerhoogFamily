@@ -10,6 +10,7 @@ on:
       - 'src/core/householdContext.js'
       - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
+      - 'src/modules/tasks/taskContextBoundary.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -18,6 +19,7 @@ on:
       - 'tests/household-context-contract.test.js'
       - 'tests/family-data-contract.test.js'
       - 'tests/family-data-store-pending-context.test.js'
+      - 'tests/task-context-boundary.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -34,6 +36,7 @@ on:
       - 'src/core/householdContext.js'
       - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
+      - 'src/modules/tasks/taskContextBoundary.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -42,6 +45,7 @@ on:
       - 'tests/household-context-contract.test.js'
       - 'tests/family-data-contract.test.js'
       - 'tests/family-data-store-pending-context.test.js'
+      - 'tests/task-context-boundary.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -67,11 +71,13 @@ jobs:
           node --check src/core/householdContext.js
           node --check src/core/familyDataContract.js
           node --check src/core/familyDataStore.js
+          node --check src/modules/tasks/taskContextBoundary.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/household-context-contract.test.js
           node --check tests/family-data-contract.test.js
           node --check tests/family-data-store-pending-context.test.js
+          node --check tests/task-context-boundary.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -82,6 +88,8 @@ jobs:
         run: node tests/household-context-contract.test.js
       - name: Family data contract
         run: node tests/family-data-contract.test.js
+      - name: Task context boundary
+        run: node tests/task-context-boundary.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
