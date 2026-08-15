@@ -23,19 +23,15 @@ var FEED_IMAGES = {
 // is purely the renderer/UI: it reads window.feedData and calls FeedSharedData
 // methods to create/delete/react/comment. Nothing here writes the whole array
 // back — see FASE 2/3 of the feed rebuild for why that mattered.
+//
+// Deliberately no localStorage warm-start here: an old cache could still hold
+// placeholder/demo content from before this rebuild, and briefly (or, if
+// FeedSharedData never attaches, indefinitely) showing that would look
+// exactly like the "stuck on placeholders" bug this exists to prevent.
+// feedData starts empty; renderFeed() shows a loading state until
+// FeedSharedData's first real snapshot arrives, then real posts or an
+// empty state — never stale local content.
 var feedData = [];
-
-// Local cache only — never treated as authority. FeedSharedData overwrites
-// window.feedData from Firebase on every realtime update; this is purely a
-// warm-start so the screen isn't empty for a split second while that first
-// snapshot loads.
-(function primeFeedFromCache(){
-  try {
-    var cached = JSON.parse(localStorage.getItem('fam_feed_v2') || 'null');
-    if (Array.isArray(cached) && cached.length) feedData = cached;
-  } catch(e) {}
-})();
-function saveFeedCache(){try{localStorage.setItem('fam_feed_v2',JSON.stringify(feedData));}catch(e){}}
 function escHtml(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function myPhotoUrl(){try{return firebase.auth().currentUser && firebase.auth().currentUser.photoURL;}catch(e){return null;}}
 
@@ -117,7 +113,32 @@ function svgIcon(type){
 }
 function icon(type){return '<div class="fs-icon '+(type||'post')+'">'+svgIcon(type||'post')+'</div>';}
 
-function renderFeed(){installFeedCSS();decorateCompose();var el=document.getElementById('feed-list');if(!el)return;var av=document.getElementById('compose-avatar');if(av){av.className='fs-compose-avatar';av.innerHTML=avatarHTML(myName,myInitials,myColor,'fs-compose-avatar-inner');av.style.background='transparent';}el.innerHTML=topHTML()+filteredFeed().map(renderPostHTML).join('');wireCompose();wireCommentInputs();}
+function feedSyncStatus(){
+  try { return window.FeedSharedData ? window.FeedSharedData.status() : null; }
+  catch(e) { return null; }
+}
+function feedListBodyHTML(){
+  var st = feedSyncStatus();
+  // No FeedSharedData loaded yet, or it's loaded but hasn't attached/received
+  // its first snapshot: show a loading state. Never render leftover/placeholder
+  // content while we don't actually know the household's real Feed yet.
+  if (!st || !st.hasSnapshot) {
+    return '<div class="fs-feed-loading" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)">'
+      + '<div style="font-size:28px;margin-bottom:8px">⏳</div>'
+      + '<div style="font-size:14px;font-weight:600">Feed wordt verbonden...</div>'
+      + '</div>';
+  }
+  var posts = filteredFeed();
+  if (!posts.length) {
+    return '<div class="fs-feed-empty" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)">'
+      + '<div style="font-size:28px;margin-bottom:8px">💬</div>'
+      + '<div style="font-size:14px;font-weight:600">Nog geen berichten</div>'
+      + '<div style="font-size:12px;margin-top:4px">Deel iets met het gezin hierboven</div>'
+      + '</div>';
+  }
+  return posts.map(renderPostHTML).join('');
+}
+function renderFeed(){installFeedCSS();decorateCompose();var el=document.getElementById('feed-list');if(!el)return;var av=document.getElementById('compose-avatar');if(av){av.className='fs-compose-avatar';av.innerHTML=avatarHTML(myName,myInitials,myColor,'fs-compose-avatar-inner');av.style.background='transparent';}el.innerHTML=topHTML()+feedListBodyHTML();wireCompose();wireCommentInputs();}
 
 window.openFeedShortcut = function openFeedShortcut(type){
   var target = { task:'tasks', agenda:'cal', shop:'shop', updates:'feed' }[type] || type;
