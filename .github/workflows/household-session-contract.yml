@@ -12,6 +12,7 @@ on:
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
+      - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
   push:
     branches:
@@ -27,6 +28,7 @@ on:
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
+      - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
 
 permissions:
@@ -49,6 +51,7 @@ jobs:
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/database-rules-removed-member.test.mjs
+          node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
         run: node tests/household-session-contract.test.js
       - name: Household account-switch behavior
@@ -57,3 +60,5 @@ jobs:
         run: npm install --no-save --no-package-lock firebase@12 @firebase/rules-unit-testing@5 firebase-tools@14
       - name: Removed-member Realtime Database rules
         run: npx firebase emulators:exec --only database --project demo-familyapp-household-isolation "node tests/database-rules-removed-member.test.mjs"
+      - name: Invite lifecycle Realtime Database rules
+        run: npx firebase emulators:exec --only database --project demo-familyapp-invite-lifecycle "node tests/database-rules-invite-lifecycle.test.mjs"
