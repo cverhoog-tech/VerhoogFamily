@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// SHARED TASK DATA FOUNDATION v1.3
+// SHARED TASK DATA FOUNDATION v1.3.1
 // Firebase shared/tasks is authoritative for household tasks.
 // window.taskData remains a compatibility projection for existing UI/progression code.
 // Bootstrap is deterministic and event-driven; no polling loop.
@@ -54,6 +54,7 @@
   function remove(id){if(!ready())return Promise.reject(new Error('Shared task store is not ready'));return fds().writeSharedRecord(COLLECTION,recordKeyFor(id),null);}
 
   function isAssignedTo(task,userId){var id=String(userId||'');if(!task||!id)return false;if(task.assignedToUids&&task.assignedToUids[id])return true;if(String(task.assignedToUid||'')===id)return true;return false;}
+  function isTaskOwner(task,userId){var id=String(userId||'');if(!task||!id)return false;return isAssignedTo(task,id)||String(task.createdByUid||'')===id||String(task.helpRequestedByUid||'')===id;}
   function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
   function mutateCollaboration(id,mutator){
     if(!ready())return Promise.reject(new Error('Shared task store is not ready'));
@@ -65,7 +66,7 @@
     var me=uid();if(!me)return Promise.reject(new Error('Niet ingelogd'));
     return mutateCollaboration(id,function(row){
       if(!row.helpRequested)throw new Error('De hulpvraag is niet meer actief');
-      if(isAssignedTo(row,me))throw new Error('Je bent al eigenaar van deze taak');
+      if(isTaskOwner(row,me))throw new Error('Je bent al eigenaar van deze taak');
       var helpers=Array.isArray(row.helpers)?row.helpers.slice():[];
       if(!helpers.some(function(h){return helperUid(h)===String(me);})){var m=member(me)||{},name=m.displayName||m.name||window.myName||'Gezinslid';helpers.push({uid:me,memberId:me,name:name,initials:String(name).trim().split(/\s+/).map(function(p){return p.charAt(0);}).join('').slice(0,2).toUpperCase(),joinedAt:now()});}
       row.helpers=helpers;return row;
@@ -78,8 +79,7 @@
   function retractHelp(id){
     var me=uid();if(!me)return Promise.reject(new Error('Niet ingelogd'));
     return mutateCollaboration(id,function(row){
-      var requester=String(row.helpRequestedByUid||row.createdByUid||'');
-      if(requester&&requester!==String(me)&&!isAssignedTo(row,me))throw new Error('Alleen de eigenaar kan de hulpvraag intrekken');
+      if(!isTaskOwner(row,me))throw new Error('Alleen de eigenaar kan de hulpvraag intrekken');
       row.helpRequested=false;row.helpRequestedForUid=null;row.helpRequestedByUid=null;row.helpRetractedAt=now();
       // Existing helpers intentionally remain participants until they leave themselves.
       return row;
@@ -108,6 +108,6 @@
   }
   function ensureStart(){start();installGuards();}
 
-  window.TaskSharedData={version:'1.3',start:start,create:write,update:update,remove:remove,normalize:normalize,members:members,memberUidByName:memberUidByName,newLegacyId:legacyId,makeRecordKey:makeRecordKey,isAssignedTo:isAssignedTo,joinHelp:joinHelp,leaveHelp:leaveHelp,retractHelp:retractHelp,status:function(){return{started:started,ready:ready(),uid:uid(),householdId:window.fbFamilyId||null,count:Array.isArray(window.taskData)?window.taskData.length:0,sharedSnapshot:hasSharedSnapshot};}};
+  window.TaskSharedData={version:'1.3.1',start:start,create:write,update:update,remove:remove,normalize:normalize,members:members,memberUidByName:memberUidByName,newLegacyId:legacyId,makeRecordKey:makeRecordKey,isAssignedTo:isAssignedTo,isTaskOwner:isTaskOwner,joinHelp:joinHelp,leaveHelp:leaveHelp,retractHelp:retractHelp,status:function(){return{started:started,ready:ready(),uid:uid(),householdId:window.fbFamilyId||null,count:Array.isArray(window.taskData)?window.taskData.length:0,sharedSnapshot:hasSharedSnapshot};}};
   window.addEventListener('familyapp:household-changed',ensureStart);window.addEventListener('familyapp:household-identity-synced',ensureStart);window.addEventListener('familyapp:auth-ready',ensureStart);window.addEventListener('load',ensureStart,{once:true});if(document.readyState==='complete')ensureStart();else Promise.resolve().then(ensureStart);
 })();
