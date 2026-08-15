@@ -13,12 +13,11 @@
     rawCheck=window.checkAchievements;
     window.checkAchievements=function(){
       if(!store())return rawCheck.apply(this,arguments);
-      var before={},beforeXp=Number(store().get().xp||0);
+      var before={};
       Object.keys(window.unlockedBadges||{}).forEach(function(k){if(window.unlockedBadges[k])before[k]=true;});
       var result=rawCheck.apply(this,arguments);
       var after={};Object.keys(window.unlockedBadges||{}).forEach(function(k){if(window.unlockedBadges[k])after[k]=true;});
-      Object.keys(after).forEach(function(id){if(before[id])return;var b=(window.BADGES||[]).find(function(x){return x.id===id;})||{};store().unlockAchievement(id,{name:b.name||id,icon:b.icon||'',xp:Number(b.xp||0)||0,rarity:b.rarity||''}).then(function(){if(Number(b.xp||0)>0)return store().awardXP(Number(b.xp||0),'achievement:'+id,{achievementId:id});}).catch(function(){});});
-      var legacyAfter=Math.max(0,Math.round(Number(window.myXP)||0)),delta=Math.max(0,legacyAfter-beforeXp);if(delta)store().awardXP(delta,'legacy-achievement-check',{source:'checkAchievements'}).catch(function(){});
+      Object.keys(after).forEach(function(id){if(before[id])return;var b=(window.BADGES||[]).find(function(x){return x.id===id;})||{};store().unlockAchievement(id,{name:b.name||id,icon:b.icon||'',xp:Number(b.xp||0)||0,rarity:b.rarity||''}).catch(function(){});});
       return result;
     };
     window.checkAchievements.__uidBridge=true;installed=true;return true;
