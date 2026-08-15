@@ -18,7 +18,7 @@ on:
       - 'src/modules/recipes/**'
       - 'src/modules/meals/**'
       - 'src/platform/activity/**'
-      - 'src/modules/feed/feedActivityPresentation.js'
+      - 'src/modules/feed/**'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -45,7 +45,7 @@ on:
       - 'src/modules/recipes/**'
       - 'src/modules/meals/**'
       - 'src/platform/activity/**'
-      - 'src/modules/feed/feedActivityPresentation.js'
+      - 'src/modules/feed/**'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -101,6 +101,10 @@ jobs:
           node --check src/modules/meals/meals.js
           node --check src/platform/activity/householdActivity.js
           node --check src/platform/activity/activityDomainProducers.js
+          node --check src/modules/feed/feedSharedData.js
+          node --check src/modules/feed/feed.js
+          node --check src/modules/feed/feedContextIdentity.js
+          node --check src/modules/feed/feedInteractionController.js
           node --check src/modules/feed/feedActivityPresentation.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
@@ -122,6 +126,8 @@ jobs:
           node --check tests/meal-plan-context-adoption.test.js
           node --check tests/activity-context-service.test.js
           node --check tests/activity-context-adoption.test.js
+          node --check tests/feed-context-rebind.test.js
+          node --check tests/feed-context-adoption.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -162,6 +168,10 @@ jobs:
         run: node tests/activity-context-service.test.js
       - name: Activity context adoption
         run: node tests/activity-context-adoption.test.js
+      - name: Feed context rebind
+        run: node tests/feed-context-rebind.test.js
+      - name: Feed context adoption
+        run: node tests/feed-context-adoption.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
