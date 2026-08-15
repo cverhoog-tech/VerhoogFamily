@@ -67,6 +67,11 @@ vm.createContext(sandbox);
 vm.runInContext(source,sandbox);
 const store=sandbox.window.FinanceStore;
 
+async function waitForPending(){
+  for(let i=0;i<20&&!pendingResolve;i++)await new Promise(r=>setTimeout(r,0));
+  assert.strictEqual(typeof pendingResolve,'function','finance transaction should be pending before context switch');
+}
+
 (async()=>{
   await store.ready();
   const before=store.monthlySummary('2026-08').disposable;
@@ -74,6 +79,7 @@ const store=sandbox.window.FinanceStore;
     sourceType:'shoppingReceipt',sourceId:'alpha-household:list1',
     transaction:{name:'Boodschappen',amount:-125,date:'2026-08-15'}
   });
+  await waitForPending();
 
   ctx={uid:'beta-user',householdId:'beta-household'};
   (listeners['familyapp:household-context-changed']||[]).forEach(f=>f());
