@@ -105,7 +105,7 @@
   function arrToLegacyObj(arr){var out={};(arr||[]).forEach(function(item,i){if(item)out[(item.id!==undefined?'id_'+item.id:'i_'+i)]=item;});return out;}
   function disableLegacyTaskFirebaseSync(){
     if(typeof window.syncToFirebase!=='function'||window.syncToFirebase.__sharedTasksOwnTasks)return false;
-    window.syncToFirebase=function(){if(!window.fbDb||!window.fbFamilyId||window.offlineMode)return;clearTimeout(legacySyncTimer);legacySyncTimer=setTimeout(function(){var currentUid=uid()||'anon';var updatePayload={shop:arrToLegacyObj(window.shopData),cal:arrToLegacyObj(window.calData),feed:arrToLegacyObj(window.feedData),recurData:arrToLegacyObj(window.recurData)};window.fbDb.ref('families/'+window.fbFamilyId).update(updatePayload);window.fbDb.ref('families/'+window.fbFamilyId+'/members/'+currentUid).update({xp:Number(window.myXP||0),name:window.myName||'Gezinslid',lastSeen:Date.now()});},800);};
+    window.syncToFirebase=function(){if(!window.fbDb||!window.fbFamilyId||window.offlineMode)return;clearTimeout(legacySyncTimer);legacySyncTimer=setTimeout(function(){var currentUid=uid()||'anon';var updatePayload={shop:arrToLegacyObj(window.shopData),cal:arrToLegacyObj(window.calData),recurData:arrToLegacyObj(window.recurData)};window.fbDb.ref('families/'+window.fbFamilyId).update(updatePayload);window.fbDb.ref('families/'+window.fbFamilyId+'/members/'+currentUid).update({xp:Number(window.myXP||0),name:window.myName||'Gezinslid',lastSeen:Date.now()});},800);};
     window.syncToFirebase.__sharedTasksOwnTasks=true;return true;
   }
   function attachLegacyRootGuard(){
