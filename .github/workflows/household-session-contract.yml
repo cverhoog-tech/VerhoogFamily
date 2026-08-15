@@ -22,6 +22,7 @@ on:
       - 'src/modules/shop/shop.js'
       - 'src/modules/shop/shoppingLists.js'
       - 'src/modules/shop/shoppingListService.js'
+      - 'src/modules/shop/shoppingReceiptFinance.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -65,6 +66,7 @@ on:
       - 'src/modules/shop/shop.js'
       - 'src/modules/shop/shoppingLists.js'
       - 'src/modules/shop/shoppingListService.js'
+      - 'src/modules/shop/shoppingReceiptFinance.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -117,6 +119,7 @@ jobs:
           node --check src/modules/shop/shop.js
           node --check src/modules/shop/shoppingLists.js
           node --check src/modules/shop/shoppingListService.js
+          node --check src/modules/shop/shoppingReceiptFinance.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/household-context-contract.test.js
