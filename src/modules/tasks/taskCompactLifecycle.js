@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// TASK COMPACT LIFECYCLE v1.3.0
+// TASK COMPACT LIFECYCLE v1.4.0
 // Deterministic post-render lifecycle for the canonical TaskCompactHome.
 // No polling or MutationObserver. Groups task lifecycle state and projects
-// collaboration actions from TaskSharedData.
+// collaboration state from TaskSharedData.
 // ============================================================
 (function(){
   if(window.__taskCompactLifecycleV1)return;
@@ -20,6 +20,7 @@
   function isHelper(task,id){return helpers(task).some(function(h){return helperUid(h)===String(id);});}
   function initials(name){return String(name||'G').trim().split(/\s+/).map(function(x){return x[0]||'';}).join('').slice(0,2).toUpperCase()||'G';}
   function avatarFor(id){var m=member(id);return m&&(m.avatar||m.avatarUrl||m.photoURL||m.profilePhoto)||'';}
+  function toast(msg){if(typeof window.showToast==='function')window.showToast(msg);}
 
   function ensureCss(){
     if(document.getElementById('tch-lifecycle-css'))return;
@@ -27,10 +28,15 @@
     s.textContent=[
       '.tch-overdue-badge{display:inline-flex;margin-left:6px;padding:2px 6px;border-radius:99px;background:#fee2e2;color:#b91c1c;font-size:8px;font-weight:900;letter-spacing:.5px}',
       '.tch-completed-group .tch-row{opacity:.72}.tch-clear-completed{border:0;background:transparent;color:#b91c1c;font-size:10px;font-weight:900;padding:4px 6px;cursor:pointer}',
-      '.tch-collab-action{border:1px solid rgba(109,40,217,.24);background:rgba(109,40,217,.08);color:#6d28d9;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:950;white-space:nowrap;cursor:pointer;flex:0 0 auto}',
-      '[data-theme*="dark"] .tch-collab-action{color:#c4b5fd;border-color:rgba(196,181,253,.32);background:rgba(124,58,237,.16)}',
-      '.tch-collab-action.is-leave,.tch-collab-action.is-retract{color:#9f1239;border-color:rgba(190,24,93,.22);background:rgba(244,63,94,.08)}',
-      '.tch-helper-avatar{width:27px;height:27px;border-radius:50%;object-fit:cover;display:grid;place-items:center;margin-left:-7px;background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;border:2px solid var(--c-surface);font-size:8px;font-weight:900;box-shadow:0 0 0 1px rgba(202,161,83,.55)}'
+      '.tch-help-indicator{position:relative;width:29px;height:29px;min-width:29px;border-radius:50%;display:grid;place-items:center;border:1.5px solid rgba(184,134,31,.7);background:radial-gradient(circle at 35% 28%,#7c3aed,#4c1d95);color:#f6cf66;font-family:Georgia,serif;font-size:16px;font-weight:900;line-height:1;box-shadow:0 2px 7px rgba(61,35,97,.18),0 0 0 2px var(--c-surface);cursor:pointer;flex:0 0 auto;padding:0}',
+      '.tch-help-indicator:after{content:"";position:absolute;inset:3px;border:1px solid rgba(246,207,102,.35);border-radius:50%;pointer-events:none}',
+      '.tch-help-indicator.is-retract:before{content:"×";position:absolute;right:-4px;top:-5px;width:13px;height:13px;border-radius:50%;display:grid;place-items:center;background:#fff7e3;color:#9f1239;border:1px solid rgba(184,134,31,.65);font:900 10px/1 Arial}',
+      '[data-theme*="dark"] .tch-help-indicator{box-shadow:0 2px 8px rgba(0,0,0,.45),0 0 0 2px var(--c-surface)}',
+      '.tch-helper-avatar{position:relative;width:27px;height:27px;border-radius:50%;object-fit:cover;display:grid;place-items:center;margin-left:-7px;background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;border:2px solid var(--c-surface);font-size:8px;font-weight:900;box-shadow:0 0 0 1px rgba(202,161,83,.55)}',
+      '.tch-helper-avatar.is-self-helper{cursor:pointer;box-shadow:0 0 0 1px rgba(202,161,83,.9),0 2px 8px rgba(109,40,217,.2)}',
+      '.tch-helper-avatar-wrap{position:relative;display:inline-flex;margin-left:-7px}',
+      '.tch-helper-avatar-wrap .tch-helper-avatar{margin-left:0}',
+      '.tch-helper-avatar-wrap.is-self-helper:after{content:"×";position:absolute;right:-4px;top:-5px;width:12px;height:12px;border-radius:50%;display:grid;place-items:center;background:#fff7e3;color:#9f1239;border:1px solid rgba(184,134,31,.65);font:900 9px/1 Arial;pointer-events:none}'
     ].join('\n');document.head.appendChild(s);
   }
   function makeGroup(name,cls){var x=document.createElement('section');x.className='tch-group '+cls;x.dataset.lifeGroup=name;x.innerHTML='<button class="tch-group-head" type="button"><span><b>'+name+'</b><em>0 taken</em></span><span class="tch-group-right"><i>⌃</i></span></button><div class="tch-list"></div>';var head=x.querySelector('.tch-group-head');head.onclick=function(){var list=x.querySelector('.tch-list'),icon=x.querySelector('i'),hide=list.style.display!=='none';list.style.display=hide?'none':'';icon.textContent=hide?'⌄':'⌃';};return x;}
@@ -44,39 +50,43 @@
       }else updateCount(group);
     });
   }
-  function cleanupButton(group){var right=group.querySelector('.tch-group-head .tch-group-right');if(!right||right.querySelector('[data-clear-completed]'))return;var b=document.createElement('button');b.type='button';b.className='tch-clear-completed';b.dataset.clearCompleted='1';b.textContent='Opschonen';b.onclick=function(e){e.preventDefault();e.stopPropagation();var done=realTasks().filter(function(t){return t&&t.done;});if(!done.length)return;if(!confirm('Alle '+done.length+' voltooide taken verwijderen?'))return;if(typeof window.deleteTask!=='function'){if(typeof window.showToast==='function')window.showToast('Opschonen is nog niet beschikbaar');return;}done.forEach(function(t){window.deleteTask(t.id);});if(typeof window.showToast==='function')window.showToast(done.length+' voltooide '+(done.length===1?'taak verwijderd':'taken verwijderd'));};right.insertBefore(b,right.firstChild);}
+  function cleanupButton(group){var right=group.querySelector('.tch-group-head .tch-group-right');if(!right||right.querySelector('[data-clear-completed]'))return;var b=document.createElement('button');b.type='button';b.className='tch-clear-completed';b.dataset.clearCompleted='1';b.textContent='Opschonen';b.onclick=function(e){e.preventDefault();e.stopPropagation();var done=realTasks().filter(function(t){return t&&t.done;});if(!done.length)return;if(!confirm('Alle '+done.length+' voltooide taken verwijderen?'))return;if(typeof window.deleteTask!=='function'){toast('Opschonen is nog niet beschikbaar');return;}done.forEach(function(t){window.deleteTask(t.id);});toast(done.length+' voltooide '+(done.length===1?'taak verwijderd':'taken verwijderd'));};right.insertBefore(b,right.firstChild);}
 
+  function leaveAsHelper(task,el){
+    var service=window.TaskSharedData;if(!service||!service.leaveHelp)return;el.style.pointerEvents='none';
+    Promise.resolve(service.leaveHelp(task.id||task._key)).then(function(){toast('Je hebt de quest verlaten');}).catch(function(err){el.style.pointerEvents='';toast((err&&err.message)||'Quest verlaten mislukt');});
+  }
   function addHelperAvatars(row,task){
-    var wrap=row.querySelector('.tch-avatars');if(!wrap)return;
+    var wrap=row.querySelector('.tch-avatars');if(!wrap)return;var me=currentUid();
     helpers(task).forEach(function(h){
       var id=helperUid(h);if(!id)return;
       var already=Array.prototype.some.call(wrap.querySelectorAll('[data-helper-uid]'),function(el){return el.getAttribute('data-helper-uid')===id;});if(already)return;
-      var av=avatarFor(id),name=(h&&h.name)||(member(id)&&(member(id).displayName||member(id).name))||'Helper';var el;
+      var av=avatarFor(id),name=(h&&h.name)||(member(id)&&(member(id).displayName||member(id).name))||'Helper',holder=document.createElement('span'),el;
+      holder.className='tch-helper-avatar-wrap'+(String(id)===String(me)?' is-self-helper':'');holder.setAttribute('data-helper-uid',id);holder.title=String(id)===String(me)?'Quest verlaten':name;
       if(av){el=document.createElement('img');el.src=av;el.alt=name;}else{el=document.createElement('span');el.textContent=initials(name);el.title=name;}
-      el.className='tch-helper-avatar';el.setAttribute('data-helper-uid',id);wrap.appendChild(el);
+      el.className='tch-helper-avatar'+(String(id)===String(me)?' is-self-helper':'');holder.appendChild(el);wrap.appendChild(holder);
+      if(String(id)===String(me))holder.onclick=function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();leaveAsHelper(task,holder);};
     });
+  }
+  function runAction(task,action,btn){
+    var service=window.TaskSharedData,p;if(!service)return;btn.disabled=true;
+    if(action==='join')p=service.joinHelp(task.id||task._key);
+    if(action==='retract')p=service.retractHelp(task.id||task._key);
+    Promise.resolve(p).then(function(saved){
+      if(action==='join'&&window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,task.helpRequestedByUid||task.createdByUid||null).catch(function(){});
+      toast(action==='join'?'Je helpt nu mee 🤝':'Hulpvraag ingetrokken');
+    }).catch(function(err){btn.disabled=false;toast((err&&err.message)||'Actie mislukt');});
   }
   function addCollaborationAction(row,task){
     var me=currentUid();if(!me||task.done)return;
-    var existing=row.querySelector('[data-collab-action]');if(existing)existing.remove();
-    var action='',label='',cls='';
-    if(isHelper(task,me)){action='leave';label='Quest verlaten';cls=' is-leave';}
-    else if(task.helpRequested&&isHelpOwner(task,me)){action='retract';label='Hulpvraag intrekken';cls=' is-retract';}
-    else if(task.helpRequested&&String(task.helpRequestedForUid||'')===String(me)){action='join';label='Hulp bieden';}
+    Array.prototype.forEach.call(row.querySelectorAll('[data-collab-action]'),function(x){x.remove();});
+    if(isHelper(task,me))return; // leave is attached to the user's helper avatar itself.
+    var action='',label='';
+    if(task.helpRequested&&isHelpOwner(task,me)){action='retract';label='Hulpvraag intrekken';}
+    else if(task.helpRequested&&String(task.helpRequestedForUid||'')===String(me)){action='join';label='Hulp geven';}
     if(!action)return;
-    var btn=document.createElement('button');btn.type='button';btn.className='tch-collab-action'+cls;btn.dataset.collabAction=action;btn.textContent=label;
-    btn.onclick=function(e){
-      e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();btn.disabled=true;
-      var service=window.TaskSharedData,p;
-      if(!service){btn.disabled=false;return;}
-      if(action==='join')p=service.joinHelp(task.id||task._key);
-      if(action==='leave')p=service.leaveHelp(task.id||task._key);
-      if(action==='retract')p=service.retractHelp(task.id||task._key);
-      Promise.resolve(p).then(function(saved){
-        if(action==='join'&&window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,task.helpRequestedByUid||task.createdByUid||null).catch(function(){});
-        if(typeof window.showToast==='function')window.showToast(action==='join'?'Je helpt nu mee 🤝':action==='leave'?'Je hebt de quest verlaten':'Hulpvraag ingetrokken');
-      }).catch(function(err){btn.disabled=false;if(typeof window.showToast==='function')window.showToast((err&&err.message)||'Actie mislukt');});
-    };
+    var btn=document.createElement('button');btn.type='button';btn.className='tch-help-indicator'+(action==='retract'?' is-retract':'');btn.dataset.collabAction=action;btn.textContent='!';btn.title=label;btn.setAttribute('aria-label',label);
+    btn.onclick=function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();runAction(task,action,btn);};
     var reward=row.querySelector('.tch-reward');if(reward)row.insertBefore(btn,reward);else row.appendChild(btn);
   }
   function projectCollaboration(row,task){addHelperAvatars(row,task);addCollaborationAction(row,task);}
@@ -96,10 +106,7 @@
     updateCanonicalCounts(page);updateCount(overdue);updateCount(completed);return true;
   }
   function schedule(){Promise.resolve().then(function(){apply();});}
-  // TaskCompactHome re-renders synchronously when a canonical group is toggled.
-  // Re-apply lifecycle groups immediately after that owned interaction; this is
-  // deterministic and avoids observers/polling while keeping Verlopen stable.
   document.addEventListener('click',function(e){var h=e.target&&e.target.closest&&e.target.closest('#task-content [data-group-toggle]');if(h)Promise.resolve().then(function(){Promise.resolve().then(apply);});},false);
   window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);
-  window.TaskCompactLifecycle={version:'1.3.0',apply:apply};
+  window.TaskCompactLifecycle={version:'1.4.0',apply:apply};
 })();
