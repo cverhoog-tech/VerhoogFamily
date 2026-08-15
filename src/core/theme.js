@@ -60,8 +60,11 @@ function syncThemePreference(){
     if(pref&&typeof pref==='object'){
       var nextTheme=validThemeId(pref.themeId)?pref.themeId:currentTheme;
       var nextDark=typeof pref.dark==='boolean'?pref.dark:isDark;
-      cacheThemePreference();
+      // applyTheme() updates the module-level isDark/currentTheme state; the
+      // cache write must happen after that so it stores the incoming server
+      // preference instead of whatever was set locally before this sync.
       applyTheme(nextTheme,nextDark);
+      cacheThemePreference();
       return;
     }
     // One-time migration of the existing local preference. Firebase becomes authoritative afterwards.
