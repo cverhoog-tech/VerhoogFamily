@@ -1,0 +1,17 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=fs.readFileSync('src/core/notificationStore.js','utf8');
+let current={uid:'alpha-user',householdId:'alpha-household'},subs=[],writes=[];
+const listeners={};
+const window={addEventListener:(n,f)=>{(listeners[n]||(listeners[n]=[])).push(f);},dispatchEvent:()=>{},HouseholdContext:{requireUser:()=>current.uid,requireHousehold:()=>current.householdId,assertContext:()=>{},isCurrent:t=>t&&t.uid===current.uid&&t.householdId===current.householdId},FamilyDataStore:{subscribeShared:(c,cb)=>{const s={c,cb,off:false};subs.push(s);return()=>s.off=true;},writeSharedRecord:(c,id,v)=>{writes.push({c,id,v,ctx:{...current}});return Promise.resolve();},writeSharedPath:(c,p,v)=>{writes.push({c,p,v,ctx:{...current}});return Promise.resolve();},makeId:()=> 'evt_1'}};
+const document={readyState:'loading',addEventListener:()=>{},getElementById:()=>null};
+const context={window,document,CustomEvent:function(){}};vm.createContext(context);vm.runInContext(src,context);
+assert.strictEqual(window.NotificationStore.start(),true);assert.strictEqual(subs.length,1);
+subs[0].cb({a:{id:'a',householdId:'alpha-household',type:'system.message',title:'A',audience:{kind:'uids',uids:['alpha-user']},createdAt:1,readBy:{},dismissedBy:{}}},{});
+assert.strictEqual(window.NotificationStore.list().length,1);
+current={uid:'beta-user',householdId:'beta-household'};(listeners['familyapp:household-context-changed']||[]).forEach(f=>f());
+assert.strictEqual(subs[0].off,true);assert.strictEqual(subs.length,2);assert.strictEqual(window.NotificationStore.list().length,0);
+subs[0].cb({late:{id:'late',householdId:'alpha-household',type:'system.message',title:'late',audience:{kind:'uids',uids:['alpha-user']},createdAt:2,readBy:{},dismissedBy:{}}},{});
+assert.strictEqual(window.NotificationStore.list().length,0);
+subs[1].cb({b:{id:'b',householdId:'beta-household',type:'system.message',title:'B',audience:{kind:'uids',uids:['beta-user']},createdAt:3,readBy:{},dismissedBy:{}}},{});
+assert.strictEqual(window.NotificationStore.list()[0].title,'B');
+window.NotificationStore.publishToUids('partyQuest.invitation.sent',['beta-user'],{title:'Invite',body:'x'}).then(e=>{assert.strictEqual(e.householdId,'beta-household');assert.strictEqual(e.actor.uid,'beta-user');console.log('notification context rebind ok');});
