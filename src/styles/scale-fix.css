@@ -1,0 +1,6 @@
+/* FamilyApp mobile scale guard.
+   Restores the two declarations that leaked from the orphaned landscape block
+   at the top of app.css, without redesigning or globally zooming the app. */
+
+.nav-btn { font-size: inherit; }
+#task-content .card { margin: 0 16px 8px; }

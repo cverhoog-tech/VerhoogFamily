@@ -1,94 +1,67 @@
 'use strict';
-// ============================================================
-// APP ICOON — losgeknipt uit theme.js
-// ============================================================
+// Canonical FamilyApp app identity + compatibility layer.
+// The installed PWA icon is fixed deliberately: iOS/Android cache install icons
+// and do not reliably support per-user runtime icon changes.
 
-var appIconEmoji    = localStorage.getItem('familie_icon_emoji') || '🏠';
-var appIconColor    = localStorage.getItem('familie_icon_color') || '#2d5a27';
-var appIconPhotoData = localStorage.getItem('familie_icon_photo') || null;
+var FAMILYAPP_APP_ICONS = Object.freeze({
+  favicon: '/assets/app-icons/icon-32.png',
+  appleTouch: '/assets/app-icons/apple-touch-icon.png',
+  preview: '/assets/app-icons/icon-192.png'
+});
 
-var BUILTIN_VISUALS = {
-  whiteDashboard:       'familieapp_white_assets/familyapp_white_dashboard.webp',
-  whiteDashboardMobile: 'familieapp_white_assets/familyapp_white_dashboard_mobile.webp',
-  appIcon:              'familieapp_white_assets/familyapp_app_icon.png',
-  iconSheet:            'familieapp_white_assets/familyapp_icon_sheet.webp',
-};
+function ensureHeadLink(id, rel, href, sizes) {
+  var el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('link');
+    el.id = id;
+    el.rel = rel;
+    if (sizes) el.setAttribute('sizes', sizes);
+    document.head.appendChild(el);
+  }
+  el.href = href;
+  return el;
+}
 
-function buildIconSvg(emoji, color) {
-  var enc = encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-    + '<rect width="100" height="100" rx="22" fill="' + color + '"/>'
-    + '<text y="68" x="50" text-anchor="middle" font-size="58">' + emoji + '</text>'
-    + '</svg>'
-  );
-  return 'data:image/svg+xml,' + enc;
+function ensureScaleFix() {
+  if (document.getElementById('familyapp-scale-fix')) return;
+  var link = document.createElement('link');
+  link.id = 'familyapp-scale-fix';
+  link.rel = 'stylesheet';
+  link.href = '/src/styles/scale-fix.css?v=1';
+  document.head.appendChild(link);
 }
 
 function applyAppIcon() {
-  var src;
-  if (appIconPhotoData) {
-    src = appIconPhotoData;
-  } else if (typeof BUILTIN_VISUALS !== 'undefined' && BUILTIN_VISUALS.appIcon) {
-    src = BUILTIN_VISUALS.appIcon;
-  } else {
-    src = buildIconSvg(appIconEmoji, appIconColor);
-  }
-
-  var ati = document.getElementById('apple-touch-icon');
-  var fav = document.getElementById('favicon');
-  if (ati) ati.href = src;
-  if (fav) fav.href = src;
+  ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '180x180');
+  ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '32x32');
 
   var prev = document.getElementById('icon-preview');
   if (prev) {
-    if (appIconPhotoData) {
-      prev.innerHTML = '<img src="' + appIconPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
-    } else {
-      prev.style.background = appIconColor;
-      prev.textContent = appIconEmoji;
-    }
+    prev.innerHTML = '<img src="' + FAMILYAPP_APP_ICONS.preview + '" alt="FamilieApp huis-icoon" style="width:100%;height:100%;display:block;object-fit:cover">';
+  }
+
+  var loginLogo = document.getElementById('login-logo');
+  if (loginLogo) {
+    loginLogo.innerHTML = '<img src="' + FAMILYAPP_APP_ICONS.preview + '" alt="FamilieApp" style="width:56px;height:56px;display:block;border-radius:14px">';
   }
 }
 
-function setAppIcon(type, value) {
-  if (type === 'emoji') {
-    appIconEmoji = value;
-    appIconPhotoData = null;
-    localStorage.removeItem('familie_icon_photo');
-    document.querySelectorAll('.icon-pick-btn').forEach(function(b) {
-      b.classList.toggle('selected', b.textContent === value);
-    });
-  }
-  applyAppIcon();
-}
-
-function setIconColor(color) {
-  appIconColor = color;
-  appIconPhotoData = null;
-  localStorage.removeItem('familie_icon_photo');
-  localStorage.setItem('familie_icon_color', color);
-  document.querySelectorAll('.icon-color-btn').forEach(function(b) {
-    b.style.borderColor = b.style.background === color ? '#333' : 'transparent';
-  });
-  applyAppIcon();
-}
-
+// Legacy callbacks remain available so old profile markup cannot throw.
+function setAppIcon() { applyAppIcon(); }
+function setIconColor() { applyAppIcon(); }
 function saveAppIconToLink() {
-  localStorage.setItem('familie_icon_emoji', appIconEmoji);
-  localStorage.setItem('familie_icon_color', appIconColor);
   applyAppIcon();
   var st = document.getElementById('icon-save-status');
-  if (st) st.innerHTML = '<span style="color:#16a34a">✓ Opgeslagen! Voeg de app toe aan je beginscherm om het nieuwe icoon te zien.</span>';
-  if (typeof showToast === 'function') showToast('App icoon opgeslagen ✓');
+  if (st) st.innerHTML = '<span style="color:#16a34a">✓ FamilieApp gebruikt nu het vaste huis-icoon.</span>';
+  if (typeof showToast === 'function') showToast('FamilieApp huis-icoon actief ✓');
 }
 
-// Laad opgeslagen waardes + initialiseer
-(function() {
-  var savedEmoji  = localStorage.getItem('familie_icon_emoji');
-  var savedColor  = localStorage.getItem('familie_icon_color');
-  var savedPhoto  = localStorage.getItem('familie_icon_photo');
-  if (savedEmoji) appIconEmoji     = savedEmoji;
-  if (savedColor) appIconColor     = savedColor;
-  if (savedPhoto) appIconPhotoData = savedPhoto;
-  setTimeout(applyAppIcon, 100);
+(function initCanonicalAppIdentity() {
+  try {
+    localStorage.removeItem('familie_icon_emoji');
+    localStorage.removeItem('familie_icon_color');
+    localStorage.removeItem('familie_icon_photo');
+  } catch (e) {}
+  ensureScaleFix();
+  applyAppIcon();
 })();
