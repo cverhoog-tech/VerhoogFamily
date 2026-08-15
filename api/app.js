@@ -23,7 +23,7 @@ module.exports = async function handler(req, res) {
     // renderer afterwards with an explicit cache-busting version.
     html = html.replace(
       '<script src="src/modules/tasks/personTabPremium.js"></script>',
-      '<script src="src/modules/tasks/personDashboardService.js?v=2"></script>\n  <script src="src/modules/tasks/personTabPremium.js?v=43"></script>'
+      '<script src="src/modules/tasks/personDashboardService.js?v=2"></script>\n  <script src="src/modules/tasks/personTabPremium.js?v=44"></script>'
     );
 
     // Keep the canonical Task Card bundle fresh on mobile Safari. Runtime
