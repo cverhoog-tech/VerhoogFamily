@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// NOTIFICATION DOMAIN EVENTS v1.4.0
+// NOTIFICATION DOMAIN EVENTS v1.4.1
 // Stable domain API for notification-worthy FamilyApp events.
 // Domain modules never construct Firebase paths or audience structures.
 // ============================================================
 (function(){
   if(window.NotificationEvents)return;
 
-  var VERSION='1.4.0';
+  var VERSION='1.4.1';
 
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function members(){
@@ -34,17 +34,14 @@
   }
   function entity(type,id){return{type:type,id:String(id==null?'':id)};}
   function requireStore(){if(!window.NotificationStore)throw new Error('NotificationStore niet beschikbaar');return NotificationStore;}
+  function storeForType(type){var s=requireStore();if(s.registerType)s.registerType(type);return s;}
   function publishTo(type,uids,payload){
     uids=Array.from(new Set((uids||[]).filter(Boolean).map(String)));
     if(!uids.length)return Promise.resolve(null);
-    return requireStore().publishToUids(type,uids,payload);
+    return storeForType(type).publishToUids(type,uids,payload);
   }
-  function publishHousehold(type,payload){return requireStore().publishHousehold(type,payload);}
+  function publishHousehold(type,payload){return storeForType(type).publishHousehold(type,payload);}
   function questLabel(quest){return String(quest&&(quest.questTitle||quest.title||quest.name)||'Party Quest');}
-
-  // Registered here so older NotificationStore builds can consume the new event
-  // without coupling the store to a particular domain release.
-  try{if(window.NotificationStore&&NotificationStore.registerType)NotificationStore.registerType('partyQuest.invitation.sent');}catch(e){}
 
   function taskHelpRequested(task,targetUid){
     if(!task)return Promise.reject(new Error('Taak ontbreekt'));
