@@ -1,0 +1,42 @@
+name: Household session contract
+
+on:
+  pull_request:
+    paths:
+      - 'src/core/householdSessionHardening.js'
+      - 'src/core/householdIdentityFirebaseBridge.js'
+      - 'src/core/householdPlatform.js'
+      - 'api/app.js'
+      - 'tests/household-session-contract.test.js'
+      - '.github/workflows/household-session-contract.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/core/householdSessionHardening.js'
+      - 'src/core/householdIdentityFirebaseBridge.js'
+      - 'src/core/householdPlatform.js'
+      - 'api/app.js'
+      - 'tests/household-session-contract.test.js'
+      - '.github/workflows/household-session-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax check household runtime
+        run: |
+          node --check src/core/householdSessionHardening.js
+          node --check src/core/householdIdentityFirebaseBridge.js
+          node --check src/core/householdPlatform.js
+          node --check api/app.js
+      - name: Household isolation contract
+        run: node tests/household-session-contract.test.js
