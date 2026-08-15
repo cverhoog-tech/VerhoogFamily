@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// ACTIVITY SERVICE v2.0
+// ACTIVITY SERVICE v2.1
 // Canonical immutable household event layer.
 // Modules publish domain events; Feed/Notifications consume them.
 // ============================================================
 (function(){
-  if(window.ActivityService&&window.ActivityService.version==='2.0.0')return;
-  var VERSION='2.0.0',COLLECTION='activity',LEGACY_COLLECTION='activityEvents';
-  var TYPES=Object.freeze({TASK_CREATED:'task.created',TASK_COMPLETED:'task.completed',MEAL_PLANNED:'meal.planned',GROCERY_RECEIPT_UPLOADED:'grocery.receipt_uploaded'});
+  if(window.ActivityService&&window.ActivityService.version==='2.1.0')return;
+  var VERSION='2.1.0',COLLECTION='activity',LEGACY_COLLECTION='activityEvents';
+  var TYPES=Object.freeze({TASK_CREATED:'task.created',TASK_COMPLETED:'task.completed',MEAL_PLANNED:'meal.planned',GROCERY_RECEIPT_UPLOADED:'grocery.receipt_uploaded',ACHIEVEMENT_UNLOCKED:'achievement.unlocked'});
   var ALLOWED={};Object.keys(TYPES).forEach(function(k){ALLOWED[TYPES[k]]=true;});
   var state={token:null,unsubscribe:null,events:[],ready:false,migrated:{},lastError:null};
   function fds(){return window.FamilyDataStore||null;}function hc(){return window.HouseholdContext||null;}function now(){return Date.now();}
