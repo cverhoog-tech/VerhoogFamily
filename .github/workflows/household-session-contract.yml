@@ -12,18 +12,11 @@ on:
       - 'src/core/familyDataStore.js'
       - 'src/core/foodAddBridge.js'
       - 'src/core/groceryQuickAddModal.js'
-      - 'src/modules/tasks/taskSharedData.js'
-      - 'src/modules/tasks/taskContextBoundary.js'
-      - 'src/modules/tasks/taskCreateReadinessFix.js'
-      - 'src/modules/tasks/partyQuestContextService.js'
-      - 'src/modules/tasks/partyQuestContextUi.js'
-      - 'src/modules/tasks/partyQuestActiveContextView.js'
-      - 'src/modules/tasks/partyQuestCompletionReward.js'
-      - 'src/modules/tasks/partyQuestNotificationProjector.js'
-      - 'src/modules/shop/shop.js'
-      - 'src/modules/shop/shoppingLists.js'
-      - 'src/modules/shop/shoppingListService.js'
-      - 'src/modules/shop/shoppingReceiptFinance.js'
+      - 'src/modules/tasks/**'
+      - 'src/modules/shop/**'
+      - 'src/modules/calendar/calendarSharedLive.js'
+      - 'src/modules/calendar/calendarGoogleSync.js'
+      - 'src/modules/calendar/calendarMealPlanIntegration.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -39,6 +32,8 @@ on:
       - 'tests/party-quest-context-adoption.test.js'
       - 'tests/shopping-context-rebind.test.js'
       - 'tests/shopping-context-adoption.test.js'
+      - 'tests/calendar-context-rebind.test.js'
+      - 'tests/calendar-context-adoption.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -57,18 +52,11 @@ on:
       - 'src/core/familyDataStore.js'
       - 'src/core/foodAddBridge.js'
       - 'src/core/groceryQuickAddModal.js'
-      - 'src/modules/tasks/taskSharedData.js'
-      - 'src/modules/tasks/taskContextBoundary.js'
-      - 'src/modules/tasks/taskCreateReadinessFix.js'
-      - 'src/modules/tasks/partyQuestContextService.js'
-      - 'src/modules/tasks/partyQuestContextUi.js'
-      - 'src/modules/tasks/partyQuestActiveContextView.js'
-      - 'src/modules/tasks/partyQuestCompletionReward.js'
-      - 'src/modules/tasks/partyQuestNotificationProjector.js'
-      - 'src/modules/shop/shop.js'
-      - 'src/modules/shop/shoppingLists.js'
-      - 'src/modules/shop/shoppingListService.js'
-      - 'src/modules/shop/shoppingReceiptFinance.js'
+      - 'src/modules/tasks/**'
+      - 'src/modules/shop/**'
+      - 'src/modules/calendar/calendarSharedLive.js'
+      - 'src/modules/calendar/calendarGoogleSync.js'
+      - 'src/modules/calendar/calendarMealPlanIntegration.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -84,6 +72,8 @@ on:
       - 'tests/party-quest-context-adoption.test.js'
       - 'tests/shopping-context-rebind.test.js'
       - 'tests/shopping-context-adoption.test.js'
+      - 'tests/calendar-context-rebind.test.js'
+      - 'tests/calendar-context-adoption.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -123,6 +113,9 @@ jobs:
           node --check src/modules/shop/shoppingLists.js
           node --check src/modules/shop/shoppingListService.js
           node --check src/modules/shop/shoppingReceiptFinance.js
+          node --check src/modules/calendar/calendarSharedLive.js
+          node --check src/modules/calendar/calendarGoogleSync.js
+          node --check src/modules/calendar/calendarMealPlanIntegration.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/household-context-contract.test.js
@@ -135,6 +128,8 @@ jobs:
           node --check tests/party-quest-context-adoption.test.js
           node --check tests/shopping-context-rebind.test.js
           node --check tests/shopping-context-adoption.test.js
+          node --check tests/calendar-context-rebind.test.js
+          node --check tests/calendar-context-adoption.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -159,6 +154,10 @@ jobs:
         run: node tests/shopping-context-rebind.test.js
       - name: Shopping context adoption
         run: node tests/shopping-context-adoption.test.js
+      - name: Calendar context rebind
+        run: node tests/calendar-context-rebind.test.js
+      - name: Calendar context adoption
+        run: node tests/calendar-context-adoption.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
