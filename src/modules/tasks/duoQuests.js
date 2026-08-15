@@ -292,7 +292,6 @@ function startFirebaseSync(){
     if(data.tasks        && objToArr(data.tasks).length)        taskData     =objToArr(data.tasks);
     if(data.shop         && objToArr(data.shop).length)         shopData     =objToArr(data.shop);
     if(data.cal          && objToArr(data.cal).length)          calData      =objToArr(data.cal);
-    if(data.feed         && objToArr(data.feed).length)         feedData     =objToArr(data.feed);
     if(data.recurData    && objToArr(data.recurData).length)    recurData    =objToArr(data.recurData);
 
     if(data.members) Object.values(data.members).forEach(function(m){
@@ -315,7 +314,7 @@ function syncToFirebase(){
     var uid=fbUser?fbUser.uid:'anon';
     fbDb.ref('families/'+fbFamilyId).update({
       tasks:arrToObj(taskData),shop:arrToObj(shopData),cal:arrToObj(calData),
-      feed:arrToObj(feedData),recurData:arrToObj(recurData)
+      recurData:arrToObj(recurData)
     });
     fbDb.ref('families/'+fbFamilyId+'/members/'+uid).update({xp:myXP,name:myName,lastSeen:Date.now()});
   },800);
@@ -378,4 +377,3 @@ function initApp() {
     checkDailyBonus();
   }, 400);
 }
-
