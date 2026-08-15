@@ -22,6 +22,7 @@ on:
       - 'src/modules/finance/**'
       - 'src/modules/achievements/**'
       - 'src/modules/skills/**'
+      - 'src/modules/profile/**'
       - 'src/platform/activity/**'
       - 'src/modules/feed/**'
       - 'api/app.js'
@@ -54,6 +55,7 @@ on:
       - 'src/modules/finance/**'
       - 'src/modules/achievements/**'
       - 'src/modules/skills/**'
+      - 'src/modules/profile/**'
       - 'src/platform/activity/**'
       - 'src/modules/feed/**'
       - 'api/app.js'
@@ -92,8 +94,11 @@ jobs:
           node --check src/core/notificationEvents.js
           node --check src/core/notificationActions.js
           node --check src/core/notificationCenter.js
+          node --check src/modules/profile/profileContextService.js
+          node --check src/modules/profile/profileRuntimeContextBridge.js
           node --check src/modules/achievements/achievementUidBridge.js
           node --check src/modules/skills/skillsProgressionBridge.js
+          node --check src/modules/tasks/personDashboardService.js
           node --check src/modules/tasks/taskSharedData.js
           node --check src/modules/tasks/taskContextBoundary.js
           node --check src/modules/tasks/taskCreateReadinessFix.js
@@ -155,6 +160,8 @@ jobs:
           node --check tests/finance-context-adoption.test.js
           node --check tests/progression-context-rebind.test.js
           node --check tests/progression-context-adoption.test.js
+          node --check tests/profile-context-rebind.test.js
+          node --check tests/profile-context-adoption.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -211,6 +218,10 @@ jobs:
         run: node tests/progression-context-rebind.test.js
       - name: Progression context adoption
         run: node tests/progression-context-adoption.test.js
+      - name: Profile and presence context rebind
+        run: node tests/profile-context-rebind.test.js
+      - name: Profile and presence context adoption
+        run: node tests/profile-context-adoption.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
