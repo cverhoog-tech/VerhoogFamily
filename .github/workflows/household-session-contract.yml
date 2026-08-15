@@ -7,11 +7,13 @@ on:
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'src/core/householdInviteLifecycle.js'
+      - 'src/core/familyDataStore.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
+      - 'tests/family-data-store-pending-context.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -24,11 +26,13 @@ on:
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'src/core/householdInviteLifecycle.js'
+      - 'src/core/familyDataStore.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
       - 'tests/household-session-contract.test.js'
       - 'tests/household-session-behavior.test.js'
+      - 'tests/family-data-store-pending-context.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -51,14 +55,18 @@ jobs:
           node --check src/core/householdIdentityFirebaseBridge.js
           node --check src/core/householdPlatform.js
           node --check src/core/householdInviteLifecycle.js
+          node --check src/core/familyDataStore.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
+          node --check tests/family-data-store-pending-context.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
         run: node tests/household-session-contract.test.js
       - name: Household account-switch behavior
         run: node tests/household-session-behavior.test.js
+      - name: Pending write context isolation
+        run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
         run: npm install --no-save --no-package-lock firebase@12 @firebase/rules-unit-testing@5 firebase-tools@14
       - name: Removed-member Realtime Database rules
