@@ -18,6 +18,7 @@ on:
       - 'src/modules/calendar/**'
       - 'src/modules/recipes/**'
       - 'src/modules/meals/**'
+      - 'src/modules/finance/**'
       - 'src/platform/activity/**'
       - 'src/modules/feed/**'
       - 'api/app.js'
@@ -46,6 +47,7 @@ on:
       - 'src/modules/calendar/**'
       - 'src/modules/recipes/**'
       - 'src/modules/meals/**'
+      - 'src/modules/finance/**'
       - 'src/platform/activity/**'
       - 'src/modules/feed/**'
       - 'api/app.js'
@@ -105,6 +107,8 @@ jobs:
           node --check src/modules/meals/mealPlannerBottomSheetBridge.js
           node --check src/modules/meals/mealPlannerContextGuard.js
           node --check src/modules/meals/meals.js
+          node --check src/modules/finance/financeStore.js
+          node --check src/modules/finance/financeRuntimeShell.js
           node --check src/platform/activity/householdActivity.js
           node --check src/platform/activity/activityDomainProducers.js
           node --check src/modules/feed/feedSharedData.js
@@ -136,6 +140,8 @@ jobs:
           node --check tests/feed-context-adoption.test.js
           node --check tests/notification-context-rebind.test.js
           node --check tests/notification-context-adoption.test.js
+          node --check tests/finance-context-rebind.test.js
+          node --check tests/finance-context-adoption.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -184,6 +190,10 @@ jobs:
         run: node tests/notification-context-rebind.test.js
       - name: Notification context adoption
         run: node tests/notification-context-adoption.test.js
+      - name: Finance context rebind and receipt accounting
+        run: node tests/finance-context-rebind.test.js
+      - name: Finance context adoption
+        run: node tests/finance-context-adoption.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
