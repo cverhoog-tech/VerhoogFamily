@@ -61,6 +61,84 @@ var _profileMounted = false;
   else document.addEventListener('DOMContentLoaded', initialApply, { once: true });
 })();
 
+// ============================================================
+// PWA INSTALL HELPER
+// Eén centrale bron voor install-status en browser-specifiek gedrag.
+// Android/Chromium gebruikt beforeinstallprompt; iOS toont instructies.
+// ============================================================
+(function bootstrapFamilyAppInstall(){
+  var deferredPrompt = null;
+
+  function isStandalone(){
+    return !!(
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true
+    );
+  }
+
+  function isIOS(){
+    var ua = navigator.userAgent || '';
+    var classicIOS = /iPad|iPhone|iPod/i.test(ua);
+    var ipadDesktopMode = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return classicIOS || ipadDesktopMode;
+  }
+
+  function getState(){
+    if(isStandalone()) return { status: 'installed', installed: true, ios: isIOS(), canPrompt: false };
+    if(deferredPrompt) return { status: 'ready', installed: false, ios: isIOS(), canPrompt: true };
+    if(isIOS()) return { status: 'ios', installed: false, ios: true, canPrompt: false };
+    return { status: 'browser', installed: false, ios: false, canPrompt: false };
+  }
+
+  function notify(){
+    try {
+      window.dispatchEvent(new CustomEvent('familyapp:pwa-install-state', { detail: getState() }));
+    } catch(e){}
+  }
+
+  async function install(){
+    if(isStandalone()) return { outcome: 'installed', method: 'standalone' };
+    if(isIOS()) return { outcome: 'instructions', method: 'ios' };
+    if(!deferredPrompt) return { outcome: 'instructions', method: 'browser' };
+
+    var promptEvent = deferredPrompt;
+    deferredPrompt = null;
+    try {
+      await promptEvent.prompt();
+      var choice = await promptEvent.userChoice;
+      notify();
+      return {
+        outcome: choice && choice.outcome ? choice.outcome : 'dismissed',
+        method: 'prompt'
+      };
+    } catch(err){
+      notify();
+      return { outcome: 'instructions', method: 'browser', error: err };
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', function(event){
+    event.preventDefault();
+    deferredPrompt = event;
+    notify();
+  });
+
+  window.addEventListener('appinstalled', function(){
+    deferredPrompt = null;
+    notify();
+  });
+
+  window.FamilyAppInstall = {
+    getState: getState,
+    install: install,
+    isStandalone: isStandalone,
+    isIOS: isIOS
+  };
+
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', notify, { once: true });
+  else setTimeout(notify, 0);
+})();
+
 // Identity/avatar bootstrap. HouseholdIdentity remains a compatibility layer;
 // Firebase household identity is read through householdIdentityFirebaseBridge.
 (function bootstrapAvatarIdentity(){
@@ -88,7 +166,7 @@ function renderProfile(){
   if(!document.querySelector('link[href*="profile.target.css"]')){
     var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css'; document.head.appendChild(link);
   }
-  import('/src/modules/profile/ProfileScreen.target.js').then(function(mod){
+  import('/src/modules/profile/ProfileScreen.target.js?v=install1').then(function(mod){
     mod.renderProfileScreen(container); _profileMounted=true; if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   }).catch(function(err){ console.error('[ProfileBridge] Kon nieuwe profielmodule niet laden:',err); });
 }
@@ -111,6 +189,6 @@ window.addEventListener('familyapp:avatar-updated',function(){
   if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   if(_profileMounted){
     var container=document.getElementById('screen-profile');
-    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js').then(function(mod){ mod.renderProfileScreen(container); });
+    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=install1').then(function(mod){ mod.renderProfileScreen(container); });
   }
 });
