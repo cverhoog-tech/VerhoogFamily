@@ -27,11 +27,9 @@ vm.runInContext(fs.readFileSync('src/core/familyDataStore.js','utf8'),context,{f
 const store=window.FamilyDataStore;
 
 (async()=>{
-  // Alpha queues shared + private writes while offline.
   await store.writeSharedRecord('recipes','same-id',{owner:'alpha'});
   await store.writePrivateRecord('preferences','same-id',{owner:'alpha'});
 
-  // Beta writes the same collection/path. These must coexist, not dedupe Alpha away.
   window.fbUser={uid:'beta-user'};
   window.fbFamilyId='beta-household';
   await store.writeSharedRecord('recipes','same-id',{owner:'beta'});
@@ -42,27 +40,24 @@ const store=window.FamilyDataStore;
   assert.equal(pending.filter(x=>x.uid==='alpha-user').length,2);
   assert.equal(pending.filter(x=>x.uid==='beta-user').length,2);
 
-  // Reconnect as Beta: only Beta writes may flush.
   window.offlineMode=false;
   let result=await store.flushPending();
   assert.equal(result.flushed,2);
   assert.equal(result.remaining,2);
   assert(writes.every(w=>!w.path.includes('alpha-household')&&!w.path.includes('alpha-user')),'Beta reconnect must not flush Alpha writes');
-  assert(writes.some(w=>w.path.includes('/families/beta-household/shared/recipes/same-id')));
-  assert(writes.some(w=>w.path.includes('/users/beta-user/private/preferences/same-id')));
+  assert(writes.some(w=>w.path.includes('families/beta-household/shared/recipes/same-id')));
+  assert(writes.some(w=>w.path.includes('users/beta-user/private/preferences/same-id')));
 
-  // Switch back to Alpha: remaining Alpha writes flush only into Alpha paths.
   writes.length=0;
   window.fbUser={uid:'alpha-user'};
   window.fbFamilyId='alpha-household';
   result=await store.flushPending();
   assert.equal(result.flushed,2);
   assert.equal(result.remaining,0);
-  assert(writes.some(w=>w.path.includes('/families/alpha-household/shared/recipes/same-id')));
-  assert(writes.some(w=>w.path.includes('/users/alpha-user/private/preferences/same-id')));
+  assert(writes.some(w=>w.path.includes('families/alpha-household/shared/recipes/same-id')));
+  assert(writes.some(w=>w.path.includes('users/alpha-user/private/preferences/same-id')));
   assert(writes.every(w=>!w.path.includes('beta-household')&&!w.path.includes('beta-user')));
 
-  // Legacy/unresolved pending writes are quarantined by dropping them, never assigned to current user.
   localStorage.setItem('familyapp_data_v1_pending_writes',JSON.stringify([
     {scope:'private',collection:'preferences',path:['legacy'],value:{secret:true},uid:null,familyId:null,at:1},
     {scope:'shared',collection:'recipes',path:['legacy'],value:{secret:true},uid:'alpha-user',familyId:null,at:1}
@@ -74,7 +69,6 @@ const store=window.FamilyDataStore;
   assert.equal(result.remaining,0);
   assert.equal(writes.length,0);
 
-  // Creating a write while identity is unresolved must never create a flushable pending item.
   window.offlineMode=true;
   window.fbUser=null;
   window.fbFamilyId=null;
