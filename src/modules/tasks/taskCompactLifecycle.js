@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// TASK COMPACT LIFECYCLE v1.0
+// TASK COMPACT LIFECYCLE v1.1
 // Deterministic post-render lifecycle for the canonical TaskCompactHome.
 // No polling, MutationObserver, global click interception or XP overrides.
-// Owns only overdue/completed grouping and completed-task cleanup UI.
+// Owns overdue/completed grouping and all counts after lifecycle grouping.
 // ============================================================
 (function(){
   if(window.__taskCompactLifecycleV1)return;
@@ -29,78 +29,47 @@
     x.dataset.lifeGroup=name;
     x.innerHTML='<button class="tch-group-head" type="button"><span><b>'+name+'</b><em>0 taken</em></span><span class="tch-group-right"><i>⌃</i></span></button><div class="tch-list"></div>';
     var head=x.querySelector('.tch-group-head');
-    head.onclick=function(){
-      var list=x.querySelector('.tch-list'),icon=x.querySelector('i'),hide=list.style.display!=='none';
-      list.style.display=hide?'none':'';
-      icon.textContent=hide?'⌄':'⌃';
-    };
+    head.onclick=function(){var list=x.querySelector('.tch-list'),icon=x.querySelector('i'),hide=list.style.display!=='none';list.style.display=hide?'none':'';icon.textContent=hide?'⌄':'⌃';};
     return x;
   }
   function updateCount(group){
-    var n=group.querySelectorAll('.tch-list>.tch-row').length,em=group.querySelector('em');
+    var list=group&&group.querySelector(':scope > .tch-list');
+    var n=list?list.querySelectorAll(':scope > .tch-row').length:0,em=group&&group.querySelector(':scope > .tch-group-head em');
     if(em)em.textContent=n+' '+(n===1?'taak':'taken');
-    group.style.display=n?'':'none';
+    if(group&&group.dataset.lifeGroup)group.style.display=n?'':'none';
+  }
+  function updateCanonicalCounts(page){
+    Array.prototype.forEach.call(page.querySelectorAll(':scope > .tch-group:not([data-life-group])'),function(group){updateCount(group);});
   }
   function cleanupButton(group){
     var right=group.querySelector('.tch-group-head .tch-group-right');
     if(!right||right.querySelector('[data-clear-completed]'))return;
-    var b=document.createElement('button');
-    b.type='button';
-    b.className='tch-clear-completed';
-    b.dataset.clearCompleted='1';
-    b.textContent='Opschonen';
-    b.onclick=function(e){
-      e.preventDefault();e.stopPropagation();
-      var done=realTasks().filter(function(t){return t&&t.done;});
-      if(!done.length)return;
-      if(!confirm('Alle '+done.length+' voltooide taken verwijderen?'))return;
-      if(typeof window.deleteTask!=='function'){
-        if(typeof window.showToast==='function')window.showToast('Opschonen is nog niet beschikbaar');
-        return;
-      }
-      done.forEach(function(t){window.deleteTask(t.id);});
-      if(typeof window.showToast==='function')window.showToast(done.length+' voltooide '+(done.length===1?'taak verwijderd':'taken verwijderd'));
-    };
+    var b=document.createElement('button');b.type='button';b.className='tch-clear-completed';b.dataset.clearCompleted='1';b.textContent='Opschonen';
+    b.onclick=function(e){e.preventDefault();e.stopPropagation();var done=realTasks().filter(function(t){return t&&t.done;});if(!done.length)return;if(!confirm('Alle '+done.length+' voltooide taken verwijderen?'))return;if(typeof window.deleteTask!=='function'){if(typeof window.showToast==='function')window.showToast('Opschonen is nog niet beschikbaar');return;}done.forEach(function(t){window.deleteTask(t.id);});if(typeof window.showToast==='function')window.showToast(done.length+' voltooide '+(done.length===1?'taak verwijderd':'taken verwijderd'));};
     right.insertBefore(b,right.firstChild);
   }
   function apply(root){
     root=root||document.getElementById('task-content');
-    var page=root&&root.querySelector('.tch-page');
-    if(!page)return false;
+    var page=root&&root.querySelector('.tch-page');if(!page)return false;
     ensureCss();
-
     var first=page.querySelector('.tch-group'),partyCard=page.querySelector('#tch-party-quest');
-    var overdue=page.querySelector('[data-life-group="Verlopen"]');
-    if(!overdue){overdue=makeGroup('Verlopen','tch-overdue-group');if(first)page.insertBefore(overdue,first);else page.appendChild(overdue);}
-    var completed=page.querySelector('[data-life-group="Voltooid"]');
-    if(!completed){completed=makeGroup('Voltooid','tch-completed-group');if(partyCard)page.insertBefore(completed,partyCard);else page.appendChild(completed);}
+    var overdue=page.querySelector('[data-life-group="Verlopen"]');if(!overdue){overdue=makeGroup('Verlopen','tch-overdue-group');if(first)page.insertBefore(overdue,first);else page.appendChild(overdue);}
+    var completed=page.querySelector('[data-life-group="Voltooid"]');if(!completed){completed=makeGroup('Voltooid','tch-completed-group');if(partyCard)page.insertBefore(completed,partyCard);else page.appendChild(completed);}
     cleanupButton(completed);
-
     var overdueList=overdue.querySelector('.tch-list'),completedList=completed.querySelector('.tch-list');
     realTasks().forEach(function(task){
-      var row=page.querySelector('.tch-row[data-task-id="'+String(task.id).replace(/"/g,'\\"')+'"]');
-      if(!row)return;
+      var row=page.querySelector('.tch-row[data-task-id="'+String(task.id).replace(/"/g,'\\"')+'"]');if(!row)return;
       var meta=row.querySelector('.tch-meta span');
-      if(task.done){
-        if(meta)meta.textContent='Voltooid';
-        completedList.appendChild(row);
-        return;
-      }
+      if(task.done){if(meta)meta.textContent='Voltooid';completedList.appendChild(row);return;}
       var diff=dayDiff(task);
-      if(diff!==null&&diff<0){
-        if(meta){var days=Math.abs(diff);meta.textContent='Verlopen · '+days+' '+(days===1?'dag':'dagen');}
-        var name=row.querySelector('.tch-name');
-        if(name&&!name.querySelector('.tch-overdue-badge'))name.insertAdjacentHTML('beforeend','<span class="tch-overdue-badge">VERLOPEN</span>');
-        overdueList.appendChild(row);
-      }
+      if(diff!==null&&diff<0){if(meta){var days=Math.abs(diff);meta.textContent='Verlopen · '+days+' '+(days===1?'dag':'dagen');}var name=row.querySelector('.tch-name');if(name&&!name.querySelector('.tch-overdue-badge'))name.insertAdjacentHTML('beforeend','<span class="tch-overdue-badge">VERLOPEN</span>');overdueList.appendChild(row);}
     });
-    updateCount(overdue);
-    updateCount(completed);
+    // Counts are derived from the final grouped DOM, after completed and overdue
+    // rows have moved. Vandaag therefore represents active due-today items only.
+    updateCanonicalCounts(page);updateCount(overdue);updateCount(completed);
     return true;
   }
-
   function schedule(){Promise.resolve().then(function(){apply();});}
-  window.addEventListener('familyapp:tasks-updated',schedule);
-  window.addEventListener('familyapp:household-identity-synced',schedule);
-  window.TaskCompactLifecycle={version:'1.0.0',apply:apply};
+  window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);
+  window.TaskCompactLifecycle={version:'1.1.0',apply:apply};
 })();
