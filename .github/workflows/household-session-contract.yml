@@ -10,8 +10,11 @@ on:
       - 'src/core/householdContext.js'
       - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
+      - 'src/modules/tasks/taskSharedData.js'
       - 'src/modules/tasks/taskContextBoundary.js'
       - 'src/modules/tasks/taskCreateReadinessFix.js'
+      - 'src/modules/tasks/partyQuestContextService.js'
+      - 'src/modules/tasks/partyQuestContextUi.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -22,6 +25,8 @@ on:
       - 'tests/family-data-store-pending-context.test.js'
       - 'tests/task-context-boundary.test.js'
       - 'tests/task-context-adoption.test.js'
+      - 'tests/task-shared-context-rebind.test.js'
+      - 'tests/party-quest-context-service.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -38,8 +43,11 @@ on:
       - 'src/core/householdContext.js'
       - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
+      - 'src/modules/tasks/taskSharedData.js'
       - 'src/modules/tasks/taskContextBoundary.js'
       - 'src/modules/tasks/taskCreateReadinessFix.js'
+      - 'src/modules/tasks/partyQuestContextService.js'
+      - 'src/modules/tasks/partyQuestContextUi.js'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
@@ -50,6 +58,8 @@ on:
       - 'tests/family-data-store-pending-context.test.js'
       - 'tests/task-context-boundary.test.js'
       - 'tests/task-context-adoption.test.js'
+      - 'tests/task-shared-context-rebind.test.js'
+      - 'tests/party-quest-context-service.test.js'
       - 'tests/database-rules-removed-member.test.mjs'
       - 'tests/database-rules-invite-lifecycle.test.mjs'
       - '.github/workflows/household-session-contract.yml'
@@ -75,8 +85,11 @@ jobs:
           node --check src/core/householdContext.js
           node --check src/core/familyDataContract.js
           node --check src/core/familyDataStore.js
+          node --check src/modules/tasks/taskSharedData.js
           node --check src/modules/tasks/taskContextBoundary.js
           node --check src/modules/tasks/taskCreateReadinessFix.js
+          node --check src/modules/tasks/partyQuestContextService.js
+          node --check src/modules/tasks/partyQuestContextUi.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
           node --check tests/household-context-contract.test.js
@@ -84,6 +97,8 @@ jobs:
           node --check tests/family-data-store-pending-context.test.js
           node --check tests/task-context-boundary.test.js
           node --check tests/task-context-adoption.test.js
+          node --check tests/task-shared-context-rebind.test.js
+          node --check tests/party-quest-context-service.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
@@ -98,6 +113,10 @@ jobs:
         run: node tests/task-context-boundary.test.js
       - name: Task context adoption
         run: node tests/task-context-adoption.test.js
+      - name: Task shared context rebind
+        run: node tests/task-shared-context-rebind.test.js
+      - name: Party quest context isolation
+        run: node tests/party-quest-context-service.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling
