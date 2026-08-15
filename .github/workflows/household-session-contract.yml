@@ -8,6 +8,7 @@ on:
       - 'src/core/householdPlatform.js'
       - 'api/app.js'
       - 'tests/household-session-contract.test.js'
+      - 'tests/household-session-behavior.test.js'
       - '.github/workflows/household-session-contract.yml'
   push:
     branches:
@@ -19,6 +20,7 @@ on:
       - 'src/core/householdPlatform.js'
       - 'api/app.js'
       - 'tests/household-session-contract.test.js'
+      - 'tests/household-session-behavior.test.js'
       - '.github/workflows/household-session-contract.yml'
 
 permissions:
@@ -39,5 +41,8 @@ jobs:
           node --check src/core/householdIdentityFirebaseBridge.js
           node --check src/core/householdPlatform.js
           node --check api/app.js
+          node --check tests/household-session-behavior.test.js
       - name: Household isolation contract
         run: node tests/household-session-contract.test.js
+      - name: Household account-switch behavior
+        run: node tests/household-session-behavior.test.js
