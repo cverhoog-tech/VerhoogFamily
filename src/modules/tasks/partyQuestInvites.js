@@ -77,11 +77,17 @@
   function sendInvites(targetUids,questIds){
     var d=db(),family=hid(),me=uid();if(!d||!family||!me)return;
     var base=d.ref('families/'+family+'/partyQuests');
-    base.once('value').then(function(snap){
-      var latest=snap.val()||{},updates={},created=0,totalTargets=0,denied=0;
+    var created=0,totalTargets=0,denied=0;
+    // A transaction on the whole partyQuests node closes the read-then-write
+    // gap: the mutator may retry against the freshest server value if another
+    // client (an accept, a revoke, or a concurrent invite) commits first, so
+    // two people sending invites at the same moment cannot double-invite the
+    // same target or resurrect a stale ownership/participant snapshot.
+    base.transaction(function(latest){
+      latest=latest||{};created=0;totalTargets=0;denied=0;
       questIds.forEach(function(questId){
         var task=taskById(questId);if(!task)return;
-        // Authorisation is checked again at the write boundary so a stale UI
+        // Authorisation is checked again inside the transaction so a stale UI
         // selection cannot be used after ownership/task state changes.
         if(!isTaskCreator(task,me)){denied++;return;}
         var blocked=activeParticipantUids(questId,latest),inv={};
@@ -92,10 +98,14 @@
         });
         if(!Object.keys(inv).length)return;
         var id=base.push().key;
-        updates[id]={id:id,title:'Party Quest',questId:String(task.id),questTitle:String(task.title||'Naamloze quest'),status:'pending',inviterUid:me,inviterName:selfName(),invitees:inv,createdAt:firebase.database.ServerValue.TIMESTAMP,updatedAt:firebase.database.ServerValue.TIMESTAMP};created++;
+        latest[id]={id:id,title:'Party Quest',questId:String(task.id),questTitle:String(task.title||'Naamloze quest'),status:'pending',inviterUid:me,inviterName:selfName(),invitees:inv,createdAt:now(),updatedAt:now()};created++;
       });
-      if(!created){toast(denied?'Alleen de maker van een quest kan deelnemers uitnodigen':'De gekozen deelnemers doen al mee of hebben al een open uitnodiging');return false;}
-      return base.update(updates).then(function(){close();toast(created+' quest'+(created===1?'':'s')+' verstuurd naar '+totalTargets+' deelnemer'+(totalTargets===1?'':'s'));return true;});
+      if(!created)return; // abort transaction, nothing to commit
+      return latest;
+    }).then(function(result){
+      if(!created){toast(denied?'Alleen de maker van een quest kan deelnemers uitnodigen':'De gekozen deelnemers doen al mee of hebben al een open uitnodiging');return;}
+      if(!result.committed){toast('Uitnodigingen versturen mislukt: probeer opnieuw');return;}
+      close();toast(created+' quest'+(created===1?'':'s')+' verstuurd naar '+totalTargets+' deelnemer'+(totalTargets===1?'':'s'));
     }).catch(function(x){toast('Uitnodigingen versturen mislukt: '+((x&&x.message)||'onbekende fout'));});
   }
 
