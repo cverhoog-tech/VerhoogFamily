@@ -50,10 +50,11 @@ module.exports = async function handler(req, res) {
     );
 
     // Load these last so no older integration can restore retired renderers or
-    // light-only UI after navigation/Firebase re-renders.
+    // light-only UI after navigation/Firebase re-renders. The fresh start reset
+    // is intentionally temporary and only appears under More.
     html = html.replace(
       '</body>',
-      '<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script></body>'
+      '<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>'
     );
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
