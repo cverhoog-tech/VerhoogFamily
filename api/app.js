@@ -26,6 +26,13 @@ module.exports = async function handler(req, res) {
       '<script src="src/modules/tasks/personDashboardService.js?v=2"></script>\n  <script src="src/modules/tasks/personTabPremium.js?v=44"></script>'
     );
 
+    // Dedicated mobile layout correction for the member rail. Loaded after the
+    // renderer styles so Safari cannot place the avatars underneath task tabs.
+    html = html.replace(
+      '<link rel="stylesheet" href="src/styles/quest.css">',
+      '<link rel="stylesheet" href="src/styles/quest.css">\n  <link rel="stylesheet" href="src/styles/personTabLayoutFix.css?v=1">'
+    );
+
     // Keep the canonical Task Card bundle fresh on mobile Safari. Runtime
     // ownership is explicit: TaskDetailPopup owns task detail/create UI,
     // TaskSwapRequests owns the UID-based swap flow, and TaskSharedData owns
