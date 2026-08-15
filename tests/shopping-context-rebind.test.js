@@ -31,17 +31,26 @@ const context={window,document,localStorage:{getItem:k=>local[k]||null,setItem:(
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('src/modules/shop/shoppingLists.js','utf8'),context,{filename:'shoppingLists.js'});
 
+async function until(predicate,label,limit=40){
+  for(let i=0;i<limit;i++){
+    if(predicate())return;
+    await new Promise(resolve=>setImmediate(resolve));
+  }
+  throw new Error('Timeout waiting for '+label);
+}
+
 (async()=>{
-  await Promise.resolve();await Promise.resolve();
+  await until(()=>subscriptions.length>=2,'alpha shopping subscriptions');
   assert.equal(window.ShoppingLists.status().context.householdId,'alpha-household');
-  assert(subscriptions.length>=2);
   const alphaShared=subscriptions.find(s=>s.scope==='shared');
   alphaShared.cb({alphaList:{id:'alphaList',name:'Alpha',items:{a:{id:'a',name:'Melk',done:false}}}});
   assert.equal(window.shopData[0].name,'Melk');
 
   current={uid:'beta-user',householdId:'beta-household',ready:true};
   (listeners['familyapp:household-context-changed']||[]).forEach(fn=>fn());
-  await Promise.resolve();await Promise.resolve();
+  await until(()=>alphaShared.off===true,'alpha shopping detach');
+  await until(()=>window.ShoppingLists.status().context&&window.ShoppingLists.status().context.householdId==='beta-household','beta shopping rebind');
+  await until(()=>subscriptions.length>=4,'beta shopping subscriptions');
   assert.equal(alphaShared.off,true,'alpha subscription must detach');
   assert.equal(window.ShoppingLists.status().context.householdId,'beta-household');
 
