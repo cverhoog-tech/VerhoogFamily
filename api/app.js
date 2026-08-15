@@ -27,6 +27,7 @@ module.exports = async function handler(req, res) {
     // Canonical household runtime. Load after duoQuests so HouseholdPlatform is
     // the identity/membership authority and the hardening layer can replace the
     // legacy auth/session lifecycle with context-safe listener cleanup.
+    // Preview marker: household-auth-hardening-v2.
     html = html.replace(
       '<script src="src/modules/tasks/duoQuests.js"></script>',
       '<script src="src/modules/tasks/duoQuests.js"></script>\n'
