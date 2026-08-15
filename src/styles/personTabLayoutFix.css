@@ -1,0 +1,60 @@
+/* Person tab mobile layout correction.
+   Keep the member selector entirely in normal document flow below the task tabs. */
+#screen-tasks:has(.task-person-page) #task-content{
+  position:relative;
+  overflow:visible;
+}
+
+#screen-tasks:has(.task-person-page) .task-person-page{
+  padding-top:18px;
+}
+
+#screen-tasks:has(.task-person-page) .pp-members{
+  display:flex;
+  align-items:flex-start;
+  gap:15px;
+  min-height:108px;
+  margin:0 0 16px;
+  padding:10px 4px 12px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  position:relative;
+  z-index:auto;
+  transform:none;
+}
+
+#screen-tasks:has(.task-person-page) .pp-member{
+  flex:0 0 68px;
+  min-height:82px;
+  transform:none;
+}
+
+#screen-tasks:has(.task-person-page) .pp-avatar-wrap{
+  width:58px;
+  height:58px;
+  margin:0 auto 7px;
+  position:relative;
+  overflow:visible;
+  transform:none;
+}
+
+#screen-tasks:has(.task-person-page) .pp-avatar,
+#screen-tasks:has(.task-person-page) .pp-avatar-fallback{
+  display:block;
+  width:58px;
+  height:58px;
+  min-width:58px;
+  min-height:58px;
+  max-width:58px;
+  max-height:58px;
+  object-fit:cover;
+  border-radius:50%;
+  transform:none;
+}
+
+/* The rail itself owns enough top space, so nothing should pull it back under
+   the sticky task navigation. */
+#screen-tasks:has(.task-person-page) .pp-members,
+#screen-tasks:has(.task-person-page) .pp-members > *{
+  top:auto;
+}
