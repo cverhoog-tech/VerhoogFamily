@@ -1,20 +1,13 @@
 'use strict';
 // ============================================================
-// FEED INTERACTION CONTROLLER v1.0.0
+// FEED INTERACTION CONTROLLER v1.0.1
 // Keeps transient comment/GIF UI state separate from realtime Feed records.
 // Loaded after feed.js and deliberately owns comment visibility/drafts/GIFs.
 // ============================================================
 (function(){
   if(window.FeedInteractionController) return;
 
-  var state={
-    expandedComments:Object.create(null),
-    commentDrafts:Object.create(null),
-    commentGifDrafts:Object.create(null),
-    submittingComments:Object.create(null),
-    gifPickerPostId:null
-  };
-
+  var state={expandedComments:Object.create(null),commentDrafts:Object.create(null),commentGifDrafts:Object.create(null),submittingComments:Object.create(null),gifPickerPostId:null};
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function postId(v){return String(v==null?'':v);}
   function currentPost(id){return (window.feedData||[]).find(function(p){return String(p.id)===String(id)||String(p._key||'')===String(id);})||null;}
@@ -28,100 +21,32 @@
   function avatar(name,initials,color,cls){try{if(typeof window.avatarHTML==='function')return window.avatarHTML(name,initials,color,cls);}catch(e){}return '<div class="'+cls+'"></div>';}
   function sendIcon(){try{if(typeof window.svgIcon==='function')return window.svgIcon('send');}catch(e){}return '➤';}
 
-  function commentsHTML(p){
-    var id=postId(p&&p.id),cs=p&&p.comments||[];
-    if(!isExpanded(id)||!cs.length)return '';
-    return '<div class="fs-comments">'+cs.map(function(c){
-      var gifHtml=c&&c.gifUrl?'<img src="'+esc(c.gifUrl)+'" alt="GIF" style="max-width:200px;border-radius:12px;margin-top:6px;display:block;">':'';
-      return '<div class="fs-comment">'+avatar(c.author,c.initials,c.color,'fs-comment-avatar')+'<div><b>'+esc(c.author||'Gezinslid')+'</b>'+(c.text?'<span>'+esc(c.text)+'</span>':'')+gifHtml+'<small>'+esc(c.time||'nu')+' &nbsp; ♡ '+((c.likes||[]).length||0)+'</small></div></div>';
-    }).join('')+'</div>';
-  }
-
-  function gifPreviewHTML(id){
-    var url=gifDraft(id);if(!url)return '';
-    return '<div class="fs-comment-gif-preview" style="margin-left:44px;margin-top:6px;">'
-      +'<div style="position:relative;display:inline-block;max-width:180px">'
-      +'<img src="'+esc(url)+'" alt="Geselecteerde GIF" style="max-width:180px;max-height:150px;object-fit:cover;border-radius:12px;display:block">'
-      +'<button type="button" onclick="removeCommentGif(\''+esc(id)+'\')" aria-label="GIF verwijderen" style="position:absolute;top:5px;right:5px;width:24px;height:24px;border:0;border-radius:50%;background:rgba(0,0,0,.68);color:#fff;display:flex;align-items:center;justify-content:center">×</button>'
-      +'</div></div>';
-  }
-
-  function replyHTML(p){
-    var id=postId(p&&p.id),value=draft(id),busy=!!state.submittingComments[id];
-    return '<div class="fs-reply" style="flex-direction:column;align-items:stretch;">'
-      +'<div style="display:flex;gap:8px;align-items:center;">'
-      +avatar(window.myName,window.myInitials,window.myColor,'fs-reply-avatar')
-      +'<div class="fs-input" style="flex:1;">'
-      +'<input id="cmt-inp-'+esc(id)+'" value="'+esc(value)+'" placeholder="Schrijf een reactie..." '+(busy?'disabled ':'')+'oninput="setCommentDraft(\''+esc(id)+'\',this.value)">'
-      +'<button id="cmt-send-'+esc(id)+'" type="button" '+(busy?'disabled ':'')+'onclick="submitComment(\''+esc(id)+'\')">'+sendIcon()+'</button>'
-      +'</div></div>'
-      +gifPreviewHTML(id)
-      +'<div style="margin-left:44px;margin-top:6px;">'
-      +'<button type="button" onclick="openCommentGifPicker(\''+esc(id)+'\')" style="background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:99px;padding:5px 12px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;">🎞️ GIF</button>'
-      +'</div></div>';
-  }
+  function commentsHTML(p){var id=postId(p&&p.id),cs=p&&p.comments||[];if(!isExpanded(id)||!cs.length)return '';return '<div class="fs-comments">'+cs.map(function(c){var gifHtml=c&&c.gifUrl?'<img src="'+esc(c.gifUrl)+'" alt="GIF" style="max-width:200px;border-radius:12px;margin-top:6px;display:block;">':'';return '<div class="fs-comment">'+avatar(c.author,c.initials,c.color,'fs-comment-avatar')+'<div><b>'+esc(c.author||'Gezinslid')+'</b>'+(c.text?'<span>'+esc(c.text)+'</span>':'')+gifHtml+'<small>'+esc(c.time||'nu')+' &nbsp; ♡ '+((c.likes||[]).length||0)+'</small></div></div>';}).join('')+'</div>';}
+  function gifPreviewHTML(id){var url=gifDraft(id);if(!url)return '';return '<div class="fs-comment-gif-preview" style="margin-left:44px;margin-top:6px;"><div style="position:relative;display:inline-block;max-width:180px"><img src="'+esc(url)+'" alt="Geselecteerde GIF" style="max-width:180px;max-height:150px;object-fit:cover;border-radius:12px;display:block"><button type="button" onclick="removeCommentGif(\''+esc(id)+'\')" aria-label="GIF verwijderen" style="position:absolute;top:5px;right:5px;width:24px;height:24px;border:0;border-radius:50%;background:rgba(0,0,0,.68);color:#fff;display:flex;align-items:center;justify-content:center">×</button></div></div>';}
+  function replyHTML(p){var id=postId(p&&p.id),value=draft(id),busy=!!state.submittingComments[id];return '<div class="fs-reply" style="flex-direction:column;align-items:stretch;"><div style="display:flex;gap:8px;align-items:center;">'+avatar(window.myName,window.myInitials,window.myColor,'fs-reply-avatar')+'<div class="fs-input" style="flex:1;"><input id="cmt-inp-'+esc(id)+'" value="'+esc(value)+'" placeholder="Schrijf een reactie..." '+(busy?'disabled ':'')+'oninput="setCommentDraft(\''+esc(id)+'\',this.value)"><button id="cmt-send-'+esc(id)+'" type="button" '+(busy?'disabled ':'')+'onclick="submitComment(\''+esc(id)+'\')">'+sendIcon()+'</button></div></div>'+gifPreviewHTML(id)+'<div style="margin-left:44px;margin-top:6px;"><button type="button" onclick="openCommentGifPicker(\''+esc(id)+'\')" style="background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:99px;padding:5px 12px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;">🎞️ GIF</button></div></div>';}
 
   function toggleComments(id){id=postId(id);setExpanded(id,!isExpanded(id));rerender();if(isExpanded(id))setTimeout(function(){var input=document.getElementById('cmt-inp-'+id);if(input)input.focus();},0);}
   function setCommentDraft(id,value){setDraft(id,value);}
   function removeCommentGif(id){setGifDraft(id,'');rerender();}
-
   function submitComment(id){
-    id=postId(id);if(state.submittingComments[id])return;
-    var text=draft(id).trim(),gifUrl=gifDraft(id);
-    if(!text&&!gifUrl){var empty=document.getElementById('cmt-inp-'+id);if(empty)empty.focus();return;}
+    id=postId(id);if(state.submittingComments[id])return;var text=draft(id).trim(),gifUrl=gifDraft(id);if(!text&&!gifUrl){var empty=document.getElementById('cmt-inp-'+id);if(empty)empty.focus();return;}
     if(!window.FeedSharedData||typeof FeedSharedData.addComment!=='function'){if(typeof window.showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
     var originalPost=currentPost(id);state.submittingComments[id]=true;setExpanded(id,true);rerender();
-    FeedSharedData.addComment(id,{text:text,gifUrl:gifUrl||null}).then(function(){
-      delete state.commentDrafts[id];delete state.commentGifDrafts[id];delete state.submittingComments[id];setExpanded(id,true);rerender();
-      if(typeof window.addNotif==='function'&&originalPost&&typeof window.isOwnFeedAuthor==='function'&&!window.isOwnFeedAuthor(originalPost.author))window.addNotif('💬','#f3e8ff',(window.profileName?window.profileName():window.myName||'Gezinslid')+' reageerde op je post',text||'[GIF]');
-    }).catch(function(err){
-      delete state.submittingComments[id];rerender();console.error('[Feed] reactie plaatsen mislukt',err);if(typeof window.showToast==='function')showToast((err&&err.message)||'Reactie plaatsen mislukt, probeer opnieuw');
-    });
+    FeedSharedData.addComment(id,{text:text,gifUrl:gifUrl||null}).then(function(){delete state.commentDrafts[id];delete state.commentGifDrafts[id];delete state.submittingComments[id];setExpanded(id,true);rerender();if(typeof window.addNotif==='function'&&originalPost&&typeof window.isOwnFeedAuthor==='function'&&!window.isOwnFeedAuthor(originalPost.author))window.addNotif('💬','#f3e8ff',(window.profileName?window.profileName():window.myName||'Gezinslid')+' reageerde op je post',text||'[GIF]');}).catch(function(err){delete state.submittingComments[id];rerender();console.error('[Feed] reactie plaatsen mislukt',err);if(typeof window.showToast==='function')showToast((err&&err.message)||'Reactie plaatsen mislukt, probeer opnieuw');});
   }
-
-  function wireCommentInputs(){
-    (window.feedData||[]).forEach(function(p){
-      var id=postId(p.id),inp=document.getElementById('cmt-inp-'+id);if(!inp)return;
-      inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitComment(id);}};
-      inp.oninput=function(){setDraft(id,inp.value);};
-    });
-  }
+  function wireCommentInputs(){(window.feedData||[]).forEach(function(p){var id=postId(p.id),inp=document.getElementById('cmt-inp-'+id);if(!inp)return;inp.value=draft(id);inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitComment(id);}};inp.oninput=function(){setDraft(id,inp.value);};});}
 
   function closeGifPicker(){var modal=document.getElementById('gif-picker-modal');if(modal)modal.remove();state.gifPickerPostId=null;}
-  function openCommentGifPicker(id){
-    id=postId(id);state.gifPickerPostId=id;var old=document.getElementById('gif-picker-modal');if(old)old.remove();
-    var modal=document.createElement('div');modal.id='gif-picker-modal';modal.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(17,24,39,.34);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:12px;';
-    modal.innerHTML='<div id="gif-picker-sheet" style="width:min(100%,480px);height:min(62vh,520px);background:#fff;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column">'
-      +'<div style="display:flex;align-items:center;gap:8px;padding:12px;border-bottom:1px solid #eef0f2">'
-      +'<input id="gif-search-inp" placeholder="Zoek GIFs..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:99px;padding:9px 13px;font-size:14px;outline:none;background:#f9fafb">'
-      +'<button type="button" id="gif-close-btn" style="background:none;border:0;font-size:22px;color:#9ca3af">×</button></div>'
-      +'<div id="gif-results" style="flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px"></div></div>';
-    document.body.appendChild(modal);
-    var input=document.getElementById('gif-search-inp'),close=document.getElementById('gif-close-btn'),timer=null;
-    if(close)close.onclick=closeGifPicker;
-    modal.addEventListener('click',function(e){if(e.target===modal)closeGifPicker();});
-    if(input){input.oninput=function(){clearTimeout(timer);var q=input.value;timer=setTimeout(function(){searchGifs(q);},220);};input.focus();}
-    searchGifs('celebrate');
-  }
-
-  function searchGifs(query){
-    var results=document.getElementById('gif-results');if(!results)return;query=String(query||'').trim();if(query.length<2){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">Typ minimaal 2 letters</div>';return;}
-    results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">Zoeken...</div>';
-    var apiKey='AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI';
-    fetch('https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+encodeURIComponent(apiKey)+'&limit=18&media_filter=gif').then(function(r){if(!r.ok)throw new Error('GIF service '+r.status);return r.json();}).then(function(data){
-      var target=document.getElementById('gif-results');if(!target)return;var list=(data&&data.results)||[];target.innerHTML='';
-      list.forEach(function(gif){var formats=gif.media_formats||{},gifUrl=formats.gif&&formats.gif.url,thumb=(formats.nanogif&&formats.nanogif.url)||gifUrl;if(!gifUrl)return;var b=document.createElement('button');b.type='button';b.style.cssText='border:0;padding:0;background:transparent;border-radius:10px;overflow:hidden;';b.innerHTML='<img src="'+esc(thumb)+'" alt="GIF" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">';b.onclick=function(){selectCommentGif(gifUrl);};target.appendChild(b);});
-      if(!target.children.length)target.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">Geen resultaten</div>';
-    }).catch(function(err){console.error('[Feed] GIF search failed',err);var target=document.getElementById('gif-results');if(target)target.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">GIFs konden niet worden geladen</div>';});
-  }
-
+  function openCommentGifPicker(id){id=postId(id);state.gifPickerPostId=id;var old=document.getElementById('gif-picker-modal');if(old)old.remove();var modal=document.createElement('div');modal.id='gif-picker-modal';modal.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(17,24,39,.34);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:12px;';modal.innerHTML='<div id="gif-picker-sheet" style="width:min(100%,480px);height:min(62vh,520px);background:#fff;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column"><div style="display:flex;align-items:center;gap:8px;padding:12px;border-bottom:1px solid #eef0f2"><input id="gif-search-inp" placeholder="Zoek GIFs..." style="flex:1;border:1.5px solid #e5e7eb;border-radius:99px;padding:9px 13px;font-size:14px;outline:none;background:#f9fafb"><button type="button" id="gif-close-btn" style="background:none;border:0;font-size:22px;color:#9ca3af">×</button></div><div id="gif-results" style="flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px"></div></div>';document.body.appendChild(modal);var input=document.getElementById('gif-search-inp'),close=document.getElementById('gif-close-btn'),timer=null;if(close)close.onclick=closeGifPicker;modal.addEventListener('click',function(e){if(e.target===modal)closeGifPicker();});if(input){input.oninput=function(){clearTimeout(timer);var q=input.value;timer=setTimeout(function(){searchGifs(q);},220);};input.focus();}searchGifs('celebrate');}
+  function searchGifs(query){var results=document.getElementById('gif-results');if(!results)return;query=String(query||'').trim();if(query.length<2){results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">Typ minimaal 2 letters</div>';return;}results.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">Zoeken...</div>';var apiKey='AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI';fetch('https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+encodeURIComponent(apiKey)+'&limit=18&media_filter=gif').then(function(r){if(!r.ok)throw new Error('GIF service '+r.status);return r.json();}).then(function(data){var target=document.getElementById('gif-results');if(!target)return;var list=(data&&data.results)||[];target.innerHTML='';list.forEach(function(gif){var formats=gif.media_formats||{},gifUrl=formats.gif&&formats.gif.url,thumb=(formats.nanogif&&formats.nanogif.url)||gifUrl;if(!gifUrl)return;var b=document.createElement('button');b.type='button';b.style.cssText='border:0;padding:0;background:transparent;border-radius:10px;overflow:hidden;';b.innerHTML='<img src="'+esc(thumb)+'" alt="GIF" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">';b.onclick=function(){selectCommentGif(gifUrl);};target.appendChild(b);});if(!target.children.length)target.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">Geen resultaten</div>';}).catch(function(err){console.error('[Feed] GIF search failed',err);var target=document.getElementById('gif-results');if(target)target.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:18px;color:#9ca3af">GIFs konden niet worden geladen</div>';});}
   function selectCommentGif(url){var id=state.gifPickerPostId;if(!id)return;setGifDraft(id,url);setExpanded(id,true);closeGifPicker();rerender();}
   function openComposeGifPicker(){var u=window.prompt('Plak een GIF URL:');if(!u)return;window.composeMediaDataUrl=u;window.composeMediaType='gif';var prev=document.getElementById('compose-media-preview'),img=document.getElementById('compose-preview-img');if(prev&&img){img.src=u;img.style.display='block';prev.style.display='block';}}
 
-  window.FeedInteractionController={version:'1.0.0',state:state,status:function(){return{expanded:Object.keys(state.expandedComments).length,drafts:Object.keys(state.commentDrafts).length,gifDrafts:Object.keys(state.commentGifDrafts).length,submitting:Object.keys(state.submittingComments).length};}};
-  window.commentsHTML=commentsHTML;window.replyHTML=replyHTML;window.toggleComments=toggleComments;window.submitComment=submitComment;window.wireCommentInputs=wireCommentInputs;
-  window.setCommentDraft=setCommentDraft;window.removeCommentGif=removeCommentGif;window.openCommentGifPicker=openCommentGifPicker;window.selectCommentGif=selectCommentGif;window.searchGifs=searchGifs;window.closeGifPicker=closeGifPicker;window.openComposeGifPicker=openComposeGifPicker;
-  // Compatibility: existing per-comment buttons still call openGifPicker(postId).
-  window.openGifPicker=function(id){if(id!==undefined&&id!==null&&String(id)!=='')return openCommentGifPicker(id);return openComposeGifPicker();};
-  window.selectGif=selectCommentGif;
+  window.FeedInteractionController={version:'1.0.1',state:state,status:function(){return{expanded:Object.keys(state.expandedComments).length,drafts:Object.keys(state.commentDrafts).length,gifDrafts:Object.keys(state.commentGifDrafts).length,submitting:Object.keys(state.submittingComments).length};}};
+  window.commentsHTML=commentsHTML;window.replyHTML=replyHTML;window.toggleComments=toggleComments;window.submitComment=submitComment;window.wireCommentInputs=wireCommentInputs;window.setCommentDraft=setCommentDraft;window.removeCommentGif=removeCommentGif;window.openCommentGifPicker=openCommentGifPicker;window.selectCommentGif=selectCommentGif;window.searchGifs=searchGifs;window.closeGifPicker=closeGifPicker;window.openComposeGifPicker=openComposeGifPicker;window.openGifPicker=function(id){if(id!==undefined&&id!==null&&String(id)!=='')return openCommentGifPicker(id);return openComposeGifPicker();};window.selectGif=selectCommentGif;
+
+  // Ensure DOM that was rendered before this controller loaded is immediately
+  // rebuilt with state-aware inputs/handlers. Subsequent Firebase snapshots are
+  // safe because drafts live in this controller, not in the replaced post object.
+  setTimeout(function(){try{var screen=document.getElementById('screen-feed');if(screen&&screen.classList.contains('active'))rerender();}catch(e){}},0);
 })();
