@@ -53,6 +53,8 @@ The existing household contract workflow also runs because this pass changes pro
 
 A fresh Vercel preview should be built from the current branch head before live acceptance so a partially deployed Phase 17 intermediate commit is never used as release evidence.
 
+The mobile Google-auth return now also uses `authSessionBootstrap.js` as the defensive post-auth transition: household resolution and core rendering happen before the login overlay is removed, so a renderer failure cannot silently leave a blank page.
+
 ## Deliberate residual compatibility
 
 Phase 17 stays 🟡 because source-level legacy is not yet zero:
