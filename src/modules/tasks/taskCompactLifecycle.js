@@ -1,20 +1,23 @@
 'use strict';
 // ============================================================
-// TASK COMPACT LIFECYCLE v1.4.0
-// Deterministic post-render lifecycle for the canonical TaskCompactHome.
-// No polling or MutationObserver. Groups task lifecycle state and projects
-// collaboration state from TaskSharedData.
+// TASK COMPACT LIFECYCLE v2.0.0
+// Verlopen/Voltooid are rendered as first-class groups directly by
+// TaskCompactHome (deterministic, always present regardless of which
+// sections happen to be collapsed). This module no longer creates or
+// moves DOM between groups; it only projects collaboration state
+// (helper avatars, join/retract) from TaskSharedData onto rows that
+// TaskCompactHome has already rendered.
 // ============================================================
 (function(){
-  if(window.__taskCompactLifecycleV1)return;
-  window.__taskCompactLifecycleV1=true;
+  if(window.__taskCompactLifecycleV2)return;
+  window.__taskCompactLifecycleV2=true;
+  window.__taskCompactLifecycleV1=true; // keep legacy guard flag so any older cached script tag still short-circuits
 
   function realTasks(){return Array.isArray(window.taskData)?window.taskData:[];}
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
   function member(id){return members().find(function(m){return String(m.uid||m.id)===String(id);})||null;}
   function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
-  function dayDiff(task){if(!task||!task.date)return null;var d=new Date(task.date+'T00:00:00'),n=new Date();n.setHours(0,0,0,0);return Math.round((d-n)/86400000);}
   function isHelpOwner(task,id){return !!(window.TaskSharedData&&TaskSharedData.isTaskOwner&&TaskSharedData.isTaskOwner(task,id));}
   function helpers(task){return Array.isArray(task&&task.helpers)?task.helpers:[];}
   function isHelper(task,id){return helpers(task).some(function(h){return helperUid(h)===String(id);});}
@@ -39,19 +42,6 @@
       '.tch-helper-avatar-wrap.is-self-helper:after{content:"×";position:absolute;right:-4px;top:-5px;width:12px;height:12px;border-radius:50%;display:grid;place-items:center;background:#fff7e3;color:#9f1239;border:1px solid rgba(184,134,31,.65);font:900 9px/1 Arial;pointer-events:none}'
     ].join('\n');document.head.appendChild(s);
   }
-  function makeGroup(name,cls){var x=document.createElement('section');x.className='tch-group '+cls;x.dataset.lifeGroup=name;x.innerHTML='<button class="tch-group-head" type="button"><span><b>'+name+'</b><em>0 taken</em></span><span class="tch-group-right"><i>⌃</i></span></button><div class="tch-list"></div>';var head=x.querySelector('.tch-group-head');head.onclick=function(){var list=x.querySelector('.tch-list'),icon=x.querySelector('i'),hide=list.style.display!=='none';list.style.display=hide?'none':'';icon.textContent=hide?'⌄':'⌃';};return x;}
-  function updateCount(group){var list=group&&group.querySelector(':scope > .tch-list');var n=list?list.querySelectorAll(':scope > .tch-row').length:0,em=group&&group.querySelector(':scope > .tch-group-head em');if(em)em.textContent=n+' '+(n===1?'taak':'taken');if(group&&group.dataset.lifeGroup)group.style.display=n?'':'none';}
-  function updateCanonicalCounts(page){
-    Array.prototype.forEach.call(page.querySelectorAll(':scope > .tch-group:not([data-life-group])'),function(group){
-      var label=String((group.querySelector(':scope > .tch-group-head b')||{}).textContent||'').trim();
-      if(label==='Vandaag'){
-        var n=realTasks().filter(function(t){var diff=dayDiff(t);return t&&!t.done&&diff!==null&&diff<=0;}).length;
-        var em=group.querySelector(':scope > .tch-group-head em');if(em)em.textContent=n+' '+(n===1?'taak':'taken');
-      }else updateCount(group);
-    });
-  }
-  function cleanupButton(group){var right=group.querySelector('.tch-group-head .tch-group-right');if(!right||right.querySelector('[data-clear-completed]'))return;var b=document.createElement('button');b.type='button';b.className='tch-clear-completed';b.dataset.clearCompleted='1';b.textContent='Opschonen';b.onclick=function(e){e.preventDefault();e.stopPropagation();var done=realTasks().filter(function(t){return t&&t.done;});if(!done.length)return;if(!confirm('Alle '+done.length+' voltooide taken verwijderen?'))return;if(typeof window.deleteTask!=='function'){toast('Opschonen is nog niet beschikbaar');return;}done.forEach(function(t){window.deleteTask(t.id);});toast(done.length+' voltooide '+(done.length===1?'taak verwijderd':'taken verwijderd'));};right.insertBefore(b,right.firstChild);}
-
   function leaveAsHelper(task,el){
     var service=window.TaskSharedData;if(!service||!service.leaveHelp)return;el.style.pointerEvents='none';
     Promise.resolve(service.leaveHelp(task.id||task._key)).then(function(){toast('Je hebt de quest verlaten');}).catch(function(err){el.style.pointerEvents='';toast((err&&err.message)||'Quest verlaten mislukt');});
@@ -93,20 +83,17 @@
 
   function apply(root){
     root=root||document.getElementById('task-content');var page=root&&root.querySelector('.tch-page');if(!page)return false;ensureCss();
-    var first=page.querySelector('.tch-group'),partyCard=page.querySelector('#tch-party-quest');
-    var overdue=page.querySelector('[data-life-group="Verlopen"]');if(!overdue){overdue=makeGroup('Verlopen','tch-overdue-group');if(first)page.insertBefore(overdue,first);else page.appendChild(overdue);}
-    var completed=page.querySelector('[data-life-group="Voltooid"]');if(!completed){completed=makeGroup('Voltooid','tch-completed-group');if(partyCard)page.insertBefore(completed,partyCard);else page.appendChild(completed);}cleanupButton(completed);
-    var overdueList=overdue.querySelector('.tch-list'),completedList=completed.querySelector('.tch-list');
-    realTasks().forEach(function(task){
-      var row=page.querySelector('.tch-row[data-task-id="'+String(task.id).replace(/"/g,'\\"')+'"]');if(!row)return;
-      projectCollaboration(row,task);
-      var meta=row.querySelector('.tch-meta span');if(task.done){if(meta)meta.textContent='Voltooid';completedList.appendChild(row);return;}
-      var diff=dayDiff(task);if(diff!==null&&diff<0){if(meta){var days=Math.abs(diff);meta.textContent='Verlopen · '+days+' '+(days===1?'dag':'dagen');}var name=row.querySelector('.tch-name');if(name&&!name.querySelector('.tch-overdue-badge'))name.insertAdjacentHTML('beforeend','<span class="tch-overdue-badge">VERLOPEN</span>');overdueList.appendChild(row);}
+    // Grouping (Verlopen/Vandaag/Morgen/Later/Voltooid) is deterministic and
+    // owned by TaskCompactHome's renderer. This only projects collaboration
+    // UI (helper avatars, join/retract) onto rows that already exist.
+    Array.prototype.forEach.call(page.querySelectorAll('.tch-row[data-task-id]'),function(row){
+      var id=row.getAttribute('data-task-id'),task=realTasks().find(function(t){return String(t.id)===String(id);});
+      if(task)projectCollaboration(row,task);
     });
-    updateCanonicalCounts(page);updateCount(overdue);updateCount(completed);return true;
+    return true;
   }
   function schedule(){Promise.resolve().then(function(){apply();});}
   document.addEventListener('click',function(e){var h=e.target&&e.target.closest&&e.target.closest('#task-content [data-group-toggle]');if(h)Promise.resolve().then(function(){Promise.resolve().then(apply);});},false);
   window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);
-  window.TaskCompactLifecycle={version:'1.4.0',apply:apply};
+  window.TaskCompactLifecycle={version:'2.0.0',apply:apply};
 })();
