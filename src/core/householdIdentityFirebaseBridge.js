@@ -1,7 +1,7 @@
 'use strict';
 (function(){
-  if(window.__householdIdentityFirebaseBridgeV2) return;
-  window.__householdIdentityFirebaseBridgeV2 = true;
+  if(window.__householdIdentityFirebaseBridgeV3) return;
+  window.__householdIdentityFirebaseBridgeV3 = true;
 
   var membersRef = null;
   var presenceRef = null;
@@ -43,8 +43,20 @@
 
   function notify(members){ subscribers.slice().forEach(function(fn){ try { fn(members.slice()); } catch(e){ console.warn('[HouseholdIdentityFirebaseBridge] subscriber failed', e); } }); }
 
+  function mirrorAuthoritativeOwnProfile(members){
+    var u = authUser();
+    if(!u) return;
+    var mine = (members || []).find(function(member){ return member.uid === u.uid; });
+    if(!mine) return;
+    try {
+      if(mine.name && localStorage.getItem('familyapp-profile-name-v1') !== mine.name) localStorage.setItem('familyapp-profile-name-v1', mine.name);
+      if(mine.avatar && localStorage.getItem('familyapp-current-user-avatar-v1') !== mine.avatar) localStorage.setItem('familyapp-current-user-avatar-v1', mine.avatar);
+    } catch(e){}
+  }
+
   function apply(){
     var members = normalizedMembers();
+    mirrorAuthoritativeOwnProfile(members);
     // Compatibility only: old screens may still read HouseholdIdentity. Firebase remains authoritative.
     if(window.HouseholdIdentity && typeof window.HouseholdIdentity.saveMembers === 'function' && members.length){
       try { window.HouseholdIdentity.saveMembers(members); } catch(e){}
@@ -92,14 +104,18 @@
     try { var name=localStorage.getItem('familyapp-profile-name-v1'), avatar=localStorage.getItem('familyapp-current-user-avatar-v1'); if(name && name.trim()) result.name=name.trim(); if(avatar) result.avatar=avatar; } catch(e){}
     return result;
   }
-  function migrationKey(hid,uid){ return 'familyapp-firebase-member-profile-migrated-v1:' + hid + ':' + uid; }
+  function migrationKey(hid,uid){ return 'familyapp-firebase-member-profile-migrated-v2:' + hid + ':' + uid; }
   function migrateOwnLegacyProfileOnce(){
     var u=authUser(), hid=householdId(); if(!u || !hid || migrationInFlight) return;
     var key=migrationKey(hid,u.uid); try { if(localStorage.getItem(key) === '1') return; } catch(e){}
-    var legacy=legacyOwnProfile();
-    if(!Object.keys(legacy).length){ try { localStorage.setItem(key,'1'); } catch(e){} return; }
+    var legacy=legacyOwnProfile(), server=(lastMembers&&lastMembers[u.uid])||{}, patch={};
+    // One-way migration only fills fields that Firebase does not already own.
+    // It must never overwrite an avatar/name that another device already synced.
+    if(!server.name && legacy.name) patch.name=legacy.name;
+    if(!(server.avatar||server.avatarUrl||server.photoURL) && legacy.avatar) patch.avatar=legacy.avatar;
+    if(!Object.keys(patch).length){ try { localStorage.setItem(key,'1'); } catch(e){} return; }
     migrationInFlight=true;
-    updateOwnMemberProfile(legacy).then(function(){ try { localStorage.setItem(key,'1'); } catch(e){} }).catch(function(err){ console.warn('[HouseholdIdentityFirebaseBridge] legacy profile migration failed',err); }).finally(function(){ migrationInFlight=false; });
+    updateOwnMemberProfile(patch).then(function(){ try { localStorage.setItem(key,'1'); } catch(e){} }).catch(function(err){ console.warn('[HouseholdIdentityFirebaseBridge] legacy profile migration failed',err); }).finally(function(){ migrationInFlight=false; });
   }
 
   function subscribe(fn){
@@ -118,7 +134,7 @@
   window.addEventListener('familyapp:avatar-updated',function(e){ var detail=(e&&e.detail)||{}, url=detail.url||''; if(url) updateOwnMemberProfile({avatar:url}).catch(function(err){ console.warn('[HouseholdIdentityFirebaseBridge] avatar sync failed',err); }); });
 
   window.HouseholdIdentityFirebaseBridge = {
-    version:'2.0', sync:sync, apply:apply, detach:detach, getMembers:function(){ return normalizedMembers(); },
+    version:'3.0', sync:sync, apply:apply, detach:detach, getMembers:function(){ return normalizedMembers(); },
     getCurrentUid:function(){ var u=authUser(); return u ? u.uid : null; }, subscribe:subscribe, updateOwnMemberProfile:updateOwnMemberProfile,
     status:function(){ return { householdId:currentHouseholdId, attached:!!membersRef, memberCount:Object.keys(lastMembers||{}).length }; }
   };
