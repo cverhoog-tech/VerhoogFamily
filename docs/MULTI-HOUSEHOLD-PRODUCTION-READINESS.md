@@ -85,7 +85,63 @@ Status: 🟡
 
 Definition of Done: modules hoeven zelf geen identity/household-resolutie meer te improviseren.
 
-## Fase 3 — Taken / Quests
+## Fase 3 — Admin foundation & beta operations
+Status: ⬜
+
+Doel: het platform beheersbaar en diagnoseerbaar maken voordat de externe testgroep groter wordt, zonder standaard toegang tot gevoelige huishoudinhoud.
+
+### Platform authorization
+- [ ] Platformrollen volledig scheiden van household-rollen.
+- [ ] Centrale `platformAdmins/{uid}` of gelijkwaardige server-side autorisatiebron.
+- [ ] Geen hardcoded admin-email/UID checks verspreid door frontend-code.
+- [ ] Rollen voorbereiden op minimaal `superadmin` en later eventueel `support`.
+- [ ] Firebase Rules blokkeren adminfunctionaliteit voor normale household-users.
+
+### Admin Console v1
+- [ ] Alleen zichtbaar/toegankelijk voor geautoriseerde platform-admins.
+- [ ] Platformoverzicht met totaal aantal households, users en actieve beta-households.
+- [ ] Householdlijst met naam/ID, aantal members, createdAt en laatste activiteit.
+- [ ] Household detail met members, rollen, status en module-health.
+- [ ] Geen standaardweergave van boodschappen, privénotities, financiële details of andere gevoelige inhoud.
+
+### Health & diagnostics
+- [ ] Gezondheidsstatus per household: healthy / attention / broken.
+- [ ] Laatste succesvolle sync per relevante module waar technisch meetbaar.
+- [ ] Pending writes / sync-errors diagnosticeerbaar zonder inhoud te loggen.
+- [ ] Schema/app-versie zichtbaar.
+- [ ] Detectie voorbereiden voor orphan records, ontbrekende UID-references en inconsistente household pointers.
+- [ ] Device/browser/PWA-context beschikbaar bij gemelde technische problemen waar verantwoord.
+
+### Beta cohorts & feature flags
+- [ ] Testhouseholds kunnen aan een beta cohort/wave worden gekoppeld.
+- [ ] Globale feature flags.
+- [ ] Household-specifieke feature overrides.
+- [ ] Veilige rolloutvolgorde ondersteunen: eigen household → kleine wave → alle testers → productie.
+- [ ] Feature flags mogen nooit securityregels vervangen.
+
+### Veilige admin-acties
+- [ ] Invite intrekken.
+- [ ] Nieuwe invite laten genereren binnen normale autorisatieregels.
+- [ ] Member verwijderen/blokkeren met expliciete bevestiging.
+- [ ] Household tijdelijk blokkeren/deblokkeren indien later nodig.
+- [ ] Testdata/resetacties uitsluitend expliciet gescoped en met zware bevestiging.
+- [ ] Geen onbeperkte "login as user" bouwen.
+- [ ] Eventuele support-preview standaard read-only, duidelijk als admin-preview gemarkeerd en gelogd.
+
+### Feedback & support
+- [ ] In-app "Feedback / Bug melden" voorbereiden.
+- [ ] Automatisch technische context meesturen: householdId, uid, appVersion, screen, device/browser, timestamp en error codes waar beschikbaar.
+- [ ] Geen gevoelige scherminhoud automatisch meesturen.
+- [ ] Feedback in Admin Console aan household/user/context kunnen koppelen.
+
+### Audit log
+- [ ] Iedere gevoelige adminactie logt `adminUid`, `action`, `targetHouseholdId`, optioneel `targetUid`, timestamp en reason/context.
+- [ ] Audit records zijn niet client-side manipuleerbaar door normale users.
+- [ ] Adminacties zijn achteraf herleidbaar.
+
+Definition of Done: jij kunt een groeiende beta operationeel begeleiden, household-health beoordelen, feature rollouts sturen en supportacties uitvoeren zonder standaard toegang tot privé-inhoud en zonder Firebase Console als primaire beheerinterface.
+
+## Fase 4 — Taken / Quests
 Status: 🟡
 
 - [ ] Alle task records household-scoped.
@@ -100,7 +156,7 @@ Status: 🟡
 - [ ] Refresh/offline/reconnect tests.
 - [ ] Cross-household negatieve tests.
 
-## Fase 4 — Winkelen / Boodschappen
+## Fase 5 — Winkelen / Boodschappen
 Status: 🟡
 
 - [ ] Legacy `shopData` en andere lokale bron-van-waarheid verwijderen.
@@ -112,7 +168,7 @@ Status: 🟡
 - [ ] Shopping → activity/feed event publiceren.
 - [ ] Refresh/offline/reconnect/cross-household tests.
 
-## Fase 5 — Agenda
+## Fase 6 — Agenda
 Status: 🟡
 
 - [ ] Events household-scoped.
@@ -122,7 +178,7 @@ Status: 🟡
 - [ ] Geen legacy lokale agenda-array als authority.
 - [ ] Refresh/offline/reconnect/isolation tests.
 
-## Fase 6 — Recepten
+## Fase 7 — Recepten
 Status: 🟡
 
 - [ ] Household-shared recipes als primaire bron.
@@ -134,7 +190,7 @@ Status: 🟡
 - [ ] Geen lokale recipe state als bron van waarheid.
 - [ ] Isolation tests.
 
-## Fase 7 — Maaltijdplanning
+## Fase 8 — Maaltijdplanning
 Status: 🟡
 
 - [ ] Meal plans household-scoped.
@@ -144,7 +200,7 @@ Status: 🟡
 - [ ] Realtime create/edit/delete.
 - [ ] Refresh/offline/reconnect tests.
 
-## Fase 8 — Centrale Activity/Event Layer
+## Fase 9 — Centrale Activity/Event Layer
 Status: ⬜
 
 - [ ] Centrale `ActivityService.publish(...)` of equivalent.
@@ -153,7 +209,7 @@ Status: ⬜
 - [ ] Task-, meal-, shopping-, achievement-events via dezelfde laag.
 - [ ] Modules kennen Feed niet rechtstreeks.
 
-## Fase 9 — Feed
+## Fase 10 — Feed
 Status: 🟡
 
 - [ ] Feed uitsluitend uit huidige household laden.
@@ -164,7 +220,7 @@ Status: 🟡
 - [ ] Actor identity uitsluitend via UID/member profile.
 - [ ] Refresh/reconnect/isolation tests.
 
-## Fase 10 — Notificaties
+## Fase 11 — Notificaties
 Status: 🟡
 
 - [ ] Centrale NotificationService.
@@ -176,7 +232,7 @@ Status: 🟡
 - [ ] Intrekken/afhandelen zonder cross-household toegang.
 - [ ] Security Rules voor recipient/household-context.
 
-## Fase 11 — Financiën
+## Fase 12 — Financiën
 Status: 🟡
 
 - [ ] Household finance expliciet scheiden van user-private preferences.
@@ -187,7 +243,7 @@ Status: 🟡
 - [ ] Resetfunctie scoped op bedoelde household/data.
 - [ ] Rules en isolation tests extra streng uitvoeren.
 
-## Fase 12 — Achievements / XP / Streaks / Skills
+## Fase 13 — Achievements / XP / Streaks / Skills
 Status: 🟡
 
 - [ ] Persoonlijke progression UID-scoped.
@@ -198,7 +254,7 @@ Status: 🟡
 - [ ] Realtime/profile/feed integraties UID-correct.
 - [ ] Isolation tests.
 
-## Fase 13 — Profiel / Persoon / Presence
+## Fase 14 — Profiel / Persoon / Presence
 Status: 🟡
 
 - [ ] Member display data via `families/{householdId}/members/{uid}`.
@@ -208,7 +264,7 @@ Status: 🟡
 - [ ] Presence uitsluitend binnen eigen household.
 - [ ] Legacy `myName`, `partnerName`, avatar globals uit functionele logica verwijderen.
 
-## Fase 14 — Home dashboard
+## Fase 15 — Home dashboard
 Status: 🟡
 
 - [ ] Home bezit geen parallelle taak/XP/meal/calendar authority.
@@ -216,7 +272,7 @@ Status: 🟡
 - [ ] Hero/stat cards huidige household/UID-data tonen.
 - [ ] Refresh/account-switch/household-switch veilig.
 
-## Fase 15 — Search / autocomplete / AI context
+## Fase 16 — Search / autocomplete / AI context
 Status: ⬜
 
 - [ ] Zoekopdrachten standaard begrensd tot huidige household of UID.
@@ -225,7 +281,7 @@ Status: ⬜
 - [ ] Geen globale databasecollecties als AI-contextbron.
 - [ ] Logging bevat geen onnodige huishoudinhoud.
 
-## Fase 16 — Legacy localStorage & direct-write cleanup
+## Fase 17 — Legacy localStorage & direct-write cleanup
 Status: 🟡
 
 - [ ] Inventariseer alle `localStorage` keys.
@@ -235,7 +291,7 @@ Status: 🟡
 - [ ] Inventariseer directe `firebase.database().ref(...)` writes in modules.
 - [ ] Routeer domeindata via centrale service/datastore.
 
-## Fase 17 — Firebase + Storage Rules audit
+## Fase 18 — Firebase + Storage Rules audit
 Status: 🟡
 
 - [ ] Default deny behouden.
@@ -244,9 +300,10 @@ Status: 🟡
 - [ ] Removed member read/write: denied.
 - [ ] Private user data door ander household-lid: denied.
 - [ ] Finance extra negatieve tests.
+- [ ] Platform-admin rules afzonderlijk testen; geen privilege leakage naar household-admins.
 - [ ] Storage recipe/avatar/shared assets scoped beveiligen.
 
-## Fase 18 — Automated multi-household isolation tests
+## Fase 19 — Automated multi-household isolation tests
 Status: ⬜
 
 Testfixture:
@@ -261,8 +318,9 @@ Voor iedere domeinfeature testen:
 - [ ] Beta → Alpha denied/onzichtbaar.
 - [ ] Refresh behoudt juiste context.
 - [ ] Reconnect schrijft pending data alleen naar oorspronkelijke UID/household.
+- [ ] Normale household-owner krijgt nooit platform-admin privileges.
 
-## Fase 19 — Lifecycle & device/PWA tests
+## Fase 20 — Lifecycle & device/PWA tests
 Status: ⬜
 
 - [ ] Signup.
@@ -274,17 +332,19 @@ Status: ⬜
 - [ ] Offline/reconnect.
 - [ ] Member removal.
 - [ ] Invite expiry.
+- [ ] Admin-console authorization lifecycle.
 - [ ] iPhone Safari.
 - [ ] Installed iOS PWA.
 - [ ] Android Chrome/PWA.
 - [ ] Desktop browser.
 
-## Fase 20 — Observability & externe beta gate
+## Fase 21 — Observability & externe beta gate
 Status: ⬜
 
 - [ ] Foutlogging met UID/household/module/operation/errorCode zonder gevoelige inhoud.
 - [ ] Auth/sync/rules fouten diagnoseerbaar.
 - [ ] Geen silent data fallbacks.
+- [ ] Admin Console gebruikt dezelfde privacyarme diagnostics/health-signalen.
 - [ ] Beta testinstructies voor externe households.
 - [ ] Bekende beperkingen documenteren.
 - [ ] Go/no-go review uitvoeren.
@@ -295,13 +355,16 @@ Status: ⬜
 
 ## Gate A — Multi-household testklaar
 Minimaal gereed:
-- Fase 1–7 voldoende gehard
-- kritieke delen van Fase 16–17 afgerond
+- Fase 1–2 voldoende gehard
+- minimale veilige delen van Fase 3 aanwezig: platform-admin authorization, householdlijst/health basis, feature flags en audit logging voor adminacties
+- Fase 4–8 voldoende gehard
+- kritieke delen van Fase 17–18 afgerond
 - handmatige test met minimaal 3 onafhankelijke households geslaagd
 
 ## Gate B — Multi-household production-ready
 Minimaal gereed:
 - alle actieve kernmodules door het production-readiness contract
+- Admin Console/beta operations veilig bruikbaar zonder standaard privédata-inzage
 - volledige Firebase/Storage rules audit
 - automated isolation tests
 - lifecycle/device/PWA tests
@@ -315,6 +378,7 @@ Na production readiness:
 - storage/bandwidth usage
 - rate limiting/misbruikscenario's
 - grotere testdataset en concurrency tests
+- admin-console performance en pagination bij grotere aantallen households/users
 
 ---
 
@@ -324,6 +388,7 @@ Na production readiness:
 |---|---|---|
 | Household/Auth | 🟡 | Unieke households, memberships, invites en presence bestaan; hardening/tests nodig |
 | FamilyDataStore | 🟡 | Shared/private UID/household persistence boundary bestaat; adoptie per module controleren |
+| Admin Console & Beta Operations | ⬜ | Nieuwe workstream: platform-admin auth, health, feature flags, feedback en audit log logisch vóór brede externe beta gepland |
 | Security Rules | 🟡 | Default deny + membership checks aanwezig; volledige negatieve audit nog nodig |
 | Taken/Quests | 🟡 | Bestaande Firebase/UID-migratie aanwezig; volledige production-readiness audit vereist |
 | Winkelen | 🟡 | Shared storage foundation aanwezig; legacy shopping bridge bestaat nog |
@@ -345,12 +410,42 @@ Na production readiness:
 
 ---
 
+# Admin Console — privacyprincipes
+
+De adminconsole is een operations- en supporttool, geen standaard data-browser voor huishoudinhoud.
+
+Standaard wel zichtbaar:
+- household metadata en ID
+- member identity/rol/status
+- created/last-active timestamps
+- app/schema versie
+- module-health
+- foutcodes en syncstatus
+- recordaantallen en technische inconsistenties
+- beta cohort en feature flags
+- feedbacktickets en technische context
+
+Standaard niet zichtbaar:
+- inhoud van privénotities
+- persoonlijke berichten
+- volledige financiële inhoud/transactiedetails alleen voor nieuwsgierige inspectie
+- boodschappen-/receptinhoud zonder expliciete supportreden
+- gevoelige scherminhoud in automatisch verzamelde feedback
+
+Als later inhoudelijke supportinzage nodig blijkt, krijgt dit een afzonderlijke consent-, authorization- en audit-flow in plaats van impliciete superadmin-toegang.
+
+---
+
 # Changelog
 
 ## 2026-08-15
 - Centrale multi-household production-readiness roadmap aangemaakt.
 - Bestaande household identity, FamilyDataStore en Firebase rules als foundation vastgelegd.
 - Nog geen feature als volledig production-ready gemarkeerd zonder module-audit + isolation tests.
+- `Admin Console & Beta Operations` als aparte workstream toegevoegd.
+- Admin foundation logisch direct na Household/Auth + HouseholdContext gepland, zodat feature flags, diagnostics, feedback en audit logging tijdens de rest van de beta-hardening gebruikt kunnen worden.
+- Privacyprincipe vastgelegd: platform-admin krijgt standaard operationele metadata/health, geen onbeperkte inzage in gevoelige huishoudinhoud.
+- Roadmap uitgebreid van 20 naar 21 fases en releasegates aangepast.
 
 ## Update-regel voor toekomstige werkzaamheden
 Wanneer we een onderdeel afronden:
