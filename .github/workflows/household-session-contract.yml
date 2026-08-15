@@ -11,6 +11,7 @@ on:
       - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
       - 'src/core/foodAddBridge.js'
+      - 'src/core/groceryQuickAddModal.js'
       - 'src/modules/tasks/taskSharedData.js'
       - 'src/modules/tasks/taskContextBoundary.js'
       - 'src/modules/tasks/taskCreateReadinessFix.js'
@@ -55,6 +56,7 @@ on:
       - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
       - 'src/core/foodAddBridge.js'
+      - 'src/core/groceryQuickAddModal.js'
       - 'src/modules/tasks/taskSharedData.js'
       - 'src/modules/tasks/taskContextBoundary.js'
       - 'src/modules/tasks/taskCreateReadinessFix.js'
@@ -108,6 +110,7 @@ jobs:
           node --check src/core/familyDataContract.js
           node --check src/core/familyDataStore.js
           node --check src/core/foodAddBridge.js
+          node --check src/core/groceryQuickAddModal.js
           node --check src/modules/tasks/taskSharedData.js
           node --check src/modules/tasks/taskContextBoundary.js
           node --check src/modules/tasks/taskCreateReadinessFix.js
