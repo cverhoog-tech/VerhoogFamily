@@ -11,6 +11,13 @@ module.exports = async function handler(req, res) {
     // taskDetailPopup.js and the canonical overview by TaskCompactHome.
     html = html.replace(/\s*<script src="src\/modules\/tasks\/quest-overlay\.js"><\/script>\s*/g, '\n');
 
+    // Ensure the event-driven shared task bootstrap is not served from an old
+    // mobile Safari cache entry from before v1.2.
+    html = html.replace(
+      '<script src="src/modules/tasks/taskSharedData.js"></script>',
+      '<script src="src/modules/tasks/taskSharedData.js?v=2"></script>'
+    );
+
     // Keep the canonical Task Card bundle fresh on mobile Safari. Runtime
     // ownership is explicit: TaskDetailPopup owns task detail/create UI,
     // TaskSwapRequests owns the UID-based swap flow, and TaskSharedData owns
