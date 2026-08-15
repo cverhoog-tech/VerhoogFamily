@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// TASK COMPACT LIFECYCLE v1.2.1
+// TASK COMPACT LIFECYCLE v1.3.0
 // Deterministic post-render lifecycle for the canonical TaskCompactHome.
-// No polling, MutationObserver or global click interception.
-// Groups task lifecycle state and projects collaboration actions from TaskSharedData.
+// No polling or MutationObserver. Groups task lifecycle state and projects
+// collaboration actions from TaskSharedData.
 // ============================================================
 (function(){
   if(window.__taskCompactLifecycleV1)return;
@@ -15,8 +15,7 @@
   function member(id){return members().find(function(m){return String(m.uid||m.id)===String(id);})||null;}
   function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
   function dayDiff(task){if(!task||!task.date)return null;var d=new Date(task.date+'T00:00:00'),n=new Date();n.setHours(0,0,0,0);return Math.round((d-n)/86400000);}
-  function isAssigned(task,id){return !!(window.TaskSharedData&&TaskSharedData.isAssignedTo&&TaskSharedData.isAssignedTo(task,id));}
-  function isHelpOwner(task,id){var key=String(id||'');return !!(key&&(isAssigned(task,key)||String(task&&task.createdByUid||'')===key||String(task&&task.helpRequestedByUid||'')===key));}
+  function isHelpOwner(task,id){return !!(window.TaskSharedData&&TaskSharedData.isTaskOwner&&TaskSharedData.isTaskOwner(task,id));}
   function helpers(task){return Array.isArray(task&&task.helpers)?task.helpers:[];}
   function isHelper(task,id){return helpers(task).some(function(h){return helperUid(h)===String(id);});}
   function initials(name){return String(name||'G').trim().split(/\s+/).map(function(x){return x[0]||'';}).join('').slice(0,2).toUpperCase()||'G';}
@@ -63,7 +62,7 @@
     var action='',label='',cls='';
     if(isHelper(task,me)){action='leave';label='Quest verlaten';cls=' is-leave';}
     else if(task.helpRequested&&isHelpOwner(task,me)){action='retract';label='Hulpvraag intrekken';cls=' is-retract';}
-    else if(task.helpRequested&&!isHelpOwner(task,me)){action='join';label='Hulp bieden';}
+    else if(task.helpRequested&&String(task.helpRequestedForUid||'')===String(me)){action='join';label='Hulp bieden';}
     if(!action)return;
     var btn=document.createElement('button');btn.type='button';btn.className='tch-collab-action'+cls;btn.dataset.collabAction=action;btn.textContent=label;
     btn.onclick=function(e){
@@ -97,6 +96,10 @@
     updateCanonicalCounts(page);updateCount(overdue);updateCount(completed);return true;
   }
   function schedule(){Promise.resolve().then(function(){apply();});}
+  // TaskCompactHome re-renders synchronously when a canonical group is toggled.
+  // Re-apply lifecycle groups immediately after that owned interaction; this is
+  // deterministic and avoids observers/polling while keeping Verlopen stable.
+  document.addEventListener('click',function(e){var h=e.target&&e.target.closest&&e.target.closest('#task-content [data-group-toggle]');if(h)Promise.resolve().then(function(){Promise.resolve().then(apply);});},false);
   window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);
-  window.TaskCompactLifecycle={version:'1.2.1',apply:apply};
+  window.TaskCompactLifecycle={version:'1.3.0',apply:apply};
 })();
