@@ -15,8 +15,9 @@ module.exports = async function handler(req, res) {
 
     html = html.replace(
       '<script src="src/modules/feed/feed.js"></script>',
-      '<script src="src/modules/feed/feedSharedData.js?v=4"></script>\n'
+      '<script src="src/modules/feed/feedSharedData.js?v=5"></script>\n'
       + '  <script src="src/modules/feed/feed.js?v=6"></script>\n'
+      + '  <script src="src/modules/feed/feedContextIdentity.js?v=1"></script>\n'
       + '  <script src="src/modules/feed/feedInteractionController.js?v=5"></script>\n'
       + '  <script src="src/platform/activity/householdActivity.js?v=6"></script>\n'
       + '  <script src="src/platform/activity/activityDomainProducers.js?v=1"></script>\n'
