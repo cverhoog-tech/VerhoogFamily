@@ -7,6 +7,60 @@
 
 var _profileMounted = false;
 
+// ============================================================
+// GLOBAL UI SCALE
+// Eén centrale schaalinstelling voor de volledige app. De instelling wordt
+// lokaal bewaard en bij iedere appstart opnieuw toegepast. CSS `zoom` schaalt
+// zowel typografie als kaarten, iconen, controls en spacing als één geheel.
+// ============================================================
+(function bootstrapFamilyUiScale(){
+  var STORAGE_KEY = 'familyapp-ui-scale-v1';
+  var OPTIONS = [90, 100, 110, 120];
+
+  function normalize(value){
+    var parsed = parseInt(value, 10);
+    return OPTIONS.indexOf(parsed) !== -1 ? parsed : 100;
+  }
+
+  function get(){
+    return normalize(localStorage.getItem(STORAGE_KEY));
+  }
+
+  function apply(value){
+    var percent = normalize(value);
+    var factor = percent / 100;
+    if(document.body){
+      document.body.style.zoom = String(factor);
+      document.body.dataset.uiScale = String(percent);
+    }
+    document.documentElement.style.setProperty('--family-ui-scale', String(factor));
+    document.documentElement.dataset.uiScale = String(percent);
+    return percent;
+  }
+
+  function set(value){
+    var percent = normalize(value);
+    localStorage.setItem(STORAGE_KEY, String(percent));
+    apply(percent);
+    try {
+      window.dispatchEvent(new CustomEvent('familyapp:ui-scale-changed', { detail: { scale: percent } }));
+    } catch(e){}
+    return percent;
+  }
+
+  window.FamilyUiScale = {
+    options: OPTIONS.slice(),
+    get: get,
+    set: set,
+    apply: apply,
+    reset: function(){ localStorage.removeItem(STORAGE_KEY); return apply(100); }
+  };
+
+  function initialApply(){ apply(get()); }
+  if(document.body) initialApply();
+  else document.addEventListener('DOMContentLoaded', initialApply, { once: true });
+})();
+
 // Identity/avatar bootstrap. HouseholdIdentity remains a compatibility layer;
 // Firebase household identity is read through householdIdentityFirebaseBridge.
 (function bootstrapAvatarIdentity(){
