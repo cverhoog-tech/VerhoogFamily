@@ -49,6 +49,14 @@ module.exports = async function handler(req, res) {
       '<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>'
     );
 
+    // Feed UI still lives in feed.js, but persistence is household-scoped and
+    // realtime through FeedSharedLive. Load this after feed.js has defined the
+    // existing renderer/mutation functions.
+    html = html.replace(
+      '<script src="src/modules/feed/feed.js"></script>',
+      '<script src="src/modules/feed/feed.js?v=2"></script>\n  <script src="src/modules/feed/feedSharedLive.js?v=1"></script>'
+    );
+
     // Load these last so no older integration can restore retired renderers or
     // light-only UI after navigation/Firebase re-renders. The fresh start reset
     // is intentionally temporary and only appears under More.
