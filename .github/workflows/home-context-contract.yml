@@ -1,0 +1,41 @@
+name: Home dashboard context contract
+
+on:
+  pull_request:
+    paths:
+      - 'src/modules/home/**'
+      - 'api/app.js'
+      - 'tests/home-context-*.test.js'
+      - '.github/workflows/home-context-contract.yml'
+  push:
+    branches:
+      - agent/household-context-foundation
+      - main
+    paths:
+      - 'src/modules/home/**'
+      - 'api/app.js'
+      - 'tests/home-context-*.test.js'
+      - '.github/workflows/home-context-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  home-context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check src/modules/home/homeDashboardService.js
+          node --check src/modules/home/home.js
+          node --check tests/home-context-rebind.test.js
+          node --check tests/home-context-adoption.test.js
+          node --check api/app.js
+      - name: Home account-switch behavior
+        run: node tests/home-context-rebind.test.js
+      - name: Home service adoption
+        run: node tests/home-context-adoption.test.js
