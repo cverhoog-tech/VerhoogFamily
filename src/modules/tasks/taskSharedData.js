@@ -1,8 +1,9 @@
 'use strict';
 // ============================================================
-// SHARED TASK DATA FOUNDATION v1.1
+// SHARED TASK DATA FOUNDATION v1.2
 // Firebase shared/tasks is authoritative for household tasks.
 // window.taskData remains a compatibility projection for existing UI/progression code.
+// Bootstrap is deterministic and event-driven; no polling loop.
 // ============================================================
 (function(){
   if(window.TaskSharedData) return;
@@ -237,7 +238,7 @@
   }
 
   window.TaskSharedData={
-    version:'1.1',
+    version:'1.2',
     start:start,
     create:write,
     update:update,
@@ -252,11 +253,8 @@
 
   window.addEventListener('familyapp:household-changed',ensureStart);
   window.addEventListener('familyapp:household-identity-synced',ensureStart);
-  window.addEventListener('load',ensureStart);
-  var bootTries=0,bootTimer=setInterval(function(){
-    bootTries++;
-    ensureStart();
-    if(bootTries>120&&started&&window.syncToFirebase&&window.syncToFirebase.__sharedTasksOwnTasks&&window.toggleTask&&window.toggleTask.__sharedTasks){clearInterval(bootTimer);}
-  },250);
-  setTimeout(ensureStart,0);
+  window.addEventListener('familyapp:auth-ready',ensureStart);
+  window.addEventListener('load',ensureStart,{once:true});
+  if(document.readyState==='complete')ensureStart();
+  else Promise.resolve().then(ensureStart);
 })();
