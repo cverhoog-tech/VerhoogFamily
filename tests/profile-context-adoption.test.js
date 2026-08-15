@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('fs'),assert=require('assert');
+const profile=fs.readFileSync('src/modules/profile/profileContextService.js','utf8');
+const runtime=fs.readFileSync('src/modules/profile/profileRuntimeContextBridge.js','utf8');
+const person=fs.readFileSync('src/modules/tasks/personDashboardService.js','utf8');
+const loader=fs.readFileSync('api/app.js','utf8');
+assert.ok(profile.includes("version==='1.0.0'"));assert.ok(profile.includes('HouseholdContext'));assert.ok(profile.includes('PROFILE_CONTEXT_CHANGED'));assert.ok(profile.includes('updateOwnMemberProfile'));assert.ok(!profile.includes('window.fbFamilyId'));assert.ok(!profile.includes('window.fbUser'));assert.ok(!profile.includes("'Shane'"));assert.ok(!profile.includes("'Esra'"));
+assert.ok(runtime.includes('ProfileContextService'));assert.ok(runtime.includes('[data-save-profile]'));assert.ok(!runtime.includes('firebase.database'));
+assert.ok(person.includes("VERSION='2.0.0'"));assert.ok(person.includes('HouseholdContext'));assert.ok(person.includes('HouseholdIdentityFirebaseBridge'));assert.ok(person.includes('privateProgressionCurrentUidOnly'));assert.ok(!person.includes('families/'));assert.ok(!person.includes('window.fbFamilyId'));assert.ok(!person.includes('window.fbUser'));
+assert.ok(loader.includes('src/modules/profile/profileContextService.js?v=1'));assert.ok(loader.includes('src/modules/profile/profileRuntimeContextBridge.js?v=1'));assert.ok(loader.includes('src/modules/tasks/personDashboardService.js?v=3'));
+console.log('profile context adoption OK');
