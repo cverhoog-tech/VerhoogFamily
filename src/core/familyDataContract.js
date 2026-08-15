@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FAMILYAPP DATA CONTRACT v1.0
+// FAMILYAPP DATA CONTRACT v1.1
 // Canonical collection names + scoped path builders.
 // ============================================================
 (function(){
@@ -8,6 +8,7 @@
 
   var SHARED=Object.freeze({
     tasks:'tasks',
+    partyQuests:'partyQuests',
     shoppingLists:'shoppingLists',
     recipes:'recipes',
     mealPlans:'mealPlans',
@@ -58,7 +59,7 @@
   }
 
   window.FamilyDataContract={
-    version:'1.0.0',
+    version:'1.1.0',
     sharedCollections:SHARED,
     privateCollections:PRIVATE,
     shared:shared,
