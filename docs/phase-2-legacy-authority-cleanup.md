@@ -55,6 +55,8 @@ A fresh Vercel preview should be built from the current branch head before live 
 
 The mobile Google-auth return now also uses `authSessionBootstrap.js` as the defensive post-auth transition: household resolution and core rendering happen before the login overlay is removed, so a renderer failure cannot silently leave a blank page.
 
+Preview deployment was retriggered after the earlier Vercel build-rate-limit gate.
+
 ## Deliberate residual compatibility
 
 Phase 17 stays 🟡 because source-level legacy is not yet zero:
