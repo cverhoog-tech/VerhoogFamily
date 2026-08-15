@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// FINANCE MAANDPLAN GROUPS v1.1.0
-// Month-plan presentation consumes FinanceStore.monthlySummary for all totals.
-// Existing legacy actions remain intact; business calculations do not live here.
+// FINANCE MAANDPLAN GROUPS v1.1.1
+// Presentation-only grouping. FinanceStore.monthlySummary is the sole owner
+// of disposable-income and monthly finance calculations.
 // ============================================================
 (function(){
   if(window.FinanceMaandplanGroups)return;
-  var VERSION='1.1.0';
+  var VERSION='1.1.1';
   var STORAGE_KEY='familyapp_finance_maandplan_groups_v1';
   var originalRender=null;
 
@@ -16,17 +16,8 @@
   function euro(v){return '€ '+Math.abs(Number(v)||0).toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:2});}
   function ym(){var y=typeof window.mpYear==='number'?window.mpYear:new Date().getFullYear();var m=typeof window.mpMonth==='number'?window.mpMonth:new Date().getMonth();return y+'-'+String(m+1).padStart(2,'0');}
   function monthSummary(){
-    if(window.FinanceStore&&typeof FinanceStore.monthlySummary==='function')return FinanceStore.monthlySummary(typeof window.mpYear==='number'?window.mpYear:undefined,typeof window.mpMonth==='number'?window.mpMonth:undefined);
-    var key=ym(),tx=(window.transData||[]).filter(function(t){return String(t&&t.date||'').slice(0,7)===key;}),extra=(window.extraIncome||[]).filter(function(t){return String(t&&t.date||'').slice(0,7)===key;});
-    var transactionExpenses=tx.filter(function(t){return Number(t.amount)<0;}).reduce(function(s,t){return s+Math.abs(Number(t.amount)||0);},0);
-    var transactionIncome=tx.filter(function(t){return Number(t.amount)>0;}).reduce(function(s,t){return s+Number(t.amount||0);},0);
-    var extraIncome=extra.filter(function(t){return Number(t.amount)>0;}).reduce(function(s,t){return s+Number(t.amount||0);},0);
-    var extraExpenses=extra.filter(function(t){return Number(t.amount)<0;}).reduce(function(s,t){return s+Math.abs(Number(t.amount)||0);},0);
-    var fixedExpenses=(window.vasteLasten||[]).reduce(function(s,t){return s+Math.abs(Number(t&&t.amount)||0);},0);
-    var savingsDeposits=(window.savingsGoals||[]).reduce(function(s,g){return s+(g.log||[]).filter(function(l){return String(l&&l.date||'').slice(0,7)===key&&l.type==='deposit';}).reduce(function(x,l){return x+Math.abs(Number(l.amount)||0);},0);},0);
-    var salaryIncome=Number(window.inkomenShane&&inkomenShane.amount||0)+Number(window.inkomenEsra&&inkomenEsra.amount||0);
-    var totalIncome=salaryIncome+extraIncome+transactionIncome,totalExpenses=fixedExpenses+extraExpenses+transactionExpenses+savingsDeposits;
-    return{month:key,transactionExpenses:transactionExpenses,transactionIncome:transactionIncome,extraIncome:extraIncome,extraExpenses:extraExpenses,fixedExpenses:fixedExpenses,savingsDeposits:savingsDeposits,totalIncome:totalIncome,totalExpenses:totalExpenses,disposable:totalIncome-totalExpenses,transactionCount:tx.length};
+    if(!window.FinanceStore||typeof FinanceStore.monthlySummary!=='function')return null;
+    return FinanceStore.monthlySummary(typeof window.mpYear==='number'?window.mpYear:undefined,typeof window.mpMonth==='number'?window.mpMonth:undefined);
   }
 
   function ensureStyles(){
@@ -55,10 +46,15 @@
     ].join('\n');document.head.appendChild(s);
   }
   function classifyButtons(root){Array.prototype.forEach.call(root.querySelectorAll('button'),function(btn){if(btn.classList.contains('mp-group-toggle'))return;var t=text(btn);if(t==='✕'||t==='×'||t==='🗑'||t==='🗑️'||t==='✓')btn.classList.add('mp-unified-icon-action');else btn.classList.add('mp-unified-action');});}
-  function summary(){var s=monthSummary();return{transactions:{count:s.transactionCount||0,total:s.transactionExpenses||0,sub:(s.transactionCount||0)+' transactie'+((s.transactionCount||0)===1?'':'s')+' deze maand'},oneoff:{count:(window.extraIncome||[]).filter(function(t){return String(t&&t.date||'').slice(0,7)===ym();}).length,total:s.extraExpenses||0,sub:(window.extraIncome||[]).filter(function(t){return String(t&&t.date||'').slice(0,7)===ym();}).length+' incidentele posten deze maand'},fixed:{count:(window.vasteLasten||[]).length,total:s.fixedExpenses||0,sub:(window.vasteLasten||[]).length+' vaste lasten'}};}
+  function summary(){
+    var s=monthSummary();if(!s)return null;
+    var oneCount=(window.extraIncome||[]).filter(function(t){return String(t&&t.date||'').slice(0,7)===ym();}).length;
+    var fixedCount=(window.vasteLasten||[]).length;
+    return{transactions:{count:s.transactionCount||0,total:s.transactionExpenses||0,sub:(s.transactionCount||0)+' transactie'+((s.transactionCount||0)===1?'':'s')+' deze maand'},oneoff:{count:oneCount,total:s.extraExpenses||0,sub:oneCount+' incidentele posten deze maand'},fixed:{count:fixedCount,total:s.fixedExpenses||0,sub:fixedCount+' vaste lasten'}};
+  }
 
   function syncDisposableHero(panel){
-    var s=monthSummary();
+    var s=monthSummary();if(!s)return false;
     var label=Array.prototype.slice.call(panel.querySelectorAll('div')).find(function(el){return text(el)==='Vrij besteedbaar';});
     if(!label)return false;
     var copy=label.parentElement,hero=copy&&copy.parentElement;if(!copy||!hero)return false;
@@ -86,16 +82,18 @@
   function collectRange(start,stop){var out=[],node=start;while(node&&node!==stop){var next=node.nextSibling;out.push(node);node=next;}return out;}
 
   function apply(){
+    var canonical=monthSummary();if(!canonical)return false;
     ensureStyles();var panel=document.getElementById('fin-maandplan');if(!panel)return false;syncDisposableHero(panel);
-    var old=panel.querySelector(':scope > .mp-groups');if(old){var sumExisting=summary();var tg=old.querySelector('[data-group="transactions"] .mp-group-total');if(tg)tg.textContent=sumExisting.transactions.total?'- '+euro(sumExisting.transactions.total):euro(0);return true;}
+    var old=panel.querySelector(':scope > .mp-groups');if(old){var sumExisting=summary();if(!sumExisting)return false;var tg=old.querySelector('[data-group="transactions"] .mp-group-total');if(tg)tg.textContent=sumExisting.transactions.total?'- '+euro(sumExisting.transactions.total):euro(0);return true;}
     var tx=document.getElementById('mp-transactions-summary');if(!tx||tx.parentNode!==panel)return false;
     var one=directHeader(panel,/^Eenmalig deze maand\b/),fixed=directHeader(panel,/^Vaste lasten\b/);if(!one||!fixed)return false;
     var children=Array.prototype.slice.call(panel.children);if(children.indexOf(one)>children.indexOf(fixed)){var oneBlock=collectRange(one,null),fixedIndex=oneBlock.indexOf(fixed);if(fixedIndex>=0)oneBlock=oneBlock.slice(0,fixedIndex);oneBlock.forEach(function(n){if(n&&n.parentNode===panel)panel.insertBefore(n,fixed);});}
     one=directHeader(panel,/^Eenmalig deze maand\b/);fixed=directHeader(panel,/^Vaste lasten\b/);if(!one||!fixed)return false;
     var oneNodes=collectRange(one.nextSibling,fixed).filter(function(n){return n!==tx&&n.id!=='mp-transactions-summary';});var fixedNodes=collectRange(fixed.nextSibling,null).filter(function(n){return n!==tx&&n.id!=='mp-transactions-summary';});
     var groups=document.createElement('div');groups.className='mp-groups';panel.insertBefore(groups,one);if(one.parentNode===panel)panel.removeChild(one);if(fixed.parentNode===panel)panel.removeChild(fixed);
-    var st=readState(),sum=summary();groups.appendChild(makeGroup('transactions','💳','Transacties',sum.transactions.sub,sum.transactions.total?'- '+euro(sum.transactions.total):euro(0),[tx],st));groups.appendChild(makeGroup('oneoff','🧾','Eenmalige rekeningen',sum.oneoff.sub,sum.oneoff.total?'- '+euro(sum.oneoff.total):euro(0),oneNodes,st));groups.appendChild(makeGroup('fixed','🏠','Vaste lasten',sum.fixed.sub,sum.fixed.total?'- '+euro(sum.fixed.total):euro(0),fixedNodes,st));return true;
+    var st=readState(),sum=summary();if(!sum)return false;groups.appendChild(makeGroup('transactions','💳','Transacties',sum.transactions.sub,sum.transactions.total?'- '+euro(sum.transactions.total):euro(0),[tx],st));groups.appendChild(makeGroup('oneoff','🧾','Eenmalige rekeningen',sum.oneoff.sub,sum.oneoff.total?'- '+euro(sum.oneoff.total):euro(0),oneNodes,st));groups.appendChild(makeGroup('fixed','🏠','Vaste lasten',sum.fixed.sub,sum.fixed.total?'- '+euro(sum.fixed.total):euro(0),fixedNodes,st));return true;
   }
   function install(){if(typeof window.renderMaandplan!=='function'||window.renderMaandplan._financeGroupsWrapped)return false;originalRender=window.renderMaandplan;function wrapped(){var result=originalRender.apply(this,arguments);apply();return result;}wrapped._financeGroupsWrapped=true;wrapped._original=originalRender;window.renderMaandplan=wrapped;apply();return true;}
+  window.addEventListener('familyapp:finance:changed',function(){apply();});
   window.FinanceMaandplanGroups={version:VERSION,install:install,apply:apply,monthSummary:monthSummary};
 })();
