@@ -28,17 +28,34 @@
       '.nc-dot{width:7px;height:7px;border-radius:50%;background:var(--c-primary);flex:0 0 auto;margin-top:7px}'
     ].join('\n');document.head.appendChild(s);
   }
+  function isPartyInviteStillPending(n){
+    var questId=n&&n.data&&n.data.questId,uid=me();
+    if(!questId||!uid||!window.PartyQuestInvites||typeof PartyQuestInvites.getById!=='function')return false;
+    var q=PartyQuestInvites.getById(questId),inv=q&&q.invitees&&q.invitees[uid];
+    return !!(inv&&inv.status==='pending');
+  }
   function itemHtml(n){
     var uid=me(),read=!!(uid&&n.readBy&&n.readBy[uid]);
     var actionable=!!(window.NotificationActions&&NotificationActions.isActionable&&NotificationActions.isActionable(n));
-    var label=actionable&&NotificationActions.actionLabel?NotificationActions.actionLabel(n):'Openen';
+    var isPartyInvite=n.type==='partyQuest.created',pendingInvite=isPartyInvite&&isPartyInviteStillPending(n);
+    var label=actionable&&!isPartyInvite&&NotificationActions.actionLabel?NotificationActions.actionLabel(n):'Openen';
     var actor=n.actor&&n.actor.name?esc(n.actor.name)+' · ':'';
     var time=n.createdAt?new Date(n.createdAt).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
     var danger=n.type==='partyQuest.invitation.sent';
+    var actionsHtml='';
+    if(isPartyInvite&&pendingInvite){
+      // Two explicit actions instead of the generic single-button model:
+      // this is the same accept/decline pair the auto-popup and Taken
+      // party card use (PartyQuestInvites.respond), just also reachable
+      // from the notification the invitee actually receives.
+      actionsHtml='<div class="nc-actions"><button type="button" class="nc-action is-danger" data-notif-action="decline">Weigeren</button><button type="button" class="nc-action" data-notif-action="accept">Accepteren</button></div>';
+    }else if(actionable){
+      actionsHtml='<div class="nc-actions"><button type="button" class="nc-action'+(danger?' is-danger':'')+'" data-notif-action="run">'+esc(label)+'</button></div>';
+    }
     return '<article class="nc-item'+(read?' is-read':'')+'" data-notif-id="'+esc(n.id)+'">'
       +'<div class="nc-icon" style="background:'+esc(n.bg||'#ede9fe')+'">'+iconHtml(n)+'</div>'
       +'<div class="nc-copy"><div class="nc-title">'+esc(n.title||'Melding')+'</div><div class="nc-body">'+esc(n.body||'')+'</div><div class="nc-meta">'+actor+esc(time)+'</div>'
-      +(actionable?'<div class="nc-actions"><button type="button" class="nc-action'+(danger?' is-danger':'')+'" data-notif-action="run">'+esc(label)+'</button></div>':'')+'</div>'
+      +actionsHtml+'</div>'
       +(!read?'<span class="nc-dot"></span>':'')+'</article>';
   }
   function render(){
@@ -55,12 +72,14 @@
       if(btn){
         var row=btn.closest('[data-notif-id]');var event=window.NotificationActions&&NotificationActions.byId?NotificationActions.byId(row&&row.getAttribute('data-notif-id')):null;
         ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();if(!event)return;
+        var action=btn.getAttribute('data-notif-action');
         btn.disabled=true;
-        NotificationActions.run(event).then(render).catch(function(err){console.warn('[NotificationCenter]',err);btn.disabled=false;if(typeof window.showToast==='function')window.showToast((err&&err.message)||'Actie uitvoeren mislukt');});return;
+        NotificationActions.run(event,action).then(render).catch(function(err){console.warn('[NotificationCenter]',err);btn.disabled=false;if(typeof window.showToast==='function')window.showToast((err&&err.message)||'Actie uitvoeren mislukt');});return;
       }
       var row=ev.target&&ev.target.closest&&ev.target.closest('#notif-list [data-notif-id]');if(row&&window.NotificationStore)NotificationStore.markRead(row.getAttribute('data-notif-id')).then(render);
     },true);
     window.addEventListener('familyapp:notifications-changed',render);
+    window.addEventListener('familyapp:party-quests-updated',render);
   }
   window.NotificationCenter={version:VERSION,render:render,install:install};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
