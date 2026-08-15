@@ -1,0 +1,18 @@
+const fs=require('fs'),assert=require('assert');
+const engine=fs.readFileSync('src/core/progressionEngine.js','utf8');
+const store=fs.readFileSync('src/core/progressionStore.js','utf8');
+const uidBridge=fs.readFileSync('src/core/progressionUidBridge.js','utf8');
+const ach=fs.readFileSync('src/modules/achievements/achievementUidBridge.js','utf8');
+const skills=fs.readFileSync('src/modules/skills/skillsProgressionBridge.js','utf8');
+const activity=fs.readFileSync('src/platform/activity/householdActivity.js','utf8');
+const feed=fs.readFileSync('src/modules/feed/feedActivityPresentation.js','utf8');
+const loader=fs.readFileSync('api/app.js','utf8');
+assert.ok(engine.includes("VERSION='2.0.0'"));assert.ok(engine.includes("COLLECTION='progression'"));assert.ok(engine.includes("STATE_KEY='current'"));assert.ok(engine.includes('HouseholdContext'));assert.ok(engine.includes('PROGRESSION_CONTEXT_CHANGED'));assert.ok(engine.includes('subscribePrivate'));assert.ok(engine.includes("familyapp:household-context-changed"));assert.ok(engine.includes('unlockAchievement'));assert.ok(engine.includes('setStreak'));assert.ok(engine.includes('awardTaskCompletion'));
+assert.ok(!engine.includes('window.fbUser'));assert.ok(!engine.includes('window.fbFamilyId'));assert.ok(!engine.includes("families/'+family+'/members"));
+assert.ok(store.includes('No second persistence authority'));assert.ok(store.includes('window.FamilyProgression'));assert.ok(!store.includes('writePrivate('));assert.ok(store.includes("type:'achievement.unlocked'"));
+assert.ok(uidBridge.includes("version:'3.0.0'"));assert.ok(uidBridge.includes('ProgressionStore'));assert.ok(!uidBridge.includes('firebase.database'));
+assert.ok(ach.includes("version:'2.0.0'"));assert.ok(ach.includes('ProgressionStore'));assert.ok(!ach.includes('badgeRef'));assert.ok(!ach.includes('xpRef'));
+assert.ok(skills.includes("version:'4.0.0'"));assert.ok(skills.includes('HouseholdContext'));assert.ok(skills.includes('FamilyProgression'));assert.ok(skills.includes('window.saveSkills=function(){}'));assert.ok(!skills.includes('window.fbUser'));
+assert.ok(activity.includes("ACHIEVEMENT_UNLOCKED:'achievement.unlocked'"));assert.ok(feed.includes("'achievement.unlocked'"));
+assert.ok(loader.includes('src/core/progressionEngine.js?v=2'));assert.ok(loader.includes('src/core/progressionStore.js?v=2'));assert.ok(loader.includes('src/core/progressionUidBridge.js?v=3'));assert.ok(loader.includes('src/modules/achievements/achievementUidBridge.js?v=2'));assert.ok(loader.includes('src/modules/skills/skillsProgressionBridge.js?v=4'));
+console.log('progression context adoption OK');
