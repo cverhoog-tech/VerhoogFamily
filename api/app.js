@@ -33,7 +33,10 @@ module.exports = async function handler(req, res) {
       + '  <script src="src/core/familyDataContract.js?v=2"></script>'
     );
 
-    html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>');
+    html = html.replace('<script src="src/modules/meals/mealPlanStore.js"></script>','<script src="src/modules/meals/mealPlanStore.js?v=2"></script>');
+    html = html.replace('<script src="src/modules/meals/mealPlannerBottomSheetBridge.js"></script>','<script src="src/modules/meals/mealPlannerBottomSheetBridge.js?v=1"></script>\n  <script src="src/modules/meals/mealPlannerContextGuard.js?v=1"></script>');
+
+    html = html.replace('</body>','<script src="src/modules/meals/mealPlannerContextGuard.js?v=1"></script>\n<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>');
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, max-age=0');
