@@ -13,6 +13,7 @@ const store={
   writeSharedRecord:(collection,id,value)=>new Promise(resolve=>{writes.push({collection,id,value,uid:current.uid,householdId:current.householdId});deferredResolve=resolve;}),
   mutateSharedRecord:()=>Promise.resolve({value:null})
 };
+const taskSharedData={members:()=>[{uid:'alpha-user',displayName:'Alpha'},{uid:'beta-user',displayName:'Beta'},{uid:'member-2',displayName:'Member Two'}]};
 const window={
   HouseholdContext:{
     current:()=>Object.assign({},current),
@@ -23,12 +24,12 @@ const window={
   },
   FamilyDataStore:store,
   FamilyDataContract:{shared:name=>{assert.equal(name,'partyQuests');return{path:'families/'+current.householdId+'/shared/partyQuests'};}},
-  TaskSharedData:{members:()=>[{uid:'alpha-user',displayName:'Alpha'},{uid:'beta-user',displayName:'Beta'},{uid:'member-2',displayName:'Member Two'}]},
+  TaskSharedData:taskSharedData,
   taskData:[{id:'task-1',title:'Quest',createdByUid:'alpha-user'}],
   addEventListener:(name,fn)=>{(listeners[name]||(listeners[name]=[])).push(fn);},
   dispatchEvent:()=>{}
 };
-const context={window,console,Promise,JSON,Date,Math,Object,Array,String,CustomEvent:function(){}};
+const context={window,TaskSharedData:taskSharedData,console,Promise,JSON,Date,Math,Object,Array,String,CustomEvent:function(){}};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('src/modules/tasks/partyQuestContextService.js','utf8'),context,{filename:'partyQuestContextService.js'});
 const svc=window.PartyQuestContextService;
