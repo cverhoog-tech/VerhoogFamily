@@ -57,5 +57,49 @@
   }
   function byId(id){if(!window.NotificationStore)return null;return NotificationStore.list().find(function(n){return String(n.id)===String(id);})||null;}
 
-  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,byId:byId};
+  // Resolves what a notification's *current* domain state actually is, so
+  // a detail view can show "open / geaccepteerd / geweigerd / ingetrokken /
+  // niet meer actief" instead of just read/unread, and only offer actions
+  // that are still valid. Pure read of TaskSharedData/PartyQuestInvites
+  // state — no separate invitation state is introduced here.
+  function describeStatus(event){
+    if(!event)return{statusLabel:'',detail:'',actions:[]};
+    if(event.type==='task.help.requested'){
+      var task=taskByEvent(event),me=currentUid();
+      if(!task)return{statusLabel:'Taak niet gevonden',detail:'Deze taak bestaat niet meer.',actions:[]};
+      var already=Array.isArray(task.helpers)&&task.helpers.some(function(h){return String(h&&(h.uid||h.memberId||h.id)||'')===String(me);});
+      if(already)return{statusLabel:'Je helpt al mee',detail:'Je bent al toegevoegd aan “'+String(task.title||task.name||'deze taak')+'”.',actions:[]};
+      var stillOpen=!!task.helpRequested&&String(task.helpRequestedForUid||'')===String(me);
+      if(stillOpen)return{statusLabel:'Open — wacht op jouw reactie',detail:event.body||'Er is hulp gevraagd.',actions:[{label:'Hulp geven',action:'run',cls:''}]};
+      return{statusLabel:'Niet meer actief',detail:'Deze hulpvraag is ingetrokken, of is al door iemand anders opgepakt.',actions:[]};
+    }
+    if(event.type==='partyQuest.created'){
+      var questId=event.data&&event.data.questId,me2=currentUid();
+      var q=window.PartyQuestInvites&&PartyQuestInvites.getById?PartyQuestInvites.getById(questId):null;
+      var inv=q&&q.invitees&&q.invitees[me2];
+      if(!q||!inv)return{statusLabel:'Niet meer beschikbaar',detail:'Deze uitnodiging bestaat niet meer.',actions:[]};
+      if(inv.status==='pending')return{statusLabel:'Open — wacht op jouw reactie',detail:event.body||'Je bent uitgenodigd voor een Party Quest.',actions:[{label:'Accepteren',action:'accept',cls:''},{label:'Weigeren',action:'decline',cls:'is-danger'}]};
+      if(inv.status==='active')return{statusLabel:'Geaccepteerd ✓',detail:'Je doet mee aan deze Party Quest.',actions:[]};
+      if(inv.status==='declined')return{statusLabel:'Geweigerd',detail:'Je hebt deze uitnodiging geweigerd.',actions:[]};
+      if(inv.status==='revoked')return{statusLabel:'Ingetrokken',detail:'De maker heeft deze uitnodiging ingetrokken.',actions:[]};
+      return{statusLabel:'',detail:event.body||'',actions:[]};
+    }
+    if(event.type==='partyQuest.invitation.sent'){
+      var questId2=event.data&&event.data.questId,targetUid=event.data&&event.data.inviteeUid;
+      var q2=window.PartyQuestInvites&&PartyQuestInvites.getById?PartyQuestInvites.getById(questId2):null;
+      var inv2=q2&&q2.invitees&&targetUid&&q2.invitees[targetUid];
+      if(!q2||!inv2)return{statusLabel:'Niet meer beschikbaar',detail:'Deze uitnodiging bestaat niet meer.',actions:[]};
+      if(inv2.status==='pending')return{statusLabel:'Wacht op reactie',detail:event.body||'',actions:[{label:'Uitnodiging intrekken',action:'run',cls:'is-danger'}]};
+      if(inv2.status==='active')return{statusLabel:'Geaccepteerd ✓',detail:'',actions:[]};
+      if(inv2.status==='declined')return{statusLabel:'Geweigerd',detail:'',actions:[]};
+      if(inv2.status==='revoked')return{statusLabel:'Al ingetrokken',detail:'',actions:[]};
+      return{statusLabel:'',detail:'',actions:[]};
+    }
+    // Informational types (task.help.joined, partyQuest.joined,
+    // partyQuest.completed, task.swap.*, finance.savings.updated): no
+    // status/action concept, just the existing body text.
+    return{statusLabel:'',detail:event.body||'',actions:[]};
+  }
+
+  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId};
 })();
