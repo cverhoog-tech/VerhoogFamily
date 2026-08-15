@@ -27,14 +27,15 @@ module.exports = async function handler(req, res) {
     // Canonical household runtime. Load after duoQuests so HouseholdPlatform is
     // the identity/membership authority and the hardening layer can replace the
     // legacy auth/session lifecycle with context-safe listener cleanup.
-    // Preview marker: household-auth-hardening-v3.
+    // HouseholdContext loads last and is the single read/assert contract for modules.
     html = html.replace(
       '<script src="src/modules/tasks/duoQuests.js"></script>',
       '<script src="src/modules/tasks/duoQuests.js"></script>\n'
       + '  <script src="src/core/householdPlatform.js?v=2"></script>\n'
       + '  <script src="src/core/householdInviteLifecycle.js?v=1"></script>\n'
       + '  <script src="src/core/householdIdentityFirebaseBridge.js?v=4"></script>\n'
-      + '  <script src="src/core/householdSessionHardening.js?v=2"></script>'
+      + '  <script src="src/core/householdSessionHardening.js?v=2"></script>\n'
+      + '  <script src="src/core/householdContext.js?v=1"></script>'
     );
 
     html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>');
