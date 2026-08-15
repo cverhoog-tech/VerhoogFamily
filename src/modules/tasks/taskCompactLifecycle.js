@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// TASK COMPACT LIFECYCLE v1.2
+// TASK COMPACT LIFECYCLE v1.2.1
 // Deterministic post-render lifecycle for the canonical TaskCompactHome.
 // No polling, MutationObserver or global click interception.
 // Groups task lifecycle state and projects collaboration actions from TaskSharedData.
@@ -16,6 +16,7 @@
   function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
   function dayDiff(task){if(!task||!task.date)return null;var d=new Date(task.date+'T00:00:00'),n=new Date();n.setHours(0,0,0,0);return Math.round((d-n)/86400000);}
   function isAssigned(task,id){return !!(window.TaskSharedData&&TaskSharedData.isAssignedTo&&TaskSharedData.isAssignedTo(task,id));}
+  function isHelpOwner(task,id){var key=String(id||'');return !!(key&&(isAssigned(task,key)||String(task&&task.createdByUid||'')===key||String(task&&task.helpRequestedByUid||'')===key));}
   function helpers(task){return Array.isArray(task&&task.helpers)?task.helpers:[];}
   function isHelper(task,id){return helpers(task).some(function(h){return helperUid(h)===String(id);});}
   function initials(name){return String(name||'G').trim().split(/\s+/).map(function(x){return x[0]||'';}).join('').slice(0,2).toUpperCase()||'G';}
@@ -49,7 +50,8 @@
   function addHelperAvatars(row,task){
     var wrap=row.querySelector('.tch-avatars');if(!wrap)return;
     helpers(task).forEach(function(h){
-      var id=helperUid(h);if(!id||wrap.querySelector('[data-helper-uid="'+CSS.escape(id)+'"]'))return;
+      var id=helperUid(h);if(!id)return;
+      var already=Array.prototype.some.call(wrap.querySelectorAll('[data-helper-uid]'),function(el){return el.getAttribute('data-helper-uid')===id;});if(already)return;
       var av=avatarFor(id),name=(h&&h.name)||(member(id)&&(member(id).displayName||member(id).name))||'Helper';var el;
       if(av){el=document.createElement('img');el.src=av;el.alt=name;}else{el=document.createElement('span');el.textContent=initials(name);el.title=name;}
       el.className='tch-helper-avatar';el.setAttribute('data-helper-uid',id);wrap.appendChild(el);
@@ -60,8 +62,8 @@
     var existing=row.querySelector('[data-collab-action]');if(existing)existing.remove();
     var action='',label='',cls='';
     if(isHelper(task,me)){action='leave';label='Quest verlaten';cls=' is-leave';}
-    else if(task.helpRequested&&isAssigned(task,me)){action='retract';label='Hulpvraag intrekken';cls=' is-retract';}
-    else if(task.helpRequested&&!isAssigned(task,me)){action='join';label='Hulp bieden';}
+    else if(task.helpRequested&&isHelpOwner(task,me)){action='retract';label='Hulpvraag intrekken';cls=' is-retract';}
+    else if(task.helpRequested&&!isHelpOwner(task,me)){action='join';label='Hulp bieden';}
     if(!action)return;
     var btn=document.createElement('button');btn.type='button';btn.className='tch-collab-action'+cls;btn.dataset.collabAction=action;btn.textContent=label;
     btn.onclick=function(e){
@@ -96,5 +98,5 @@
   }
   function schedule(){Promise.resolve().then(function(){apply();});}
   window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);
-  window.TaskCompactLifecycle={version:'1.2.0',apply:apply};
+  window.TaskCompactLifecycle={version:'1.2.1',apply:apply};
 })();
