@@ -3,12 +3,11 @@
   if(window.__familyClientObservabilityV1) return;
   window.__familyClientObservabilityV1=true;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var MAX_EVENTS=80;
   var events=[];
   var sessionId='obs_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
   var blockedKeys=/^(name|displayName|email|phone|address|body|text|messageBody|description|amount|price|value|note|notes|ingredients|content|photoURL|avatarUrl|token|fcmToken)$/i;
-  var allowedContextKeys={uid:1,householdId:1,role:1,reason:1,code:1,type:1,module:1,screen:1,event:1,online:1,visibility:1,version:1,build:1,branch:1,status:1};
 
   function hash(value){
     value=String(value||'');
@@ -16,9 +15,13 @@
     for(var i=0;i<value.length;i++){h^=value.charCodeAt(i);h+=(h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);}
     return (h>>>0).toString(36);
   }
+  function isIdentityKey(key){
+    key=String(key||'');
+    return /uid$/i.test(key)||/householdid$/i.test(key)||/familyid$/i.test(key);
+  }
   function scrubScalar(key,value){
     if(blockedKeys.test(key||'')) return '[redacted]';
-    if(key==='uid'||key==='householdId') return value?hash(value):null;
+    if(isIdentityKey(key)) return value?hash(value):null;
     if(typeof value==='string') return value.slice(0,120).replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig,'[email]').replace(/https?:\/\/[^\s]+/ig,'[url]');
     if(typeof value==='number'||typeof value==='boolean'||value==null) return value;
     return String(value).slice(0,120);
@@ -26,12 +29,12 @@
   function scrub(input){
     if(!input||typeof input!=='object') return {};
     var out={};
-    Object.keys(input).forEach(function(key){
-      if(!allowedContextKeys[key]&&blockedKeys.test(key)) return;
+    Object.keys(input).slice(0,30).forEach(function(key){
+      if(blockedKeys.test(key)) return;
       var value=input[key];
       if(value&&typeof value==='object'&&!Array.isArray(value)){
         var nested={};
-        Object.keys(value).slice(0,12).forEach(function(k){nested[k]=scrubScalar(k,value[k]);});
+        Object.keys(value).slice(0,20).forEach(function(k){nested[k]=scrubScalar(k,value[k]);});
         out[key]=nested;
       } else if(Array.isArray(value)) {
         out[key]='[array:'+value.length+']';
@@ -42,10 +45,17 @@
   function snapshotContext(){
     var c={online:navigator.onLine!==false,visibility:document.visibilityState||'unknown'};
     try{
-      if(window.HouseholdContext&&HouseholdContext.current){var hc=HouseholdContext.current();c.uid=hc&&hc.uid;c.householdId=hc&&hc.householdId;c.role=hc&&hc.role;}
-      else {c.uid=window.fbUser&&window.fbUser.uid;c.householdId=window.fbFamilyId||null;}
+      if(window.HouseholdContext&&typeof window.HouseholdContext.current==='function'){
+        var hc=window.HouseholdContext.current();
+        c.uid=hc&&hc.uid;
+        c.householdId=hc&&hc.householdId;
+        c.role=hc&&hc.role;
+      } else {
+        c.uid=window.fbUser&&window.fbUser.uid;
+        c.householdId=window.fbFamilyId||null;
+      }
     }catch(e){}
-    try{if(window.AuthSessionBootstrap)c.auth=window.AuthSessionBootstrap.status();}catch(e){}
+    try{if(window.AuthSessionBootstrap&&typeof window.AuthSessionBootstrap.status==='function')c.auth=window.AuthSessionBootstrap.status();}catch(e){}
     return scrub(c);
   }
   function record(type,detail){
