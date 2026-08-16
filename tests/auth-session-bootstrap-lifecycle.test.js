@@ -87,21 +87,20 @@ function resolvePending(uid,value){
   assert.equal(window._appStarted,false);
   assert.equal(window.AuthSessionBootstrap.status().bootedUid,null);
 
-  // Resume from BFCache must restart authenticated session. Use an immediate loader now.
+  // Resume from BFCache must restart authenticated session. Trigger the real
+  // pageshow handler, then await the idempotent recovery promise explicitly.
   window.loadUserFamily=()=>Promise.resolve({id:'beta-household'});
   const pageShowHandler=(winEvents.pageshow||[])[0];
   assert.equal(typeof pageShowHandler,'function');
   pageShowHandler({persisted:true});
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
+  await window.AuthSessionBootstrap.recover('pageshow-bfcache-test');
   assert.equal(window._appStarted,true);
   assert.equal(window.AuthSessionBootstrap.status().bootedUid,'beta-user');
 
   // Visible resume on started session should refresh context/identity and flush pending data.
   const refreshBefore=contextRefreshes, syncBefore=identitySyncs, flushBefore=flushCalls;
   (docEvents.visibilitychange||[]).forEach(fn=>fn());
-  await Promise.resolve();
+  await window.AuthSessionBootstrap.recover('visibility-visible-test');
   assert(contextRefreshes>refreshBefore,'visible resume should refresh HouseholdContext');
   assert(identitySyncs>syncBefore,'visible resume should resync household identity');
   assert(flushCalls>flushBefore,'visible resume should flush pending writes when online');
@@ -113,7 +112,7 @@ function resolvePending(uid,value){
   assert.equal(flushCalls,offlineBefore);
   window.offlineMode=false;
   (winEvents.online||[]).forEach(fn=>fn());
-  await Promise.resolve();
+  await window.AuthSessionBootstrap.recover('online-test');
   assert(flushCalls>offlineBefore);
 
   console.log('auth-session-bootstrap-lifecycle: PASS');
