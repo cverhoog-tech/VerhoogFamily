@@ -7,6 +7,7 @@ module.exports = async function handler(req, res) {
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
     html = html.replace(/\s*<script src="src\/modules\/tasks\/quest-overlay\.js"><\/script>\s*/g, '\n');
+    html = html.replace('<script src="src/core/data.js"></script>','<script src="src/core/clientObservability.js?v=1"></script>\n  <script src="src/core/data.js"></script>');
     html = html.replace('<script src="src/modules/tasks/taskSharedData.js"></script>','<script src="src/modules/tasks/taskSharedData.js?v=3"></script>\n  <script src="src/modules/tasks/taskContextBoundary.js?v=1"></script>');
     html = html.replace('<script src="src/modules/tasks/personTabPremium.js"></script>','<script src="src/modules/tasks/personDashboardService.js?v=3"></script>\n  <script src="src/modules/tasks/personTabPremium.js?v=44"></script>');
     html = html.replace('<script src="src/modules/home/home.js"></script>','<script src="src/modules/home/homeDashboardService.js?v=1"></script>\n  <script src="src/modules/home/home.js?v=2"></script>');
