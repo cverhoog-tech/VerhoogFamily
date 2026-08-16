@@ -12,8 +12,8 @@ const els={
 };
 const winEvents={},docEvents={};
 let currentUser={uid:'alpha-user',displayName:'Alpha'};
-let resolveLoad=null;
 let loadCalls=0,flushCalls=0,contextRefreshes=0,identitySyncs=0;
+const pendingLoads=[];
 const window={
   fbUser:currentUser,
   fbAuth:{get currentUser(){return currentUser;}},
@@ -22,7 +22,11 @@ const window={
   dispatchEvent(){},
   renderNav(){},renderHome(){},renderNotifs(){},updateHomeXP(){},
   showScreen(){els['screen-home'].classList.add('active');},
-  loadUserFamily(){loadCalls++;return new Promise(r=>{resolveLoad=r;});},
+  loadUserFamily(){
+    const uid=window.fbUser&&window.fbUser.uid;
+    loadCalls++;
+    return new Promise(resolve=>pendingLoads.push({uid,resolve}));
+  },
   HouseholdContext:{refresh(){contextRefreshes++;}},
   HouseholdIdentityFirebaseBridge:{sync(){identitySyncs++;}},
   FamilyDataStore:{flushPending(){flushCalls++;return Promise.resolve({});}},
@@ -41,20 +45,38 @@ context.firebase={auth:()=>({get currentUser(){return currentUser;}})};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('src/core/authSessionBootstrap.js','utf8'),context,{filename:'authSessionBootstrap.js'});
 
+function resolvePending(uid,value){
+  const index=pendingLoads.findIndex(x=>x.uid===uid);
+  assert(index>=0,'expected pending load for '+uid);
+  const entry=pendingLoads.splice(index,1)[0];
+  entry.resolve(value||{id:uid.replace('-user','-household')});
+}
+
 (async()=>{
-  // Start Alpha boot, then switch UID before household resolution completes.
+  // Start Alpha boot. loadUserFamily is scheduled in a Promise microtask.
   const alphaBoot=window.AuthSessionBootstrap.boot(currentUser);
-  assert.equal(loadCalls,1);
-  currentUser={uid:'beta-user',displayName:'Beta'};window.fbUser=currentUser;
-  const betaBoot=window.AuthSessionBootstrap.boot(currentUser);
-  assert.equal(loadCalls,2,'new UID must start a new boot generation');
-  resolveLoad();
   await Promise.resolve();
-  // Resolve the second load explicitly by swapping loader to immediate success and recover.
-  window.loadUserFamily=()=>Promise.resolve({id:'beta-household'});
-  await window.AuthSessionBootstrap.recover('uid-switch-test');
+  assert.equal(loadCalls,1);
+  assert.equal(pendingLoads[0].uid,'alpha-user');
+
+  // Switch UID before Alpha household resolution completes.
+  currentUser={uid:'beta-user',displayName:'Beta'};
+  window.fbUser=currentUser;
+  const betaBoot=window.AuthSessionBootstrap.boot(currentUser);
+  await Promise.resolve();
+  assert.equal(loadCalls,2,'new UID must start a new boot generation');
+  assert(pendingLoads.some(x=>x.uid==='beta-user'));
+
+  // Resolve stale Alpha first. It must not render or mark the app started for Alpha.
+  resolvePending('alpha-user',{id:'alpha-household'});
   await alphaBoot;
-  await betaBoot.catch(()=>false);
+  assert.equal(window.AuthSessionBootstrap.status().uid,'beta-user');
+  assert.notEqual(window.AuthSessionBootstrap.status().bootedUid,'alpha-user');
+  assert.equal(window._appStarted,false,'stale Alpha boot must not reveal the app');
+
+  // Resolve Beta. Only the current generation may reveal the app.
+  resolvePending('beta-user',{id:'beta-household'});
+  await betaBoot;
   assert.equal(window.AuthSessionBootstrap.status().uid,'beta-user');
   assert.equal(window.AuthSessionBootstrap.status().bootedUid,'beta-user');
   assert.equal(window._appStarted,true);
@@ -65,10 +87,16 @@ vm.runInContext(fs.readFileSync('src/core/authSessionBootstrap.js','utf8'),conte
   assert.equal(window._appStarted,false);
   assert.equal(window.AuthSessionBootstrap.status().bootedUid,null);
 
-  // Resume from BFCache must restart authenticated session.
-  await (winEvents.pageshow||[])[0]({persisted:true});
+  // Resume from BFCache must restart authenticated session. Use an immediate loader now.
+  window.loadUserFamily=()=>Promise.resolve({id:'beta-household'});
+  const pageShowHandler=(winEvents.pageshow||[])[0];
+  assert.equal(typeof pageShowHandler,'function');
+  pageShowHandler({persisted:true});
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   assert.equal(window._appStarted,true);
+  assert.equal(window.AuthSessionBootstrap.status().bootedUid,'beta-user');
 
   // Visible resume on started session should refresh context/identity and flush pending data.
   const refreshBefore=contextRefreshes, syncBefore=identitySyncs, flushBefore=flushCalls;
@@ -78,7 +106,7 @@ vm.runInContext(fs.readFileSync('src/core/authSessionBootstrap.js','utf8'),conte
   assert(identitySyncs>syncBefore,'visible resume should resync household identity');
   assert(flushCalls>flushBefore,'visible resume should flush pending writes when online');
 
-  // Offline online transition: no flush while offline, flush after online recovery.
+  // Offline recovery must not flush; online recovery must flush again.
   window.offlineMode=true;
   const offlineBefore=flushCalls;
   await window.AuthSessionBootstrap.recover('offline-check');
