@@ -1,0 +1,85 @@
+name: Multi-household isolation
+
+on:
+  pull_request:
+    paths:
+      - 'src/core/**'
+      - 'src/modules/tasks/**'
+      - 'src/modules/shop/**'
+      - 'src/modules/calendar/**'
+      - 'src/modules/recipes/**'
+      - 'src/modules/meals/**'
+      - 'src/modules/feed/**'
+      - 'src/modules/finance/**'
+      - 'src/modules/profile/**'
+      - 'src/platform/activity/**'
+      - 'database.rules.json'
+      - 'firebase.json'
+      - 'tests/**'
+      - '.github/workflows/multi-household-isolation.yml'
+  push:
+    branches:
+      - main
+      - agent/household-context-foundation
+    paths:
+      - 'src/core/**'
+      - 'src/modules/tasks/**'
+      - 'src/modules/shop/**'
+      - 'src/modules/calendar/**'
+      - 'src/modules/recipes/**'
+      - 'src/modules/meals/**'
+      - 'src/modules/feed/**'
+      - 'src/modules/finance/**'
+      - 'src/modules/profile/**'
+      - 'src/platform/activity/**'
+      - 'database.rules.json'
+      - 'firebase.json'
+      - 'tests/**'
+      - '.github/workflows/multi-household-isolation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Household context contract
+        run: node tests/household-context-contract.test.js
+      - name: Pending write two-context regression
+        run: node tests/family-data-store-pending-context.test.js
+      - name: Pending write three-household isolation
+        run: node tests/family-data-store-three-household-switch.test.js
+      - name: Tasks realtime context rebind
+        run: node tests/task-shared-context-rebind.test.js
+      - name: Shopping realtime context rebind
+        run: node tests/shopping-context-rebind.test.js
+      - name: Calendar realtime context rebind
+        run: node tests/calendar-context-rebind.test.js
+      - name: Recipes realtime context rebind
+        run: node tests/recipe-context-rebind.test.js
+      - name: Meal plan realtime context rebind
+        run: node tests/meal-plan-context-rebind.test.js
+      - name: Activity context isolation
+        run: node tests/activity-context-service.test.js
+      - name: Feed realtime context rebind
+        run: node tests/feed-context-rebind.test.js
+      - name: Notifications realtime context rebind
+        run: node tests/notification-context-rebind.test.js
+      - name: Finance realtime context rebind
+        run: node tests/finance-context-rebind.test.js
+      - name: Progression context rebind
+        run: node tests/progression-context-rebind.test.js
+      - name: Profile and presence context rebind
+        run: node tests/profile-context-rebind.test.js
+
+      - name: Install Firebase emulator tooling
+        run: npm install --no-save --no-package-lock firebase@12 @firebase/rules-unit-testing@5 firebase-tools@14
+      - name: Three-household RTDB collection matrix
+        run: npx firebase emulators:exec --only database --project demo-familyapp-three-household-matrix "node tests/database-rules-three-household-matrix.test.mjs"
