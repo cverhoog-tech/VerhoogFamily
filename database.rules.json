@@ -49,8 +49,20 @@
           "notifications": {
             ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
             "$notificationId": {
-              ".write": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active' && ((!data.exists() && newData.child('householdId').val() === $familyId && newData.child('actor').child('uid').val() === auth.uid) || (data.exists() && newData.exists() && newData.child('householdId').val() === data.child('householdId').val() && newData.child('actor').child('uid').val() === data.child('actor').child('uid').val() && newData.child('createdAt').val() === data.child('createdAt').val()))",
-              ".validate": "newData.val() == null || (newData.child('id').val() === $notificationId && newData.child('householdId').val() === $familyId && newData.child('actor').child('uid').isString() && newData.child('type').isString() && newData.child('createdAt').isNumber())"
+              ".write": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active' && !data.exists() && newData.child('householdId').val() === $familyId && newData.child('actor').child('uid').val() === auth.uid",
+              ".validate": "newData.val() == null || (newData.child('id').val() === $notificationId && newData.child('householdId').val() === $familyId && newData.child('actor').child('uid').isString() && newData.child('type').isString() && newData.child('createdAt').isNumber())",
+              "readBy": {
+                "$readerUid": {
+                  ".write": "auth != null && auth.uid === $readerUid && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+                  ".validate": "newData.val() == null || newData.isNumber()"
+                }
+              },
+              "dismissedBy": {
+                "$readerUid": {
+                  ".write": "auth != null && auth.uid === $readerUid && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+                  ".validate": "newData.val() == null || newData.isNumber()"
+                }
+              }
             }
           },
           "activity": {
