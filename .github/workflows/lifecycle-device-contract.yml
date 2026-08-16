@@ -1,0 +1,52 @@
+name: Lifecycle device contract
+
+on:
+  pull_request:
+    paths:
+      - 'src/core/authSessionBootstrap.js'
+      - 'src/core/householdSessionHardening.js'
+      - 'src/core/householdIdentityFirebaseBridge.js'
+      - 'src/core/familyDataStore.js'
+      - 'api/app.js'
+      - 'tests/auth-session-bootstrap-lifecycle.test.js'
+      - '.github/workflows/lifecycle-device-contract.yml'
+  push:
+    branches:
+      - main
+      - agent/household-context-foundation
+    paths:
+      - 'src/core/authSessionBootstrap.js'
+      - 'src/core/householdSessionHardening.js'
+      - 'src/core/householdIdentityFirebaseBridge.js'
+      - 'src/core/familyDataStore.js'
+      - 'api/app.js'
+      - 'tests/auth-session-bootstrap-lifecycle.test.js'
+      - '.github/workflows/lifecycle-device-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax check lifecycle runtime
+        run: |
+          node --check src/core/authSessionBootstrap.js
+          node --check src/core/householdSessionHardening.js
+          node --check src/core/householdIdentityFirebaseBridge.js
+          node --check src/core/familyDataStore.js
+          node --check api/app.js
+      - name: Auth bootstrap lifecycle recovery
+        run: node tests/auth-session-bootstrap-lifecycle.test.js
+      - name: Household account-switch behavior
+        run: node tests/household-session-behavior.test.js
+      - name: Pending write context isolation
+        run: node tests/family-data-store-pending-context.test.js
+      - name: Three-household pending write isolation
+        run: node tests/family-data-store-three-household-switch.test.js
