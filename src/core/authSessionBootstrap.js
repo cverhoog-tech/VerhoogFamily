@@ -16,7 +16,7 @@
   function currentUser(){
     try {
       return window.fbUser || (window.fbAuth && window.fbAuth.currentUser) ||
-        (window.firebase && firebase.auth && firebase.auth().currentUser) || null;
+        (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
     } catch(e){ return null; }
   }
 
@@ -101,8 +101,8 @@
 
     safeCall('startFirebaseSync', window.startFirebaseSync);
     safeCall('notification subscription', function(){
-      if(window.NotificationStore && typeof NotificationStore.ensureSubscription === 'function') {
-        NotificationStore.ensureSubscription();
+      if(window.NotificationStore && typeof window.NotificationStore.ensureSubscription === 'function') {
+        window.NotificationStore.ensureSubscription();
       }
     });
     safeCall('push notifications', window.setupPushNotifications);
@@ -181,10 +181,12 @@
     if(bootedUid && bootedUid!==user.uid) resetStartedState(reason||'uid-changed');
     if(!window._appStarted) return bootAuthenticatedSession(user);
     try{
-      if(window.HouseholdContext && typeof HouseholdContext.refresh==='function') HouseholdContext.refresh(reason||'lifecycle-recovery');
-      if(window.HouseholdIdentityFirebaseBridge && typeof HouseholdIdentityFirebaseBridge.sync==='function') HouseholdIdentityFirebaseBridge.sync();
-      if(window.FamilyDataStore && typeof FamilyDataStore.flushPending==='function' && window.offlineMode!==true) FamilyDataStore.flushPending().catch(function(){});
-    }catch(e){}
+      if(window.HouseholdContext && typeof window.HouseholdContext.refresh==='function') window.HouseholdContext.refresh(reason||'lifecycle-recovery');
+      if(window.HouseholdIdentityFirebaseBridge && typeof window.HouseholdIdentityFirebaseBridge.sync==='function') window.HouseholdIdentityFirebaseBridge.sync();
+      if(window.FamilyDataStore && typeof window.FamilyDataStore.flushPending==='function' && window.offlineMode!==true) window.FamilyDataStore.flushPending().catch(function(){});
+    }catch(e){
+      console.warn('[AuthSessionBootstrap] lifecycle recovery hook failed',e);
+    }
     return Promise.resolve(true);
   }
 
@@ -199,7 +201,7 @@
   window.addEventListener('familyapp:session:cleared', function(){ resetStartedState('session-cleared'); });
 
   window.AuthSessionBootstrap = {
-    version: '1.1.0',
+    version: '1.1.1',
     boot: bootAuthenticatedSession,
     recover: recoverAuthenticatedSession,
     reset: resetStartedState,
