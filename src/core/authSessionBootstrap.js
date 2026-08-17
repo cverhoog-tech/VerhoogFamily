@@ -1,12 +1,19 @@
 'use strict';
 // ============================================================
-// AUTH SESSION BOOTSTRAP v1.1
-// Single defensive transition from Firebase auth -> household -> visible app.
+// AUTH SESSION BOOTSTRAP v1.2
+// THE single canonical owner of:
+//   authenticated user -> household resolution -> first render -> app reveal
+// No other module may call loadUserFamily()/onLoggedIn(), flip _appStarted,
+// or hide/reveal the login screen on the authenticated-boot path. Other
+// modules (HouseholdSessionHardening, HouseholdContext) may keep their own
+// onAuthStateChanged subscriptions ONLY for observation/session bookkeeping
+// (cleanup, presence, context publishing) — never to drive household load or
+// DOM reveal themselves.
 // Resilient to redirect, BFCache resume, reconnect and auth context switches.
 // ============================================================
 (function(){
-  if(window.__familyAuthSessionBootstrapV11) return;
-  window.__familyAuthSessionBootstrapV11 = true;
+  if(window.__familyAuthSessionBootstrapV12) return;
+  window.__familyAuthSessionBootstrapV12 = true;
 
   var booting = false;
   var bootedUid = null;
@@ -23,13 +30,31 @@
   function currentUid(){ var u=currentUser(); return u&&u.uid||null; }
   function emit(name,detail){ try{ window.dispatchEvent(new CustomEvent('familyapp:auth-bootstrap:'+name,{detail:detail||{}})); }catch(e){} }
 
-  function showLoginError(message){
+  // Any bootstrap failure state must leave something VISIBLE — never a blank
+  // screen. opts.retry, when given, renders a retry action so an authenticated
+  // recovery/error UI is always actionable, not a dead end.
+  function showLoginError(message, opts){
+    opts = opts || {};
     var screen = document.getElementById('login-screen');
     var error = document.getElementById('auth-error');
     if(screen) screen.style.display = 'flex';
     if(error){
       error.textContent = message || 'De app kon na het inloggen niet worden geladen.';
       error.style.display = 'block';
+      if(opts.retry){
+        try{
+          var btn = document.getElementById('auth-boot-retry-btn');
+          if(!btn && error.parentNode){
+            btn = document.createElement('button');
+            btn.id = 'auth-boot-retry-btn';
+            btn.type = 'button';
+            btn.textContent = 'Opnieuw proberen';
+            btn.style.cssText = 'margin-top:8px;width:100%;background:var(--c-primary,#2d5a27);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer';
+            error.parentNode.insertBefore(btn, error.nextSibling);
+          }
+          if(btn) btn.onclick = opts.retry;
+        }catch(e){}
+      }
     }
   }
 
@@ -57,7 +82,23 @@
     booting=false;
     activeBoot=null;
     bootedUid=null;
+    var wasStarted=!!window._appStarted;
     window._appStarted=false;
+    // A reset (uid switch, household switch, signed out, session cleared)
+    // must never leave the PREVIOUS user's revealed app on screen with
+    // nothing to show it's stale. If the app was already revealed, fall back
+    // to a visible state; the next successful boot (if any) will reveal
+    // fresh content over it. This is what "household switch -> correcte
+    // rebind zonder stale reveal" and "stale UID generation mag huidige UI
+    // niet wijzigen" together require: the OLD owner may not leave the UI in
+    // a state nobody currently owns.
+    if(wasStarted){
+      try{
+        var login=document.getElementById('login-screen');
+        if(login && login.style.display==='none') login.style.display='flex';
+      }catch(e){}
+      try{ document.body.classList.remove('logged-in'); }catch(e){}
+    }
     emit('reset',{reason:reason||'context-changed',uid:currentUid()});
   }
 
@@ -106,6 +147,12 @@
       }
     });
     safeCall('push notifications', window.setupPushNotifications);
+    // Daily login bonus has no other trigger anywhere in the app (unlike
+    // checkAchievements, which re-runs on every awardXP() call, or
+    // renderFeed/renderFinance, which their own realtime stores already
+    // drive when their screen is active) — deferred slightly so DOM from the
+    // reveal above has settled first.
+    setTimeout(function(){ safeCall('checkDailyBonus', window.checkDailyBonus); }, 400);
     safeCall('welcome toast', function(){
       if(typeof window.showToast === 'function' && !window.__familyAuthWelcomeShown) {
         window.__familyAuthWelcomeShown = true;
@@ -144,10 +191,15 @@
       revealApp(user,token);
       return true;
     }).catch(function(error){
+      // A stale (superseded) generation cancels itself silently — but ONLY
+      // because a newer generation already owns (or is about to own) the UI.
+      // It must never be the reason the UI goes blank.
       if(error && error.code === 'AUTH_BOOT_CONTEXT_CHANGED') return false;
       console.error('[AuthSessionBootstrap] session boot failed', error);
       var code = error && error.code;
-      if(code === 'HOUSEHOLD_REQUIRED' && typeof window.showNameSetupStep === 'function') {
+      var isCurrentGeneration = token.generation===generation && currentUid()===token.uid;
+
+      if((code === 'HOUSEHOLD_REQUIRED' || code === 'HOUSEHOLD_ACCESS_REVOKED') && typeof window.showNameSetupStep === 'function') {
         try {
           assertCurrent(token);
           window.showNameSetupStep(user);
@@ -156,8 +208,18 @@
           return false;
         } catch(e){ if(e&&e.code==='AUTH_BOOT_CONTEXT_CHANGED') return false; }
       }
-      if(token.generation===generation && currentUid()===token.uid){
-        showLoginError('Inloggen gelukt, maar de app kon niet worden geopend. Vernieuw de pagina en probeer opnieuw.');
+
+      if(isCurrentGeneration){
+        var message = code === 'HOUSEHOLD_ACCESS_REVOKED'
+          ? 'Je toegang tot dit gezin is niet meer actief. Maak een nieuw gezin aan of vraag een nieuwe uitnodiging.'
+          : 'Inloggen gelukt, maar de app kon niet worden geopend.';
+        showLoginError(message, {retry: function(){
+          try{
+            var errEl = document.getElementById('auth-error');
+            if(errEl) errEl.style.display = 'none';
+          }catch(e){}
+          bootAuthenticatedSession(currentUser());
+        }});
       }
       return false;
     }).finally(function(){
@@ -171,6 +233,34 @@
 
   window.onLoggedIn = function(){ return bootAuthenticatedSession(currentUser()); };
   try { onLoggedIn = window.onLoggedIn; } catch(e){}
+
+  // THE canonical Firebase auth subscription that actually drives household
+  // load + first render + reveal. Every sign-in path (Google redirect,
+  // Google popup, email/password, redirect return) funnels through this one
+  // listener via Firebase's own auth state, instead of each sign-in method
+  // separately racing to bootstrap the app.
+  function installCanonicalAuthListener(){
+    if(window.__familyAuthSessionBootstrapListenerInstalled) return;
+    try{
+      var authInstance = window.fbAuth || (window.firebase && window.firebase.auth && window.firebase.auth());
+      if(!authInstance || typeof authInstance.onAuthStateChanged !== 'function') return;
+      authInstance.onAuthStateChanged(function(user){
+        if(user) bootAuthenticatedSession(user);
+        else resetStartedState('auth-signed-out');
+      });
+      window.__familyAuthSessionBootstrapListenerInstalled = true;
+    }catch(e){ console.error('[AuthSessionBootstrap] could not attach canonical auth listener', e); }
+  }
+  installCanonicalAuthListener();
+  // Firebase itself (firebase.initializeApp/fbAuth) may not exist yet at
+  // parse time depending on script order, so keep trying briefly.
+  (function pollForAuthListener(tries){
+    if(window.__familyAuthSessionBootstrapListenerInstalled || tries>120) return;
+    setTimeout(function(){
+      installCanonicalAuthListener();
+      pollForAuthListener(tries+1);
+    },250);
+  })(0);
 
   function recoverAuthenticatedSession(reason){
     var user = currentUser();
@@ -201,7 +291,7 @@
   window.addEventListener('familyapp:session:cleared', function(){ resetStartedState('session-cleared'); });
 
   window.AuthSessionBootstrap = {
-    version: '1.1.1',
+    version: '1.2.0',
     boot: bootAuthenticatedSession,
     recover: recoverAuthenticatedSession,
     reset: resetStartedState,
