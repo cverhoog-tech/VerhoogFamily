@@ -38,7 +38,12 @@
     });
   }
 
-  guardedLoad.__householdV1=true;
+  // Same explicit contract as HouseholdSessionHardening's strictLoad: this
+  // wrapper is a deliberate, known member of the loadUserFamily ownership
+  // chain, not a second bootstrap owner. It only adds a one-time legacy ->
+  // HouseholdPlatform migration fallback around the hardened loader; it never
+  // decides membership itself and never performs render/reveal.
+  guardedLoad.__familyHouseholdLoadOwner=true;
   guardedLoad.__householdHardening=true;
   guardedLoad.__migrationCompatibility=true;
   window.loadUserFamily=guardedLoad;
