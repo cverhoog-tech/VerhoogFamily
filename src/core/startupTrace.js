@@ -1,238 +1,170 @@
 'use strict';
-// ============================================================
-// STARTUP TRACE v1 — DIAGNOSTIC ONLY, NO FUNCTIONAL CHANGES
-//
-// Purpose: give visible, privacy-safe evidence of exactly where the
-// login/setup -> first-render -> reveal pipeline stops on a real device
-// (specifically iPhone Safari), without changing any reveal behavior.
-//
-// Every wrapper below is a strict passthrough: call the original
-// function, record what happened, and either return its result or
-// re-throw the exact same error it threw. Nothing here suppresses,
-// delays, retries, or alters any existing code path. This is
-// intentionally NOT a fix — see the accompanying report for analysis.
-//
-// Privacy: only records event names, elapsed milliseconds, a coarse
-// "available"/"missing" flag for functions, and error.name/error.message
-// for JS errors thrown by our own code (e.g. "ReferenceError: renderNotifs
-// is not defined" — generic JS error text, never user data). Never records
-// uid, householdId, names, emails, financial data, household data, tokens,
-// or any free-text app content.
-// ============================================================
+// Preview-only, privacy-safe startup diagnostics. No production behavior.
 (function(){
-  if(window.__familyStartupTraceV1) return;
-  window.__familyStartupTraceV1 = true;
+  if(window.__familyStartupTraceV2) return;
+  window.__familyStartupTraceV2 = true;
 
   var PRODUCTION_HOSTNAME = 'verhoog-family.vercel.app';
   var startedAt = Date.now();
   var buffer = [];
   var MAX_EVENTS = 500;
+  var panelEl = null, listEl = null, panelEnabled = false, expanded = false;
 
   function isProductionHost(){
-    var host = '';
-    try { host = window.location.hostname || ''; } catch(e){}
-    return host === PRODUCTION_HOSTNAME;
+    try { return (window.location.hostname || '') === PRODUCTION_HOSTNAME; } catch(e){ return false; }
   }
-  // Entirely inert on production, regardless of query params. This check
-  // gates BOTH the trace buffer and the debug panel below.
   if(isProductionHost()) return;
+
+  try { panelEnabled = /[?&]startupTrace=1(?:&|$)/.test((window.location && window.location.search) || ''); } catch(e){}
+
+  function clean(value, max){
+    if(value === undefined || value === null) return undefined;
+    return String(value).slice(0, max || 120);
+  }
 
   function trace(event, info){
     info = info || {};
-    var entry = {
-      event: String(event),
-      t: Date.now() - startedAt
-    };
-    if(info.fnType) entry.fnType = info.fnType; // 'available' | 'missing'
-    if(info.errorName) entry.errorName = info.errorName;
-    if(info.errorMessage) entry.errorMessage = String(info.errorMessage).slice(0, 200);
+    var entry = { event:String(event), t:Date.now()-startedAt };
+    ['fnType','reason','authState','wasStarted','listenerReady','generation','errorName','errorMessage'].forEach(function(k){
+      if(info[k] !== undefined) entry[k] = clean(info[k], k === 'errorMessage' ? 200 : 120);
+    });
     buffer.push(entry);
     if(buffer.length > MAX_EVENTS) buffer.shift();
     try { renderPanel(); } catch(e){}
     return entry;
   }
 
-  // ---- Wrap a global function by name with a strict start/ok/error
-  // passthrough. Never installs a function that doesn't already exist —
-  // that would change ReferenceError behavior for callers that reference
-  // it as a bare (unqualified) identifier, which is exactly the behavior
-  // we need unmodified evidence of.
-  function wrapGlobal(name, label){
+  function traceDomSnapshot(label){
+    try {
+      var login = document.getElementById('login-screen');
+      var visible = login ? login.style.display !== 'none' : null;
+      trace('dom:'+label,{fnType:visible===true?'login-visible':visible===false?'login-hidden':'login-screen-missing'});
+      trace('state:'+label,{fnType:(document.body&&document.body.classList.contains('logged-in')?'logged-in-class-set':'logged-in-class-absent')+'/'+(window._appStarted?'appStarted-true':'appStarted-false')});
+    } catch(e){}
+  }
+
+  function wrapGlobal(name){
     var existing = window[name];
-    if(typeof existing !== 'function'){
-      trace('fn-check:' + (label || name), { fnType: 'missing' });
-      return;
-    }
-    trace('fn-check:' + (label || name), { fnType: 'available' });
+    if(typeof existing !== 'function') { trace('fn-check:'+name,{fnType:'missing'}); return; }
+    trace('fn-check:'+name,{fnType:'available'});
+    if(existing.__familyStartupTraceWrapped) return;
     var wrapped = function(){
-      trace('reveal:' + (label || name) + ':start');
+      trace('reveal:'+name+':start');
       try {
         var result = existing.apply(this, arguments);
-        trace('reveal:' + (label || name) + ':ok');
+        trace('reveal:'+name+':ok');
         return result;
       } catch(e){
-        trace('reveal:' + (label || name) + ':error', {
-          errorName: e && e.name,
-          errorMessage: e && e.message
-        });
-        throw e; // preserve exact original failure behavior
+        trace('reveal:'+name+':error',{errorName:e&&e.name,errorMessage:e&&e.message});
+        throw e;
       }
     };
     wrapped.__familyStartupTraceWrapped = true;
     try { window[name] = wrapped; } catch(e){}
   }
 
-  // Snapshot DOM/state that the reveal pipeline is expected to change.
-  function traceDomSnapshot(label){
-    try {
-      var login = document.getElementById('login-screen');
-      var loginVisible = login ? (login.style.display !== 'none') : null;
-      var loggedIn = document.body ? document.body.classList.contains('logged-in') : null;
-      var appStarted = !!window._appStarted;
-      trace('dom:' + label, {
-        fnType: (loginVisible === false ? 'login-hidden' : loginVisible === true ? 'login-visible' : 'login-screen-missing')
-      });
-      trace('state:' + label, {
-        fnType: (loggedIn ? 'logged-in-class-set' : 'logged-in-class-absent') + '/' + (appStarted ? 'appStarted-true' : 'appStarted-false')
-      });
-    } catch(e){}
-  }
+  ['renderNav','renderHome','updateHomeXP','checkAchievements','checkDailyBonus','showScreen','_renderScreen','hideLoginScreen','useOfflineMode'].forEach(wrapGlobal);
 
-  // ---- Install wrappers around the functions the reveal pipeline calls.
-  // These are all statically-loaded, always-present-by-this-point functions
-  // (this script loads last, after every synchronous <script> tag), so
-  // wrapping them cannot itself change availability timing.
-  ['renderNav','renderHome','updateHomeXP','checkAchievements','checkDailyBonus',
-   'showScreen','_renderScreen','hideLoginScreen','useOfflineMode'
-  ].forEach(function(name){ wrapGlobal(name); });
-
-  // renderNotifs is loaded asynchronously via a multi-hop dynamic
-  // script-injection chain (swipe.js -> familyDataStore.js -> notificationStore.js
-  // -> notificationEvents.js -> notificationActions.js -> notificationCenter.js).
-  // It is very likely NOT yet defined when this script runs. We deliberately
-  // do NOT create window.renderNotifs if it's missing (that would silently
-  // fix the exact crash we're trying to observe). We only record whether it
-  // exists right now, and poll (briefly, diagnostic-only, preview-gated) for
-  // when it actually becomes available, so we can see the real race window.
   (function traceRenderNotifsAvailability(){
-    var already = typeof window.renderNotifs === 'function';
-    trace('fn-check:renderNotifs', { fnType: already ? 'available' : 'missing' });
-    if(already){ wrapGlobal('renderNotifs'); return; }
+    if(typeof window.renderNotifs === 'function') { wrapGlobal('renderNotifs'); return; }
+    trace('fn-check:renderNotifs',{fnType:'missing'});
     var tries = 0;
     var timer = setInterval(function(){
       tries++;
       if(typeof window.renderNotifs === 'function'){
         clearInterval(timer);
-        trace('fn-became-available:renderNotifs', { t: Date.now() - startedAt });
+        trace('fn-became-available:renderNotifs',{fnType:'available'});
         wrapGlobal('renderNotifs');
-        return;
+      } else if(tries > 40){
+        clearInterval(timer);
+        trace('fn-check:renderNotifs:gave-up-waiting');
       }
-      if(tries > 40){ clearInterval(timer); trace('fn-check:renderNotifs:gave-up-waiting'); }
-    }, 250);
+    },250);
   })();
 
-  // ---- Login action entry points (offline / google) — envelope only.
-  (function wrapLoginActions(){
-    if(typeof window.useOfflineMode === 'function'){
-      var origOffline = window.useOfflineMode;
-      window.useOfflineMode = function(){
-        trace('login-action:offline');
-        traceDomSnapshot('before-offline');
-        try {
-          var r = origOffline.apply(this, arguments);
-          traceDomSnapshot('after-offline');
-          trace('reveal:offline-complete');
-          return r;
-        } catch(e){
-          traceDomSnapshot('after-offline-error');
-          trace('reveal:offline-error', { errorName: e && e.name, errorMessage: e && e.message });
-          throw e;
-        }
-      };
-      try { useOfflineMode = window.useOfflineMode; } catch(e){}
-    }
-    if(typeof window.signInWithGoogle === 'function'){
-      var origGoogle = window.signInWithGoogle;
-      window.signInWithGoogle = function(){
-        trace('login-action:google');
-        return origGoogle.apply(this, arguments);
-      };
-      try { signInWithGoogle = window.signInWithGoogle; } catch(e){}
-    }
-  })();
+  if(typeof window.signInWithGoogle === 'function'){
+    var origGoogle = window.signInWithGoogle;
+    window.signInWithGoogle = function(){ trace('login-action:google'); return origGoogle.apply(this,arguments); };
+    try { signInWithGoogle = window.signInWithGoogle; } catch(e){}
+  }
 
-  // ---- AuthSessionBootstrap already emits lifecycle events on window —
-  // listen only, zero risk, zero duplication of its own logic.
-  ['start','ready','reset','listener-ready'].forEach(function(name){
-    window.addEventListener('familyapp:auth-bootstrap:' + name, function(){
-      trace('boot:' + name);
-      if(name === 'ready'){
-        traceDomSnapshot('after-auth-reveal');
-        trace('reveal:complete');
-      }
+  ['start','ready','listener-ready'].forEach(function(name){
+    window.addEventListener('familyapp:auth-bootstrap:'+name,function(e){
+      trace('boot:'+name,{generation:e&&e.detail&&e.detail.generation});
+      if(name==='ready') { traceDomSnapshot('after-auth-reveal'); trace('reveal:complete'); }
     });
   });
 
+  window.addEventListener('familyapp:auth-bootstrap:reset',function(e){
+    var detail = e && e.detail || {};
+    var userPresent = false;
+    try { userPresent = !!(window.fbUser || (window.fbAuth && window.fbAuth.currentUser) || (window.firebase&&window.firebase.auth&&window.firebase.auth().currentUser)); } catch(err){}
+    trace('boot:reset',{
+      reason: detail.reason || 'unknown',
+      authState: userPresent ? 'user-present' : 'user-null',
+      wasStarted: !!window._appStarted,
+      listenerReady: !!window.__familyAuthSessionBootstrapListenerInstalled,
+      generation: window.AuthSessionBootstrap && window.AuthSessionBootstrap.status ? window.AuthSessionBootstrap.status().generation : undefined
+    });
+    traceDomSnapshot('after-reset');
+  });
+
+  // Observer-only Firebase auth trace. It never performs bootstrap, writes or DOM changes.
+  (function installAuthObserver(tries){
+    var auth = null;
+    try { auth = window.fbAuth || (window.firebase&&window.firebase.auth&&window.firebase.auth()); } catch(e){}
+    if(auth && typeof auth.onAuthStateChanged === 'function'){
+      try {
+        auth.onAuthStateChanged(function(user){ trace('auth:event',{authState:user?'user-present':'user-null'}); });
+        trace('auth:observer-installed');
+      } catch(e){ trace('auth:observer-error',{errorName:e&&e.name,errorMessage:e&&e.message}); }
+      return;
+    }
+    if(tries < 120) setTimeout(function(){ installAuthObserver(tries+1); },250);
+    else trace('auth:observer-timeout');
+  })(0);
+
   trace('reveal:trace-installed');
   traceDomSnapshot('at-trace-install');
-
-  // ---- Preview-only visible debug panel (?startupTrace=1). Stays fixed +
-  // very high z-index so it remains visible even if the rest of the app is
-  // a blank white screen. Never rendered on production (already returned
-  // above for that case).
-  var panelEl = null, listEl = null, panelEnabled = false;
-  (function maybeEnablePanel(){
-    try {
-      var search = (window.location && window.location.search) || '';
-      panelEnabled = /[?&]startupTrace=1(?:&|$)/.test(search);
-    } catch(e){ panelEnabled = false; }
-  })();
 
   function ensurePanel(){
     if(panelEl || !panelEnabled) return;
     panelEl = document.createElement('div');
     panelEl.id = 'family-startup-trace-panel';
-    panelEl.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:45vh;overflow-y:auto;'
-      + 'background:rgba(10,10,20,.94);color:#d1fae5;font:11px/1.4 -apple-system,Menlo,monospace;'
-      + 'padding:8px 10px 24px;z-index:2147483647;box-shadow:0 -4px 20px rgba(0,0,0,.4);'
-      + '-webkit-user-select:text;user-select:text';
-    var header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-weight:700;color:#fff';
-    header.textContent = '⚙️ Startup trace (preview only)';
-    var copyBtn = document.createElement('button');
-    copyBtn.textContent = 'Log naar console';
-    copyBtn.style.cssText = 'background:#2d5a27;color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:10px;margin-left:8px';
-    copyBtn.onclick = function(){ console.log('[__familyStartupTrace]', JSON.stringify(buffer, null, 2)); };
-    header.appendChild(copyBtn);
+    panelEl.style.cssText = 'position:fixed;right:10px;bottom:10px;width:min(92vw,380px);background:rgba(10,10,20,.96);color:#d1fae5;font:11px/1.35 -apple-system,Menlo,monospace;z-index:2147483647;border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,.45);overflow:hidden';
+    var header = document.createElement('button');
+    header.type = 'button';
+    header.style.cssText = 'width:100%;display:flex;align-items:center;justify-content:space-between;background:#151522;color:#fff;border:0;padding:9px 11px;font:700 12px -apple-system,sans-serif;text-align:left';
+    header.innerHTML = '<span>⚙️ Startup trace</span><span id="family-trace-toggle">Open</span>';
+    header.onclick = function(){ expanded=!expanded; renderPanel(); };
     listEl = document.createElement('div');
-    panelEl.appendChild(header);
-    panelEl.appendChild(listEl);
-    (document.body || document.documentElement).appendChild(panelEl);
+    listEl.style.cssText = 'display:none;max-height:35vh;overflow:auto;padding:8px 10px 12px;-webkit-user-select:text;user-select:text';
+    panelEl.appendChild(header); panelEl.appendChild(listEl);
+    (document.body||document.documentElement).appendChild(panelEl);
   }
 
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
   function renderPanel(){
     if(!panelEnabled) return;
     ensurePanel();
-    if(!listEl) return;
+    if(!panelEl || !listEl) return;
+    var toggle = panelEl.querySelector('#family-trace-toggle');
+    if(toggle) toggle.textContent = expanded ? 'Sluit' : 'Open';
+    listEl.style.display = expanded ? 'block' : 'none';
+    if(!expanded) return;
     listEl.innerHTML = buffer.map(function(e){
-      var color = /error/.test(e.event) ? '#fca5a5' : /missing|gave-up/.test(e.event) ? '#fde68a' : '#a7f3d0';
-      var extra = '';
-      if(e.fnType) extra += ' [' + e.fnType + ']';
-      if(e.errorName) extra += ' — ' + e.errorName + (e.errorMessage ? ': ' + e.errorMessage : '');
-      return '<div style="color:' + color + '">+' + e.t + 'ms &nbsp;' + e.event + extra + '</div>';
+      var color=/error/.test(e.event)?'#fca5a5':/missing|timeout|gave-up/.test(e.event)?'#fde68a':'#a7f3d0';
+      var extra='';
+      ['fnType','reason','authState','wasStarted','listenerReady','generation'].forEach(function(k){if(e[k]!==undefined) extra+=' '+k+'='+esc(e[k]);});
+      if(e.errorName) extra+=' '+esc(e.errorName)+(e.errorMessage?': '+esc(e.errorMessage):'');
+      return '<div style="color:'+color+'">+'+e.t+'ms '+esc(e.event)+extra+'</div>';
     }).join('');
+    listEl.scrollTop = listEl.scrollHeight;
   }
 
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ ensurePanel(); renderPanel(); });
-  } else {
-    ensurePanel(); renderPanel();
-  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ensurePanel();renderPanel();});
+  else { ensurePanel(); renderPanel(); }
 
   window.__familyStartupTrace = buffer;
-  window.__familyStartupTraceExport = function(){
-    var json = JSON.stringify(buffer, null, 2);
-    console.log('[__familyStartupTrace]', json);
-    return json;
-  };
+  window.__familyStartupTraceExport = function(){ var json=JSON.stringify(buffer,null,2); console.log('[__familyStartupTrace]',json); return json; };
 })();
