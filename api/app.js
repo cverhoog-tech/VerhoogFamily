@@ -35,6 +35,7 @@ module.exports = async function handler(req, res) {
       + '  <script src="src/core/householdInviteLifecycle.js?v=1"></script>\n'
       + '  <script src="src/core/householdIdentityFirebaseBridge.js?v=4"></script>\n'
       + '  <script src="src/core/householdSessionHardening.js?v=2"></script>\n'
+      + '  <script src="src/core/householdMigrationCompatibility.js?v=1"></script>\n'
       + '  <script src="src/core/authSessionBootstrap.js?v=3"></script>\n'
       + '  <script src="src/core/householdContext.js?v=1"></script>\n'
       + '  <script src="src/core/familyDataContract.js?v=2"></script>\n'
