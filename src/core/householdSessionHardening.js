@@ -2,6 +2,13 @@
 // ============================================================
 // HOUSEHOLD SESSION HARDENING v1.1
 // One lifecycle boundary for auth + active household runtime state.
+//
+// This module keeps its own onAuthStateChanged subscription (onAuthChanged
+// below), but it is observation/session-bookkeeping ONLY: UID/household
+// switch cleanup, listener detach, presence cleanup, stale-context
+// protection. It must never call loadUserFamily()/onLoggedIn(), flip
+// window._appStarted, or hide/reveal the login screen — that is
+// AuthSessionBootstrap's exclusive responsibility.
 // ============================================================
 (function(){
   if(window.__householdSessionHardeningV1) return;
@@ -202,7 +209,12 @@
         });
       });
     };
-    strictLoad.__householdV1=true;
+    // Explicit contract (not an accidental shared flag): any function tagged
+    // __familyHouseholdLoadOwner is a legitimate, deliberate wrapper in the
+    // loadUserFamily ownership chain (hardening -> migration compatibility).
+    // Code that wants to know "is loadUserFamily already claimed by that
+    // chain, or is it still the untouched legacy version" checks this flag.
+    strictLoad.__familyHouseholdLoadOwner=true;
     strictLoad.__householdHardening=true;
     window.loadUserFamily=strictLoad;
     try{loadUserFamily=strictLoad;}catch(e){}
@@ -236,6 +248,11 @@
     try{logoutUser=guarded;}catch(e){}
   }
 
+  // Bookkeeping only: mirrors fbUser/profile cache and tears down a stale
+  // bound context on account switch/sign-out. Deliberately does NOT call
+  // loadUserFamily()/onLoggedIn() or touch _appStarted/login-screen —
+  // AuthSessionBootstrap's own onAuthStateChanged subscription is the only
+  // one allowed to drive household load and app reveal.
   function onAuthChanged(nextUser){
     var nextUid=nextUser&&nextUser.uid||null;
     if(lastAuthUid&&nextUid!==lastAuthUid){
