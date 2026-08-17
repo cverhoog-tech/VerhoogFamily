@@ -7,9 +7,17 @@
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['name']) || data.exists()",
-        "familyId": { ".validate": "newData.val() == null || newData.val() === data.val() || root.child('families').child(newData.val()).child('members').child(auth.uid).child('status').val() === 'active'" },
-        "activeHouseholdId": { ".validate": "newData.val() == null || root.child('families').child(newData.val()).child('members').child(auth.uid).child('status').val() === 'active'" },
-        "households": { "$familyId": { ".validate": "newData.val() == null || root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'" } },
+        "familyId": {
+          ".validate": "newData.val() == null || newData.val() === data.val() || root.child('families').child(newData.val()).child('members').child(auth.uid).child('status').val() === 'active'"
+        },
+        "activeHouseholdId": {
+          ".validate": "newData.val() == null || root.child('families').child(newData.val()).child('members').child(auth.uid).child('status').val() === 'active'"
+        },
+        "households": {
+          "$familyId": {
+            ".validate": "newData.val() == null || root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'"
+          }
+        },
         "private": {
           ".read": "auth != null && auth.uid === $uid",
           ".write": "auth != null && auth.uid === $uid"
@@ -18,13 +26,13 @@
     },
     "families": {
       "$familyId": {
-        ".read": "auth != null && data.child('members').child(auth.uid).child('status').val() === 'active'",
         "meta": {
           ".read": "auth != null",
           ".write": "auth != null && ((data.parent().child('members').child(auth.uid).child('status').val() === 'active' && (data.parent().child('members').child(auth.uid).child('role').val() === 'owner' || data.parent().child('members').child(auth.uid).child('role').val() === 'admin')) || (!data.exists() && newData.child('ownerUid').val() === auth.uid))",
-          ".validate": "newData.hasChildren(['id','name','ownerUid','version','createdAt','updatedAt']) && newData.child('id').val() === $familyId && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 80 && newData.child('ownerUid').isString()"
+          ".validate": "newData.hasChildren(['id','name','ownerUid','version','createdAt','updatedAt']) && newData.child('id').val() === $familyId && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 80 && newData.child('ownerUid').isString() && (!data.exists() || newData.child('ownerUid').val() === data.child('ownerUid').val())"
         },
         "members": {
+          ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
           "$memberUid": {
             ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
             ".write": "auth != null && ((root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active' && (root.child('families').child($familyId).child('members').child(auth.uid).child('role').val() === 'owner' || root.child('families').child($familyId).child('members').child(auth.uid).child('role').val() === 'admin')) || ($memberUid === auth.uid && data.child('status').val() === 'active') || ($memberUid === auth.uid && !data.exists() && newData.child('uid').val() === auth.uid && newData.child('role').val() === 'owner' && newData.child('status').val() === 'active' && root.child('families').child($familyId).child('meta').child('ownerUid').val() === auth.uid) || ($memberUid === auth.uid && !data.exists() && root.child('joinClaims').child($familyId).child(auth.uid).child('status').val() === 'approved' && root.child('joinClaims').child($familyId).child(auth.uid).child('expiresAt').val() > now) || ($memberUid === auth.uid && !data.exists() && root.child('users').child(auth.uid).child('familyId').val() === $familyId && !root.child('families').child($familyId).child('meta').exists()))",
@@ -32,15 +40,55 @@
           }
         },
         "presence": {
+          ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
           "$memberUid": {
             ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
             ".write": "auth != null && auth.uid === $memberUid && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
-            ".validate": "newData.val() == null || newData.hasChildren(['online','lastSeen','name'])"
+            ".validate": "newData.val() == null || (newData.hasChildren(['online','lastSeen','name']) && newData.child('online').isBoolean() && newData.child('lastSeen').isNumber() && newData.child('name').isString())"
           }
         },
-        "$sharedData": {
-          ".read": "auth != null && $sharedData !== 'meta' && $sharedData !== 'members' && $sharedData !== 'presence' && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
-          ".write": "auth != null && $sharedData !== 'meta' && $sharedData !== 'members' && $sharedData !== 'presence' && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'"
+        "shared": {
+          "notifications": {
+            ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+            "$notificationId": {
+              ".write": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active' && !data.exists() && newData.child('householdId').val() === $familyId && newData.child('actor').child('uid').val() === auth.uid",
+              ".validate": "newData.val() == null || (newData.child('id').val() === $notificationId && newData.child('householdId').val() === $familyId && newData.child('actor').child('uid').isString() && newData.child('type').isString() && newData.child('createdAt').isNumber())",
+              "readBy": {
+                "$readerUid": {
+                  ".write": "auth != null && auth.uid === $readerUid && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+                  ".validate": "newData.val() == null || newData.isNumber()"
+                }
+              },
+              "dismissedBy": {
+                "$readerUid": {
+                  ".write": "auth != null && auth.uid === $readerUid && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+                  ".validate": "newData.val() == null || newData.isNumber()"
+                }
+              }
+            }
+          },
+          "activity": {
+            ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+            "$activityId": {
+              ".write": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active' && !data.exists() && newData.child('householdId').val() === $familyId && newData.child('actorUid').val() === auth.uid",
+              ".validate": "newData.hasChildren(['id','schemaVersion','type','householdId','actorUid','entityType','entityId','occurredAt','createdAt','visibility']) && newData.child('id').val() === $activityId && newData.child('householdId').val() === $familyId && newData.child('actorUid').val() === auth.uid && newData.child('visibility').val() === 'household'"
+            }
+          },
+          "$collection": {
+            ".read": "auth != null && ($collection === 'tasks' || $collection === 'partyQuests' || $collection === 'shoppingLists' || $collection === 'recipes' || $collection === 'mealPlans' || $collection === 'calendar' || $collection === 'finance' || $collection === 'feed' || $collection === 'achievements' || $collection === 'notes' || $collection === 'activityEvents') && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+            ".write": "auth != null && ($collection === 'tasks' || $collection === 'partyQuests' || $collection === 'shoppingLists' || $collection === 'recipes' || $collection === 'mealPlans' || $collection === 'calendar' || $collection === 'finance' || $collection === 'feed' || $collection === 'achievements' || $collection === 'notes' || $collection === 'activityEvents') && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'"
+          }
+        },
+        "fcmTokens": {
+          "$memberUid": {
+            ".read": "auth != null && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active' && (auth.uid === $memberUid || root.child('families').child($familyId).child('members').child(auth.uid).child('role').val() === 'owner' || root.child('families').child($familyId).child('members').child(auth.uid).child('role').val() === 'admin')",
+            ".write": "auth != null && auth.uid === $memberUid && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+            ".validate": "newData.val() == null || (newData.child('token').isString() && newData.child('token').val().length > 0)"
+          }
+        },
+        "$legacyCollection": {
+          ".read": "auth != null && ($legacyCollection === 'tasks' || $legacyCollection === 'shop' || $legacyCollection === 'cal' || $legacyCollection === 'recurData' || $legacyCollection === 'feed' || $legacyCollection === 'trans' || $legacyCollection === 'savingsGoals' || $legacyCollection === 'extraIncome' || $legacyCollection === 'vasteLasten') && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'",
+          ".write": "auth != null && ($legacyCollection === 'tasks' || $legacyCollection === 'shop' || $legacyCollection === 'cal' || $legacyCollection === 'recurData' || $legacyCollection === 'feed' || $legacyCollection === 'trans' || $legacyCollection === 'savingsGoals' || $legacyCollection === 'extraIncome' || $legacyCollection === 'vasteLasten') && root.child('families').child($familyId).child('members').child(auth.uid).child('status').val() === 'active'"
         }
       }
     },

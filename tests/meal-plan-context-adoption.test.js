@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('fs'),assert=require('assert');
+const store=fs.readFileSync('src/modules/meals/mealPlanStore.js','utf8');
+const guard=fs.readFileSync('src/modules/meals/mealPlannerContextGuard.js','utf8');
+const app=fs.readFileSync('api/app.js','utf8');
+assert(store.includes('HouseholdContext'),'MealPlanStore must use HouseholdContext');
+assert(store.includes('MEAL_PLAN_CONTEXT_CHANGED'),'MealPlanStore must expose stale-context error');
+assert(store.includes("familyapp:household-context-changed"),'MealPlanStore must rebind on household context changes');
+assert(store.includes('function stop()'),'MealPlanStore must detach/clear state');
+assert(!store.includes('status().userId'),'MealPlanStore must not derive identity from FamilyDataStore.status');
+assert(!store.includes('fbFamilyId'),'MealPlanStore must not fall back to fbFamilyId');
+assert(guard.includes("options.title!=='📅 Maaltijd plannen'"),'meal planner guard must scope itself to planner sheet');
+assert(guard.includes('HouseholdContext.isCurrent'),'meal planner guard must validate captured context');
+assert(app.includes('mealPlannerContextGuard.js?v=1'),'runtime must load meal planner context guard');
+assert(app.includes('mealPlanStore.js?v=2'),'runtime must cache-bust MealPlanStore v2');
+console.log('meal plan context adoption ok');

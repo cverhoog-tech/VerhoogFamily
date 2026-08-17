@@ -1,214 +1,38 @@
 'use strict';
 // ============================================================
-// FEED SHARED DATA v1.0
-// Firebase shared/feedPosts is authoritative for the household Feed.
-// Record-based: every post is its own child node, and likes/comments are
-// written to their own leaf paths. Nothing here ever overwrites the whole
-// feedPosts collection — create/delete/like/comment each touch only the
-// path they own, so two members acting at the same time cannot silently
-// drop each other's changes.
-// window.feedData remains a compatibility projection for the existing Feed UI.
+// FEED SHARED DATA v2.0
+// Canonical household social posts under shared/feed.
+// Activity events live separately under shared/activity.
 // ============================================================
 (function(){
-  if(window.FeedSharedData) return;
-
-  var COLLECTION='feedPosts';
-  var LEGACY_COLLECTION='feed';
-  var started=false,attached=false,hasSnapshot=false,migrating=false,lastError=null;
-
-  // Sparse, dev-facing trace of the create -> write -> snapshot -> render
-  // pipeline. Not spammy: one line per meaningful transition, so a broken
-  // link in the chain is easy to spot in the console without noise.
-  function trace(label,detail){try{console.log('[FeedSharedData]',label,detail!==undefined?detail:'');}catch(e){}}
-
-  function uid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
-  function now(){return Date.now();}
+  if(window.FeedSharedData&&window.FeedSharedData.version==='2.0.0')return;
+  var VERSION='2.0.0',COLLECTION='feed',LEGACY_RECORD_COLLECTION='feedPosts';
+  var state={token:null,unsubscribe:null,hasSnapshot:false,posts:{},migrated:{},lastError:null};
+  function fds(){return window.FamilyDataStore||null;}function hc(){return window.HouseholdContext||null;}function now(){return Date.now();}
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-  function fds(){return window.FamilyDataStore||null;}
-  function ready(){return !!(fds()&&window.fbFamilyId&&uid());}
-
-  function members(){
-    try{
-      if(window.HouseholdIdentityFirebaseBridge&&typeof window.HouseholdIdentityFirebaseBridge.getMembers==='function')return window.HouseholdIdentityFirebaseBridge.getMembers()||[];
-      if(window.TaskSharedData&&typeof window.TaskSharedData.members==='function')return window.TaskSharedData.members()||[];
-    }catch(e){}
-    return[];
-  }
-  function memberByUid(uidVal){var list=members();for(var i=0;i<list.length;i++){var m=list[i];if(String(m.uid||m.id)===String(uidVal))return m;}return null;}
-  function displayNameFor(uidVal){var m=memberByUid(uidVal);return m?(m.displayName||m.name||null):null;}
-  function myDisplayName(){try{return localStorage.getItem('familyapp-profile-name-v1')||window.myName||'Ik';}catch(e){return window.myName||'Ik';}}
+  function captureReady(){var c=hc();if(!c)throw new Error('HOUSEHOLD_CONTEXT_UNAVAILABLE');var uid=c.requireUser(),householdId=c.requireHousehold();c.assertContext({uid:uid,householdId:householdId,requireReady:true});return{uid:uid,householdId:householdId};}
+  function same(t){return!!(t&&hc()&&hc().isCurrent(t));}function assertToken(t){if(!same(t)){var e=new Error('FEED_CONTEXT_CHANGED');e.code='FEED_CONTEXT_CHANGED';throw e;}return t;}
+  function members(){try{if(window.HouseholdIdentityFirebaseBridge&&typeof HouseholdIdentityFirebaseBridge.getMembers==='function')return HouseholdIdentityFirebaseBridge.getMembers()||[];if(window.TaskSharedData&&typeof TaskSharedData.members==='function')return TaskSharedData.members()||[];}catch(e){}return[];}
+  function memberByUid(id){return members().find(function(m){return String(m.uid||m.id)===String(id);})||null;}
+  function displayNameFor(id){var m=memberByUid(id)||{};return m.displayName||m.name||'Gezinslid';}
   function initialsFor(name){return String(name||'G').trim().split(/\s+/).map(function(p){return p.charAt(0);}).join('').slice(0,2).toUpperCase()||'G';}
-  function makeId(prefix){var store=fds();return store&&typeof store.makeId==='function'?store.makeId(prefix||'post'):(prefix||'post')+'_'+now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
-
+  function makeId(prefix){var s=fds();return s&&s.makeId?s.makeId(prefix||'post'):(prefix||'post')+'_'+now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
   function likesArray(row){var l=row&&row.likes;if(!l)return[];if(Array.isArray(l))return l.filter(Boolean);return Object.keys(l).filter(function(k){return l[k];});}
-  function commentsArray(row){
-    var c=row&&row.comments;if(!c)return[];
-    var list=Array.isArray(c)?c.filter(Boolean).map(function(x,i){return Object.assign({},x,{_key:x._key||String(i)});}):Object.keys(c).map(function(k){var v=c[k];return v?Object.assign({},v,{_key:k}):null;}).filter(Boolean);
-    return list.sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
-  }
-
-  // Projects the raw Firebase record map into the array shape the existing
-  // Feed UI (feed.js) already knows how to render.
-  function rows(value){
-    if(!value)return[];
-    return Object.keys(value).map(function(key){
-      var raw=value[key];
-      if(!raw||typeof raw!=='object')return null;
-      var row=clone(raw)||{};
-      row._key=key;
-      if(row.id===undefined||row.id===null)row.id=key;
-      row.likes=likesArray(row);
-      row.comments=commentsArray(row);
-      if(!row.authorDisplayName)row.authorDisplayName=row.author||displayNameFor(row.authorUid)||'Gezinslid';
-      if(!row.author)row.author=row.authorDisplayName;
-      if(!row.initials)row.initials=initialsFor(row.authorDisplayName);
-      return row;
-    }).filter(Boolean).sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
-  }
-
-  function publishProjection(value,source){
-    window.feedData=rows(value);
-    trace('snapshot received',{source:source,count:window.feedData.length});
-    try{window.dispatchEvent(new CustomEvent('familyapp:feed-updated',{detail:{source:source||'shared',count:window.feedData.length}}));}catch(e){}
-    try{
-      var screen=document.getElementById('screen-feed');
-      if(typeof window.renderFeed==='function'&&screen&&screen.classList.contains('active'))window.renderFeed();
-    }catch(e){}
-    try{if(typeof window.updateStats==='function')window.updateStats();}catch(e){}
-  }
-
-  // One-time migration of the retired FeedSharedLive whole-array doc
-  // (families/{hid}/shared/feed) into individual feedPosts records.
-  // Guarded by a migratedToFeedPosts marker on the legacy doc so it can
-  // never run twice, and skipped entirely if feedPosts already has content.
-  function migrateLegacyIfNeeded(){
-    if(!ready()||migrating)return Promise.resolve(false);
-    migrating=true;
-    return fds().readShared(LEGACY_COLLECTION,null).then(function(legacy){
-      if(!legacy||legacy.migratedToFeedPosts||!Array.isArray(legacy.items)||!legacy.items.length)return false;
-      return fds().readShared(COLLECTION,{}).then(function(existing){
-        if(existing&&Object.keys(existing).length)return false;
-        var ts=now();
-        var writes=legacy.items.map(function(p,i){
-          var key=makeId('post');
-          var row=clone(p)||{};
-          row.id=key;row._key=key;
-          row.authorDisplayName=row.author||row.authorDisplayName||'Gezinslid';
-          row.author=row.authorDisplayName;
-          row.authorUid=null; // legacy name-only posts have no reliable UID mapping
-          row.createdAt=row.createdAt||(ts-i);
-          row.updatedAt=row.updatedAt||row.createdAt;
-          row.likes={}; // legacy likes were display-name strings; not safely mappable to uids
-          var comments={};
-          (Array.isArray(p.comments)?p.comments:[]).forEach(function(c,ci){
-            comments[makeId('cmt')]={authorUid:null,authorDisplayName:c.author||'Gezinslid',author:c.author||'Gezinslid',initials:initialsFor(c.author),text:c.text||'',gifUrl:c.gifUrl||null,createdAt:row.createdAt+ci};
-          });
-          row.comments=comments;
-          return fds().writeSharedRecord(COLLECTION,key,row);
-        });
-        return Promise.all(writes).then(function(){
-          return fds().writeShared(LEGACY_COLLECTION,Object.assign({},legacy,{migratedToFeedPosts:true,migratedAt:now()}));
-        }).then(function(){return true;});
-      });
-    }).catch(function(e){console.error('[FeedSharedData] legacy migration failed',e);return false;}).then(function(result){migrating=false;return result;});
-  }
-
-  function start(){
-    if(started||!ready())return false;
-    started=true;
-    trace('start()',{uid:uid(),householdId:window.fbFamilyId});
-    fds().subscribeShared(COLLECTION,function(value){
-      attached=true;
-      hasSnapshot=true;
-      publishProjection(value,'firebase');
-    },{});
-    migrateLegacyIfNeeded();
-    return true;
-  }
-
-  function findLocal(idOrKey){
-    var target=String(idOrKey);
-    return (window.feedData||[]).find(function(p){return String(p.id)===target||String(p._key)===target;})||null;
-  }
-  function keyFor(post){return post&&(post._key||String(post.id));}
-
-  function createPost(data){
-    if(!ready()){lastError='not-ready';return Promise.reject(new Error('Feed opslag is nog niet gereed'));}
-    var me=uid(),name=myDisplayName(),key=makeId('post'),ts=now();
-    var row={
-      id:key,type:'post',authorUid:me,authorDisplayName:name,author:name,
-      initials:initialsFor(name),color:(data&&data.color)||window.myColor||'#eaf7e5',
-      text:(data&&data.text)||'',media:(data&&data.media)||null,mediaType:(data&&data.mediaType)||null,
-      linkedEntity:(data&&data.linkedEntity)||null,
-      createdAt:ts,updatedAt:ts,likes:{},comments:{}
-    };
-    trace('createPost begin',key);
-    return fds().writeSharedRecord(COLLECTION,key,row).then(function(){
-      trace('writeSharedRecord success',key);
-      lastError=null;
-      return row;
-    }).catch(function(e){
-      trace('writeSharedRecord FAILED',key+' '+(e&&e.message));
-      lastError=(e&&e.message)||String(e);
-      throw e;
-    });
-  }
-
-  function canDelete(post){
-    if(!post)return false;
-    if(!post.authorUid)return true; // legacy/unowned post — any household member may clean it up
-    return String(post.authorUid)===String(uid());
-  }
-
-  function deletePost(idOrKey){
-    if(!ready())return Promise.reject(new Error('Feed opslag is nog niet gereed'));
-    var post=findLocal(idOrKey);
-    if(!post)return Promise.reject(new Error('Post niet gevonden'));
-    if(!canDelete(post))return Promise.reject(new Error('Je kunt alleen je eigen posts verwijderen'));
-    return fds().writeSharedRecord(COLLECTION,keyFor(post),null);
-  }
-
-  function toggleReaction(idOrKey){
-    if(!ready())return Promise.reject(new Error('Feed opslag is nog niet gereed'));
-    var post=findLocal(idOrKey),me=uid();
-    if(!post)return Promise.reject(new Error('Post niet gevonden'));
-    if(!me)return Promise.reject(new Error('Niet ingelogd'));
-    var liked=(post.likes||[]).indexOf(me)>-1;
-    return fds().writeSharedPath(COLLECTION,[keyFor(post),'likes',me],liked?null:true).then(function(){return{liked:!liked};});
-  }
-
-  function addComment(idOrKey,data){
-    if(!ready())return Promise.reject(new Error('Feed opslag is nog niet gereed'));
-    var post=findLocal(idOrKey),me=uid(),name=myDisplayName();
-    if(!post)return Promise.reject(new Error('Post niet gevonden'));
-    var commentKey=makeId('cmt');
-    var comment={authorUid:me,authorDisplayName:name,author:name,initials:initialsFor(name),text:(data&&data.text)||'',gifUrl:(data&&data.gifUrl)||null,createdAt:now()};
-    return fds().writeSharedPath(COLLECTION,[keyFor(post),'comments',commentKey],comment).then(function(){return comment;});
-  }
-
-  function getPosts(){return window.feedData||[];}
-  function status(){return{
-    started:started,
-    ready:ready(),
-    attached:attached,
-    subscribed:attached,
-    uid:uid(),
-    householdId:window.fbFamilyId||null,
-    count:(window.feedData||[]).length,
-    hasSnapshot:hasSnapshot,
-    lastError:lastError
-  };}
-
-  window.FeedSharedData={
-    version:'1.0.0',start:start,createPost:createPost,deletePost:deletePost,
-    toggleReaction:toggleReaction,addComment:addComment,getPosts:getPosts,
-    canDelete:canDelete,members:members,status:status
-  };
-
-  function ensureStart(){start();}
-  window.addEventListener('familyapp:household-changed',ensureStart);
-  window.addEventListener('familyapp:household-identity-synced',ensureStart);
-  window.addEventListener('familyapp:auth-ready',ensureStart);
-  window.addEventListener('load',ensureStart,{once:true});
-  if(document.readyState==='complete')ensureStart();else Promise.resolve().then(ensureStart);
+  function commentsArray(row){var c=row&&row.comments;if(!c)return[];var list=Array.isArray(c)?c.filter(Boolean).map(function(x,i){return Object.assign({},x,{_key:x._key||String(i)});}):Object.keys(c).map(function(k){var v=c[k];return v?Object.assign({},v,{_key:k}):null;}).filter(Boolean);return list.sort(function(a,b){return Number(a.createdAt||0)-Number(b.createdAt||0);});}
+  function rows(value){if(!value)return[];return Object.keys(value).map(function(key){var raw=value[key];if(!raw||typeof raw!=='object')return null;var row=clone(raw)||{};row._key=key;if(row.id==null)row.id=key;row.likes=likesArray(row);row.comments=commentsArray(row);row.authorDisplayName=row.authorDisplayName||displayNameFor(row.authorUid);row.author=row.authorDisplayName;row.initials=row.initials||initialsFor(row.authorDisplayName);return row;}).filter(Boolean).sort(function(a,b){return Number(b.createdAt||0)-Number(a.createdAt||0);});}
+  function publishProjection(value,token){if(token&&!same(token))return;state.posts=value&&typeof value==='object'?value:{};window.feedData=rows(state.posts);state.hasSnapshot=true;try{window.dispatchEvent(new CustomEvent('familyapp:feed-updated',{detail:{householdId:token&&token.householdId||null,count:window.feedData.length}}));}catch(e){}try{var screen=document.getElementById('screen-feed');if(screen&&screen.classList.contains('active')&&typeof window.renderFeed==='function')window.renderFeed();}catch(e){}}
+  function findLocal(idOrKey){var target=String(idOrKey||'');return(window.feedData||[]).find(function(p){return String(p.id)===target||String(p._key||'')===target;})||null;}function keyFor(post){return post&&(post._key||String(post.id));}
+  function migrateLegacy(token){var k=token.uid+':'+token.householdId;if(state.migrated[k])return Promise.resolve(false);state.migrated[k]=true;var s=fds();return s.readShared(COLLECTION,{}).then(function(current){assertToken(token);if(current&&Object.keys(current).length)return false;return s.readShared(LEGACY_RECORD_COLLECTION,{}).then(function(old){assertToken(token);if(!old||typeof old!=='object'||!Object.keys(old).length)return false;var jobs=Object.keys(old).map(function(key){var raw=old[key];if(!raw||typeof raw!=='object')return Promise.resolve();var row=clone(raw);row.id=row.id||key;row.householdId=token.householdId;row.authorUid=row.authorUid||null;return s.writeSharedRecord(COLLECTION,key,row);});return Promise.all(jobs).then(function(){assertToken(token);return true;});});});}
+  function stop(){if(state.unsubscribe)try{state.unsubscribe();}catch(e){}state.unsubscribe=null;state.token=null;state.posts={};state.hasSnapshot=false;window.feedData=[];try{window.dispatchEvent(new CustomEvent('familyapp:feed-updated',{detail:{count:0}}));}catch(e){}}
+  function start(){var token;try{token=captureReady();}catch(e){stop();return Promise.resolve(status());}if(state.token&&same(state.token)&&state.unsubscribe)return Promise.resolve(status());stop();state.token=token;return migrateLegacy(token).catch(function(e){if(e&&e.code!=='FEED_CONTEXT_CHANGED')console.warn('[FeedSharedData] legacy migration failed',e);}).then(function(){assertToken(token);state.unsubscribe=fds().subscribeShared(COLLECTION,function(value){if(!same(token))return;publishProjection(value,token);},{});return status();}).catch(function(e){if(e&&e.code!=='FEED_CONTEXT_CHANGED')state.lastError=e.message||String(e);return status();});}
+  function rebind(){stop();return start();}
+  function createPost(data){var token=captureReady(),key=makeId('post'),ts=now(),name=displayNameFor(token.uid);var row={id:key,type:'post',householdId:token.householdId,authorUid:token.uid,authorDisplayName:name,author:name,initials:initialsFor(name),text:String(data&&data.text||''),media:data&&data.media||null,mediaType:data&&data.mediaType||null,linkedEntity:data&&data.linkedEntity||null,createdAt:ts,updatedAt:ts,likes:{},comments:{}};assertToken(token);return fds().writeSharedRecord(COLLECTION,key,row).then(function(result){assertToken(token);return row;});}
+  function canDelete(post){var token;try{token=captureReady();}catch(e){return false;}return!!(post&&post.authorUid&&String(post.authorUid)===String(token.uid));}
+  function deletePost(idOrKey){var token=captureReady(),post=findLocal(idOrKey);if(!post)return Promise.reject(new Error('Post niet gevonden'));if(!canDelete(post))return Promise.reject(new Error('Je kunt alleen je eigen posts verwijderen'));assertToken(token);return fds().writeSharedRecord(COLLECTION,keyFor(post),null).then(function(r){assertToken(token);return r;});}
+  function toggleReaction(idOrKey){var token=captureReady(),post=findLocal(idOrKey);if(!post)return Promise.reject(new Error('Post niet gevonden'));var liked=(post.likes||[]).indexOf(token.uid)>-1;assertToken(token);return fds().writeSharedPath(COLLECTION,[keyFor(post),'likes',token.uid],liked?null:true).then(function(){assertToken(token);return{liked:!liked};});}
+  function addComment(idOrKey,data){var token=captureReady(),post=findLocal(idOrKey);if(!post)return Promise.reject(new Error('Post niet gevonden'));var name=displayNameFor(token.uid),commentKey=makeId('cmt'),comment={authorUid:token.uid,authorDisplayName:name,author:name,initials:initialsFor(name),text:String(data&&data.text||''),gifUrl:data&&data.gifUrl||null,createdAt:now()};assertToken(token);return fds().writeSharedPath(COLLECTION,[keyFor(post),'comments',commentKey],comment).then(function(){assertToken(token);return comment;});}
+  function getPosts(){return(window.feedData||[]).slice();}
+  function status(){return{version:VERSION,ready:!!(state.token&&same(state.token)&&state.unsubscribe),hasSnapshot:state.hasSnapshot,context:state.token?clone(state.token):null,count:(window.feedData||[]).length,lastError:state.lastError,collection:COLLECTION};}
+  window.FeedSharedData={version:VERSION,start:start,stop:stop,rebind:rebind,createPost:createPost,deletePost:deletePost,toggleReaction:toggleReaction,addComment:addComment,getPosts:getPosts,canDelete:canDelete,members:members,status:status};
+  window.addEventListener('familyapp:household-context-changed',rebind);window.addEventListener('familyapp:session:cleared',stop);window.addEventListener('online',start);window.addEventListener('focus',start);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();

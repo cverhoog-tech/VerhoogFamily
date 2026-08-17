@@ -1,0 +1,61 @@
+name: Firebase Rules Contract
+
+on:
+  push:
+    branches:
+      - agent/household-context-foundation
+    paths:
+      - database.rules.json
+      - storage.rules
+      - firebase.json
+      - tests/firebase-rules-phase18.test.mjs
+      - tests/storage-rules-default-deny.test.mjs
+      - tests/database-rules-removed-member.test.mjs
+      - tests/database-rules-invite-lifecycle.test.mjs
+      - .github/workflows/firebase-rules-contract.yml
+  pull_request:
+    paths:
+      - database.rules.json
+      - storage.rules
+      - firebase.json
+      - tests/firebase-rules-phase18.test.mjs
+      - tests/storage-rules-default-deny.test.mjs
+      - tests/database-rules-removed-member.test.mjs
+      - tests/database-rules-invite-lifecycle.test.mjs
+      - .github/workflows/firebase-rules-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rules-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Firebase config and database rules JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('database.rules.json','utf8')); JSON.parse(require('fs').readFileSync('firebase.json','utf8')); console.log('Firebase JSON: valid')"
+          test -s storage.rules
+
+      - name: Install Firebase emulator test tooling
+        run: npm install --no-save --no-package-lock firebase@12 @firebase/rules-unit-testing@5 firebase-tools@14
+
+      - name: Phase 18 Realtime Database security contract
+        run: npx firebase emulators:exec --only database --project demo-familyapp-phase18-rtdb "node tests/firebase-rules-phase18.test.mjs"
+
+      - name: Removed-member regression
+        run: npx firebase emulators:exec --only database --project demo-familyapp-household-isolation "node tests/database-rules-removed-member.test.mjs"
+
+      - name: Invite lifecycle regression
+        run: npx firebase emulators:exec --only database --project demo-familyapp-invite-lifecycle "node tests/database-rules-invite-lifecycle.test.mjs"
+
+      - name: Storage default-deny contract
+        run: npx firebase emulators:exec --only storage --project demo-familyapp-phase18-storage "node tests/storage-rules-default-deny.test.mjs"

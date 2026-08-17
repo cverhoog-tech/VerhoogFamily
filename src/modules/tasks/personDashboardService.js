@@ -1,76 +1,29 @@
 'use strict';
 // ============================================================
-// PERSON DASHBOARD SERVICE v1.0.0
-// Read-only, UID-first view model for the Taken > Persoon tab.
-// No member data is inferred from display names.
+// PERSON DASHBOARD SERVICE v2.0.0
+// Read-only UID-first household view model.
+// Public identity/presence comes from the household identity bridge.
+// Private progression is exposed only for the current authenticated UID.
 // ============================================================
 (function(){
-  if(window.PersonDashboardService) return;
-
-  var VERSION='1.0.0';
-  var subscribers=[];
-  var cachedIdentity=[];
-  var cachedMemberRecords={};
-  var memberRef=null;
-  var memberHouseholdId=null;
-  var booted=false;
-
-  function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
-  function hid(){return window.fbFamilyId||null;}
-  function currentUid(){try{if(window.HouseholdIdentityFirebaseBridge&&HouseholdIdentityFirebaseBridge.getCurrentUid)return HouseholdIdentityFirebaseBridge.getCurrentUid();var u=window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser);return u&&u.uid||null;}catch(e){return null;}}
-  function now(){return Date.now();}
-  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-  function number(v,fallback){var n=Number(v);return isFinite(n)?n:(fallback||0);}
-  function rewardXp(task){if(window.ProgressionUidBridge&&typeof ProgressionUidBridge.rewardXp==='function')return ProgressionUidBridge.rewardXp(task);var m=String(task&&(task.rewardXp||task.xpAmount||task.xpReward||task.xp)||'').match(/(\d+)/);return m?Math.max(0,parseInt(m[1],10)):0;}
-  function isDone(task){return !!(task&&(task.done===true||task.status==='completed'));}
-  function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
-  function isAssigned(task,uid){return !!(task&&uid&&((task.assignedToUids&&task.assignedToUids[uid])||String(task.assignedToUid||'')===String(uid)));}
-  function isCreator(task,uid){return !!(task&&uid&&String(task.createdByUid||task.ownerUid||'')===String(uid));}
-  function isHelper(task,uid){return !!(task&&uid&&Array.isArray(task.helpers)&&task.helpers.some(function(h){return helperUid(h)===String(uid);}));}
-  function isParticipant(task,uid){return isAssigned(task,uid)||isCreator(task,uid)||isHelper(task,uid);}
-  function taskRole(task,uid){var roles=[];if(isCreator(task,uid))roles.push('creator');if(isAssigned(task,uid))roles.push('assignee');if(isHelper(task,uid))roles.push('helper');return roles;}
-  function taskRows(){if(window.TaskSharedData&&Array.isArray(window.taskData))return window.taskData.slice();if(window.TaskRepositoryAdapter&&typeof TaskRepositoryAdapter.listTasks==='function')return TaskRepositoryAdapter.listTasks()||[];return Array.isArray(window.taskData)?window.taskData.slice():[];}
-  function normalizeTask(task,uid){var t=clone(task)||{};return{id:t.id,_key:t._key||null,title:t.title||t.name||'Taak',description:t.description||t.desc||'',type:t.type||t.questType||'SIDE QUEST',dueDate:t.date||t.dueDate||t.deadline||null,image:t.imageUrl||t.image||t.photo||'',xp:rewardXp(t),done:isDone(t),completedAt:number(t.completedAt,0)||null,completedByUid:t.completedByUid||null,roles:taskRole(t,uid),helpRequested:!!t.helpRequested,raw:t};}
-  function weekAgo(){return now()-(7*24*60*60*1000);}
-  function levelFromXp(xp){var n=Math.max(0,number(xp,0));try{if(typeof window.getLevel==='function')return Math.max(1,number(window.getLevel(n),1));}catch(e){}return Math.max(1,Math.floor(n/100)+1);}
-  function xpBounds(level){var prev=0,next=level*100;try{if(Array.isArray(window.LEVEL_XP)){prev=number(window.LEVEL_XP[Math.max(0,level-1)],0);next=number(window.LEVEL_XP[Math.min(level,window.LEVEL_XP.length-1)],prev+200)||prev+200;}}catch(e){}if(next<=prev)next=prev+200;return{previous:prev,next:next};}
-  function titleFor(level){try{var row=Array.isArray(window.LEVEL_TITLES)?window.LEVEL_TITLES[Math.min(Math.max(0,level-1),window.LEVEL_TITLES.length-1)]:null;return row&&(row.title||row.name)||'Avonturier';}catch(e){return'Avonturier';}}
-  function achievementsFromRecord(record){var rows=(record&&record.achievements)||{};return Object.keys(rows).map(function(id){var a=rows[id];if(!a||a.unlocked===false)return null;return{id:id,unlocked:true,unlockedAt:number(a.unlockedAt,0)||null,xp:number(a.xp,0)};}).filter(Boolean).sort(function(a,b){return number(b.unlockedAt,0)-number(a.unlockedAt,0);});}
-  function presenceState(member){var online=member&&member.online===true,ts=number(member&&member.lastSeen,0),age=ts?Math.max(0,now()-ts):Infinity;if(online)return'online';if(age<=15*60*1000)return'recent';if(age<=24*60*60*1000)return'today';return'offline';}
-  function identityMembers(){try{if(window.HouseholdIdentityFirebaseBridge&&typeof HouseholdIdentityFirebaseBridge.getMembers==='function'){var list=HouseholdIdentityFirebaseBridge.getMembers();if(Array.isArray(list)&&list.length)cachedIdentity=list.slice();}}catch(e){}return cachedIdentity.slice();}
-  function buildMember(identity){var uid=String(identity.uid||identity.id||''),record=cachedMemberRecords[uid]||{},xp=number(record.xp,0),level=levelFromXp(xp),bounds=xpBounds(level),all=taskRows(),mine=all.filter(function(t){return isParticipant(t,uid);}),active=mine.filter(function(t){return !isDone(t);}).map(function(t){return normalizeTask(t,uid);}),completed=mine.filter(isDone),recentCompleted=completed.filter(function(t){return number(t.completedAt,0)>=weekAgo();}),earned=completed.filter(function(t){return String(t.completedByUid||'')===uid&&number(t.completedAt,0)>=weekAgo();}).reduce(function(sum,t){return sum+rewardXp(t);},0),achievements=achievementsFromRecord(record);return{
-      uid:uid,
-      member:{uid:uid,displayName:identity.displayName||identity.name||record.name||'Gezinslid',avatar:identity.avatar||record.avatar||'',initials:identity.initials||'',role:identity.role||record.role||'member',isCurrent:uid===String(currentUid()||'')},
-      presence:{state:presenceState(identity),online:identity.online===true,lastSeen:identity.lastSeen||null,area:identity.area||''},
-      progression:{xp:xp,level:level,title:titleFor(level),previousLevelXp:bounds.previous,nextLevelXp:bounds.next,streak:null},
-      quests:{active:active,activeCount:active.length,completedCount:completed.length,completedThisWeek:recentCompleted.length,earnedXpThisWeek:earned},
-      achievements:{unlocked:achievements,recent:achievements.slice(0,6),total:achievements.length},
-      activity:{recent:[]},
-      capabilities:{identity:true,presence:true,progression:true,quests:true,achievements:true,streak:false,activity:false}
-    };}
-  function snapshot(){return identityMembers().map(buildMember);}
-  function notify(){var data=snapshot();subscribers.slice().forEach(function(fn){try{fn(data.slice());}catch(e){console.warn('[PersonDashboardService] subscriber failed',e);}});try{window.dispatchEvent(new CustomEvent('familyapp:person-dashboard-updated',{detail:{members:data,version:VERSION}}));}catch(e){}return data;}
-  function detachMembers(){if(memberRef)try{memberRef.off();}catch(e){}memberRef=null;memberHouseholdId=null;cachedMemberRecords={};}
-  function attachMembers(){var d=db(),family=hid();if(!d||!family)return false;if(memberRef&&memberHouseholdId===family)return true;detachMembers();memberHouseholdId=family;memberRef=d.ref('families/'+family+'/members');memberRef.on('value',function(s){cachedMemberRecords=s.val()||{};notify();});return true;}
-  function refresh(){attachMembers();return notify();}
-  function subscribe(fn){if(typeof fn!=='function')return function(){};subscribers.push(fn);try{fn(snapshot());}catch(e){}refresh();return function(){var i=subscribers.indexOf(fn);if(i>=0)subscribers.splice(i,1);};}
-  function get(uid){var id=String(uid||'');return snapshot().find(function(m){return m.uid===id;})||null;}
-  function boot(){if(booted){refresh();return;}booted=true;attachMembers();refresh();}
-
-  window.PersonDashboardService={
-    version:VERSION,
-    getMembers:snapshot,
-    get:get,
-    subscribe:subscribe,
-    refresh:refresh,
-    status:function(){return{version:VERSION,householdId:hid(),currentUid:currentUid(),memberCount:identityMembers().length,memberRecords:Object.keys(cachedMemberRecords||{}).length,attached:!!memberRef,capabilities:{streak:false,activity:false}};}
-  };
-
-  window.addEventListener('familyapp:household-identity-synced',function(e){var members=e&&e.detail&&e.detail.members;if(Array.isArray(members))cachedIdentity=members.slice();boot();});
-  window.addEventListener('familyapp:household-changed',function(){detachMembers();booted=false;boot();});
-  window.addEventListener('familyapp:tasks-updated',notify);
-  window.addEventListener('familyapp:progression-updated',notify);
-  window.addEventListener('familyapp:auth-ready',boot);
-  window.addEventListener('load',boot,{once:true});
-  if(document.readyState==='complete')boot();else Promise.resolve().then(boot);
+  if(window.PersonDashboardService&&window.PersonDashboardService.version==='2.0.0')return;
+  var VERSION='2.0.0',subscribers=[],cachedIdentity=[],boundToken=null,identityUnsub=null;
+  function hc(){return window.HouseholdContext||null;}function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}function now(){return Date.now();}function num(v,f){var n=Number(v);return isFinite(n)?n:(f||0);}
+  function capture(){var c=hc();if(!c)throw new Error('HOUSEHOLD_CONTEXT_UNAVAILABLE');var uid=c.requireUser(),householdId=c.requireHousehold();c.assertContext({uid:uid,householdId:householdId,requireReady:true});return{uid:uid,householdId:householdId};}
+  function same(t){return!!(t&&hc()&&hc().isCurrent(t));}
+  function rewardXp(task){try{if(window.ProgressionUidBridge&&typeof ProgressionUidBridge.rewardXp==='function')return ProgressionUidBridge.rewardXp(task);}catch(e){}var m=String(task&&(task.rewardXp||task.xpAmount||task.xpReward||task.xp)||'').match(/(\d+)/);return m?Math.max(0,parseInt(m[1],10)):0;}
+  function isDone(t){return!!(t&&(t.done===true||t.status==='completed'));}function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
+  function assigned(t,uid){return!!(t&&uid&&((t.assignedToUids&&t.assignedToUids[uid])||String(t.assignedToUid||'')===String(uid)));}function creator(t,uid){return!!(t&&uid&&String(t.createdByUid||t.ownerUid||'')===String(uid));}function helper(t,uid){return!!(t&&uid&&Array.isArray(t.helpers)&&t.helpers.some(function(h){return helperUid(h)===String(uid);}));}function participant(t,uid){return assigned(t,uid)||creator(t,uid)||helper(t,uid);}
+  function roles(t,uid){var out=[];if(creator(t,uid))out.push('creator');if(assigned(t,uid))out.push('assignee');if(helper(t,uid))out.push('helper');return out;}
+  function tasks(){return Array.isArray(window.taskData)?window.taskData.slice():[];}function normTask(t,uid){t=clone(t)||{};return{id:t.id,_key:t._key||null,title:t.title||t.name||'Taak',description:t.description||t.desc||'',type:t.type||t.questType||'SIDE QUEST',dueDate:t.date||t.dueDate||t.deadline||null,image:t.imageUrl||t.image||t.photo||'',xp:rewardXp(t),done:isDone(t),completedAt:num(t.completedAt,0)||null,completedByUid:t.completedByUid||null,roles:roles(t,uid),helpRequested:!!t.helpRequested,raw:t};}
+  function presence(m){var ts=num(m&&m.lastSeen,0),age=ts?Math.max(0,now()-ts):Infinity;return{state:m&&m.online===true?'online':age<=15*60*1000?'recent':age<=24*60*60*1000?'today':'offline',online:!!(m&&m.online),lastSeen:ts||null,area:m&&m.area||''};}
+  function currentProgression(uid){var token=boundToken;if(!token||String(uid)!==String(token.uid))return null;try{if(window.FamilyProgression&&FamilyProgression.isReady&&FamilyProgression.isReady()){var s=FamilyProgression.getState()||{},lv=Math.max(1,num(s.level,1)),prev=FamilyProgression.totalXpForLevel?FamilyProgression.totalXpForLevel(lv):Math.max(0,(lv-1)*100),next=FamilyProgression.totalXpForLevel?FamilyProgression.totalXpForLevel(lv+1):lv*100;return{xp:num(s.totalXp,0),level:lv,title:(Array.isArray(window.LEVEL_TITLES)&&window.LEVEL_TITLES[Math.min(lv-1,window.LEVEL_TITLES.length-1)]&&(window.LEVEL_TITLES[Math.min(lv-1,window.LEVEL_TITLES.length-1)].title||window.LEVEL_TITLES[Math.min(lv-1,window.LEVEL_TITLES.length-1)].name))||'Avonturier',previousLevelXp:prev,nextLevelXp:next,streak:clone(s.streak||null),achievements:clone(s.achievements||{})};}}catch(e){}return null;}
+  function build(identity){var uid=String(identity.uid||identity.id||''),all=tasks(),mine=all.filter(function(t){return participant(t,uid);}),active=mine.filter(function(t){return!isDone(t);}).map(function(t){return normTask(t,uid);}),completed=mine.filter(isDone),week=now()-7*24*60*60*1000,recent=completed.filter(function(t){return num(t.completedAt,0)>=week;}),earned=completed.filter(function(t){return String(t.completedByUid||'')===uid&&num(t.completedAt,0)>=week;}).reduce(function(sum,t){return sum+rewardXp(t);},0),prog=currentProgression(uid),ach=[];if(prog&&prog.achievements)ach=Object.keys(prog.achievements).map(function(id){var a=prog.achievements[id];return a&&a.unlocked!==false?{id:id,unlocked:true,unlockedAt:num(a.unlockedAt,0)||null,xp:num(a.xp,0),name:a.name||'',icon:a.icon||''}:null;}).filter(Boolean).sort(function(a,b){return num(b.unlockedAt,0)-num(a.unlockedAt,0);});return{uid:uid,member:{uid:uid,displayName:identity.displayName||identity.name||'Gezinslid',avatar:identity.avatar||'',initials:identity.initials||'',role:identity.role||'member',isCurrent:!!(boundToken&&uid===String(boundToken.uid))},presence:presence(identity),progression:prog||{xp:0,level:1,title:'Gezinslid',previousLevelXp:0,nextLevelXp:100,streak:null},quests:{active:active,activeCount:active.length,completedCount:completed.length,completedThisWeek:recent.length,earnedXpThisWeek:earned},achievements:{unlocked:ach,recent:ach.slice(0,6),total:ach.length},activity:{recent:[]},capabilities:{identity:true,presence:true,progression:!!prog,quests:true,achievements:!!prog,streak:!!(prog&&prog.streak),activity:false}};}
+  function snapshot(){if(!boundToken||!same(boundToken))return[];return cachedIdentity.map(build);}function notify(){var data=snapshot();subscribers.slice().forEach(function(fn){try{fn(data.slice());}catch(e){}});try{window.dispatchEvent(new CustomEvent('familyapp:person-dashboard-updated',{detail:{members:data,version:VERSION,householdId:boundToken&&boundToken.householdId||null}}));}catch(e){}return data;}
+  function stop(){if(identityUnsub)try{identityUnsub();}catch(e){}identityUnsub=null;boundToken=null;cachedIdentity=[];notify();}
+  function start(){var token;try{token=capture();}catch(e){stop();return false;}if(boundToken&&same(boundToken)&&identityUnsub)return true;stop();boundToken=token;var b=window.HouseholdIdentityFirebaseBridge;if(b&&typeof b.subscribe==='function'){identityUnsub=b.subscribe(function(list){if(!same(token))return;cachedIdentity=Array.isArray(list)?list.slice():[];notify();});}else{try{cachedIdentity=b&&b.getMembers?b.getMembers()||[]:[];}catch(e){cachedIdentity=[];}notify();}return true;}
+  function refresh(){if(!boundToken||!same(boundToken))start();try{var b=window.HouseholdIdentityFirebaseBridge;if(b&&typeof b.getMembers==='function')cachedIdentity=b.getMembers()||cachedIdentity;}catch(e){}return notify();}
+  function subscribe(fn){if(typeof fn!=='function')return function(){};subscribers.push(fn);start();try{fn(snapshot());}catch(e){}return function(){var i=subscribers.indexOf(fn);if(i>=0)subscribers.splice(i,1);};}
+  window.PersonDashboardService={version:VERSION,getMembers:function(){start();return snapshot();},get:function(uid){start();return snapshot().find(function(m){return m.uid===String(uid||'');})||null;},subscribe:subscribe,refresh:refresh,start:start,stop:stop,status:function(){return{version:VERSION,context:boundToken?clone(boundToken):null,memberCount:cachedIdentity.length,capabilities:{privateProgressionCurrentUidOnly:true,activity:false}};}};
+  window.addEventListener('familyapp:household-context-changed',function(){stop();start();});window.addEventListener('familyapp:session:cleared',stop);window.addEventListener('familyapp:tasks-updated',notify);window.addEventListener('familyapp:progression-updated',notify);window.addEventListener('familyapp:household-identity-synced',refresh);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();

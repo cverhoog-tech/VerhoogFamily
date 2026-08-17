@@ -1,0 +1,17 @@
+const fs=require('fs'),assert=require('assert');
+const finance=fs.readFileSync('src/modules/finance/financeStore.js','utf8');
+const receipt=fs.readFileSync('src/modules/shop/shoppingReceiptFinance.js','utf8');
+assert.match(finance,/FINANCE STORE v4\.0\.0/);
+assert.match(finance,/HouseholdContext/);
+assert.match(finance,/FINANCE_CONTEXT_CHANGED/);
+assert.match(finance,/familyapp:household-context-changed/);
+assert.match(finance,/familyapp:session:cleared/);
+assert.match(finance,/householdId:t\.householdId/);
+assert.match(finance,/transactionExpenses/);
+assert.match(finance,/disposable:totalIncome-totalExpenses/);
+assert.doesNotMatch(finance,/function status\(\)\{ return store\(\)/);
+assert.doesNotMatch(finance,/status\(\)\.userId/);
+assert.match(receipt,/amount:-Math\.abs\(amount\)/);
+assert.match(receipt,/sourceType:'shoppingReceipt'/);
+assert.match(receipt,/FinanceStore\.upsertSourceTransaction/);
+console.log('finance context adoption OK');

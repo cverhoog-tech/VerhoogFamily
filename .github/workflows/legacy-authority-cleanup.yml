@@ -1,0 +1,48 @@
+name: Legacy authority cleanup contract
+
+on:
+  pull_request:
+    paths:
+      - 'src/core/avatarIdentityBridge.js'
+      - 'src/core/legacyAuthorityRetirement.js'
+      - 'src/core/profile.legacy.js'
+      - 'src/modules/profile/**'
+      - 'api/app.js'
+      - 'tests/legacy-*.test.js'
+      - '.github/workflows/legacy-authority-cleanup.yml'
+  push:
+    branches:
+      - main
+      - agent/household-context-foundation
+    paths:
+      - 'src/core/avatarIdentityBridge.js'
+      - 'src/core/legacyAuthorityRetirement.js'
+      - 'src/core/profile.legacy.js'
+      - 'src/modules/profile/**'
+      - 'api/app.js'
+      - 'tests/legacy-*.test.js'
+      - '.github/workflows/legacy-authority-cleanup.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax
+        run: |
+          node --check src/core/avatarIdentityBridge.js
+          node --check src/core/legacyAuthorityRetirement.js
+          node --check src/modules/profile/profileRuntimeContextBridge.js
+          node --check api/app.js
+          node --check tests/legacy-authority-retirement.test.js
+          node --check tests/legacy-cleanup-adoption.test.js
+      - name: Legacy runtime authority retirement
+        run: node tests/legacy-authority-retirement.test.js
+      - name: Legacy cleanup adoption
+        run: node tests/legacy-cleanup-adoption.test.js

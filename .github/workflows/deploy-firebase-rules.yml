@@ -1,10 +1,11 @@
-name: Deploy Firebase Database Rules
+name: Deploy Firebase Rules
 
 on:
   push:
     branches: [main]
     paths:
       - database.rules.json
+      - storage.rules
       - firebase.json
       - .github/workflows/deploy-firebase-rules.yml
   workflow_dispatch:
@@ -13,12 +14,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: firebase-database-rules-production
+  group: firebase-rules-production
   cancel-in-progress: false
 
 jobs:
   deploy-rules:
-    name: Deploy Realtime Database rules
+    name: Deploy Firebase security rules
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -30,8 +31,10 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Validate rules JSON
-        run: node -e "JSON.parse(require('fs').readFileSync('database.rules.json','utf8')); console.log('database.rules.json is valid JSON')"
+      - name: Validate rules configuration
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('database.rules.json','utf8')); JSON.parse(require('fs').readFileSync('firebase.json','utf8')); console.log('Firebase JSON: valid')"
+          test -s storage.rules
 
       - name: Write Firebase service account credentials
         shell: bash
@@ -45,7 +48,7 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
           chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Realtime Database rules
+      - name: Deploy Realtime Database and Storage rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx --yes firebase-tools@latest deploy --only database --project verhoog-family --non-interactive
+        run: npx --yes firebase-tools@latest deploy --only database,storage --project verhoog-family --non-interactive

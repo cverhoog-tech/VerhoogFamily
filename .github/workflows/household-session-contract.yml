@@ -7,34 +7,61 @@ on:
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'src/core/householdInviteLifecycle.js'
+      - 'src/core/householdContext.js'
+      - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
+      - 'src/core/progression*.js'
+      - 'src/core/foodAddBridge.js'
+      - 'src/core/groceryQuickAddModal.js'
+      - 'src/core/notification*.js'
+      - 'src/modules/tasks/**'
+      - 'src/modules/shop/**'
+      - 'src/modules/calendar/**'
+      - 'src/modules/recipes/**'
+      - 'src/modules/meals/**'
+      - 'src/modules/finance/**'
+      - 'src/modules/achievements/**'
+      - 'src/modules/skills/**'
+      - 'src/modules/profile/**'
+      - 'src/platform/activity/**'
+      - 'src/modules/feed/**'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
-      - 'tests/household-session-contract.test.js'
-      - 'tests/household-session-behavior.test.js'
-      - 'tests/family-data-store-pending-context.test.js'
-      - 'tests/database-rules-removed-member.test.mjs'
-      - 'tests/database-rules-invite-lifecycle.test.mjs'
+      - 'tests/**'
       - '.github/workflows/household-session-contract.yml'
   push:
     branches:
       - main
       - agent/household-auth-hardening
+      - agent/household-context-foundation
     paths:
       - 'src/core/householdSessionHardening.js'
       - 'src/core/householdIdentityFirebaseBridge.js'
       - 'src/core/householdPlatform.js'
       - 'src/core/householdInviteLifecycle.js'
+      - 'src/core/householdContext.js'
+      - 'src/core/familyDataContract.js'
       - 'src/core/familyDataStore.js'
+      - 'src/core/progression*.js'
+      - 'src/core/foodAddBridge.js'
+      - 'src/core/groceryQuickAddModal.js'
+      - 'src/core/notification*.js'
+      - 'src/modules/tasks/**'
+      - 'src/modules/shop/**'
+      - 'src/modules/calendar/**'
+      - 'src/modules/recipes/**'
+      - 'src/modules/meals/**'
+      - 'src/modules/finance/**'
+      - 'src/modules/achievements/**'
+      - 'src/modules/skills/**'
+      - 'src/modules/profile/**'
+      - 'src/platform/activity/**'
+      - 'src/modules/feed/**'
       - 'api/app.js'
       - 'database.rules.json'
       - 'firebase.json'
-      - 'tests/household-session-contract.test.js'
-      - 'tests/household-session-behavior.test.js'
-      - 'tests/family-data-store-pending-context.test.js'
-      - 'tests/database-rules-removed-member.test.mjs'
-      - 'tests/database-rules-invite-lifecycle.test.mjs'
+      - 'tests/**'
       - '.github/workflows/household-session-contract.yml'
 
 permissions:
@@ -55,16 +82,146 @@ jobs:
           node --check src/core/householdIdentityFirebaseBridge.js
           node --check src/core/householdPlatform.js
           node --check src/core/householdInviteLifecycle.js
+          node --check src/core/householdContext.js
+          node --check src/core/familyDataContract.js
           node --check src/core/familyDataStore.js
+          node --check src/core/progressionEngine.js
+          node --check src/core/progressionStore.js
+          node --check src/core/progressionUidBridge.js
+          node --check src/core/foodAddBridge.js
+          node --check src/core/groceryQuickAddModal.js
+          node --check src/core/notificationStore.js
+          node --check src/core/notificationEvents.js
+          node --check src/core/notificationActions.js
+          node --check src/core/notificationCenter.js
+          node --check src/modules/profile/profileContextService.js
+          node --check src/modules/profile/profileRuntimeContextBridge.js
+          node --check src/modules/achievements/achievementUidBridge.js
+          node --check src/modules/skills/skillsProgressionBridge.js
+          node --check src/modules/tasks/personDashboardService.js
+          node --check src/modules/tasks/taskSharedData.js
+          node --check src/modules/tasks/taskContextBoundary.js
+          node --check src/modules/tasks/taskCreateReadinessFix.js
+          node --check src/modules/tasks/partyQuestContextService.js
+          node --check src/modules/tasks/partyQuestContextUi.js
+          node --check src/modules/tasks/partyQuestActiveContextView.js
+          node --check src/modules/tasks/partyQuestCompletionReward.js
+          node --check src/modules/tasks/partyQuestNotificationProjector.js
+          node --check src/modules/shop/shop.js
+          node --check src/modules/shop/shoppingLists.js
+          node --check src/modules/shop/shoppingListService.js
+          node --check src/modules/shop/shoppingReceiptFinance.js
+          node --check src/modules/calendar/calendarSharedLive.js
+          node --check src/modules/calendar/calendarGoogleSync.js
+          node --check src/modules/calendar/calendarMealPlanIntegration.js
+          node --check src/modules/recipes/recipeSharedLive.js
+          node --check src/modules/recipes/recipeManageAndImageBridge.js
+          node --check src/modules/recipes/recipeEditorPopup.js
+          node --check src/modules/recipes/recipeLinkImport.js
+          node --check src/modules/recipes/recipes.js
+          node --check src/modules/meals/mealPlanStore.js
+          node --check src/modules/meals/mealPlannerBottomSheetBridge.js
+          node --check src/modules/meals/mealPlannerContextGuard.js
+          node --check src/modules/meals/meals.js
+          node --check src/modules/finance/financeStore.js
+          node --check src/modules/finance/financeRuntimeShell.js
+          node --check src/platform/activity/householdActivity.js
+          node --check src/platform/activity/activityDomainProducers.js
+          node --check src/modules/feed/feedSharedData.js
+          node --check src/modules/feed/feed.js
+          node --check src/modules/feed/feedContextIdentity.js
+          node --check src/modules/feed/feedInteractionController.js
+          node --check src/modules/feed/feedActivityPresentation.js
           node --check api/app.js
           node --check tests/household-session-behavior.test.js
+          node --check tests/household-context-contract.test.js
+          node --check tests/family-data-contract.test.js
           node --check tests/family-data-store-pending-context.test.js
+          node --check tests/task-context-boundary.test.js
+          node --check tests/task-context-adoption.test.js
+          node --check tests/task-shared-context-rebind.test.js
+          node --check tests/party-quest-context-service.test.js
+          node --check tests/party-quest-context-adoption.test.js
+          node --check tests/shopping-context-rebind.test.js
+          node --check tests/shopping-context-adoption.test.js
+          node --check tests/calendar-context-rebind.test.js
+          node --check tests/calendar-context-adoption.test.js
+          node --check tests/recipe-context-rebind.test.js
+          node --check tests/recipe-context-adoption.test.js
+          node --check tests/meal-plan-context-rebind.test.js
+          node --check tests/meal-plan-context-adoption.test.js
+          node --check tests/activity-context-service.test.js
+          node --check tests/activity-context-adoption.test.js
+          node --check tests/feed-context-rebind.test.js
+          node --check tests/feed-context-adoption.test.js
+          node --check tests/notification-context-rebind.test.js
+          node --check tests/notification-context-adoption.test.js
+          node --check tests/finance-context-rebind.test.js
+          node --check tests/finance-context-adoption.test.js
+          node --check tests/progression-context-rebind.test.js
+          node --check tests/progression-context-adoption.test.js
+          node --check tests/profile-context-rebind.test.js
+          node --check tests/profile-context-adoption.test.js
           node --check tests/database-rules-removed-member.test.mjs
           node --check tests/database-rules-invite-lifecycle.test.mjs
       - name: Household isolation contract
         run: node tests/household-session-contract.test.js
       - name: Household account-switch behavior
         run: node tests/household-session-behavior.test.js
+      - name: Household context contract
+        run: node tests/household-context-contract.test.js
+      - name: Family data contract
+        run: node tests/family-data-contract.test.js
+      - name: Task context boundary
+        run: node tests/task-context-boundary.test.js
+      - name: Task context adoption
+        run: node tests/task-context-adoption.test.js
+      - name: Task shared context rebind
+        run: node tests/task-shared-context-rebind.test.js
+      - name: Party quest context isolation
+        run: node tests/party-quest-context-service.test.js
+      - name: Party quest context adoption
+        run: node tests/party-quest-context-adoption.test.js
+      - name: Shopping context rebind
+        run: node tests/shopping-context-rebind.test.js
+      - name: Shopping context adoption
+        run: node tests/shopping-context-adoption.test.js
+      - name: Calendar context rebind
+        run: node tests/calendar-context-rebind.test.js
+      - name: Calendar context adoption
+        run: node tests/calendar-context-adoption.test.js
+      - name: Recipe context rebind
+        run: node tests/recipe-context-rebind.test.js
+      - name: Recipe context adoption
+        run: node tests/recipe-context-adoption.test.js
+      - name: Meal plan context rebind
+        run: node tests/meal-plan-context-rebind.test.js
+      - name: Meal plan context adoption
+        run: node tests/meal-plan-context-adoption.test.js
+      - name: Activity context isolation and idempotency
+        run: node tests/activity-context-service.test.js
+      - name: Activity context adoption
+        run: node tests/activity-context-adoption.test.js
+      - name: Feed context rebind
+        run: node tests/feed-context-rebind.test.js
+      - name: Feed context adoption
+        run: node tests/feed-context-adoption.test.js
+      - name: Notification context rebind
+        run: node tests/notification-context-rebind.test.js
+      - name: Notification context adoption
+        run: node tests/notification-context-adoption.test.js
+      - name: Finance context rebind and receipt accounting
+        run: node tests/finance-context-rebind.test.js
+      - name: Finance context adoption
+        run: node tests/finance-context-adoption.test.js
+      - name: Progression context rebind and idempotency
+        run: node tests/progression-context-rebind.test.js
+      - name: Progression context adoption
+        run: node tests/progression-context-adoption.test.js
+      - name: Profile and presence context rebind
+        run: node tests/profile-context-rebind.test.js
+      - name: Profile and presence context adoption
+        run: node tests/profile-context-adoption.test.js
       - name: Pending write context isolation
         run: node tests/family-data-store-pending-context.test.js
       - name: Install Firebase rules test tooling

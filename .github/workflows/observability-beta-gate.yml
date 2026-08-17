@@ -1,0 +1,24 @@
+name: Observability beta gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - agent/household-context-foundation
+
+jobs:
+  observability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax check observability runtime
+        run: |
+          node --check src/core/clientObservability.js
+          node --check api/app.js
+      - name: Privacy-safe diagnostics contract
+        run: node tests/client-observability-privacy.test.js
+      - name: Lifecycle device regression
+        run: node tests/auth-session-bootstrap-lifecycle.test.js

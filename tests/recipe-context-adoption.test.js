@@ -1,0 +1,21 @@
+'use strict';
+const fs=require('fs');
+const assert=require('assert');
+function read(p){return fs.readFileSync(p,'utf8');}
+const store=read('src/modules/recipes/recipeSharedLive.js');
+const ui=read('src/modules/recipes/recipes.js');
+const editor=read('src/modules/recipes/recipeEditorPopup.js');
+const importer=read('src/modules/recipes/recipeLinkImport.js');
+const manage=read('src/modules/recipes/recipeManageAndImageBridge.js');
+assert(store.includes('HouseholdContext'),'RecipeStore must use HouseholdContext');
+assert(store.includes('RECIPE_CONTEXT_CHANGED'),'RecipeStore must reject stale context mutations');
+assert(store.includes("familyapp:household-context-changed"),'RecipeStore must rebind on context change');
+assert(store.includes('state.unsubscribe'),'RecipeStore must retain realtime unsubscribe');
+assert(!store.includes('window.fbFamilyId'),'RecipeStore must not use fbFamilyId authority fallback');
+assert(editor.includes('RecipeStore'),'recipe editor must delegate to RecipeStore');
+assert(importer.includes('RecipeStore.create'),'recipe import must delegate to RecipeStore.create');
+assert(manage.includes('RecipeStore'),'recipe manage bridge must delegate to RecipeStore');
+assert(!manage.includes('HouseholdRepository.write'),'recipe manage bridge must not write legacy repository authority');
+assert(!manage.includes('localStorage.setItem'),'recipe manage bridge must not persist parallel recipe authority');
+assert(ui.includes('RecipeStore'),'recipe UI must read from RecipeStore');
+console.log('recipe-context-adoption: PASS');

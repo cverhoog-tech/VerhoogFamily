@@ -1,68 +1,19 @@
 'use strict';
-// ============================================================
-// PARTY QUEST NOTIFICATION PROJECTOR v1.2.0
-// Read-only observer over the existing UID-based partyQuests store.
-// Converts invite/join/complete transitions into typed NotificationEvents and
-// publishes a single read-model update event for task presentation.
-// ============================================================
 (function(){
   if(window.PartyQuestNotificationProjector)return;
-
-  var VERSION='1.2.0';
-  var ref=null,handler=null,householdId=null,snapshot={},initialized=false;
-
-  function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
-  function uid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
-  function hid(){return window.fbFamilyId||null;}
-  function map(value){var out={};Object.keys(value||{}).forEach(function(k){var q=value[k];if(q)out[k]=Object.assign({id:q.id||k},q);});return out;}
+  var VERSION='2.0.0',snapshot={},initialized=false,started=false;
+  function uid(){try{return window.HouseholdContext&&HouseholdContext.requireUser?HouseholdContext.requireUser():null;}catch(e){return null;}}
+  function service(){return window.PartyQuestContextService||null;}
+  function map(list){var out={};(list||[]).forEach(function(q){if(q&&q.id)out[q.id]=q;});return out;}
   function invitees(q){return q&&q.invitees&&typeof q.invitees==='object'?q.invitees:{};}
   function safe(p){if(p&&typeof p.catch==='function')p.catch(function(e){console.warn('[PartyQuestNotificationProjector]',e);});}
-  function publishReadModel(next){
-    try{window.dispatchEvent(new CustomEvent('familyapp:party-quests-updated',{detail:{source:'firebase',householdId:householdId,quests:Object.keys(next||{}).map(function(k){return next[k];})}}));}catch(e){}
-  }
-
-  function project(next){
-    var me=uid();
-    if(!initialized){snapshot=next;initialized=true;publishReadModel(next);return;}
-    Object.keys(next).forEach(function(k){
-      var q=next[k],prev=snapshot[k]||null;
-      if(!q||!window.NotificationEvents)return;
-
-      if(!prev&&String(q.inviterUid||'')===String(me)){
-        var targets=Object.keys(invitees(q)).filter(function(id){return invitees(q)[id]&&invitees(q)[id].status==='pending';});
-        safe(NotificationEvents.partyQuestCreated(q,targets));
-        targets.forEach(function(targetUid){
-          if(NotificationEvents.partyQuestInvitationSent)safe(NotificationEvents.partyQuestInvitationSent(q,targetUid));
-        });
-      }
-
-      if(prev){
-        var beforeMine=invitees(prev)[me],afterMine=invitees(q)[me];
-        if(afterMine&&String(q.inviterUid||'')!==String(me)&&(!beforeMine||beforeMine.status!==afterMine.status)&&afterMine.status==='active'){
-          safe(NotificationEvents.partyQuestJoined(q,q.inviterUid));
-        }
-        if(prev.status!==q.status&&q.status==='completed'&&String(q.inviterUid||'')===String(me))safe(NotificationEvents.partyQuestCompleted(q));
-      }
-    });
-    snapshot=next;
-    publishReadModel(next);
-  }
-
-  function stop(){if(ref&&handler)try{ref.off('value',handler);}catch(e){}ref=null;handler=null;householdId=null;snapshot={};initialized=false;}
-  function start(){
-    var d=db(),family=hid(),me=uid();
-    if(!d||!family||!me)return false;
-    if(ref&&householdId===family)return true;
-    stop();householdId=family;
-    ref=d.ref('families/'+family+'/partyQuests');
-    handler=function(s){project(map(s.val()||{}));};
-    ref.on('value',handler);
-    return true;
-  }
-
-  window.PartyQuestNotificationProjector={version:VERSION,start:start,stop:stop,status:function(){return{version:VERSION,started:!!ref,householdId:householdId,tracked:Object.keys(snapshot).length};}};
-  window.addEventListener('familyapp:household-members-updated',start);
-  window.addEventListener('familyapp:household-changed',start);
-  window.addEventListener('familyapp:household-identity-synced',start);
+  function project(next){var me=uid();if(!me)return;if(!initialized){snapshot=next;initialized=true;return;}Object.keys(next).forEach(function(k){var q=next[k],prev=snapshot[k]||null;if(!q||!window.NotificationEvents)return;if(!prev&&String(q.inviterUid||'')===String(me)){var targets=Object.keys(invitees(q)).filter(function(id){return invitees(q)[id]&&invitees(q)[id].status==='pending';});safe(NotificationEvents.partyQuestCreated(q,targets));targets.forEach(function(targetUid){if(NotificationEvents.partyQuestInvitationSent)safe(NotificationEvents.partyQuestInvitationSent(q,targetUid));});}if(prev){var beforeMine=invitees(prev)[me],afterMine=invitees(q)[me];if(afterMine&&String(q.inviterUid||'')!==String(me)&&(!beforeMine||beforeMine.status!==afterMine.status)&&afterMine.status==='active')safe(NotificationEvents.partyQuestJoined(q,q.inviterUid));if(prev.status!==q.status&&q.status==='completed'&&String(q.inviterUid||'')===String(me))safe(NotificationEvents.partyQuestCompleted(q));}});snapshot=next;}
+  function refresh(){var s=service();if(!s)return false;try{project(map(s.list()));return true;}catch(e){return false;}}
+  function stop(){snapshot={};initialized=false;started=false;}
+  function start(){var s=service();if(!s)return false;s.start();started=true;refresh();return true;}
+  window.PartyQuestNotificationProjector={version:VERSION,start:start,stop:stop,status:function(){var c=null;try{c=HouseholdContext.current();}catch(e){}return{version:VERSION,started:started,householdId:c&&c.householdId||null,tracked:Object.keys(snapshot).length};}};
+  window.addEventListener('familyapp:party-quests-updated',refresh);
+  window.addEventListener('familyapp:household-context-changed',function(){stop();start();});
+  window.addEventListener('familyapp:session:cleared',stop);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();

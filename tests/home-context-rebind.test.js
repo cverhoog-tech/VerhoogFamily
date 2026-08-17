@@ -1,0 +1,15 @@
+const fs=require('fs');const vm=require('vm');const assert=require('assert');
+const code=fs.readFileSync('src/modules/home/homeDashboardService.js','utf8');
+let token={uid:'alpha1',householdId:'alpha'};let handlers={};
+const context={console,window:{},document:{},CustomEvent:function(n,o){this.type=n;this.detail=o&&o.detail;}};context.window=context;context.window.addEventListener=(n,fn)=>{handlers[n]=fn;};context.window.dispatchEvent=()=>{};
+context.HouseholdContext={requireUser:()=>token.uid,requireHousehold:()=>token.householdId,assertContext:()=>true,isCurrent:t=>t&&t.uid===token.uid&&t.householdId===token.householdId};
+context.ProfileContextService={getCurrentMember:()=>({uid:token.uid,displayName:token.uid==='alpha1'?'Alpha One':'Beta One',initials:token.uid==='alpha1'?'AO':'BO'})};
+context.ProgressionStore={get:()=>token.uid==='alpha1'?{totalXp:250,level:3}:{totalXp:40,level:1}};
+context.FamilyProgression={totalXpForLevel:l=>(l-1)*100};
+context.taskData=[{id:1,done:false},{id:2,done:true}];
+context.ShoppingLists={active:()=>({list:{items:{a:{done:false},b:{done:true}}}})};
+context.FeedSharedData={getPosts:()=>[{id:'p'}]};context.ActivityService={getEvents:()=>[{type:'task.completed',householdId:token.householdId}]};
+vm.createContext(context);vm.runInContext(code,context);
+let a=context.HomeDashboardService.get();assert.equal(a.context.uid,'alpha1');assert.equal(a.profile.name,'Alpha One');assert.equal(a.progression.xp,250);assert.deepEqual(a.stats,{tasks:1,shopping:1,feed:1});
+const old=a.context;token={uid:'beta1',householdId:'beta'};let b=context.HomeDashboardService.get();assert.equal(b.context.uid,'beta1');assert.equal(b.profile.name,'Beta One');assert.equal(b.progression.xp,40);assert.equal(context.HomeDashboardService.isCurrent(old),false);assert.equal(context.HomeDashboardService.isCurrent(b.context),true);
+console.log('home context rebind behavior ok');

@@ -1,14 +1,13 @@
 'use strict';
 // ============================================================
-// TASK CREATE READINESS v2.0
-// Keeps TaskSharedData/Firebase authoritative while resolving the authenticated
-// household context on demand. No install polling or dynamic script loading.
+// TASK CREATE READINESS v3.0
+// Uses HouseholdContext as the only task identity/readiness authority.
 // ============================================================
 (function(){
-  if(window.__taskCreateReadinessV2)return;
-  window.__taskCreateReadinessV2=true;
+  if(window.__taskCreateReadinessV3)return;
+  window.__taskCreateReadinessV3=true;
 
-  var householdResolvePromise=null;
+  var contextWaitPromise=null;
 
   function installLayoutGuard(){
     if(document.getElementById('task-create-mobile-guard-style'))return;
@@ -40,70 +39,45 @@
     },true);
   }
 
-  function currentUser(){
-    try{return window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;}catch(e){return null;}
+  function householdContext(){return window.HouseholdContext||null;}
+
+  function currentReadyContext(){
+    var ctx=householdContext();
+    if(!ctx)return null;
+    try{
+      var current=ctx.current();
+      if(current&&current.ready&&current.uid&&current.householdId)return current;
+    }catch(e){}
+    return null;
   }
 
-  function waitForAuthenticatedUser(){
-    var existing=currentUser();
-    if(existing&&existing.uid)return Promise.resolve(existing);
-    return new Promise(function(resolve,reject){
-      var auth=null,done=false,off=null,timer=null;
-      try{auth=window.firebase&&firebase.auth?firebase.auth():null;}catch(e){}
-      function finish(err,user){
-        if(done)return;done=true;
-        if(timer)clearTimeout(timer);
-        if(typeof off==='function')try{off();}catch(e){}
-        if(err)reject(err);else resolve(user);
-      }
-      if(!auth||typeof auth.onAuthStateChanged!=='function'){
-        finish(new Error('Firebase gebruiker is nog niet beschikbaar'));return;
-      }
-      off=auth.onAuthStateChanged(function(user){if(user&&user.uid){window.fbUser=user;finish(null,user);}});
-      timer=setTimeout(function(){finish(new Error('Firebase gebruiker is nog niet beschikbaar'));},6000);
-    });
-  }
-
-  function resolveHouseholdContext(){
-    if(window.fbFamilyId)return Promise.resolve(window.fbFamilyId);
-    if(householdResolvePromise)return householdResolvePromise;
-    householdResolvePromise=waitForAuthenticatedUser().then(function(){
-      if(window.fbFamilyId)return window.fbFamilyId;
-      if(window.FamilyHousehold&&typeof window.FamilyHousehold.resolve==='function'){
-        return Promise.resolve(window.FamilyHousehold.resolve()).then(function(result){
-          var hid=window.fbFamilyId||(result&&result.id)||null;
-          if(!hid)throw new Error('Geen actief gezin gevonden');
-          window.fbFamilyId=hid;
-          return hid;
-        });
-      }
-      return new Promise(function(resolve,reject){
-        var settled=false,timer=null;
-        function finish(){
-          if(settled)return;
-          if(window.fbFamilyId){settled=true;cleanup();resolve(window.fbFamilyId);}
-        }
-        function cleanup(){
-          if(timer)clearTimeout(timer);
-          window.removeEventListener('familyapp:household-changed',finish);
-          window.removeEventListener('familyapp:household-identity-synced',finish);
-        }
-        window.addEventListener('familyapp:household-changed',finish);
-        window.addEventListener('familyapp:household-identity-synced',finish);
-        timer=setTimeout(function(){if(!settled){settled=true;cleanup();reject(new Error('Household platform is nog niet beschikbaar'));}},6000);
-        finish();
-      });
-    }).finally(function(){householdResolvePromise=null;});
-    return householdResolvePromise;
+  function waitForReadyContext(){
+    var existing=currentReadyContext();
+    if(existing)return Promise.resolve(existing);
+    if(contextWaitPromise)return contextWaitPromise;
+    contextWaitPromise=new Promise(function(resolve,reject){
+      var settled=false,timer=null,off=null;
+      function cleanup(){if(timer)clearTimeout(timer);if(typeof off==='function')try{off();}catch(e){}}
+      function finish(err,value){if(settled)return;settled=true;cleanup();if(err)reject(err);else resolve(value);}
+      function inspect(){var ready=currentReadyContext();if(ready)finish(null,ready);}
+      var ctx=householdContext();
+      if(!ctx||typeof ctx.subscribe!=='function'){finish(new Error('HouseholdContext is niet beschikbaar'));return;}
+      off=ctx.subscribe(function(){inspect();});
+      timer=setTimeout(function(){finish(new Error('Geen actieve household-context beschikbaar'));},6000);
+      inspect();
+    }).finally(function(){contextWaitPromise=null;});
+    return contextWaitPromise;
   }
 
   function prepareSharedTaskStore(shared){
     if(!window.FamilyDataStore)return Promise.reject(new Error('FamilyDataStore is niet beschikbaar'));
-    return resolveHouseholdContext().then(function(){
+    return waitForReadyContext().then(function(ctx){
+      var boundary=window.TaskContextBoundary;
+      if(boundary&&typeof boundary.assertReady==='function')boundary.assertReady();
       if(typeof shared.start==='function')shared.start();
       var status=typeof shared.status==='function'?shared.status():null;
-      if(status&&status.ready)return status;
-      throw new Error('Shared task store niet ready na household resolve');
+      if(status&&status.ready)return {status:status,context:ctx};
+      throw new Error('Shared task store niet ready na HouseholdContext resolve');
     });
   }
 
@@ -112,12 +86,13 @@
     installTapGuard();
     var shared=window.TaskSharedData;
     if(!shared||typeof shared.create!=='function')return false;
-    if(shared.create.__resolvesHouseholdContext)return true;
+    if(shared.create.__resolvesHouseholdContextV3)return true;
     var originalCreate=shared.create.bind(shared);
     function createWhenReady(task){return prepareSharedTaskStore(shared).then(function(){return originalCreate(task);});}
-    createWhenReady.__resolvesHouseholdContext=true;
+    createWhenReady.__resolvesHouseholdContextV3=true;
     createWhenReady.__original=originalCreate;
     shared.create=createWhenReady;
+    if(window.TaskContextBoundary&&typeof window.TaskContextBoundary.install==='function')window.TaskContextBoundary.install();
     return true;
   }
 
