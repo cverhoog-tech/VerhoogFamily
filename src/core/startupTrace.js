@@ -15,7 +15,15 @@
   }
   if(isProductionHost()) return;
 
-  try { panelEnabled = /[?&]startupTrace=1(?:&|$)/.test((window.location && window.location.search) || ''); } catch(e){}
+  // The normal ?startupTrace=1 crash-capture path is now owned by the tiny
+  // head-loaded startupTraceEarly.js probe. Keep this heavier wrapper/panel
+  // completely inert during that run so diagnostics cannot amplify a Safari
+  // crash through function wrapping, polling or repeated DOM rendering.
+  try {
+    if(/[?&](?:startupTrace|startupTraceReport)=1(?:&|$)/.test((window.location && window.location.search) || '')) return;
+  } catch(e){}
+
+  try { panelEnabled = /[?&]startupTraceLegacy=1(?:&|$)/.test((window.location && window.location.search) || ''); } catch(e){}
 
   function clean(value, max){
     if(value === undefined || value === null) return undefined;
@@ -109,7 +117,6 @@
     traceDomSnapshot('after-reset');
   });
 
-  // Observer-only Firebase auth trace. It never performs bootstrap, writes or DOM changes.
   (function installAuthObserver(tries){
     var auth = null;
     try { auth = window.fbAuth || (window.firebase&&window.firebase.auth&&window.firebase.auth()); } catch(e){}
