@@ -6,6 +6,10 @@ module.exports = async function handler(req, res) {
     const htmlPath = path.join(process.cwd(), 'index.html');
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
+    // Preview-only early diagnostics: load before Firebase and all app modules so
+    // redirect/cold-start failures that occur before startupTrace.js are visible.
+    html = html.replace('<head>', '<head>\n  <script src="src/core/startupTraceEarly.js?v=1"></script>');
+
     html = html.replace(/\s*<script src="src\/modules\/tasks\/quest-overlay\.js"><\/script>\s*/g, '\n');
     html = html.replace('<script src="src/core/data.js"></script>','<script src="src/core/clientObservability.js?v=1"></script>\n  <script src="src/core/data.js"></script>');
     html = html.replace('<script src="src/modules/tasks/taskSharedData.js"></script>','<script src="src/modules/tasks/taskSharedData.js?v=3"></script>\n  <script src="src/modules/tasks/taskContextBoundary.js?v=1"></script>');
