@@ -249,6 +249,11 @@
         else resetStartedState('auth-signed-out');
       });
       window.__familyAuthSessionBootstrapListenerInstalled = true;
+      // Readiness signal ONLY — this does not add a new post-auth action
+      // owner. It just lets pre-auth code (e.g. the Google-login readiness
+      // gate) know the canonical listener is actually attached, instead of
+      // guessing or polling internal state.
+      emit('listener-ready',{});
     }catch(e){ console.error('[AuthSessionBootstrap] could not attach canonical auth listener', e); }
   }
   installCanonicalAuthListener();
@@ -295,6 +300,10 @@
     boot: bootAuthenticatedSession,
     recover: recoverAuthenticatedSession,
     reset: resetStartedState,
+    // Readiness accessor for pre-auth gating code (e.g. the Google-login
+    // readiness gate). Purely observational — does not participate in the
+    // post-auth household-load/reveal chain above.
+    listenerReady: function(){ return !!window.__familyAuthSessionBootstrapListenerInstalled; },
     status: function(){
       var user = currentUser();
       return {booting:booting, started:!!window._appStarted, uid:user&&user.uid||null, bootedUid:bootedUid,generation:generation,activeBootUid:activeBoot&&activeBoot.uid||null};
