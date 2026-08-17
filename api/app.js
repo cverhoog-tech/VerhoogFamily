@@ -24,6 +24,34 @@ module.exports = async function handler(req, res) {
       + '  <script src="src/modules/feed/feedActivityPresentation.js?v=5"></script>'
     );
 
+    // Bottom sheet UI primitive — only depends on ModalManager (already loaded
+    // just above). Needed by mealPlannerBottomSheetBridge.js below.
+    html = html.replace(
+      '<script src="src/core/modalManager.js"></script>',
+      '<script src="src/core/modalManager.js"></script>\n  <script src="src/core/bottomSheet.js?v=1"></script>'
+    );
+
+    // Finance data layer. Additive: seeds from the existing legacy finance
+    // globals on first boot and only calls the already-defined
+    // window.renderFinance() when present. Also what HouseholdActivity's
+    // grocery.receipt_uploaded bridge (FinanceStore.upsertSourceTransaction)
+    // needs to exist at all.
+    html = html.replace(
+      '<script src="src/modules/finance/finance.js"></script>',
+      '<script src="src/modules/finance/financeStore.js?v=1"></script>\n  <script src="src/modules/finance/finance.js"></script>'
+    );
+
+    // Meal planner runtime: meals.js and householdActivity.js already reference
+    // MealPlanStore/MealPlannerBottomSheetBridge, but neither was ever loaded,
+    // so tapping a meal slot only showed a toast. This makes meal planning and
+    // the meal.planned activity event actually work.
+    html = html.replace(
+      '<script src="src/modules/meals/meals.js"></script>',
+      '<script src="src/modules/meals/mealPlanStore.js?v=1"></script>\n'
+      + '  <script src="src/modules/meals/meals.js"></script>\n'
+      + '  <script src="src/modules/meals/mealPlannerBottomSheetBridge.js?v=1"></script>'
+    );
+
     html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=5"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>');
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
