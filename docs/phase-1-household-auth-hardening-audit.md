@@ -1,115 +1,129 @@
 # Fase 1 — Household/Auth Hardening Audit
 
 Datum: 2026-08-15
-Status: gestart — blockers gevonden, codefixes nog niet gepubliceerd
+Status: 🟡 hardening geïmplementeerd op PR #22; geautomatiseerde isolation-tests groen; echte device/PWA-acceptatie nog open.
 
 ## Scope
-Deze audit toetst de actuele `main` op de Fase-1-eisen uit `MULTI-HOUSEHOLD-PRODUCTION-READINESS.md`: household-isolatie bij login/logout/account-switch, membership-validatie, listener cleanup, presence lifecycle en cache/runtime state.
+Deze audit toetst Fase 1 uit `MULTI-HOUSEHOLD-PRODUCTION-READINESS.md`: household-isolatie bij login/logout/account-switch, membership-validatie, listener cleanup, presence lifecycle, cache/runtime state en removed-member access revocation.
 
-## Belangrijkste bevindingen
+## Oorspronkelijke blockers en huidige status
 
-### 🔴 1. Legacy family realtime listener wordt niet losgekoppeld bij logout
-`startFirebaseSync()` maakt een `ref.on('value', ...)` op `families/{fbFamilyId}`, maar bewaart de ref/handler niet. `logoutUser()` zet alleen `_fbSyncActive=false`; er wordt geen `.off()` uitgevoerd.
+### ✅ 1. Legacy family realtime listener cleanup
+Oorspronkelijk bleef de `families/{householdId}` value-listener uit legacy `duoQuests` actief na logout/account-switch.
 
-Risico:
-- oude household-listener blijft actief na logout;
-- bij account-switch kan daarna óók een listener voor het nieuwe household worden gekoppeld;
-- de oude listener kan globale arrays zoals `taskData`, `shopData` en `calData` blijven muteren;
-- dit is een echte cross-household runtime-isolatieblocker op gedeelde browsers/toestellen.
+PR #22 introduceert `householdSessionHardening.js` dat:
+- ref + handler bewaart;
+- expliciet `.off('value', handler)` uitvoert;
+- callbacks bindt aan oorspronkelijke UID + householdId;
+- late callbacks weigert zodra auth/household-context is veranderd;
+- gedeelde runtime arrays opruimt bij context teardown.
 
-Vereiste fix:
-- centrale `stopFirebaseSync()`;
-- actieve ref + handler bewaren;
-- `.off('value', handler)` vóór logout, auth-switch en household-switch;
-- sync-context aan UID + householdId binden;
-- callback negeren als context inmiddels gewijzigd is.
+Automatisch bewezen via syntax/contracttest en account-switch behavior simulation.
 
-### 🔴 2. Household identity bridge blijft attached als auth/household verdwijnt
-`HouseholdIdentityFirebaseBridge.sync()` doet niets wanneer user of household ontbreekt, maar roept dan geen `detach()` aan. Bestaande `membersRef`/`presenceRef` en in-memory memberdata kunnen daardoor blijven bestaan nadat auth-context wegvalt.
+### ✅ 2. Household Identity Bridge lifecycle
+`HouseholdIdentityFirebaseBridge.sync()` detacht nu expliciet wanneer auth, database of household-context ontbreekt, en bij UID/household-switch.
 
-Vereiste fix:
-- `sync()` moet bij ontbrekende/mismatchende context expliciet `detach()` uitvoeren;
-- auth-state/household-context events moeten detach/reattach afdwingen;
-- subscribers mogen na logout geen oude memberlijst terugkrijgen.
+Verder:
+- stale member callbacks worden verworpen;
+- stale presence callbacks worden verworpen;
+- subscribers krijgen een lege memberlijst na detach;
+- de bridge luistert naar session teardown;
+- UID + householdId worden samen als bound context behandeld.
 
-### 🔴 3. Presence lifecycle heeft geen echte stop/cleanup
-`startPresence()` voegt telkens een listener toe op `.info/connected`, maar bewaart die connected-ref/handler niet. `presenceRef.off()` verwijdert die listener niet, omdat deze op een andere ref staat.
+### ✅ 3. Presence cleanup boundary
+De session-hardening verwijdert oude `.info/connected` listeners, annuleert oude `onDisconnect` waar mogelijk en zet de vorige presence expliciet offline bij context teardown.
 
-Risico:
-- meerdere connected listeners stapelen zich op;
-- oude presence-context kan na household/account-switch opnieuw schrijven;
-- presence van oude UID/household kan onjuist blijven of opnieuw geactiveerd worden.
+Volledige live multi-device presence-acceptatietest blijft nog open; de lifecycle-contracten zijn wel automatisch bewaakt.
 
-Vereiste fix:
-- `connectedRef` + handler bewaren;
-- `stopPresence()` toevoegen;
-- onDisconnect waar mogelijk annuleren/herzetten;
-- huidige presence expliciet offline zetten vóór contextwissel wanneer toegestaan;
-- logout/auth change koppelen aan `stopPresence()`.
+### ✅ 4. Active membership gate / removed-member handling
+Moderne households worden alleen geactiveerd als `families/{householdId}/members/{uid}/status === 'active'`.
 
-### 🔴 4. `resolveHousehold()` valideert active membership niet expliciet vóór activation
-De flow leest `users/{uid}` en gebruikt `activeHouseholdId || familyId`, waarna `ensureLegacyMembership()` draait en vervolgens globals/presence worden gestart. Er is geen expliciete `member.status === 'active'` gate vóór `setGlobals()`.
+Bij ontbrekende/inactieve membership:
+- household activation wordt geweigerd;
+- stale `users/{uid}/activeHouseholdId` en legacy `familyId` worden verwijderd;
+- een verwijderd lid wordt niet impliciet opnieuw toegevoegd;
+- alleen een expliciet pre-platform legacy household mag de oude migratieroute gebruiken.
 
-Risico:
-- stale user pointers naar een verwijderd/inactief household worden niet schoon afgehandeld;
-- removed-member scenario kan in permission errors of stale cached UI eindigen in plaats van gecontroleerde re-onboarding;
-- legacy recovery en normale production membership-validatie lopen door elkaar.
+### ✅ 5. UID-scoped profile cache boundary
+Authenticated profielcache gebruikt `familyapp-profile-v2:{uid}:...`.
 
-Vereiste fix:
-- membershiprecord expliciet valideren;
-- alleen `status: active` accepteert household activation;
-- stale `activeHouseholdId` veilig verwijderen wanneer membership ongeldig is;
-- verwijderd lid niet automatisch opnieuw activeren;
-- legacy migration alleen via een expliciet, afgebakend migratiepad.
+De oude globale profile keys bestaan alleen nog als compatibility mirror/migratiebron voor de huidige ingelogde UID en worden bij session teardown gewist.
 
-### 🟠 5. Globale profiel-localStorage kan account-switch state mengen
-`familyapp-profile-name-v1` en `familyapp-current-user-avatar-v1` zijn niet UID-scoped. Auth/profile bridges lezen en schrijven deze globale keys.
+### 🟠 6. Legacy auth/family compatibility blijft tijdelijk aanwezig
+`duoQuests.js` bevat nog legacy auth/family functies. De nieuwe runtime-loadvolgorde is nu expliciet:
 
-Risico:
-- een tweede account op hetzelfde toestel kan tijdelijk naam/avatar van de vorige gebruiker erven;
-- vooral accounts zonder eigen displayName/photo zijn gevoelig voor legacy fallback;
-- nieuw memberRecord kan lokale legacy-profieldata als fallback gebruiken.
+1. legacy `duoQuests.js`
+2. `householdPlatform.js`
+3. `householdIdentityFirebaseBridge.js`
+4. `householdSessionHardening.js`
 
-Vereiste fix:
-- authenticated profile cache UID-scopen, bijvoorbeeld `familyapp-profile:{uid}:...`;
-- globale keys alleen als eenmalige legacy migration bron gebruiken;
-- na migration nooit meer als authority/fallback voor een andere UID gebruiken.
+Hierdoor vervangt de hardeninglaag de risicovolle lifecyclepaden. Definitieve verwijdering van legacy identity-code hoort bij de latere cleanup/HouseholdContext-fase.
 
-### 🟠 6. Oude auth/family code bestaat nog naast HouseholdPlatform overrides
-`duoQuests.js` bevat nog legacy `setupNewFamily()`, `loadUserFamily()`, `startFirebaseSync()` en auth-state-logica. `householdPlatform.js` vervangt enkele functies later via runtime overrides.
+## Automatische tests toegevoegd
 
-Risico:
-- load-order/race afhankelijk gedrag;
-- twee architecturen blijven tegelijk actief;
-- moeilijk aantoonbaar dat iedere auth-route dezelfde household-validatie gebruikt.
+### Household session contract
+GitHub Actions controleert onder andere:
+- syntax van household runtime;
+- expliciete listener cleanup;
+- stale callback guards;
+- logout/account-switch teardown;
+- actieve membership gate;
+- stale household pointer cleanup;
+- UID-scoped profile cache;
+- identity bridge detach lifecycle;
+- canonical runtime load order;
+- geen hardcoded user/admin e-mail identity of UID-as-household fallback.
 
-Vereiste fix:
-- HouseholdPlatform/HouseholdContext wordt de enige identity-authority;
-- legacy functies reduceren tot expliciete compatibility wrappers of verwijderen zodra callers gemigreerd zijn;
-- één auth-state lifecycle orchestrator.
+Status: ✅ groen.
 
-## Reeds sterke basis
+### Account-switch behavior simulation
+Een mock Firebase runtime simuleert:
 
-- Family data is in Security Rules membership-gated.
-- Private user data is UID-gated.
-- FamilyDataStore cachekeys zijn voor shared data family-scoped en voor private data UID-scoped.
-- Pending writes bewaren oorspronkelijke UID/familyId en flushen niet zomaar naar een andere context.
-- HouseholdIdentityFirebaseBridge heeft al een bruikbare `detach()` functie; lifecycle moet hem alleen betrouwbaar aanroepen.
+`Alpha user → Alpha household → data callback → switch naar Beta user/household → late Alpha callback → Beta callback → logout`
 
-## Eerste implementatiepakket
+Bewezen:
+- Alpha data komt eerst binnen;
+- oude Alpha listener wordt verwijderd;
+- late Alpha callback kan Beta runtime-state niet muteren;
+- Beta data wordt correct actief;
+- logout wist household runtime en `fbFamilyId`.
 
-1. `HouseholdSession`/lifecycle cleanup helper introduceren of lifecycle-functies centraliseren.
-2. `stopFirebaseSync()` toevoegen aan legacy sync en context guard toevoegen aan callbacks.
-3. `stopPresence()` toevoegen aan HouseholdPlatform.
-4. `HouseholdIdentityFirebaseBridge.sync()` laten detachen wanneer context ontbreekt/wijzigt.
-5. `resolveHousehold()` active-membership gate + stale-pointer handling geven.
-6. UID-scoped profielcache introduceren met eenmalige legacy migration.
-7. Auth-state listener bij logout/account switch alle household-runtime state laten resetten.
-8. Daarna tests uitvoeren voor A→logout→B op hetzelfde toestel en removed-member relogin.
+Status: ✅ groen.
+
+### Removed-member Firebase Realtime Database emulator test
+De echte Firebase Database emulator laadt `database.rules.json` en test:
+
+1. actief Alpha-lid mag Alpha shared data lezen en schrijven;
+2. actief Alpha-lid mag Beta household niet lezen/schrijven;
+3. Alpha owner zet dat lid via de echte rules op `status: removed`;
+4. dezelfde authenticated UID wordt direct geweigerd voor:
+   - Alpha shared reads;
+   - Alpha member reads;
+   - Alpha shared writes;
+   - Alpha presence writes;
+5. removed user mag eigen stale `activeHouseholdId`/`familyId` leegmaken;
+6. removed user mag zichzelf niet opnieuw naar Alpha wijzen zolang membership niet active is.
+
+Status: ✅ groen in GitHub Actions run `31901692837`.
+
+## Security Rules conclusie voor removed-member lifecycle
+De huidige Realtime Database Rules dwingen access revocation server-side af. Dit is belangrijk: de beveiliging hangt dus niet alleen af van frontend cleanup. Zelfs wanneer een oude client nog een Firebase auth-token/sessie heeft, is family data na `status: removed` niet meer leesbaar/schrijfbaar volgens de emulator.
+
+## Nog open binnen Fase 1
+
+- [ ] Nieuw account maakt eigen household zonder overlap — echte signup/create acceptatietest.
+- [ ] Invite voegt alleen toe aan bedoelde household — invite lifecycle emulator/integration test uitbreiden.
+- [ ] Verlopen/gebruikte/revoked invites volledig testen.
+- [x] Removed member verliest direct server-side toegang — emulator bewezen.
+- [x] Logout verwijdert legacy household listener/runtime-state — automatisch contract + behavior simulation.
+- [x] Account-switch laat late oude household callbacks geen state muteren — behavior simulation bewezen.
+- [x] `activeHouseholdId` vereist actieve membership voor moderne households — codecontract + rules bewezen.
+- [ ] Offline/reconnect met echte FamilyDataStore pending writes testen.
+- [ ] Live presence op twee devices valideren.
+- [ ] iPhone Safari + installed PWA Google auth/logout/relogin valideren.
+- [ ] Minimaal drie onafhankelijke echte test-households end-to-end uitvoeren.
 
 ## Definition of Done voor Fase 1
+Fase 1 blijft 🟡 totdat de resterende invite-, offline/reconnect-, live presence-, PWA/device- en drie-household acceptatietests zijn geslaagd.
 
-Nog niet gehaald. Fase 1 wordt pas ✅ wanneer minimaal drie onafhankelijke test-households auth/join/logout/relogin kunnen doorlopen en account-switch, removed-member, offline/reconnect en listener cleanup aantoonbaar geen cross-household runtime- of datatoegang opleveren.
-
-## Toolingnotitie
-De audit is uitgevoerd op de actuele GitHub `main`. De lokale omgeving bevat momenteel geen `gh` CLI, waardoor de normale branch/commit/push/PR workflow uit de GitHub publish-skill niet veilig kan worden uitgevoerd. Daarom zijn in deze stap alleen analyse en documentatie naar de repo gepubliceerd; codefixes zijn nog niet als fasebranch/PR gepubliceerd.
+De belangrijkste cross-household runtime- en removed-member securityblockers hebben nu wel geautomatiseerde regressiedekking.
