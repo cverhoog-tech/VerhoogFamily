@@ -55,12 +55,20 @@ function initFirebase(config) {
     fbDb   = firebase.database();
     fbAuth = firebase.auth();
     try { fbMsg = firebase.messaging(); } catch(e){ fbMsg=null; }
+    // Redirect result is authentication-only here: it just keeps fbUser in
+    // sync and surfaces a redirect-specific error. Household resolution,
+    // first render and app reveal are owned exclusively by
+    // AuthSessionBootstrap's own onAuthStateChanged subscription — the
+    // redirect always also fires that event once Firebase resolves the
+    // session, so a second bootstrap path here would only race it.
     fbAuth.getRedirectResult().then(function(result) {
       if(result && result.user) {
         fbUser = result.user;
-        loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
       }
-    }).catch(function(e){ console.error('Redirect result:', e); });
+    }).catch(function(e){
+      console.error('Redirect result:', e);
+      if(typeof showAuthError==='function') showAuthError(translateFbError(e));
+    });
 
   return true;
   } catch(e){ console.error('Firebase init:',e); showAuthError('Init fout: '+e.message); return false; }
@@ -86,7 +94,7 @@ function emailAuth() {
   action.then(function(result) {
     fbUser = result.user;
     if(loginBtn) { loginBtn.textContent = isRegister ? 'Registreren' : 'Inloggen'; loginBtn.disabled = false; }
-    loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
+    // Household load + reveal owned by AuthSessionBootstrap via onAuthStateChanged.
   }).catch(function(e) {
     if(loginBtn) { loginBtn.textContent = isRegister ? 'Registreren' : 'Inloggen'; loginBtn.disabled = false; }
     if(err) err.textContent = translateFbError(e);
@@ -134,7 +142,7 @@ function signInWithGoogle() {
       .then(function(result) {
         fbUser = result.user;
         if(btn) { btn.innerHTML = '✅ Ingelogd'; }
-        loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
+        // Household load + reveal owned by AuthSessionBootstrap via onAuthStateChanged.
       })
       .catch(function(e) {
         if(btn) { btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Inloggen met Google'; btn.disabled = false; }
@@ -209,12 +217,20 @@ function submitAuth() {
     fbAuth.createUserWithEmailAndPassword(email,pass)
       .then(function(c){fbUser=c.user;return c.user.updateProfile({displayName:name});})
       .then(function(){return setupNewFamily(name,partner);})
-      .then(onLoggedIn)
+      .then(function(){
+        // A brand-new household was just created as part of registration —
+        // that's genuine setup logic, not a duplicate bootstrap. Route the
+        // reveal itself through the single canonical entry point.
+        if(window.AuthSessionBootstrap && typeof window.AuthSessionBootstrap.boot==='function') return window.AuthSessionBootstrap.boot(fbUser);
+        if(typeof onLoggedIn==='function') return onLoggedIn();
+      })
       .catch(function(e){showAuthError(translateFbError(e));btn.disabled=false;btn.textContent='Account aanmaken';});
   } else {
     fbAuth.signInWithEmailAndPassword(email,pass)
-      .then(function(c){fbUser=c.user;return loadUserFamily();})
-      .then(onLoggedIn)
+      .then(function(c){
+        fbUser=c.user;
+        // Household load + reveal owned by AuthSessionBootstrap via onAuthStateChanged.
+      })
       .catch(function(e){showAuthError(translateFbError(e));btn.disabled=false;btn.textContent='Inloggen';});
   }
 }
@@ -257,19 +273,17 @@ function loadUserFamily(){
   });
 }
 
-function onLoggedIn(){
-  if(window._appStarted) { startFirebaseSync(); if(window.NotificationStore)NotificationStore.ensureSubscription(); return; }
-  window._appStarted = true;
-  hideLoginScreen();
-  if(typeof renderNav === 'function') renderNav();
-  if(typeof showScreen === 'function') showScreen('home');
-  else if(typeof renderHome === 'function') renderHome();
-  startFirebaseSync();
-  if(window.NotificationStore)NotificationStore.ensureSubscription();
-  setupPushNotifications();
-  showToast('👋 Welkom '+myName+'!');
-}
-
+// NOTE: onLoggedIn is intentionally NOT defined here anymore.
+// AuthSessionBootstrap (src/core/authSessionBootstrap.js) is the sole owner of
+// window.onLoggedIn: authenticated user -> household load -> first render ->
+// reveal. Every call site in this file that used to drive that flow directly
+// now either does nothing further (Firebase's onAuthStateChanged, owned by
+// AuthSessionBootstrap, picks it up) or explicitly calls
+// window.AuthSessionBootstrap.boot(...) after genuine setup work (creating a
+// new household) that AuthSessionBootstrap itself doesn't do.
+//
+// hideLoginScreen() remains here for the offline-mode path (useOfflineMode),
+// which has no Firebase auth event to hang off of.
 function hideLoginScreen(){
   var preloginCss = document.getElementById('prelogin-css');
   if(preloginCss) preloginCss.remove();
@@ -345,23 +359,16 @@ function logoutUser(){ document.body.classList.remove('logged-in');
   if(ls){ls.style.display='flex';ls.style.animation='fadeIn .3s ease';}
 }
 
+// This module only initializes the Firebase SDK and starts authentication.
+// It intentionally does NOT register its own onAuthStateChanged listener
+// anymore: AuthSessionBootstrap is the single canonical entry for
+// "authenticated user -> household load -> first render -> reveal" and owns
+// that subscription itself (see src/core/authSessionBootstrap.js). A second,
+// independent listener here would race it — that duplicate-ownership race
+// was the root cause of the post-Google-redirect white screen on iPhone
+// Safari.
 if(typeof firebase !== 'undefined') {
-  var _fbOk = initFirebase(HARDCODED_FB_CONFIG);
-  if(_fbOk) {
-    firebase.auth().onAuthStateChanged(function(user){
-      if(user){
-        fbUser=user;
-        loadUserFamily().then(onLoggedIn).catch(function(){
-          showNameSetupStep(user);
-          var ls=document.getElementById('login-screen');
-          if(ls) ls.style.display='flex';
-        });
-      } else {
-        var ls=document.getElementById('login-screen');
-        if(ls) ls.style.display='flex';
-      }
-    });
-  }
+  initFirebase(HARDCODED_FB_CONFIG);
 }
 
 function initApp() {
