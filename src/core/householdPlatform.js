@@ -139,8 +139,20 @@
   function overlay(html){css();var old=document.getElementById('household-onboarding');if(old)old.remove();var el=document.createElement('div');el.id='household-onboarding';el.className='hh-overlay';el.innerHTML='<div class="hh-card">'+html+'</div>';document.body.appendChild(el);return el;}
   function closeOverlay(){var el=document.getElementById('household-onboarding');if(el)el.remove();}
   function showChooser(){var name=displayName(user()),el=overlay('<div class="hh-mark">🏰</div><h2>Welkom, '+name+'</h2><p>Maak een nieuw huishouden of sluit veilig aan bij een bestaand gezin.</p><button class="hh-choice" data-hh="create"><b>✨ Nieuw gezin maken</b><span>Word beheerder en nodig gezinsleden uit</span></button><button class="hh-choice" data-hh="join"><b>🔗 Deelnemen aan gezin</b><span>Gebruik een persoonlijke uitnodigingscode</span></button>');el.querySelector('[data-hh="create"]').onclick=showCreate;el.querySelector('[data-hh="join"]').onclick=showJoin;}
-  function showCreate(){var def=displayName(user())+' Family',el=overlay('<div class="hh-mark">✨</div><h2>Maak jullie gezin</h2><p>Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.</p><input class="hh-input" id="hh-name" maxlength="50" value="'+def.replace(/"/g,'&quot;')+'"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-create">Gezin aanmaken</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-create').onclick=function(){var b=this;b.disabled=true;createHousehold({name:el.querySelector('#hh-name').value}).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();setTimeout(showInviteManager,350);}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
-  function showJoin(){var el=overlay('<div class="hh-mark">🔗</div><h2>Deelnemen aan gezin</h2><p>Vul de persoonlijke uitnodigingscode in.</p><input class="hh-input" id="hh-code" maxlength="9" placeholder="ABCD-EFGH" style="text-transform:uppercase;text-align:center"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-join">Deelnemen</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-join').onclick=function(){var b=this;b.disabled=true;joinHousehold(el.querySelector('#hh-code').value).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
+  function showCreate(){var def=displayName(user())+' Family',el=overlay('<div class="hh-mark">✨</div><h2>Maak jullie gezin</h2><p>Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.</p><input class="hh-input" id="hh-name" maxlength="50" value="'+def.replace(/"/g,'&quot;')+'"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-create">Gezin aanmaken</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-create').onclick=function(){var b=this;b.disabled=true;createHousehold({name:el.querySelector('#hh-name').value}).then(function(){closeOverlay();revealAfterHouseholdChange();setTimeout(showInviteManager,350);}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
+  function showJoin(){var el=overlay('<div class="hh-mark">🔗</div><h2>Deelnemen aan gezin</h2><p>Vul de persoonlijke uitnodigingscode in.</p><input class="hh-input" id="hh-code" maxlength="9" placeholder="ABCD-EFGH" style="text-transform:uppercase;text-align:center"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-join">Deelnemen</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-join').onclick=function(){var b=this;b.disabled=true;joinHousehold(el.querySelector('#hh-code').value).then(function(){closeOverlay();revealAfterHouseholdChange();}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
+  // Household selection/create/join changed which household is active — that
+  // must reveal through the SAME canonical entry as every other auth path,
+  // never a bespoke reveal here. Prefer AuthSessionBootstrap.boot() directly;
+  // window.onLoggedIn is the same function by the time this ever runs (only
+  // reachable via user interaction, well after all scripts have loaded), but
+  // calling it explicitly documents the intent rather than relying on that.
+  function revealAfterHouseholdChange(){
+    var u=user();
+    if(window.AuthSessionBootstrap&&typeof window.AuthSessionBootstrap.boot==='function') return window.AuthSessionBootstrap.boot(u);
+    if(typeof window.onLoggedIn==='function') return window.onLoggedIn();
+  }
+
   function fmtDate(ts){try{return new Date(Number(ts)).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return'';}}
   function renderInviteRows(el,hid){
     var list=el.querySelector('#hh-invite-list');if(!list)return;
@@ -160,7 +172,35 @@
     renderInviteRows(el,hid);
   }
 
-  function installOverrides(){if(typeof window.loadUserFamily==='function'&&!window.loadUserFamily.__householdV1){var fn=function(){return resolveHousehold();};fn.__householdV1=true;window.loadUserFamily=fn;try{loadUserFamily=fn;}catch(e){}}if(typeof window.setupNewFamily==='function'&&!window.setupNewFamily.__householdV1){var create=function(name){return createHousehold({name:(safe(name)||displayName(user()))+' Family'});};create.__householdV1=true;window.setupNewFamily=create;try{setupNewFamily=create;}catch(e){}}if(typeof window.showNameSetupStep==='function'&&!window.showNameSetupStep.__householdV1){var setup=function(){showChooser();};setup.__householdV1=true;window.showNameSetupStep=setup;try{showNameSetupStep=setup;}catch(e){}}if(typeof window.showScreen==='function'&&!window.showScreen.__householdPresence){var orig=window.showScreen,wrapped=function(name){var r=orig.apply(this,arguments);setPresenceArea(name);return r;};wrapped.__householdPresence=true;window.showScreen=wrapped;try{showScreen=wrapped;}catch(e){}}}
+  // Explicit ownership contracts (not accidental shared flags):
+  // __familyHouseholdLoadOwner: loadUserFamily already belongs to the
+  //   HouseholdSessionHardening -> HouseholdMigrationCompatibility chain once
+  //   either has run — this module must never reclaim it from them.
+  // __familyHouseholdCreateOwner / __familyHouseholdSetupOwner: this module's
+  //   own claims on setupNewFamily/showNameSetupStep, so a second load of
+  //   this file (or a future module) can tell they're already owned here.
+  function installOverrides(){
+    if(typeof window.loadUserFamily==='function'&&!window.loadUserFamily.__familyHouseholdLoadOwner){
+      var fn=function(){return resolveHousehold();};
+      fn.__familyHouseholdLoadOwner=true;
+      window.loadUserFamily=fn;try{loadUserFamily=fn;}catch(e){}
+    }
+    if(typeof window.setupNewFamily==='function'&&!window.setupNewFamily.__familyHouseholdCreateOwner){
+      var create=function(name){return createHousehold({name:(safe(name)||displayName(user()))+' Family'});};
+      create.__familyHouseholdCreateOwner=true;
+      window.setupNewFamily=create;try{setupNewFamily=create;}catch(e){}
+    }
+    if(typeof window.showNameSetupStep==='function'&&!window.showNameSetupStep.__familyHouseholdSetupOwner){
+      var setup=function(){showChooser();};
+      setup.__familyHouseholdSetupOwner=true;
+      window.showNameSetupStep=setup;try{showNameSetupStep=setup;}catch(e){}
+    }
+    if(typeof window.showScreen==='function'&&!window.showScreen.__householdPresence){
+      var orig=window.showScreen,wrapped=function(name){var r=orig.apply(this,arguments);setPresenceArea(name);return r;};
+      wrapped.__householdPresence=true;
+      window.showScreen=wrapped;try{showScreen=wrapped;}catch(e){}
+    }
+  }
   function boot(){var tries=0,t=setInterval(function(){tries++;installOverrides();if(tries>60)clearInterval(t);},150);setTimeout(installOverrides,0);}
   window.FamilyHousehold={create:createHousehold,resolve:resolveHousehold,createInvite:createInvite,inspectInvite:inspectInvite,join:joinHousehold,showOnboarding:showChooser,showInviteManager:showInviteManager,setPresenceArea:setPresenceArea,startPresence:startPresence};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
