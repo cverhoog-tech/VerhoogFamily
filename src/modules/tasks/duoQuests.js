@@ -5,143 +5,35 @@
 var duoQuestProgress={duo_tasks:0,duo_cook:0,duo_shop:0};
 var activeDuoQuest={id:'duo_tasks_10',icon:'👫',desc:'Shane én Esra samen 10 taken voltooien',target:10,type:'duo_tasks'};
 var duoQuestDone=false;
-function trackDuoProgress(type){
-  if(!duoQuestProgress[type])duoQuestProgress[type]=0;
-  duoQuestProgress[type]++;
-  if(activeDuoQuest&&activeDuoQuest.type===type&&!duoQuestDone&&duoQuestProgress[type]>=activeDuoQuest.target){
-    duoQuestDone=true;
-    queueUnlock({icon:'👫',type:'👫 Duo Quest voltooid!',title:activeDuoQuest.desc,desc:'Jullie hebben het samen gedaan! +30 XP',who:null,confetti:true});
-    awardXP(30,'Duo quest');
-  }
-}
+function trackDuoProgress(type){if(!duoQuestProgress[type])duoQuestProgress[type]=0;duoQuestProgress[type]++;if(activeDuoQuest&&activeDuoQuest.type===type&&!duoQuestDone&&duoQuestProgress[type]>=activeDuoQuest.target){duoQuestDone=true;queueUnlock({icon:'👫',type:'👫 Duo Quest voltooid!',title:activeDuoQuest.desc,desc:'Jullie hebben het samen gedaan! +30 XP',who:null,confetti:true});awardXP(30,'Duo quest');}}
+var _origSaveItem=saveItem;saveItem=function(){if(currentAddType==='new_template'){saveNewTemplate();return;}if(currentAddType==='meal_pick'||currentAddType==='yt_search')return;_origSaveItem();};
 
-var _origSaveItem=saveItem;
-saveItem=function(){
-  if(currentAddType==='new_template'){saveNewTemplate();return;}
-  if(currentAddType==='meal_pick')return;
-  if(currentAddType==='yt_search')return;
-  _origSaveItem();
-};
-
-// ============================================================
-// FIREBASE DATA + AUTH COMMANDS
-// Auth state, session bootstrap and app reveal are owned exclusively by
-// AuthenticatedSessionController. This legacy module keeps data helpers only.
-// ============================================================
-var fb = null; var fbDb = null; var fbAuth = null; var fbMsg = null;
-var fbUser = null; var fbFamilyId = null;
-var offlineMode = false;
-var syncDebounce = {};
-
-var FB_CONFIG_KEY = 'familie_fb_config';
-var HARDCODED_FB_CONFIG = {
-  apiKey: "AIzaSyA4vXaF85pfv2Cxy5VG-KJXxsOG14UeN1s",
-  authDomain: "verhoog-family.firebaseapp.com",
-  databaseURL: "https://verhoog-family-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "verhoog-family",
-  storageBucket: "verhoog-family.firebasestorage.app",
-  messagingSenderId: "216169661092",
-  appId: "1:216169661092:web:ee86eb0b7b18bd4ae05c31"
-};
-var savedFbConfig = HARDCODED_FB_CONFIG;
-
-function initFirebase(config) {
-  try {
-    if(typeof firebase==='undefined') return false;
-    if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(config);
-    fbDb=window.fbDb=firebase.database();
-    fbAuth=window.fbAuth=firebase.auth();
-    try { fbMsg=window.fbMsg=firebase.messaging(); } catch(e){ fbMsg=null; window.fbMsg=null; }
-    return true;
-  } catch(e){ console.error('Firebase init:',e); showAuthError('Init fout: '+e.message); return false; }
-}
-
-function emailAuth() {
-  var email=(document.getElementById('auth-email')||{}).value||'';
-  var pass=(document.getElementById('auth-pass')||document.getElementById('auth-password')||{}).value||'';
-  var err=document.getElementById('login-error')||document.getElementById('auth-error');
-  if(!email||!pass){if(err){err.textContent='Vul e-mail en wachtwoord in';err.style.display='block';}return;}
-  if(!fbAuth){if(err){err.textContent='Firebase niet verbonden';err.style.display='block';}return;}
-  var isRegister=window._loginTab==='register';
-  var action=isRegister?fbAuth.createUserWithEmailAndPassword(email,pass):fbAuth.signInWithEmailAndPassword(email,pass);
-  action.catch(function(e){if(err){err.textContent=translateFbError(e);err.style.display='block';}});
-}
-
+// Firebase data helpers only. Auth state/session bootstrap/app reveal are owned by
+// AuthenticatedSessionController.
+var fb=null,fbDb=null,fbAuth=null,fbMsg=null,fbUser=null,fbFamilyId=null,offlineMode=false,syncDebounce={};
+var FB_CONFIG_KEY='familie_fb_config';
+var HARDCODED_FB_CONFIG={apiKey:"AIzaSyA4vXaF85pfv2Cxy5VG-KJXxsOG14UeN1s",authDomain:"verhoog-family.firebaseapp.com",databaseURL:"https://verhoog-family-default-rtdb.europe-west1.firebasedatabase.app",projectId:"verhoog-family",storageBucket:"verhoog-family.firebasestorage.app",messagingSenderId:"216169661092",appId:"1:216169661092:web:ee86eb0b7b18bd4ae05c31"};
+var savedFbConfig=HARDCODED_FB_CONFIG;
+function initFirebase(config){try{if(typeof firebase==='undefined')return false;if(!firebase.apps||!firebase.apps.length)firebase.initializeApp(config);fbDb=window.fbDb=firebase.database();fbAuth=window.fbAuth=firebase.auth();try{fbMsg=window.fbMsg=firebase.messaging();}catch(e){fbMsg=null;window.fbMsg=null;}return true;}catch(e){console.error('Firebase init:',e);showAuthError('Init fout: '+e.message);return false;}}
+function emailAuth(){var email=(document.getElementById('auth-email')||{}).value||'',pass=(document.getElementById('auth-pass')||document.getElementById('auth-password')||{}).value||'',err=document.getElementById('login-error')||document.getElementById('auth-error');if(!email||!pass){if(err){err.textContent='Vul e-mail en wachtwoord in';err.style.display='block';}return;}if(!fbAuth){if(err){err.textContent='Firebase niet verbonden';err.style.display='block';}return;}var action=window._loginTab==='register'?fbAuth.createUserWithEmailAndPassword(email,pass):fbAuth.signInWithEmailAndPassword(email,pass);action.catch(function(e){if(err){err.textContent=translateFbError(e);err.style.display='block';}});}
 function toggleFbConfig(){var p=document.getElementById('fb-config-panel');if(p)p.style.display=p.style.display==='none'?'block':'none';}
-function saveFbConfig(){
-  var inp=document.getElementById('fb-config-input'),st=document.getElementById('fb-config-status');
-  try{var cfg=JSON.parse((inp?inp.value:'').trim());if(!cfg.apiKey)throw new Error('Mist apiKey');localStorage.setItem(FB_CONFIG_KEY,JSON.stringify(cfg));savedFbConfig=cfg;var ok=initFirebase(cfg);if(st)st.innerHTML=ok?'<span style="color:#16a34a">✅ Verbonden!</span>':'<span style="color:#dc2626">❌ Mislukt</span>';}catch(e){if(st)st.innerHTML='<span style="color:#dc2626">❌ '+e.message+'</span>';}
-}
-
+function saveFbConfig(){var inp=document.getElementById('fb-config-input'),st=document.getElementById('fb-config-status');try{var cfg=JSON.parse((inp?inp.value:'').trim());if(!cfg.apiKey)throw new Error('Mist apiKey');localStorage.setItem(FB_CONFIG_KEY,JSON.stringify(cfg));savedFbConfig=cfg;var ok=initFirebase(cfg);if(st)st.innerHTML=ok?'<span style="color:#16a34a">✅ Verbonden!</span>':'<span style="color:#dc2626">❌ Mislukt</span>';}catch(e){if(st)st.innerHTML='<span style="color:#dc2626">❌ '+e.message+'</span>';}}
 var loginTab='login';
-function signInWithGoogle(){
-  if(!fbAuth){showAuthError('Firebase niet verbonden.');return;}
-  var provider=new firebase.auth.GoogleAuthProvider();provider.addScope('profile');provider.addScope('email');
-  fbAuth.signInWithPopup(provider).catch(function(e){showAuthError(translateFbError(e)+(e.code?' ['+e.code+']':''));});
-}
-
-function showNameSetupStep(user) {
-  if(user&&user.photoURL)localStorage.setItem('familyapp-current-user-avatar-v1',user.photoURL);
-  var s1=document.getElementById('login-step-1'),s2=document.getElementById('login-step-2');
-  if(s1)s1.style.display='none';if(s2)s2.style.display='block';
-  var displayName=(user&&user.displayName)||'',firstName=displayName.split(' ')[0]||'';
-  var av=document.getElementById('google-avatar-preview'),nm=document.getElementById('google-name-preview'),ni=document.getElementById('step2-name');
-  if(av){if(user&&user.photoURL)av.innerHTML='<img src="'+user.photoURL+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">';else av.textContent=(firstName.substring(0,2)||'?').toUpperCase();}
-  if(nm)nm.textContent=displayName||(user&&user.email)||'';if(ni&&firstName)ni.value=firstName;
-}
-
-function finishGoogleSetup(){
-  var name=(document.getElementById('step2-name')||{}).value||'',partner=(document.getElementById('step2-partner')||{}).value||'',errEl=document.getElementById('step2-error');
-  if(!name.trim()){if(errEl){errEl.textContent='Vul je naam in';errEl.style.display='block';}return;}
-  name=name.trim();partner=partner.trim()||'Partner';
-  var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user){if(errEl)errEl.textContent='Geen ingelogde gebruiker';return;}
-  user.updateProfile({displayName:name}).catch(function(){});
-  setupNewFamily(name,partner).then(function(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}).catch(function(e){if(errEl){errEl.textContent='Fout: '+e.message;errEl.style.display='block';}});
-}
-
-function submitAuth(){
-  var email=(document.getElementById('auth-email')||{}).value||'',pass=(document.getElementById('auth-password')||{}).value||'',btn=document.getElementById('auth-submit-btn');
-  if(!email||!pass){showAuthError('Vul e-mail en wachtwoord in');return;}
-  if(!fbAuth){showAuthError('Firebase niet verbonden.');return;}
-  if(btn){btn.textContent='⏳...';btn.disabled=true;}
-  var isRegister=window._loginTab==='register';
-  var action=isRegister?fbAuth.createUserWithEmailAndPassword(email,pass):fbAuth.signInWithEmailAndPassword(email,pass);
-  action.then(function(c){
-    if(btn){btn.textContent=isRegister?'Account aanmaken':'Inloggen';btn.disabled=false;}
-    if(!isRegister)return;
-    fbUser=window.fbUser=c.user;
-    var name=(document.getElementById('auth-name')||{}).value||'',partner=(document.getElementById('auth-partner')||{}).value||'Partner';
-    if(!name)throw new Error('Vul je naam in');
-    return c.user.updateProfile({displayName:name}).then(function(){return setupNewFamily(name,partner);}).then(function(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();});
-  }).catch(function(e){showAuthError(translateFbError(e));if(btn){btn.disabled=false;btn.textContent=isRegister?'Account aanmaken':'Inloggen';}});
-}
-
+function signInWithGoogle(){if(!fbAuth){showAuthError('Firebase niet verbonden.');return;}var provider=new firebase.auth.GoogleAuthProvider();provider.addScope('profile');provider.addScope('email');fbAuth.signInWithPopup(provider).catch(function(e){showAuthError(translateFbError(e)+(e.code?' ['+e.code+']':''));});}
+function showNameSetupStep(user){if(user&&user.photoURL)localStorage.setItem('familyapp-current-user-avatar-v1',user.photoURL);var s1=document.getElementById('login-step-1'),s2=document.getElementById('login-step-2');if(s1)s1.style.display='none';if(s2)s2.style.display='block';var displayName=(user&&user.displayName)||'',firstName=displayName.split(' ')[0]||'',av=document.getElementById('google-avatar-preview'),nm=document.getElementById('google-name-preview'),ni=document.getElementById('step2-name');if(av){if(user&&user.photoURL)av.innerHTML='<img src="'+user.photoURL+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">';else av.textContent=(firstName.substring(0,2)||'?').toUpperCase();}if(nm)nm.textContent=displayName||(user&&user.email)||'';if(ni&&firstName)ni.value=firstName;}
+function finishGoogleSetup(){var name=(document.getElementById('step2-name')||{}).value||'',partner=(document.getElementById('step2-partner')||{}).value||'',errEl=document.getElementById('step2-error');if(!name.trim()){if(errEl){errEl.textContent='Vul je naam in';errEl.style.display='block';}return;}name=name.trim();partner=partner.trim()||'Partner';var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user){if(errEl)errEl.textContent='Geen ingelogde gebruiker';return;}user.updateProfile({displayName:name}).catch(function(){});setupNewFamily(name,partner).then(function(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}).catch(function(e){if(errEl){errEl.textContent='Fout: '+e.message;errEl.style.display='block';}});}
+function submitAuth(){var email=(document.getElementById('auth-email')||{}).value||'',pass=(document.getElementById('auth-password')||{}).value||'',btn=document.getElementById('auth-submit-btn');if(!email||!pass){showAuthError('Vul e-mail en wachtwoord in');return;}if(!fbAuth){showAuthError('Firebase niet verbonden.');return;}if(btn){btn.textContent='⏳...';btn.disabled=true;}var isRegister=window._loginTab==='register',action=isRegister?fbAuth.createUserWithEmailAndPassword(email,pass):fbAuth.signInWithEmailAndPassword(email,pass);action.then(function(c){if(btn){btn.textContent=isRegister?'Account aanmaken':'Inloggen';btn.disabled=false;}if(!isRegister)return;fbUser=window.fbUser=c.user;var name=(document.getElementById('auth-name')||{}).value||'',partner=(document.getElementById('auth-partner')||{}).value||'Partner';if(!name)throw new Error('Vul je naam in');return c.user.updateProfile({displayName:name}).then(function(){return setupNewFamily(name,partner);}).then(function(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();});}).catch(function(e){showAuthError(translateFbError(e));if(btn){btn.disabled=false;btn.textContent=isRegister?'Account aanmaken':'Inloggen';}});}
 function showAuthError(msg){var e=document.getElementById('auth-error');if(e){e.textContent=msg;e.style.display='block';}}
 function translateFbError(e){return({'auth/user-not-found':'Geen account met dit e-mailadres','auth/wrong-password':'Wachtwoord onjuist','auth/email-already-in-use':'E-mail al in gebruik','auth/weak-password':'Min. 6 tekens','auth/invalid-email':'Ongeldig e-mailadres','auth/network-request-failed':'Geen internet'}[e.code]||e.message);}
 function useOfflineMode(){showAuthError('Offline openen zonder ingelogd account is niet beschikbaar.');}
-
-function setupNewFamily(name,partner){
-  var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user)return Promise.reject(new Error('Geen ingelogde gebruiker'));
-  var uid=user.uid;fbUser=window.fbUser=user;fbFamilyId=window.fbFamilyId=uid;myName=name;partnerName=partner;myInitials=name.substring(0,2).toUpperCase();
-  return fbDb.ref('families/'+uid).set({members:{},tasks:{},shop:{},cal:{},feed:{},trans:{},savingsGoals:{},extraIncome:{},vasteLasten:{},recurData:{}}).then(function(){return fbDb.ref('users/'+uid).set({familyId:uid,name:name,partner:partner});}).then(function(){return fbDb.ref('families/'+uid+'/members/'+uid).set({name:name,color:'#2d5a27',partner:partner,xp:0,joined:Date.now()});});
-}
-
-function loadUserFamily(){
-  var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user)return Promise.reject(new Error('Geen ingelogde gebruiker'));
-  fbUser=window.fbUser=user;
-  return fbDb.ref('users/'+user.uid).once('value').then(function(snap){var d=snap.val();if(!d||!d.familyId)throw new Error('Geen gezin gevonden');fbFamilyId=window.fbFamilyId=d.familyId;myName=d.name||user.displayName||'Gebruiker';partnerName=d.partner||'Partner';myInitials=myName.substring(0,2).toUpperCase();});
-}
-
+function setupNewFamily(name,partner){var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user)return Promise.reject(new Error('Geen ingelogde gebruiker'));var uid=user.uid;fbUser=window.fbUser=user;fbFamilyId=window.fbFamilyId=uid;myName=name;partnerName=partner;myInitials=name.substring(0,2).toUpperCase();return fbDb.ref('families/'+uid).set({members:{},tasks:{},shop:{},cal:{},feed:{},trans:{},savingsGoals:{},extraIncome:{},vasteLasten:{},recurData:{}}).then(function(){return fbDb.ref('users/'+uid).set({familyId:uid,name:name,partner:partner});}).then(function(){return fbDb.ref('families/'+uid+'/members/'+uid).set({name:name,color:'#2d5a27',partner:partner,xp:0,joined:Date.now()});});}
+function loadUserFamily(){var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user)return Promise.reject(new Error('Geen ingelogde gebruiker'));fbUser=window.fbUser=user;return fbDb.ref('users/'+user.uid).once('value').then(function(snap){var d=snap.val();if(!d||!d.familyId)throw new Error('Geen gezin gevonden');fbFamilyId=window.fbFamilyId=d.familyId;myName=d.name||user.displayName||'Gebruiker';partnerName=d.partner||'Partner';myInitials=myName.substring(0,2).toUpperCase();});}
 function onLoggedIn(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}
 function hideLoginScreen(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}
 
-var _fbSyncActive=false;
-function startFirebaseSync(){
-  if(!fbDb||!fbFamilyId||offlineMode||_fbSyncActive)return;
-  _fbSyncActive=true;
-  var ref=fbDb.ref('families/'+fbFamilyId);
-  ref.on('value',function(snap){var data=snap.val();if(!data)return;if(data.tasks&&objToArr(data.tasks).length)taskData=objToArr(data.tasks);if(data.shop&&objToArr(data.shop).length)shopData=objToArr(data.shop);if(data.cal&&objToArr(data.cal).length)calData=objToArr(data.cal);if(data.recurData&&objToArr(data.recurData).length)recurData=objToArr(data.recurData);if(data.members)Object.values(data.members).forEach(function(m){if(m.name!==myName){partnerName=m.name;partnerXPStore=m.xp||0;}else myXP=m.xp||myXP;});_renderScreen(_currentScreen);updateHomeXP();});
-}
+var _fbSyncActive=false,_fbSyncRef=null,_fbSyncHandler=null;
+function stopFirebaseSync(){if(_fbSyncRef&&_fbSyncHandler){try{_fbSyncRef.off('value',_fbSyncHandler);}catch(e){}}_fbSyncRef=null;_fbSyncHandler=null;_fbSyncActive=false;}
+function startFirebaseSync(){if(!fbDb||!fbFamilyId||offlineMode||_fbSyncActive)return;_fbSyncActive=true;_fbSyncRef=fbDb.ref('families/'+fbFamilyId);_fbSyncHandler=function(snap){var data=snap.val();if(!data)return;if(data.tasks&&objToArr(data.tasks).length)taskData=objToArr(data.tasks);if(data.shop&&objToArr(data.shop).length)shopData=objToArr(data.shop);if(data.cal&&objToArr(data.cal).length)calData=objToArr(data.cal);if(data.recurData&&objToArr(data.recurData).length)recurData=objToArr(data.recurData);if(data.members)Object.values(data.members).forEach(function(m){if(m.name!==myName){partnerName=m.name;partnerXPStore=m.xp||0;}else myXP=m.xp||myXP;});_renderScreen(_currentScreen);updateHomeXP();};_fbSyncRef.on('value',_fbSyncHandler);if(window.AuthenticatedSessionController&&typeof window.AuthenticatedSessionController.addCleanup==='function')window.AuthenticatedSessionController.addCleanup(stopFirebaseSync);}
 function objToArr(obj){if(Array.isArray(obj))return obj;if(!obj)return[];return Object.values(obj);}
 function arrToObj(arr){var o={};(arr||[]).forEach(function(item,i){o[(item.id!==undefined?'id_'+item.id:'i_'+i)]=item;});return o;}
 var _syncTimer=null;
@@ -149,7 +41,5 @@ function syncToFirebase(){if(!fbDb||!fbFamilyId||offlineMode)return;clearTimeout
 function setupPushNotifications(){if(!fbMsg)return;try{Notification.requestPermission().then(function(p){if(p!=='granted')return;fbMsg.getToken().then(function(t){if(t&&fbDb&&fbFamilyId&&fbUser)fbDb.ref('families/'+fbFamilyId+'/fcmTokens/'+fbUser.uid).set({token:t,name:myName});}).catch(function(){});});}catch(e){}}
 var _oadXP=awardXP;awardXP=function(a,r){_oadXP(a,r);syncToFirebase();};
 function logoutUser(){document.body.classList.remove('logged-in');if(fbAuth)fbAuth.signOut().catch(function(){});}
-
 if(typeof firebase!=='undefined')initFirebase(HARDCODED_FB_CONFIG);
-
 function initApp(){renderNav();attachNavDelegation();renderHome();renderFeed();renderFinance();renderNotifs();updateHomeXP();setTimeout(function(){checkAchievements();checkDailyBonus();},400);}
