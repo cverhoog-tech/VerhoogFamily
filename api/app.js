@@ -13,6 +13,18 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>','<script src="src/modules/tasks/taskCreateReadinessFix.js?v=2"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>\n  <script src="src/modules/tasks/taskCompactPrimary.js?v=1"></script>\n  <script src="src/modules/tasks/taskSwapRequests.js?v=2"></script>\n  <script src="src/modules/tasks/taskCategoryIcons.js?v=3"></script>\n  <script src="src/modules/tasks/taskHeroTemplates.js?v=6"></script>\n  <script src="src/core/progressionUidBridge.js?v=2"></script>\n  <script src="src/core/legacyXpOverwriteGuard.js?v=1"></script>\n  <script src="src/modules/achievements/achievementUidBridge.js?v=1"></script>\n  <script src="src/modules/tasks/taskRewardBridge.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestActiveView.js?v=5"></script>\n  <script src="src/modules/tasks/partyQuestCompletionReward.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestInvites.js?v=4"></script>\n  <script src="src/modules/tasks/taskCompactLifecycle.js?v=1"></script>\n  <script src="src/modules/tasks/taskXpViewSync.js?v=1"></script>');
     html = html.replace('<script src="src/modules/achievements/achievements.js"></script>','<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>');
 
+    // STEP 1: exactly one authenticated-session bootstrap and app-reveal owner.
+    // DuoQuests still initializes Firebase/data helpers; the controller is loaded
+    // immediately afterwards so it owns the sole auth-state observer.
+    html = html.replace(
+      '<script src="src/modules/tasks/duoQuests.js"></script>',
+      '<script src="src/modules/tasks/duoQuests.js?v=3"></script>\n  <script src="src/core/authenticatedSessionController.js?v=1"></script>'
+    );
+
+    // Retire the historical 600ms localStorage app reveal. It could expose Home
+    // before Firebase auth/household resolution and raced the canonical session.
+    html = html.replace(/\s*window\.addEventListener\(['"]load['"],\s*function\s*\(\)\s*\{\s*setTimeout\s*\(\s*function\s*\(\)\s*\{[\s\S]*?familyapp-profile-name-v1[\s\S]*?\},\s*600\s*\);\s*\}\);?/g, '\n');
+
     // Canonical Feed runtime: social post persistence -> renderer -> transient
     // interaction state -> immutable household activity -> activity presentation.
     html = html.replace(
