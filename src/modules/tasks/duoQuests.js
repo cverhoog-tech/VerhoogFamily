@@ -15,7 +15,6 @@ function trackDuoProgress(type){
   }
 }
 
-// Wire saveItem for new templates
 var _origSaveItem=saveItem;
 saveItem=function(){
   if(currentAddType==='new_template'){saveNewTemplate();return;}
@@ -25,10 +24,10 @@ saveItem=function(){
 };
 
 // ============================================================
-// FIREBASE — AUTH + SYNC
-// Notification events are owned by NotificationStore, not this module.
+// FIREBASE DATA + AUTH COMMANDS
+// Auth state, session bootstrap and app reveal are owned exclusively by
+// AuthenticatedSessionController. This legacy module keeps data helpers only.
 // ============================================================
-
 var fb = null; var fbDb = null; var fbAuth = null; var fbMsg = null;
 var fbUser = null; var fbFamilyId = null;
 var offlineMode = false;
@@ -49,331 +48,108 @@ var savedFbConfig = HARDCODED_FB_CONFIG;
 function initFirebase(config) {
   try {
     if(typeof firebase==='undefined') return false;
-    if(!firebase.apps || !firebase.apps.length) {
-      firebase.initializeApp(config);
-    }
-    fbDb   = firebase.database();
-    fbAuth = firebase.auth();
-    try { fbMsg = firebase.messaging(); } catch(e){ fbMsg=null; }
-    fbAuth.getRedirectResult().then(function(result) {
-      if(result && result.user) {
-        fbUser = result.user;
-        loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
-      }
-    }).catch(function(e){ console.error('Redirect result:', e); });
-
-  return true;
+    if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(config);
+    fbDb=window.fbDb=firebase.database();
+    fbAuth=window.fbAuth=firebase.auth();
+    try { fbMsg=window.fbMsg=firebase.messaging(); } catch(e){ fbMsg=null; window.fbMsg=null; }
+    return true;
   } catch(e){ console.error('Firebase init:',e); showAuthError('Init fout: '+e.message); return false; }
 }
 
 function emailAuth() {
-  var email = (document.getElementById('auth-email')||{}).value || '';
-  var pass  = (document.getElementById('auth-pass')||{}).value  || '';
-  var err   = document.getElementById('login-error');
-  if(!email || !pass) { if(err) err.textContent = 'Vul e-mail en wachtwoord in'; return; }
-  if(!fbAuth) { if(err) err.textContent = 'Firebase niet verbonden'; return; }
-
-  var btn = document.querySelector('#login-step-1 button.green-btn, #login-step-1 .login-btn');
-  var loginBtn = document.querySelector('button[onclick="emailAuth()"]');
-  if(loginBtn) { loginBtn.textContent = '⏳ Bezig...'; loginBtn.disabled = true; }
-  if(err) err.textContent = '';
-
-  var isRegister = window._loginTab === 'register';
-  var action = isRegister
-    ? fbAuth.createUserWithEmailAndPassword(email, pass)
-    : fbAuth.signInWithEmailAndPassword(email, pass);
-
-  action.then(function(result) {
-    fbUser = result.user;
-    if(loginBtn) { loginBtn.textContent = isRegister ? 'Registreren' : 'Inloggen'; loginBtn.disabled = false; }
-    loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
-  }).catch(function(e) {
-    if(loginBtn) { loginBtn.textContent = isRegister ? 'Registreren' : 'Inloggen'; loginBtn.disabled = false; }
-    if(err) err.textContent = translateFbError(e);
-  });
+  var email=(document.getElementById('auth-email')||{}).value||'';
+  var pass=(document.getElementById('auth-pass')||document.getElementById('auth-password')||{}).value||'';
+  var err=document.getElementById('login-error')||document.getElementById('auth-error');
+  if(!email||!pass){if(err){err.textContent='Vul e-mail en wachtwoord in';err.style.display='block';}return;}
+  if(!fbAuth){if(err){err.textContent='Firebase niet verbonden';err.style.display='block';}return;}
+  var isRegister=window._loginTab==='register';
+  var action=isRegister?fbAuth.createUserWithEmailAndPassword(email,pass):fbAuth.signInWithEmailAndPassword(email,pass);
+  action.catch(function(e){if(err){err.textContent=translateFbError(e);err.style.display='block';}});
 }
 
-function toggleFbConfig() {
-  var p=document.getElementById('fb-config-panel');
-  if(p) p.style.display=p.style.display==='none'?'block':'none';
-}
-
-function saveFbConfig() {
-  var inp=document.getElementById('fb-config-input');
-  var st =document.getElementById('fb-config-status');
-  try {
-    var cfg=JSON.parse((inp?inp.value:'').trim());
-    if(!cfg.apiKey) throw new Error('Mist apiKey');
-    localStorage.setItem(FB_CONFIG_KEY,JSON.stringify(cfg));
-    savedFbConfig=cfg;
-    var ok=initFirebase(cfg);
-    if(st) st.innerHTML=ok?'<span style="color:#16a34a">✅ Verbonden!</span>':'<span style="color:#dc2626">❌ Mislukt</span>';
-    var w=document.getElementById('fb-config-warning');
-    if(w&&ok) w.style.display='none';
-  } catch(e){ if(st) st.innerHTML='<span style="color:#dc2626">❌ '+e.message+'</span>'; }
+function toggleFbConfig(){var p=document.getElementById('fb-config-panel');if(p)p.style.display=p.style.display==='none'?'block':'none';}
+function saveFbConfig(){
+  var inp=document.getElementById('fb-config-input'),st=document.getElementById('fb-config-status');
+  try{var cfg=JSON.parse((inp?inp.value:'').trim());if(!cfg.apiKey)throw new Error('Mist apiKey');localStorage.setItem(FB_CONFIG_KEY,JSON.stringify(cfg));savedFbConfig=cfg;var ok=initFirebase(cfg);if(st)st.innerHTML=ok?'<span style="color:#16a34a">✅ Verbonden!</span>':'<span style="color:#dc2626">❌ Mislukt</span>';}catch(e){if(st)st.innerHTML='<span style="color:#dc2626">❌ '+e.message+'</span>';}
 }
 
 var loginTab='login';
-function signInWithGoogle() {
-  if(!fbAuth) {
-    showAuthError('Firebase niet verbonden.');
-    return;
-  }
-  var btn = document.getElementById('google-btn');
-  if(btn) { btn.innerHTML = '⏳ Bezig...'; btn.disabled = true; }
-
-  var provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope('profile');
-  provider.addScope('email');
-
-  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if(isMobile) {
-    fbAuth.signInWithRedirect(provider);
-  } else {
-    fbAuth.signInWithPopup(provider)
-      .then(function(result) {
-        fbUser = result.user;
-        if(btn) { btn.innerHTML = '✅ Ingelogd'; }
-        loadUserFamily().catch(function(){ showNameSetupStep(result.user); });
-      })
-      .catch(function(e) {
-        if(btn) { btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Inloggen met Google'; btn.disabled = false; }
-        showAuthError(translateFbError(e) + ' [' + e.code + ']');
-      });
-  }
+function signInWithGoogle(){
+  if(!fbAuth){showAuthError('Firebase niet verbonden.');return;}
+  var provider=new firebase.auth.GoogleAuthProvider();provider.addScope('profile');provider.addScope('email');
+  fbAuth.signInWithPopup(provider).catch(function(e){showAuthError(translateFbError(e)+(e.code?' ['+e.code+']':''));});
 }
 
 function showNameSetupStep(user) {
-  if(user && user.photoURL) {
-    localStorage.setItem('familyapp-current-user-avatar-v1', user.photoURL);
-  }
-
-  var savedName    = localStorage.getItem('familyapp-profile-name-v1');
-  var savedPartner = localStorage.getItem('familyapp-partner-name-v1');
-  if(savedName && savedPartner) {
-    onLoggedIn();
-    return;
-  }
-
-  var s1 = document.getElementById('login-step-1');
-  var s2 = document.getElementById('login-step-2');
-  if(s1) s1.style.display = 'none';
-  if(s2) s2.style.display = 'block';
-
-  var displayName = (user && user.displayName) || '';
-  var firstName   = displayName.split(' ')[0] || '';
-  var av = document.getElementById('google-avatar-preview');
-  var nm = document.getElementById('google-name-preview');
-  var ni = document.getElementById('step2-name');
-
-  if(av) {
-    if(user && user.photoURL) {
-      av.innerHTML = '<img src="'+user.photoURL+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">';
-    } else {
-      av.textContent = (firstName.substring(0,2)||'?').toUpperCase();
-    }
-  }
-  if(nm) nm.textContent = displayName || (user && user.email) || '';
-  if(ni && firstName) ni.value = firstName;
+  if(user&&user.photoURL)localStorage.setItem('familyapp-current-user-avatar-v1',user.photoURL);
+  var s1=document.getElementById('login-step-1'),s2=document.getElementById('login-step-2');
+  if(s1)s1.style.display='none';if(s2)s2.style.display='block';
+  var displayName=(user&&user.displayName)||'',firstName=displayName.split(' ')[0]||'';
+  var av=document.getElementById('google-avatar-preview'),nm=document.getElementById('google-name-preview'),ni=document.getElementById('step2-name');
+  if(av){if(user&&user.photoURL)av.innerHTML='<img src="'+user.photoURL+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover">';else av.textContent=(firstName.substring(0,2)||'?').toUpperCase();}
+  if(nm)nm.textContent=displayName||(user&&user.email)||'';if(ni&&firstName)ni.value=firstName;
 }
 
-function finishGoogleSetup() {
-  var name    = (document.getElementById('step2-name')||{}).value||'';
-  var partner = (document.getElementById('step2-partner')||{}).value||'';
-  var errEl   = document.getElementById('step2-error');
-
-  if(!name.trim()) {
-    if(errEl) { errEl.textContent='Vul je naam in'; errEl.style.display='block'; }
-    return;
-  }
-  name = name.trim();
-  partner = partner.trim() || 'Partner';
-
-  fbUser.updateProfile({displayName: name}).catch(function(){});
-  setupNewFamily(name, partner).then(onLoggedIn).catch(function(e) {
-    if(errEl) { errEl.textContent='Fout: '+e.message; errEl.style.display='block'; }
-  });
+function finishGoogleSetup(){
+  var name=(document.getElementById('step2-name')||{}).value||'',partner=(document.getElementById('step2-partner')||{}).value||'',errEl=document.getElementById('step2-error');
+  if(!name.trim()){if(errEl){errEl.textContent='Vul je naam in';errEl.style.display='block';}return;}
+  name=name.trim();partner=partner.trim()||'Partner';
+  var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user){if(errEl)errEl.textContent='Geen ingelogde gebruiker';return;}
+  user.updateProfile({displayName:name}).catch(function(){});
+  setupNewFamily(name,partner).then(function(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}).catch(function(e){if(errEl){errEl.textContent='Fout: '+e.message;errEl.style.display='block';}});
 }
 
-function submitAuth() {
-  var email=(document.getElementById('auth-email')||{}).value||'';
-  var pass =(document.getElementById('auth-password')||{}).value||'';
-  var btn  =document.getElementById('auth-submit-btn');
+function submitAuth(){
+  var email=(document.getElementById('auth-email')||{}).value||'',pass=(document.getElementById('auth-password')||{}).value||'',btn=document.getElementById('auth-submit-btn');
   if(!email||!pass){showAuthError('Vul e-mail en wachtwoord in');return;}
-  if(!fbAuth){showAuthError('Firebase niet verbonden. Stel Firebase in of gebruik offline modus.');return;}
-  btn.textContent='⏳...'; btn.disabled=true;
-  if(loginTab==='register') {
-    var name=(document.getElementById('auth-name')||{}).value||'';
-    var partner=(document.getElementById('auth-partner')||{}).value||'Partner';
-    if(!name){showAuthError('Vul je naam in');btn.disabled=false;btn.textContent='Account aanmaken';return;}
-    fbAuth.createUserWithEmailAndPassword(email,pass)
-      .then(function(c){fbUser=c.user;return c.user.updateProfile({displayName:name});})
-      .then(function(){return setupNewFamily(name,partner);})
-      .then(onLoggedIn)
-      .catch(function(e){showAuthError(translateFbError(e));btn.disabled=false;btn.textContent='Account aanmaken';});
-  } else {
-    fbAuth.signInWithEmailAndPassword(email,pass)
-      .then(function(c){fbUser=c.user;return loadUserFamily();})
-      .then(onLoggedIn)
-      .catch(function(e){showAuthError(translateFbError(e));btn.disabled=false;btn.textContent='Inloggen';});
-  }
+  if(!fbAuth){showAuthError('Firebase niet verbonden.');return;}
+  if(btn){btn.textContent='⏳...';btn.disabled=true;}
+  var isRegister=window._loginTab==='register';
+  var action=isRegister?fbAuth.createUserWithEmailAndPassword(email,pass):fbAuth.signInWithEmailAndPassword(email,pass);
+  action.then(function(c){
+    if(btn){btn.textContent=isRegister?'Account aanmaken':'Inloggen';btn.disabled=false;}
+    if(!isRegister)return;
+    fbUser=window.fbUser=c.user;
+    var name=(document.getElementById('auth-name')||{}).value||'',partner=(document.getElementById('auth-partner')||{}).value||'Partner';
+    if(!name)throw new Error('Vul je naam in');
+    return c.user.updateProfile({displayName:name}).then(function(){return setupNewFamily(name,partner);}).then(function(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();});
+  }).catch(function(e){showAuthError(translateFbError(e));if(btn){btn.disabled=false;btn.textContent=isRegister?'Account aanmaken':'Inloggen';}});
 }
 
 function showAuthError(msg){var e=document.getElementById('auth-error');if(e){e.textContent=msg;e.style.display='block';}}
-function translateFbError(e){
-  return({'auth/user-not-found':'Geen account met dit e-mailadres','auth/wrong-password':'Wachtwoord onjuist',
-    'auth/email-already-in-use':'E-mail al in gebruik','auth/weak-password':'Min. 6 tekens',
-    'auth/invalid-email':'Ongeldig e-mailadres','auth/network-request-failed':'Geen internet'}[e.code]||e.message);
-}
-
-function useOfflineMode(){
-  offlineMode=true;
-  var n=localStorage.getItem('familie_offline_name');
-  if(n){myName=n;myInitials=n.substring(0,2).toUpperCase();}
-  hideLoginScreen();
-}
+function translateFbError(e){return({'auth/user-not-found':'Geen account met dit e-mailadres','auth/wrong-password':'Wachtwoord onjuist','auth/email-already-in-use':'E-mail al in gebruik','auth/weak-password':'Min. 6 tekens','auth/invalid-email':'Ongeldig e-mailadres','auth/network-request-failed':'Geen internet'}[e.code]||e.message);}
+function useOfflineMode(){showAuthError('Offline openen zonder ingelogd account is niet beschikbaar.');}
 
 function setupNewFamily(name,partner){
-  var uid=fbUser.uid; fbFamilyId=uid;
-  myName=name; partnerName=partner; myInitials=name.substring(0,2).toUpperCase();
-  return fbDb.ref('families/'+uid).set({
-    members:{},tasks:{},shop:{},cal:{},feed:{},trans:{},savingsGoals:{},extraIncome:{},vasteLasten:{},recurData:{}
-  }).then(function(){
-    return fbDb.ref('users/'+uid).set({familyId:uid,name:name,partner:partner});
-  }).then(function(){
-    return fbDb.ref('families/'+uid+'/members/'+uid).set({name:name,color:'#2d5a27',partner:partner,xp:0,joined:Date.now()});
-  });
+  var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user)return Promise.reject(new Error('Geen ingelogde gebruiker'));
+  var uid=user.uid;fbUser=window.fbUser=user;fbFamilyId=window.fbFamilyId=uid;myName=name;partnerName=partner;myInitials=name.substring(0,2).toUpperCase();
+  return fbDb.ref('families/'+uid).set({members:{},tasks:{},shop:{},cal:{},feed:{},trans:{},savingsGoals:{},extraIncome:{},vasteLasten:{},recurData:{}}).then(function(){return fbDb.ref('users/'+uid).set({familyId:uid,name:name,partner:partner});}).then(function(){return fbDb.ref('families/'+uid+'/members/'+uid).set({name:name,color:'#2d5a27',partner:partner,xp:0,joined:Date.now()});});
 }
 
 function loadUserFamily(){
-  var uid=fbUser.uid;
-  return fbDb.ref('users/'+uid).once('value').then(function(snap){
-    var d=snap.val();
-    if(!d||!d.familyId) throw new Error('Geen gezin gevonden');
-    fbFamilyId=d.familyId;
-    myName=d.name||fbUser.displayName||'Gebruiker';
-    partnerName=d.partner||'Partner';
-    myInitials=myName.substring(0,2).toUpperCase();
-  });
+  var user=fbUser||(fbAuth&&fbAuth.currentUser);if(!user)return Promise.reject(new Error('Geen ingelogde gebruiker'));
+  fbUser=window.fbUser=user;
+  return fbDb.ref('users/'+user.uid).once('value').then(function(snap){var d=snap.val();if(!d||!d.familyId)throw new Error('Geen gezin gevonden');fbFamilyId=window.fbFamilyId=d.familyId;myName=d.name||user.displayName||'Gebruiker';partnerName=d.partner||'Partner';myInitials=myName.substring(0,2).toUpperCase();});
 }
 
-function onLoggedIn(){
-  if(window._appStarted) { startFirebaseSync(); if(window.NotificationStore)NotificationStore.ensureSubscription(); return; }
-  window._appStarted = true;
-  hideLoginScreen();
-  if(typeof renderNav === 'function') renderNav();
-  if(typeof showScreen === 'function') showScreen('home');
-  else if(typeof renderHome === 'function') renderHome();
-  startFirebaseSync();
-  if(window.NotificationStore)NotificationStore.ensureSubscription();
-  setupPushNotifications();
-  showToast('👋 Welkom '+myName+'!');
-}
-
-function hideLoginScreen(){
-  var preloginCss = document.getElementById('prelogin-css');
-  if(preloginCss) preloginCss.remove();
-  var ls = document.getElementById('login-screen');
-  if(ls) ls.style.display = 'none';
-  renderNav();
-  renderHome();
-  renderNotifs();
-  updateHomeXP();
-  setTimeout(function(){ checkAchievements(); checkDailyBonus(); }, 400);
-}
+function onLoggedIn(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}
+function hideLoginScreen(){if(window.AuthenticatedSessionController)return window.AuthenticatedSessionController.resume();}
 
 var _fbSyncActive=false;
 function startFirebaseSync(){
-  if(!fbDb||!fbFamilyId||offlineMode||_fbSyncActive) return;
+  if(!fbDb||!fbFamilyId||offlineMode||_fbSyncActive)return;
   _fbSyncActive=true;
   var ref=fbDb.ref('families/'+fbFamilyId);
-  ref.on('value',function(snap){
-    var data=snap.val(); if(!data) return;
-    if(data.tasks        && objToArr(data.tasks).length)        taskData     =objToArr(data.tasks);
-    if(data.shop         && objToArr(data.shop).length)         shopData     =objToArr(data.shop);
-    if(data.cal          && objToArr(data.cal).length)          calData      =objToArr(data.cal);
-    if(data.recurData    && objToArr(data.recurData).length)    recurData    =objToArr(data.recurData);
-
-    if(data.members) Object.values(data.members).forEach(function(m){
-      if(m.name!==myName){partnerName=m.name;partnerXPStore=m.xp||0;}
-      else myXP=m.xp||myXP;
-    });
-    _renderScreen(_currentScreen);
-    updateHomeXP();
-  });
+  ref.on('value',function(snap){var data=snap.val();if(!data)return;if(data.tasks&&objToArr(data.tasks).length)taskData=objToArr(data.tasks);if(data.shop&&objToArr(data.shop).length)shopData=objToArr(data.shop);if(data.cal&&objToArr(data.cal).length)calData=objToArr(data.cal);if(data.recurData&&objToArr(data.recurData).length)recurData=objToArr(data.recurData);if(data.members)Object.values(data.members).forEach(function(m){if(m.name!==myName){partnerName=m.name;partnerXPStore=m.xp||0;}else myXP=m.xp||myXP;});_renderScreen(_currentScreen);updateHomeXP();});
 }
-
 function objToArr(obj){if(Array.isArray(obj))return obj;if(!obj)return[];return Object.values(obj);}
 function arrToObj(arr){var o={};(arr||[]).forEach(function(item,i){o[(item.id!==undefined?'id_'+item.id:'i_'+i)]=item;});return o;}
-
 var _syncTimer=null;
-function syncToFirebase(){
-  if(!fbDb||!fbFamilyId||offlineMode) return;
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(function(){
-    var uid=fbUser?fbUser.uid:'anon';
-    fbDb.ref('families/'+fbFamilyId).update({
-      tasks:arrToObj(taskData),shop:arrToObj(shopData),cal:arrToObj(calData),
-      recurData:arrToObj(recurData)
-    });
-    fbDb.ref('families/'+fbFamilyId+'/members/'+uid).update({xp:myXP,name:myName,lastSeen:Date.now()});
-  },800);
-}
+function syncToFirebase(){if(!fbDb||!fbFamilyId||offlineMode)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(function(){var uid=fbUser?fbUser.uid:'anon';fbDb.ref('families/'+fbFamilyId).update({tasks:arrToObj(taskData),shop:arrToObj(shopData),cal:arrToObj(calData),recurData:arrToObj(recurData)});fbDb.ref('families/'+fbFamilyId+'/members/'+uid).update({xp:myXP,name:myName,lastSeen:Date.now()});},800);}
+function setupPushNotifications(){if(!fbMsg)return;try{Notification.requestPermission().then(function(p){if(p!=='granted')return;fbMsg.getToken().then(function(t){if(t&&fbDb&&fbFamilyId&&fbUser)fbDb.ref('families/'+fbFamilyId+'/fcmTokens/'+fbUser.uid).set({token:t,name:myName});}).catch(function(){});});}catch(e){}}
+var _oadXP=awardXP;awardXP=function(a,r){_oadXP(a,r);syncToFirebase();};
+function logoutUser(){document.body.classList.remove('logged-in');if(fbAuth)fbAuth.signOut().catch(function(){});}
 
-// Device-token registration is delivery infrastructure only. Notification
-// event creation, recipients, read state and realtime sync live in NotificationStore.
-function setupPushNotifications(){
-  if(!fbMsg) return;
-  try {
-    Notification.requestPermission().then(function(p){
-      if(p!=='granted') return;
-      fbMsg.getToken().then(function(t){
-        if(t&&fbDb&&fbFamilyId&&fbUser) fbDb.ref('families/'+fbFamilyId+'/fcmTokens/'+fbUser.uid).set({token:t,name:myName});
-      }).catch(function(){});
-    });
-  } catch(e){}
-}
+if(typeof firebase!=='undefined')initFirebase(HARDCODED_FB_CONFIG);
 
-// Hook sync into XP only; notification writes are not coupled to this legacy sync.
-var _oadXP=awardXP;
-awardXP=function(a,r){_oadXP(a,r);syncToFirebase();};
-
-function logoutUser(){ document.body.classList.remove('logged-in');
-  if(fbAuth) fbAuth.signOut().catch(function(){});
-  offlineMode=false; fbUser=null; _fbSyncActive=false;
-  var ls=document.getElementById('login-screen');
-  if(ls){ls.style.display='flex';ls.style.animation='fadeIn .3s ease';}
-}
-
-if(typeof firebase !== 'undefined') {
-  var _fbOk = initFirebase(HARDCODED_FB_CONFIG);
-  if(_fbOk) {
-    firebase.auth().onAuthStateChanged(function(user){
-      if(user){
-        fbUser=user;
-        loadUserFamily().then(onLoggedIn).catch(function(){
-          showNameSetupStep(user);
-          var ls=document.getElementById('login-screen');
-          if(ls) ls.style.display='flex';
-        });
-      } else {
-        var ls=document.getElementById('login-screen');
-        if(ls) ls.style.display='flex';
-      }
-    });
-  }
-}
-
-function initApp() {
-  renderNav();
-  attachNavDelegation();
-  renderHome();
-  renderFeed();
-  renderFinance();
-  renderNotifs();
-  updateHomeXP();
-  setTimeout(function(){
-    checkAchievements();
-    checkDailyBonus();
-  }, 400);
-}
+function initApp(){renderNav();attachNavDelegation();renderHome();renderFeed();renderFinance();renderNotifs();updateHomeXP();setTimeout(function(){checkAchievements();checkDailyBonus();},400);}
