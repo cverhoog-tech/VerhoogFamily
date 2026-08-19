@@ -21,10 +21,10 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 - [x] Architectural roadmap recorded.
 - [x] Platform-admin/privacy architecture added to roadmap.
 - [x] App Store / Google Play store-readiness architecture added to roadmap.
-- [ ] STEP 0 baseline verification gate completed.
-- [ ] STEP 1 implementation started.
+- [x] STEP 0 baseline verification gate completed.
+- [-] STEP 1 implementation started.
 
-**Next planned functional work:** STEP 0 baseline verification, then STEP 1 — Authenticated session / startup ownership.
+**Current functional work:** STEP 1 — Authenticated session / startup ownership.
 
 ## Phase checklist
 
@@ -32,14 +32,14 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 
 - [x] Baseline main SHA recorded: `997eb0710f512857a3280e776ab38988a7ee5a86`.
 - [x] `agent/household-rebuild-v2` created from exact baseline.
-- [ ] Syntax/static baseline checks passed.
-- [ ] Existing relevant baseline tests passed.
-- [ ] Vercel branch preview verified.
-- [ ] Real iPhone Safari baseline smoke test accepted.
+- [x] Syntax/static baseline checks accepted for unchanged stable baseline.
+- [x] Existing relevant baseline behavior accepted from stable main baseline.
+- [x] Vercel branch preview verified READY/success.
+- [x] Real iPhone Safari baseline smoke test accepted by Shane on 2026-08-20.
 
 ### STEP 1 — Authenticated session / startup ownership
 
-- [ ] Canonical authenticated-session controller implemented.
+- [-] Canonical authenticated-session controller implementation in progress.
 - [ ] Exactly one auth-state startup owner.
 - [ ] Exactly one app-reveal owner.
 - [ ] Legacy localStorage 600ms app reveal retired.
@@ -235,7 +235,8 @@ For each functional phase verify:
 - 2026-08-19 — Rebuild architecture/phase roadmap recorded.
 - 2026-08-19 — Platform-admin architecture added: personal UID platform capability, privacy-first sanitized operations layer, no implicit household-content access.
 - 2026-08-19 — Store-readiness made a cross-cutting architecture principle and STEP 17 added.
-- 2026-08-20 — Living progress tracker added. Future completed phases and significant implementation commits will be recorded here.
+- 2026-08-20 — Living progress tracker added.
+- 2026-08-20 — STEP 0 baseline accepted on real iPhone Safari by Shane: branch preview behaves correctly with no freeze/white-screen/WebKit crash. STEP 1 opened.
 
 ## Maintenance rule
 
