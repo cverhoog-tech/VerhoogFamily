@@ -15,6 +15,7 @@ Baseline main SHA: `997eb0710f512857a3280e776ab38988a7ee5a86`
 - Every realtime subscription must have explicit cleanup/unsubscribe.
 - Household switches must not leave stale listeners or stale writes behind.
 - Device gate after every functional phase: Vercel branch preview + real iPhone Safari smoke test before continuing.
+- All new architecture must remain compatible with a later iOS and Android store distribution layer; avoid web-only coupling where a platform-neutral service/domain boundary is practical.
 
 ## Device gate after every functional phase
 
@@ -37,6 +38,78 @@ Baseline main SHA: `997eb0710f512857a3280e776ab38988a7ee5a86`
    - no Safari/WebKit crash.
 
 No next functional phase until the device gate is approved.
+
+## Store-ready architecture principle
+
+FamilyApp remains web/PWA-first during the rebuild, but the domain/data architecture must be suitable for later distribution through the Apple App Store and Google Play without a second backend rewrite.
+
+### Architectural separation
+
+Keep these boundaries explicit:
+
+`UI / platform shell -> application services -> repositories/domain -> Firebase/backend`
+
+The web/PWA shell must not become the only place where business rules live. Authentication orchestration, household context, task mutations, notifications, progression, finance rules and other core behavior should expose platform-neutral service/repository contracts where practical.
+
+A later iOS/Android shell may therefore reuse the same backend contracts and domain semantics, whether implemented with a native framework or a hybrid bridge.
+
+### Native/store capabilities to preserve room for
+
+Do not design current modules in a way that blocks later support for:
+- native push notifications and device-token lifecycle;
+- universal links / app links and deep-link routing;
+- share sheet / platform sharing;
+- camera/photo/file pickers through permission-minimized adapters;
+- native badges and notification actions;
+- background/foreground lifecycle handling;
+- secure device credential/token storage;
+- platform-specific authentication providers;
+- app version / minimum-supported-version controls;
+- release channels such as TestFlight/internal testing;
+- optional widgets/shortcuts later, without moving domain logic into them.
+
+### Authentication/store readiness
+
+- The canonical authenticated-session controller remains platform-neutral at its core.
+- Google Sign-In must be an authentication adapter/command, not the owner of FamilyApp startup.
+- Before an iOS App Store release, login options must be reviewed against the then-current Apple Login Services rules. If Google or another third-party login is used for the primary FamilyApp account, provide an Apple-compliant equivalent login option where required.
+- Account creation and account deletion must have explicit backend lifecycle semantics; deletion must not merely clear local state.
+- Account deletion must account for household ownership, membership, shared data ownership, audit retention and legal/financial retention requirements before destructive deletion.
+- Sign-out, revocation and account deletion are separate operations.
+
+### Privacy and data minimization
+
+Store readiness reinforces the platform-admin privacy model:
+- collect only data required for an explicit FamilyApp purpose;
+- classify shared household data, user-private data, operational telemetry and platform-admin metadata separately;
+- permission prompts must be contextual and purpose-specific;
+- avoid requesting broad Photos/Contacts/Location access when picker/share mechanisms can accomplish the task;
+- maintain a data inventory that can later map directly to App Store privacy disclosures and Google Play Data Safety declarations;
+- maintain retention/deletion rules per data category;
+- analytics/telemetry SDKs are dependencies that require explicit privacy review, not invisible implementation details.
+
+### App-like quality
+
+A future App Store binary must not be treated as merely a website wrapped in a WebView. The native/store release should provide a deliberate app experience and native integration where it materially improves FamilyApp, while preserving the same core product and backend.
+
+The current premium mobile UI, offline/reconnect behavior, realtime household collaboration, notifications, deep links and platform lifecycle integration should collectively form an app-like experience rather than a thin website wrapper.
+
+### User-generated household content
+
+Because families can create tasks, posts/feed activity, recipes, profile information and other shared content, store-readiness review must classify which areas count as user-generated/shared content and what safety controls are proportionate to the product model.
+
+For any area that becomes open/social beyond a private household, reassess moderation/report/block requirements before release. Private-household-only behavior should remain technically separated from any future public/community features.
+
+### Store-readiness review gate
+
+At the end of every relevant phase, add a lightweight architecture check:
+- Did this phase introduce browser-global assumptions into domain logic?
+- Can the repository/service contract be called from a future native shell?
+- Are permissions/data collection minimized?
+- Are deep-link/push/lifecycle entry points representable without duplicating business logic?
+- Does the feature have deterministic authenticated/offline/reconnect behavior?
+
+A dedicated final store-readiness phase will still be required before submission because Apple/Google policies and SDK/OS requirements change over time.
 
 ## Platform administration and privacy model
 
@@ -128,6 +201,8 @@ Remove the legacy localStorage-driven app reveal when the new controller becomes
 
 Do not introduce multiple bootstrap/auth/lifecycle owners.
 
+Store-readiness note: keep the controller independent from Google-specific UI so Apple/other native auth adapters can enter through the same canonical session pipeline later.
+
 ### STEP 2 - HouseholdContext / UID identity / lifecycle contract
 
 - Read-only canonical session/household context.
@@ -206,6 +281,7 @@ This phase must not make startup dependent on the admin subsystem. A platform-ad
 - Domain-event projection.
 - One household listener with cleanup.
 - Push delivery kept separate from notification state.
+- Keep notification state independent from web-only APIs so native APNs/FCM delivery and native notification actions can be attached later.
 
 ### STEP 11 - Party quests
 
@@ -284,6 +360,31 @@ Emulator/tests first. No production Rules deploy without explicit approval.
 - Consolidate runtime wiring.
 - Remove deprecated duplicate assets/code after proving they are unused.
 - Simplify fragile `api/app.js` string-injection wiring when safe.
+
+### STEP 17 - Store distribution readiness
+
+This is a deliberate release-preparation phase, not a backend rewrite.
+
+Re-check the then-current Apple App Store and Google Play requirements before implementation/submission.
+
+Planned work:
+- choose/validate the iOS/Android shell strategy based on the state of the product at that time;
+- native signing/bundle identifiers/build pipeline;
+- production-grade app icons, launch assets and store metadata;
+- TestFlight / Google internal testing pipeline;
+- native push registration and deep links;
+- secure token/credential storage appropriate to each platform;
+- native lifecycle/background integration;
+- Apple-compliant login option(s) if required by the current login mix;
+- in-app account deletion and complete backend deletion workflow;
+- privacy policy/support/legal surfaces;
+- Apple privacy disclosures and Google Play Data Safety inventory;
+- permission purpose strings and permission audit;
+- accessibility/device-layout review;
+- crash/stability instrumentation;
+- review account/demo path for store reviewers;
+- store-review checklist against then-current policies;
+- ensure the delivered app is sufficiently app-like and not merely a repackaged website.
 
 ## Admin architecture decision
 
