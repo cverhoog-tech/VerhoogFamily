@@ -24,9 +24,10 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 - [x] STEP 0 baseline verification gate completed.
 - [x] STEP 1 authenticated session / startup ownership completed.
 - [x] STEP 2 HouseholdContext / UID identity / lifecycle completed.
-- [-] STEP 2A platform-admin identity foundation started.
+- [ ] STEP 2A platform-admin identity foundation paused until STEP 2B is complete.
+- [-] STEP 2B Person hero backdrop system in progress.
 
-**Current functional work:** STEP 2A — Platform admin identity foundation.
+**Current functional work:** STEP 2B.1 — Person hero backdrop foundation.
 
 ## Phase checklist
 
@@ -69,7 +70,8 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 
 ### STEP 2A — Platform admin identity foundation
 
-- [-] Platform role separated from household role.
+- [ ] Paused while STEP 2B Person hero backdrop system is completed and device-validated.
+- [ ] Platform role separated from household role.
 - [ ] Platform admin tied to protected authenticated UID authority.
 - [ ] No client self-elevation.
 - [ ] Dedicated platform permission contract.
@@ -77,6 +79,36 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 - [ ] Privacy classification enforced.
 - [ ] Tests prove platform admin does not imply raw household-content access.
 - [ ] tests/preview/device gate accepted where applicable.
+
+### STEP 2B — Person hero backdrop system
+
+#### STEP 2B.1 — Backdrop foundation
+- [-] Canonical hero backdrop preset catalog.
+- [ ] Canonical backdrop resolver separate from avatar/portrait media.
+- [ ] Default preset contract: `fantasy-castle-night`.
+- [ ] Premium fantasy castle night asset added as a real app asset.
+- [ ] PersonDashboardService exposes resolved `heroBackdrop` view model.
+- [ ] PersonTabV2 renders backdrop independently from character portrait.
+- [ ] Resolver/catalog contract tests.
+- [ ] Vercel preview accepted.
+- [ ] iPhone Safari gate accepted.
+
+#### STEP 2B.2 — Preset picker
+- [ ] Small edit-pencil action on own hero card.
+- [ ] Premium bottom sheet / picker UI.
+- [ ] Preset selection and default reset.
+- [ ] UID/household-safe member hero background repository.
+- [ ] Only current member can edit own backdrop in first version.
+- [ ] Realtime persistence/re-render.
+- [ ] tests/preview/device gate accepted.
+
+#### STEP 2B.3 — Upload support
+- [ ] Image-only upload service.
+- [ ] Size/type validation and compression/resize boundary.
+- [ ] Household/UID scoped Firebase Storage path.
+- [ ] Upload preview and confirm flow.
+- [ ] Persist uploaded backdrop metadata to member profile.
+- [ ] tests/preview/device gate accepted.
 
 ### STEP 3 — Tasks core
 
@@ -244,6 +276,8 @@ For each functional phase verify:
 - 2026-08-20 — STEP 0 baseline accepted on real iPhone Safari by Shane: branch preview behaves correctly with no freeze/white-screen/WebKit crash. STEP 1 opened.
 - 2026-08-20 — STEP 1 canonical session/startup ownership accepted on real iPhone Safari by Shane. One auth-state owner, one reveal path, command-only Google auth, generation protection, recoverable errors and exact session cleanup validated. STEP 2 opened.
 - 2026-08-20 — STEP 2 HouseholdContext/UID/lifecycle accepted on real iPhone Safari by Shane. Canonical read-only context, uid+householdId contract, stale-context protection, explicit subscriptions and event-driven household rebind validated. STEP 2A opened.
+- 2026-08-20 — STEP 2A paused after Person-tab visual regressions surfaced. Person tab rebuilt as V2 with separate character portrait presentation.
+- 2026-08-20 — STEP 2B opened for a scalable hero backdrop system: independent backdrop presets/uploads, own-card edit action and UID/household-safe persistence. STEP 2B.1 foundation started.
 
 ## Maintenance rule
 
