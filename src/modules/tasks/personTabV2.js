@@ -7,17 +7,13 @@
 (function(){
   if(window.PersonTabV2)return;
 
-  var VERSION='2.3.0';
+  var VERSION='2.4.0';
   var target=null;
   var selectedUid=null;
   var unsubscribe=null;
   var lastModels=[];
 
-  function esc(value){
-    return String(value==null?'':value)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-  }
+  function esc(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function clamp(value){return Math.max(0,Math.min(100,Math.round(Number(value)||0)));}
   function initials(member){if(member&&member.initials)return member.initials;return String(member&&member.displayName||'?').split(/\s+/).filter(Boolean).map(function(part){return part.charAt(0);}).join('').slice(0,2).toUpperCase()||'?';}
   function currentModel(models){if(!models.length)return null;var chosen=selectedUid&&models.find(function(model){return model.uid===selectedUid;});if(!chosen)chosen=models.find(function(model){return model.member&&model.member.isCurrent;})||models[0];selectedUid=chosen.uid;return chosen;}
@@ -25,33 +21,19 @@
   function presenceText(model){var p=model&&model.presence||{};if(p.state==='online')return p.area?'Online · '+String(p.area):'Online';if(p.state==='recent')return'Recent actief';if(p.state==='today')return'Vandaag actief';return'Offline';}
   function avatarHtml(model,large){var member=model.member||{},src=member.avatar||'',cls=large?'pt2-avatar pt2-avatar-large':'pt2-avatar';if(src)return'<img class="'+cls+'" src="'+esc(src)+'" alt="'+esc(member.displayName||'Gezinslid')+'">';return'<div class="'+cls+' pt2-avatar-fallback">'+esc(initials(member))+'</div>';}
   function memberRail(models){return'<div class="pt2-members" role="list">'+models.map(function(model){var member=model.member||{},active=model.uid===selectedUid,state=presenceState(model);return'<button type="button" class="pt2-member'+(active?' is-active':'')+'" data-pt2-member="'+esc(model.uid)+'" role="listitem"><span class="pt2-avatar-shell">'+avatarHtml(model,false)+'<i class="pt2-status-dot is-'+esc(state)+'"></i></span><span class="pt2-member-name">'+esc(member.displayName||'Gezinslid')+'</span><span class="pt2-member-state">'+esc(state==='online'?'Online':state==='recent'?'Recent':state==='today'?'Vandaag':'Offline')+'</span></button>';}).join('')+'</div>';}
+  function resolvedBackdrop(member){
+    try{if(window.HeroBackdropResolver&&typeof HeroBackdropResolver.resolve==='function')return HeroBackdropResolver.resolve(member&&member.heroBackground||null);}catch(e){}
+    return {imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.svg',focalX:.58,focalY:.46,overlayStyle:'violet-night'};
+  }
   function heroBackdropHtml(member){
-    var media=member.heroMedia||{};
-    var url=media.url||member.avatar||'';
+    var backdrop=resolvedBackdrop(member||{}),url=backdrop&&backdrop.imageUrl||'';
     if(!url)return'';
-    var x=Math.max(0,Math.min(1,Number(media.focalX)));if(!isFinite(x))x=.5;
-    var y=Math.max(0,Math.min(1,Number(media.focalY)));if(!isFinite(y))y=.5;
-    return'<div class="pt2-hero-backdrop-layer" style="--pt2-focal-x:'+(x*100).toFixed(2)+'%;--pt2-focal-y:'+(y*100).toFixed(2)+'%"><img src="'+esc(url)+'" alt=""></div>';
+    var x=Math.max(0,Math.min(1,Number(backdrop.focalX)));if(!isFinite(x))x=.5;
+    var y=Math.max(0,Math.min(1,Number(backdrop.focalY)));if(!isFinite(y))y=.5;
+    return'<div class="pt2-hero-backdrop-layer" data-overlay="'+esc(backdrop.overlayStyle||'violet-night')+'" style="--pt2-focal-x:'+(x*100).toFixed(2)+'%;--pt2-focal-y:'+(y*100).toFixed(2)+'%"><img src="'+esc(url)+'" alt=""></div>';
   }
-  function characterPortraitHtml(member){
-    if(member.avatar)return'<div class="pt2-hero-character"><img src="'+esc(member.avatar)+'" alt="'+esc(member.displayName||'Gezinslid')+'"></div>';
-    return'<div class="pt2-hero-character pt2-hero-character-fallback">'+esc(initials(member))+'</div>';
-  }
-  function hero(model){
-    var member=model.member||{},progress=model.progression||{},prev=Number(progress.previousLevelXp||0),next=Number(progress.nextLevelXp||prev+1),xp=Number(progress.xp||0),pct=next>prev?clamp(((xp-prev)/(next-prev))*100):0;
-    return'<section class="pt2-hero">'
-      +heroBackdropHtml(member)
-      +'<div class="pt2-hero-shade"></div>'
-      +characterPortraitHtml(member)
-      +'<div class="pt2-level"><span>LEVEL</span><strong>'+esc(progress.level||1)+'</strong></div>'
-      +'<div class="pt2-hero-body">'
-        +'<div class="pt2-hero-name"><h2>'+esc(member.displayName||'Gezinslid')+'</h2><p>'+esc(progress.title||'Avonturier')+'</p></div>'
-        +'<div class="pt2-presence is-'+esc(presenceState(model))+'"><i></i>'+esc(presenceText(model))+'</div>'
-        +'<div class="pt2-xp-meta"><span>'+xp.toLocaleString('nl-NL')+' XP</span><span>'+next.toLocaleString('nl-NL')+' XP</span></div>'
-        +'<div class="pt2-progress"><i style="width:'+pct+'%"></i></div>'
-      +'</div>'
-    +'</section>';
-  }
+  function characterPortraitHtml(member){if(member.avatar)return'<div class="pt2-hero-character"><img src="'+esc(member.avatar)+'" alt="'+esc(member.displayName||'Gezinslid')+'"></div>';return'<div class="pt2-hero-character pt2-hero-character-fallback">'+esc(initials(member))+'</div>';}
+  function hero(model){var member=model.member||{},progress=model.progression||{},prev=Number(progress.previousLevelXp||0),next=Number(progress.nextLevelXp||prev+1),xp=Number(progress.xp||0),pct=next>prev?clamp(((xp-prev)/(next-prev))*100):0;return'<section class="pt2-hero">'+heroBackdropHtml(member)+'<div class="pt2-hero-shade"></div>'+characterPortraitHtml(member)+'<div class="pt2-level"><span>LEVEL</span><strong>'+esc(progress.level||1)+'</strong></div><div class="pt2-hero-body"><div class="pt2-hero-name"><h2>'+esc(member.displayName||'Gezinslid')+'</h2><p>'+esc(progress.title||'Avonturier')+'</p></div><div class="pt2-presence is-'+esc(presenceState(model))+'"><i></i>'+esc(presenceText(model))+'</div><div class="pt2-xp-meta"><span>'+xp.toLocaleString('nl-NL')+' XP</span><span>'+next.toLocaleString('nl-NL')+' XP</span></div><div class="pt2-progress"><i style="width:'+pct+'%"></i></div></div></section>';}
   function statCard(icon,value,label){return'<div class="pt2-stat"><span class="pt2-stat-icon">'+icon+'</span><strong>'+esc(value)+'</strong><small>'+esc(label)+'</small></div>';}
   function stats(model){var q=model.quests||{},g=model.progression||{};return'<section class="pt2-section"><h3>Jouw avontuur</h3><div class="pt2-stats">'+statCard('⬡',g.level||1,'Level')+statCard('🔥',g.streak==null?'—':g.streak,'Streak')+statCard('⚔️',q.completedCount||0,'Quests')+statCard('✦',q.earnedXpThisWeek||0,'XP/week')+'</div></section>';}
   function questIcon(task){var type=String(task&&task.type||'').toUpperCase();if(type.indexOf('RAID')>-1)return'⚔️';if(type.indexOf('DUNGEON')>-1)return'🏰';return'✦';}
