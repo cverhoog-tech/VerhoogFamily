@@ -1,18 +1,17 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v1.0.0
+// BOODSCHAPPEN v1.0.1
 // Render-only. ShoppingListStore.js is the sole owner of shopping state,
 // mutations and realtime subscriptions — this file never mutates shopping
 // data directly and holds no shopping array of its own.
 // ============================================================
 (function(){
-  var VERSION = '1.0.0';
+  var VERSION = '1.0.1';
   var storeSub = null;
 
   function esc(v){ var d = document.createElement('div'); d.textContent = String(v == null ? '' : v); return d.innerHTML; }
   function store(){ return window.ShoppingListStore || null; }
 
-  // ── styles ──
   function ensureStyles(){
     if(document.getElementById('shop-v1-style')) return;
     var css = document.createElement('style');
@@ -34,7 +33,6 @@
     document.head.appendChild(css);
   }
 
-  // ── item + list-switcher rendering ──
   function listScopeIcon(scope){
     return scope === 'private'
       ? '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9" rx="2"></rect><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"></path></svg>'
@@ -43,7 +41,7 @@
   function shopUtilityIcon(item){
     var legacy = (item && item.photo && !String(item.photo).startsWith('http')) ? String(item.photo) : '📦';
     var resolver = window.FamilyAppUtilityIconResolver;
-    var html = resolver && typeof resolver.render === 'function' ? resolver.render(item && item.cat, legacy, { size: 'lg' }) : '';
+    var html = resolver && typeof resolver.render === 'function' ? resolver.render(item && item.cat, legacy, { size: 'lg', name: item && item.name }) : '';
     return html || legacy;
   }
   function shopItemHTML(item){
@@ -56,176 +54,17 @@
       + '<div class="shop-info"><div class="shop-name' + (item.done ? ' done' : '') + '">' + esc(item.name) + '</div><div class="shop-qty">' + esc(item.qty) + ' · ' + esc(item.cat) + '</div></div>'
       + '<button class="shop-del" onclick="deleteShop(\'' + attrKey + '\')">✕</button></div>';
   }
-  function ensureListBar(){
-    var screen = document.getElementById('screen-shop');
-    var header = screen && screen.querySelector('.list-header');
-    if(!header) return null;
-    var bar = document.getElementById('shopping-listbar');
-    if(!bar){
-      bar = document.createElement('div');
-      bar.id = 'shopping-listbar';
-      bar.className = 'shopping-listbar';
-      header.insertAdjacentElement('afterend', bar);
-    }
-    return bar;
-  }
-  function renderListSwitcher(view){
-    var bar = ensureListBar();
-    if(!bar || !view.key) { if(bar) bar.innerHTML = ''; return; }
-    bar.innerHTML = '<button class="shopping-listpick" id="shopping-list-pick" aria-label="Winkellijst kiezen">'
-      + '<span class="sl-icon">' + listScopeIcon(view.scope) + '</span>'
-      + '<span class="sl-copy"><b>' + esc(view.name || 'Winkellijst') + '</b><small>' + (view.scope === 'private' ? '🔒 Privé' : '👨‍👩‍👧 Gezin · live') + ' · ' + view.openCount + ' te kopen</small></span>'
-      + '<span class="sl-chevron">⌄</span></button>';
-    var pick = document.getElementById('shopping-list-pick');
-    if(pick) pick.onclick = openPicker;
-  }
-  function openPicker(){
-    var s = store();
-    if(!s || !window.BottomSheet) return;
-    var rowsHtml = s.all().map(function(row){
-      return '<button class="shopping-list-option" data-list-key="' + esc(row.key) + '"><span>' + esc(row.list.icon || '🛒') + '</span><span style="flex:1"><b>' + esc(row.list.name) + '</b><small>' + (row.scope === 'private' ? '🔒 Alleen ik' : '👨‍👩‍👧 Gezin · live') + '</small></span></button>';
-    }).join('') + '<button class="shopping-list-create" id="shopping-list-create">＋ Nieuwe lijst</button>';
-    window.BottomSheet.open({
-      title: 'Winkellijst kiezen', html: rowsHtml,
-      onOpen: function(ctx){
-        ctx.modal.querySelectorAll('[data-list-key]').forEach(function(btn){
-          btn.onclick = function(){ s.setActiveList(btn.getAttribute('data-list-key')); ctx.close(); };
-        });
-        var create = ctx.modal.querySelector('#shopping-list-create');
-        if(create) create.onclick = function(){ ctx.close(); setTimeout(openCreate, 180); };
-      },
-      actions: [{ label: 'Sluiten' }]
-    });
-  }
-  function openCreate(){
-    var s = store();
-    if(!s || !window.BottomSheet) return;
-    var html = '<div class="fam-modal-field"><label>Naam</label><input id="sl-name" placeholder="bijv. IKEA of Weekboodschappen"></div><div class="fam-modal-field"><label>Zichtbaarheid</label><select id="sl-privacy"><option value="household">Gezin</option><option value="private">Alleen ik</option></select></div>';
-    window.BottomSheet.open({
-      title: 'Nieuwe winkellijst', html: html,
-      actions: [
-        { label: 'Annuleren' },
-        { label: 'Lijst maken', primary: true, onClick: function(ctx){
-          var name = ctx.modal.querySelector('#sl-name').value.trim();
-          if(!name) return false;
-          s.createList({ name: name, visibility: ctx.modal.querySelector('#sl-privacy').value }).catch(function(){
-            if(typeof window.showToast === 'function') window.showToast('Lijst kon niet worden aangemaakt');
-          });
-        } }
-      ]
-    });
-  }
-
-  // ── main render ──
-  function renderShop(){
-    ensureStyles();
-    var openEl = document.getElementById('shop-open'), doneEl = document.getElementById('shop-done');
-    var ocnt = document.getElementById('shop-open-cnt'), dcnt = document.getElementById('shop-done-cnt');
-    if(!openEl) return;
-    var s = store();
-    var view = s ? s.projection() : { openItems: [], doneItems: [], openCount: 0, doneCount: 0 };
-    // Single computation feeds both the counters and the rendered lists —
-    // they can never diverge because there is nowhere else in the app that
-    // independently counts shopping items.
-    if(ocnt) ocnt.textContent = view.openCount;
-    if(dcnt) dcnt.textContent = view.doneCount;
-    openEl.innerHTML = view.openItems.map(shopItemHTML).join('');
-    doneEl.innerHTML = view.doneItems.map(shopItemHTML).join('');
-    renderListSwitcher(view);
-    if(typeof window.updateStats === 'function') window.updateStats();
-    if(window.ShoppingReceiptFinance && typeof window.ShoppingReceiptFinance.render === 'function') setTimeout(window.ShoppingReceiptFinance.render, 0);
-  }
-
-  function highlightShopItem(id){
-    if(id === undefined || id === null) return;
-    var el = document.getElementById('si-' + String(id).replace(/[^a-zA-Z0-9_-]/g, '_'));
-    if(!el) return;
-    el.classList.remove('shop-item-added');
-    void el.offsetWidth;
-    el.classList.add('shop-item-added');
-    setTimeout(function(){ el.classList.remove('shop-item-added'); }, 850);
-  }
-
-  function toggleShop(id){
-    var s = store();
-    if(!s) return false;
-    s.toggleItem(id).then(function(record){
-      if(record && record.done){
-        if(typeof window.awardXP === 'function') window.awardXP(2, 'Boodschap');
-        if(typeof window.addActivity === 'function') window.addActivity('🛒', '#fff3dc', (window.myName || 'Gezin') + ' kocht "' + record.name + '"');
-      }
-    }).catch(function(err){
-      console.warn('[Shop] toggle failed', err);
-      if(typeof window.showToast === 'function') window.showToast('Kon item niet bijwerken. Probeer opnieuw.');
-    });
-    return false;
-  }
-  function deleteShop(id){
-    var s = store();
-    if(!s) return false;
-    s.deleteItem(id).catch(function(err){
-      console.warn('[Shop] delete failed', err);
-      if(typeof window.showToast === 'function') window.showToast('Kon item niet verwijderen. Probeer opnieuw.');
-    });
-    return false;
-  }
-  function resetShop(){
-    var s = store();
-    if(!s) return false;
-    s.clearDone().then(function(){
-      if(typeof window.showToast === 'function') window.showToast('Gekochte items geleegd ↺');
-    }).catch(function(err){
-      console.warn('[Shop] reset failed', err);
-      if(typeof window.showToast === 'function') window.showToast('Kon niet legen. Probeer opnieuw.');
-    });
-    return false;
-  }
-
-  function wireShopAddButton(){
-    var screen = document.getElementById('screen-shop');
-    if(!screen) return;
-    var header = screen.querySelector('.list-header');
-    if(!header) return;
-    var btn = header.querySelector('.add-btn');
-    if(!btn){ btn = document.createElement('button'); btn.className = 'add-btn'; header.appendChild(btn); }
-    btn.textContent = '+ Toevoegen';
-    btn.onclick = function(e){
-      if(e) e.preventDefault();
-      if(window.GroceryAddSheet && typeof window.GroceryAddSheet.open === 'function') window.GroceryAddSheet.open();
-      return false;
-    };
-  }
-
-  function boot(){
-    ensureStyles();
-    wireShopAddButton();
-    if(!storeSub && window.ShoppingListStore){
-      storeSub = window.ShoppingListStore.onChange(function(){
-        if(window._currentScreen === 'shop') renderShop();
-      });
-    }
-    // The add button and the store may attach slightly after DOMContentLoaded
-    // depending on script order; a short defensive re-check covers that
-    // without reintroducing a private dynamic script-loading chain.
-    [100, 300, 800].forEach(function(delay){
-      setTimeout(function(){
-        wireShopAddButton();
-        if(!storeSub && window.ShoppingListStore){
-          storeSub = window.ShoppingListStore.onChange(function(){
-            if(window._currentScreen === 'shop') renderShop();
-          });
-        }
-      }, delay);
-    });
-  }
-
-  window.renderShop = renderShop;
-  window.toggleShop = toggleShop;
-  window.deleteShop = deleteShop;
-  window.resetShop = resetShop;
-  window.highlightShopItem = highlightShopItem;
-  window.wireShopAddButton = wireShopAddButton;
-
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
+  function ensureListBar(){var screen=document.getElementById('screen-shop');var header=screen&&screen.querySelector('.list-header');if(!header)return null;var bar=document.getElementById('shopping-listbar');if(!bar){bar=document.createElement('div');bar.id='shopping-listbar';bar.className='shopping-listbar';header.insertAdjacentElement('afterend',bar);}return bar;}
+  function renderListSwitcher(view){var bar=ensureListBar();if(!bar||!view.key){if(bar)bar.innerHTML='';return;}bar.innerHTML='<button class="shopping-listpick" id="shopping-list-pick" aria-label="Winkellijst kiezen"><span class="sl-icon">'+listScopeIcon(view.scope)+'</span><span class="sl-copy"><b>'+esc(view.name||'Winkellijst')+'</b><small>'+(view.scope==='private'?'🔒 Privé':'👨‍👩‍👧 Gezin · live')+' · '+view.openCount+' te kopen</small></span><span class="sl-chevron">⌄</span></button>';var pick=document.getElementById('shopping-list-pick');if(pick)pick.onclick=openPicker;}
+  function openPicker(){var s=store();if(!s||!window.BottomSheet)return;var rowsHtml=s.all().map(function(row){return '<button class="shopping-list-option" data-list-key="'+esc(row.key)+'"><span>'+esc(row.list.icon||'🛒')+'</span><span style="flex:1"><b>'+esc(row.list.name)+'</b><small>'+(row.scope==='private'?'🔒 Alleen ik':'👨‍👩‍👧 Gezin · live')+'</small></span></button>';}).join('')+'<button class="shopping-list-create" id="shopping-list-create">＋ Nieuwe lijst</button>';window.BottomSheet.open({title:'Winkellijst kiezen',html:rowsHtml,onOpen:function(ctx){ctx.modal.querySelectorAll('[data-list-key]').forEach(function(btn){btn.onclick=function(){s.setActiveList(btn.getAttribute('data-list-key'));ctx.close();};});var create=ctx.modal.querySelector('#shopping-list-create');if(create)create.onclick=function(){ctx.close();setTimeout(openCreate,180);};},actions:[{label:'Sluiten'}]});}
+  function openCreate(){var s=store();if(!s||!window.BottomSheet)return;var html='<div class="fam-modal-field"><label>Naam</label><input id="sl-name" placeholder="bijv. IKEA of Weekboodschappen"></div><div class="fam-modal-field"><label>Zichtbaarheid</label><select id="sl-privacy"><option value="household">Gezin</option><option value="private">Alleen ik</option></select></div>';window.BottomSheet.open({title:'Nieuwe winkellijst',html:html,actions:[{label:'Annuleren'},{label:'Lijst maken',primary:true,onClick:function(ctx){var name=ctx.modal.querySelector('#sl-name').value.trim();if(!name)return false;s.createList({name:name,visibility:ctx.modal.querySelector('#sl-privacy').value}).catch(function(){if(typeof window.showToast==='function')window.showToast('Lijst kon niet worden aangemaakt');});}}]});}
+  function renderShop(){ensureStyles();var openEl=document.getElementById('shop-open'),doneEl=document.getElementById('shop-done');var ocnt=document.getElementById('shop-open-cnt'),dcnt=document.getElementById('shop-done-cnt');if(!openEl)return;var s=store();var view=s?s.projection():{openItems:[],doneItems:[],openCount:0,doneCount:0};if(ocnt)ocnt.textContent=view.openCount;if(dcnt)dcnt.textContent=view.doneCount;openEl.innerHTML=view.openItems.map(shopItemHTML).join('');doneEl.innerHTML=view.doneItems.map(shopItemHTML).join('');renderListSwitcher(view);if(typeof window.updateStats==='function')window.updateStats();if(window.ShoppingReceiptFinance&&typeof window.ShoppingReceiptFinance.render==='function')setTimeout(window.ShoppingReceiptFinance.render,0);}
+  function highlightShopItem(id){if(id===undefined||id===null)return;var el=document.getElementById('si-'+String(id).replace(/[^a-zA-Z0-9_-]/g,'_'));if(!el)return;el.classList.remove('shop-item-added');void el.offsetWidth;el.classList.add('shop-item-added');setTimeout(function(){el.classList.remove('shop-item-added');},850);}
+  function toggleShop(id){var s=store();if(!s)return false;s.toggleItem(id).then(function(record){if(record&&record.done){if(typeof window.awardXP==='function')window.awardXP(2,'Boodschap');if(typeof window.addActivity==='function')window.addActivity('🛒','#fff3dc',(window.myName||'Gezin')+' kocht "'+record.name+'"');}}).catch(function(err){console.warn('[Shop] toggle failed',err);if(typeof window.showToast==='function')window.showToast('Kon item niet bijwerken. Probeer opnieuw.');});return false;}
+  function deleteShop(id){var s=store();if(!s)return false;s.deleteItem(id).catch(function(err){console.warn('[Shop] delete failed',err);if(typeof window.showToast==='function')window.showToast('Kon item niet verwijderen. Probeer opnieuw.');});return false;}
+  function resetShop(){var s=store();if(!s)return false;s.clearDone().then(function(){if(typeof window.showToast==='function')window.showToast('Gekochte items geleegd ↺');}).catch(function(err){console.warn('[Shop] reset failed',err);if(typeof window.showToast==='function')window.showToast('Kon niet legen. Probeer opnieuw.');});return false;}
+  function wireShopAddButton(){var screen=document.getElementById('screen-shop');if(!screen)return;var header=screen.querySelector('.list-header');if(!header)return;var btn=header.querySelector('.add-btn');if(!btn){btn=document.createElement('button');btn.className='add-btn';header.appendChild(btn);}btn.textContent='+ Toevoegen';btn.onclick=function(e){if(e)e.preventDefault();if(window.GroceryAddSheet&&typeof window.GroceryAddSheet.open==='function')window.GroceryAddSheet.open();return false;};}
+  function boot(){ensureStyles();wireShopAddButton();if(!storeSub&&window.ShoppingListStore){storeSub=window.ShoppingListStore.onChange(function(){if(window._currentScreen==='shop')renderShop();});}[100,300,800].forEach(function(delay){setTimeout(function(){wireShopAddButton();if(!storeSub&&window.ShoppingListStore){storeSub=window.ShoppingListStore.onChange(function(){if(window._currentScreen==='shop')renderShop();});}},delay);});}
+  window.renderShop=renderShop;window.toggleShop=toggleShop;window.deleteShop=deleteShop;window.resetShop=resetShop;window.highlightShopItem=highlightShopItem;window.wireShopAddButton=wireShopAddButton;window.ShopRenderer={version:VERSION,render:renderShop};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
