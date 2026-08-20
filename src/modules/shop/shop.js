@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v0.360
+// BOODSCHAPPEN v0.361
 // Grocery add flow + shopping receipt finance bridge.
 // Colorful FamilyApp utility icons are presentation-only; legacy icon metadata
 // remains readable for compatibility with existing household grocery records.
@@ -35,7 +35,7 @@
       .then(function(){ return loadScriptOnce('modal-manager-js', 'src/core/modalManager.js', function(){ return !!window.ModalManager; }); })
       .then(function(){ return loadScriptOnce('bottom-sheet-js', 'src/core/bottomSheet.js', function(){ return !!window.BottomSheet; }); })
       .then(function(){ return loadScriptOnce('grocery-product-classifier-js', 'src/modules/shop/groceryProductClassifier.js?v=1', function(){ return !!window.GroceryProductClassifier; }); })
-      .then(function(){ return loadScriptOnce('grocery-quick-add-modal-js', 'src/core/groceryQuickAddModal.js?v=4', function(){ return !!window.GroceryQuickAddModal; }); })
+      .then(function(){ return loadScriptOnce('grocery-quick-add-modal-js', 'src/core/groceryQuickAddModal.js?v=5', function(){ return !!window.GroceryQuickAddModal && window.GroceryQuickAddModal.version === '0.432'; }); })
       .then(function(){ return loadScriptOnce('shopping-receipt-finance-js', 'src/modules/shop/shoppingReceiptFinance.js?v=3', function(){ return !!window.ShoppingReceiptFinance; }); })
       .then(function(){
         if(window.GroceryQuickAddModal && typeof window.GroceryQuickAddModal.installButton === 'function') window.GroceryQuickAddModal.installButton();
