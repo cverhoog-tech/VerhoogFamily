@@ -6,9 +6,6 @@ module.exports = async function handler(req, res) {
     const htmlPath = path.join(process.cwd(), 'index.html');
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
-    // Cache-busting for files touched by the Boodschappen rebuild. iOS Safari
-    // can otherwise keep serving a stale cached copy indefinitely after a
-    // deploy since these paths themselves don't change.
     html = html.replace('<script src="src/core/store.js"></script>','<script src="src/core/store.js?v=1"></script>');
     html = html.replace('<script src="src/core/utils.js"></script>','<script src="src/core/utils.js?v=1"></script>');
     html = html.replace('<script src="src/core/addSheet.js"></script>','<script src="src/core/addSheet.js?v=1"></script>');
@@ -22,20 +19,16 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/modules/tasks/taskDetailPopup.js?v=2"></script>','<script src="src/modules/tasks/taskCreateReadinessFix.js?v=2"></script>\n  <script src="src/modules/tasks/taskDetailPopup.js?v=3"></script>\n  <script src="src/modules/tasks/taskCompactPrimary.js?v=1"></script>\n  <script src="src/modules/tasks/taskSwapRequests.js?v=2"></script>\n  <script src="src/modules/tasks/taskCategoryIcons.js?v=5"></script>\n  <script src="src/modules/tasks/taskHeroTemplates.js?v=6"></script>\n  <script src="src/core/progressionUidBridge.js?v=2"></script>\n  <script src="src/core/legacyXpOverwriteGuard.js?v=1"></script>\n  <script src="src/modules/achievements/achievementUidBridge.js?v=1"></script>\n  <script src="src/modules/tasks/taskRewardBridge.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestActiveView.js?v=5"></script>\n  <script src="src/modules/tasks/partyQuestCompletionReward.js?v=2"></script>\n  <script src="src/modules/tasks/partyQuestInvites.js?v=4"></script>\n  <script src="src/modules/tasks/taskCompactLifecycle.js?v=1"></script>\n  <script src="src/modules/tasks/taskXpViewSync.js?v=1"></script>');
     html = html.replace('<script src="src/modules/achievements/achievements.js"></script>','<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>');
 
-    // The canonical icon system must exist before Shopping/Recipes/Meals render.
-    // Shopping loads as one deterministic static chain, in dependency order:
-    // icon system -> BottomSheet -> input parser -> classifier -> ShoppingListStore
-    // -> shop renderer -> Add Sheet -> receipt/finance bridge.
-    html = html.replace('<script src="src/modules/shop/shop.js"></script>','<script src="src/ui/icons/familyAppIconRegistry.js?v=6"></script>\n  <script src="src/ui/icons/familyAppIconRenderer.js?v=2"></script>\n  <script src="src/ui/icons/familyAppUtilityIconResolver.js?v=2"></script>\n  <script src="src/core/bottomSheet.js?v=1"></script>\n  <script src="src/modules/shop/groceryInputParser.js?v=1"></script>\n  <script src="src/modules/shop/groceryProductClassifier.js?v=2"></script>\n  <script src="src/modules/shop/shoppingListStore.js?v=1"></script>\n  <script src="src/modules/shop/shop.js?v=5"></script>\n  <script src="src/modules/shop/groceryAddSheet.js?v=2"></script>\n  <script src="src/modules/shop/shoppingReceiptFinance.js?v=2"></script>');
+    // Canonical icon + shopping chain. Product lexicon loads before both the
+    // icon resolver and classifier so existing and newly-added products share
+    // exactly the same compound-name recognition rules.
+    html = html.replace('<script src="src/modules/shop/shop.js"></script>','<script src="src/ui/icons/familyAppIconRegistry.js?v=6"></script>\n  <script src="src/ui/icons/familyAppIconRenderer.js?v=2"></script>\n  <script src="src/modules/shop/groceryProductLexicon.js?v=1"></script>\n  <script src="src/ui/icons/familyAppUtilityIconResolver.js?v=3"></script>\n  <script src="src/core/bottomSheet.js?v=1"></script>\n  <script src="src/modules/shop/groceryInputParser.js?v=1"></script>\n  <script src="src/modules/shop/groceryProductClassifier.js?v=3"></script>\n  <script src="src/modules/shop/shoppingListStore.js?v=1"></script>\n  <script src="src/modules/shop/shop.js?v=5"></script>\n  <script src="src/modules/shop/groceryAddSheet.js?v=2"></script>\n  <script src="src/modules/shop/shoppingReceiptFinance.js?v=2"></script>');
     html = html.replace('<script src="src/modules/recipes/recipes.js"></script>','<script src="src/modules/recipes/recipes.js?v=2"></script>\n  <script src="src/modules/recipes/recipePremiumCardBridge.js?v=2"></script>');
     html = html.replace('<script src="src/modules/meals/meals.js"></script>','<script src="src/modules/meals/meals.js?v=2"></script>');
 
     html = html.replace('<script src="src/modules/tasks/duoQuests.js"></script>','<script src="src/modules/tasks/duoQuests.js?v=3"></script>\n  <script src="src/core/authenticatedSessionController.js?v=1"></script>\n  <script src="src/core/householdContext.js?v=1"></script>');
     html = html.replace(/\s*window\.addEventListener\(['"]load['"],\s*function\s*\(\)\s*\{\s*setTimeout\s*\(\s*function\s*\(\)\s*\{[\s\S]*?familyapp-profile-name-v1[\s\S]*?\},\s*600\s*\);\s*\}\);?/g, '\n');
 
-    // Task swapping/help now lives on the task cards themselves. The old
-    // standalone handshake tab is therefore intentionally absent from the
-    // served task header so there is one obvious entry point for this action.
     html = html.replace(/\s*<button class="ttab ttab-trade"[^>]*onclick="openTradeSheet\(\)"[^>]*>🤝<\/button>\s*/g, '\n');
 
     html = html.replace('<script src="src/modules/feed/feed.js"></script>','<script src="src/modules/feed/feedSharedData.js?v=4"></script>\n  <script src="src/modules/feed/feed.js?v=6"></script>\n  <script src="src/modules/feed/feedInteractionController.js?v=5"></script>\n  <script src="src/platform/activity/householdActivity.js?v=5"></script>\n  <script src="src/modules/feed/feedActivityPresentation.js?v=5"></script>');
