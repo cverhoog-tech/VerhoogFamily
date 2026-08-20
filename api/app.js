@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/modules/achievements/achievements.js"></script>','<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>');
 
     // The canonical icon system must exist before Shopping/Recipes/Meals render.
-    html = html.replace('<script src="src/modules/shop/shop.js"></script>','<script src="src/ui/icons/familyAppIconRegistry.js?v=5"></script>\n  <script src="src/ui/icons/familyAppIconRenderer.js?v=2"></script>\n  <script src="src/ui/icons/familyAppUtilityIconResolver.js?v=1"></script>\n  <script src="src/modules/shop/shop.js?v=2"></script>');
+    html = html.replace('<script src="src/modules/shop/shop.js"></script>','<script src="src/ui/icons/familyAppIconRegistry.js?v=5"></script>\n  <script src="src/ui/icons/familyAppIconRenderer.js?v=2"></script>\n  <script src="src/ui/icons/familyAppUtilityIconResolver.js?v=1"></script>\n  <script src="src/modules/shop/shop.js?v=3"></script>');
     html = html.replace('<script src="src/modules/recipes/recipes.js"></script>','<script src="src/modules/recipes/recipes.js"></script>\n  <script src="src/modules/recipes/recipePremiumCardBridge.js?v=2"></script>');
     html = html.replace('<script src="src/modules/meals/meals.js"></script>','<script src="src/modules/meals/meals.js?v=2"></script>');
 
