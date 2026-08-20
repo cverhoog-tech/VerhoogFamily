@@ -1,24 +1,30 @@
-/* Person tab mobile layout correction.
-   Keep the task tabs compact under the app header and the member selector
-   entirely in normal document flow below them. */
+/* Person tab layout parity with the canonical task overview.
+   The Persoon view must not introduce its own oversized task-tab header.
+   Keep the shared task tabs in the same compact shell position/dimensions and
+   only adjust the content that belongs to the person dashboard itself. */
 
-/* The task shell had too much vertical space above the actual tab buttons on
-   mobile. Normalize the strip itself instead of compensating in the avatar rail. */
-#screen-tasks .task-tabs{
+#screen-tasks:has(.task-person-page) .task-tabs{
   display:flex;
   align-items:center;
-  min-height:64px;
-  height:auto;
+  min-height:44px;
+  height:44px;
   margin:0;
-  padding:10px 12px 8px;
+  padding:0 12px;
   position:sticky;
   top:54px;
   z-index:20;
 }
 
-#screen-tasks .task-tabs .ttab{
+#screen-tasks:has(.task-person-page) .task-tabs .ttab{
+  min-height:44px;
+  height:44px;
   margin:0;
-  align-self:stretch;
+  padding:0 4px;
+  align-self:auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1.1;
 }
 
 #screen-tasks:has(.task-person-page) #task-content{
@@ -27,16 +33,16 @@
 }
 
 #screen-tasks:has(.task-person-page) .task-person-page{
-  padding-top:12px;
+  padding-top:8px;
 }
 
 #screen-tasks:has(.task-person-page) .pp-members{
   display:flex;
   align-items:flex-start;
   gap:15px;
-  min-height:106px;
-  margin:0 0 14px;
-  padding:8px 4px 12px;
+  min-height:96px;
+  margin:0 0 12px;
+  padding:6px 4px 10px;
   overflow-x:auto;
   overflow-y:hidden;
   position:relative;
@@ -79,9 +85,9 @@
 }
 
 @media(max-width:480px){
-  #screen-tasks .task-tabs{
-    min-height:60px;
-    padding-top:8px;
-    padding-bottom:7px;
+  #screen-tasks:has(.task-person-page) .task-tabs,
+  #screen-tasks:has(.task-person-page) .task-tabs .ttab{
+    min-height:44px;
+    height:44px;
   }
 }
