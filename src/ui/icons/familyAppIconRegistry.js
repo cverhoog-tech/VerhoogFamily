@@ -1,8 +1,8 @@
 'use strict';
 (function(){
   if(window.FamilyAppIconRegistry)return;
-  var VERSION='1.0.0';
-  var SPRITE='src/ui/icons/assets/familyapp-icons.svg';
+  var VERSION='1.1.0';
+  var SPRITE='src/ui/icons/assets/familyapp-icons-premium.svg';
   var ICONS=Object.freeze({
     level:Object.freeze({symbol:'fa-level',label:'Level',tone:'purple-gold'}),
     streak:Object.freeze({symbol:'fa-streak',label:'Streak',tone:'fire'}),
