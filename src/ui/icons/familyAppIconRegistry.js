@@ -1,12 +1,13 @@
 'use strict';
 (function(){
   if(window.FamilyAppIconRegistry)return;
-  var VERSION='1.6.0';
+  var VERSION='1.7.0';
   var PROGRESSION='src/ui/icons/assets/familyapp-icons-premium.svg';
   var TASKS='src/ui/icons/assets/familyapp-task-icons-premium.svg';
   var TASKS_COMPACT='src/ui/icons/assets/familyapp-task-icons-compact.svg?v=2';
   var UTILITY='src/ui/icons/assets/familyapp-colorful-icons.svg?v=2';
   var VEGETABLES='src/ui/icons/assets/familyapp-vegetable-basket.svg?v=1';
+  var ACTIONS='src/ui/icons/assets/familyapp-content-actions.svg?v=1';
   function task(symbol,label){return Object.freeze({symbol:symbol,label:label,tone:'task',sprite:TASKS,family:'tasks',variants:Object.freeze({compact:Object.freeze({symbol:symbol+'-compact',sprite:TASKS_COMPACT})})});}
   function utility(symbol,label,tone,sprite){return Object.freeze({symbol:symbol,label:label,tone:tone||'utility',sprite:sprite||UTILITY,family:'utility'});}
   var ICONS=Object.freeze({
@@ -94,6 +95,15 @@
     utilityBus:utility('utility-bus','Bus','utility-warm'),
     utilityBike:utility('utility-bike','Fiets','utility-purple'),
     utilityBackpack:utility('utility-backpack','Rugzak','utility-purple'),
+
+    utilityClock:utility('utility-clock','Tijd','utility-indigo',ACTIONS),
+    utilityPeople:utility('utility-people','Personen','utility-purple',ACTIONS),
+    utilityGlobe:utility('utility-globe','Keuken','utility-blue',ACTIONS),
+    utilityEdit:utility('utility-edit','Bewerken','utility-purple',ACTIONS),
+    utilityTrash:utility('utility-trash','Verwijderen','utility-red',ACTIONS),
+    utilityLightbulb:utility('utility-lightbulb','Tip','utility-warm',ACTIONS),
+    utilityLink:utility('utility-link','Link','utility-blue',ACTIONS),
+    utilityPhoto:utility('utility-photo','Foto','utility-indigo',ACTIONS),
 
     utilityGeneric:utility('utility-generic','Overig','utility-purple'),
     utilityRecipe:utility('utility-recipe','Recept','utility-warm'),
