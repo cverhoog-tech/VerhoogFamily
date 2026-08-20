@@ -1,0 +1,192 @@
+'use strict';
+// ============================================================
+// GROCERY ADD SHEET v1.0.0
+// UI/controller only — owns no shopping state. Parses free text via
+// GroceryInputParser, classifies via GroceryProductClassifier, and writes
+// through ShoppingListStore, which is the only module allowed to mutate
+// shopping data.
+// ============================================================
+(function(){
+  var VERSION = '1.0.0';
+  var STYLE_ID = 'grocery-add-sheet-style';
+
+  function store(){ return window.ShoppingListStore || null; }
+  function toast(msg){ if(typeof window.showToast === 'function') window.showToast(msg); }
+  function utility(cat, icon, size){
+    var r = window.FamilyAppUtilityIconResolver;
+    return r && typeof r.render === 'function' ? r.render(cat, icon, { size: size || 'lg' }) : (icon || '📦');
+  }
+
+  function activeListLabel(){
+    var s = store();
+    var row = s && s.active ? s.active() : null;
+    return row && row.list ? row.list.name : 'Gezinslijst';
+  }
+
+  // Combines the parser (explicit amount/unit from what the user typed) with
+  // the classifier (category/icon/default amount+unit for the product name).
+  // An explicit amount/unit the user typed always wins over the classifier's
+  // default — this is the single place that rule is enforced.
+  function guess(rawText){
+    var parser = window.GroceryInputParser, classifier = window.GroceryProductClassifier;
+    var parsed = parser && typeof parser.parse === 'function' ? parser.parse(rawText) : { productName: rawText, amount: null, unit: null, explicitAmount: false, explicitUnit: false };
+    var classified = classifier && typeof classifier.classify === 'function' ? classifier.classify(parsed.productName) : { category: 'Overig', icon: '📦', qty: '1 st', confidence: 0 };
+    var defaultParts = splitDefaultQty(classified.qty);
+    return {
+      productName: parsed.productName || rawText,
+      amount: parsed.explicitAmount ? parsed.amount : defaultParts.amount,
+      unit: parsed.explicitUnit ? parsed.unit : defaultParts.unit,
+      explicitAmount: parsed.explicitAmount,
+      explicitUnit: parsed.explicitUnit,
+      category: classified.category,
+      icon: classified.icon,
+      confidence: classified.confidence
+    };
+  }
+  function splitDefaultQty(qty){
+    var raw = String(qty || '1 st').trim();
+    var m = raw.match(/^([0-9]+(?:[.,][0-9]+)?)\s*([a-zA-Z]+)?$/);
+    if(!m) return { amount: 1, unit: 'st' };
+    var unit = (window.GroceryInputParser && window.GroceryInputParser.normalizeUnit(m[2])) || 'st';
+    return { amount: parseFloat((m[1] || '1').replace(',', '.')) || 1, unit: unit };
+  }
+  function unitOptionsHtml(){
+    var units = (window.GroceryInputParser && window.GroceryInputParser.canonicalUnits) || ['st', 'g', 'kg', 'ml', 'l', 'pak', 'zak', 'fles', 'rol', 'bak'];
+    return units.map(function(u){ return '<option>' + u + '</option>'; }).join('');
+  }
+  function categoryOptionsHtml(){
+    var cats = window.GroceryProductClassifier && typeof window.GroceryProductClassifier.categories === 'function' ? window.GroceryProductClassifier.categories() : ['Groente', 'Fruit', 'Zuivel', 'Brood', 'Vlees', 'Dranken', 'Overig'];
+    return cats.map(function(c){ return '<option>' + c + '</option>'; }).join('');
+  }
+
+  function ensureStyles(){
+    if(document.getElementById(STYLE_ID)) return;
+    var s = document.createElement('style');
+    s.id = STYLE_ID;
+    s.textContent = ''
+      + '.grocery-sheet-grid{display:grid;grid-template-columns:1fr 112px;gap:10px}.grocery-qty-grid{display:grid;grid-template-columns:1fr 92px;gap:8px}'
+      + '.grocery-auto-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--c-border);border-radius:14px;background:var(--c-surface2);margin-bottom:12px}.grocery-auto-icon,.grocery-icon-preview{width:42px;height:42px;border-radius:13px;background:var(--c-surface);border:1px solid var(--c-border);display:grid;place-items:center;flex-shrink:0}.grocery-icon-preview{margin:auto}'
+      + '.grocery-auto-title{font-size:12px;font-weight:800;color:var(--c-text)}.grocery-auto-meta{font-size:11px;color:var(--c-text2);margin-top:2px}'
+      + '.grocery-sheet-error{display:none;font-size:12px;font-weight:700;color:#dc2626;background:#fee2e2;border-radius:10px;padding:8px 10px;margin-top:10px}';
+    document.head.appendChild(s);
+  }
+
+  function sheetHtml(){
+    var fallback = utility('Overig', '📦', 'lg');
+    return '<div style="font-size:11px;font-weight:800;color:var(--c-primary);margin:-4px 0 10px">Toevoegen aan · ' + activeListLabel() + '</div>'
+      + '<div class="fam-modal-field"><label>Product</label><input id="grocery-name" autocomplete="off" placeholder="bijv. 2 kg aardappelen, melk, 500g gehakt"></div>'
+      + '<div class="grocery-auto-row"><div class="grocery-auto-icon" id="grocery-auto-icon">' + fallback + '</div><div><div class="grocery-auto-title">Automatisch herkend</div><div class="grocery-auto-meta" id="grocery-auto-meta">Overig · 1 st</div></div></div>'
+      + '<div class="grocery-sheet-grid"><div class="fam-modal-field"><label>Hoeveelheid</label><div class="grocery-qty-grid"><input id="grocery-amount" inputmode="decimal" value="1"><select id="grocery-unit">' + unitOptionsHtml() + '</select></div></div><div class="fam-modal-field"><label>Icoon</label><div class="grocery-icon-preview" id="grocery-icon-preview">' + fallback + '</div></div></div>'
+      + '<div class="fam-modal-field"><label>Categorie</label><select id="grocery-cat">' + categoryOptionsHtml() + '</select></div>'
+      + '<div class="grocery-sheet-error" id="grocery-sheet-error"></div>';
+  }
+
+  function applyGuessToFields(m, refs, force){
+    if(refs.cat.dataset.manual !== '1') refs.cat.value = m.category;
+    var iconHtml = utility(m.category, m.icon, 'lg');
+    if(refs.icon) refs.icon.innerHTML = iconHtml;
+    if(refs.preview) refs.preview.innerHTML = iconHtml;
+    if(refs.meta) refs.meta.textContent = m.category + ' · ' + m.amount + ' ' + m.unit;
+    if(force || refs.amount.dataset.auto !== '0'){
+      refs.amount.value = m.amount;
+      refs.amount.dataset.auto = '1';
+    }
+    if(force || refs.unit.dataset.auto !== '0'){
+      var hasUnit = Array.prototype.some.call(refs.unit.options, function(o){ return o.value === m.unit; });
+      refs.unit.value = hasUnit ? m.unit : 'st';
+      refs.unit.dataset.auto = '1';
+    }
+  }
+
+  function attachLiveRecognition(modal){
+    var refs = {
+      name: modal.querySelector('#grocery-name'),
+      amount: modal.querySelector('#grocery-amount'),
+      unit: modal.querySelector('#grocery-unit'),
+      cat: modal.querySelector('#grocery-cat'),
+      icon: modal.querySelector('#grocery-auto-icon'),
+      preview: modal.querySelector('#grocery-icon-preview'),
+      meta: modal.querySelector('#grocery-auto-meta')
+    };
+    refs.amount.oninput = function(){ refs.amount.dataset.auto = '0'; };
+    refs.unit.onchange = function(){ refs.unit.dataset.auto = '0'; };
+    refs.cat.onchange = function(){ refs.cat.dataset.manual = '1'; };
+    refs.name.oninput = function(){
+      if(!refs.name.value.trim()) return;
+      applyGuessToFields(guess(refs.name.value), refs, false);
+    };
+    setTimeout(function(){ refs.name.focus(); }, 80);
+    return refs;
+  }
+
+  function showError(modal, message){
+    var el = modal.querySelector('#grocery-sheet-error');
+    if(!el) return;
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+  function clearError(modal){
+    var el = modal.querySelector('#grocery-sheet-error');
+    if(el){ el.style.display = 'none'; el.textContent = ''; }
+  }
+
+  function saveFromModal(modal, close){
+    clearError(modal);
+    var name = (modal.querySelector('#grocery-name').value || '').trim();
+    if(!name){ showError(modal, 'Vul eerst een productnaam in'); return false; }
+
+    var m = guess(name);
+    var amount = parseFloat((modal.querySelector('#grocery-amount').value || '').replace(',', '.')) || m.amount;
+    var unit = modal.querySelector('#grocery-unit').value || m.unit;
+    var cat = modal.querySelector('#grocery-cat').value || m.category;
+    var item = {
+      name: m.productName || name,
+      amount: amount, unit: unit, qty: amount + ' ' + unit,
+      cat: cat, photo: m.icon || null, who: window.myName || 'Gezin'
+    };
+
+    var s = store();
+    if(!s){ showError(modal, 'Boodschappenlijst is nog niet beschikbaar. Probeer opnieuw.'); return false; }
+
+    var submitBtn = modal.querySelector('.fam-modal-primary');
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Toevoegen…'; }
+
+    s.addItem(item).then(function(){
+      toast('Toegevoegd aan ' + activeListLabel() + ' ✓');
+      if(typeof window.addActivity === 'function') window.addActivity('🛒', '#fff3dc', (window.myName || 'Gezin') + ' voegde "' + item.name + '" toe');
+      if(typeof close === 'function') close();
+    }).catch(function(err){
+      console.error('[GroceryAddSheet] add failed', err);
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Toevoegen'; }
+      // Popup stays open on failure — this is the point of the strict write
+      // check in ShoppingListStore: a real error here means the item was
+      // NOT confirmed as saved, so the sheet must not close.
+      showError(modal, err && err.confirmed === false ? 'Opslaan niet gelukt (nog niet bevestigd door Firebase). Probeer opnieuw.' : 'Toevoegen mislukt. Probeer opnieuw.');
+    });
+    return false; // keepOpen handles closing on success
+  }
+
+  function open(){
+    ensureStyles();
+    if(!window.BottomSheet){ toast('Boodschappenlijst is nog niet beschikbaar'); return; }
+    window.BottomSheet.open({
+      title: 'Item toevoegen',
+      html: sheetHtml(),
+      onOpen: function(ctx){ attachLiveRecognition(ctx.modal); },
+      actions: [
+        { label: 'Annuleren' },
+        { label: 'Toevoegen', primary: true, keepOpen: true, onClick: function(ctx){ return saveFromModal(ctx.modal, ctx.close); } }
+      ]
+    });
+  }
+
+  function installButton(){
+    if(typeof window.wireShopAddButton === 'function') window.wireShopAddButton();
+  }
+
+  window.GroceryAddSheet = { version: VERSION, open: open, installButton: installButton, guess: guess };
+
+  function boot(){ installButton(); }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
