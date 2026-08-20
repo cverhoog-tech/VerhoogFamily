@@ -1,7 +1,8 @@
 'use strict';
 // ============================================================
-// TASK CATEGORY ICONS v4
+// TASK CATEGORY ICONS v5
 // Canonical premium fantasy/RPG task family for Overview + popup.
+// Compact rows use simplified artwork; detail/picker keep rich artwork.
 // Theme-safe via FamilyApp icon tokens. Visual-only: no task data changes.
 // ============================================================
 (function(){
@@ -41,11 +42,11 @@
     return'quest';
   }
 
-  function icon(cat,size){
+  function icon(cat,size,variant){
     cat=KNOWN[cat]?cat:'quest';
     var key=ICON_KEYS[cat]||ICON_KEYS.quest;
     var html=window.FamilyAppIconRenderer&&typeof FamilyAppIconRenderer.render==='function'
-      ? FamilyAppIconRenderer.render(key,{size:size||'sm',label:false,className:'fa-task-category-icon'})
+      ? FamilyAppIconRenderer.render(key,{size:size||'sm',variant:variant||'default',label:false,className:'fa-task-category-icon'})
       : '';
     return html||'<span class="fa-task-fallback" aria-hidden="true"></span>';
   }
@@ -61,9 +62,9 @@
   function patchCompact(){
     document.querySelectorAll('.tch-icon').forEach(function(node){
       var cat=compactCat(node),old=node.querySelector('[data-rpg-cat]');
-      if(old&&old.getAttribute('data-rpg-cat')===cat)return;
+      if(old&&old.getAttribute('data-rpg-cat')===cat&&old.getAttribute('data-rpg-variant')==='compact')return;
       node.setAttribute('data-task-icon-family','fantasy');
-      node.innerHTML='<span data-rpg-cat="'+cat+'" class="fa-task-icon-wrap">'+icon(cat,'sm')+'</span>';
+      node.innerHTML='<span data-rpg-cat="'+cat+'" data-rpg-variant="compact" class="fa-task-icon-wrap fa-task-icon-wrap--compact">'+icon(cat,'sm','compact')+'</span>';
     });
   }
 
@@ -96,12 +97,14 @@
     var selected=selectedCreateCat();
     var cat=selected||(createTitleCat()!=='quest'?createTitleCat():(activeDetailCat||'quest'));
     var old=inner.querySelector('[data-rpg-cat]');
-    if(!old||old.getAttribute('data-rpg-cat')!==cat){inner.innerHTML='<span data-rpg-cat="'+cat+'" class="fa-task-icon-wrap fa-task-icon-wrap--large">'+icon(cat,'lg')+'</span>';}
+    if(!old||old.getAttribute('data-rpg-cat')!==cat||old.getAttribute('data-rpg-variant')!=='rich'){
+      inner.innerHTML='<span data-rpg-cat="'+cat+'" data-rpg-variant="rich" class="fa-task-icon-wrap fa-task-icon-wrap--large">'+icon(cat,'lg','default')+'</span>';
+    }
     document.querySelectorAll('[data-cat-pick]').forEach(function(btn){
       var c=btn.getAttribute('data-cat-pick')||'quest';
       var wrap=btn.querySelector('.tdp-cat-glyph');
       if(!wrap){wrap=document.createElement('span');wrap.className='tdp-cat-glyph fa-task-picker-icon';btn.insertBefore(wrap,btn.firstChild);}
-      if(wrap.getAttribute('data-rpg-cat')!==c){wrap.setAttribute('data-rpg-cat',c);wrap.innerHTML=icon(c,'xs');}
+      if(wrap.getAttribute('data-rpg-cat')!==c){wrap.setAttribute('data-rpg-cat',c);wrap.innerHTML=icon(c,'xs','compact');}
     });
   }
 
