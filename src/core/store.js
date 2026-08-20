@@ -2,6 +2,11 @@
 // ============================================================
 // CENTRAL STATE STORE - FamilieApp v0.24
 // Single source of truth for all app data
+// NOTE: shopping-list data is intentionally NOT part of this store.
+// ShoppingListStore.js (Firebase-backed) owns it exclusively — see
+// src/modules/shop/shoppingListStore.js. AppState previously also held a
+// 'shop' array here; that was one of several competing shopping-state
+// owners and has been removed as part of the Boodschappen rebuild.
 // ============================================================
 
 var FAM_VERSION = '0.24.0';
@@ -15,8 +20,6 @@ var _defaultState = {
   taskNextId: 1,
   recur: [],
   recurNextId: 1,
-  shop: [],
-  shopNextId: 1,
   notes: [],
   noteNextId: 1,
   cal: [],
@@ -86,7 +89,6 @@ var AppState = (function() {
 
     // Migrate other legacy keys
     var legacyKeys = {
-      'fam_shop': 'shop',
       'fam_notes': 'notes',
       'fam_cal': 'cal',
     };
@@ -117,8 +119,6 @@ var AppState = (function() {
     taskNextId = _state.taskNextId;
     recurData = _state.recur;
     recurNextId = _state.recurNextId;
-    shopData = _state.shop;
-    shopNextId = _state.shopNextId || 1;
     noteData = _state.notes;
     calData = _state.cal;
   }
@@ -179,16 +179,6 @@ var AppState = (function() {
         _syncGlobals();
         _save();
       }
-    },
-
-    // ── SHOP METHODS ──
-    addShopItem: function(item) {
-      item.id = (_state.shopNextId || 1);
-      _state.shopNextId = item.id + 1;
-      _state.shop.unshift(item);
-      _syncGlobals();
-      _save();
-      return item;
     },
 
     // ── USER METHODS ──

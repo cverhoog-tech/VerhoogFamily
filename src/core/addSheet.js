@@ -77,33 +77,6 @@ var SHEETS = {
         +'</div>';
     }
   },
-  shop: {
-    title: 'Boodschap toevoegen',
-    build: function() {
-      return '<div class="field"><label>Product</label>'
-        +'<div class="ac-wrap"><input id="f1" placeholder="bijv. Melk" autocomplete="off">'
-        +'<div class="ac-dropdown" id="ac-shop" style="display:none"></div></div></div>'
-        +'<div class="field"><label>Hoeveelheid</label><input id="f2" placeholder="bijv. 2x, 500g"></div>'
-        +'<div class="field"><label>Categorie</label><select id="f3">'
-        +'<option>Groente</option><option>Fruit</option><option>Zuivel</option>'
-        +'<option>Brood</option><option>Vlees</option><option>Dranken</option><option>Overig</option>'
-        +'</select></div>'
-        +'<div class="field"><label>Foto / Emoji (optioneel)</label>'
-        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🥛\')">🥛</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🍎\')">🍎</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🍞\')">🍞</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🧀\')">🧀</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🍅\')">🍅</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🍌\')">🍌</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🥚\')">🥚</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🥩\')">🥩</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🥦\')">🥦</span>'
-        +'<span style="font-size:22px;cursor:pointer" onclick="setShopEmoji(\'🧃\')">🧃</span>'
-        +'</div>'
-        +'<input id="f4" placeholder="Of plak een foto-URL..."></div>';
-    }
-  },
   cal: { title: 'Afspraak toevoegen', build: function() { return '<div class="field"><label>Titel</label><input id="f1" placeholder="bijv. Tandarts"></div>' +'<div class="field"><label>Datum</label><input id="f2" type="date"></div>' +'<div class="field"><label>Tijd</label><input id="f3" type="time" value="10:00"></div>'; } },
   trans: { title: 'Transactie toevoegen', build: function() { return '<div class="field"><label>Omschrijving</label><input id="f1" placeholder="bijv. Albert Heijn"></div>' +'<div class="field"><label>Bedrag (€)</label><input id="f2" type="number" min="0" step="0.01" placeholder="0.00"></div>' +'<div class="field"><label>Type</label><div class="type-row">' +'<button type="button" class="type-btn active" id="trans-neg" data-tt="-1">💸 Uitgave</button>' +'<button type="button" class="type-btn" id="trans-pos" data-tt="1">💚 Inkomst</button>' +'</div></div>' +'<div class="field"><label>Categorie</label><select id="f3">' +'<option>Boodschappen</option><option>Uit eten</option><option>Transport</option>' +'<option>Gezondheid</option><option>Abonnementen</option><option>Kleding</option>' +'<option>Shopping</option><option>Overig</option></select></div>' +'<div class="field"><label>Wie</label><div class="assignee-row">' +'<button type="button" class="assignee-chip active" id="tw-shane" data-tw="Shane">Shane</button>' +'<button type="button" class="assignee-chip" id="tw-esra" data-tw="Esra">Esra</button>' +'</div></div>' +'<div class="field"><label>Datum</label><input id="f4" type="date"></div>'; } },
   extraincome: { title: '🎁 Extra inkomen toevoegen', build: function() { return '<div class="field"><label>Omschrijving</label><input id="f1" placeholder="bijv. Vakantiegeld"></div>' +'<div class="field"><label>Bedrag (€)</label><input id="f2" type="number" min="0" step="0.01" placeholder="0.00"></div>' +'<div class="field"><label>Categorie</label><select id="f3">' +'<option>Vakantiegeld</option><option>Bonus</option><option>Belasting</option>' +'<option>Freelance</option><option>Cadeau</option><option>Overig</option>' +'</select></div>' +'<div class="field"><label>Wie</label><div class="assignee-row">' +'<button type="button" class="assignee-chip active" id="ew-shane" data-ew="Shane">Shane</button>' +'<button type="button" class="assignee-chip" id="ew-esra" data-ew="Esra">Esra</button>' +'</div></div>' +'<div class="field"><label>Datum</label><input id="f4" type="date"></div>'; } },
@@ -111,6 +84,14 @@ var SHEETS = {
 };
 
 function openAdd(type) {
+  // Boodschappen has its own dedicated, state-owning UI (GroceryAddSheet ->
+  // ShoppingListStore). It is not a SHEETS[] entry: routing it through the
+  // generic raw sheet here would resurrect a second, competing add-item UI.
+  if(type === 'shop') {
+    if(window.GroceryAddSheet && typeof window.GroceryAddSheet.open === 'function') { window.GroceryAddSheet.open(); return; }
+    if(typeof window.showToast === 'function') window.showToast('Boodschappenlijst is nog niet beschikbaar. Probeer opnieuw.');
+    return;
+  }
   var sheet = SHEETS[type];
   if(!sheet) return;
   currentAddType = type;
@@ -121,7 +102,6 @@ function openAdd(type) {
   if(addSheetEl) addSheetEl.classList.toggle('sheet-task', type === 'task');
   setTimeout(function(){
     var f=document.getElementById('f1');if(f)f.focus();
-    if(currentAddType==='shop') attachShopAutocomplete();
     document.querySelectorAll('[data-tt]').forEach(function(b){ b.onclick=function(){setTransType(parseInt(b.dataset.tt));}; });
     document.querySelectorAll('[data-tw]').forEach(function(b){ b.onclick=function(){setTransWie(b.dataset.tw);}; });
     document.querySelectorAll('[data-ew]').forEach(function(b){ b.onclick=function(){setExtraWie(b.dataset.ew);}; });
@@ -150,7 +130,6 @@ function setFreq(f) { freqMode = f; ['weekly','monthly1','monthly2'].forEach(fun
 function toggleDay(btn) { btn.classList.toggle('active'); }
 function toggleMonthDay(btn) { document.querySelectorAll('#freq-month-days .day-pill').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
 function setMonthWeek(btn) { btn.closest('.type-row').querySelectorAll('.type-btn').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
-function setShopEmoji(e) { var f=document.getElementById('f4');if(f)f.value=e; }
 function setQDate(days) { var d=new Date();d.setDate(d.getDate()+days); var f=document.getElementById('f3'); if(f)f.value=d.toISOString().split('T')[0]; }
 
 function saveItem() {
@@ -169,7 +148,7 @@ function saveItem() {
       var createdTask = {id:taskNextId++,title:val,who:who,date:date,done:false,prio:prio};
       taskData.unshift(createdTask);
       persistTasksFromAddSheet('createTask', createdTask.id);
-      addActivity('📋','#f0ede8',myName+' maakte taak "'+val+'" aan');
+      addActivity('📋',' #f0ede8',myName+' maakte taak "'+val+'" aan');
       renderTasks(); updateStats();
     } else {
       var who2 = [];
@@ -193,18 +172,6 @@ function saveItem() {
       persistTasksFromAddSheet('createRecurringTask', r.id);
       addActivity('🔁','#e8f5e3',myName+' voegde vaste taak "'+val+'" toe');
       renderTasks();
-    }
-  }
-  else if(currentAddType==='shop') {
-    var qty  = (document.getElementById('f2')||{}).value||'1x';
-    var cat  = (document.getElementById('f3')||{}).value||'Overig';
-    var photo = ((document.getElementById('f4')||{}).value||'').trim()||null;
-    if(!shopNextId) shopNextId=1;
-    var newShopId = shopNextId++;
-    shopData.unshift({id:newShopId,name:val,qty:qty,cat:cat,who:myName,done:false,photo:photo});
-    AppState.save(); renderShop(); updateStats(); addActivity('🛒','#fff3dc',myName+' voegde "'+val+'" toe');
-    if(typeof window.highlightShopItem === 'function'){
-      requestAnimationFrame(function(){ window.highlightShopItem(newShopId); });
     }
   }
   else if(currentAddType==='cal') { var date2 = (document.getElementById('f2')||{}).value||''; var time  = (document.getElementById('f3')||{}).value||''; calData.push({id:calNextId++,title:val,date:date2,time:time,color:'#2d5a27'}); renderCal(); addActivity('📅','#dbeafe',myName+' voegde afspraak "'+val+'" toe'); }

@@ -1,25 +1,30 @@
 'use strict';
 // ============================================================
-// HOUSEHOLD REPOSITORY v0.331
+// HOUSEHOLD REPOSITORY v0.332
 // Legacy local persistence boundary. New shared/private data should use
 // Firebase-backed domain stores; existing consumers are migrated gradually.
+// 'groceries' was removed from this collection map as part of the
+// Boodschappen rebuild: ShoppingListStore.js (Firebase-backed) is now the
+// sole owner of shopping data. This file is otherwise kept as-is because
+// other collections below (tasks, members, etc.) may still have live
+// consumers that were out of scope for this change.
 // ============================================================
 
 (function(){
-  var VERSION = '0.331';
+  var VERSION = '0.332';
   var PREFIX = 'familyapp_repo_';
   var META_KEY = PREFIX + 'meta_v001';
   var listeners = {};
 
   var COLLECTIONS = {
     household: 'household', members: 'members', groupQuests: 'groupQuests', tasks: 'tasks', progression: 'progression',
-    activity: 'activity', abilities: 'abilities', titles: 'titles', recipes: 'recipes', meals: 'meals', groceries: 'groceries', notes: 'notes'
+    activity: 'activity', abilities: 'abilities', titles: 'titles', recipes: 'recipes', meals: 'meals', notes: 'notes'
   };
   var LEGACY_KEYS = {
     groupQuests: ['fam_group_quests_v001', 'groupQuests', 'family_group_quests'],
     members: ['familyapp_household_members_v001', 'fam_group_quest_members_v001', 'fam_members', 'family_members'],
     tasks: ['fam_tasks_v023', 'fam_tasks_v022', 'fam_tasks_v021', 'fam_tasks', 'tasks'], recipes: ['fam_recipes', 'recipes'],
-    meals: ['fam_meals', 'meals'], groceries: ['fam_groceries', 'groceries'], notes: ['fam_notes', 'notes']
+    meals: ['fam_meals', 'meals'], notes: ['fam_notes', 'notes']
   };
   function nowIso(){ return new Date().toISOString(); }
   function key(collection){ return PREFIX + collection + '_v001'; }
