@@ -1,16 +1,16 @@
 'use strict';
 (function(){
   if(window.FamilyAppUtilityIconResolver)return;
-  var VERSION='1.2.0';
+  var VERSION='1.3.0';
   var BY_CATEGORY={
-    'Zuivel':'utilityDairy','Brood':'utilityBread','Ontbijt':'utilityBread','Groente':'utilityVegetable','Fruit':'utilityFruit',
+    'Zuivel':'utilityDairy','Brood':'utilityBread','Ontbijt':'utilityBread','Groente':'utilityVegetableBasket','Fruit':'utilityFruit',
     'Vlees':'utilityMeat','Vis':'utilityFish','Vega':'utilityVegetable','Voorraad':'utilityPantry','Dranken':'utilityDrinks',
     'Snacks':'utilitySnacks','Diepvries':'utilityFrozen','Huishouden':'utilityHousehold','Verzorging':'utilityCare',
     'Baby':'utilityBaby','Huisdieren':'utilityPet','Elektronica':'utilityElectronics','Wonen':'utilityHome','Reizen':'utilityTravel','Overig':'utilityGeneric'
   };
   var BY_EMOJI={
     '🥛':'utilityDairy','🥣':'utilityDairy','🧀':'utilityCheese','🥚':'utilityEggs','🍞':'utilityBread','🥐':'utilityBread',
-    '🥔':'utilityPotato','🍅':'utilityTomato','🥦':'utilityBroccoli','🥕':'utilityVegetable','🧅':'utilityVegetable','🧄':'utilityVegetable','🥒':'utilityVegetable','🫑':'utilityVegetable','🥬':'utilityVegetable','🍄':'utilityVegetable','🌱':'utilityVegetable',
+    '🥔':'utilityPotato','🍅':'utilityTomato','🥦':'utilityBroccoli','🥕':'utilityVegetableBasket','🧅':'utilityVegetableBasket','🧄':'utilityVegetableBasket','🥒':'utilityVegetableBasket','🫑':'utilityVegetableBasket','🥬':'utilityVegetableBasket','🍄':'utilityVegetableBasket','🌱':'utilityVegetableBasket',
     '🍌':'utilityBanana','🍎':'utilityFruit','🍐':'utilityFruit','🍊':'utilityCitrus','🍇':'utilityBerries','🍓':'utilityBerries','🫐':'utilityBerries','🥝':'utilityFruit','🍋':'utilityCitrus','🍉':'utilityFruit',
     '🍗':'utilityChicken','🥩':'utilityMeat','🥓':'utilityMeat','🐟':'utilityFish','🍝':'utilityPasta','🍚':'utilityRice','🥫':'utilityPantry','🫘':'utilityPantry','🫒':'utilityPantry',
     '💧':'utilityDrinks','🥤':'utilitySoda','🧃':'utilityDrinks','☕':'utilityCoffee','🫖':'utilityTea','🍫':'utilitySnacks','🍪':'utilitySnacks','🍿':'utilitySnacks','🧊':'utilityFrozen','🍕':'utilityFrozen','🍨':'utilityFrozen',
@@ -22,7 +22,10 @@
   function keyFor(category,legacyIcon,name){
     var lex=window.FamilyAppProductLexicon;
     var hit=lex&&typeof lex.match==='function'?lex.match(name):null;
-    if(hit&&hit.iconKey)return hit.iconKey;
+    if(hit&&hit.iconKey){
+      if(hit.category==='Groente'&&hit.iconKey==='utilityVegetable')return 'utilityVegetableBasket';
+      return hit.iconKey;
+    }
     return BY_EMOJI[String(legacyIcon||'')]||BY_CATEGORY[String(category||'')]||'utilityGeneric';
   }
   function render(category,legacyIcon,opts){
