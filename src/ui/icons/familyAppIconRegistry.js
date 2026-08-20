@@ -1,13 +1,14 @@
 'use strict';
 (function(){
   if(window.FamilyAppIconRegistry)return;
-  var VERSION='1.5.0';
+  var VERSION='1.6.0';
   var PROGRESSION='src/ui/icons/assets/familyapp-icons-premium.svg';
   var TASKS='src/ui/icons/assets/familyapp-task-icons-premium.svg';
   var TASKS_COMPACT='src/ui/icons/assets/familyapp-task-icons-compact.svg?v=2';
   var UTILITY='src/ui/icons/assets/familyapp-colorful-icons.svg?v=2';
+  var VEGETABLES='src/ui/icons/assets/familyapp-vegetable-basket.svg?v=1';
   function task(symbol,label){return Object.freeze({symbol:symbol,label:label,tone:'task',sprite:TASKS,family:'tasks',variants:Object.freeze({compact:Object.freeze({symbol:symbol+'-compact',sprite:TASKS_COMPACT})})});}
-  function utility(symbol,label,tone){return Object.freeze({symbol:symbol,label:label,tone:tone||'utility',sprite:UTILITY,family:'utility'});}
+  function utility(symbol,label,tone,sprite){return Object.freeze({symbol:symbol,label:label,tone:tone||'utility',sprite:sprite||UTILITY,family:'utility'});}
   var ICONS=Object.freeze({
     level:Object.freeze({symbol:'fa-level',label:'Level',tone:'purple-gold',sprite:PROGRESSION,family:'progression'}),
     streak:Object.freeze({symbol:'fa-streak',label:'Streak',tone:'fire',sprite:PROGRESSION,family:'progression'}),
@@ -33,6 +34,7 @@
     utilityBerries:utility('utility-berries','Bessen','utility-red'),
     utilityCitrus:utility('utility-citrus','Citrus','utility-orange'),
     utilityVegetable:utility('utility-vegetable','Groente','utility-green'),
+    utilityVegetableBasket:utility('utility-vegetable-basket','Groente','utility-green',VEGETABLES),
     utilityTomato:utility('utility-tomato','Tomaat','utility-red'),
     utilityPotato:utility('utility-potato','Aardappel','utility-warm'),
     utilityBroccoli:utility('utility-broccoli','Broccoli','utility-green'),
