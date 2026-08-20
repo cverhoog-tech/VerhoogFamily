@@ -2,12 +2,12 @@
 // ============================================================
 // PERSON TAB V2
 // Clean UID-first renderer over PersonDashboardService.
-// Owns only #task-content. Shared task-shell theme is owned by the router.
+// Hero backdrop and character portrait are separate presentation layers.
 // ============================================================
 (function(){
   if(window.PersonTabV2)return;
 
-  var VERSION='2.2.0';
+  var VERSION='2.3.0';
   var target=null;
   var selectedUid=null;
   var unsubscribe=null;
@@ -25,23 +25,33 @@
   function presenceText(model){var p=model&&model.presence||{};if(p.state==='online')return p.area?'Online · '+String(p.area):'Online';if(p.state==='recent')return'Recent actief';if(p.state==='today')return'Vandaag actief';return'Offline';}
   function avatarHtml(model,large){var member=model.member||{},src=member.avatar||'',cls=large?'pt2-avatar pt2-avatar-large':'pt2-avatar';if(src)return'<img class="'+cls+'" src="'+esc(src)+'" alt="'+esc(member.displayName||'Gezinslid')+'">';return'<div class="'+cls+' pt2-avatar-fallback">'+esc(initials(member))+'</div>';}
   function memberRail(models){return'<div class="pt2-members" role="list">'+models.map(function(model){var member=model.member||{},active=model.uid===selectedUid,state=presenceState(model);return'<button type="button" class="pt2-member'+(active?' is-active':'')+'" data-pt2-member="'+esc(model.uid)+'" role="listitem"><span class="pt2-avatar-shell">'+avatarHtml(model,false)+'<i class="pt2-status-dot is-'+esc(state)+'"></i></span><span class="pt2-member-name">'+esc(member.displayName||'Gezinslid')+'</span><span class="pt2-member-state">'+esc(state==='online'?'Online':state==='recent'?'Recent':state==='today'?'Vandaag':'Offline')+'</span></button>';}).join('')+'</div>';}
-  function heroMediaHtml(member){
-    var media=member.heroMedia||{};if(!media.url)return'';
+  function heroBackdropHtml(member){
+    var media=member.heroMedia||{};
+    var url=media.url||member.avatar||'';
+    if(!url)return'';
     var x=Math.max(0,Math.min(1,Number(media.focalX)));if(!isFinite(x))x=.5;
     var y=Math.max(0,Math.min(1,Number(media.focalY)));if(!isFinite(y))y=.5;
-    var zoom=Math.max(1,Math.min(2.5,Number(media.zoom)));if(!isFinite(zoom))zoom=1;
-    var fit=media.fit==='contain'?'contain':'cover';
-    var mode=media.mode==='portrait'?'portrait':'hero';
-    var style='--pt2-focal-x:'+(x*100).toFixed(2)+'%;--pt2-focal-y:'+(y*100).toFixed(2)+'%;--pt2-media-zoom:'+zoom.toFixed(3)+';--pt2-media-fit:'+fit;
-    if(mode==='portrait'){
-      return'<div class="pt2-hero-media pt2-hero-media-portrait" style="'+style+'">'
-        +'<img class="pt2-hero-backdrop" src="'+esc(media.url)+'" alt="">'
-        +'<img class="pt2-hero-image" src="'+esc(media.url)+'" alt="">'
-      +'</div>';
-    }
-    return'<div class="pt2-hero-media pt2-hero-media-cover" style="'+style+'"><img class="pt2-hero-image" src="'+esc(media.url)+'" alt=""></div>';
+    return'<div class="pt2-hero-backdrop-layer" style="--pt2-focal-x:'+(x*100).toFixed(2)+'%;--pt2-focal-y:'+(y*100).toFixed(2)+'%"><img src="'+esc(url)+'" alt=""></div>';
   }
-  function hero(model){var member=model.member||{},progress=model.progression||{},prev=Number(progress.previousLevelXp||0),next=Number(progress.nextLevelXp||prev+1),xp=Number(progress.xp||0),pct=next>prev?clamp(((xp-prev)/(next-prev))*100):0;return'<section class="pt2-hero">'+heroMediaHtml(member)+'<div class="pt2-hero-shade"></div><div class="pt2-level"><span>LEVEL</span><strong>'+esc(progress.level||1)+'</strong></div><div class="pt2-hero-body"><div class="pt2-hero-identity">'+avatarHtml(model,true)+'<div><h2>'+esc(member.displayName||'Gezinslid')+'</h2><p>'+esc(progress.title||'Avonturier')+'</p></div></div><div class="pt2-presence is-'+esc(presenceState(model))+'"><i></i>'+esc(presenceText(model))+'</div><div class="pt2-xp-meta"><span>'+xp.toLocaleString('nl-NL')+' XP</span><span>'+next.toLocaleString('nl-NL')+' XP</span></div><div class="pt2-progress"><i style="width:'+pct+'%"></i></div></div></section>';}
+  function characterPortraitHtml(member){
+    if(member.avatar)return'<div class="pt2-hero-character"><img src="'+esc(member.avatar)+'" alt="'+esc(member.displayName||'Gezinslid')+'"></div>';
+    return'<div class="pt2-hero-character pt2-hero-character-fallback">'+esc(initials(member))+'</div>';
+  }
+  function hero(model){
+    var member=model.member||{},progress=model.progression||{},prev=Number(progress.previousLevelXp||0),next=Number(progress.nextLevelXp||prev+1),xp=Number(progress.xp||0),pct=next>prev?clamp(((xp-prev)/(next-prev))*100):0;
+    return'<section class="pt2-hero">'
+      +heroBackdropHtml(member)
+      +'<div class="pt2-hero-shade"></div>'
+      +characterPortraitHtml(member)
+      +'<div class="pt2-level"><span>LEVEL</span><strong>'+esc(progress.level||1)+'</strong></div>'
+      +'<div class="pt2-hero-body">'
+        +'<div class="pt2-hero-name"><h2>'+esc(member.displayName||'Gezinslid')+'</h2><p>'+esc(progress.title||'Avonturier')+'</p></div>'
+        +'<div class="pt2-presence is-'+esc(presenceState(model))+'"><i></i>'+esc(presenceText(model))+'</div>'
+        +'<div class="pt2-xp-meta"><span>'+xp.toLocaleString('nl-NL')+' XP</span><span>'+next.toLocaleString('nl-NL')+' XP</span></div>'
+        +'<div class="pt2-progress"><i style="width:'+pct+'%"></i></div>'
+      +'</div>'
+    +'</section>';
+  }
   function statCard(icon,value,label){return'<div class="pt2-stat"><span class="pt2-stat-icon">'+icon+'</span><strong>'+esc(value)+'</strong><small>'+esc(label)+'</small></div>';}
   function stats(model){var q=model.quests||{},g=model.progression||{};return'<section class="pt2-section"><h3>Jouw avontuur</h3><div class="pt2-stats">'+statCard('⬡',g.level||1,'Level')+statCard('🔥',g.streak==null?'—':g.streak,'Streak')+statCard('⚔️',q.completedCount||0,'Quests')+statCard('✦',q.earnedXpThisWeek||0,'XP/week')+'</div></section>';}
   function questIcon(task){var type=String(task&&task.type||'').toUpperCase();if(type.indexOf('RAID')>-1)return'⚔️';if(type.indexOf('DUNGEON')>-1)return'🏰';return'✦';}
