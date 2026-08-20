@@ -1,10 +1,10 @@
 'use strict';
 (function(){
   if(window.FamilyAppIconRegistry)return;
-  var VERSION='1.3.0';
+  var VERSION='1.3.1';
   var PROGRESSION='src/ui/icons/assets/familyapp-icons-premium.svg';
   var TASKS='src/ui/icons/assets/familyapp-task-icons-premium.svg';
-  var TASKS_COMPACT='src/ui/icons/assets/familyapp-task-icons-compact.svg';
+  var TASKS_COMPACT='src/ui/icons/assets/familyapp-task-icons-compact.svg?v=2';
   function task(symbol,label){return Object.freeze({symbol:symbol,label:label,tone:'task',sprite:TASKS,family:'tasks',variants:Object.freeze({compact:Object.freeze({symbol:symbol+'-compact',sprite:TASKS_COMPACT})})});}
   var ICONS=Object.freeze({
     level:Object.freeze({symbol:'fa-level',label:'Level',tone:'purple-gold',sprite:PROGRESSION,family:'progression'}),
