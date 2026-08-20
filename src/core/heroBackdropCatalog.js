@@ -1,22 +1,22 @@
 'use strict';
 (function(){
   if(window.HeroBackdropCatalog)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var DEFAULT_ID='fantasy-castle-night';
   var PRESETS=Object.freeze([
     Object.freeze({
       id:'fantasy-castle-night',
       label:'Fantasy Castle Night',
       category:'fantasy',
-      imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.svg',
-      thumbnailUrl:'src/assets/hero-backdrops/fantasy-castle-night.svg',
+      imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.webp',
+      thumbnailUrl:'src/assets/hero-backdrops/fantasy-castle-night.webp',
       overlayStyle:'violet-night',
-      focalX:0.58,
-      focalY:0.46,
-      sceneExposure:1.18,
-      sceneSaturation:1.12,
-      sceneContrast:1.05,
-      overlayStrength:0.44
+      focalX:0.60,
+      focalY:0.47,
+      sceneExposure:1.04,
+      sceneSaturation:1.04,
+      sceneContrast:1.03,
+      overlayStrength:0.34
     })
   ]);
   function clone(row){return row?Object.freeze(Object.assign({},row)):null;}
