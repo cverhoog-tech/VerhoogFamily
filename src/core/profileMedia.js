@@ -1,30 +1,30 @@
 'use strict';
 // ============================================================
-// FAMILYAPP PROFILE MEDIA v1
+// FAMILYAPP PROFILE MEDIA v1.1
 // Platform-neutral presentation model for profile/avatar media.
-// No DOM ownership and no Firebase ownership.
+// Distinguishes true hero media from portrait/avatar fallback media.
 // ============================================================
 (function(){
   if(window.ProfileMedia)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var DEFAULT_FOCAL={x:0.5,y:0.5};
 
-  // Canonical presentation metadata for bundled portrait assets. These values
-  // describe the subject focal point, not a screen-specific CSS offset.
+  // Canonical subject focal points for bundled portraits. These values belong
+  // to the assets and can be reused by web/native renderers.
   var BUNDLED={
-    '01-aiden.webp':{x:0.50,y:0.36},
-    '02-kai.webp':{x:0.50,y:0.34},
-    '03-liam.webp':{x:0.50,y:0.36},
-    '04-asuna.webp':{x:0.50,y:0.34},
-    '05-elizabeth.webp':{x:0.50,y:0.35},
-    '06-mila.webp':{x:0.50,y:0.35},
-    '07-dylan.webp':{x:0.50,y:0.36},
-    '08-ethan.webp':{x:0.50,y:0.35},
-    '09-noah.webp':{x:0.50,y:0.36},
-    '10-sophie.webp':{x:0.50,y:0.36},
-    '11-luna.webp':{x:0.50,y:0.35},
-    '12-zara.webp':{x:0.50,y:0.35}
+    '01-aiden.webp':{x:0.50,y:0.25},
+    '02-kai.webp':{x:0.50,y:0.27},
+    '03-liam.webp':{x:0.50,y:0.27},
+    '04-asuna.webp':{x:0.50,y:0.25},
+    '05-elizabeth.webp':{x:0.50,y:0.26},
+    '06-mila.webp':{x:0.50,y:0.26},
+    '07-dylan.webp':{x:0.50,y:0.27},
+    '08-ethan.webp':{x:0.50,y:0.26},
+    '09-noah.webp':{x:0.50,y:0.27},
+    '10-sophie.webp':{x:0.50,y:0.25},
+    '11-luna.webp':{x:0.50,y:0.26},
+    '12-zara.webp':{x:0.50,y:0.26}
   };
 
   function number(value,fallback){var n=Number(value);return isFinite(n)?n:fallback;}
@@ -40,20 +40,33 @@
     }
     return null;
   }
+  function explicitHeroUrl(identityHero,recordHero,identity,record){
+    return firstValue([identityHero,recordHero,identity,record],['url','heroImage','heroUrl'])||'';
+  }
+  function avatarUrl(identity,record,fallbackUrl){
+    return firstValue([identity,record],['avatar','avatarUrl','photoURL'])||fallbackUrl||'';
+  }
   function resolveHeroMedia(identity,record,fallbackUrl){
     identity=identity||{};record=record||{};
     var identityHero=candidate(identity,'heroMedia')||(identity.media&&candidate(identity.media,'hero'))||null;
     var recordHero=candidate(record,'heroMedia')||(record.media&&candidate(record.media,'hero'))||null;
+    var heroUrl=explicitHeroUrl(identityHero,recordHero,identity,record);
+    var fallbackAvatar=avatarUrl(identity,record,fallbackUrl);
+    var usesPortraitFallback=!heroUrl;
+    var url=heroUrl||fallbackAvatar||'';
     var rows=[identityHero,recordHero,identity,record];
-    var url=firstValue(rows,['url','heroImage','heroUrl','avatar','avatarUrl','photoURL'])||fallbackUrl||'';
     var bundled=bundledFocus(url)||DEFAULT_FOCAL;
     var focalX=firstValue(rows,['focalX','heroFocalX']);
     var focalY=firstValue(rows,['focalY','heroFocalY']);
     var zoom=firstValue(rows,['zoom','heroZoom']);
-    var fit=String(firstValue(rows,['fit','heroFit'])||'cover');
-    if(fit!=='cover'&&fit!=='contain')fit='cover';
+    var fit=String(firstValue(rows,['fit','heroFit'])||(usesPortraitFallback?'contain':'cover'));
+    if(fit!=='cover'&&fit!=='contain')fit=usesPortraitFallback?'contain':'cover';
+    var mode=String(firstValue(rows,['mode','heroMode'])||(usesPortraitFallback?'portrait':'hero'));
+    if(mode!=='portrait'&&mode!=='hero')mode=usesPortraitFallback?'portrait':'hero';
     return Object.freeze({
       url:String(url||''),
+      mode:mode,
+      source:usesPortraitFallback?'avatar-fallback':'hero',
       focalX:clamp01(focalX,bundled.x),
       focalY:clamp01(focalY,bundled.y),
       zoom:clampZoom(zoom),
@@ -65,6 +78,6 @@
     version:VERSION,
     resolveHeroMedia:resolveHeroMedia,
     bundledFocus:function(url){var row=bundledFocus(url);return row?Object.freeze(row):null;},
-    defaults:Object.freeze({focalX:DEFAULT_FOCAL.x,focalY:DEFAULT_FOCAL.y,zoom:1,fit:'cover'})
+    defaults:Object.freeze({focalX:DEFAULT_FOCAL.x,focalY:DEFAULT_FOCAL.y,zoom:1,fit:'cover',mode:'hero'})
   };
 })();
