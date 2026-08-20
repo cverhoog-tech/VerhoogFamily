@@ -2,12 +2,12 @@
 // ============================================================
 // PERSON TAB V2
 // Clean UID-first renderer over PersonDashboardService.
-// Owns only #task-content. It never styles or repositions the shared task tabs.
+// Owns only #task-content. Shared task-shell theme is owned by the router.
 // ============================================================
 (function(){
   if(window.PersonTabV2)return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var target=null;
   var selectedUid=null;
   var unsubscribe=null;
@@ -56,13 +56,21 @@
         +'</button>';
     }).join('')+'</div>';
   }
+  function heroMediaHtml(member){
+    var media=member.heroMedia||{};
+    if(!media.url)return'';
+    var x=Math.max(0,Math.min(1,Number(media.focalX)));if(!isFinite(x))x=.5;
+    var y=Math.max(0,Math.min(1,Number(media.focalY)));if(!isFinite(y))y=.5;
+    var zoom=Math.max(1,Math.min(2.5,Number(media.zoom)));if(!isFinite(zoom))zoom=1;
+    var fit=media.fit==='contain'?'contain':'cover';
+    return'<img class="pt2-hero-image" src="'+esc(media.url)+'" alt="" style="--pt2-focal-x:'+(x*100).toFixed(2)+'%;--pt2-focal-y:'+(y*100).toFixed(2)+'%;--pt2-media-zoom:'+zoom.toFixed(3)+';--pt2-media-fit:'+fit+'">';
+  }
   function hero(model){
     var member=model.member||{},progress=model.progression||{};
     var prev=Number(progress.previousLevelXp||0),next=Number(progress.nextLevelXp||prev+1),xp=Number(progress.xp||0);
     var pct=next>prev?clamp(((xp-prev)/(next-prev))*100):0;
-    var heroImage=member.heroImage||member.avatar||'';
     return'<section class="pt2-hero">'
-      +(heroImage?'<img class="pt2-hero-image" src="'+esc(heroImage)+'" alt="">':'')
+      +heroMediaHtml(member)
       +'<div class="pt2-hero-shade"></div>'
       +'<div class="pt2-level"><span>LEVEL</span><strong>'+esc(progress.level||1)+'</strong></div>'
       +'<div class="pt2-hero-body">'
@@ -73,58 +81,15 @@
       +'</div>'
     +'</section>';
   }
-  function statCard(icon,value,label){
-    return'<div class="pt2-stat"><span class="pt2-stat-icon">'+icon+'</span><strong>'+esc(value)+'</strong><small>'+esc(label)+'</small></div>';
-  }
-  function stats(model){
-    var q=model.quests||{},g=model.progression||{};
-    return'<section class="pt2-section"><h3>Jouw avontuur</h3><div class="pt2-stats">'
-      +statCard('⬡',g.level||1,'Level')
-      +statCard('🔥',g.streak==null?'—':g.streak,'Streak')
-      +statCard('⚔️',q.completedCount||0,'Quests')
-      +statCard('✦',q.earnedXpThisWeek||0,'XP/week')
-      +'</div></section>';
-  }
+  function statCard(icon,value,label){return'<div class="pt2-stat"><span class="pt2-stat-icon">'+icon+'</span><strong>'+esc(value)+'</strong><small>'+esc(label)+'</small></div>';}
+  function stats(model){var q=model.quests||{},g=model.progression||{};return'<section class="pt2-section"><h3>Jouw avontuur</h3><div class="pt2-stats">'+statCard('⬡',g.level||1,'Level')+statCard('🔥',g.streak==null?'—':g.streak,'Streak')+statCard('⚔️',q.completedCount||0,'Quests')+statCard('✦',q.earnedXpThisWeek||0,'XP/week')+'</div></section>';}
   function questIcon(task){var type=String(task&&task.type||'').toUpperCase();if(type.indexOf('RAID')>-1)return'⚔️';if(type.indexOf('DUNGEON')>-1)return'🏰';return'✦';}
-  function quests(model){
-    var list=((model.quests&&model.quests.active)||[]).slice(0,3);
-    var body=list.length?'<div class="pt2-quest-list">'+list.map(function(task){
-      return'<article class="pt2-quest"><span class="pt2-quest-icon">'+questIcon(task)+'</span><div class="pt2-quest-copy"><strong>'+esc(task.title||'Taak')+'</strong><small>'+esc(task.dueDate||'Actieve quest')+'</small></div><b>+'+esc(task.xp||0)+' XP</b></article>';
-    }).join('')+'</div>':'<div class="pt2-empty">Geen actieve quests voor dit gezinslid.</div>';
-    return'<section class="pt2-section"><div class="pt2-section-head"><h3>Actieve quests</h3><button type="button" data-pt2-tasks>Alles bekijken</button></div>'+body+'</section>';
-  }
-  function achievements(model){
-    var list=((model.achievements&&model.achievements.recent)||[]).slice(0,4);
-    if(!list.length)return'<section class="pt2-section"><h3>Achievements</h3><div class="pt2-empty">Nog geen achievements ontgrendeld.</div></section>';
-    return'<section class="pt2-section"><h3>Achievements</h3><div class="pt2-achievements">'+list.map(function(item){return'<div class="pt2-achievement"><span>🏆</span><strong>'+esc(item.id||'Achievement')+'</strong></div>';}).join('')+'</div></section>';
-  }
-  function renderModels(models){
-    if(!target)return;
-    lastModels=Array.isArray(models)?models.slice():[];
-    var selected=currentModel(lastModels);
-    if(!selected){target.innerHTML='<div class="person-tab-v2"><div class="pt2-empty pt2-empty-main">Geen gezinsleden beschikbaar.</div></div>';return;}
-    target.innerHTML='<div class="person-tab-v2">'+memberRail(lastModels)+hero(selected)+stats(selected)+quests(selected)+achievements(selected)+'</div>';
-    bindUi();
-  }
-  function bindUi(){
-    if(!target)return;
-    target.querySelectorAll('[data-pt2-member]').forEach(function(button){button.addEventListener('click',function(){selectedUid=button.getAttribute('data-pt2-member');renderModels(lastModels);});});
-    var tasks=target.querySelector('[data-pt2-tasks]');
-    if(tasks)tasks.addEventListener('click',function(){if(typeof window.setTaskTab==='function')window.setTaskTab('compact',document.querySelector('#screen-tasks .task-tabs .ttab'));});
-  }
-  function connectService(){
-    if(!window.PersonDashboardService)return false;
-    if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
-    unsubscribe=window.PersonDashboardService.subscribe(function(models){renderModels(models);});
-    return true;
-  }
-  function render(el){
-    target=el||document.getElementById('task-content');
-    if(!target)return;
-    target.innerHTML='<div class="person-tab-v2"><div class="pt2-loading">Persoonsdashboard laden…</div></div>';
-    if(connectService())return;
-    var tries=0,timer=setInterval(function(){tries++;if(connectService()||tries>=20)clearInterval(timer);},100);
-  }
+  function quests(model){var list=((model.quests&&model.quests.active)||[]).slice(0,3);var body=list.length?'<div class="pt2-quest-list">'+list.map(function(task){return'<article class="pt2-quest"><span class="pt2-quest-icon">'+questIcon(task)+'</span><div class="pt2-quest-copy"><strong>'+esc(task.title||'Taak')+'</strong><small>'+esc(task.dueDate||'Actieve quest')+'</small></div><b>+'+esc(task.xp||0)+' XP</b></article>';}).join('')+'</div>':'<div class="pt2-empty">Geen actieve quests voor dit gezinslid.</div>';return'<section class="pt2-section"><div class="pt2-section-head"><h3>Actieve quests</h3><button type="button" data-pt2-tasks>Alles bekijken</button></div>'+body+'</section>';}
+  function achievements(model){var list=((model.achievements&&model.achievements.recent)||[]).slice(0,4);if(!list.length)return'<section class="pt2-section"><h3>Achievements</h3><div class="pt2-empty">Nog geen achievements ontgrendeld.</div></section>';return'<section class="pt2-section"><h3>Achievements</h3><div class="pt2-achievements">'+list.map(function(item){return'<div class="pt2-achievement"><span>🏆</span><strong>'+esc(item.id||'Achievement')+'</strong></div>';}).join('')+'</div></section>';}
+  function renderModels(models){if(!target)return;lastModels=Array.isArray(models)?models.slice():[];var selected=currentModel(lastModels);if(!selected){target.innerHTML='<div class="person-tab-v2"><div class="pt2-empty pt2-empty-main">Geen gezinsleden beschikbaar.</div></div>';return;}target.innerHTML='<div class="person-tab-v2">'+memberRail(lastModels)+hero(selected)+stats(selected)+quests(selected)+achievements(selected)+'</div>';bindUi();}
+  function bindUi(){if(!target)return;target.querySelectorAll('[data-pt2-member]').forEach(function(button){button.addEventListener('click',function(){selectedUid=button.getAttribute('data-pt2-member');renderModels(lastModels);});});var tasks=target.querySelector('[data-pt2-tasks]');if(tasks)tasks.addEventListener('click',function(){if(typeof window.setTaskTab==='function')window.setTaskTab('compact',document.querySelector('#screen-tasks .task-tabs .ttab'));});}
+  function connectService(){if(!window.PersonDashboardService)return false;if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}unsubscribe=window.PersonDashboardService.subscribe(function(models){renderModels(models);});return true;}
+  function render(el){target=el||document.getElementById('task-content');if(!target)return;target.innerHTML='<div class="person-tab-v2"><div class="pt2-loading">Persoonsdashboard laden…</div></div>';if(connectService())return;var tries=0,timer=setInterval(function(){tries++;if(connectService()||tries>=20)clearInterval(timer);},100);}
   function destroy(){if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}target=null;lastModels=[];}
 
   window.PersonTabV2={version:VERSION,render:render,destroy:destroy,selectedUid:function(){return selectedUid;}};
