@@ -1,11 +1,12 @@
 'use strict';
 // ============================================================
-// CANONICAL TASK OVERVIEW v2.1
-// TaskCompactHome owns Overzicht. PersonTabPremium owns Persoon.
-// Legacy tasks.js person rendering is intentionally unreachable live.
+// CANONICAL TASK OVERVIEW v2.2
+// TaskCompactHome owns Overzicht. PersonTabV2 owns Persoon.
+// Legacy person renderers are intentionally unreachable live.
 // ============================================================
 (function(){
-  if(window.__taskOverviewCanonicalV21)return;
+  if(window.__taskOverviewCanonicalV22)return;
+  window.__taskOverviewCanonicalV22=true;
   window.__taskOverviewCanonicalV21=true;
   window.__taskOverviewCanonicalV2=true;
 
@@ -27,16 +28,11 @@
   }
   function renderPerson(){
     var el=taskEl();if(!el)return false;
-    if(window.PersonTabPremium&&typeof window.PersonTabPremium.render==='function'){
-      window.PersonTabPremium.render(el);return true;
-    }
-    // PersonTabPremium normally loads before this canonical router. This
-    // fallback only handles unusually slow/script-delayed clients.
-    if(typeof window.renderTasksPersoon==='function' && window.renderTasksPersoon.__canonicalPremium===true){
-      window.renderTasksPersoon(el);return true;
+    if(window.PersonTabV2&&typeof window.PersonTabV2.render==='function'){
+      window.PersonTabV2.render(el);return true;
     }
     el.innerHTML='<div style="padding:30px 16px;text-align:center;color:var(--c-text2);font-size:13px">Persoonsdashboard laden…</div>';
-    var tries=0,timer=setInterval(function(){tries++;if(window.PersonTabPremium&&typeof window.PersonTabPremium.render==='function'){clearInterval(timer);window.PersonTabPremium.render(el);}else if(tries>30){clearInterval(timer);}},100);
+    var tries=0,timer=setInterval(function(){tries++;if(window.PersonTabV2&&typeof window.PersonTabV2.render==='function'){clearInterval(timer);window.PersonTabV2.render(el);}else if(tries>30){clearInterval(timer);}},100);
     return true;
   }
 
