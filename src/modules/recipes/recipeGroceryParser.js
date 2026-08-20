@@ -1,6 +1,6 @@
 'use strict';
 // RECIPE GROCERY PARSER v0.283
-// Pure ingredient parsing utility. Mutations are owned by ShoppingListService.
+// Pure ingredient parsing utility. Shopping mutations are owned by ShoppingListStore.
 
 (function(){
   function norm(v){ return String(v || '').toLowerCase().trim().replace(/\s+/g, ' '); }
