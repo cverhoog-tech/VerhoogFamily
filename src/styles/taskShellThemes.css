@@ -9,6 +9,7 @@
   --task-shell-tabs-text:var(--c-text2);
   --task-shell-tabs-active:var(--c-primary);
   --task-shell-tabs-border:var(--c-border);
+  --task-shell-content-bg:var(--c-bg);
 }
 
 body[data-task-view="person"]{
@@ -19,6 +20,7 @@ body[data-task-view="person"]{
   --task-shell-tabs-text:rgba(242,239,255,.56);
   --task-shell-tabs-active:#c4b5fd;
   --task-shell-tabs-border:rgba(255,255,255,.08);
+  --task-shell-content-bg:#0b0d18;
 }
 
 body[data-task-view] .app-header{
@@ -29,16 +31,20 @@ body[data-task-view] .header-title{color:var(--task-shell-header-text)}
 body[data-task-view] .header-notif{color:var(--task-shell-header-muted)}
 body[data-task-view] .app-header svg{stroke:var(--task-shell-header-muted)}
 
+body[data-task-view] #screen-tasks{
+  background:var(--task-shell-content-bg);
+}
 body[data-task-view] #screen-tasks .task-tabs{
   background:var(--task-shell-tabs-bg);
   border-bottom-color:var(--task-shell-tabs-border);
 }
-body[data-task-view] #screen-tasks .task-tabs .ttab{
-  color:var(--task-shell-tabs-text);
-}
+body[data-task-view] #screen-tasks .task-tabs .ttab{color:var(--task-shell-tabs-text)}
 body[data-task-view] #screen-tasks .task-tabs .ttab.active{
   color:var(--task-shell-tabs-active);
   border-bottom-color:var(--task-shell-tabs-active);
+}
+body[data-task-view] #screen-tasks #task-content{
+  background:var(--task-shell-content-bg);
 }
 body[data-task-view="person"] #screen-tasks .task-tabs .ttab-trade{
   background:#111421;
