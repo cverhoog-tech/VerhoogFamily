@@ -23,9 +23,10 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 - [x] App Store / Google Play store-readiness architecture added to roadmap.
 - [x] STEP 0 baseline verification gate completed.
 - [x] STEP 1 authenticated session / startup ownership completed.
-- [-] STEP 2 HouseholdContext / UID identity / lifecycle started.
+- [x] STEP 2 HouseholdContext / UID identity / lifecycle completed.
+- [-] STEP 2A platform-admin identity foundation started.
 
-**Current functional work:** STEP 2 — HouseholdContext / UID identity / lifecycle.
+**Current functional work:** STEP 2A — Platform admin identity foundation.
 
 ## Phase checklist
 
@@ -56,16 +57,19 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 
 ### STEP 2 — HouseholdContext / UID identity / lifecycle
 
-- [-] Canonical read-only household/session context.
-- [ ] UID + householdId context contract.
-- [ ] capture/isCurrent stale-context protection.
-- [ ] explicit subscription/unsubscribe contract.
-- [ ] household-switch rebind contract.
-- [ ] tests/preview/device gate accepted.
+- [x] Canonical read-only household/session context implemented.
+- [x] UID + householdId context contract implemented.
+- [x] capture/isCurrent stale-context protection implemented.
+- [x] explicit subscription/unsubscribe contract implemented.
+- [x] household-switch rebind contract implemented.
+- [x] identity bridge migrated away from polling/focus lifecycle ownership.
+- [x] lifecycle/adoption regression tests added and accepted.
+- [x] Vercel preview READY/success.
+- [x] iPhone Safari device gate accepted by Shane on 2026-08-20.
 
 ### STEP 2A — Platform admin identity foundation
 
-- [ ] Platform role separated from household role.
+- [-] Platform role separated from household role.
 - [ ] Platform admin tied to protected authenticated UID authority.
 - [ ] No client self-elevation.
 - [ ] Dedicated platform permission contract.
@@ -239,6 +243,7 @@ For each functional phase verify:
 - 2026-08-20 — Living progress tracker added.
 - 2026-08-20 — STEP 0 baseline accepted on real iPhone Safari by Shane: branch preview behaves correctly with no freeze/white-screen/WebKit crash. STEP 1 opened.
 - 2026-08-20 — STEP 1 canonical session/startup ownership accepted on real iPhone Safari by Shane. One auth-state owner, one reveal path, command-only Google auth, generation protection, recoverable errors and exact session cleanup validated. STEP 2 opened.
+- 2026-08-20 — STEP 2 HouseholdContext/UID/lifecycle accepted on real iPhone Safari by Shane. Canonical read-only context, uid+householdId contract, stale-context protection, explicit subscriptions and event-driven household rebind validated. STEP 2A opened.
 
 ## Maintenance rule
 
