@@ -1,7 +1,7 @@
 'use strict';
 (function(){
   if(window.HeroBackdropResolver)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   function clamp01(value,fallback){var n=Number(value);if(!isFinite(n))n=fallback;return Math.max(0,Math.min(1,n));}
   function clamp(value,min,max,fallback){var n=Number(value);if(!isFinite(n))n=fallback;return Math.max(min,Math.min(max,n));}
   function normalizeBase(row,source){return Object.freeze({
@@ -20,7 +20,7 @@
   });}
   function resolve(config){
     var catalog=window.HeroBackdropCatalog;
-    if(!catalog)return normalizeBase({type:'preset',presetId:'fantasy-castle-night',imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.svg',thumbnailUrl:'src/assets/hero-backdrops/fantasy-castle-night.svg',overlayStyle:'violet-night',focalX:.58,focalY:.46,sceneExposure:1.18,sceneSaturation:1.12,sceneContrast:1.05,overlayStrength:.44},'default');
+    if(!catalog)return normalizeBase({type:'preset',presetId:'fantasy-castle-night',imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.webp',thumbnailUrl:'src/assets/hero-backdrops/fantasy-castle-night.webp',overlayStyle:'violet-night',focalX:.60,focalY:.47,sceneExposure:1.04,sceneSaturation:1.04,sceneContrast:1.03,overlayStrength:.34},'default');
     config=config&&typeof config==='object'?config:{};
     if(config.type==='upload'&&config.imageUrl){
       return normalizeBase({
