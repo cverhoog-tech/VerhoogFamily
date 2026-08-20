@@ -1,0 +1,47 @@
+/* TASK SHELL VIEW THEMES
+   The canonical task router owns body[data-task-view].
+   Subviews consume shell tokens; they do not patch header DOM or positioning. */
+:root{
+  --task-shell-header-bg:var(--c-header-bg);
+  --task-shell-header-text:var(--c-text);
+  --task-shell-header-muted:var(--c-text2);
+  --task-shell-tabs-bg:var(--c-surface);
+  --task-shell-tabs-text:var(--c-text2);
+  --task-shell-tabs-active:var(--c-primary);
+  --task-shell-tabs-border:var(--c-border);
+}
+
+body[data-task-view="person"]{
+  --task-shell-header-bg:#0b0d18;
+  --task-shell-header-text:#f7f5ff;
+  --task-shell-header-muted:rgba(242,239,255,.62);
+  --task-shell-tabs-bg:#0b0d18;
+  --task-shell-tabs-text:rgba(242,239,255,.56);
+  --task-shell-tabs-active:#c4b5fd;
+  --task-shell-tabs-border:rgba(255,255,255,.08);
+}
+
+body[data-task-view] .app-header{
+  background:var(--task-shell-header-bg);
+  border-bottom-color:var(--task-shell-tabs-border);
+}
+body[data-task-view] .header-title{color:var(--task-shell-header-text)}
+body[data-task-view] .header-notif{color:var(--task-shell-header-muted)}
+body[data-task-view] .app-header svg{stroke:var(--task-shell-header-muted)}
+
+body[data-task-view] #screen-tasks .task-tabs{
+  background:var(--task-shell-tabs-bg);
+  border-bottom-color:var(--task-shell-tabs-border);
+}
+body[data-task-view] #screen-tasks .task-tabs .ttab{
+  color:var(--task-shell-tabs-text);
+}
+body[data-task-view] #screen-tasks .task-tabs .ttab.active{
+  color:var(--task-shell-tabs-active);
+  border-bottom-color:var(--task-shell-tabs-active);
+}
+body[data-task-view="person"] #screen-tasks .task-tabs .ttab-trade{
+  background:#111421;
+  color:#f4d37e;
+  border-left-color:rgba(255,255,255,.08);
+}
