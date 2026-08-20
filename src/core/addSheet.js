@@ -148,7 +148,7 @@ function saveItem() {
       var createdTask = {id:taskNextId++,title:val,who:who,date:date,done:false,prio:prio};
       taskData.unshift(createdTask);
       persistTasksFromAddSheet('createTask', createdTask.id);
-      addActivity('📋',' #f0ede8',myName+' maakte taak "'+val+'" aan');
+      addActivity('📋','#f0ede8',myName+' maakte taak "'+val+'" aan');
       renderTasks(); updateStats();
     } else {
       var who2 = [];
