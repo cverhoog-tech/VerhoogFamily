@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// BOODSCHAPPEN v1.0.1
+// BOODSCHAPPEN v1.0.2
 // Render-only. ShoppingListStore.js is the sole owner of shopping state,
 // mutations and realtime subscriptions — this file never mutates shopping
 // data directly and holds no shopping array of its own.
 // ============================================================
 (function(){
-  var VERSION = '1.0.1';
+  var VERSION = '1.0.2';
   var storeSub = null;
 
   function esc(v){ var d = document.createElement('div'); d.textContent = String(v == null ? '' : v); return d.innerHTML; }
@@ -38,10 +38,20 @@
       ? '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9" rx="2"></rect><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"></path></svg>'
       : '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 20v-1a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v1"></path><circle cx="12" cy="7" r="3.2"></circle><path d="M21 20v-1a3.5 3.5 0 0 0-2.5-3.36"></path><path d="M15.5 3.13a3.2 3.2 0 0 1 0 6.2"></path></svg>';
   }
+  function productHit(item){
+    var lex=window.FamilyAppProductLexicon;
+    return lex&&typeof lex.match==='function'?lex.match(item&&item.name):null;
+  }
+  function displayCategory(item){
+    var stored=String(item&&item.cat||'').trim();
+    if(stored&&stored!=='Overig')return stored;
+    var hit=productHit(item);
+    return hit&&hit.category?hit.category:(stored||'Overig');
+  }
   function shopUtilityIcon(item){
     var legacy = (item && item.photo && !String(item.photo).startsWith('http')) ? String(item.photo) : '📦';
     var resolver = window.FamilyAppUtilityIconResolver;
-    var html = resolver && typeof resolver.render === 'function' ? resolver.render(item && item.cat, legacy, { size: 'lg', name: item && item.name }) : '';
+    var html = resolver && typeof resolver.render === 'function' ? resolver.render(displayCategory(item), legacy, { size: 'lg', name: item && item.name }) : '';
     return html || legacy;
   }
   function shopItemHTML(item){
@@ -51,7 +61,7 @@
     return '<div class="shop-item" id="si-' + domKey + '">'
       + '<div class="check-circle ' + (item.done ? 'done' : '') + '" id="shck-' + domKey + '" onclick="toggleShop(\'' + attrKey + '\')" style="cursor:pointer;flex-shrink:0">' + (item.done ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</div>'
       + '<div class="shop-emoji fa-utility-item">' + shopUtilityIcon(item) + '</div>'
-      + '<div class="shop-info"><div class="shop-name' + (item.done ? ' done' : '') + '">' + esc(item.name) + '</div><div class="shop-qty">' + esc(item.qty) + ' · ' + esc(item.cat) + '</div></div>'
+      + '<div class="shop-info"><div class="shop-name' + (item.done ? ' done' : '') + '">' + esc(item.name) + '</div><div class="shop-qty">' + esc(item.qty) + ' · ' + esc(displayCategory(item)) + '</div></div>'
       + '<button class="shop-del" onclick="deleteShop(\'' + attrKey + '\')">✕</button></div>';
   }
   function ensureListBar(){var screen=document.getElementById('screen-shop');var header=screen&&screen.querySelector('.list-header');if(!header)return null;var bar=document.getElementById('shopping-listbar');if(!bar){bar=document.createElement('div');bar.id='shopping-listbar';bar.className='shopping-listbar';header.insertAdjacentElement('afterend',bar);}return bar;}
