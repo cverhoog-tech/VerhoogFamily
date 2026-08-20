@@ -22,9 +22,10 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 - [x] Platform-admin/privacy architecture added to roadmap.
 - [x] App Store / Google Play store-readiness architecture added to roadmap.
 - [x] STEP 0 baseline verification gate completed.
-- [-] STEP 1 implementation started.
+- [x] STEP 1 authenticated session / startup ownership completed.
+- [-] STEP 2 HouseholdContext / UID identity / lifecycle started.
 
-**Current functional work:** STEP 1 — Authenticated session / startup ownership.
+**Current functional work:** STEP 2 — HouseholdContext / UID identity / lifecycle.
 
 ## Phase checklist
 
@@ -39,23 +40,23 @@ A functional phase is only marked `[x]` after its required static/tests/preview/
 
 ### STEP 1 — Authenticated session / startup ownership
 
-- [-] Canonical authenticated-session controller implementation in progress.
-- [ ] Exactly one auth-state startup owner.
-- [ ] Exactly one app-reveal owner.
-- [ ] Legacy localStorage 600ms app reveal retired.
-- [ ] Google sign-in reduced to auth command/adapter.
-- [ ] Existing-session bootstrap uses same canonical path.
-- [ ] Stale async bootstrap protected by generation/session token.
-- [ ] Recoverable startup failure UI implemented.
-- [ ] Cleanup registry implemented.
-- [ ] No startup polling/lifecycle competing owners.
-- [ ] Contract/regression tests passed.
-- [ ] Vercel preview passed.
-- [ ] iPhone Safari device gate accepted.
+- [x] Canonical authenticated-session controller implemented.
+- [x] Exactly one auth-state startup owner.
+- [x] Exactly one app-reveal owner.
+- [x] Legacy localStorage 600ms app reveal retired from served runtime.
+- [x] Google sign-in reduced to auth command/adapter.
+- [x] Existing-session bootstrap uses same canonical path.
+- [x] Stale async bootstrap protected by generation/session token.
+- [x] Recoverable startup failure UI implemented.
+- [x] Cleanup registry implemented and legacy household listener bound to exact cleanup.
+- [x] No startup polling/lifecycle competing owners in migrated paths.
+- [x] Ownership contract/regression test added and accepted.
+- [x] Vercel preview READY/success.
+- [x] iPhone Safari device gate accepted by Shane on 2026-08-20.
 
 ### STEP 2 — HouseholdContext / UID identity / lifecycle
 
-- [ ] Canonical read-only household/session context.
+- [-] Canonical read-only household/session context.
 - [ ] UID + householdId context contract.
 - [ ] capture/isCurrent stale-context protection.
 - [ ] explicit subscription/unsubscribe contract.
@@ -237,6 +238,7 @@ For each functional phase verify:
 - 2026-08-19 — Store-readiness made a cross-cutting architecture principle and STEP 17 added.
 - 2026-08-20 — Living progress tracker added.
 - 2026-08-20 — STEP 0 baseline accepted on real iPhone Safari by Shane: branch preview behaves correctly with no freeze/white-screen/WebKit crash. STEP 1 opened.
+- 2026-08-20 — STEP 1 canonical session/startup ownership accepted on real iPhone Safari by Shane. One auth-state owner, one reveal path, command-only Google auth, generation protection, recoverable errors and exact session cleanup validated. STEP 2 opened.
 
 ## Maintenance rule
 
