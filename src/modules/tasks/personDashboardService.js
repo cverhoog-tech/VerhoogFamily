@@ -1,13 +1,14 @@
 'use strict';
 // ============================================================
-// PERSON DASHBOARD SERVICE v1.0.0
+// PERSON DASHBOARD SERVICE v1.1.0
 // Read-only, UID-first view model for the Taken > Persoon tab.
-// No member data is inferred from display names.
+// Avatar presentation resolves through the canonical identity bridge so the
+// dashboard never depends on legacy DOM patching or display-name inference.
 // ============================================================
 (function(){
   if(window.PersonDashboardService) return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var subscribers=[];
   var cachedIdentity=[];
   var cachedMemberRecords={};
@@ -16,8 +17,8 @@
   var booted=false;
 
   function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
-  function hid(){return window.fbFamilyId||null;}
-  function currentUid(){try{if(window.HouseholdIdentityFirebaseBridge&&HouseholdIdentityFirebaseBridge.getCurrentUid)return HouseholdIdentityFirebaseBridge.getCurrentUid();var u=window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser);return u&&u.uid||null;}catch(e){return null;}}
+  function hid(){try{var c=window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;return c&&c.householdId||window.fbFamilyId||null;}catch(e){return window.fbFamilyId||null;}}
+  function currentUid(){try{var c=window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;if(c&&c.uid)return c.uid;if(window.HouseholdIdentityFirebaseBridge&&HouseholdIdentityFirebaseBridge.getCurrentUid)return HouseholdIdentityFirebaseBridge.getCurrentUid();var u=window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser);return u&&u.uid||null;}catch(e){return null;}}
   function now(){return Date.now();}
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function number(v,fallback){var n=Number(v);return isFinite(n)?n:(fallback||0);}
@@ -38,9 +39,16 @@
   function achievementsFromRecord(record){var rows=(record&&record.achievements)||{};return Object.keys(rows).map(function(id){var a=rows[id];if(!a||a.unlocked===false)return null;return{id:id,unlocked:true,unlockedAt:number(a.unlockedAt,0)||null,xp:number(a.xp,0)};}).filter(Boolean).sort(function(a,b){return number(b.unlockedAt,0)-number(a.unlockedAt,0);});}
   function presenceState(member){var online=member&&member.online===true,ts=number(member&&member.lastSeen,0),age=ts?Math.max(0,now()-ts):Infinity;if(online)return'online';if(age<=15*60*1000)return'recent';if(age<=24*60*60*1000)return'today';return'offline';}
   function identityMembers(){try{if(window.HouseholdIdentityFirebaseBridge&&typeof HouseholdIdentityFirebaseBridge.getMembers==='function'){var list=HouseholdIdentityFirebaseBridge.getMembers();if(Array.isArray(list)&&list.length)cachedIdentity=list.slice();}}catch(e){}return cachedIdentity.slice();}
-  function buildMember(identity){var uid=String(identity.uid||identity.id||''),record=cachedMemberRecords[uid]||{},xp=number(record.xp,0),level=levelFromXp(xp),bounds=xpBounds(level),all=taskRows(),mine=all.filter(function(t){return isParticipant(t,uid);}),active=mine.filter(function(t){return !isDone(t);}).map(function(t){return normalizeTask(t,uid);}),completed=mine.filter(isDone),recentCompleted=completed.filter(function(t){return number(t.completedAt,0)>=weekAgo();}),earned=completed.filter(function(t){return String(t.completedByUid||'')===uid&&number(t.completedAt,0)>=weekAgo();}).reduce(function(sum,t){return sum+rewardXp(t);},0),achievements=achievementsFromRecord(record);return{
+  function resolvedAvatar(identity,record){
+    var direct=(identity&&(identity.avatar||identity.avatarUrl||identity.photoURL))||(record&&(record.avatar||record.avatarUrl||record.photoURL))||'';
+    if(direct)return direct;
+    try{if(window.FamilyAvatarIdentity&&typeof FamilyAvatarIdentity.resolveAvatar==='function'){var fromBridge=FamilyAvatarIdentity.resolveAvatar(identity||record);if(fromBridge)return fromBridge;}}catch(e){}
+    try{if(window.HouseholdIdentity&&typeof HouseholdIdentity.resolveAvatar==='function'){var fromIdentity=HouseholdIdentity.resolveAvatar(identity&&identity.uid||identity&&identity.id||identity&&identity.displayName||'');if(fromIdentity)return fromIdentity;}}catch(e){}
+    return'';
+  }
+  function buildMember(identity){var uid=String(identity.uid||identity.id||''),record=cachedMemberRecords[uid]||{},avatar=resolvedAvatar(identity,record),xp=number(record.xp,0),level=levelFromXp(xp),bounds=xpBounds(level),all=taskRows(),mine=all.filter(function(t){return isParticipant(t,uid);}),active=mine.filter(function(t){return !isDone(t);}).map(function(t){return normalizeTask(t,uid);}),completed=mine.filter(isDone),recentCompleted=completed.filter(function(t){return number(t.completedAt,0)>=weekAgo();}),earned=completed.filter(function(t){return String(t.completedByUid||'')===uid&&number(t.completedAt,0)>=weekAgo();}).reduce(function(sum,t){return sum+rewardXp(t);},0),achievements=achievementsFromRecord(record);return{
       uid:uid,
-      member:{uid:uid,displayName:identity.displayName||identity.name||record.name||'Gezinslid',avatar:identity.avatar||record.avatar||'',initials:identity.initials||'',role:identity.role||record.role||'member',isCurrent:uid===String(currentUid()||'')},
+      member:{uid:uid,displayName:identity.displayName||identity.name||record.name||'Gezinslid',avatar:avatar,heroImage:avatar,initials:identity.initials||'',role:identity.role||record.role||'member',isCurrent:uid===String(currentUid()||'')},
       presence:{state:presenceState(identity),online:identity.online===true,lastSeen:identity.lastSeen||null,area:identity.area||''},
       progression:{xp:xp,level:level,title:titleFor(level),previousLevelXp:bounds.previous,nextLevelXp:bounds.next,streak:null},
       quests:{active:active,activeCount:active.length,completedCount:completed.length,completedThisWeek:recentCompleted.length,earnedXpThisWeek:earned},
@@ -67,10 +75,10 @@
   };
 
   window.addEventListener('familyapp:household-identity-synced',function(e){var members=e&&e.detail&&e.detail.members;if(Array.isArray(members))cachedIdentity=members.slice();boot();});
-  window.addEventListener('familyapp:household-changed',function(){detachMembers();booted=false;boot();});
+  window.addEventListener('familyapp:household-context-changed',function(){detachMembers();booted=false;boot();});
   window.addEventListener('familyapp:tasks-updated',notify);
   window.addEventListener('familyapp:progression-updated',notify);
-  window.addEventListener('familyapp:auth-ready',boot);
-  window.addEventListener('load',boot,{once:true});
-  if(document.readyState==='complete')boot();else Promise.resolve().then(boot);
+  window.addEventListener('familyapp:avatar-updated',notify);
+  if(window.HouseholdContext&&typeof HouseholdContext.subscribe==='function')HouseholdContext.subscribe(function(){if(booted)refresh();});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
