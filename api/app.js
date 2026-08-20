@@ -6,6 +6,15 @@ module.exports = async function handler(req, res) {
     const htmlPath = path.join(process.cwd(), 'index.html');
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
+    // Cache-busting for files touched by the Boodschappen rebuild. iOS Safari
+    // can otherwise keep serving a stale cached copy indefinitely after a
+    // deploy since these paths themselves don't change.
+    html = html.replace('<script src="src/core/store.js"></script>','<script src="src/core/store.js?v=1"></script>');
+    html = html.replace('<script src="src/core/utils.js"></script>','<script src="src/core/utils.js?v=1"></script>');
+    html = html.replace('<script src="src/core/addSheet.js"></script>','<script src="src/core/addSheet.js?v=1"></script>');
+    html = html.replace('<script src="src/core/search.js"></script>','<script src="src/core/search.js?v=1"></script>');
+    html = html.replace('<script src="src/core/swipe.js"></script>','<script src="src/core/swipe.js?v=1"></script>');
+
     html = html.replace(/\s*<script src="src\/modules\/tasks\/quest-overlay\.js"><\/script>\s*/g, '\n');
     html = html.replace('<script src="src/modules/tasks/taskSharedData.js"></script>','<script src="src/modules/tasks/taskSharedData.js?v=2"></script>');
     html = html.replace('<script src="src/modules/tasks/personTabPremium.js"></script>','<script src="src/core/profileMedia.js?v=3"></script>\n  <script src="src/core/heroBackdropCatalog.js?v=4"></script>\n  <script src="src/core/heroBackdropResolver.js?v=3"></script>\n  <script src="src/modules/profile/memberHeroBackgroundRepository.js?v=1"></script>\n  <script src="src/modules/profile/personHeroBackgroundPicker.js?v=1"></script>\n  <script src="src/modules/tasks/personDashboardService.js?v=5"></script>\n  <script src="src/modules/tasks/personTabV2.js?v=8"></script>');
@@ -14,8 +23,17 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/modules/achievements/achievements.js"></script>','<script src="src/modules/achievements/achievements.js?v=2"></script>\n  <script src="src/modules/achievements/achievementsPremium.js?v=1"></script>');
 
     // The canonical icon system must exist before Shopping/Recipes/Meals render.
-    html = html.replace('<script src="src/modules/shop/shop.js"></script>','<script src="src/ui/icons/familyAppIconRegistry.js?v=5"></script>\n  <script src="src/ui/icons/familyAppIconRenderer.js?v=2"></script>\n  <script src="src/ui/icons/familyAppUtilityIconResolver.js?v=1"></script>\n  <script src="src/modules/shop/shop.js?v=3"></script>');
-    html = html.replace('<script src="src/modules/recipes/recipes.js"></script>','<script src="src/modules/recipes/recipes.js"></script>\n  <script src="src/modules/recipes/recipePremiumCardBridge.js?v=2"></script>');
+    // Shopping loads as one deterministic static chain, in dependency order:
+    // icon system -> BottomSheet (shared sheet UI, previously only ever loaded
+    // dynamically) -> input parser -> classifier -> ShoppingListStore (the sole
+    // canonical shopping-state owner: subscriptions + mutations + migration) ->
+    // shop.js (render-only) -> Add Sheet (UI/controller, no state of its own) ->
+    // receipt/finance bridge. This replaces both shop.js's old private dynamic
+    // script-loading chain and the separate shoppingLists.js/shoppingSyncDiagnostics.js
+    // chain that used to be injected from swipe.js — there is now exactly one
+    // shopping owner and one deterministic load order for it.
+    html = html.replace('<script src="src/modules/shop/shop.js"></script>','<script src="src/ui/icons/familyAppIconRegistry.js?v=5"></script>\n  <script src="src/ui/icons/familyAppIconRenderer.js?v=2"></script>\n  <script src="src/ui/icons/familyAppUtilityIconResolver.js?v=1"></script>\n  <script src="src/core/bottomSheet.js?v=1"></script>\n  <script src="src/modules/shop/groceryInputParser.js?v=1"></script>\n  <script src="src/modules/shop/groceryProductClassifier.js?v=1"></script>\n  <script src="src/modules/shop/shoppingListStore.js?v=1"></script>\n  <script src="src/modules/shop/shop.js?v=4"></script>\n  <script src="src/modules/shop/groceryAddSheet.js?v=1"></script>\n  <script src="src/modules/shop/shoppingReceiptFinance.js?v=2"></script>');
+    html = html.replace('<script src="src/modules/recipes/recipes.js"></script>','<script src="src/modules/recipes/recipes.js?v=2"></script>\n  <script src="src/modules/recipes/recipePremiumCardBridge.js?v=2"></script>');
     html = html.replace('<script src="src/modules/meals/meals.js"></script>','<script src="src/modules/meals/meals.js?v=2"></script>');
 
     html = html.replace('<script src="src/modules/tasks/duoQuests.js"></script>','<script src="src/modules/tasks/duoQuests.js?v=3"></script>\n  <script src="src/core/authenticatedSessionController.js?v=1"></script>\n  <script src="src/core/householdContext.js?v=1"></script>');
