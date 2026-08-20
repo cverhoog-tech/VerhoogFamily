@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// PERSON DASHBOARD SERVICE v1.1.0
+// PERSON DASHBOARD SERVICE v1.2.0
 // Read-only, UID-first view model for the Taken > Persoon tab.
-// Avatar presentation resolves through the canonical identity bridge so the
-// dashboard never depends on legacy DOM patching or display-name inference.
+// Avatar and hero presentation are resolved through canonical identity/media
+// layers so renderers never need name heuristics or screen-specific crop rules.
 // ============================================================
 (function(){
   if(window.PersonDashboardService) return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var subscribers=[];
   var cachedIdentity=[];
   var cachedMemberRecords={};
@@ -46,9 +46,13 @@
     try{if(window.HouseholdIdentity&&typeof HouseholdIdentity.resolveAvatar==='function'){var fromIdentity=HouseholdIdentity.resolveAvatar(identity&&identity.uid||identity&&identity.id||identity&&identity.displayName||'');if(fromIdentity)return fromIdentity;}}catch(e){}
     return'';
   }
-  function buildMember(identity){var uid=String(identity.uid||identity.id||''),record=cachedMemberRecords[uid]||{},avatar=resolvedAvatar(identity,record),xp=number(record.xp,0),level=levelFromXp(xp),bounds=xpBounds(level),all=taskRows(),mine=all.filter(function(t){return isParticipant(t,uid);}),active=mine.filter(function(t){return !isDone(t);}).map(function(t){return normalizeTask(t,uid);}),completed=mine.filter(isDone),recentCompleted=completed.filter(function(t){return number(t.completedAt,0)>=weekAgo();}),earned=completed.filter(function(t){return String(t.completedByUid||'')===uid&&number(t.completedAt,0)>=weekAgo();}).reduce(function(sum,t){return sum+rewardXp(t);},0),achievements=achievementsFromRecord(record);return{
+  function resolvedHeroMedia(identity,record,avatar){
+    try{if(window.ProfileMedia&&typeof ProfileMedia.resolveHeroMedia==='function')return ProfileMedia.resolveHeroMedia(identity,record,avatar);}catch(e){}
+    return Object.freeze({url:String(avatar||''),focalX:0.5,focalY:0.5,zoom:1,fit:'cover'});
+  }
+  function buildMember(identity){var uid=String(identity.uid||identity.id||''),record=cachedMemberRecords[uid]||{},avatar=resolvedAvatar(identity,record),heroMedia=resolvedHeroMedia(identity,record,avatar),xp=number(record.xp,0),level=levelFromXp(xp),bounds=xpBounds(level),all=taskRows(),mine=all.filter(function(t){return isParticipant(t,uid);}),active=mine.filter(function(t){return !isDone(t);}).map(function(t){return normalizeTask(t,uid);}),completed=mine.filter(isDone),recentCompleted=completed.filter(function(t){return number(t.completedAt,0)>=weekAgo();}),earned=completed.filter(function(t){return String(t.completedByUid||'')===uid&&number(t.completedAt,0)>=weekAgo();}).reduce(function(sum,t){return sum+rewardXp(t);},0),achievements=achievementsFromRecord(record);return{
       uid:uid,
-      member:{uid:uid,displayName:identity.displayName||identity.name||record.name||'Gezinslid',avatar:avatar,heroImage:avatar,initials:identity.initials||'',role:identity.role||record.role||'member',isCurrent:uid===String(currentUid()||'')},
+      member:{uid:uid,displayName:identity.displayName||identity.name||record.name||'Gezinslid',avatar:avatar,heroMedia:heroMedia,initials:identity.initials||'',role:identity.role||record.role||'member',isCurrent:uid===String(currentUid()||'')},
       presence:{state:presenceState(identity),online:identity.online===true,lastSeen:identity.lastSeen||null,area:identity.area||''},
       progression:{xp:xp,level:level,title:titleFor(level),previousLevelXp:bounds.previous,nextLevelXp:bounds.next,streak:null},
       quests:{active:active,activeCount:active.length,completedCount:completed.length,completedThisWeek:recentCompleted.length,earnedXpThisWeek:earned},
@@ -71,7 +75,7 @@
     get:get,
     subscribe:subscribe,
     refresh:refresh,
-    status:function(){return{version:VERSION,householdId:hid(),currentUid:currentUid(),memberCount:identityMembers().length,memberRecords:Object.keys(cachedMemberRecords||{}).length,attached:!!memberRef,capabilities:{streak:false,activity:false}};}
+    status:function(){return{version:VERSION,householdId:hid(),currentUid:currentUid(),memberCount:identityMembers().length,memberRecords:Object.keys(cachedMemberRecords||{}).length,attached:!!memberRef,capabilities:{streak:false,activity:false,heroMedia:!!window.ProfileMedia}};}
   };
 
   window.addEventListener('familyapp:household-identity-synced',function(e){var members=e&&e.detail&&e.detail.members;if(Array.isArray(members))cachedIdentity=members.slice();boot();});
