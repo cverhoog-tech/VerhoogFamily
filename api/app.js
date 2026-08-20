@@ -16,6 +16,11 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/modules/tasks/duoQuests.js"></script>','<script src="src/modules/tasks/duoQuests.js?v=3"></script>\n  <script src="src/core/authenticatedSessionController.js?v=1"></script>\n  <script src="src/core/householdContext.js?v=1"></script>');
     html = html.replace(/\s*window\.addEventListener\(['"]load['"],\s*function\s*\(\)\s*\{\s*setTimeout\s*\(\s*function\s*\(\)\s*\{[\s\S]*?familyapp-profile-name-v1[\s\S]*?\},\s*600\s*\);\s*\}\);?/g, '\n');
 
+    // Task swapping/help now lives on the task cards themselves. The old
+    // standalone handshake tab is therefore intentionally absent from the
+    // served task header so there is one obvious entry point for this action.
+    html = html.replace(/\s*<button class="ttab ttab-trade"[^>]*onclick="openTradeSheet\(\)"[^>]*>🤝<\/button>\s*/g, '\n');
+
     html = html.replace('<script src="src/modules/feed/feed.js"></script>','<script src="src/modules/feed/feedSharedData.js?v=4"></script>\n  <script src="src/modules/feed/feed.js?v=6"></script>\n  <script src="src/modules/feed/feedInteractionController.js?v=5"></script>\n  <script src="src/platform/activity/householdActivity.js?v=5"></script>\n  <script src="src/modules/feed/feedActivityPresentation.js?v=5"></script>');
 
     html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=7"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script>\n<script src="src/app/freshStartReset.js?v=1"></script></body>');
