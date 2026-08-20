@@ -112,7 +112,7 @@ function spawnParticles(el) {
 function updateStats() {
   var el;
   el=document.getElementById('stat-tasks');if(el)el.textContent=taskData.filter(function(t){return !t.done;}).length;
-  el=document.getElementById('stat-shop');if(el)el.textContent=shopData.filter(function(i){return !i.done;}).length;
+  el=document.getElementById('stat-shop');if(el)el.textContent=(window.ShoppingListStore&&typeof window.ShoppingListStore.projection==='function')?window.ShoppingListStore.projection().openCount:0;
   el=document.getElementById('stat-feed');if(el)el.textContent=feedData.length;
 }
 
