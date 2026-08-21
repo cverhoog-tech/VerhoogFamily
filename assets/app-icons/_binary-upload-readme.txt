@@ -1,1 +1,0 @@
-Binary icon assets are added through Git blob/tree commits; this marker is temporary.
