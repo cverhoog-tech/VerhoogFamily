@@ -1,24 +1,13 @@
 'use strict';
 (function(){
   if(window.FamilyAppIconRegistry)return;
-  var VERSION='1.7.0';
+  var VERSION='1.7.1';
   var PROGRESSION='src/ui/icons/assets/familyapp-icons-premium.svg';
   var TASKS='src/ui/icons/assets/familyapp-task-icons-premium.svg';
   var TASKS_COMPACT='src/ui/icons/assets/familyapp-task-icons-compact.svg?v=2';
   var UTILITY='src/ui/icons/assets/familyapp-colorful-icons.svg?v=2';
   var VEGETABLES='src/ui/icons/assets/familyapp-vegetable-basket.svg?v=1';
-  var ACTIONS='src/ui/icons/assets/familyapp-content-actions.svg?v=1';
-  // visualScale normalizes perceived icon size across familyapp-task-icons-premium.svg.
-  // Every symbol in that file shares one <symbol viewBox="0 0 32 32">, but the actual
-  // artwork inside occupies a different footprint per icon (e.g. task-quest's crossed
-  // blades reach a 24x24 bounding box, task-groceries' basket only reaches 20x18).
-  // These factors are measured, not eyeballed: max(bbox width,height) per symbol,
-  // normalized against the largest footprint in the set (task-quest, scale 1) so no
-  // icon is ever scaled down from its authored size. familyAppIconRenderer.js applies
-  // this as a native SVG <use transform="translate(16,16) scale(s) translate(-16,-16)">
-  // around the shared viewBox center -- one formula for every icon, not a per-icon
-  // pixel offset. Recompute with the same method (bounding-box measurement of each
-  // <symbol>'s paths/circles) if the artwork in the sprite ever changes.
+  var ACTIONS='src/ui/icons/assets/familyapp-content-actions.svg?v=2';
   function task(symbol,label,visualScale){return Object.freeze({symbol:symbol,label:label,tone:'task',sprite:TASKS,family:'tasks',visualScale:visualScale||1,variants:Object.freeze({compact:Object.freeze({symbol:symbol+'-compact',sprite:TASKS_COMPACT})})});}
   function utility(symbol,label,tone,sprite){return Object.freeze({symbol:symbol,label:label,tone:tone||'utility',sprite:sprite||UTILITY,family:'utility'});}
   var ICONS=Object.freeze({
@@ -115,6 +104,8 @@
     utilityLightbulb:utility('utility-lightbulb','Tip','utility-warm',ACTIONS),
     utilityLink:utility('utility-link','Link','utility-blue',ACTIONS),
     utilityPhoto:utility('utility-photo','Foto','utility-indigo',ACTIONS),
+    utilityBookmark:utility('utility-bookmark','Opslaan','utility-purple',ACTIONS),
+    utilityCheck:utility('utility-check','Bevestigen','utility-purple',ACTIONS),
 
     utilityGeneric:utility('utility-generic','Overig','utility-purple'),
     utilityRecipe:utility('utility-recipe','Recept','utility-warm'),
