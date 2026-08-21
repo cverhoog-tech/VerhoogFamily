@@ -99,11 +99,14 @@
   transform-origin:center center !important;
 }
 
+/* Keep the artwork comfortably large at 100% while still leaving breathing
+   room inside the premium badge at 120%. 76% gives a much better visual fill
+   than the previous 62% without touching the badge itself. */
 #tdp-overlay .tdp-icon-inner .fa-task-category-icon{
   box-sizing:border-box;
   display:block !important;
-  width:62% !important;
-  height:62% !important;
+  width:76% !important;
+  height:76% !important;
   max-width:none !important;
   max-height:none !important;
   margin:0 !important;
@@ -116,8 +119,8 @@
   flex:none !important;
 }
 
-/* Subtask glyphs: normalize both the current inline SVG and future registry
-   icons so the symbol stays optically centred at every FamilyUiScale value. */
+/* Subtask glyphs: make the small symbol readable at 100% and keep it centered.
+   The global body zoom will still scale the complete control at 90/110/120%. */
 #tdp-overlay .tdp-sub-icon,
 #tdp-overlay .tdp-sub-glyph,
 #tdp-overlay .tdp-sub [class*="sub-icon"]{
@@ -135,6 +138,8 @@
 #tdp-overlay .tdp-sub-icon .fa-icon,
 #tdp-overlay .tdp-sub-glyph .fa-icon{
   display:block !important;
+  width:16px !important;
+  height:16px !important;
   margin:0 !important;
   position:static !important;
   inset:auto !important;
