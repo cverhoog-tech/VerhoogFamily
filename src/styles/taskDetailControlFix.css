@@ -143,6 +143,40 @@
   flex:none !important;
 }
 
+/* STEP 2B.6C — keep the accepted detail/create layout, but normalize delete
+   controls that now use the canonical FamilyApp utility-trash artwork. */
+#tdp-overlay .tdp-sub-accent[data-sub-del]{
+  box-sizing:border-box;
+  display:grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+  padding:0 !important;
+}
+
+#tdp-overlay .tdp-sub-accent[data-sub-del] .fa-task-delete-icon{
+  display:block !important;
+  width:16px !important;
+  height:16px !important;
+  margin:0 !important;
+  transform:none !important;
+}
+
+#tdp-overlay .fa-task-control-slot{
+  display:inline-grid;
+  place-items:center;
+  line-height:0;
+  margin-right:6px;
+  flex:none;
+}
+
+#tdp-overlay .fa-task-control-slot .fa-task-delete-icon{
+  display:block !important;
+  width:16px !important;
+  height:16px !important;
+  margin:0 !important;
+  transform:none !important;
+}
+
 /* Help crest and square utility controls use the same centering contract. */
 #tdp-overlay .tdp-help-icon,
 #tdp-overlay .tdp-help-crest,
