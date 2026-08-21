@@ -90,30 +90,39 @@
     });
   }
 
-  function patchDeleteControls(){
-    if(!window.FamilyAppIconRenderer||typeof FamilyAppIconRenderer.render!=='function')return;
-    var trash=FamilyAppIconRenderer.render('utilityTrash',{size:'sm',label:false,className:'fa-task-delete-icon'});
-    if(!trash)return;
-    document.querySelectorAll('#tdp-overlay .tdp-sub-accent[data-sub-del]').forEach(function(btn){
-      if(btn.getAttribute('data-rpg-control-icon')==='trash')return;
-      btn.innerHTML=trash;
-      btn.setAttribute('data-rpg-control-icon','trash');
-      btn.setAttribute('aria-label','Subtaak verwijderen');
-      btn.setAttribute('title','Subtaak verwijderen');
-    });
-    var deleteTask=document.querySelector('#tdp-overlay .tdp-del-btn');
-    if(deleteTask&&deleteTask.getAttribute('data-rpg-control-icon')!=='trash'){
-      var old=deleteTask.querySelector('svg');
-      if(old){
-        var slot=document.createElement('span');
-        slot.className='fa-task-control-slot';
-        slot.innerHTML=trash;
-        old.replaceWith(slot);
-      }else{
-        deleteTask.insertAdjacentHTML('afterbegin','<span class="fa-task-control-slot">'+trash+'</span>');
-      }
-      deleteTask.setAttribute('data-rpg-control-icon','trash');
+  function renderUtility(key,size,className){
+    if(!window.FamilyAppIconRenderer||typeof FamilyAppIconRenderer.render!=='function')return'';
+    return FamilyAppIconRenderer.render(key,{size:size||'sm',label:false,className:className||'fa-task-control-icon'});
+  }
+
+  function replaceLeadingSvg(control,key,className){
+    if(!control)return;
+    var marker=String(key||'');
+    if(control.getAttribute('data-rpg-control-icon')===marker)return;
+    var html=renderUtility(key,'sm',className||'fa-task-control-icon');
+    if(!html)return;
+    var old=control.querySelector('svg');
+    var slot=document.createElement('span');
+    slot.className='fa-task-control-slot';
+    slot.innerHTML=html;
+    if(old)old.replaceWith(slot);else control.insertAdjacentElement('afterbegin',slot);
+    control.setAttribute('data-rpg-control-icon',marker);
+  }
+
+  function patchActionControls(){
+    var trash=renderUtility('utilityTrash','sm','fa-task-delete-icon');
+    if(trash){
+      document.querySelectorAll('#tdp-overlay .tdp-sub-accent[data-sub-del]').forEach(function(btn){
+        if(btn.getAttribute('data-rpg-control-icon')==='utilityTrash')return;
+        btn.innerHTML=trash;
+        btn.setAttribute('data-rpg-control-icon','utilityTrash');
+        btn.setAttribute('aria-label','Subtaak verwijderen');
+        btn.setAttribute('title','Subtaak verwijderen');
+      });
+      replaceLeadingSvg(document.querySelector('#tdp-overlay .tdp-del-btn'),'utilityTrash','fa-task-delete-icon');
     }
+    replaceLeadingSvg(document.querySelector('#tdp-overlay #tdp-bookmark-btn'),'utilityBookmark','fa-task-bookmark-icon');
+    replaceLeadingSvg(document.querySelector('#tdp-overlay #tdp-create-save-btn'),'utilityCheck','fa-task-confirm-icon');
   }
 
   function patchPopup(){
@@ -132,7 +141,7 @@
       if(!wrap){wrap=document.createElement('span');wrap.className='tdp-cat-glyph fa-task-picker-icon';btn.insertBefore(wrap,btn.firstChild);}
       if(wrap.getAttribute('data-rpg-cat')!==c){wrap.setAttribute('data-rpg-cat',c);wrap.innerHTML=icon(c,'xs','compact');}
     });
-    patchDeleteControls();
+    patchActionControls();
   }
 
   function hookPopup(){
@@ -147,9 +156,9 @@
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')patchPopup();});
   var observer=new MutationObserver(function(){patchCompact();if(document.querySelector('.tdp-overlay'))patchPopup();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
-  hookPopup();patchCompact();patchDeleteControls();
+  hookPopup();patchCompact();patchActionControls();
   var tries=0,timer=setInterval(function(){tries++;if(hookPopup()||tries>40)clearInterval(timer);},100);
 
-  window.TaskCategoryIcons={iconKeys:ICON_KEYS,detect:detect,infer:infer,icon:icon,patchCompact:patchCompact,patchPopup:patchPopup,patchDeleteControls:patchDeleteControls};
+  window.TaskCategoryIcons={iconKeys:ICON_KEYS,detect:detect,infer:infer,icon:icon,patchCompact:patchCompact,patchPopup:patchPopup,patchActionControls:patchActionControls};
   window.dispatchEvent(new CustomEvent('familyapp:task-icons-ready'));
 })();
