@@ -8,7 +8,18 @@
   var UTILITY='src/ui/icons/assets/familyapp-colorful-icons.svg?v=2';
   var VEGETABLES='src/ui/icons/assets/familyapp-vegetable-basket.svg?v=1';
   var ACTIONS='src/ui/icons/assets/familyapp-content-actions.svg?v=1';
-  function task(symbol,label){return Object.freeze({symbol:symbol,label:label,tone:'task',sprite:TASKS,family:'tasks',variants:Object.freeze({compact:Object.freeze({symbol:symbol+'-compact',sprite:TASKS_COMPACT})})});}
+  // visualScale normalizes perceived icon size across familyapp-task-icons-premium.svg.
+  // Every symbol in that file shares one <symbol viewBox="0 0 32 32">, but the actual
+  // artwork inside occupies a different footprint per icon (e.g. task-quest's crossed
+  // blades reach a 24x24 bounding box, task-groceries' basket only reaches 20x18).
+  // These factors are measured, not eyeballed: max(bbox width,height) per symbol,
+  // normalized against the largest footprint in the set (task-quest, scale 1) so no
+  // icon is ever scaled down from its authored size. familyAppIconRenderer.js applies
+  // this as a native SVG <use transform="translate(16,16) scale(s) translate(-16,-16)">
+  // around the shared viewBox center -- one formula for every icon, not a per-icon
+  // pixel offset. Recompute with the same method (bounding-box measurement of each
+  // <symbol>'s paths/circles) if the artwork in the sprite ever changes.
+  function task(symbol,label,visualScale){return Object.freeze({symbol:symbol,label:label,tone:'task',sprite:TASKS,family:'tasks',visualScale:visualScale||1,variants:Object.freeze({compact:Object.freeze({symbol:symbol+'-compact',sprite:TASKS_COMPACT})})});}
   function utility(symbol,label,tone,sprite){return Object.freeze({symbol:symbol,label:label,tone:tone||'utility',sprite:sprite||UTILITY,family:'utility'});}
   var ICONS=Object.freeze({
     level:Object.freeze({symbol:'fa-level',label:'Level',tone:'purple-gold',sprite:PROGRESSION,family:'progression'}),
@@ -21,7 +32,7 @@
     achievement:Object.freeze({symbol:'fa-achievement',label:'Achievement',tone:'gold',sprite:PROGRESSION,family:'progression'}),
     title:Object.freeze({symbol:'fa-title',label:'Titel',tone:'purple-gold',sprite:PROGRESSION,family:'progression'}),
 
-    taskQuest:task('task-quest','Quest'),taskLaundry:task('task-laundry','Was'),taskCleaning:task('task-cleaning','Schoonmaken'),taskKitchen:task('task-kitchen','Keuken'),taskGroceries:task('task-groceries','Boodschappen'),taskPantry:task('task-pantry','Voorraad'),taskAdmin:task('task-admin','Administratie'),taskFamily:task('task-family','Gezin'),taskGarden:task('task-garden','Tuin'),taskTravel:task('task-travel','Reizen'),taskDropoff:task('task-dropoff','Wegbrengen'),taskPickup:task('task-pickup','Ophalen'),
+    taskQuest:task('task-quest','Quest',1),taskLaundry:task('task-laundry','Was',1.04),taskCleaning:task('task-cleaning','Schoonmaken',1.02),taskKitchen:task('task-kitchen','Keuken',1.09),taskGroceries:task('task-groceries','Boodschappen',1.2),taskPantry:task('task-pantry','Voorraad',1.2),taskAdmin:task('task-admin','Administratie',1.14),taskFamily:task('task-family','Gezin',1.14),taskGarden:task('task-garden','Tuin',1.17),taskTravel:task('task-travel','Reizen',1.09),taskDropoff:task('task-dropoff','Wegbrengen',1.04),taskPickup:task('task-pickup','Ophalen',1.04),
 
     utilityShopping:utility('utility-shopping','Boodschappen','utility-purple'),
     utilityCart:utility('utility-cart','Winkelwagen','utility-purple'),
