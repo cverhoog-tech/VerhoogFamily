@@ -4,27 +4,27 @@
   "short_name": "FamilieApp",
   "description": "Jouw gezins-app voor taken, planning, boodschappen en familie-avonturen.",
   "lang": "nl",
-  "start_url": "/",
+  "start_url": "/?brand=v4",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f6faf7",
-  "theme_color": "#199653",
+  "background_color": "#140724",
+  "theme_color": "#140724",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/assets/app-icons/icon-192-v3.png",
+      "src": "https://res.cloudinary.com/rg86slp4/image/upload/v1787324391/familyapp/brand/v4/icon-master.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/app-icons/icon-512-v3.png",
+      "src": "https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/app-icons/icon-512-maskable-v3.png",
+      "src": "https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:140724,f_png/v1787324391/familyapp/brand/v4/icon-master.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
