@@ -8,7 +8,7 @@ Primary branch: `agent/household-rebuild-v2`
 
 ### STEP 2B.5 — Brand / app identity
 
-Status: **mostly complete; one asset handoff still open**
+Status: **mostly complete; final approved crest asset handoff still open**
 
 Done:
 - Canonical app-icon runtime exists.
@@ -45,7 +45,7 @@ Decision:
 
 ### STEP 2B.6C — Detail / create action controls
 
-Status: **code pass complete; final live smoke test pending**
+Status: **accepted / complete**
 
 Done:
 - Subtask delete uses canonical `utilityTrash` artwork.
@@ -56,15 +56,24 @@ Done:
 - Remaining inline popup icons were audited.
 - Existing close, metadata calendar, recurrence shield, completion/reopen/lock, help crest and collaboration link are deliberate exceptions because changing them would alter previously approved presentation.
 - Regression contract test added in `scripts/test-task-detail-icon-contract.js` to protect these accepted boundaries.
+- Live iPhone Safari smoke test accepted by product owner on 2026-08-22.
 
-Pending acceptance:
-- Quick iPhone Safari smoke test of detail + create popup at 100% and 120%.
+### STEP 2B.6 — Overall
+
+Status: **accepted / frozen baseline**
+
+Decision:
+- 2B.6A accepted.
+- 2B.6B closed with the previous presentation intentionally preserved.
+- 2B.6C accepted after live iPhone testing.
+- Treat the current task icon/detail/create presentation as a frozen baseline for the next rebuild phase.
 
 ## Next work
 
-1. Finish STEP 2B.6C acceptance with the live smoke test.
-2. Swap in the final approved STEP 2B.5 crest asset and re-test Add to Home Screen.
-3. Start the next rebuild step only after 2B.5 / 2B.6 are frozen as accepted baselines.
+1. Finish STEP 2B.5 by swapping in the final approved white/gold crest with the single purple diamond.
+2. Re-test login branding and Add to Home Screen on iPhone Safari.
+3. Freeze STEP 2B.5 together with the already frozen STEP 2B.6 baseline.
+4. Start the next household-rebuild step from that accepted baseline.
 
 ## Guardrails
 
