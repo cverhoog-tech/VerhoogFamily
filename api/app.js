@@ -6,23 +6,30 @@ module.exports = async function handler(req, res) {
     const htmlPath = path.join(process.cwd(), 'index.html');
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
-    // STEP 2B.5 — one visible brand identity across browser, iOS/PWA and login.
-    // The manifest already references the v3 192/512/maskable assets; keep all
-    // browser/PWA entry points on that same asset family so identity cannot drift.
+    // STEP 2B.5 — one canonical visual identity across login, browser and PWA.
+    // Versioned Cloudinary delivery prevents Safari from reusing the old green
+    // house asset while keeping every generated size derived from one source.
+    const brandIcon192 = 'https://res.cloudinary.com/rg86slp4/image/upload/v1787324391/familyapp/brand/v4/icon-master.png';
+    const brandIcon180 = 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png';
+    const brandIcon32 = 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_32,h_32,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png';
+
+    html = html.replace('<meta name="apple-mobile-web-app-status-bar-style" content="default">','<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">');
+    html = html.replace('<meta name="theme-color" content="#f6faf7">','<meta name="theme-color" content="#140724">');
     html = html.replace(
       '<link rel="manifest" href="manifest.json">',
-      '<link rel="manifest" href="manifest.json?v=3">\n' +
+      '<link rel="manifest" href="manifest.json?v=4">\n' +
       '  <meta name="application-name" content="FamilieApp">\n' +
       '  <meta name="apple-mobile-web-app-title" content="FamilieApp">\n' +
-      '  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">\n' +
-      '  <link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icons/icon-192-v3.png?v=3">\n' +
-      '  <link rel="shortcut icon" type="image/png" href="/assets/app-icons/icon-192-v3.png?v=3">'
+      '  <link rel="apple-touch-icon" sizes="180x180" href="' + brandIcon180 + '">\n' +
+      '  <link rel="icon" type="image/png" sizes="32x32" href="' + brandIcon32 + '">\n' +
+      '  <link rel="icon" type="image/png" sizes="192x192" href="' + brandIcon192 + '">\n' +
+      '  <link rel="shortcut icon" type="image/png" href="' + brandIcon32 + '">'
     );
     html = html.replace(
       '<div id="login-logo" style="font-size:56px;margin-bottom:8px">🏠</div>',
-      '<div id="login-logo" style="width:92px;height:92px;margin-bottom:12px;display:flex;align-items:center;justify-content:center">' +
-      '<img src="/assets/app-icons/icon-192-v3.png?v=3" width="92" height="92" alt="FamilieApp" ' +
-      'style="display:block;width:92px;height:92px;object-fit:cover;border-radius:24px;box-shadow:0 12px 28px rgba(25,150,83,.16)">' +
+      '<div id="login-logo" style="width:108px;height:108px;margin-bottom:14px;display:flex;align-items:center;justify-content:center">' +
+      '<img src="' + brandIcon192 + '" width="108" height="108" alt="FamilieApp" ' +
+      'style="display:block;width:108px;height:108px;object-fit:cover;border-radius:28px;box-shadow:0 16px 36px rgba(72,22,126,.24),0 4px 14px rgba(214,160,55,.18)">' +
       '</div>'
     );
 
