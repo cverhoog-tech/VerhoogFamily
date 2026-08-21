@@ -90,6 +90,32 @@
     });
   }
 
+  function patchDeleteControls(){
+    if(!window.FamilyAppIconRenderer||typeof FamilyAppIconRenderer.render!=='function')return;
+    var trash=FamilyAppIconRenderer.render('utilityTrash',{size:'sm',label:false,className:'fa-task-delete-icon'});
+    if(!trash)return;
+    document.querySelectorAll('#tdp-overlay .tdp-sub-accent[data-sub-del]').forEach(function(btn){
+      if(btn.getAttribute('data-rpg-control-icon')==='trash')return;
+      btn.innerHTML=trash;
+      btn.setAttribute('data-rpg-control-icon','trash');
+      btn.setAttribute('aria-label','Subtaak verwijderen');
+      btn.setAttribute('title','Subtaak verwijderen');
+    });
+    var deleteTask=document.querySelector('#tdp-overlay .tdp-del-btn');
+    if(deleteTask&&deleteTask.getAttribute('data-rpg-control-icon')!=='trash'){
+      var old=deleteTask.querySelector('svg');
+      if(old){
+        var slot=document.createElement('span');
+        slot.className='fa-task-control-slot';
+        slot.innerHTML=trash;
+        old.replaceWith(slot);
+      }else{
+        deleteTask.insertAdjacentHTML('afterbegin','<span class="fa-task-control-slot">'+trash+'</span>');
+      }
+      deleteTask.setAttribute('data-rpg-control-icon','trash');
+    }
+  }
+
   function patchPopup(){
     var inner=document.querySelector('.tdp-icon-inner');
     if(!inner)return;
@@ -106,6 +132,7 @@
       if(!wrap){wrap=document.createElement('span');wrap.className='tdp-cat-glyph fa-task-picker-icon';btn.insertBefore(wrap,btn.firstChild);}
       if(wrap.getAttribute('data-rpg-cat')!==c){wrap.setAttribute('data-rpg-cat',c);wrap.innerHTML=icon(c,'xs','compact');}
     });
+    patchDeleteControls();
   }
 
   function hookPopup(){
@@ -120,9 +147,9 @@
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')patchPopup();});
   var observer=new MutationObserver(function(){patchCompact();if(document.querySelector('.tdp-overlay'))patchPopup();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
-  hookPopup();patchCompact();
+  hookPopup();patchCompact();patchDeleteControls();
   var tries=0,timer=setInterval(function(){tries++;if(hookPopup()||tries>40)clearInterval(timer);},100);
 
-  window.TaskCategoryIcons={iconKeys:ICON_KEYS,detect:detect,infer:infer,icon:icon,patchCompact:patchCompact,patchPopup:patchPopup};
+  window.TaskCategoryIcons={iconKeys:ICON_KEYS,detect:detect,infer:infer,icon:icon,patchCompact:patchCompact,patchPopup:patchPopup,patchDeleteControls:patchDeleteControls};
   window.dispatchEvent(new CustomEvent('familyapp:task-icons-ready'));
 })();
