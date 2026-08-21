@@ -20,10 +20,10 @@ module.exports = async function handler(req, res) {
       '<link rel="manifest" href="manifest.json?v=4">\n' +
       '  <meta name="application-name" content="FamilieApp">\n' +
       '  <meta name="apple-mobile-web-app-title" content="FamilieApp">\n' +
-      '  <link rel="apple-touch-icon" sizes="180x180" href="' + brandIcon180 + '">\n' +
-      '  <link rel="icon" type="image/png" sizes="32x32" href="' + brandIcon32 + '">\n' +
-      '  <link rel="icon" type="image/png" sizes="192x192" href="' + brandIcon192 + '">\n' +
-      '  <link rel="shortcut icon" type="image/png" href="' + brandIcon32 + '">'
+      '  <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="' + brandIcon180 + '">\n' +
+      '  <link id="favicon" rel="icon" type="image/png" sizes="32x32" href="' + brandIcon32 + '">\n' +
+      '  <link id="app-icon-192" rel="icon" type="image/png" sizes="192x192" href="' + brandIcon192 + '">\n' +
+      '  <link id="shortcut-icon" rel="shortcut icon" type="image/png" href="' + brandIcon32 + '">'
     );
     html = html.replace(
       '<div id="login-logo" style="font-size:56px;margin-bottom:8px">🏠</div>',
@@ -35,6 +35,7 @@ module.exports = async function handler(req, res) {
 
     html = html.replace('<script src="src/core/store.js"></script>','<script src="src/core/store.js?v=1"></script>');
     html = html.replace('<script src="src/core/utils.js"></script>','<script src="src/core/utils.js?v=1"></script>');
+    html = html.replace('<script src="src/core/appIcon.js"></script>','<script src="src/core/appIcon.js?v=4"></script>');
     html = html.replace('<script src="src/core/addSheet.js"></script>','<script src="src/core/addSheet.js?v=1"></script>');
     html = html.replace('<script src="src/core/search.js"></script>','<script src="src/core/search.js?v=1"></script>');
     html = html.replace('<script src="src/core/swipe.js"></script>','<script src="src/core/swipe.js?v=1"></script>');
