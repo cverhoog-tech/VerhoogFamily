@@ -1,5 +1,11 @@
 /* Keep the small controls in the task detail card perfectly circular on iOS/Safari.
-   Some global mobile button/input rules can otherwise stretch them into pills/ovals. */
+   Some global mobile button/input rules can otherwise stretch them into pills/ovals.
+
+   STEP 2B.6A note:
+   FamilyApp supports global UI zoom at 90/100/110/120%. Task-detail icon wrappers
+   must therefore center by layout, not by incidental padding/line-height offsets.
+   The rules below make the task popup scale-safe and avoid content-box overflow
+   from nested icon wrappers. */
 #tdp-overlay .tdp-close{
   box-sizing:border-box;
   width:32px;
@@ -15,7 +21,7 @@
   border-radius:50% !important;
   display:grid;
   place-items:center;
-  line-height:1;
+  line-height:0;
   -webkit-appearance:none;
   appearance:none;
 }
@@ -24,6 +30,7 @@
   width:14px;
   height:14px;
   display:block;
+  margin:0;
 }
 
 #tdp-overlay .tdp-sub-chk{
@@ -41,7 +48,7 @@
   border-radius:50% !important;
   display:grid;
   place-items:center;
-  line-height:1;
+  line-height:0;
   -webkit-appearance:none;
   appearance:none;
 }
@@ -65,6 +72,101 @@
   align-items:center;
 }
 
+/* Main category crest in the task popup.
+   The nested .fa-task-icon-wrap previously used width/height:100% plus padding
+   with content-box sizing. At non-100% browser zoom this can overflow the parent
+   and make the artwork look off-centre. Keep every layer in the same grid box. */
+#tdp-overlay .tdp-icon-inner{
+  box-sizing:border-box;
+  display:grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+  overflow:hidden;
+}
+
+#tdp-overlay .tdp-icon-inner > .fa-task-icon-wrap,
+#tdp-overlay .tdp-icon-inner .fa-task-icon-wrap--large{
+  box-sizing:border-box !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+  transform:none !important;
+  transform-origin:center center !important;
+}
+
+#tdp-overlay .tdp-icon-inner .fa-task-category-icon{
+  box-sizing:border-box;
+  display:block !important;
+  width:62% !important;
+  height:62% !important;
+  max-width:none !important;
+  max-height:none !important;
+  margin:0 !important;
+  padding:0 !important;
+  position:static !important;
+  inset:auto !important;
+  vertical-align:0 !important;
+  transform:none !important;
+  transform-origin:center center !important;
+  flex:none !important;
+}
+
+/* Subtask glyphs: normalize both the current inline SVG and future registry
+   icons so the symbol stays optically centred at every FamilyUiScale value. */
+#tdp-overlay .tdp-sub-icon,
+#tdp-overlay .tdp-sub-glyph,
+#tdp-overlay .tdp-sub [class*="sub-icon"]{
+  box-sizing:border-box;
+  display:grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+  padding:0 !important;
+  flex:none;
+}
+
+#tdp-overlay .tdp-sub-icon > svg,
+#tdp-overlay .tdp-sub-glyph > svg,
+#tdp-overlay .tdp-sub [class*="sub-icon"] > svg,
+#tdp-overlay .tdp-sub-icon .fa-icon,
+#tdp-overlay .tdp-sub-glyph .fa-icon{
+  display:block !important;
+  margin:0 !important;
+  position:static !important;
+  inset:auto !important;
+  transform:none !important;
+  transform-origin:center center !important;
+  vertical-align:0 !important;
+  flex:none !important;
+}
+
+/* Help crest and square utility controls use the same centering contract. */
+#tdp-overlay .tdp-help-icon,
+#tdp-overlay .tdp-help-crest,
+#tdp-overlay .tdp-bookmark,
+#tdp-overlay [class*="bookmark"]{
+  box-sizing:border-box;
+  display:grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+}
+
+#tdp-overlay .tdp-help-icon > svg,
+#tdp-overlay .tdp-help-crest > svg,
+#tdp-overlay .tdp-bookmark > svg,
+#tdp-overlay [class*="bookmark"] > svg{
+  display:block !important;
+  margin:0 !important;
+  position:static !important;
+  inset:auto !important;
+  transform:none !important;
+  transform-origin:center center !important;
+}
+
 @media(max-width:430px){
   #tdp-overlay .tdp-close{
     width:34px;
@@ -84,4 +186,14 @@
     max-height:26px;
     flex-basis:26px;
   }
+}
+
+/* Explicit scale invariants. These selectors intentionally do not apply a
+   counter-scale: body zoom should still resize the whole UI. They only lock the
+   centering model across all supported profile scale settings. */
+html[data-ui-scale="90"] #tdp-overlay .tdp-icon-inner,
+html[data-ui-scale="100"] #tdp-overlay .tdp-icon-inner,
+html[data-ui-scale="110"] #tdp-overlay .tdp-icon-inner,
+html[data-ui-scale="120"] #tdp-overlay .tdp-icon-inner{
+  place-items:center !important;
 }
