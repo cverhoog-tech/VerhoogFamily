@@ -12,19 +12,19 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://res.cloudinary.com/rg86slp4/image/upload/v1787324391/familyapp/brand/v4/icon-master.png",
+      "src": "/api/brand-icon?variant=192&v=4",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png",
+      "src": "/api/brand-icon?variant=512&v=4",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:140724,f_png/v1787324391/familyapp/brand/v4/icon-master.png",
+      "src": "/api/brand-icon?variant=maskable&v=4",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
