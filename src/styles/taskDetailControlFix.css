@@ -53,29 +53,43 @@
   appearance:none;
 }
 
-#tdp-overlay .tdp-sub-chk::before{
-  content:"";
+/* The done-state checkmark is a real inline <svg> (uiIcon('check',11) in
+   taskDetailPopup.js), not a CSS-drawn shape. Give it its own explicit,
+   transform-free sizing contract so it is the only grid item in
+   .tdp-sub-chk and place-items:center can center it exactly. Previously an
+   additional ::before pseudo-element also drew a checkmark here; with two
+   items and no explicit grid-template, .tdp-sub-chk implicitly split into
+   two rows and centered each glyph in its own half — that was the source
+   of the visible offset. */
+#tdp-overlay .tdp-sub-chk > svg{
+  box-sizing:border-box;
   display:block;
-  width:8px;
-  height:4px;
-  border-left:2px solid transparent;
-  border-bottom:2px solid transparent;
-  transform:rotate(-45deg) translateY(-1px);
-}
-
-#tdp-overlay .tdp-sub-chk.done::before{
-  border-left-color:#fff;
-  border-bottom-color:#fff;
+  width:11px;
+  height:11px;
+  margin:0;
+  position:static;
+  inset:auto;
+  transform:none;
+  transform-origin:center center;
+  vertical-align:0;
+  flex:none;
 }
 
 #tdp-overlay .tdp-sub{
   align-items:center;
 }
 
-/* Main category crest in the task popup.
-   The nested .fa-task-icon-wrap previously used width/height:100% plus padding
-   with content-box sizing. At non-100% browser zoom this can overflow the parent
-   and make the artwork look off-centre. Keep every layer in the same grid box. */
+/* Main category crest in the task popup (top-left badge under the hero
+   image). taskDetailPopup.js's categorySvg() writes a bare <svg
+   viewBox="0 0 24 24"> straight into .tdp-icon-inner — it does not go
+   through the shared FamilyAppIconRenderer / .fa-task-icon-wrap /
+   .fa-task-category-icon contract used elsewhere in the app (see
+   taskCategoryIcons.js). Rules targeting those classes never matched this
+   badge, which is why the icon had no real sizing/centering contract at
+   all beyond default inline-SVG flow. Target the actual element and give
+   it an explicit, px-based size so every layer (ring -> inner -> svg)
+   scales together under the profile's UI-scale zoom instead of relying on
+   default replaced-element sizing. */
 #tdp-overlay .tdp-icon-inner{
   box-sizing:border-box;
   display:grid !important;
@@ -84,31 +98,11 @@
   overflow:hidden;
 }
 
-#tdp-overlay .tdp-icon-inner > .fa-task-icon-wrap,
-#tdp-overlay .tdp-icon-inner .fa-task-icon-wrap--large{
-  box-sizing:border-box !important;
-  width:100% !important;
-  height:100% !important;
-  min-width:0 !important;
-  min-height:0 !important;
-  margin:0 !important;
-  display:grid !important;
-  place-items:center !important;
-  line-height:0 !important;
-  transform:none !important;
-  transform-origin:center center !important;
-}
-
-/* Keep the artwork comfortably large at 100% while still leaving breathing
-   room inside the premium badge at 120%. 76% gives a much better visual fill
-   than the previous 62% without touching the badge itself. */
-#tdp-overlay .tdp-icon-inner .fa-task-category-icon{
+#tdp-overlay .tdp-icon-inner > svg{
   box-sizing:border-box;
   display:block !important;
-  width:76% !important;
-  height:76% !important;
-  max-width:none !important;
-  max-height:none !important;
+  width:22px !important;
+  height:22px !important;
   margin:0 !important;
   padding:0 !important;
   position:static !important;
