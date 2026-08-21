@@ -116,11 +116,21 @@
     api.__categoryIconsHooked=true;return true;
   }
 
+  function ensureStatusIconModule(){
+    if(window.TaskStatusIcons||document.querySelector('script[data-familyapp-task-status-icons]'))return;
+    var s=document.createElement('script');
+    s.src='src/modules/tasks/taskStatusIcons.js?v=1';
+    s.async=false;
+    s.setAttribute('data-familyapp-task-status-icons','1');
+    s.onload=function(){try{if(window.TaskStatusIcons&&typeof TaskStatusIcons.patch==='function')TaskStatusIcons.patch(document);}catch(e){}};
+    document.head.appendChild(s);
+  }
+
   document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-cat-pick]');if(!b)return;var cat=b.getAttribute('data-cat-pick');if(cat&&KNOWN[cat]){activeCreateCat=cat;setTimeout(patchPopup,0);}},true);
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='tdp-create-title')patchPopup();});
   var observer=new MutationObserver(function(){patchCompact();if(document.querySelector('.tdp-overlay'))patchPopup();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
-  hookPopup();patchCompact();
+  hookPopup();patchCompact();ensureStatusIconModule();
   var tries=0,timer=setInterval(function(){tries++;if(hookPopup()||tries>40)clearInterval(timer);},100);
 
   window.TaskCategoryIcons={iconKeys:ICON_KEYS,detect:detect,infer:infer,icon:icon,patchCompact:patchCompact,patchPopup:patchPopup};
