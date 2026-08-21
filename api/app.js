@@ -7,11 +7,11 @@ module.exports = async function handler(req, res) {
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
     // STEP 2B.5 — one canonical visual identity across login, browser and PWA.
-    // Versioned Cloudinary delivery prevents Safari from reusing the old green
-    // house asset while keeping every generated size derived from one source.
-    const brandIcon192 = 'https://res.cloudinary.com/rg86slp4/image/upload/v1787324391/familyapp/brand/v4/icon-master.png';
-    const brandIcon180 = 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png';
-    const brandIcon32 = 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_32,h_32,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png';
+    // Every size is delivered through one same-origin endpoint backed by the
+    // versioned v4 crest, preventing Safari from falling back to the old asset.
+    const brandIcon192 = '/api/brand-icon?variant=192&v=4';
+    const brandIcon180 = '/api/brand-icon?variant=180&v=4';
+    const brandIcon32 = '/api/brand-icon?variant=32&v=4';
 
     html = html.replace('<meta name="apple-mobile-web-app-status-bar-style" content="default">','<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">');
     html = html.replace('<meta name="theme-color" content="#f6faf7">','<meta name="theme-color" content="#140724">');
