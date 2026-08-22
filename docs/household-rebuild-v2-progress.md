@@ -44,8 +44,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [-] STEP 2B Person/UI identity modernization in progress.
 - [x] STEP 2B.5 Brand/PWA identity accepted and frozen.
 - [x] STEP 2B.6 Tasks icon/detail/create presentation accepted and frozen.
+- [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 
-**Next planned functional work:** continue remaining STEP 2B work from the accepted 2B.5 + 2B.6 baseline, with STEP 2B.7 as the next module icon migration; after STEP 2B closes, resume STEP 2A platform-admin identity foundation.
+**Next planned functional work:** continue remaining STEP 2B work from the accepted 2B.5 + 2B.6 + 2B.7 baseline, with STEP 2B.8 as the next module icon migration; after STEP 2B closes, resume STEP 2A platform-admin identity foundation.
 
 ## Phase checklist
 
@@ -162,11 +163,13 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] STEP 2B.6 frozen baseline.
 
 #### STEP 2B.7 — Shopping / Recipes / Meals icon migration
-- [ ] Shopping/category/item icons moved to canonical registry.
-- [ ] Recipe/ingredient/meal content icons moved to canonical registry.
-- [ ] Generic emoji fallbacks reduced to explicit semantic fallback only.
-- [ ] Existing shopping/recipe/meal behavior remains functionally unchanged.
-- [ ] tests/preview/device gate accepted.
+- [x] Shopping/category/item icons moved to canonical registry/resolver presentation.
+- [x] Recipe/ingredient/meal content icons moved to canonical registry/resolver presentation where in current visible scope.
+- [x] Generic visible emoji fallbacks reduced to explicit semantic fallback only; legacy stored emoji retained as compatibility metadata.
+- [x] Existing shopping/recipe/meal behavior remains functionally unchanged in accepted device smoke test.
+- [x] `scripts/test-food-icon-contract.js` added and Vercel branch preview READY.
+- [x] Real iPhone Safari visual/device gate accepted on 2026-08-22.
+- [x] STEP 2B.7 frozen baseline.
 
 #### STEP 2B.8 — Feed / Notifications / Agenda / Finance / Achievements icon migration
 - [ ] Feed/activity content icons migrated.
@@ -368,6 +371,7 @@ For each functional phase verify:
 - 2026-08-20 — STEP 2B.4 Global Icon System and STEP 2B.5 Brand/PWA Identity added before broader module icon migrations.
 - 2026-08-22 — STEP 2B.5 crest v5/PWA/login presentation accepted and frozen after real iPhone Add-to-Home-Screen and login tests.
 - 2026-08-22 — STEP 2B.6 task icon/detail/create presentation accepted and frozen; rejected help/status migration remains intentionally reverted.
+- 2026-08-22 — STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted on real iPhone Safari and frozen after READY preview + device smoke test.
 - 2026-08-22 — Multi-family readiness and privacy-safe personal platform administration made explicit end goals and broader-beta release gates for the prototype.
 
 ## Maintenance rule
