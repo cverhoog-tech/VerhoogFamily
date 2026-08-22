@@ -5,7 +5,7 @@
 //
 // Source of truth: families/{householdId}/tasks/{taskKey}
 // Identity authority: HouseholdContext (UID + household + revision)
-// Local cache is household-scoped presentation fallback only.
+// Local cache is UID + household scoped presentation fallback only.
 // Generic legacy localStorage task keys are never used as identity/data authority.
 // ============================================================
 (function(){
@@ -54,18 +54,18 @@
     try{return !!(window.HouseholdContext&&typeof window.HouseholdContext.isCurrent==='function'&&window.HouseholdContext.isCurrent(token));}catch(e){return false;}
   }
   function validContext(ctx){return !!(ctx&&ctx.ready===true&&ctx.uid&&ctx.householdId);}
-  function cacheKey(householdId){return CACHE_PREFIX+String(householdId||'unresolved');}
-  function readCache(householdId){
-    if(!householdId)return [];
+  function cacheKey(userId,householdId){return CACHE_PREFIX+String(userId||'unresolved-user')+'_'+String(householdId||'unresolved-household');}
+  function readCache(userId,householdId){
+    if(!userId||!householdId)return [];
     try{
-      var raw=localStorage.getItem(cacheKey(householdId));
+      var raw=localStorage.getItem(cacheKey(userId,householdId));
       var parsed=raw?JSON.parse(raw):[];
       return Array.isArray(parsed)?parsed:[];
     }catch(e){return [];}
   }
-  function writeCache(householdId,tasks){
-    if(!householdId)return;
-    try{localStorage.setItem(cacheKey(householdId),JSON.stringify(Array.isArray(tasks)?tasks:[]));}catch(e){}
+  function writeCache(userId,householdId,tasks){
+    if(!userId||!householdId)return;
+    try{localStorage.setItem(cacheKey(userId,householdId),JSON.stringify(Array.isArray(tasks)?tasks:[]));}catch(e){}
   }
   function rows(value){
     if(!value)return [];
@@ -146,7 +146,7 @@
   function emit(tasks,meta){
     currentTasks=Array.isArray(tasks)?tasks.map(clone):[];
     lastMeta=Object.assign({source:'unknown',ready:!!active,error:null,migration:'none'},meta||{});
-    if(lastMeta.householdId)writeCache(lastMeta.householdId,currentTasks);
+    if(lastMeta.uid&&lastMeta.householdId)writeCache(lastMeta.uid,lastMeta.householdId,currentTasks);
     subscribers.slice().forEach(function(fn){try{fn(currentTasks.map(clone),clone(lastMeta));}catch(e){console.warn('[TaskHouseholdRepository] subscriber failed',e);}});
     try{window.dispatchEvent(new CustomEvent('familyapp:task-repository',{detail:{tasks:currentTasks.map(clone),meta:clone(lastMeta)}}));}catch(e){}
   }
@@ -194,9 +194,17 @@
       }
       binding.migrationState='legacy-shared-to-canonical';
       var migrated=mapFromTasks(legacyTasks,binding.context,true);
-      return binding.ref.set(migrated).then(function(){
-        if(!bindingCurrent(binding))return;
-        binding.migrationState='legacy-shared-to-canonical';
+      return new Promise(function(resolve,reject){
+        binding.ref.transaction(function(current){
+          if(!bindingCurrent(binding))return;
+          if(rows(current).length)return;
+          return migrated;
+        },function(error,committed){
+          if(error){reject(error);return;}
+          if(!bindingCurrent(binding)){resolve(false);return;}
+          binding.migrationState=committed?'legacy-shared-to-canonical':'canonical-won-migration-race';
+          resolve(committed);
+        },false);
       });
     }).catch(function(error){
       if(!bindingCurrent(binding))return;
@@ -215,7 +223,7 @@
     }
     var database=db();
     if(!database){
-      var cachedNoDb=readCache(ctx.householdId);
+      var cachedNoDb=readCache(ctx.uid,ctx.householdId);
       emit(cachedNoDb,{source:'cache-no-db',ready:false,uid:ctx.uid,householdId:ctx.householdId,revision:ctx.revision,migration:'none',error:'FIREBASE_DATABASE_UNAVAILABLE'});
       return false;
     }
@@ -235,7 +243,7 @@
       migrationState:'none'
     };
     active=binding;
-    var cached=readCache(ctx.householdId);
+    var cached=readCache(ctx.uid,ctx.householdId);
     if(cached.length)emit(cached,{source:'household-cache',ready:true,uid:ctx.uid,householdId:ctx.householdId,revision:ctx.revision,migration:'none'});
     else emit([],{source:'binding',ready:true,uid:ctx.uid,householdId:ctx.householdId,revision:ctx.revision,migration:'none'});
     binding.handler=function(snapshot){
@@ -253,7 +261,7 @@
     };
     ref.on('value',binding.handler,function(error){
       if(!bindingCurrent(binding))return;
-      emit(readCache(ctx.householdId),{source:'firebase-error-cache',ready:true,uid:ctx.uid,householdId:ctx.householdId,revision:ctx.revision,migration:binding.migrationState,error:error&&error.message||String(error||'TASK_LISTENER_ERROR')});
+      emit(readCache(ctx.uid,ctx.householdId),{source:'firebase-error-cache',ready:true,uid:ctx.uid,householdId:ctx.householdId,revision:ctx.revision,migration:binding.migrationState,error:error&&error.message||String(error||'TASK_LISTENER_ERROR')});
     });
     return true;
   }
@@ -324,12 +332,11 @@
     var binding=assertWritable(requireBinding());
     var key=keyFor(id);
     var ref=binding.ref.child(key);
-    var fallback=findLocal(id);
     return new Promise(function(resolve,reject){
       var mutatorError=null;
       ref.transaction(function(server){
         if(!bindingCurrent(binding))return;
-        var base=server&&typeof server==='object'?normalizeExisting(server,key,binding.context):(fallback?normalizeExisting(fallback,key,binding.context):null);
+        var base=server&&typeof server==='object'?normalizeExisting(server,key,binding.context):null;
         if(!base)return;
         var changed;
         try{changed=mutator(clone(base));}catch(error){mutatorError=error;return;}
