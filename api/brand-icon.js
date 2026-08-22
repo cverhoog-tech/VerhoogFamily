@@ -8,7 +8,8 @@ const VARIANTS = Object.freeze({
   '180': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
   '192': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_192,h_192,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
   '512': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
-  'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:faf8f2,f_png/v1787358667/familyapp/brand/v5/icon-master.png'
+  'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:faf8f2,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
+  'login': 'https://res.cloudinary.com/rg86slp4/image/upload/e_background_removal/c_fit,w_512/f_png/v1787358667/familyapp/brand/v5/icon-master.png'
 });
 
 function pipeImage(url, res, redirectsLeft) {
