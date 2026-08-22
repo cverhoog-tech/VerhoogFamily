@@ -19,106 +19,90 @@ This is a release gate for a broader family beta, not an optional future enhance
 
 ### STEP 2B.3 — Own hero backdrop upload support
 
-Status: **implementation complete on branch; production Storage Rules deployment approved but blocked by first-release IAM; real-device gate pending**
+Status: **Cloudinary Free implementation complete on branch; one-time unsigned-preset setup + real-device gate pending**
 
-Implemented:
-- Added `HeroBackdropUploadService` as the dedicated upload boundary.
-- Only the currently authenticated member can upload/change their own hero background.
-- Image-only validation with a 15 MB source limit.
-- Client-side resize/compression before upload: max 1800px edge, WebP where supported with JPEG fallback, and a bounded final payload.
-- Uploads use household/UID-scoped Firebase Storage paths with a cryptographically random 128-bit object id.
-- HouseholdContext `capture()` / `isCurrent()` protects against a household/account switch during an upload.
-- The member repository persists only whitelisted upload metadata and `storagePath`; Firebase download-token URLs are deliberately not stored in RTDB.
-- Download URLs are resolved only in memory for the active household session when the Person hero needs to render.
-- Picker now has select -> local optimized preview -> explicit confirm -> upload/progress flow.
-- Switching back to a preset/reset cleans up the member's previous uploaded object after the profile mutation succeeds.
-- Failed profile persistence attempts clean up the newly uploaded object.
-- Firebase Storage compat SDK is wired into the served runtime before the upload service is used.
-- `storage.rules` is versioned and registered by `firebase.json`.
-- Storage rules deny listing, restrict create/update/delete to the member's own UID path, and validate image size/type + FamilyApp metadata.
-- `scripts/test-person-hero-backdrop-upload.js` records the upload/privacy contract.
-- Branch contract-test workflow added for ongoing non-production CI coverage.
-- Latest Vercel branch deployments for the implementation reached READY.
+Product decision on 2026-08-22:
+- Do **not** upgrade Firebase from Spark to Blaze just to obtain Cloud Storage.
+- Keep Firebase on the no-cost Spark plan.
+- Use the existing Cloudinary **Free** account as the prototype image-storage provider for own hero backdrops.
+- The abandoned Firebase Storage implementation is retired; no Firebase Storage production release/rules are required for STEP 2B.3.
 
-Production deploy attempt on 2026-08-22:
-- Product-owner approval for the Storage Rules production deployment was explicitly given.
-- The standard Firebase CLI path authenticated successfully but was blocked because the GitHub Firebase service account cannot read the Service Usage state for `firebasestorage.googleapis.com`.
-- A direct Firebase Rules API path was then used without bypassing Firebase Rules IAM.
-- The service account successfully authenticated, listed current releases, and successfully created an immutable ruleset from the repository `storage.rules`; therefore the rules source passed the authoritative ruleset-create validation boundary.
-- Firebase reports **no existing `firebase.storage/...` release** for this project.
-- Creating the first Storage release was denied with HTTP 403 because the service account lacks `firebaserules.releases.create`.
-- The newly created ruleset is not active because no release points to it. No production Storage rule behavior changed.
-- Automatic production deployment is disabled again. The deployment workflow is manual-only and remains behind explicit approval.
+Implemented on the branch:
+- `HeroBackdropUploadService` now uses Cloudinary cloud `rg86slp4` rather than Firebase Storage.
+- The upload UI remains own-profile only and still requires a ready UID + household context.
+- HouseholdContext `capture()` / `isCurrent()` protects against account/household changes during upload.
+- Source validation remains image-only with a 15 MB source cap.
+- Images are resized/compressed client-side before upload: max 1800 px edge, WebP where supported with JPEG fallback, bounded to about 1.4 MB.
+- Upload uses a dedicated prototype unsigned preset: `fa_hero_91c8f43ad0b6_v1`.
+- Cloudinary receives no household ID, member UID, display name or other household content as upload metadata.
+- Realtime Database remains the household-scoped source of truth for the selected backdrop.
+- The member record persists only the Cloudinary delivery URL plus opaque provider/asset metadata needed to render and later clean up the file.
+- Replaced/retired Cloudinary assets are recorded under the user's private `mediaCleanup/cloudinary` queue so a future signed cleanup worker can delete them without exposing a Cloudinary API secret in the browser.
+- The picker still uses select -> optimized local preview -> explicit confirm -> upload/progress -> profile persistence.
+- Firebase Storage compat runtime injection was removed.
+- `firebase.json` no longer registers Storage.
+- The unused `storage.rules`, Firebase Storage deploy workflow and direct rules-deploy helper were removed.
+- Temporary Cloudinary capability/environment probe endpoints were removed after verification.
+- `scripts/test-person-hero-backdrop-upload.js` now protects the Cloudinary/Spark contract.
+- The general rebuild contract-test workflow remains active.
 
-Security note:
-- Firebase Cloud Storage Rules cannot directly look up Realtime Database household membership. The STEP 2B.3 prototype rule therefore uses authenticated exact-path reads plus unguessable random object paths, while the exact path is exposed only through the already household-protected RTDB member record.
-- This is acceptable only as the current prototype bridge. Before the broader multi-family beta, STEP 15 must replace that read boundary with a server-verifiable household authorization signal or secure media service.
+Cloudinary account state checked on 2026-08-22:
+- Plan: **Free**.
+- Usage at check time: 0.19 / 25 credits used.
+- Dedicated Media Library folder created: `familyapp/hero-uploads`.
+- No Cloudinary API secret is stored in the repository or browser runtime.
+
+Prototype privacy/security boundary:
+- The unsigned preset is deliberately a **prototype bridge**, not the broader-beta final media architecture.
+- The preset must restrict formats, maximum file size and destination folder, and must generate random public IDs.
+- Standard Cloudinary `upload` delivery URLs are public-by-URL: someone who obtains the exact URL can retrieve that image. Testers should therefore not use sensitive/private photos in this prototype upload feature.
+- Before broader multi-family beta, STEP 15 must replace unsigned client uploads with a server-authorized/signed media boundary (or equivalent secure media service) and process the private cleanup queue.
+- This trade-off keeps the current prototype on Firebase Spark and avoids enabling a billable Firebase project solely for image storage.
 
 Still required before STEP 2B.3 is accepted/frozen:
-- Create/initialize the project's first Firebase Storage release with an identity that has `firebaserules.releases.create` (for example by completing Firebase Storage setup as a project owner, or granting the deployment identity the minimal required Firebase Rules permission).
-- Re-run the already approved Storage Rules deployment and verify the active release points to the repository ruleset.
-- Real iPhone Safari/PWA smoke test after those rules are active: select a photo, preview, confirm, persist after reload, verify another household member can see it, then switch back to a preset/reset.
+1. Create the Cloudinary unsigned upload preset `fa_hero_91c8f43ad0b6_v1` in the Cloudinary Console with the documented restrictions.
+2. Verify a direct test upload succeeds through that preset.
+3. Run the real iPhone Safari/PWA gate: choose a photo, preview, confirm, reload, verify the backdrop persists and another member in the same household sees it, then switch back to a preset/reset.
 
 ### STEP 2B.4 — Global FamilyApp Icon System
 
 Status: **accepted / scope closed at current baseline by product decision**
 
-Decision:
-- The central semantic registry/renderer foundation remains in use where already migrated.
-- Existing current icons across the remaining app surfaces are accepted as-is for the prototype.
-- No further broad icon replacement/audit is required in STEP 2B.
+- Central semantic registry/renderer remains in use where already migrated.
+- Existing current icons across remaining surfaces are accepted as-is for the prototype.
 - Bottom navigation and More-menu icons remain unchanged.
-- Reopen icon work only for a concrete regression or a newly approved visual redesign.
+- No further broad icon migration is planned without an explicit redesign request.
 
 ### STEP 2B.5 — Brand / app identity
 
 Status: **accepted / complete / frozen baseline**
 
-Done:
-- Canonical app-icon runtime exists.
-- Manifest / Apple touch / favicon paths are centralized through the same-origin brand endpoint.
-- Login and PWA/browser shell use the canonical brand pipeline.
-- Final approved white/gold crest with the single purple diamond is stored as the v5 brand source.
-- `api/brand-icon.js` serves the v5 crest for 32 / 180 / 192 / 512 / maskable variants.
-- A separate transparent `login` crest variant is served for the authentication screen so the logo blends into the page without a white square/tile.
-- Maskable icon uses a light ivory safety background to match the approved crest.
-- Final iPhone Safari Add-to-Home-Screen test and transparent login-screen presentation accepted by product owner on 2026-08-22.
-
-Decision:
-- Treat the current v5 brand/PWA/login presentation as a frozen baseline.
-- Do not reintroduce a white or rounded-square tile around the login crest.
-- Keep the installed PWA icon pipeline separate from the transparent login presentation.
+- Approved crest v5 is the PWA/browser/login identity.
+- Transparent login crest and real iPhone Add-to-Home-Screen presentation were accepted on 2026-08-22.
+- Do not reintroduce a white/rounded-square tile around the login crest.
 
 ### STEP 2B.6 — Tasks icon/detail/create presentation
 
 Status: **accepted / frozen baseline**
 
-Decision:
-- Task category/content icons are accepted.
-- Rejected help/status migration remains reverted; previous presentation is intentional.
-- Approved detail/create controls are accepted after live iPhone testing.
-- Do not reopen this presentation without an explicit new design request or regression.
+- Approved task category/content and detail/create presentation stays frozen.
+- Rejected help/status migration remains reverted and the previous presentation is intentional.
 
 ### STEP 2B.7 — Shopping / Recipes / Meals icon migration
 
 Status: **accepted / complete / frozen baseline**
 
-Decision:
-- Current Shopping / Recipes / Meals icon presentation is accepted after the real iPhone Safari device gate.
-- Stored legacy emoji fields remain compatibility metadata for now; removal belongs to later legacy/data-contract cleanup.
+- Current Shopping / Recipes / Meals presentation was accepted after the real iPhone device gate.
 
 ### STEP 2B.8 — Feed / Notifications / Agenda / Finance / Achievements icon migration
 
 Status: **closed by product decision — current icons retained**
 
-Decision:
-- Do not perform the planned broad icon migration for Feed, Notifications, Agenda, Finance or Achievements.
-- Their current icon presentation is acceptable for the prototype and remains the baseline.
-- This is a deliberate scope decision, not an unfinished migration.
+- No broad migration is required; current icons remain the prototype baseline.
 
 ## Rebuild baseline
 
-**Current icon/brand scope is accepted and frozen. STEP 2B.3 is the only remaining STEP 2B device-gate item.**
+**Current icon/brand scope is accepted and frozen. STEP 2B.3 is the only remaining STEP 2B gate.**
 
 Existing accepted icons, branding and task/food presentation must remain unchanged unless explicitly requested.
 
@@ -132,7 +116,7 @@ Current planning is based only on:
 - `docs/household-rebuild-v2-roadmap.md`;
 - `docs/household-rebuild-v2-progress.md`;
 - `docs/multi-family-prototype-acceptance.md`;
-- `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md` for the deeper multi-household architecture checklist;
+- `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md`;
 - newly reported bugs/features from the current product state.
 
 ## Multi-family / admin acceptance principles
@@ -140,31 +124,30 @@ Current planning is based only on:
 - Platform admin is tied to the product owner's personal authenticated UID via server-verifiable authorization, never a frontend name/email check.
 - Platform-admin capability is separate from household ownership/admin roles.
 - Default admin visibility is sanitized technical/operational telemetry only.
-- Raw task/shopping/recipe/meal/calendar/feed/private-note/upload/financial content is not part of the normal admin projection.
-- If content-level debugging is ever needed, it must use a separate consent-based, minimum-scope, audited support mechanism.
-- Multi-household isolation/lifecycle tests are added per module as the rebuild proceeds, not postponed until the end.
+- Raw household content is not part of the normal admin projection.
+- Multi-household isolation/lifecycle tests are added per module as the rebuild proceeds.
 
 ## Next work
 
 Planned order:
-1. Unblock the first Firebase Storage release (`firebaserules.releases.create` / initial Storage setup).
-2. Re-run and verify the already approved STEP 2B.3 Storage Rules deployment.
-3. Run the STEP 2B.3 real iPhone/PWA upload + persistence + family-view device gate.
-4. If accepted, freeze STEP 2B.3 and close STEP 2B overall.
-5. Resume **STEP 2A platform-admin identity foundation**.
-6. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
-7. Build **STEP 14A sanitized platform operations dashboard**.
-8. STEP 15 Rules hardening must prove household isolation, removed-member revocation, Storage/media authorization and the platform-admin privacy boundary.
-9. STEP 16 removes remaining single-family/global legacy authorities.
-10. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
+1. Complete the one-time restricted Cloudinary unsigned-preset setup for STEP 2B.3.
+2. Run the STEP 2B.3 real iPhone/PWA upload + persistence + same-household visibility + reset gate.
+3. If accepted, freeze STEP 2B.3 and close STEP 2B overall.
+4. Resume **STEP 2A platform-admin identity foundation**.
+5. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
+6. Build **STEP 14A sanitized platform operations dashboard**.
+7. STEP 15 hardens Firebase Rules **and media authorization**, replaces the unsigned Cloudinary bridge, and processes retired-media cleanup safely.
+8. STEP 16 removes remaining single-family/global legacy authorities.
+9. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
 
 ## Guardrails
 
-- No production Firebase Rules/Storage Rules deployment without explicit product-owner approval.
-- No changes to Firebase task data model during UI work.
+- Firebase stays on Spark unless a future paid-plan change is explicitly approved.
+- No Cloudinary API secret may be stored in client code or the public repository.
+- The unsigned Cloudinary upload bridge is prototype-only and must not silently become the broader-beta media boundary.
+- No changes to the Firebase task data model during UI work.
 - No changes to task completion or XP semantics during UI work.
 - Current app icons are accepted for the prototype; no broad icon migrations without explicit approval.
-- Bottom-nav and More-menu iconography remain unchanged.
-- Preserve the transparent login crest presentation separately from the installed PWA icon variants.
+- Preserve the transparent login crest presentation separately from installed PWA icon variants.
 - Never use the retired May 2026 TODO as a source of truth.
 - Never grant platform admin unrestricted raw household-root access as a shortcut for diagnostics.
