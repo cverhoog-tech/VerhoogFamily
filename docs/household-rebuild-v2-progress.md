@@ -33,18 +33,18 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] STEP 0 stable baseline.
 - [x] STEP 1 authenticated session / startup ownership.
 - [x] STEP 2 HouseholdContext / UID identity / lifecycle.
-- [ ] STEP 2A platform-admin identity foundation — paused until STEP 2B closes.
-- [-] STEP 2B Person/UI identity modernization.
+- [-] STEP 2A platform-admin identity foundation — active next phase.
+- [x] STEP 2B Person/UI identity modernization — accepted and closed.
 - [x] STEP 2B.1 backdrop foundation.
 - [x] STEP 2B.2 preset picker.
-- [-] STEP 2B.3 hero backdrop upload support — Cloudinary Free implementation is on branch; one-time preset setup + device gate remain.
+- [x] STEP 2B.3 hero backdrop upload support — Cloudinary Free prototype baseline accepted on real iPhone.
 - [x] STEP 2B.4 Global FamilyApp Icon System — current scope accepted; no further broad icon migration required.
 - [x] STEP 2B.5 Brand/PWA identity accepted and frozen.
 - [x] STEP 2B.6 Tasks icon/detail/create presentation accepted and frozen.
 - [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
 
-**Next gate: configure the restricted Cloudinary Free unsigned preset, then run the real iPhone/PWA upload test. If accepted, close STEP 2B and resume STEP 2A platform-admin identity foundation.**
+**Next phase: STEP 2A platform-admin identity foundation. After acceptance, continue with STEP 3 Tasks core.**
 
 ## Phase checklist
 
@@ -81,6 +81,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ### STEP 2B — Person/UI identity modernization
 
+Status: **accepted / closed / frozen prototype baseline**
+
 #### STEP 2B.1 — Backdrop foundation
 - [x] Canonical backdrop catalog and resolver.
 - [x] Backdrop separate from avatar/portrait media.
@@ -99,8 +101,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Product decision: keep Firebase on Spark; do not enable Blaze solely for image storage.
 - [x] Existing Cloudinary Free account selected for prototype hero-backdrop uploads.
 - [x] Dedicated Cloudinary folder `familyapp/hero-uploads` created.
+- [x] Restricted unsigned preset `fa_hero_91c8f43ad0b6_v1` created in Cloudinary Console.
 - [x] Image-only upload service.
-- [x] Size/type validation and client-side compression/resize boundary.
+- [x] Size/type validation and adaptive client-side compression/resize boundary.
 - [x] Own-profile + active UID/household gate.
 - [x] Stale HouseholdContext protection during upload.
 - [x] Upload preview, explicit confirm and progress flow.
@@ -112,9 +115,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Upload/privacy regression contract updated for the Cloudinary/Spark boundary.
 - [x] Rebuild contract-test CI workflow retained.
 - [x] Temporary Cloudinary probe endpoints removed after capability checks.
-- [ ] Create restricted unsigned preset `fa_hero_91c8f43ad0b6_v1` in Cloudinary Console.
-- [ ] Verify preset upload succeeds and lands in the dedicated folder.
-- [ ] Real iPhone/PWA upload + reload persistence + same-household visibility + reset/preset device gate accepted.
+- [x] Preset-backed upload verified through the live app.
+- [x] Real iPhone/PWA upload gate accepted on 2026-08-22 after adaptive compression fix.
 - [!] Before broader multi-family beta, replace the unsigned public-by-URL bridge with server-authorized/signed media access and process cleanup queue automatically.
 
 #### STEP 2B.4 — Global FamilyApp Icon System
@@ -341,6 +343,7 @@ For each functional phase verify:
 - 2026-08-22 — Multi-family readiness and privacy-safe personal platform administration made explicit broader-beta release gates.
 - 2026-08-22 — Firebase Storage path abandoned after Spark required a Blaze upgrade for Storage; product owner explicitly chose no billing exposure.
 - 2026-08-22 — STEP 2B.3 migrated to the existing Cloudinary Free account. Firebase remains Spark; unsigned Cloudinary upload is explicitly prototype-only pending signed media hardening before broader beta.
+- 2026-08-22 — Adaptive iPhone photo compression fix accepted on real device; STEP 2B.3 accepted/frozen and STEP 2B closed. STEP 2A resumes.
 
 ## Maintenance rule
 
