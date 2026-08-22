@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FAMILYAPP HERO BACKDROP UPLOAD SERVICE v2.0.1
+// FAMILYAPP HERO BACKDROP UPLOAD SERVICE v2.1.0
 // STEP 2B.3
 // Own-profile Cloudinary Free upload bridge. Images are validated and
 // compressed client-side before upload. Firebase Realtime Database remains
@@ -9,7 +9,7 @@
 (function(){
   if(window.HeroBackdropUploadService)return;
 
-  var VERSION='2.0.1';
+  var VERSION='2.1.0';
   var CLOUD_NAME='rg86slp4';
   // Prototype-only unsigned preset. Configure this preset in Cloudinary with
   // image-only formats, a strict file-size cap, random public IDs and the
@@ -19,8 +19,17 @@
   var MAX_SOURCE_BYTES=15*1024*1024;
   var MAX_EDGE=1800;
   var MAX_OUTPUT_BYTES=1400*1024;
-  var QUALITY=.82;
   var CLOUDINARY_ORIGIN='https://res.cloudinary.com/'+CLOUD_NAME+'/image/upload/';
+  var COMPRESSION_STEPS=[
+    {edge:1800,quality:.82},
+    {edge:1600,quality:.76},
+    {edge:1440,quality:.70},
+    {edge:1280,quality:.64},
+    {edge:1120,quality:.58},
+    {edge:960,quality:.52},
+    {edge:820,quality:.48},
+    {edge:720,quality:.44}
+  ];
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function capture(){try{return window.HouseholdContext&&HouseholdContext.capture?HouseholdContext.capture():null;}catch(e){return null;}}
@@ -47,7 +56,7 @@
 
   function canvasBlob(canvas,type,quality){return new Promise(function(resolve){try{canvas.toBlob(function(blob){resolve(blob||null);},type,quality);}catch(e){resolve(null);}});}
 
-  function resize(img,maxEdge,quality){
+  function makeCanvas(img,maxEdge){
     var w=Math.max(1,Number(img.naturalWidth||img.width||1)),h=Math.max(1,Number(img.naturalHeight||img.height||1));
     var scale=Math.min(1,maxEdge/Math.max(w,h));
     var outW=Math.max(1,Math.round(w*scale)),outH=Math.max(1,Math.round(h*scale));
@@ -55,20 +64,48 @@
     var ctx=canvas.getContext('2d',{alpha:false});
     if(!ctx)throw error('CANVAS_UNAVAILABLE','Afbeelding verwerken is niet beschikbaar op dit toestel.');
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,outW,outH);
-    return canvasBlob(canvas,'image/webp',quality).then(function(blob){
-      if(blob)return{blob:blob,width:outW,height:outH,contentType:'image/webp'};
-      return canvasBlob(canvas,'image/jpeg',Math.min(.88,quality+.04)).then(function(jpeg){
-        if(!jpeg)throw error('ENCODE_FAILED','Afbeelding comprimeren is niet gelukt.');
-        return{blob:jpeg,width:outW,height:outH,contentType:'image/jpeg'};
+    return{canvas:canvas,width:outW,height:outH};
+  }
+
+  function encodeCandidate(img,maxEdge,quality){
+    var rendered=makeCanvas(img,maxEdge);
+    // JPEG quality control is reliable on iOS Safari and is ideal for photos.
+    // If JPEG encoding is unavailable, WebP remains a safe fallback.
+    return canvasBlob(rendered.canvas,'image/jpeg',quality).then(function(jpeg){
+      if(jpeg&&jpeg.size<=MAX_OUTPUT_BYTES)return{blob:jpeg,width:rendered.width,height:rendered.height,contentType:'image/jpeg'};
+      return canvasBlob(rendered.canvas,'image/webp',quality).then(function(webp){
+        var chosen=null,type='';
+        if(jpeg&&webp){chosen=jpeg.size<=webp.size?jpeg:webp;type=chosen===jpeg?'image/jpeg':'image/webp';}
+        else if(jpeg){chosen=jpeg;type='image/jpeg';}
+        else if(webp){chosen=webp;type='image/webp';}
+        if(!chosen)throw error('ENCODE_FAILED','Afbeelding comprimeren is niet gelukt.');
+        return{blob:chosen,width:rendered.width,height:rendered.height,contentType:type};
       });
     });
   }
 
+  function compressToLimit(img){
+    var index=0,best=null;
+    function next(){
+      var step=COMPRESSION_STEPS[index];
+      return encodeCandidate(img,step.edge,step.quality).then(function(candidate){
+        if(!best||candidate.blob.size<best.blob.size)best=candidate;
+        if(candidate.blob.size<=MAX_OUTPUT_BYTES)return candidate;
+        index++;
+        if(index<COMPRESSION_STEPS.length)return next();
+        throw error('OUTPUT_TOO_LARGE','Deze foto blijft uitzonderlijk groot na optimaliseren. Probeer een andere foto of een screenshot ervan.');
+      });
+    }
+    return next();
+  }
+
   function prepare(file){
     try{validate(file);}catch(e){return Promise.reject(e);}
-    return loadImage(file).then(function(img){return resize(img,MAX_EDGE,QUALITY).then(function(prepared){return prepared.blob.size<=MAX_OUTPUT_BYTES?prepared:resize(img,1280,.72);});}).then(function(prepared){
-      if(prepared.blob.size>MAX_OUTPUT_BYTES)throw error('OUTPUT_TOO_LARGE','De foto kon niet klein genoeg worden gemaakt. Kies een andere afbeelding.');
-      prepared.previewUrl=URL.createObjectURL(prepared.blob);prepared.sourceName=String(file.name||'achtergrond');prepared.sourceBytes=Number(file.size||0);return prepared;
+    return loadImage(file).then(function(img){return compressToLimit(img);}).then(function(prepared){
+      prepared.previewUrl=URL.createObjectURL(prepared.blob);
+      prepared.sourceName=String(file.name||'achtergrond');
+      prepared.sourceBytes=Number(file.size||0);
+      return prepared;
     });
   }
 
@@ -105,7 +142,7 @@
       }
       return{
         type:'upload',provider:'cloudinary',cloudName:CLOUD_NAME,assetId:String(data.asset_id||''),publicId:String(data.public_id||''),version:Number(data.version||0),format:String(data.format||''),
-        imageUrl:String(data.secure_url||''),thumbnailUrl:String(data.secure_url||''),contentType:prepared.contentType||prepared.blob.type||'image/webp',
+        imageUrl:String(data.secure_url||''),thumbnailUrl:String(data.secure_url||''),contentType:prepared.contentType||prepared.blob.type||'image/jpeg',
         width:Number(data.width||prepared.width||0),height:Number(data.height||prepared.height||0),bytes:Number(data.bytes||prepared.blob.size||0),uploadedAt:Date.now(),
         focalX:.5,focalY:.5,overlayStyle:'violet-night',overlayStrength:.34
       };
