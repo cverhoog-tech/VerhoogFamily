@@ -33,7 +33,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] STEP 0 stable baseline.
 - [x] STEP 1 authenticated session / startup ownership.
 - [x] STEP 2 HouseholdContext / UID identity / lifecycle.
-- [-] STEP 2A platform-admin identity foundation — active next phase.
+- [x] STEP 2A platform-admin identity foundation — code/foundation accepted; production activation remains a separate explicitly approved action.
 - [x] STEP 2B Person/UI identity modernization — accepted and closed.
 - [x] STEP 2B.1 backdrop foundation.
 - [x] STEP 2B.2 preset picker.
@@ -44,7 +44,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
 
-**Next phase: STEP 2A platform-admin identity foundation. After acceptance, continue with STEP 3 Tasks core.**
+**Next phase: STEP 3 Tasks core. Production activation of STEP 2A Firebase rules / personal platform-admin provisioning remains separate and requires explicit approval.**
 
 ## Phase checklist
 
@@ -68,16 +68,18 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Tests, preview and iPhone gate accepted.
 
 ### STEP 2A — Platform admin identity foundation
-- [ ] Platform role separated from household role.
-- [ ] Platform admin tied to protected authenticated personal UID authority.
-- [ ] No client self-elevation.
-- [ ] Dedicated platform permission contract.
-- [ ] Audit-event contract.
-- [ ] Privacy classification enforced.
-- [ ] Normal admin API exposes sanitized operational data only.
-- [ ] Tests prove household admin is not platform admin.
-- [ ] Tests prove platform admin does not imply raw household-content access.
-- [ ] Preview/device gate accepted where applicable.
+- [x] Platform role separated from household role.
+- [x] Platform admin tied to protected authenticated personal UID authority.
+- [x] No client self-elevation.
+- [x] Dedicated platform permission contract.
+- [x] Audit-event contract.
+- [x] Privacy classification enforced.
+- [x] Normal admin API exposes sanitized operational data only.
+- [x] Tests prove household admin is not platform admin.
+- [x] Tests prove platform admin does not imply raw household-content access.
+- [x] Preview/device gate accepted where applicable.
+
+Status: **code/foundation accepted on 2026-08-22. Production Firebase Rules deployment and provisioning of the product owner's personal UID in `platformAdmins/{uid}` are not part of this acceptance and remain pending explicit approval.**
 
 ### STEP 2B — Person/UI identity modernization
 
@@ -344,6 +346,7 @@ For each functional phase verify:
 - 2026-08-22 — Firebase Storage path abandoned after Spark required a Blaze upgrade for Storage; product owner explicitly chose no billing exposure.
 - 2026-08-22 — STEP 2B.3 migrated to the existing Cloudinary Free account. Firebase remains Spark; unsigned Cloudinary upload is explicitly prototype-only pending signed media hardening before broader beta.
 - 2026-08-22 — Adaptive iPhone photo compression fix accepted on real device; STEP 2B.3 accepted/frozen and STEP 2B closed. STEP 2A resumes.
+- 2026-08-22 — STEP 2A platform-admin identity foundation accepted after CI, READY preview and real iPhone smoke gate. Production Firebase Rules deployment and personal UID provisioning remain deliberately pending explicit approval.
 
 ## Maintenance rule
 
