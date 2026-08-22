@@ -17,6 +17,44 @@ Baseline main SHA: `997eb0710f512857a3280e776ab38988a7ee5a86`
 - Device gate after every functional phase: Vercel branch preview + real iPhone Safari smoke test before continuing.
 - All new architecture must remain compatible with a later iOS and Android store distribution layer; avoid web-only coupling where a platform-neutral service/domain boundary is practical.
 
+## Prototype end goal / release gate
+
+The household rebuild is not complete merely because one household works correctly. A core end goal of this prototype is that **multiple independent families can use FamilyApp safely at the same time**, while the product owner has a **personal platform-admin capability** for diagnostics and beta operations without unrestricted access to private household content.
+
+The detailed acceptance contract lives in `docs/multi-family-prototype-acceptance.md` and is part of this roadmap.
+
+### Multi-family acceptance
+
+Before the prototype is called multi-family ready:
+- every shared domain record must be scoped to exactly one `householdId`;
+- every user-private record must be UID-scoped;
+- account switch/logout/reconnect must not leak stale state or writes between users/households;
+- removed members must lose access according to Firebase Rules;
+- core modules must use household/UID-aware repository/service boundaries;
+- negative cross-household tests must exist for sensitive modules;
+- at least three independent test households must pass signup/join/use/logout/relogin/refresh/reconnect without data overlap.
+
+### Personal platform-admin acceptance
+
+Platform administration is a separate capability tied to the product owner's authenticated personal UID through server-verifiable authorization.
+
+By default the admin may see only sanitized operational information needed to run and debug the beta, such as:
+- opaque household ID and member count;
+- app/runtime/schema version;
+- last activity/sync timestamps;
+- startup/auth/sync/permission error codes;
+- listener/rebind/pending-write health;
+- device/browser/PWA context needed for technical reproduction;
+- module health, notification delivery health and intentionally collected aggregate usage signals.
+
+The normal admin surface must **not** expose raw household content such as task text, shopping items, recipes, meal contents, calendar text, feed/comments, private notes, uploads or detailed financial content.
+
+If content-level debugging is ever required, it must be a separate, consent-based, minimum-scope, audited and preferably time-limited support mechanism. Platform-admin status alone must never grant generic raw access to `families/{householdId}`.
+
+### Cross-cutting implementation rule
+
+Multi-family isolation and privacy-safe diagnostics are not deferred until the end. Each migrated module must add the relevant UID/household lifecycle and isolation tests as it is completed. STEP 14A then assembles the sanitized operational projection/dashboard, STEP 15 proves the security boundary, and STEP 16 removes any legacy authority that could bypass it.
+
 ## Device gate after every functional phase
 
 1. Syntax/static checks.
@@ -217,7 +255,7 @@ Store-readiness note: keep the controller independent from Google-specific UI so
 
 Introduce the platform-admin security boundary without building the full dashboard yet:
 - platform role separate from household role;
-- admin authority bound to the owner's authenticated personal UID via server-verifiable authorization;
+- admin authority bound to the product owner's authenticated personal UID via server-verifiable authorization;
 - no client self-elevation;
 - platform permission helper/API contract;
 - audit-event contract for admin actions;
@@ -328,7 +366,9 @@ Dashboard goals:
 - auth/startup/runtime error summaries;
 - module-level sync health;
 - notification-delivery health;
+- device/browser/PWA context required for technical reproduction where deliberately collected;
 - aggregate usage/operational metrics that were intentionally instrumented;
+- beta cohort / feature-flag state;
 - support-case/audit view.
 
 Privacy requirements:
