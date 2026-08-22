@@ -7,11 +7,12 @@ module.exports = async function handler(req, res) {
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
     // STEP 2B.5 — one canonical visual identity across login, browser and PWA.
-    // Every size is delivered through one same-origin endpoint backed by the
-    // versioned v5 crest, preventing Safari from falling back to the old asset.
+    // Install surfaces keep the square PWA variants; login uses a transparent
+    // presentation variant so the crest visually belongs to the auth page.
     const brandIcon192 = '/api/brand-icon?variant=192&v=5';
     const brandIcon180 = '/api/brand-icon?variant=180&v=5';
     const brandIcon32 = '/api/brand-icon?variant=32&v=5';
+    const brandLogin = '/api/brand-icon?variant=login&v=5-login1';
 
     html = html.replace('<meta name="apple-mobile-web-app-status-bar-style" content="default">','<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">');
     html = html.replace('<meta name="theme-color" content="#f6faf7">','<meta name="theme-color" content="#140724">');
@@ -27,15 +28,15 @@ module.exports = async function handler(req, res) {
     );
     html = html.replace(
       '<div id="login-logo" style="font-size:56px;margin-bottom:8px">🏠</div>',
-      '<div id="login-logo" style="width:108px;height:108px;margin-bottom:14px;display:flex;align-items:center;justify-content:center">' +
-      '<img src="' + brandIcon192 + '" width="108" height="108" alt="FamilieApp" ' +
-      'style="display:block;width:108px;height:108px;object-fit:cover;border-radius:28px;box-shadow:0 16px 36px rgba(72,22,126,.24),0 4px 14px rgba(214,160,55,.18)">' +
+      '<div id="login-logo" style="width:108px;height:108px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;box-shadow:none;overflow:visible">' +
+      '<img src="' + brandLogin + '" width="108" height="108" alt="FamilieApp" ' +
+      'style="display:block;width:108px;height:108px;object-fit:contain;background:transparent;border:0;border-radius:0;box-shadow:none;filter:drop-shadow(0 10px 18px rgba(72,22,126,.16)) drop-shadow(0 2px 5px rgba(214,160,55,.16))">' +
       '</div>'
     );
 
     html = html.replace('<script src="src/core/store.js"></script>','<script src="src/core/store.js?v=1"></script>');
     html = html.replace('<script src="src/core/utils.js"></script>','<script src="src/core/utils.js?v=1"></script>');
-    html = html.replace('<script src="src/core/appIcon.js"></script>','<script src="src/core/appIcon.js?v=5"></script>');
+    html = html.replace('<script src="src/core/appIcon.js"></script>','<script src="src/core/appIcon.js?v=6"></script>');
     html = html.replace('<script src="src/core/addSheet.js"></script>','<script src="src/core/addSheet.js?v=1"></script>');
     html = html.replace('<script src="src/core/search.js"></script>','<script src="src/core/search.js?v=1"></script>');
     html = html.replace('<script src="src/core/swipe.js"></script>','<script src="src/core/swipe.js?v=1"></script>');
