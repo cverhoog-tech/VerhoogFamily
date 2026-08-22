@@ -177,42 +177,105 @@
       migration:migration||binding.migrationState||'none'
     });
   }
-  function migrateLegacyShared(binding){
+  function taskIdentity(entry){
+    var row=entry&&entry.value||{};
+    if(row.id!==undefined&&row.id!==null&&row.id!=='')return String(row.id);
+    if(row._key)return String(row._key);
+    return String(entry&&entry.key||'');
+  }
+  function reconcileLegacyMap(currentValue,legacyValue,ctx){
+    var currentEntries=rows(currentValue);
+    var legacyEntries=rows(legacyValue);
+    if(!legacyEntries.length)return clone(currentValue)||{};
+
+    var result={};
+    var currentKeyByIdentity={};
+    var canonicalKeyByIdentity={};
+    currentEntries.forEach(function(entry){
+      var identity=taskIdentity(entry);
+      if(identity)currentKeyByIdentity[identity]=entry.key;
+      if(Number(entry.value&&entry.value.schemaVersion||0)>=2){
+        var canonical=normalizeExisting(entry.value,entry.key,ctx);
+        result[entry.key]=canonical;
+        if(identity)canonicalKeyByIdentity[identity]=entry.key;
+      }
+    });
+
+    legacyEntries.forEach(function(entry,index){
+      var identity=taskIdentity(entry)||String(index);
+      if(canonicalKeyByIdentity[identity])return;
+      var key=currentKeyByIdentity[identity]||entry.key||safeKey(identity);
+      if(result[key]&&taskIdentity({key:key,value:result[key]})!==identity)key=safeKey(identity)+'_legacy';
+      var row=normalizeExisting(entry.value,key,ctx);
+      if(!row.createdByUid)row.createdByUid=ctx.uid;
+      if(!row.createdAt)row.createdAt=now();
+      row.schemaVersion=2;
+      row.migratedFrom='shared/tasks';
+      row.migratedAt=now();
+      result[key]=row;
+    });
+    return result;
+  }
+  function ensureLegacyReconciled(binding,canonicalValue){
     if(!bindingCurrent(binding)||binding.migrationChecked||binding.migrationInFlight)return;
     binding.migrationInFlight=true;
-    binding.migrationState='checking-legacy-shared';
+    binding.migrationState='checking-migration-marker';
+    var markerRef=binding.db.ref('families/'+binding.context.householdId+'/taskMigrations/v2SharedToCanonical');
     var legacyRef=binding.db.ref('families/'+binding.context.householdId+'/shared/tasks');
-    legacyRef.once('value').then(function(snapshot){
-      if(!bindingCurrent(binding))return;
-      binding.migrationInFlight=false;
-      binding.migrationChecked=true;
-      var legacyTasks=listFromValue(snapshot&&snapshot.val?snapshot.val():null,binding.context);
-      if(!legacyTasks.length){
-        binding.migrationState='none';
-        publishCanonical(binding,{},'firebase-empty','none');
-        return;
+
+    markerRef.once('value').then(function(markerSnapshot){
+      if(!bindingCurrent(binding))return null;
+      var marker=markerSnapshot&&markerSnapshot.val?markerSnapshot.val():null;
+      if(marker&&marker.status==='complete'){
+        binding.migrationChecked=true;
+        binding.migrationInFlight=false;
+        binding.migrationState='complete';
+        return binding.ref.once('value').then(function(latestSnapshot){
+          if(!bindingCurrent(binding))return null;
+          publishCanonical(binding,latestSnapshot&&latestSnapshot.val?latestSnapshot.val():null,'firebase','legacy-reconciled');
+          return null;
+        });
       }
-      binding.migrationState='legacy-shared-to-canonical';
-      var migrated=mapFromTasks(legacyTasks,binding.context,true);
-      return new Promise(function(resolve,reject){
-        binding.ref.transaction(function(current){
+      binding.migrationState='checking-legacy-shared';
+      return legacyRef.once('value').then(function(legacySnapshot){
+        if(!bindingCurrent(binding))return null;
+        var legacyValue=legacySnapshot&&legacySnapshot.val?legacySnapshot.val():null;
+        var legacyEntries=rows(legacyValue);
+        if(!legacyEntries.length){
+          return {value:canonicalValue,source:'no-shared-data'};
+        }
+        binding.migrationState='reconciling-legacy-shared';
+        return new Promise(function(resolve,reject){
+          binding.ref.transaction(function(current){
+            if(!bindingCurrent(binding))return;
+            return reconcileLegacyMap(current,legacyValue,binding.context);
+          },function(error,committed,snapshot){
+            if(error){reject(error);return;}
+            if(!bindingCurrent(binding)){resolve(null);return;}
+            resolve({value:snapshot&&snapshot.val?snapshot.val():canonicalValue,source:committed?'shared-reconciled':'canonical-unchanged'});
+          },false);
+        });
+      });
+    }).then(function(result){
+      if(!result||!bindingCurrent(binding)||binding.migrationChecked)return null;
+      binding.migrationState='writing-migration-marker';
+      return markerRef.set({status:'complete',source:'shared/tasks',strategy:result.source,completedAt:now(),byUid:binding.context.uid}).then(function(){
+        if(!bindingCurrent(binding))return null;
+        binding.migrationChecked=true;
+        binding.migrationInFlight=false;
+        binding.migrationState='complete';
+        return binding.ref.once('value').then(function(latestSnapshot){
           if(!bindingCurrent(binding))return;
-          if(rows(current).length)return;
-          return migrated;
-        },function(error,committed){
-          if(error){reject(error);return;}
-          if(!bindingCurrent(binding)){resolve(false);return;}
-          binding.migrationState=committed?'legacy-shared-to-canonical':'canonical-won-migration-race';
-          resolve(committed);
-        },false);
+          publishCanonical(binding,latestSnapshot&&latestSnapshot.val?latestSnapshot.val():null,'firebase','legacy-reconciled');
+        });
       });
     }).catch(function(error){
       if(!bindingCurrent(binding))return;
       binding.migrationInFlight=false;
       binding.migrationChecked=true;
-      binding.migrationState='legacy-check-failed';
-      publishCanonical(binding,{},'firebase-empty','legacy-check-failed');
-      console.warn('[TaskHouseholdRepository] legacy shared/tasks migration check failed',error);
+      binding.migrationState='legacy-reconcile-failed';
+      publishCanonical(binding,canonicalValue,'firebase','legacy-reconcile-failed');
+      console.warn('[TaskHouseholdRepository] legacy task reconciliation failed',error);
     });
   }
   function bind(ctx,reason){
@@ -249,15 +312,8 @@
     binding.handler=function(snapshot){
       if(!bindingCurrent(binding))return;
       var value=snapshot&&snapshot.val?snapshot.val():null;
-      var taskRows=rows(value);
-      if(taskRows.length){
-        binding.migrationChecked=true;
-        binding.migrationInFlight=false;
-        publishCanonical(binding,value,'firebase',binding.migrationState);
-        return;
-      }
-      if(binding.migrationChecked){publishCanonical(binding,{},'firebase-empty',binding.migrationState);return;}
-      migrateLegacyShared(binding);
+      if(!binding.migrationChecked){ensureLegacyReconciled(binding,value);return;}
+      publishCanonical(binding,value,rows(value).length?'firebase':'firebase-empty',binding.migrationState);
     };
     ref.on('value',binding.handler,function(error){
       if(!bindingCurrent(binding))return;
