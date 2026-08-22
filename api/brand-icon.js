@@ -2,13 +2,13 @@
 
 const https = require('https');
 
-const SOURCE = 'https://res.cloudinary.com/rg86slp4/image/upload/v1787324391/familyapp/brand/v4/icon-master.png';
+const SOURCE = 'https://res.cloudinary.com/rg86slp4/image/upload/v1787358667/familyapp/brand/v5/icon-master.png';
 const VARIANTS = Object.freeze({
-  '32': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_32,h_32,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png',
-  '180': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png',
-  '192': SOURCE,
-  '512': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1787324391/familyapp/brand/v4/icon-master.png',
-  'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:140724,f_png/v1787324391/familyapp/brand/v4/icon-master.png'
+  '32': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_32,h_32,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
+  '180': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
+  '192': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_192,h_192,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
+  '512': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1787358667/familyapp/brand/v5/icon-master.png',
+  'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:faf8f2,f_png/v1787358667/familyapp/brand/v5/icon-master.png'
 });
 
 function pipeImage(url, res, redirectsLeft) {
@@ -28,7 +28,7 @@ function pipeImage(url, res, redirectsLeft) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('CDN-Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Disposition', 'inline; filename="familyapp-brand-v4.png"');
+    res.setHeader('Content-Disposition', 'inline; filename="familyapp-brand-v5.png"');
     upstream.pipe(res);
   }).on('error', function() {
     if (!res.headersSent) res.status(502).send('FamilyApp brand asset unavailable');
