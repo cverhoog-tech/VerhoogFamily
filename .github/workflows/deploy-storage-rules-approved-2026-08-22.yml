@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: firebase-storage-rules-production
@@ -20,6 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Mark Firebase deployment pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=pending -f context='Firebase Storage Rules' -f description='Deploying approved production Storage rules'
+
       - name: Checkout approved branch
         uses: actions/checkout@v4
         with:
@@ -50,3 +56,15 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: npx --yes firebase-tools@latest deploy --only storage --project verhoog-family --non-interactive
+
+      - name: Mark Firebase deployment successful
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context='Firebase Storage Rules' -f description='Approved production Storage rules deployed'
+
+      - name: Mark Firebase deployment failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context='Firebase Storage Rules' -f description='Production Storage rules deployment failed'
