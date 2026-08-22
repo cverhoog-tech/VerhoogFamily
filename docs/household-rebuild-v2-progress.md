@@ -43,8 +43,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] STEP 2B.6 Tasks icon/detail/create presentation accepted and frozen.
 - [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
+- [-] STEP 3 Tasks core — implementation, isolation contract, CI and READY preview complete; real-device gate pending.
 
-**Next phase: STEP 3 Tasks core. Production activation of STEP 2A Firebase rules / personal platform-admin provisioning remains separate and requires explicit approval.**
+**Current phase: STEP 3 Tasks core. After real-device acceptance, continue with STEP 4 Recipes. Production activation of STEP 2A Firebase rules / personal platform-admin provisioning remains separate and requires explicit approval.**
 
 ## Phase checklist
 
@@ -160,12 +161,14 @@ Status: **accepted / closed / frozen prototype baseline**
 - [x] No additional icon migration/device gate required because no code change is being made.
 
 ### STEP 3 — Tasks core
-- [ ] Household-scoped task repository.
-- [ ] UID identity and mutation boundary.
-- [ ] Realtime bind/unbind without duplicate listeners.
-- [ ] Existing premium UI retained.
-- [ ] Cross-household/lifecycle tests.
-- [ ] Tests/preview/device gate accepted.
+- [x] Household-scoped task repository at `families/{householdId}/tasks`.
+- [x] UID identity and mutation boundary through `HouseholdContext` capture/isCurrent protection.
+- [x] Realtime bind/unbind with exact-listener cleanup and stale-callback rejection.
+- [x] Existing premium UI contract retained through the `TaskSharedData` compatibility facade; no STEP 3 redesign introduced.
+- [x] Cross-household/lifecycle regression contract covers A → B switching, stale callbacks, local legacy leak prevention and same-household migration.
+- [-] Tests/preview/device gate — contract CI and Vercel READY preview passed; real iPhone/PWA gate still pending.
+
+Status: **implementation ready for real-device acceptance. Canonical task persistence is now separated from the legacy family-root sync. Generic local task/AppState data is never used to seed another household. Local task cache is UID + household scoped. Same-household `shared/tasks` migration is guarded by a transaction so a concurrent canonical write wins instead of being overwritten.**
 
 ### STEP 4 — Recipes
 - [ ] Firebase shared source of truth.
@@ -347,6 +350,7 @@ For each functional phase verify:
 - 2026-08-22 — STEP 2B.3 migrated to the existing Cloudinary Free account. Firebase remains Spark; unsigned Cloudinary upload is explicitly prototype-only pending signed media hardening before broader beta.
 - 2026-08-22 — Adaptive iPhone photo compression fix accepted on real device; STEP 2B.3 accepted/frozen and STEP 2B closed. STEP 2A resumes.
 - 2026-08-22 — STEP 2A platform-admin identity foundation accepted after CI, READY preview and real iPhone smoke gate. Production Firebase Rules deployment and personal UID provisioning remain deliberately pending explicit approval.
+- 2026-08-22 — STEP 3 Tasks core implementation completed through `d00f7d99e2f418fbd3d7b9f5e7aa35bbc86cc761`: canonical household task repository, UID/context mutation boundary, exact listener rebind, stale-callback protection, same-household legacy migration, UID+household cache isolation and legacy task sync guard. Household Rebuild Contracts and Vercel preview passed; real iPhone/PWA device gate remains pending.
 
 ## Maintenance rule
 
