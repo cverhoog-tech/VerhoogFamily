@@ -3,6 +3,10 @@
 // CALENDAR + FINANCE BOOTSTRAP
 // FinanceStore is loaded before the legacy agenda/finance runtime so every
 // finance mutation has one household-scoped source of truth from first use.
+//
+// STEP 6 calendar order is deliberate:
+// legacy UI -> canonical repository -> compatibility facade -> premium UI ->
+// virtual MealPlan projection -> per-user Google sync.
 // ============================================================
 (function(){
   function load(src, done){
@@ -24,10 +28,12 @@
               if(window.FinanceMaandplanPriority&&FinanceMaandplanPriority.install)FinanceMaandplanPriority.install();
               if(window.FinanceTransactionsPremiumUi&&FinanceTransactionsPremiumUi.install)FinanceTransactionsPremiumUi.install();
               if(window.FinanceMaandplanGroups&&FinanceMaandplanGroups.install)FinanceMaandplanGroups.install();
-              load('src/modules/calendar/calendarSharedLive.js?v=2', function(){
-                load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
-                  load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                    load('src/modules/calendar/calendarGoogleSync.js?v=1');
+              load('src/modules/calendar/calendarEventHouseholdRepository.js?v=1', function(){
+                load('src/modules/calendar/calendarSharedLive.js?v=3', function(){
+                  load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
+                    load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                      load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                    });
                   });
                 });
               });
