@@ -89,31 +89,30 @@ Decision:
 
 ### STEP 2B.7 — Shopping / Recipes / Meals icon migration
 
-Status: **implementation wired; preview/device acceptance pending**
+Status: **accepted / complete / frozen baseline**
 
-Done in implementation:
+Done:
 - Added `FamilyAppFoodIconResolver` as a central semantic boundary for recipe categories and meal slots.
 - Shopping product/category rendering continues through the canonical `FamilyAppUtilityIconResolver`; visible generic emoji fallback is replaced by canonical `utilityGeneric` artwork.
 - Shopping list selector/picker uses canonical shopping/people artwork and no longer depends on emoji labels for private/household presentation.
-- Recipe editor hero category presentation now uses the canonical food resolver while retaining legacy recipe emoji only as compatibility metadata in stored records.
-- Meals screen lunch/dinner content icons now resolve through the central food resolver.
+- Recipe editor hero category presentation uses the canonical food resolver while retaining legacy recipe emoji only as compatibility metadata in stored records.
+- Meals screen lunch/dinner content icons resolve through the central food resolver.
 - Runtime loads `familyAppFoodIconResolver.js` before migrated module presentation code and cache-busts Shop / Recipe editor / Meals.
-- Added `scripts/test-food-icon-contract.js` to lock the semantic mappings, runtime wiring and frozen STEP 2B.6 boundary.
+- Added `scripts/test-food-icon-contract.js` to lock semantic mappings, runtime wiring and the frozen STEP 2B.6 boundary.
+- Latest Vercel branch preview reached READY.
+- Real iPhone Safari visual/device smoke test for Shopping, Recipes and Meals accepted by product owner on 2026-08-22.
+- Shopping/recipe/meal behavior confirmed visually/functionally acceptable during the device gate.
 
-Still required before accepting/freeze:
-- Vercel branch preview must be READY on the latest 2B.7 commit.
-- Real iPhone Safari visual/device smoke test for Shopping, Recipes and Meals.
-- Confirm no shopping/recipe/meal functional regression.
-
-Guardrail:
-- Stored legacy emoji fields are intentionally not deleted in this visual phase; cleanup belongs to later legacy/data-contract work.
+Decision:
+- Treat the current Shopping / Recipes / Meals icon presentation as a frozen STEP 2B.7 baseline.
+- Stored legacy emoji fields remain compatibility metadata for now; removing them belongs to later legacy/data-contract cleanup, not this visual phase.
 - STEP 2B.5 and STEP 2B.6 remain untouched/frozen.
 
 ## Rebuild baseline
 
-**STEP 2B.5 + STEP 2B.6 are accepted and frozen. STEP 2B.7 is the active device-gate candidate.**
+**STEP 2B.5 + STEP 2B.6 + STEP 2B.7 are accepted and frozen. STEP 2B.8 is the next module icon migration.**
 
-The next household-rebuild work must preserve the accepted brand/PWA/login and task icon/detail/create presentation unless explicitly requested.
+The next household-rebuild work must preserve the accepted brand/PWA/login, task icon/detail/create, and Shopping / Recipes / Meals icon presentation unless explicitly requested.
 
 ## Planning source of truth
 
@@ -141,11 +140,11 @@ Do not resurrect or infer open work from the retired May TODO.
 
 ## Next work
 
-### Complete STEP 2B device gates, then resume platform/multi-family architecture
+### Complete remaining STEP 2B work, then resume platform/multi-family architecture
 
 Planned order:
-1. Device-test and accept/freeze STEP 2B.7.
-2. Complete remaining STEP 2B work, including 2B.8 and the outstanding 2B.3/2B.4 closure items.
+1. Implement and device-test STEP 2B.8 — Feed / Notifications / Agenda / Finance / Achievements icon migration.
+2. Close the outstanding STEP 2B.3 upload-support and STEP 2B.4 global icon-system audit items.
 3. Resume **STEP 2A platform-admin identity foundation** before building the later admin dashboard.
 4. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
 5. Build **STEP 14A sanitized platform operations dashboard**.
