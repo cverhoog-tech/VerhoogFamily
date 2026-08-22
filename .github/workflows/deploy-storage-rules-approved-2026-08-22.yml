@@ -1,13 +1,7 @@
-name: Deploy approved Firebase Storage Rules 2026-08-22
+name: Deploy Firebase Storage Rules (explicit approval only)
 
 on:
-  push:
-    branches:
-      - agent/household-rebuild-v2
-    paths:
-      - .github/workflows/deploy-storage-rules-approved-2026-08-22.yml
-      - storage.rules
-      - scripts/deploy-storage-rules-direct.js
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,7 +20,7 @@ jobs:
       - name: Mark Firebase deployment pending
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=pending -f context='Firebase Storage Rules' -f description='Deploying approved production Storage rules' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=pending -f context='Firebase Storage Rules' -f description='Deploying explicitly approved production Storage rules' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Checkout approved branch
         uses: actions/checkout@v4
