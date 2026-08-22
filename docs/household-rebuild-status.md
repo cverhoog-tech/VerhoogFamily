@@ -8,17 +8,20 @@ Primary branch: `agent/household-rebuild-v2`
 
 ### STEP 2B.5 — Brand / app identity
 
-Status: **mostly complete; final approved crest asset handoff still open**
+Status: **v5 wired; final real-device Add-to-Home-Screen acceptance pending**
 
 Done:
 - Canonical app-icon runtime exists.
 - Manifest / Apple touch / favicon paths are centralized through the same-origin brand endpoint.
 - Login and PWA/browser shell use the canonical brand pipeline.
+- Final approved white/gold crest with the single purple diamond is stored as the v5 brand source.
+- `api/brand-icon.js` serves the v5 crest for 32 / 180 / 192 / 512 / maskable variants.
+- `src/core/appIcon.js`, `manifest.json` and the runtime shell are switched from brand v4 to brand v5.
+- Maskable icon uses a light ivory safety background to match the approved crest.
 - iPhone Safari PWA behavior has been exercised during this phase.
 
 Open:
-- Wire the final approved white/gold crest with the single purple diamond into the canonical brand endpoint/assets. The runtime still references the earlier v4 asset path/version.
-- Final real-device Add-to-Home-Screen acceptance after that asset swap.
+- Final real-device Add-to-Home-Screen acceptance with the v5 crest on iPhone Safari.
 
 ### STEP 2B.6A — Task category/content icons
 
@@ -70,10 +73,9 @@ Decision:
 
 ## Next work
 
-1. Finish STEP 2B.5 by swapping in the final approved white/gold crest with the single purple diamond.
-2. Re-test login branding and Add to Home Screen on iPhone Safari.
-3. Freeze STEP 2B.5 together with the already frozen STEP 2B.6 baseline.
-4. Start the next household-rebuild step from that accepted baseline.
+1. Re-test login branding and Add to Home Screen on iPhone Safari with crest v5.
+2. Freeze STEP 2B.5 together with the already frozen STEP 2B.6 baseline after acceptance.
+3. Start the next household-rebuild step from that accepted baseline.
 
 ## Guardrails
 
