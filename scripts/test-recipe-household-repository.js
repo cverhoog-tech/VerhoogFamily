@@ -146,9 +146,26 @@ function makeDb(initial){
   assert.strictEqual(created.householdId,'B');
   assert.strictEqual(created.createdByUid,'uidB');
   assert.strictEqual(created.schemaVersion,3);
-  assert.ok(database.writes.some(w=>w.path.startsWith('families/B/recipes/id_recipe_')&&w.value&&w.value.name==='Created in B'),'create must write under canonical B recipe path');
+  const createdPath='families/B/recipes/'+created._key;
+  assert.ok(database.writes.some(w=>w.path===createdPath&&w.value&&w.value.name==='Created in B'),'create must write under canonical B recipe path');
   assert.ok(!database.writes.some(w=>w.path.startsWith('families/A/recipes')&&w.value&&w.value.name==='Created in B'),'B create must never write to A');
   assert.ok(Object.keys(storage.dump()).some(k=>k==='familyapp_recipes_v3_uidB_B'),'recipe cache must be scoped by UID + household');
+
+  // Edit is transactionally sealed: immutable identity/household fields cannot be forged.
+  const edited=await repo.updateOne(created.id,{name:'Edited in B',householdId:'A',createdByUid:'forged',schemaVersion:999});
+  assert.strictEqual(edited.name,'Edited in B');
+  assert.strictEqual(edited.householdId,'B','edit must remain in the active household');
+  assert.strictEqual(edited.createdByUid,'uidB','edit cannot replace creator identity');
+  assert.strictEqual(edited.schemaVersion,3,'edit cannot replace canonical schema version');
+  assert.strictEqual(edited.updatedByUid,'uidB','edit must audit the active UID');
+  assert.ok(database.writes.some(w=>w.path===createdPath&&w.value&&w.value.name==='Edited in B'&&w.value.householdId==='B'),'edit must transact only on the canonical B recipe record');
+  assert.ok(!database.writes.some(w=>w.path.startsWith('families/A/recipes')&&w.value&&w.value.name==='Edited in B'),'B edit must never write to A');
+
+  // Delete removes exactly the canonical B record and does not touch A.
+  const removed=await repo.remove(created.id);
+  assert.strictEqual(removed,true);
+  assert.ok(database.writes.some(w=>w.path===createdPath&&w.value===null),'delete must clear exactly the canonical B recipe record');
+  assert.ok(!database.writes.some(w=>w.path.startsWith('families/A/recipes')&&w.value===null),'B delete must never target A');
 
   // Same-household shared/recipes migration is allowed.
   contextState={uid:'uidC',householdId:'C',ready:true,revision:3};
