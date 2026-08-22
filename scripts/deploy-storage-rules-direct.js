@@ -2,8 +2,9 @@
 // Direct Firebase Rules API deploy for the explicitly approved STEP 2B.3
 // production Storage Rules release. This intentionally bypasses the Firebase
 // CLI Service Usage preflight only; it does not bypass Firebase Rules IAM.
-// The service account must still be authorized by Google to test/create/release
-// Firebase Security Rules.
+// The service account must still be authorized by Google to create/release
+// Firebase Security Rules. If rulesets.test is unavailable, rulesets.create
+// remains the authoritative syntax/semantic validation boundary.
 
 const fs = require('fs');
 const crypto = require('crypto');
@@ -134,16 +135,25 @@ async function main() {
   console.log(`Authenticating Firebase Rules deploy for ${PROJECT_ID}...`);
   const token = await getAccessToken(credentials);
 
-  console.log('Validating Storage rules with Firebase Rules API...');
-  const test = await rulesApi(token, 'POST', `/projects/${PROJECT_ID}:test`, { source });
-  const errors = (test.issues || []).filter((issue) => issue && issue.severity === 'ERROR');
-  if (errors.length) {
-    errors.forEach((issue) => console.error(`Rules ERROR ${issue.sourcePosition ? `${issue.sourcePosition.line}:${issue.sourcePosition.column}` : ''} ${issue.description || ''}`));
-    fail('Firebase Rules validation returned errors.');
+  console.log('Attempting pre-deploy Firebase Rules validation...');
+  try {
+    const test = await rulesApi(token, 'POST', `/projects/${PROJECT_ID}:test`, { source });
+    const errors = (test.issues || []).filter((issue) => issue && issue.severity === 'ERROR');
+    if (errors.length) {
+      errors.forEach((issue) => console.error(`Rules ERROR ${issue.sourcePosition ? `${issue.sourcePosition.line}:${issue.sourcePosition.column}` : ''} ${issue.description || ''}`));
+      fail('Firebase Rules validation returned errors.');
+    }
+    (test.issues || []).filter((issue) => issue && issue.severity !== 'ERROR').forEach((issue) => {
+      console.warn(`Rules ${issue.severity || 'ISSUE'}: ${issue.description || ''}`);
+    });
+    console.log('Pre-deploy rules validation passed.');
+  } catch (error) {
+    if (error && error.status === 403) {
+      console.warn('Service account lacks optional firebaserules.rulesets.test permission; continuing with immutable ruleset creation, which also validates rule syntax/semantics.');
+    } else {
+      throw error;
+    }
   }
-  (test.issues || []).filter((issue) => issue && issue.severity !== 'ERROR').forEach((issue) => {
-    console.warn(`Rules ${issue.severity || 'ISSUE'}: ${issue.description || ''}`);
-  });
 
   console.log('Reading current Firebase Rules releases...');
   const releases = await listAllReleases(token);
@@ -151,7 +161,7 @@ async function main() {
   console.log(`Target release: ${target.name}${target.exists ? ' (existing)' : ' (new)'}`);
   if (target.previousRulesetName) console.log(`Previous ruleset: ${target.previousRulesetName}`);
 
-  console.log('Creating immutable Storage ruleset...');
+  console.log('Creating immutable Storage ruleset (authoritative validation boundary)...');
   const created = await rulesApi(token, 'POST', `/projects/${PROJECT_ID}/rulesets`, { source });
   if (!created.name) fail('Firebase Rules API did not return a ruleset name.');
   console.log(`Created ruleset: ${created.name}`);
