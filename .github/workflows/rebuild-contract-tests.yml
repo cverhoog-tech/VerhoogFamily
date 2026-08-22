@@ -8,7 +8,6 @@ on:
       - 'src/**'
       - 'api/**'
       - 'scripts/**'
-      - 'storage.rules'
       - 'firebase.json'
       - '.github/workflows/rebuild-contract-tests.yml'
   workflow_dispatch:
