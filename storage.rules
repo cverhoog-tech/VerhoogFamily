@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // STEP 2B.3 prototype media boundary.
+    // Object ids are cryptographically random and the RTDB member record is
+    // the only place that exposes the exact storagePath to household members.
+    // Listing is always denied. Reads require authentication. Writes/deletes
+    // are restricted to the member's own UID path and validated image metadata.
+    //
+    // STEP 15 must replace authenticated exact-path reads with a stronger
+    // household authorization signal (for example verified custom claims or a
+    // dedicated secure media service) before the broader multi-family beta.
+    match /families/{familyId}/members/{memberUid}/hero-backdrops/{fileName} {
+      allow list: if false;
+      allow get: if request.auth != null;
+
+      allow create, update: if request.auth != null
+        && request.auth.uid == memberUid
+        && fileName.matches('^[0-9a-f]{32}[.](webp|jpg)$')
+        && request.resource.size > 0
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.metadata.familyAppPurpose == 'hero-backdrop'
+        && request.resource.metadata.householdId == familyId
+        && request.resource.metadata.uid == memberUid;
+
+      allow delete: if request.auth != null && request.auth.uid == memberUid;
+    }
+  }
+}
