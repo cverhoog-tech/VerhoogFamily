@@ -1,0 +1,52 @@
+name: Deploy approved Firebase Storage Rules 2026-08-22
+
+on:
+  push:
+    branches:
+      - agent/household-rebuild-v2
+    paths:
+      - .github/workflows/deploy-storage-rules-approved-2026-08-22.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-storage-rules-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-storage-rules:
+    name: Deploy approved Cloud Storage rules
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout approved branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/household-rebuild-v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify approved Storage rules are registered
+        run: |
+          node -e "const fs=require('fs'); const cfg=JSON.parse(fs.readFileSync('firebase.json','utf8')); if(!cfg.storage || cfg.storage.rules!=='storage.rules') throw new Error('storage.rules is not registered in firebase.json'); if(!fs.existsSync('storage.rules')) throw new Error('storage.rules missing'); console.log('Approved Storage rules configuration verified')"
+
+      - name: Write Firebase service account credentials
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Missing GitHub secret FIREBASE_SERVICE_ACCOUNT"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Deploy Storage rules only
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: npx --yes firebase-tools@latest deploy --only storage --project verhoog-family --non-interactive
