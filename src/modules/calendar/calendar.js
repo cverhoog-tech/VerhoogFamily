@@ -29,7 +29,7 @@
               if(window.FinanceTransactionsPremiumUi&&FinanceTransactionsPremiumUi.install)FinanceTransactionsPremiumUi.install();
               if(window.FinanceMaandplanGroups&&FinanceMaandplanGroups.install)FinanceMaandplanGroups.install();
               load('src/modules/calendar/calendarEventHouseholdRepository.js?v=1', function(){
-                load('src/modules/calendar/calendarSharedLive.js?v=3', function(){
+                load('src/modules/calendar/calendarSharedLive.js?v=4', function(){
                   load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
                     load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
                       load('src/modules/calendar/calendarGoogleSync.js?v=1');

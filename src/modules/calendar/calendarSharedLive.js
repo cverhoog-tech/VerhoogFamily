@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CALENDAR SHARED LIVE v2.0.0
+// CALENDAR SHARED LIVE v2.0.1
 // STEP 6 compatibility facade over CalendarEventHouseholdRepository.
 //
 // Existing agenda UI keeps window.calData/saveItem/openCalEdit/deleteCalEvent,
@@ -8,9 +8,9 @@
 // the canonical repository.
 // ============================================================
 (function(){
-  if(window.CalendarSharedLive&&window.CalendarSharedLive.version==='2.0.0')return;
+  if(window.CalendarSharedLive&&window.CalendarSharedLive.version==='2.0.1')return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.0.1';
   var state={editingId:null,repositoryUnsubscribe:null,bootTimer:null,lastMeta:{source:'idle',ready:false}};
 
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
@@ -47,34 +47,88 @@
     return r.remove(id).then(function(ok){if(ok&&(!options||options.emitMutation!==false)&&old)emitLocal('delete',old);return ok;});
   }
 
-  function patchAddSheet(){
-    if(typeof window.saveItem!=='function'||window.saveItem.__calendarRepositoryWrapped)return false;
-    var originalSave=window.saveItem;
-    function wrappedSaveItem(){
-      if(window.currentAddType!=='cal')return originalSave.apply(this,arguments);
-      var title=((document.getElementById('f1')||{}).value||'').trim();
-      var date=((document.getElementById('f2')||{}).value||'').trim();
-      var time=((document.getElementById('f3')||{}).value||'').trim();
-      var description=((document.getElementById('cal-description')||{}).value||'').trim();
-      if(!title){if(window.showToast)showToast('Vul een titel in');return false;}
-      if(!date){if(window.showToast)showToast('Kies een datum');return false;}
-      var button=document.querySelector('#add-overlay .sheet-btn');if(button)button.disabled=true;
-      var id=state.editingId,existing=id!==null?current(id):null;
-      var work=existing
-        ? updateEvent(existing.id,{title:title,date:date,time:time,description:description})
-        : createEvent({title:title,date:date,time:time,description:description,color:'#2d5a27',createdAt:now()});
-      work.then(function(){state.editingId=null;if(window.closeAdd)window.closeAdd();if(window.showToast)showToast('Afspraak opgeslagen ✓');}).catch(function(error){if(button)button.disabled=false;if(window.showToast)showToast(error&&error.message||'Afspraak opslaan mislukt');});
-      return false;
+  function isIsoDate(value){return /^\d{4}-\d{2}-\d{2}$/.test(String(value||''));}
+  function localToday(){
+    if(typeof window.todayStr==='function'){
+      try{var provided=window.todayStr();if(isIsoDate(provided))return provided;}catch(e){}
     }
-    wrappedSaveItem.__calendarRepositoryWrapped=true;
-    window.saveItem=wrappedSaveItem;
+    var d=new Date(),m=d.getMonth()+1,day=d.getDate();
+    return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day;
+  }
+  function selectedCalendarDate(){
+    var selected=String(window.calSelDay||'');
+    return isIsoDate(selected)?selected:localToday();
+  }
+  function addSheetButton(){return document.querySelector('#add-overlay .sheet-btn');}
+  function resetCalendarButton(button,label){
+    if(!button)return;
+    button.disabled=false;
+    button.removeAttribute('aria-busy');
+    if(label)button.textContent=label;
+  }
+  function prepareCalendarAddSheet(isEditing){
+    var button=addSheetButton();
+    resetCalendarButton(button,isEditing?'Opslaan':'Toevoegen');
+    if(!isEditing){
+      var date=document.getElementById('f2');
+      if(date)date.value=selectedCalendarDate();
+    }
+  }
+
+  function patchAddSheet(){
+    if(typeof window.openAdd==='function'&&!window.openAdd.__calendarRepositoryOpenWrapped){
+      var originalOpen=window.openAdd;
+      var wrappedOpen=function(type){
+        var isCalendar=type==='cal',isEditing=isCalendar&&state.editingId!==null;
+        var result=originalOpen.apply(this,arguments);
+        if(isCalendar)prepareCalendarAddSheet(isEditing);
+        return result;
+      };
+      wrappedOpen.__calendarRepositoryOpenWrapped=true;
+      window.openAdd=wrappedOpen;
+    }
+
+    if(typeof window.saveItem==='function'&&!window.saveItem.__calendarRepositoryWrapped){
+      var originalSave=window.saveItem;
+      function wrappedSaveItem(){
+        if(window.currentAddType!=='cal')return originalSave.apply(this,arguments);
+        var title=((document.getElementById('f1')||{}).value||'').trim();
+        var date=((document.getElementById('f2')||{}).value||'').trim();
+        var time=((document.getElementById('f3')||{}).value||'').trim();
+        var description=((document.getElementById('cal-description')||{}).value||'').trim();
+        var button=addSheetButton();
+        if(!title){resetCalendarButton(button);if(window.showToast)showToast('Vul een titel in');return false;}
+        if(!date){resetCalendarButton(button);if(window.showToast)showToast('Kies een datum');return false;}
+        if(button){button.disabled=true;button.setAttribute('aria-busy','true');}
+        var id=state.editingId,existing=id!==null?current(id):null;
+        var work=existing
+          ? updateEvent(existing.id,{title:title,date:date,time:time,description:description})
+          : createEvent({title:title,date:date,time:time,description:description,color:'#2d5a27',createdAt:now()});
+        work.then(function(){
+          resetCalendarButton(button);
+          state.editingId=null;
+          if(window.closeAdd)window.closeAdd();
+          if(window.showToast)showToast('Afspraak opgeslagen ✓');
+        }).catch(function(error){
+          resetCalendarButton(button);
+          if(window.showToast)showToast(error&&error.message||'Afspraak opslaan mislukt');
+        });
+        return false;
+      }
+      wrappedSaveItem.__calendarRepositoryWrapped=true;
+      window.saveItem=wrappedSaveItem;
+    }
 
     if(typeof window.closeAdd==='function'&&!window.closeAdd.__calendarRepositoryWrapped){
       var originalClose=window.closeAdd;
-      var wrappedClose=function(){state.editingId=null;return originalClose.apply(this,arguments);};
+      var wrappedClose=function(){
+        resetCalendarButton(addSheetButton());
+        state.editingId=null;
+        return originalClose.apply(this,arguments);
+      };
       wrappedClose.__calendarRepositoryWrapped=true;window.closeAdd=wrappedClose;
     }
-    return true;
+    return !!(window.saveItem&&window.saveItem.__calendarRepositoryWrapped&&window.openAdd&&window.openAdd.__calendarRepositoryOpenWrapped);
   }
 
   function patchCalendarCrud(){
@@ -85,7 +139,7 @@
       var event=current(id);if(!event||event._imported||typeof window.openAdd!=='function')return;
       state.editingId=event.id;window.openAdd('cal');
       var st=document.getElementById('sheet-title');if(st)st.textContent='Afspraak bewerken';
-      var btn=document.querySelector('#add-overlay .sheet-btn');if(btn){btn.textContent='Opslaan';btn.disabled=false;}
+      var btn=addSheetButton();if(btn){btn.textContent='Opslaan';btn.disabled=false;btn.removeAttribute('aria-busy');}
       var f1=document.getElementById('f1');if(f1)f1.value=event.title||'';
       var f2=document.getElementById('f2');if(f2)f2.value=event.date||'';
       var f3=document.getElementById('f3');if(f3)f3.value=event.time||'';
@@ -123,7 +177,7 @@
   function boot(){
     ensureRepository();patchAddSheet();patchCalendarCrud();patchIcsImport();
     if(state.bootTimer)return;
-    var tries=0;state.bootTimer=setInterval(function(){tries++;var ok=ensureRepository();patchAddSheet();patchCalendarCrud();patchIcsImport();if((ok&&window.saveItem&&window.saveItem.__calendarRepositoryWrapped)||tries>240){clearInterval(state.bootTimer);state.bootTimer=null;}},100);
+    var tries=0;state.bootTimer=setInterval(function(){tries++;var ok=ensureRepository();var sheetOk=patchAddSheet();patchCalendarCrud();patchIcsImport();if((ok&&sheetOk)||tries>240){clearInterval(state.bootTimer);state.bootTimer=null;}},100);
   }
   function status(){var r=repo(),base=r&&typeof r.status==='function'?r.status():{};return Object.assign({version:VERSION,editingId:state.editingId,count:(window.calData||[]).length,source:state.lastMeta.source||'idle'},base);}
 
