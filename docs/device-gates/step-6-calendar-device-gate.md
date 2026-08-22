@@ -1,8 +1,9 @@
 # STEP 6 Agenda — iPhone/PWA device gate
 
 Branch: `agent/household-rebuild-v2`
-Status: implementation complete; real-device acceptance pending
-Implementation HEAD: `b4c76ce9a07955c59cc6a040cb6871916fdc31e1`
+Status: accepted on real iPhone/PWA on 2026-08-23
+Accepted preview: `https://verhoog-family-fl3a49ck3-cverhoog-techs-projects.vercel.app`
+Accepted branch HEAD: `b18f42c026dde094812eaf3a18919b17e79810b6`
 
 ## Purpose
 
@@ -22,9 +23,20 @@ Validate the canonical household agenda repository in the real FamilyApp runtime
 10. Confirm the Google Agenda card/surface still renders normally; an actual Google connection is not required for this device gate.
 11. Open Tasks, Recipes and Meals once after the Agenda flow to confirm there is no startup/freeze regression.
 
-## Architecture already covered by CI
+## Acceptance result
 
-The STEP 6 contract proves:
+The product owner confirmed the complete STEP 6 flow on a real iPhone/PWA on 2026-08-23. STEP 6 is accepted.
+
+The device gate exposed and closed three runtime issues before acceptance:
+- a reused add-sheet button could remain disabled after a successful calendar save;
+- the selected calendar day was not initially propagated into the add form;
+- the legacy family-root Firebase sync still projected `families/{householdId}/cal` into `calData`, racing the canonical `calendarEvents` repository and causing newly created appointments to disappear after reload.
+
+The accepted implementation now keeps Tasks and Agenda fenced from the legacy family-root sync. `CalendarEventHouseholdRepository` is the persistence/projection owner for Agenda, acknowledged mutations project immediately after Firebase success, and realtime Firebase remains the canonical synchronization path.
+
+## Architecture covered by CI
+
+The STEP 6 contracts prove:
 - canonical source `families/{householdId}/calendarEvents`;
 - `HouseholdContext.capture()/isCurrent()` stale-context protection;
 - exact prior Firebase listener cleanup;
@@ -36,8 +48,7 @@ The STEP 6 contract proves:
 - create/edit/delete stay inside the active household;
 - immutable household/creator/schema fields cannot be moved by an edit;
 - MealPlanStore remains a virtual Agenda projection and is not duplicated into calendarEvents;
+- legacy family-root sync cannot read or write `calData` / `cal` after STEP 6;
 - runtime order remains legacy UI → canonical repository → facade → premium UI → meal projection → Google sync.
 
-Do not mark STEP 6 accepted until this flow passes on an up-to-date READY preview containing the implementation HEAD or a descendant with green Household Rebuild Contracts.
-
-No merge to `main`, production deployment or production Firebase Rules deployment is part of this gate.
+Household Rebuild Contracts and Vercel were green on the accepted branch HEAD. No merge to `main`, production deployment or production Firebase Rules deployment was performed.
