@@ -25,7 +25,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Core modules prove no cross-household read/write/state leakage.
 - [ ] Account switch/logout/reconnect/removed-member behavior passes isolation tests.
 - [ ] Sanitized platform operations/admin dashboard accepted.
-- [ ] Firebase/Storage Rules prove household isolation and admin privacy boundary.
+- [ ] Firebase Rules + media authorization prove household isolation and admin privacy boundary.
 - [ ] Broader family beta acceptance gate passed.
 
 ## Current position
@@ -37,14 +37,14 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [-] STEP 2B Person/UI identity modernization.
 - [x] STEP 2B.1 backdrop foundation.
 - [x] STEP 2B.2 preset picker.
-- [-] STEP 2B.3 hero backdrop upload support — implementation is on branch; Storage Rules production approval + device gate remain.
+- [-] STEP 2B.3 hero backdrop upload support — Cloudinary Free implementation is on branch; one-time preset setup + device gate remain.
 - [x] STEP 2B.4 Global FamilyApp Icon System — current scope accepted; no further broad icon migration required.
 - [x] STEP 2B.5 Brand/PWA identity accepted and frozen.
 - [x] STEP 2B.6 Tasks icon/detail/create presentation accepted and frozen.
 - [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
 
-**Next gate: explicit approval to deploy the STEP 2B.3 Storage Rules, then real iPhone/PWA upload testing. If accepted, close STEP 2B and resume STEP 2A platform-admin identity foundation.**
+**Next gate: configure the restricted Cloudinary Free unsigned preset, then run the real iPhone/PWA upload test. If accepted, close STEP 2B and resume STEP 2A platform-admin identity foundation.**
 
 ## Phase checklist
 
@@ -96,22 +96,26 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] iPhone gate accepted.
 
 #### STEP 2B.3 — Upload support
+- [x] Product decision: keep Firebase on Spark; do not enable Blaze solely for image storage.
+- [x] Existing Cloudinary Free account selected for prototype hero-backdrop uploads.
+- [x] Dedicated Cloudinary folder `familyapp/hero-uploads` created.
 - [x] Image-only upload service.
 - [x] Size/type validation and client-side compression/resize boundary.
-- [x] Household/UID-scoped Firebase Storage path using cryptographically random object ids.
-- [x] Upload preview, explicit confirm and progress flow.
-- [x] Persist whitelisted upload metadata + `storagePath` to the member profile.
-- [x] Firebase download-token URLs are not persisted in RTDB; they resolve in memory only for active-session rendering.
+- [x] Own-profile + active UID/household gate.
 - [x] Stale HouseholdContext protection during upload.
-- [x] Old uploaded object cleanup on preset/reset/replacement; failed profile persistence cleans up the new object.
-- [x] Storage SDK wired into served runtime.
-- [x] `storage.rules` authored and registered in `firebase.json` without production deployment.
-- [x] Storage listing denied; create/update/delete restricted to the member's UID path and image metadata validated.
-- [x] Upload/privacy regression contract script added.
-- [x] Rebuild contract-test CI workflow added for future branch/human pushes.
-- [x] Latest Vercel branch preview reached READY.
-- [!] Production Firebase Storage Rules deployment requires explicit product-owner approval.
-- [ ] Real iPhone/PWA upload + reload persistence + other-member visibility + reset/preset device gate accepted.
+- [x] Upload preview, explicit confirm and progress flow.
+- [x] Cloudinary receives no householdId/UID/display-name metadata from the upload flow.
+- [x] Persist whitelisted Cloudinary provider/asset/delivery metadata to the household member profile.
+- [x] Replaced/retired Cloudinary assets are recorded in the user's private cleanup queue for later signed deletion.
+- [x] Firebase Storage compat SDK removed from served runtime.
+- [x] Firebase Storage config/rules/deploy workflow retired from this prototype path.
+- [x] Upload/privacy regression contract updated for the Cloudinary/Spark boundary.
+- [x] Rebuild contract-test CI workflow retained.
+- [x] Temporary Cloudinary probe endpoints removed after capability checks.
+- [ ] Create restricted unsigned preset `fa_hero_91c8f43ad0b6_v1` in Cloudinary Console.
+- [ ] Verify preset upload succeeds and lands in the dedicated folder.
+- [ ] Real iPhone/PWA upload + reload persistence + same-household visibility + reset/preset device gate accepted.
+- [!] Before broader multi-family beta, replace the unsigned public-by-URL bridge with server-authorized/signed media access and process cleanup queue automatically.
 
 #### STEP 2B.4 — Global FamilyApp Icon System
 - [x] Central semantic icon registry exists.
@@ -256,7 +260,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Consent/audited mechanism for any future content-level support access.
 - [ ] Tests/preview/device gate accepted.
 
-### STEP 15 — Firebase Rules hardening
+### STEP 15 — Firebase Rules + media authorization hardening
 - [ ] Canonical path/rules matrix.
 - [ ] Shared collection allowlist.
 - [ ] Notification/activity/FCM rules.
@@ -265,8 +269,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Removed-member access denied.
 - [ ] Platform admin restricted to sanitized operations data.
 - [ ] Normal household admin cannot gain platform privileges.
-- [ ] Storage paths audited.
-- [ ] Replace STEP 2B.3 authenticated exact-path media reads with true server-verifiable household authorization before broader multi-family beta.
+- [ ] Replace prototype unsigned Cloudinary uploads with a server-authorized/signed media boundary or equivalent secure service.
+- [ ] Retired Cloudinary media cleanup queue processed by a signed server worker.
+- [ ] Media access/privacy boundary tested across households.
 - [ ] Emulator/rule tests passed.
 - [ ] No production Rules deployment without explicit approval.
 
@@ -292,6 +297,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Removed member loses access.
 - [ ] Admin diagnostics support normal bug triage without raw household content.
 - [ ] Admin privileged actions authorized and audited.
+- [ ] Media authorization no longer relies on the STEP 2B.3 unsigned prototype bridge.
 - [ ] Real iPhone/PWA multi-account smoke gate accepted.
 
 ### STEP 17 — Store distribution readiness
@@ -331,10 +337,10 @@ For each functional phase verify:
 - 2026-08-22 — STEP 2B.5 crest v5/PWA/login accepted and frozen.
 - 2026-08-22 — STEP 2B.6 task icon/detail/create presentation accepted and frozen.
 - 2026-08-22 — STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
-- 2026-08-22 — Product decision: all other current app icons are acceptable for the prototype. STEP 2B.4 icon scope is closed at the current baseline and STEP 2B.8 is deliberately skipped/closed without code changes.
-- 2026-08-22 — STEP 2B.3 upload implementation added: client compression, UID/household-scoped random Storage objects, safe metadata persistence, in-memory URL resolution, preview/confirm flow and object cleanup.
-- 2026-08-22 — STEP 2B.3 Storage Rules are committed but intentionally not deployed pending explicit product-owner approval; broader-beta STEP 15 must harden exact-path reads to true household authorization.
-- 2026-08-22 — Multi-family readiness and privacy-safe personal platform administration are explicit broader-beta release gates.
+- 2026-08-22 — Product decision: all other current app icons are acceptable for the prototype. STEP 2B.4 icon scope is closed and STEP 2B.8 deliberately closed without code changes.
+- 2026-08-22 — Multi-family readiness and privacy-safe personal platform administration made explicit broader-beta release gates.
+- 2026-08-22 — Firebase Storage path abandoned after Spark required a Blaze upgrade for Storage; product owner explicitly chose no billing exposure.
+- 2026-08-22 — STEP 2B.3 migrated to the existing Cloudinary Free account. Firebase remains Spark; unsigned Cloudinary upload is explicitly prototype-only pending signed media hardening before broader beta.
 
 ## Maintenance rule
 
@@ -345,4 +351,5 @@ When implementation progresses:
 4. a deliberate product scope closure may be marked complete without a device gate when it makes no runtime/code change;
 5. keep the architecture roadmap synchronized when scope/order/constraints materially change;
 6. add household-isolation/lifecycle tests during each module migration rather than postponing them;
-7. never use unrestricted household-content access as a shortcut for platform diagnostics.
+7. never use unrestricted household-content access as a shortcut for platform diagnostics;
+8. keep the STEP 2B.3 unsigned media bridge clearly prototype-only until STEP 15 replaces it.
