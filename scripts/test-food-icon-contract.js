@@ -33,7 +33,7 @@ assert(meals.includes("foodIcon(type,'sm')"),'meal slots must render canonical s
 assert(shell.includes('src/ui/icons/familyAppFoodIconResolver.js?v=1'),'runtime must load food resolver');
 assert(shell.includes('src/modules/recipes/recipeEditorPopup.js?v=2'),'runtime must cache-bust migrated recipe editor');
 assert(shell.includes('src/modules/shop/shop.js?v=7'),'runtime must cache-bust migrated shopping UI');
-assert(shell.includes('src/modules/meals/meals.js?v=3'),'runtime must cache-bust migrated meals UI');
+assert(shell.includes('src/modules/meals/meals.js?v=4'),'runtime must cache-bust migrated meals UI');
 
 assert(taskStatus.includes('STEP 2B.6 — Tasks icon/detail/create presentation'),'frozen task baseline status missing');
 assert(taskStatus.includes('accepted / frozen baseline'),'task baseline must remain frozen');
