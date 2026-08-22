@@ -18,6 +18,7 @@ assert.ok(repoSource.includes('HouseholdContext.capture'),'task repository must 
 assert.ok(repoSource.includes('HouseholdContext.isCurrent'),'task repository must reject stale household context');
 assert.ok(repoSource.includes("active.ref.off('value',active.handler)"),'task repository must detach the exact previous Firebase listener');
 assert.ok(repoSource.includes("families/'+binding.context.householdId+'/shared/tasks"),'migration may only read the same household legacy shared/tasks path');
+assert.ok(repoSource.includes('taskMigrations/v2SharedToCanonical'),'legacy reconciliation must use a persistent sibling migration marker');
 assert.ok(!/fam_tasks_v0|familieapp_state_v024/.test(repoSource),'canonical repository must never seed from generic legacy local task storage');
 assert.ok(!repoSource.includes('FamilyDataStore'),'canonical task repository must own its Firebase listener directly');
 assert.ok(facadeSource.includes('TaskHouseholdRepository'),'TaskSharedData must be a compatibility facade over the canonical repository');
@@ -80,7 +81,7 @@ function makeDb(initial){
   let contextSubscriber=null;
   const database=makeDb();
   const storage=makeStorage({
-    // Deliberately hostile generic legacy tasks. They must never seed household B.
+    // Deliberately hostile generic legacy task. It must never seed household B.
     fam_tasks_v023:JSON.stringify([{id:'leak',title:'A-only local task'}]),
     familieapp_state_v024:JSON.stringify({tasks:[{id:'leak2',title:'another local leak'}]})
   });
@@ -113,6 +114,7 @@ function makeDb(initial){
   const staleAHandler=aRef.handlers[0];
 
   aRef.emit({a1:{id:1,title:'Task A',createdByUid:'uidA',createdAt:1}});
+  await tick();await tick();await tick();
   assert.deepStrictEqual(repo.list().map(t=>t.title),['Task A']);
 
   // Switch account + household: old listener must be detached and projection cleared.
@@ -131,8 +133,7 @@ function makeDb(initial){
 
   // Empty canonical B checks only B/shared/tasks. Generic localStorage must never seed B.
   bRef.emit(null);
-  await tick();
-  await tick();
+  await tick();await tick();await tick();
   assert.strictEqual(repo.list().length,0,'empty B must remain empty when same-household legacy path is empty');
   assert.ok(!database.writes.some(w=>w.path.startsWith('families/B/tasks')&&JSON.stringify(w.value).includes('A-only local task')),'generic local task must never migrate into B');
   assert.ok(!database.writes.some(w=>w.path.startsWith('families/B/tasks')&&JSON.stringify(w.value).includes('another local leak')),'generic AppState task must never migrate into B');
@@ -140,6 +141,8 @@ function makeDb(initial){
   bRef.emit({b1:{id:11,title:'Task B',createdByUid:'uidB',createdAt:2}});
   assert.deepStrictEqual(repo.list().map(t=>t.title),['Task B']);
   assert.ok(repo.list().every(t=>t.householdId==='B'),'projection must be stamped to current household');
+  assert.ok(Object.keys(storage.dump()).some(k=>k==='familyapp_tasks_v2_uidB_B'),'task cache must be scoped by UID + household');
+  assert.ok(!Object.keys(storage.dump()).some(k=>k==='familyapp_tasks_v2_B'),'household-only cache key must not be used');
 
   const created=await repo.create({title:'Created in B',who:['B user']});
   assert.strictEqual(created.householdId,'B');
@@ -154,11 +157,30 @@ function makeDb(initial){
   contextSubscriber(Object.freeze(Object.assign({},contextState)),'identity-change');
   const cRef=database.refs['families/C/tasks'];
   cRef.emit(null);
-  await tick();
-  await tick();
+  await tick();await tick();await tick();await tick();
   const migrationWrite=database.writes.find(w=>w.path==='families/C/tasks'&&w.value&&Object.values(w.value).some(t=>t.title==='Legacy C'));
   assert.ok(migrationWrite,'same-household shared/tasks may migrate into canonical C tasks');
   assert.ok(Object.values(migrationWrite.value).every(t=>t.householdId==='C'),'migrated rows must be stamped with household C');
+
+  // When both legacy root tasks and the previously authoritative shared/tasks exist,
+  // shared/tasks wins for legacy rows so an older root copy cannot resurrect stale state.
+  contextState={uid:'uidD',householdId:'D',ready:true,revision:4};
+  database.data['families/D/shared/tasks']={sharedD:{id:50,title:'Newer shared D',updatedAt:200,createdByUid:'uidD',createdAt:10}};
+  contextSubscriber(Object.freeze(Object.assign({},contextState)),'identity-change');
+  const dRef=database.refs['families/D/tasks'];
+  dRef.emit({id_50:{id:50,title:'Stale root D',updatedAt:100,createdByUid:'uidD',createdAt:10}});
+  await tick();await tick();await tick();await tick();
+  assert.deepStrictEqual(repo.list().map(t=>t.title),['Newer shared D'],'shared/tasks must win over a legacy root conflict during one-time reconciliation');
+  assert.ok(database.writes.some(w=>w.path==='families/D/taskMigrations/v2SharedToCanonical'&&w.value&&w.value.status==='complete'),'reconciliation must persist a sibling migration marker');
+
+  // A canonical v2 record always wins over stale shared legacy data.
+  contextState={uid:'uidE',householdId:'E',ready:true,revision:5};
+  database.data['families/E/shared/tasks']={sharedE:{id:60,title:'Old shared E',updatedAt:100,createdByUid:'uidE',createdAt:10}};
+  contextSubscriber(Object.freeze(Object.assign({},contextState)),'identity-change');
+  const eRef=database.refs['families/E/tasks'];
+  eRef.emit({e1:{id:60,title:'Canonical E',schemaVersion:2,updatedAt:300,createdByUid:'uidE',createdAt:10}});
+  await tick();await tick();await tick();await tick();
+  assert.deepStrictEqual(repo.list().map(t=>t.title),['Canonical E'],'canonical v2 task must win over legacy shared data');
 
   console.log('task household repository contract: PASS');
 })().catch(error=>{console.error(error);process.exitCode=1;});
