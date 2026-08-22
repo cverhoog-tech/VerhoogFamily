@@ -12,7 +12,7 @@ assert(sprite.includes('id="fa-level"')&&sprite.includes('id="fa-streak"')&&spri
 assert(person.includes("statCard('level'")&&person.includes("statCard('streak'")&&person.includes("statCard('quest'")&&person.includes("statCard('xpWeekly'"),'Person stats not migrated');
 assert(person.includes("icon('achievement'")&&person.includes("icon('edit'")&&person.includes("icon('title'"),'Person content icons not migrated');
 assert(!/[🔥⚔️✦🏆⬡]/u.test(person),'generic emoji/symbol content icons remain in PersonTabV2');
-assert(loader.includes('familyAppIconRegistry.js?v=1')&&loader.includes('familyAppIconRenderer.js?v=1')&&loader.includes('familyAppIcons.css?v=1'),'icon runtime wiring missing');
+assert(loader.includes('familyAppIconRegistry.js?v=8')&&loader.includes('familyAppIconRenderer.js?v=2')&&loader.includes('familyAppIcons.css?v=8'),'icon runtime wiring missing');
 assert(loader.indexOf('familyAppIconRegistry.js')<loader.indexOf('personTabV2.js'),'registry must load before PersonTabV2');
 assert(!registry.includes('bottom-nav')&&!registry.includes('more-menu'),'global registry must not take ownership of excluded navigation');
 console.log('global icon system foundation contract OK');
