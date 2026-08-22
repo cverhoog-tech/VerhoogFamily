@@ -82,18 +82,17 @@ Decision:
 
 The next household-rebuild work should start from this baseline without changing the accepted brand/PWA/login or task icon/detail/create presentation unless explicitly requested.
 
-## Legacy TODO reconciliation
+## Planning source of truth
 
-Status: **completed 2026-08-22**
+The obsolete May 2026 generic TODO is retired completely and must not be used for planning, regression work, prioritization, or feature status.
 
-The May 2026 generic TODO was audited against the current branch and rewritten into `docs/legacy-todo-audit-2026-08-22.md`.
+Current planning is based only on:
+- the actual code/state of `agent/household-rebuild-v2`;
+- this status document;
+- `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md` for the active multi-household architecture roadmap;
+- newly reported bugs/features from the current product state.
 
-Key decisions:
-- Old feed persistence/realtime items are superseded by the current household-scoped FeedSharedData architecture.
-- Accounts, household invites, cloud sync and generic realtime are no longer “future features”; remaining work is hardening, lifecycle and isolation testing.
-- Branding/PWA and task icon/detail/create items covered by 2B.5/2B.6 are closed and frozen.
-- Carousel, avatar, home, profile, navigation and task visual items remain only as targeted regression/verification checklists where still reproducible.
-- The authoritative architecture roadmap is `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md`.
+Do not resurrect or infer open work from the retired May TODO.
 
 ## Next work
 
@@ -106,8 +105,6 @@ Priority order:
 4. Removed-member access revocation.
 5. Automated two-account / multi-household tests proving no state leakage across refresh and reconnect.
 
-After this architecture pass, run a short visual regression sweep using only the surviving current UI checklist from the legacy TODO audit.
-
 ## Guardrails
 
 - No changes to Firebase task data model during icon/UI work.
@@ -116,4 +113,4 @@ After this architecture pass, run a short visual regression sweep using only the
 - Prefer central semantic registry/resolver paths over duplicate inline artwork when a visual migration has been approved.
 - Preserve explicitly accepted legacy presentation where a migration was visually rejected.
 - Preserve the transparent login crest presentation separately from the installed PWA icon variants.
-- Do not revive stale May 2026 TODO items without first reproducing them on the current branch.
+- Never use the retired May 2026 TODO as a source of truth.
