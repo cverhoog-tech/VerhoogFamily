@@ -1,26 +1,42 @@
 'use strict';
 // ============================================================
-// FAMILYAPP HERO BACKDROP UPLOAD SERVICE v1.0.0
+// FAMILYAPP HERO BACKDROP UPLOAD SERVICE v1.1.0
 // STEP 2B.3
-// Own-profile only, household/UID-scoped Firebase Storage upload boundary.
-// Performs client-side image validation + resize/compression before upload.
+// Own-profile write boundary for household/UID-scoped Firebase Storage.
+// Files are resized/compressed client-side and stored under an unguessable
+// object id. Download URLs are resolved in-memory only and are never part of
+// the persistence contract.
 // ============================================================
 (function(){
   if(window.HeroBackdropUploadService)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var MAX_SOURCE_BYTES=15*1024*1024;
   var MAX_EDGE=1800;
   var MAX_OUTPUT_BYTES=1400*1024;
   var QUALITY=.82;
+  var resolvedUrlCache=Object.create(null);
+  var resolving=Object.create(null);
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function capture(){try{return window.HouseholdContext&&HouseholdContext.capture?HouseholdContext.capture():null;}catch(e){return null;}}
   function isCurrent(token){try{return !!(window.HouseholdContext&&HouseholdContext.isCurrent&&HouseholdContext.isCurrent(token));}catch(e){return false;}}
   function storage(){try{if(window.fbStorage)return window.fbStorage;if(window.firebase&&firebase.storage)return firebase.storage();}catch(e){}return null;}
   function own(uid){var c=context();return !!(c&&c.ready&&c.uid&&c.householdId&&String(c.uid)===String(uid));}
-  function storagePath(householdId,uid){return 'families/'+householdId+'/members/'+uid+'/hero-backdrops/current';}
   function error(code,message){var e=new Error(message);e.code=code;return e;}
+  function clean(v){return String(v==null?'':v).replace(/^\/+|\/+$/g,'');}
+  function familyPrefix(householdId){return 'families/'+clean(householdId)+'/members/';}
+  function ownPrefix(householdId,uid){return familyPrefix(householdId)+clean(uid)+'/hero-backdrops/';}
+  function extension(type){return String(type||'').toLowerCase()==='image/webp'?'.webp':'.jpg';}
+  function randomId(){
+    var cryptoObj=window.crypto||window.msCrypto;
+    if(!cryptoObj||typeof cryptoObj.getRandomValues!=='function')throw error('SECURE_RANDOM_UNAVAILABLE','Veilige afbeeldingsopslag is op dit toestel niet beschikbaar.');
+    var bytes=new Uint8Array(16);cryptoObj.getRandomValues(bytes);
+    return Array.prototype.map.call(bytes,function(b){return ('0'+b.toString(16)).slice(-2);}).join('');
+  }
+  function storagePath(householdId,uid,contentType){return ownPrefix(householdId,uid)+randomId()+extension(contentType);}
+  function pathBelongsToHousehold(path,householdId){return clean(path).indexOf(familyPrefix(householdId))===0&&clean(path).indexOf('/hero-backdrops/')>-1;}
+  function pathBelongsToMember(path,householdId,uid){return clean(path).indexOf(ownPrefix(householdId,uid))===0;}
 
   function validate(file){
     if(!file)throw error('NO_FILE','Kies eerst een afbeelding.');
@@ -39,9 +55,7 @@
   }
 
   function canvasBlob(canvas,type,quality){
-    return new Promise(function(resolve){
-      try{canvas.toBlob(function(blob){resolve(blob||null);},type,quality);}catch(e){resolve(null);}
-    });
+    return new Promise(function(resolve){try{canvas.toBlob(function(blob){resolve(blob||null);},type,quality);}catch(e){resolve(null);}});
   }
 
   function resize(img,maxEdge,quality){
@@ -64,10 +78,7 @@
   function prepare(file){
     try{validate(file);}catch(e){return Promise.reject(e);}
     return loadImage(file).then(function(img){
-      return resize(img,MAX_EDGE,QUALITY).then(function(prepared){
-        if(prepared.blob.size<=MAX_OUTPUT_BYTES)return prepared;
-        return resize(img,1280,.72);
-      });
+      return resize(img,MAX_EDGE,QUALITY).then(function(prepared){return prepared.blob.size<=MAX_OUTPUT_BYTES?prepared:resize(img,1280,.72);});
     }).then(function(prepared){
       if(prepared.blob.size>MAX_OUTPUT_BYTES)throw error('OUTPUT_TOO_LARGE','De foto kon niet klein genoeg worden gemaakt. Kies een andere afbeelding.');
       prepared.previewUrl=URL.createObjectURL(prepared.blob);
@@ -77,9 +88,7 @@
     });
   }
 
-  function dispose(prepared){
-    if(prepared&&prepared.previewUrl){try{URL.revokeObjectURL(prepared.previewUrl);}catch(e){}prepared.previewUrl='';}
-  }
+  function dispose(prepared){if(prepared&&prepared.previewUrl){try{URL.revokeObjectURL(prepared.previewUrl);}catch(e){}prepared.previewUrl='';}}
 
   function upload(uid,prepared,onProgress){
     if(!own(uid))return Promise.reject(error('NOT_OWN_PROFILE','Je kunt alleen je eigen hero-achtergrond aanpassen.'));
@@ -87,9 +96,14 @@
     var c=context(),token=capture(),s=storage();
     if(!c||!c.householdId||!token)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
     if(!s)return Promise.reject(error('STORAGE_UNAVAILABLE','Firebase Storage is niet beschikbaar.'));
-    var path=storagePath(c.householdId,String(uid));
+    var path;
+    try{path=storagePath(c.householdId,String(uid),prepared.contentType||prepared.blob.type);}catch(e){return Promise.reject(e);}
     var ref=s.ref().child(path);
-    var metadata={contentType:prepared.contentType||prepared.blob.type||'image/webp',cacheControl:'private,max-age=3600',customMetadata:{familyAppPurpose:'hero-backdrop',householdId:String(c.householdId),uid:String(uid)}};
+    var metadata={
+      contentType:prepared.contentType||prepared.blob.type||'image/webp',
+      cacheControl:'private,max-age=3600',
+      customMetadata:{familyAppPurpose:'hero-backdrop',householdId:String(c.householdId),uid:String(uid)}
+    };
     return new Promise(function(resolve,reject){
       var task;
       try{task=ref.put(prepared.blob,metadata);}catch(e){reject(e);return;}
@@ -101,23 +115,57 @@
         try{snapshot.ref.delete().catch(function(){});}catch(e){}
         throw error('STALE_CONTEXT','De gezinscontext veranderde tijdens het uploaden. Probeer opnieuw.');
       }
-      return snapshot.ref.getDownloadURL();
-    }).then(function(url){
-      if(!isCurrent(token))throw error('STALE_CONTEXT','De gezinscontext veranderde tijdens het uploaden. Probeer opnieuw.');
-      var uploadedAt=Date.now();
-      var versioned=String(url||'')+(String(url||'').indexOf('?')>=0?'&':'?')+'familyapp_v='+uploadedAt;
       return{
-        type:'upload',imageUrl:versioned,thumbnailUrl:versioned,storagePath:path,
+        type:'upload',storagePath:path,
         contentType:prepared.contentType||prepared.blob.type||'image/webp',
-        width:Number(prepared.width||0),height:Number(prepared.height||0),bytes:Number(prepared.blob.size||0),uploadedAt:uploadedAt,
+        width:Number(prepared.width||0),height:Number(prepared.height||0),bytes:Number(prepared.blob.size||0),uploadedAt:Date.now(),
         focalX:.5,focalY:.5,overlayStyle:'violet-night',overlayStrength:.34
       };
     });
   }
 
+  function resolvePath(path,uploadedAt){
+    var c=context(),token=capture(),s=storage(),cleanPath=clean(path);
+    if(!c||!c.ready||!c.householdId||!token)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
+    if(!pathBelongsToHousehold(cleanPath,c.householdId))return Promise.reject(error('OUTSIDE_HOUSEHOLD','Afbeeldingspad hoort niet bij dit gezin.'));
+    if(!s)return Promise.reject(error('STORAGE_UNAVAILABLE','Firebase Storage is niet beschikbaar.'));
+    if(resolvedUrlCache[cleanPath])return Promise.resolve(resolvedUrlCache[cleanPath]);
+    if(resolving[cleanPath])return resolving[cleanPath];
+    resolving[cleanPath]=s.ref().child(cleanPath).getDownloadURL().then(function(url){
+      if(!isCurrent(token))throw error('STALE_CONTEXT','De gezinscontext veranderde tijdens het laden.');
+      var v=String(url||'');
+      if(uploadedAt)v+=(v.indexOf('?')>=0?'&':'?')+'familyapp_v='+encodeURIComponent(String(uploadedAt));
+      resolvedUrlCache[cleanPath]=v;return v;
+    }).finally(function(){delete resolving[cleanPath];});
+    return resolving[cleanPath];
+  }
+
+  function resolveConfig(config){
+    config=config&&typeof config==='object'?config:{};
+    if(config.type!=='upload')return Promise.resolve(config);
+    if(config.imageUrl)return Promise.resolve(config);
+    if(!config.storagePath)return Promise.reject(error('UPLOAD_PATH_MISSING','Uploadachtergrond heeft geen opslagpad.'));
+    return resolvePath(config.storagePath,config.uploadedAt).then(function(url){return Object.assign({},config,{imageUrl:url,thumbnailUrl:url});});
+  }
+
+  function deletePath(uid,path){
+    if(!own(uid))return Promise.reject(error('NOT_OWN_PROFILE','Je kunt alleen je eigen hero-achtergrond verwijderen.'));
+    var c=context(),s=storage(),cleanPath=clean(path);
+    if(!c||!c.householdId)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
+    if(!pathBelongsToMember(cleanPath,c.householdId,String(uid)))return Promise.reject(error('INVALID_DELETE_PATH','Dit afbeeldingspad hoort niet bij jouw profiel.'));
+    if(!s)return Promise.reject(error('STORAGE_UNAVAILABLE','Firebase Storage is niet beschikbaar.'));
+    return s.ref().child(cleanPath).delete().then(function(){delete resolvedUrlCache[cleanPath];}).catch(function(err){
+      if(err&&err.code==='storage/object-not-found'){delete resolvedUrlCache[cleanPath];return;}
+      throw err;
+    });
+  }
+
+  function clearCache(){resolvedUrlCache=Object.create(null);resolving=Object.create(null);}
+  try{if(window.HouseholdContext&&typeof HouseholdContext.subscribe==='function')HouseholdContext.subscribe(function(s,reason){if(reason==='identity-change')clearCache();});}catch(e){}
+
   window.HeroBackdropUploadService={
-    version:VERSION,prepare:prepare,upload:upload,dispose:dispose,canUpload:own,
+    version:VERSION,prepare:prepare,upload:upload,dispose:dispose,resolveConfig:resolveConfig,resolvePath:resolvePath,deletePath:deletePath,canUpload:own,
     limits:Object.freeze({maxSourceBytes:MAX_SOURCE_BYTES,maxEdge:MAX_EDGE,maxOutputBytes:MAX_OUTPUT_BYTES}),
-    storagePath:function(uid){var c=context();return c&&c.householdId?storagePath(c.householdId,String(uid||c.uid||'')):'';}
+    storagePrefix:function(uid){var c=context();return c&&c.householdId?ownPrefix(c.householdId,String(uid||c.uid||'')):'';}
   };
 })();
