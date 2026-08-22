@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CALENDAR EVENT HOUSEHOLD REPOSITORY v1.0.0
+// CALENDAR EVENT HOUSEHOLD REPOSITORY v1.0.1
 // STEP 6 canonical agenda persistence boundary.
 //
 // Source of truth: families/{householdId}/calendarEvents/{eventKey}
@@ -11,7 +11,7 @@
 (function(){
   if(window.CalendarEventHouseholdRepository)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var SCHEMA_VERSION=2;
   var CACHE_PREFIX='familyapp_calendar_events_v2_';
   var subscribers=[];
@@ -98,6 +98,20 @@
     subscribers.slice().forEach(function(fn){try{fn(currentEvents.map(clone),clone(lastMeta));}catch(e){console.warn('[CalendarEventHouseholdRepository] subscriber failed',e);}});
     try{window.dispatchEvent(new CustomEvent('familyapp:calendar-repository',{detail:{events:currentEvents.map(clone),meta:clone(lastMeta)}}));}catch(e){}
   }
+  function eventIdentity(row){return String(row&&row.id!=null?row.id:row&&row._key!=null?row._key:'');}
+  function acknowledge(binding,type,row){
+    if(!bindingCurrent(binding)||!row)return;
+    var wanted=eventIdentity(row),next=currentEvents.map(clone);
+    if(type==='delete'){
+      next=next.filter(function(item){return eventIdentity(item)!==wanted;});
+    }else{
+      var replaced=false;
+      next=next.map(function(item){if(eventIdentity(item)!==wanted)return item;replaced=true;return clone(row);});
+      if(!replaced)next.push(clone(row));
+      next.sort(function(a,b){var d=String(a&&a.date||'').localeCompare(String(b&&b.date||''));return d||String(a&&a.time||'').localeCompare(String(b&&b.time||''));});
+    }
+    emit(next,{source:'mutation-ack',ready:true,uid:binding.context.uid,householdId:binding.context.householdId,revision:binding.context.revision,migration:binding.migrationState||'none'});
+  }
   function subscribe(fn){if(typeof fn!=='function')return function(){};subscribers.push(fn);try{fn(currentEvents.map(clone),clone(lastMeta));}catch(e){}return function(){var i=subscribers.indexOf(fn);if(i>=0)subscribers.splice(i,1);};}
   function bindingCurrent(binding){return !!(binding&&active===binding&&binding.generation===bindGeneration&&isCurrent(binding.token));}
   function unbind(reason,clearProjection){if(active&&active.ref&&active.handler){try{active.ref.off('value',active.handler);}catch(e){}}active=null;bindGeneration++;if(clearProjection!==false)emit([],{source:reason||'unbound',ready:false,uid:null,householdId:null,migration:'none'});}
@@ -166,15 +180,15 @@
   function findById(id){var wanted=String(id||'');return currentEvents.find(function(row){return String(row.id)===wanted||String(row._key)===wanted;})||null;}
   function create(input){
     var binding;try{binding=requireBinding();}catch(e){return Promise.reject(e);}var row=normalizeCreate(input,null,binding.context);if(!row.title.trim()||!row.date){return Promise.reject(new Error('Titel en datum zijn verplicht'));}var key=row._key,ref=binding.ref.child(key),token=binding.token;
-    return ref.set(row).then(function(){if(!bindingCurrent(binding)||!isCurrent(token))throw new Error('Agenda context changed during create');return clone(row);});
+    return ref.set(row).then(function(){if(!bindingCurrent(binding)||!isCurrent(token))throw new Error('Agenda context changed during create');acknowledge(binding,'create',row);return clone(row);});
   }
   function updateOne(id,patch){
     var binding;try{binding=requireBinding();}catch(e){return Promise.reject(e);}var existing=findById(id);if(!existing)return Promise.reject(new Error('Afspraak niet gevonden'));var key=existing._key||safeKey(existing.id),ref=binding.ref.child(key),token=binding.token;
-    return new Promise(function(resolve,reject){ref.transaction(function(server){if(!bindingCurrent(binding)||!isCurrent(token))return;return sealMutation(server||existing,patch,key,binding.context);},function(error,committed,snap){if(error){reject(error);return;}if(!committed||!bindingCurrent(binding)||!isCurrent(token)){reject(new Error('Agenda update geannuleerd door contextwissel'));return;}resolve(normalizeExisting(snap&&snap.val?snap.val():existing,key,binding.context));},false);});
+    return new Promise(function(resolve,reject){ref.transaction(function(server){if(!bindingCurrent(binding)||!isCurrent(token))return;return sealMutation(server||existing,patch,key,binding.context);},function(error,committed,snap){if(error){reject(error);return;}if(!committed||!bindingCurrent(binding)||!isCurrent(token)){reject(new Error('Agenda update geannuleerd door contextwissel'));return;}var updated=normalizeExisting(snap&&snap.val?snap.val():existing,key,binding.context);acknowledge(binding,'update',updated);resolve(updated);},false);});
   }
   function remove(id){
     var binding;try{binding=requireBinding();}catch(e){return Promise.reject(e);}var existing=findById(id);if(!existing)return Promise.resolve(false);var key=existing._key||safeKey(existing.id),token=binding.token;
-    return binding.ref.child(key).set(null).then(function(){if(!bindingCurrent(binding)||!isCurrent(token))throw new Error('Agenda context changed during delete');return true;});
+    return binding.ref.child(key).set(null).then(function(){if(!bindingCurrent(binding)||!isCurrent(token))throw new Error('Agenda context changed during delete');acknowledge(binding,'delete',existing);return true;});
   }
   function stop(){if(contextUnsubscribe){try{contextUnsubscribe();}catch(e){}contextUnsubscribe=null;}if(attachTimer){clearInterval(attachTimer);attachTimer=null;}unbind('stopped',true);}
   function status(){var ctx=snapshot();return{version:VERSION,schemaVersion:SCHEMA_VERSION,ready:!!(active&&bindingCurrent(active)),uid:ctx&&ctx.uid||null,householdId:ctx&&ctx.householdId||null,count:currentEvents.length,source:lastMeta.source,migration:lastMeta.migration,error:lastMeta.error||null};}
