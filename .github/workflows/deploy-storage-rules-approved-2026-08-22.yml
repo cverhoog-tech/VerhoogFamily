@@ -24,7 +24,7 @@ jobs:
       - name: Mark Firebase deployment pending
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=pending -f context='Firebase Storage Rules' -f description='Deploying approved production Storage rules'
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=pending -f context='Firebase Storage Rules' -f description='Deploying approved production Storage rules' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Checkout approved branch
         uses: actions/checkout@v4
@@ -61,10 +61,10 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context='Firebase Storage Rules' -f description='Approved production Storage rules deployed'
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context='Firebase Storage Rules' -f description='Approved production Storage rules deployed' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Mark Firebase deployment failed
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context='Firebase Storage Rules' -f description='Production Storage rules deployment failed'
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context='Firebase Storage Rules' -f description='Production Storage rules deployment failed' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
