@@ -87,11 +87,33 @@ Decision:
 - 2B.6C accepted after live iPhone testing.
 - Treat the current task icon/detail/create presentation as a frozen baseline for the next rebuild phase.
 
+### STEP 2B.7 — Shopping / Recipes / Meals icon migration
+
+Status: **implementation wired; preview/device acceptance pending**
+
+Done in implementation:
+- Added `FamilyAppFoodIconResolver` as a central semantic boundary for recipe categories and meal slots.
+- Shopping product/category rendering continues through the canonical `FamilyAppUtilityIconResolver`; visible generic emoji fallback is replaced by canonical `utilityGeneric` artwork.
+- Shopping list selector/picker uses canonical shopping/people artwork and no longer depends on emoji labels for private/household presentation.
+- Recipe editor hero category presentation now uses the canonical food resolver while retaining legacy recipe emoji only as compatibility metadata in stored records.
+- Meals screen lunch/dinner content icons now resolve through the central food resolver.
+- Runtime loads `familyAppFoodIconResolver.js` before migrated module presentation code and cache-busts Shop / Recipe editor / Meals.
+- Added `scripts/test-food-icon-contract.js` to lock the semantic mappings, runtime wiring and frozen STEP 2B.6 boundary.
+
+Still required before accepting/freeze:
+- Vercel branch preview must be READY on the latest 2B.7 commit.
+- Real iPhone Safari visual/device smoke test for Shopping, Recipes and Meals.
+- Confirm no shopping/recipe/meal functional regression.
+
+Guardrail:
+- Stored legacy emoji fields are intentionally not deleted in this visual phase; cleanup belongs to later legacy/data-contract work.
+- STEP 2B.5 and STEP 2B.6 remain untouched/frozen.
+
 ## Rebuild baseline
 
-**STEP 2B.5 + STEP 2B.6 are now both accepted and frozen.**
+**STEP 2B.5 + STEP 2B.6 are accepted and frozen. STEP 2B.7 is the active device-gate candidate.**
 
-The next household-rebuild work should start from this baseline without changing the accepted brand/PWA/login or task icon/detail/create presentation unless explicitly requested.
+The next household-rebuild work must preserve the accepted brand/PWA/login and task icon/detail/create presentation unless explicitly requested.
 
 ## Planning source of truth
 
@@ -119,16 +141,17 @@ Do not resurrect or infer open work from the retired May TODO.
 
 ## Next work
 
-### Finish STEP 2B, then resume platform/multi-family architecture
+### Complete STEP 2B device gates, then resume platform/multi-family architecture
 
 Planned order:
-1. Continue the remaining STEP 2B UI identity work from the frozen 2B.5 + 2B.6 baseline.
-2. Resume **STEP 2A platform-admin identity foundation** before building the later admin dashboard.
-3. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
-4. Build **STEP 14A sanitized platform operations dashboard**.
-5. STEP 15 Rules hardening must prove household isolation, removed-member revocation and the platform-admin privacy boundary.
-6. STEP 16 removes remaining single-family/global legacy authorities.
-7. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
+1. Device-test and accept/freeze STEP 2B.7.
+2. Complete remaining STEP 2B work, including 2B.8 and the outstanding 2B.3/2B.4 closure items.
+3. Resume **STEP 2A platform-admin identity foundation** before building the later admin dashboard.
+4. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
+5. Build **STEP 14A sanitized platform operations dashboard**.
+6. STEP 15 Rules hardening must prove household isolation, removed-member revocation and the platform-admin privacy boundary.
+7. STEP 16 removes remaining single-family/global legacy authorities.
+8. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
 
 ## Guardrails
 
