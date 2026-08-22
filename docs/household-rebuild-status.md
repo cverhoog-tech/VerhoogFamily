@@ -4,6 +4,17 @@ _Last updated: 2026-08-22_
 
 Primary branch: `agent/household-rebuild-v2`
 
+## Prototype end goal
+
+The rebuild now has an explicit second end goal alongside product/UI quality and later store-readiness:
+
+1. **Multi-family ready prototype** — multiple independent families can use FamilyApp concurrently without cross-household data/state/write leakage.
+2. **Privacy-safe personal platform admin** — the product owner's personal authenticated UID can access sanitized operational/diagnostic data needed to run the beta and fix bugs, without generic access to private household content.
+
+Detailed acceptance contract: `docs/multi-family-prototype-acceptance.md`.
+
+This is a release gate for a broader family beta, not an optional future enhancement.
+
 ## Current phase
 
 ### STEP 2B.5 — Brand / app identity
@@ -89,21 +100,35 @@ The obsolete May 2026 generic TODO is retired completely and must not be used fo
 Current planning is based only on:
 - the actual code/state of `agent/household-rebuild-v2`;
 - this status document;
-- `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md` for the active multi-household architecture roadmap;
+- `docs/household-rebuild-v2-roadmap.md`;
+- `docs/household-rebuild-v2-progress.md`;
+- `docs/multi-family-prototype-acceptance.md`;
+- `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md` for the deeper multi-household architecture checklist;
 - newly reported bugs/features from the current product state.
 
 Do not resurrect or infer open work from the retired May TODO.
 
+## Multi-family / admin acceptance principles
+
+- Platform admin is tied to the product owner's personal authenticated UID via server-verifiable authorization, never a frontend name/email check.
+- Platform-admin capability is separate from household ownership/admin roles.
+- Default admin visibility is sanitized technical/operational telemetry only.
+- Raw task/shopping/recipe/meal/calendar/feed/private-note/upload/financial content is not part of the normal admin projection.
+- If content-level debugging is ever needed, it must use a separate consent-based, minimum-scope, audited support mechanism.
+- Multi-household isolation/lifecycle tests are added per module as the rebuild proceeds, not postponed until the end.
+
 ## Next work
 
-### Household/Auth lifecycle hardening — next implementation phase
+### Finish STEP 2B, then resume platform/multi-family architecture
 
-Priority order:
-1. Account-switch on the same device without stale household/user state.
-2. Logout cleanup for subscriptions and sensitive runtime state.
-3. Validate the active household after login instead of trusting stale local state.
-4. Removed-member access revocation.
-5. Automated two-account / multi-household tests proving no state leakage across refresh and reconnect.
+Planned order:
+1. Continue the remaining STEP 2B UI identity work from the frozen 2B.5 + 2B.6 baseline.
+2. Resume **STEP 2A platform-admin identity foundation** before building the later admin dashboard.
+3. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
+4. Build **STEP 14A sanitized platform operations dashboard**.
+5. STEP 15 Rules hardening must prove household isolation, removed-member revocation and the platform-admin privacy boundary.
+6. STEP 16 removes remaining single-family/global legacy authorities.
+7. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
 
 ## Guardrails
 
@@ -114,3 +139,4 @@ Priority order:
 - Preserve explicitly accepted legacy presentation where a migration was visually rejected.
 - Preserve the transparent login crest presentation separately from the installed PWA icon variants.
 - Never use the retired May 2026 TODO as a source of truth.
+- Never grant platform admin unrestricted raw household-root access as a shortcut for diagnostics.
