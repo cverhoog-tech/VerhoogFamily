@@ -6,10 +6,12 @@ const vm=require('vm');
 const source=fs.readFileSync('src/modules/tasks/taskLegacySyncGuard.js','utf8');
 const app=fs.readFileSync('api/app.js','utf8');
 
-assert.ok(source.includes('CANONICAL LEGACY SYNC GUARD v2.0.0'),'legacy sync guard must identify the canonical repository boundary');
-assert.ok(!source.includes("if(data.cal&&toArray(data.cal).length)window.calData=toArray(data.cal)"),'legacy family-root listener must never overwrite calData from families/{householdId}/cal');
-assert.ok(!source.includes('cal:toObject(window.calData)'),'legacy family-root writer must never persist calData back to families/{householdId}/cal');
-assert.ok(app.includes('taskLegacySyncGuard.js?v=2'),'runtime must cache-bust the canonical legacy sync guard on iPhone/PWA');
+assert.ok(source.includes('CANONICAL LEGACY SYNC GUARD v3.0.0'),'legacy sync guard must identify the STEP 3/6/7 canonical repository boundary');
+assert.ok(!source.includes("if(data.cal&&toArray(data.cal).length)window.calData=toArray(data.cal)"),'legacy family-root listener must never overwrite calData');
+assert.ok(!source.includes('cal:toObject(window.calData)'),'legacy family-root writer must never persist calData');
+assert.ok(!source.includes("if(data.shop&&toArray(data.shop).length)window.shopData=toArray(data.shop)"),'legacy family-root listener must never overwrite shopping state');
+assert.ok(!source.includes('shop:toObject(window.shopData)'),'legacy family-root writer must never persist shopData');
+assert.ok(app.includes('taskLegacySyncGuard.js?v=2'),'runtime must load the canonical legacy sync guard before session bootstrap');
 
 (async function(){
   const rootListeners=[];
@@ -17,55 +19,32 @@ assert.ok(app.includes('taskLegacySyncGuard.js?v=2'),'runtime must cache-bust th
   const refs={};
   function ref(path){
     if(refs[path])return refs[path];
-    const node={
-      path,
-      on(event,handler){assert.strictEqual(event,'value');rootListeners.push({path,handler});},
-      off(){},
-      update(value){writes.push({path,value:JSON.parse(JSON.stringify(value))});return Promise.resolve();}
-    };
-    refs[path]=node;
-    return node;
+    const node={path,on(event,handler){assert.strictEqual(event,'value');rootListeners.push({path,handler});},off(){},update(value){writes.push({path,value:JSON.parse(JSON.stringify(value))});return Promise.resolve();}};
+    refs[path]=node;return node;
   }
 
-  const canonical=[{id:'canonical-1',title:'Blijf bestaan',date:'2026-08-28'}];
-  const window={
-    fbDb:{ref},
-    fbFamilyId:'household-A',
-    fbUser:{uid:'uA'},
-    offlineMode:false,
-    _fbSyncActive:false,
-    _syncTimer:null,
-    calData:canonical.slice(),
-    shopData:[],
-    recurData:[],
-    myXP:0,
-    myName:'Shane',
-    partnerName:'Esra',
-    partnerXPStore:0,
-    _currentScreen:'cal',
-    _renderScreen(){},
-    updateHomeXP(){},
-    AuthenticatedSessionController:{addCleanup(){}},
-    stopFirebaseSync(){},
-    objToArr(value){return value?Object.values(value):[];},
-    arrToObj(value){const out={};(value||[]).forEach((row,i)=>{out['id_'+(row.id||i)]=row;});return out;}
-  };
+  const canonicalCal=[{id:'canonical-1',title:'Blijf bestaan',date:'2026-08-28'}];
+  const canonicalShop=[{id:'canonical-shop',name:'Melk'}];
+  const window={fbDb:{ref},fbFamilyId:'household-A',fbUser:{uid:'uA'},offlineMode:false,_fbSyncActive:false,_syncTimer:null,calData:canonicalCal.slice(),shopData:canonicalShop.slice(),recurData:[],myXP:0,myName:'Shane',partnerName:'Esra',partnerXPStore:0,_currentScreen:'cal',_renderScreen(){},updateHomeXP(){},AuthenticatedSessionController:{addCleanup(){}},stopFirebaseSync(){},objToArr(value){return value?Object.values(value):[];},arrToObj(value){const out={};(value||[]).forEach((row,i)=>{out['id_'+(row.id||i)]=row;});return out;}};
   const sandbox={window,console,setTimeout,clearTimeout,Date,Object,Array,Number,String,JSON};
-  vm.createContext(sandbox);
-  vm.runInContext(source,sandbox,{filename:'taskLegacySyncGuard.js'});
+  vm.createContext(sandbox);vm.runInContext(source,sandbox,{filename:'taskLegacySyncGuard.js'});
 
   window.startFirebaseSync();
   const root=rootListeners.find(x=>x.path==='families/household-A');
-  assert.ok(root,'legacy family-root listener must still attach for unmigrated modules');
-  root.handler({val(){return{cal:{id_old:{id:'old',title:'Legacy',date:'2026-01-01'}},shop:{},recurData:{},members:{}};}});
-  assert.deepStrictEqual(window.calData,canonical,'legacy root snapshots must not replace canonical Agenda projection');
+  assert.ok(root,'legacy family-root listener must still attach for recurData');
+  root.handler({val(){return{cal:{id_old:{id:'old',title:'Legacy'}},shop:{id_old:{id:'old',name:'Legacy melk'}},recurData:{r1:{id:'r1',title:'Weektaak'}},members:{}};}});
+  assert.deepStrictEqual(window.calData,canonicalCal,'legacy root snapshots must not replace canonical Agenda projection');
+  assert.deepStrictEqual(window.shopData,canonicalShop,'legacy root snapshots must not replace canonical Shopping projection');
+  assert.strictEqual(window.recurData.length,1,'remaining unmigrated recurData may still project');
 
   window.syncToFirebase();
   await new Promise(resolve=>setTimeout(resolve,850));
   const familyWrite=writes.find(x=>x.path==='families/household-A');
-  assert.ok(familyWrite,'legacy sync should still write remaining unmigrated modules');
+  assert.ok(familyWrite,'legacy sync should still write remaining recurData module');
   assert.ok(!Object.prototype.hasOwnProperty.call(familyWrite.value,'cal'),'legacy root write must not contain cal');
   assert.ok(!Object.prototype.hasOwnProperty.call(familyWrite.value,'tasks'),'legacy root write must not contain tasks');
+  assert.ok(!Object.prototype.hasOwnProperty.call(familyWrite.value,'shop'),'legacy root write must not contain shop');
+  assert.ok(Object.prototype.hasOwnProperty.call(familyWrite.value,'recurData'),'legacy root write should only retain recurData payload');
 
-  console.log('STEP 6 calendar legacy sync guard contract: PASS');
+  console.log('STEP 6/7 canonical legacy sync guard contract: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
