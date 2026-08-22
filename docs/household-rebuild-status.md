@@ -19,7 +19,7 @@ This is a release gate for a broader family beta, not an optional future enhance
 
 ### STEP 2B.3 — Own hero backdrop upload support
 
-Status: **implementation complete on branch; production Storage Rules approval + real-device gate pending**
+Status: **implementation complete on branch; production Storage Rules deployment approved but blocked by first-release IAM; real-device gate pending**
 
 Implemented:
 - Added `HeroBackdropUploadService` as the dedicated upload boundary.
@@ -34,18 +34,29 @@ Implemented:
 - Switching back to a preset/reset cleans up the member's previous uploaded object after the profile mutation succeeds.
 - Failed profile persistence attempts clean up the newly uploaded object.
 - Firebase Storage compat SDK is wired into the served runtime before the upload service is used.
-- `storage.rules` is versioned and registered by `firebase.json` but has **not** been deployed to production.
+- `storage.rules` is versioned and registered by `firebase.json`.
 - Storage rules deny listing, restrict create/update/delete to the member's own UID path, and validate image size/type + FamilyApp metadata.
 - `scripts/test-person-hero-backdrop-upload.js` records the upload/privacy contract.
 - Branch contract-test workflow added for ongoing non-production CI coverage.
-- Latest Vercel branch deployment for this implementation reached READY.
+- Latest Vercel branch deployments for the implementation reached READY.
+
+Production deploy attempt on 2026-08-22:
+- Product-owner approval for the Storage Rules production deployment was explicitly given.
+- The standard Firebase CLI path authenticated successfully but was blocked because the GitHub Firebase service account cannot read the Service Usage state for `firebasestorage.googleapis.com`.
+- A direct Firebase Rules API path was then used without bypassing Firebase Rules IAM.
+- The service account successfully authenticated, listed current releases, and successfully created an immutable ruleset from the repository `storage.rules`; therefore the rules source passed the authoritative ruleset-create validation boundary.
+- Firebase reports **no existing `firebase.storage/...` release** for this project.
+- Creating the first Storage release was denied with HTTP 403 because the service account lacks `firebaserules.releases.create`.
+- The newly created ruleset is not active because no release points to it. No production Storage rule behavior changed.
+- Automatic production deployment is disabled again. The deployment workflow is manual-only and remains behind explicit approval.
 
 Security note:
 - Firebase Cloud Storage Rules cannot directly look up Realtime Database household membership. The STEP 2B.3 prototype rule therefore uses authenticated exact-path reads plus unguessable random object paths, while the exact path is exposed only through the already household-protected RTDB member record.
 - This is acceptable only as the current prototype bridge. Before the broader multi-family beta, STEP 15 must replace that read boundary with a server-verifiable household authorization signal or secure media service.
 
 Still required before STEP 2B.3 is accepted/frozen:
-- Explicit product-owner approval before deploying `storage.rules` to the production Firebase project.
+- Create/initialize the project's first Firebase Storage release with an identity that has `firebaserules.releases.create` (for example by completing Firebase Storage setup as a project owner, or granting the deployment identity the minimal required Firebase Rules permission).
+- Re-run the already approved Storage Rules deployment and verify the active release points to the repository ruleset.
 - Real iPhone Safari/PWA smoke test after those rules are active: select a photo, preview, confirm, persist after reload, verify another household member can see it, then switch back to a preset/reset.
 
 ### STEP 2B.4 — Global FamilyApp Icon System
@@ -136,15 +147,16 @@ Current planning is based only on:
 ## Next work
 
 Planned order:
-1. Obtain explicit approval and deploy the STEP 2B.3 Firebase Storage Rules.
-2. Run the STEP 2B.3 real iPhone/PWA upload + persistence + family-view device gate.
-3. If accepted, freeze STEP 2B.3 and close STEP 2B overall.
-4. Resume **STEP 2A platform-admin identity foundation**.
-5. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
-6. Build **STEP 14A sanitized platform operations dashboard**.
-7. STEP 15 Rules hardening must prove household isolation, removed-member revocation, Storage/media authorization and the platform-admin privacy boundary.
-8. STEP 16 removes remaining single-family/global legacy authorities.
-9. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
+1. Unblock the first Firebase Storage release (`firebaserules.releases.create` / initial Storage setup).
+2. Re-run and verify the already approved STEP 2B.3 Storage Rules deployment.
+3. Run the STEP 2B.3 real iPhone/PWA upload + persistence + family-view device gate.
+4. If accepted, freeze STEP 2B.3 and close STEP 2B overall.
+5. Resume **STEP 2A platform-admin identity foundation**.
+6. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
+7. Build **STEP 14A sanitized platform operations dashboard**.
+8. STEP 15 Rules hardening must prove household isolation, removed-member revocation, Storage/media authorization and the platform-admin privacy boundary.
+9. STEP 16 removes remaining single-family/global legacy authorities.
+10. Broader family beta is gated on the multi-family + privacy-safe-admin acceptance contract.
 
 ## Guardrails
 
