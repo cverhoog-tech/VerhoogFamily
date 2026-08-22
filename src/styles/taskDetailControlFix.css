@@ -5,7 +5,14 @@
    FamilyApp supports global UI zoom at 90/100/110/120%. Task-detail icon wrappers
    must therefore center by layout, not by incidental padding/line-height offsets.
    The rules below make the task popup scale-safe and avoid content-box overflow
-   from nested icon wrappers. */
+   from nested icon wrappers.
+
+   STEP 2B.6D note:
+   Interactive subtask icon slots are buttons, so they need the same complete
+   geometry contract as checkboxes (width AND min/max height). iOS Safari and
+   global touch-target rules can otherwise stretch a button despite an explicit
+   height. Keep the selectors exact: never use a broad [class*="sub-icon"] match
+   for controls, because that also matches .tdp-sub-icon-btn. */
 #tdp-overlay .tdp-close{
   box-sizing:border-box;
   width:32px;
@@ -53,6 +60,13 @@
   appearance:none;
 }
 
+/* A completed step must remain readable on the saturated purple fill.
+   uiIcon('check') uses currentColor, so white here is the single source of
+   truth for the glyph contrast in both light and dark themes. */
+#tdp-overlay .tdp-sub-chk.done{
+  color:#fff !important;
+}
+
 /* The done-state checkmark is a real inline <svg> (uiIcon('check',11) in
    taskDetailPopup.js), not a CSS-drawn shape. Give it its own explicit,
    transform-free sizing contract so it is the only grid item in
@@ -64,8 +78,8 @@
 #tdp-overlay .tdp-sub-chk > svg{
   box-sizing:border-box;
   display:block;
-  width:11px;
-  height:11px;
+  width:13px;
+  height:13px;
   margin:0;
   position:static;
   inset:auto;
@@ -73,6 +87,50 @@
   transform-origin:center center;
   vertical-align:0;
   flex:none;
+  color:inherit;
+  stroke:currentColor !important;
+  stroke-width:2.4 !important;
+}
+
+/* Subtask icon slot: this is a real <button> while the task is editable.
+   Lock every dimension, not only width/height, so neither WebKit's native
+   button metrics nor a global minimum touch target can turn it into a pill. */
+#tdp-overlay .tdp-sub-icon,
+#tdp-overlay .tdp-sub-icon-btn{
+  box-sizing:border-box !important;
+  width:24px !important;
+  height:24px !important;
+  min-width:24px !important;
+  min-height:24px !important;
+  max-width:24px !important;
+  max-height:24px !important;
+  aspect-ratio:1 / 1 !important;
+  flex:0 0 24px !important;
+  border-radius:50% !important;
+  padding:0 !important;
+  margin:0 !important;
+  display:grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+  overflow:hidden;
+}
+
+#tdp-overlay .tdp-sub-icon-btn{
+  border:0 !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  touch-action:manipulation;
+}
+
+#tdp-overlay .tdp-sub-icon-empty{
+  box-sizing:border-box;
+  width:100%;
+  height:100%;
+  display:grid !important;
+  place-items:center !important;
+  line-height:1 !important;
+  margin:0 !important;
+  padding:0 !important;
 }
 
 #tdp-overlay .tdp-sub{
@@ -113,11 +171,10 @@
   flex:none !important;
 }
 
-/* Subtask glyphs: make the small symbol readable at 100% and keep it centered.
-   The global body zoom will still scale the complete control at 90/110/120%. */
+/* Subtask glyphs: exact selectors only. The interactive button has its own
+   control contract above and must not be caught by substring selectors. */
 #tdp-overlay .tdp-sub-icon,
-#tdp-overlay .tdp-sub-glyph,
-#tdp-overlay .tdp-sub [class*="sub-icon"]{
+#tdp-overlay .tdp-sub-glyph{
   box-sizing:border-box;
   display:grid !important;
   place-items:center !important;
@@ -128,7 +185,6 @@
 
 #tdp-overlay .tdp-sub-icon > svg,
 #tdp-overlay .tdp-sub-glyph > svg,
-#tdp-overlay .tdp-sub [class*="sub-icon"] > svg,
 #tdp-overlay .tdp-sub-icon .fa-icon,
 #tdp-overlay .tdp-sub-glyph .fa-icon{
   display:block !important;
@@ -210,14 +266,20 @@
     max-height:34px;
     flex-basis:34px;
   }
-  #tdp-overlay .tdp-sub-chk{
-    width:26px;
-    height:26px;
-    min-width:26px;
-    min-height:26px;
-    max-width:26px;
-    max-height:26px;
-    flex-basis:26px;
+  #tdp-overlay .tdp-sub-chk,
+  #tdp-overlay .tdp-sub-icon,
+  #tdp-overlay .tdp-sub-icon-btn{
+    width:26px !important;
+    height:26px !important;
+    min-width:26px !important;
+    min-height:26px !important;
+    max-width:26px !important;
+    max-height:26px !important;
+    flex:0 0 26px !important;
+  }
+  #tdp-overlay .tdp-sub-chk > svg{
+    width:14px;
+    height:14px;
   }
 }
 
