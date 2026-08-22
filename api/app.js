@@ -8,16 +8,16 @@ module.exports = async function handler(req, res) {
 
     // STEP 2B.5 — one canonical visual identity across login, browser and PWA.
     // Every size is delivered through one same-origin endpoint backed by the
-    // versioned v4 crest, preventing Safari from falling back to the old asset.
-    const brandIcon192 = '/api/brand-icon?variant=192&v=4';
-    const brandIcon180 = '/api/brand-icon?variant=180&v=4';
-    const brandIcon32 = '/api/brand-icon?variant=32&v=4';
+    // versioned v5 crest, preventing Safari from falling back to the old asset.
+    const brandIcon192 = '/api/brand-icon?variant=192&v=5';
+    const brandIcon180 = '/api/brand-icon?variant=180&v=5';
+    const brandIcon32 = '/api/brand-icon?variant=32&v=5';
 
     html = html.replace('<meta name="apple-mobile-web-app-status-bar-style" content="default">','<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">');
     html = html.replace('<meta name="theme-color" content="#f6faf7">','<meta name="theme-color" content="#140724">');
     html = html.replace(
       '<link rel="manifest" href="manifest.json">',
-      '<link rel="manifest" href="manifest.json?v=4">\n' +
+      '<link rel="manifest" href="manifest.json?v=5">\n' +
       '  <meta name="application-name" content="FamilieApp">\n' +
       '  <meta name="apple-mobile-web-app-title" content="FamilieApp">\n' +
       '  <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" href="' + brandIcon180 + '">\n' +
@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
 
     html = html.replace('<script src="src/core/store.js"></script>','<script src="src/core/store.js?v=1"></script>');
     html = html.replace('<script src="src/core/utils.js"></script>','<script src="src/core/utils.js?v=1"></script>');
-    html = html.replace('<script src="src/core/appIcon.js"></script>','<script src="src/core/appIcon.js?v=4"></script>');
+    html = html.replace('<script src="src/core/appIcon.js"></script>','<script src="src/core/appIcon.js?v=5"></script>');
     html = html.replace('<script src="src/core/addSheet.js"></script>','<script src="src/core/addSheet.js?v=1"></script>');
     html = html.replace('<script src="src/core/search.js"></script>','<script src="src/core/search.js?v=1"></script>');
     html = html.replace('<script src="src/core/swipe.js"></script>','<script src="src/core/swipe.js?v=1"></script>');
