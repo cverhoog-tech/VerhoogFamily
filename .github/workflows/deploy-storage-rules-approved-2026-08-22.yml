@@ -38,7 +38,7 @@ jobs:
 
       - name: Verify approved Storage rules are registered
         run: |
-          node -e "const fs=require('fs'); const cfg=JSON.parse(fs.readFileSync('firebase.json','utf8')); if(!cfg.storage || cfg.storage.rules!=='storage.rules') throw new Error('storage.rules is not registered in firebase.json'); if(!fs.existsSync('storage.rules')) throw new Error('storage.rules missing'); console.log('Approved Storage rules configuration verified')"
+          node -e "const fs=require('fs'); const cfg=JSON.parse(fs.readFileSync('firebase.json','utf8')); if(!cfg.storage || cfg.storage.rules!=='storage.rules') throw new Error('storage.rules is not registered in firebase.json'); if(!fs.existsSync('storage.rules')) throw new Error('storage.rules missing'); if(!fs.existsSync('scripts/deploy-storage-rules-direct.js')) throw new Error('direct rules deploy script missing'); console.log('Approved Storage rules configuration verified')"
 
       - name: Write Firebase service account credentials
         shell: bash
@@ -52,16 +52,19 @@ jobs:
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
           chmod 600 "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Storage rules only
+      - name: Deploy and verify Storage rules via Firebase Rules API
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx --yes firebase-tools@latest deploy --only storage --project verhoog-family --non-interactive
+          FIREBASE_PROJECT_ID: verhoog-family
+          FIREBASE_STORAGE_BUCKET: verhoog-family.firebasestorage.app
+          FIREBASE_STORAGE_RULES: storage.rules
+        run: node scripts/deploy-storage-rules-direct.js
 
       - name: Mark Firebase deployment successful
         if: success()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context='Firebase Storage Rules' -f description='Approved production Storage rules deployed' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context='Firebase Storage Rules' -f description='Approved production Storage rules deployed and verified' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Mark Firebase deployment failed
         if: failure()
