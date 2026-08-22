@@ -4,10 +4,10 @@
 // and do not reliably support per-user runtime icon changes.
 
 var FAMILYAPP_APP_ICONS = Object.freeze({
-  version: '4',
-  favicon: '/api/brand-icon?variant=32&v=4',
-  appleTouch: '/api/brand-icon?variant=180&v=4',
-  preview: '/api/brand-icon?variant=192&v=4'
+  version: '5',
+  favicon: '/api/brand-icon?variant=32&v=5',
+  appleTouch: '/api/brand-icon?variant=180&v=5',
+  preview: '/api/brand-icon?variant=192&v=5'
 });
 
 function ensureHeadLink(id, rel, href, sizes) {
