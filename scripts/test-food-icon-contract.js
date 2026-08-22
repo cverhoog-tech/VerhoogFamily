@@ -35,7 +35,7 @@ assert(shell.includes('src/modules/recipes/recipeEditorPopup.js?v=2'),'runtime m
 assert(shell.includes('src/modules/shop/shop.js?v=7'),'runtime must cache-bust migrated shopping UI');
 assert(shell.includes('src/modules/meals/meals.js?v=3'),'runtime must cache-bust migrated meals UI');
 
-assert(taskStatus.includes('STEP 2B.6 — Overall'),'frozen task baseline status missing');
+assert(taskStatus.includes('STEP 2B.6 — Tasks icon/detail/create presentation'),'frozen task baseline status missing');
 assert(taskStatus.includes('accepted / frozen baseline'),'task baseline must remain frozen');
 
 console.log('FamilyApp STEP 2B.7 food icon contract OK');
