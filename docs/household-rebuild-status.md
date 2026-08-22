@@ -8,7 +8,7 @@ Primary branch: `agent/household-rebuild-v2`
 
 ### STEP 2B.5 — Brand / app identity
 
-Status: **v5 wired; final real-device Add-to-Home-Screen acceptance pending**
+Status: **accepted / complete / frozen baseline**
 
 Done:
 - Canonical app-icon runtime exists.
@@ -16,12 +16,17 @@ Done:
 - Login and PWA/browser shell use the canonical brand pipeline.
 - Final approved white/gold crest with the single purple diamond is stored as the v5 brand source.
 - `api/brand-icon.js` serves the v5 crest for 32 / 180 / 192 / 512 / maskable variants.
+- A separate transparent `login` crest variant is served for the authentication screen so the logo blends into the page without a white square/tile.
 - `src/core/appIcon.js`, `manifest.json` and the runtime shell are switched from brand v4 to brand v5.
 - Maskable icon uses a light ivory safety background to match the approved crest.
-- iPhone Safari PWA behavior has been exercised during this phase.
+- Login presentation uses the transparent crest with `object-fit: contain` and no rounded-square tile styling.
+- Final iPhone Safari Add-to-Home-Screen test with crest v5 accepted by product owner on 2026-08-22.
+- Final login-screen transparent crest presentation accepted by product owner on 2026-08-22.
 
-Open:
-- Final real-device Add-to-Home-Screen acceptance with the v5 crest on iPhone Safari.
+Decision:
+- Treat the current v5 brand/PWA/login presentation as a frozen baseline.
+- Do not reintroduce a white or rounded-square tile around the login crest.
+- Keep the installed PWA icon pipeline separate from the transparent login presentation.
 
 ### STEP 2B.6A — Task category/content icons
 
@@ -71,11 +76,17 @@ Decision:
 - 2B.6C accepted after live iPhone testing.
 - Treat the current task icon/detail/create presentation as a frozen baseline for the next rebuild phase.
 
+## Rebuild baseline
+
+**STEP 2B.5 + STEP 2B.6 are now both accepted and frozen.**
+
+The next household-rebuild work should start from this baseline without changing the accepted brand/PWA/login or task icon/detail/create presentation unless explicitly requested.
+
 ## Next work
 
-1. Re-test login branding and Add to Home Screen on iPhone Safari with crest v5.
-2. Freeze STEP 2B.5 together with the already frozen STEP 2B.6 baseline after acceptance.
-3. Start the next household-rebuild step from that accepted baseline.
+1. Start the next household-rebuild step from the accepted 2B.5 + 2B.6 baseline.
+2. Re-audit the older general FamilyApp TODO against the current branch before treating legacy items as still open.
+3. Keep production-readiness/multi-household architecture as the priority over cosmetic one-off fixes.
 
 ## Guardrails
 
@@ -84,3 +95,4 @@ Decision:
 - No bottom-nav or More-menu icon migration as part of this phase.
 - Prefer central semantic registry/resolver paths over duplicate inline artwork when a visual migration has been approved.
 - Preserve explicitly accepted legacy presentation where a migration was visually rejected.
+- Preserve the transparent login crest presentation separately from the installed PWA icon variants.
