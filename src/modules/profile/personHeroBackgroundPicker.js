@@ -1,7 +1,7 @@
 'use strict';
 (function(){
   if(window.PersonHeroBackgroundPicker)return;
-  var VERSION='1.1.0',root=null,activeUid=null,currentConfig=null,busy=false,prepared=null,progress=0;
+  var VERSION='2.0.0',root=null,activeUid=null,currentConfig=null,busy=false,prepared=null,progress=0;
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function clone(v){try{return JSON.parse(JSON.stringify(v||null));}catch(e){return v||null;}}
   function uploadService(){return window.HeroBackdropUploadService||null;}
@@ -9,7 +9,7 @@
   function catalog(){return window.HeroBackdropCatalog&&HeroBackdropCatalog.listPresets?HeroBackdropCatalog.listPresets():[];}
   function defaultId(){return window.HeroBackdropCatalog&&HeroBackdropCatalog.defaultId||null;}
   function currentPresetId(){return currentConfig&&currentConfig.type==='preset'&&currentConfig.presetId?currentConfig.presetId:(!currentConfig?defaultId():null);}
-  function isCurrentUpload(){return !!(currentConfig&&currentConfig.type==='upload'&&currentConfig.storagePath);}
+  function isCurrentUpload(){return !!(currentConfig&&currentConfig.type==='upload'&&currentConfig.provider==='cloudinary'&&currentConfig.imageUrl);}
   function formatBytes(bytes){var n=Number(bytes||0);if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(0)+' KB';return (n/(1024*1024)).toFixed(1)+' MB';}
   function message(err,fallback){var text=err&&err.message||fallback||'Er ging iets mis.';try{if(typeof window.showToast==='function')window.showToast(text);else alert(text);}catch(e){alert(text);}}
 
@@ -49,7 +49,12 @@
 
   function close(){if(busy||!root)return;disposePrepared();root.classList.remove('is-open');root.setAttribute('aria-hidden','true');activeUid=null;currentConfig=null;var input=root.querySelector('[data-phbp-file]');if(input)input.value='';}
 
-  function cleanupOldUpload(oldConfig,newPath){var s=uploadService();if(!oldConfig||oldConfig.type!=='upload'||!oldConfig.storagePath||oldConfig.storagePath===newPath||!s||typeof s.deletePath!=='function')return Promise.resolve();return s.deletePath(activeUid,oldConfig.storagePath).catch(function(err){console.warn('[HeroBackgroundPicker] old upload cleanup failed',err);});}
+  function cleanupOldUpload(oldConfig,newAssetId){
+    var s=uploadService();
+    if(!oldConfig||oldConfig.type!=='upload'||oldConfig.provider!=='cloudinary'||!oldConfig.assetId||oldConfig.assetId===newAssetId||!s)return Promise.resolve();
+    if(typeof s.retireUpload==='function')return s.retireUpload(activeUid,oldConfig).catch(function(err){console.warn('[HeroBackgroundPicker] old upload cleanup queue failed',err);});
+    return Promise.resolve();
+  }
 
   function savePreset(id){
     if(busy||!activeUid)return;var r=repo();if(!r||typeof r.setPreset!=='function')return;
@@ -74,8 +79,8 @@
     if(busy||!activeUid||!prepared)return;var s=uploadService(),r=repo();if(!s||!r||typeof s.upload!=='function'||typeof r.setUpload!=='function')return;
     var old=clone(currentConfig),newMeta=null;progress=.02;setBusy(true);
     s.upload(activeUid,prepared,function(value){progress=value;if(root){var bar=root.querySelector('.phbp-progress i');if(bar)bar.style.width=Math.round(progress*100)+'%';}})
-      .then(function(meta){newMeta=meta;progress=1;return r.setUpload(activeUid,meta).catch(function(err){return s.deletePath(activeUid,meta.storagePath).catch(function(){}).then(function(){throw err;});});})
-      .then(function(){currentConfig=clone(newMeta);return cleanupOldUpload(old,newMeta.storagePath);})
+      .then(function(meta){newMeta=meta;progress=1;return r.setUpload(activeUid,meta).catch(function(err){var retire=typeof s.retireUpload==='function'?s.retireUpload(activeUid,meta):Promise.resolve();return retire.catch(function(){}).then(function(){throw err;});});})
+      .then(function(){currentConfig=clone(newMeta);return cleanupOldUpload(old,newMeta.assetId);})
       .then(function(){disposePrepared();setBusy(false);setTimeout(close,90);})
       .catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker] upload failed',err);message(err,'Uploaden is niet gelukt.');});
   }
