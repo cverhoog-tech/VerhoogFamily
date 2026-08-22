@@ -1,8 +1,9 @@
 'use strict';
 // ============================================================
-// MAALTIJDPLANNER v2.2
+// MAALTIJDPLANNER v2.3
 // UI projection of MealPlanStore/window.mealPlanData.
 // Real calendar weeks: this week / next week.
+// STEP 2B.7: meal content icons resolve through the canonical food boundary.
 // ============================================================
 (function(){
   var weekOffset=0;
@@ -16,6 +17,7 @@
   function weekDays(offset){var start=mondayForOffset(offset),out=[];for(var i=0;i<7;i++){var d=new Date(start);d.setDate(start.getDate()+i);out.push(d);}return out;}
   function weekRange(offset){var d=weekDays(offset);return fmt(d[0])+' – '+fmt(d[6]);}
   function icon(key,size){return window.FamilyAppIconRenderer&&FamilyAppIconRenderer.render?FamilyAppIconRenderer.render(key,{size:size||'sm',label:false,className:'fa-utility-icon'}):'';}
+  function foodIcon(type,size){var r=window.FamilyAppFoodIconResolver;return r&&typeof r.renderMealType==='function'?r.renderMealType(type,{size:size||'sm',label:false,className:'fa-utility-icon'}):icon(type==='lunch'?'utilityLunch':'utilityDinner',size);}
   function ensureStyles(){if(document.getElementById('meal-week-selector-style'))return;var s=document.createElement('style');s.id='meal-week-selector-style';s.textContent=''
     +'.meal-week-switch{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 16px 10px;padding:4px;border-radius:14px;background:var(--c-surface2,#f3f4f6);border:1px solid var(--c-border,#e5e7eb)}'
     +'.meal-week-switch button{border:0;border-radius:10px;background:transparent;padding:8px 7px;color:var(--c-text2,#667085);font-size:11px;font-weight:850;line-height:1.15;cursor:pointer}.meal-week-switch button span{display:block;font-size:9.5px;font-weight:700;opacity:.72;margin-top:2px}'
@@ -30,8 +32,8 @@
       +'<div style="padding:0 16px 8px;font-size:12px;color:var(--c-text2)">Tik op een slot om een recept of maaltijd te plannen.</div>';
     days.forEach(function(d,i){
       var ds=iso(d),lunch=mealAt(ds,'lunch'),dinner=mealAt(ds,'dinner'),isToday=ds===today();
-      function slot(type,m,key,label){var rec=m&&m.recipeId?recipeById(m.recipeId):null,title=m?(m.title||(rec&&rec.name)||'Maaltijd'):null;return '<div class="meal-slot" data-date="'+ds+'" data-slot="'+type+'"><span class="meal-slot-icon">'+icon(key,'sm')+'</span>'+(m?'<div class="meal-slot-name">'+title+'</div><button type="button" data-clear-date="'+ds+'" data-clear-slot="'+type+'" style="background:none;border:none;font-size:12px;color:var(--c-text3);cursor:pointer;margin-left:auto">✕</button>':'<div class="meal-slot-empty">'+label+' kiezen...</div>')+'</div>';}
-      html+='<div class="meal-day" style="'+(isToday?'background:var(--c-primary-light)':'')+'"><div class="meal-day-label" style="'+(isToday?'color:var(--c-primary);font-weight:800':'')+'">'+dayNames[i]+'<br><span style="font-size:10px;font-weight:400">'+d.getDate()+'/'+(d.getMonth()+1)+'</span></div><div style="flex:1;display:flex;flex-direction:column;gap:5px">'+slot('lunch',lunch,'utilityLunch','Lunch')+slot('dinner',dinner,'utilityDinner','Diner')+'</div></div>';
+      function slot(type,m,label){var rec=m&&m.recipeId?recipeById(m.recipeId):null,title=m?(m.title||(rec&&rec.name)||'Maaltijd'):null;return '<div class="meal-slot" data-date="'+ds+'" data-slot="'+type+'"><span class="meal-slot-icon">'+foodIcon(type,'sm')+'</span>'+(m?'<div class="meal-slot-name">'+title+'</div><button type="button" data-clear-date="'+ds+'" data-clear-slot="'+type+'" style="background:none;border:none;font-size:12px;color:var(--c-text3);cursor:pointer;margin-left:auto">✕</button>':'<div class="meal-slot-empty">'+label+' kiezen...</div>')+'</div>';}
+      html+='<div class="meal-day" style="'+(isToday?'background:var(--c-primary-light)':'')+'"><div class="meal-day-label" style="'+(isToday?'color:var(--c-primary);font-weight:800':'')+'">'+dayNames[i]+'<br><span style="font-size:10px;font-weight:400">'+d.getDate()+'/'+(d.getMonth()+1)+'</span></div><div style="flex:1;display:flex;flex-direction:column;gap:5px">'+slot('lunch',lunch,'Lunch')+slot('dinner',dinner,'Diner')+'</div></div>';
     });
     html+='<div style="padding:12px 16px"><button id="meal-week-shop" style="width:100%;background:var(--c-primary);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer"><span class="meal-shop-icon">'+icon('utilityShopping','sm')+'</span>Voeg ingrediënten van deze week toe</button></div>';
     el.innerHTML=html;
