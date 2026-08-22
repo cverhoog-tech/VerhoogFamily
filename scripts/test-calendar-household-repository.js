@@ -22,6 +22,7 @@ assert.ok(repoSource.includes("active.ref.off('value',active.handler)"),'agenda 
 assert.ok(repoSource.includes("families/'+binding.context.householdId+'/shared/calendar"),'same-household shared/calendar must be an allowed legacy source');
 assert.ok(repoSource.includes("families/'+binding.context.householdId+'/cal"),'same-household historical root calendar must be an allowed legacy source');
 assert.ok(repoSource.includes('calendarMigrations/v2LegacyToCanonical'),'agenda migration must use a household marker');
+assert.ok(repoSource.includes("source:'mutation-ack'"),'successful mutations must update the canonical in-memory projection without waiting for listener timing');
 assert.ok(!repoSource.includes('AppState.set('),'generic AppState calendar data must never seed canonical households');
 assert.ok(!repoSource.includes('window.calData'),'canonical agenda repository must not read legacy in-memory calendar state');
 assert.ok(!repoSource.includes('FamilyDataStore'),'canonical agenda repository must own Firebase directly');
@@ -33,8 +34,8 @@ assert.ok(mealIntegrationSource.includes('Projects MealPlanStore data into Agend
 assert.ok(!mealIntegrationSource.includes('CalendarSharedLive.create'),'meal integration must not duplicate meals into calendar events');
 
 const legacyIndex=bootstrapSource.indexOf('calendarLegacy.js?v=3');
-const repoIndex=bootstrapSource.indexOf('calendarEventHouseholdRepository.js?v=1');
-const facadeIndex=bootstrapSource.indexOf('calendarSharedLive.js?v=4');
+const repoIndex=bootstrapSource.indexOf('calendarEventHouseholdRepository.js?v=2');
+const facadeIndex=bootstrapSource.indexOf('calendarSharedLive.js?v=5');
 const premiumIndex=bootstrapSource.indexOf('calendarPremiumUi.js?v=2');
 const mealsIndex=bootstrapSource.indexOf('calendarMealPlanIntegration.js?v=1');
 const googleIndex=bootstrapSource.indexOf('calendarGoogleSync.js?v=1');
@@ -111,6 +112,14 @@ function makeDb(initial){
   assert.strictEqual(created.createdByUid,'uB','created agenda event must use active UID');
   assert.ok(db.writes.some(w=>w.path.indexOf('families/B/calendarEvents/')===0&&w.value&&w.value.title==='B nieuw'),'create must write only under household B');
   assert.ok(!db.writes.some(w=>w.path.indexOf('families/A/calendarEvents/')===0&&w.value&&w.value.title==='B nieuw'),'create must never write new B event under A');
+  assert.strictEqual(repo.get(created.id).title,'B nieuw','create acknowledgement must immediately project the new event before a Firebase listener callback');
+
+  const createdUpdated=await repo.updateOne(created.id,{title:'B nieuw direct gewijzigd'});
+  assert.strictEqual(createdUpdated.title,'B nieuw direct gewijzigd','a just-created event must be editable before another listener callback');
+  assert.strictEqual(repo.get(created.id).title,'B nieuw direct gewijzigd','update acknowledgement must immediately refresh repository projection');
+  const createdRemoved=await repo.remove(created.id);
+  assert.strictEqual(createdRemoved,true,'a just-created event must be removable before another listener callback');
+  assert.strictEqual(repo.get(created.id),null,'delete acknowledgement must immediately remove the event from repository projection');
 
   const updated=await repo.updateOne('b',{title:'B gewijzigd',householdId:'A',createdByUid:'evil',schemaVersion:99});
   assert.strictEqual(updated.title,'B gewijzigd','edit must update mutable fields');
@@ -122,6 +131,7 @@ function makeDb(initial){
   const removed=await repo.remove('b');
   assert.strictEqual(removed,true,'delete must resolve true for existing B event');
   assert.ok(db.writes.some(w=>w.path==='families/B/calendarEvents/id_b'&&w.value===null),'delete must remove only the B event record');
+  assert.strictEqual(repo.get('b'),null,'delete acknowledgement must remove existing events from projection immediately');
 
   const cacheKeys=storage.keys();
   assert.ok(cacheKeys.some(k=>k.includes('uA_A')),'A cache must be UID + household scoped');
