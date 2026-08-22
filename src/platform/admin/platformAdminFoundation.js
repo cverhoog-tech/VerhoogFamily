@@ -43,11 +43,15 @@
     state={uid:next.uid||null,role:next.role||null,status:next.status||'none',permissions:Array.isArray(next.permissions)?next.permissions.slice():[],resolved:next.resolved===true,loading:next.loading===true,lastError:next.lastError||null,revision:revision};
     emit(reason);return snapshot();
   }
-  function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
+  function db(){
+    try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}
+  }
   function authenticatedUid(){
-    var session=window.AuthenticatedSessionController&&typeof AuthenticatedSessionController.status==='function'?AuthenticatedSessionController.status():null;
+    var sessionController=window.AuthenticatedSessionController;
+    var session=sessionController&&typeof sessionController.status==='function'?sessionController.status():null;
     if(session&&session.uid)return session.uid;
-    var ctx=window.HouseholdContext&&typeof HouseholdContext.snapshot==='function'?HouseholdContext.snapshot():null;
+    var householdContext=window.HouseholdContext;
+    var ctx=householdContext&&typeof householdContext.snapshot==='function'?householdContext.snapshot():null;
     if(ctx&&ctx.uid)return ctx.uid;
     try{return window.fbAuth&&window.fbAuth.currentUser&&window.fbAuth.currentUser.uid||null;}catch(e){return null;}
   }
