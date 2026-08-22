@@ -82,17 +82,38 @@ Decision:
 
 The next household-rebuild work should start from this baseline without changing the accepted brand/PWA/login or task icon/detail/create presentation unless explicitly requested.
 
+## Legacy TODO reconciliation
+
+Status: **completed 2026-08-22**
+
+The May 2026 generic TODO was audited against the current branch and rewritten into `docs/legacy-todo-audit-2026-08-22.md`.
+
+Key decisions:
+- Old feed persistence/realtime items are superseded by the current household-scoped FeedSharedData architecture.
+- Accounts, household invites, cloud sync and generic realtime are no longer “future features”; remaining work is hardening, lifecycle and isolation testing.
+- Branding/PWA and task icon/detail/create items covered by 2B.5/2B.6 are closed and frozen.
+- Carousel, avatar, home, profile, navigation and task visual items remain only as targeted regression/verification checklists where still reproducible.
+- The authoritative architecture roadmap is `docs/MULTI-HOUSEHOLD-PRODUCTION-READINESS.md`.
+
 ## Next work
 
-1. Start the next household-rebuild step from the accepted 2B.5 + 2B.6 baseline.
-2. Re-audit the older general FamilyApp TODO against the current branch before treating legacy items as still open.
-3. Keep production-readiness/multi-household architecture as the priority over cosmetic one-off fixes.
+### Household/Auth lifecycle hardening — next implementation phase
+
+Priority order:
+1. Account-switch on the same device without stale household/user state.
+2. Logout cleanup for subscriptions and sensitive runtime state.
+3. Validate the active household after login instead of trusting stale local state.
+4. Removed-member access revocation.
+5. Automated two-account / multi-household tests proving no state leakage across refresh and reconnect.
+
+After this architecture pass, run a short visual regression sweep using only the surviving current UI checklist from the legacy TODO audit.
 
 ## Guardrails
 
 - No changes to Firebase task data model during icon/UI work.
 - No changes to task completion or XP semantics during icon/UI work.
-- No bottom-nav or More-menu icon migration as part of this phase.
+- No bottom-nav or More-menu icon migration as part of the frozen 2B.6 baseline.
 - Prefer central semantic registry/resolver paths over duplicate inline artwork when a visual migration has been approved.
 - Preserve explicitly accepted legacy presentation where a migration was visually rejected.
 - Preserve the transparent login crest presentation separately from the installed PWA icon variants.
+- Do not revive stale May 2026 TODO items without first reproducing them on the current branch.
