@@ -5,7 +5,7 @@
 //
 // Existing recipe UI keeps using window.RecipeStore, but every read/write now
 // flows through the canonical UID + HouseholdContext repository boundary.
-// No FamilyDataStore listener and no generic fam_recipes_v1 cache authority.
+// No generic shared-store listener and no unscoped legacy recipe-cache authority.
 // ============================================================
 (function(){
   if(window.RecipeStore&&window.RecipeStore.version==='3.0.0')return;
