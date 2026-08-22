@@ -34,7 +34,7 @@ assert.ok(!mealIntegrationSource.includes('CalendarSharedLive.create'),'meal int
 
 const legacyIndex=bootstrapSource.indexOf('calendarLegacy.js?v=3');
 const repoIndex=bootstrapSource.indexOf('calendarEventHouseholdRepository.js?v=1');
-const facadeIndex=bootstrapSource.indexOf('calendarSharedLive.js?v=3');
+const facadeIndex=bootstrapSource.indexOf('calendarSharedLive.js?v=4');
 const premiumIndex=bootstrapSource.indexOf('calendarPremiumUi.js?v=2');
 const mealsIndex=bootstrapSource.indexOf('calendarMealPlanIntegration.js?v=1');
 const googleIndex=bootstrapSource.indexOf('calendarGoogleSync.js?v=1');
