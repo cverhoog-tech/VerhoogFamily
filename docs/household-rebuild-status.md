@@ -17,6 +17,17 @@ This is a release gate for a broader family beta, not an optional future enhance
 
 ## Current phase
 
+### STEP 2B.4 — Global FamilyApp Icon System
+
+Status: **accepted / scope closed at current baseline by product decision**
+
+Decision:
+- The central semantic registry/renderer foundation remains in use where already migrated.
+- Existing current icons across the remaining app surfaces are accepted as-is for the prototype.
+- No further broad icon replacement/audit is required in STEP 2B.
+- Bottom navigation and More-menu icons remain unchanged.
+- Reopen icon work only for a concrete regression or a newly approved visual redesign.
+
 ### STEP 2B.5 — Brand / app identity
 
 Status: **accepted / complete / frozen baseline**
@@ -108,11 +119,21 @@ Decision:
 - Stored legacy emoji fields remain compatibility metadata for now; removing them belongs to later legacy/data-contract cleanup, not this visual phase.
 - STEP 2B.5 and STEP 2B.6 remain untouched/frozen.
 
+### STEP 2B.8 — Feed / Notifications / Agenda / Finance / Achievements icon migration
+
+Status: **closed by product decision — current icons retained**
+
+Decision:
+- Do not perform the planned broad icon migration for Feed, Notifications, Agenda, Finance or Achievements.
+- Their current icon presentation is acceptable for the prototype and remains the baseline.
+- This is a deliberate scope decision, not an unfinished migration.
+- Future changes require a concrete regression or explicit new design request.
+
 ## Rebuild baseline
 
-**STEP 2B.5 + STEP 2B.6 + STEP 2B.7 are accepted and frozen. STEP 2B.8 is the next module icon migration.**
+**Current icon scope is accepted and frozen: STEP 2B.4, 2B.5, 2B.6, 2B.7 and 2B.8 require no further icon work.**
 
-The next household-rebuild work must preserve the accepted brand/PWA/login, task icon/detail/create, and Shopping / Recipes / Meals icon presentation unless explicitly requested.
+The remaining STEP 2B functional item is **STEP 2B.3 — hero backdrop upload support**. Existing accepted icons, branding and task/food presentation must remain unchanged unless explicitly requested.
 
 ## Planning source of truth
 
@@ -140,11 +161,11 @@ Do not resurrect or infer open work from the retired May TODO.
 
 ## Next work
 
-### Complete remaining STEP 2B work, then resume platform/multi-family architecture
+### Finish STEP 2B without further icon migration, then resume platform/multi-family architecture
 
 Planned order:
-1. Implement and device-test STEP 2B.8 — Feed / Notifications / Agenda / Finance / Achievements icon migration.
-2. Close the outstanding STEP 2B.3 upload-support and STEP 2B.4 global icon-system audit items.
+1. Complete **STEP 2B.3 — hero backdrop upload support** and its device gate.
+2. Close STEP 2B overall using the current accepted/frozen icon scope.
 3. Resume **STEP 2A platform-admin identity foundation** before building the later admin dashboard.
 4. Migrate core modules STEP 3–14 with UID/household-scoped repositories, lifecycle cleanup and cross-household tests.
 5. Build **STEP 14A sanitized platform operations dashboard**.
@@ -154,10 +175,10 @@ Planned order:
 
 ## Guardrails
 
-- No changes to Firebase task data model during icon/UI work.
-- No changes to task completion or XP semantics during icon/UI work.
-- No bottom-nav or More-menu icon migration as part of the frozen 2B.6 baseline.
-- Prefer central semantic registry/resolver paths over duplicate inline artwork when a visual migration has been approved.
+- No changes to Firebase task data model during UI work.
+- No changes to task completion or XP semantics during UI work.
+- Current app icons are accepted for the prototype; no broad icon migrations without explicit approval.
+- Bottom-nav and More-menu iconography remain unchanged.
 - Preserve explicitly accepted legacy presentation where a migration was visually rejected.
 - Preserve the transparent login crest presentation separately from the installed PWA icon variants.
 - Never use the retired May 2026 TODO as a source of truth.
