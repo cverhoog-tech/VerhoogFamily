@@ -1,42 +1,33 @@
 'use strict';
 // ============================================================
-// FAMILYAPP HERO BACKDROP UPLOAD SERVICE v1.1.0
+// FAMILYAPP HERO BACKDROP UPLOAD SERVICE v2.0.0
 // STEP 2B.3
-// Own-profile write boundary for household/UID-scoped Firebase Storage.
-// Files are resized/compressed client-side and stored under an unguessable
-// object id. Download URLs are resolved in-memory only and are never part of
-// the persistence contract.
+// Own-profile Cloudinary Free upload bridge. Images are validated and
+// compressed client-side before upload. Firebase Realtime Database remains
+// the household-scoped source of truth for the selected backdrop metadata.
 // ============================================================
 (function(){
   if(window.HeroBackdropUploadService)return;
 
-  var VERSION='1.1.0';
+  var VERSION='2.0.0';
+  var CLOUD_NAME='rg86slp4';
+  // Prototype-only unsigned preset. Configure this preset in Cloudinary with
+  // image-only formats, a strict file-size cap, random public IDs and the
+  // familyapp/hero-uploads asset folder. STEP 15 replaces this bridge with a
+  // server-authorized media boundary before broader multi-family beta.
+  var UPLOAD_PRESET='fa_hero_91c8f43ad0b6_v1';
   var MAX_SOURCE_BYTES=15*1024*1024;
   var MAX_EDGE=1800;
   var MAX_OUTPUT_BYTES=1400*1024;
   var QUALITY=.82;
-  var resolvedUrlCache=Object.create(null);
-  var resolving=Object.create(null);
+  var CLOUDINARY_ORIGIN='https://res.cloudinary.com/'+CLOUD_NAME+'/image/upload/';
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function capture(){try{return window.HouseholdContext&&HouseholdContext.capture?HouseholdContext.capture():null;}catch(e){return null;}}
   function isCurrent(token){try{return !!(window.HouseholdContext&&HouseholdContext.isCurrent&&HouseholdContext.isCurrent(token));}catch(e){return false;}}
-  function storage(){try{if(window.fbStorage)return window.fbStorage;if(window.firebase&&firebase.storage)return firebase.storage();}catch(e){}return null;}
   function own(uid){var c=context();return !!(c&&c.ready&&c.uid&&c.householdId&&String(c.uid)===String(uid));}
   function error(code,message){var e=new Error(message);e.code=code;return e;}
-  function clean(v){return String(v==null?'':v).replace(/^\/+|\/+$/g,'');}
-  function familyPrefix(householdId){return 'families/'+clean(householdId)+'/members/';}
-  function ownPrefix(householdId,uid){return familyPrefix(householdId)+clean(uid)+'/hero-backdrops/';}
-  function extension(type){return String(type||'').toLowerCase()==='image/webp'?'.webp':'.jpg';}
-  function randomId(){
-    var cryptoObj=window.crypto||window.msCrypto;
-    if(!cryptoObj||typeof cryptoObj.getRandomValues!=='function')throw error('SECURE_RANDOM_UNAVAILABLE','Veilige afbeeldingsopslag is op dit toestel niet beschikbaar.');
-    var bytes=new Uint8Array(16);cryptoObj.getRandomValues(bytes);
-    return Array.prototype.map.call(bytes,function(b){return ('0'+b.toString(16)).slice(-2);}).join('');
-  }
-  function storagePath(householdId,uid,contentType){return ownPrefix(householdId,uid)+randomId()+extension(contentType);}
-  function pathBelongsToHousehold(path,householdId){return clean(path).indexOf(familyPrefix(householdId))===0&&clean(path).indexOf('/hero-backdrops/')>-1;}
-  function pathBelongsToMember(path,householdId,uid){return clean(path).indexOf(ownPrefix(householdId,uid))===0;}
+  function validCloudinaryUrl(value){return String(value||'').indexOf(CLOUDINARY_ORIGIN)===0;}
 
   function validate(file){
     if(!file)throw error('NO_FILE','Kies eerst een afbeelding.');
@@ -90,82 +81,79 @@
 
   function dispose(prepared){if(prepared&&prepared.previewUrl){try{URL.revokeObjectURL(prepared.previewUrl);}catch(e){}prepared.previewUrl='';}}
 
+  function cloudinaryUpload(prepared,onProgress){
+    return new Promise(function(resolve,reject){
+      var form=new FormData();
+      form.append('file',prepared.blob,'familyapp-hero.'+(prepared.contentType==='image/webp'?'webp':'jpg'));
+      form.append('upload_preset',UPLOAD_PRESET);
+      form.append('return_delete_token','true');
+      var xhr=new XMLHttpRequest();
+      xhr.open('POST','https://api.cloudinary.com/v1_1/'+CLOUD_NAME+'/image/upload',true);
+      xhr.upload.onprogress=function(evt){if(evt.lengthComputable&&typeof onProgress==='function'){try{onProgress(Math.max(0,Math.min(.94,evt.loaded/evt.total*.94)));}catch(e){}}};
+      xhr.onerror=function(){reject(error('UPLOAD_NETWORK','Uploaden naar de afbeeldingsdienst is niet gelukt.'));};
+      xhr.onload=function(){
+        var data={};try{data=JSON.parse(xhr.responseText||'{}');}catch(e){}
+        if(xhr.status<200||xhr.status>=300){var msg=data&&data.error&&data.error.message||'Cloudinary upload mislukt.';reject(error('UPLOAD_FAILED',msg));return;}
+        if(!data.secure_url||!validCloudinaryUrl(data.secure_url)){reject(error('INVALID_UPLOAD_RESPONSE','De afbeeldingsdienst gaf geen geldige URL terug.'));return;}
+        if(typeof onProgress==='function'){try{onProgress(1);}catch(e){}}
+        resolve(data);
+      };
+      xhr.send(form);
+    });
+  }
+
   function upload(uid,prepared,onProgress){
     if(!own(uid))return Promise.reject(error('NOT_OWN_PROFILE','Je kunt alleen je eigen hero-achtergrond aanpassen.'));
     if(!prepared||!prepared.blob)return Promise.reject(error('NOT_PREPARED','De afbeelding is nog niet voorbereid.'));
-    var c=context(),token=capture(),s=storage();
+    var c=context(),token=capture();
     if(!c||!c.householdId||!token)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
-    if(!s)return Promise.reject(error('STORAGE_UNAVAILABLE','Firebase Storage is niet beschikbaar.'));
-    var path;
-    try{path=storagePath(c.householdId,String(uid),prepared.contentType||prepared.blob.type);}catch(e){return Promise.reject(e);}
-    var ref=s.ref().child(path);
-    var metadata={
-      contentType:prepared.contentType||prepared.blob.type||'image/webp',
-      cacheControl:'private,max-age=3600',
-      customMetadata:{familyAppPurpose:'hero-backdrop',householdId:String(c.householdId),uid:String(uid)}
-    };
-    return new Promise(function(resolve,reject){
-      var task;
-      try{task=ref.put(prepared.blob,metadata);}catch(e){reject(e);return;}
-      task.on('state_changed',function(snap){
-        if(typeof onProgress==='function'){var total=Number(snap.totalBytes||0),done=Number(snap.bytesTransferred||0);try{onProgress(total?Math.max(0,Math.min(1,done/total)):0);}catch(e){}}
-      },reject,function(){resolve(task.snapshot);});
-    }).then(function(snapshot){
+    return cloudinaryUpload(prepared,onProgress).then(function(data){
       if(!isCurrent(token)){
-        try{snapshot.ref.delete().catch(function(){});}catch(e){}
+        queueRetirement(uid,{provider:'cloudinary',assetId:data.asset_id||'',publicId:data.public_id||''});
         throw error('STALE_CONTEXT','De gezinscontext veranderde tijdens het uploaden. Probeer opnieuw.');
       }
       return{
-        type:'upload',storagePath:path,
+        type:'upload',provider:'cloudinary',cloudName:CLOUD_NAME,
+        assetId:String(data.asset_id||''),publicId:String(data.public_id||''),version:Number(data.version||0),format:String(data.format||''),
+        imageUrl:String(data.secure_url||''),thumbnailUrl:String(data.secure_url||''),
         contentType:prepared.contentType||prepared.blob.type||'image/webp',
-        width:Number(prepared.width||0),height:Number(prepared.height||0),bytes:Number(prepared.blob.size||0),uploadedAt:Date.now(),
+        width:Number(data.width||prepared.width||0),height:Number(data.height||prepared.height||0),bytes:Number(data.bytes||prepared.blob.size||0),uploadedAt:Date.now(),
         focalX:.5,focalY:.5,overlayStyle:'violet-night',overlayStrength:.34
       };
     });
   }
 
-  function resolvePath(path,uploadedAt){
-    var c=context(),token=capture(),s=storage(),cleanPath=clean(path);
-    if(!c||!c.ready||!c.householdId||!token)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
-    if(!pathBelongsToHousehold(cleanPath,c.householdId))return Promise.reject(error('OUTSIDE_HOUSEHOLD','Afbeeldingspad hoort niet bij dit gezin.'));
-    if(!s)return Promise.reject(error('STORAGE_UNAVAILABLE','Firebase Storage is niet beschikbaar.'));
-    if(resolvedUrlCache[cleanPath])return Promise.resolve(resolvedUrlCache[cleanPath]);
-    if(resolving[cleanPath])return resolving[cleanPath];
-    resolving[cleanPath]=s.ref().child(cleanPath).getDownloadURL().then(function(url){
-      if(!isCurrent(token))throw error('STALE_CONTEXT','De gezinscontext veranderde tijdens het laden.');
-      var v=String(url||'');
-      if(uploadedAt)v+=(v.indexOf('?')>=0?'&':'?')+'familyapp_v='+encodeURIComponent(String(uploadedAt));
-      resolvedUrlCache[cleanPath]=v;return v;
-    }).finally(function(){delete resolving[cleanPath];});
-    return resolving[cleanPath];
-  }
-
   function resolveConfig(config){
     config=config&&typeof config==='object'?config:{};
     if(config.type!=='upload')return Promise.resolve(config);
-    if(config.imageUrl)return Promise.resolve(config);
-    if(!config.storagePath)return Promise.reject(error('UPLOAD_PATH_MISSING','Uploadachtergrond heeft geen opslagpad.'));
-    return resolvePath(config.storagePath,config.uploadedAt).then(function(url){return Object.assign({},config,{imageUrl:url,thumbnailUrl:url});});
+    if(config.provider==='cloudinary'&&validCloudinaryUrl(config.imageUrl))return Promise.resolve(config);
+    if(config.imageUrl&&validCloudinaryUrl(config.imageUrl))return Promise.resolve(Object.assign({},config,{provider:'cloudinary'}));
+    return Promise.reject(error('UPLOAD_URL_MISSING','Deze uploadachtergrond heeft geen geldige Cloudinary-URL.'));
   }
 
-  function deletePath(uid,path){
-    if(!own(uid))return Promise.reject(error('NOT_OWN_PROFILE','Je kunt alleen je eigen hero-achtergrond verwijderen.'));
-    var c=context(),s=storage(),cleanPath=clean(path);
-    if(!c||!c.householdId)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
-    if(!pathBelongsToMember(cleanPath,c.householdId,String(uid)))return Promise.reject(error('INVALID_DELETE_PATH','Dit afbeeldingspad hoort niet bij jouw profiel.'));
-    if(!s)return Promise.reject(error('STORAGE_UNAVAILABLE','Firebase Storage is niet beschikbaar.'));
-    return s.ref().child(cleanPath).delete().then(function(){delete resolvedUrlCache[cleanPath];}).catch(function(err){
-      if(err&&err.code==='storage/object-not-found'){delete resolvedUrlCache[cleanPath];return;}
-      throw err;
-    });
+  function cleanupDb(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
+  function queueRetirement(uid,config){
+    config=config&&typeof config==='object'?config:{};
+    if(!own(uid)||config.provider!=='cloudinary'||!config.assetId)return Promise.resolve(false);
+    var d=cleanupDb(),assetId=String(config.assetId||'').replace(/[^A-Za-z0-9_-]/g,'');
+    if(!d||!assetId)return Promise.resolve(false);
+    return d.ref('users/'+String(uid)+'/private/mediaCleanup/cloudinary/'+assetId).set({
+      provider:'cloudinary',assetId:assetId,publicId:String(config.publicId||''),queuedAt:Date.now(),reason:'hero-backdrop-retired'
+    }).then(function(){return true;}).catch(function(err){console.warn('[HeroBackdropUploadService] cleanup queue failed',err);return false;});
   }
 
-  function clearCache(){resolvedUrlCache=Object.create(null);resolving=Object.create(null);}
-  try{if(window.HouseholdContext&&typeof HouseholdContext.subscribe==='function')HouseholdContext.subscribe(function(s,reason){if(reason==='identity-change')clearCache();});}catch(e){}
+  function deletePath(uid,pathOrConfig){
+    // Backward-compatible picker boundary. Cloudinary deletion needs signed
+    // server credentials; retired assets are queued privately instead of
+    // exposing an API secret in the browser.
+    if(pathOrConfig&&typeof pathOrConfig==='object')return queueRetirement(uid,pathOrConfig);
+    return Promise.resolve(false);
+  }
 
   window.HeroBackdropUploadService={
-    version:VERSION,prepare:prepare,upload:upload,dispose:dispose,resolveConfig:resolveConfig,resolvePath:resolvePath,deletePath:deletePath,canUpload:own,
-    limits:Object.freeze({maxSourceBytes:MAX_SOURCE_BYTES,maxEdge:MAX_EDGE,maxOutputBytes:MAX_OUTPUT_BYTES}),
-    storagePrefix:function(uid){var c=context();return c&&c.householdId?ownPrefix(c.householdId,String(uid||c.uid||'')):'';}
+    version:VERSION,provider:'cloudinary',cloudName:CLOUD_NAME,uploadPreset:UPLOAD_PRESET,
+    prepare:prepare,upload:upload,dispose:dispose,resolveConfig:resolveConfig,deletePath:deletePath,retireUpload:queueRetirement,canUpload:own,
+    isValidCloudinaryUrl:validCloudinaryUrl,
+    limits:Object.freeze({maxSourceBytes:MAX_SOURCE_BYTES,maxEdge:MAX_EDGE,maxOutputBytes:MAX_OUTPUT_BYTES})
   };
 })();
