@@ -1,0 +1,43 @@
+name: Household Rebuild Contract Tests
+
+on:
+  push:
+    branches:
+      - agent/household-rebuild-v2
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'scripts/**'
+      - 'storage.rules'
+      - 'firebase.json'
+      - '.github/workflows/rebuild-contract-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: household-rebuild-contract-tests
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Node contract checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run rebuild contract tests
+        shell: bash
+        run: |
+          set -e
+          for test_file in scripts/test-*.js; do
+            echo "Running ${test_file}"
+            node "${test_file}"
+          done
