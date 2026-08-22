@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CALENDAR SHARED LIVE v2.0.1
+// CALENDAR SHARED LIVE v2.0.2
 // STEP 6 compatibility facade over CalendarEventHouseholdRepository.
 //
 // Existing agenda UI keeps window.calData/saveItem/openCalEdit/deleteCalEvent,
@@ -8,15 +8,16 @@
 // the canonical repository.
 // ============================================================
 (function(){
-  if(window.CalendarSharedLive&&window.CalendarSharedLive.version==='2.0.1')return;
+  if(window.CalendarSharedLive&&window.CalendarSharedLive.version==='2.0.2')return;
 
-  var VERSION='2.0.1';
+  var VERSION='2.0.2';
   var state={editingId:null,repositoryUnsubscribe:null,bootTimer:null,lastMeta:{source:'idle',ready:false}};
 
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function repo(){return window.CalendarEventHouseholdRepository||window.CalendarEventRepository||null;}
   function ctx(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function now(){return Date.now();}
+  function eventId(event){return String(event&&event.id!=null?event.id:event&&event._key!=null?event._key:'');}
   function current(id){var r=repo();return r&&typeof r.get==='function'?r.get(id):((window.calData||[]).find(function(e){return String(e&&e.id)===String(id);})||null);}
   function render(){try{if(typeof window.renderCal==='function')window.renderCal();}catch(e){}try{if(typeof window.updateStats==='function')window.updateStats();}catch(e){}}
   function emitLocal(type,event){
@@ -29,6 +30,25 @@
     state.lastMeta=clone(meta||{})||{};
     render();
   }
+  function projectAcknowledgedMutation(type,event){
+    if(!event)return;
+    var rows=Array.isArray(window.calData)?window.calData.map(clone):[];
+    var wanted=eventId(event);
+    if(type==='delete'){
+      rows=rows.filter(function(row){return eventId(row)!==wanted;});
+    }else{
+      var replaced=false;
+      rows=rows.map(function(row){
+        if(eventId(row)!==wanted)return row;
+        replaced=true;
+        return clone(event);
+      });
+      if(!replaced)rows.push(clone(event));
+      rows.sort(function(a,b){var d=String(a&&a.date||'').localeCompare(String(b&&b.date||''));return d||String(a&&a.time||'').localeCompare(String(b&&b.time||''));});
+    }
+    var c=ctx();
+    projection(rows,{source:'mutation-ack',ready:true,uid:c&&c.uid||null,householdId:c&&c.householdId||null,revision:c&&c.revision});
+  }
   function ensureRepository(){
     var r=repo();
     if(!r||typeof r.subscribe!=='function')return false;
@@ -38,13 +58,21 @@
   }
   function mutationResult(promise,type,options){
     options=options||{};
-    return promise.then(function(event){if(options.emitMutation!==false&&event)emitLocal(type,event);return event;});
+    return promise.then(function(event){
+      if(event)projectAcknowledgedMutation(type,event);
+      if(options.emitMutation!==false&&event)emitLocal(type,event);
+      return event;
+    });
   }
   function createEvent(input,options){var r=repo();if(!r||typeof r.create!=='function')return Promise.reject(new Error('Agenda-opslag niet beschikbaar'));return mutationResult(r.create(input||{}),'create',options);}
   function updateEvent(id,patch,options){var r=repo();if(!r||typeof r.updateOne!=='function')return Promise.reject(new Error('Agenda-opslag niet beschikbaar'));return mutationResult(r.updateOne(id,patch||{}),'update',options);}
   function removeEvent(id,options){
     var r=repo(),old=current(id);if(!r||typeof r.remove!=='function')return Promise.reject(new Error('Agenda-opslag niet beschikbaar'));
-    return r.remove(id).then(function(ok){if(ok&&(!options||options.emitMutation!==false)&&old)emitLocal('delete',old);return ok;});
+    return r.remove(id).then(function(ok){
+      if(ok&&old)projectAcknowledgedMutation('delete',old);
+      if(ok&&(!options||options.emitMutation!==false)&&old)emitLocal('delete',old);
+      return ok;
+    });
   }
 
   function isIsoDate(value){return /^\d{4}-\d{2}-\d{2}$/.test(String(value||''));}
