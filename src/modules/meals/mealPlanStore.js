@@ -1,45 +1,41 @@
 'use strict';
 // ============================================================
-// MEAL PLAN STORE v1.0
-// Shared household meal planning on top of FamilyDataStore.
-// Firebase is authoritative; window.mealPlanData is compatibility only.
+// MEAL PLAN STORE COMPATIBILITY FACADE v2.0.0
+// STEP 5: MealPlanHouseholdRepository is the only persistence/listener owner.
+// Existing Meals UI keeps using MealPlanStore/window.mealPlanData.
 // ============================================================
 (function(){
-  if(window.MealPlanStore)return;
-  var VERSION='1.0.0',COLLECTION='mealPlans',LEGACY_KEY='familyapp_food_meal_plan_v001';
-  var records={},listeners=[],booted=false,unsub=null,migrated=false;
+  if(window.MealPlanStore&&window.MealPlanStore.version==='2.0.0')return;
 
-  function store(){return window.FamilyDataStore||null;}
-  function status(){return store()&&store().status?store().status():{};}
-  function ready(){var s=status();return !!(s.userId&&s.familyId);}
-  function now(){return Date.now();}
-  function uid(){return status().userId||null;}
-  function parse(v,f){try{return v?JSON.parse(v):f;}catch(e){return f;}}
-  function normalize(x,id){
-    x=x||{};var mealType=String(x.mealType||x.slot||'dinner').toLowerCase();
-    if(mealType!=='breakfast'&&mealType!=='lunch'&&mealType!=='dinner')mealType='dinner';
-    return {
-      id:String(x.id||id||''),date:String(x.date||''),mealType:mealType,
-      recipeId:x.recipeId==null?null:String(x.recipeId),title:String(x.title||'Maaltijd'),
-      persons:parseInt(x.persons,10)||4,notes:String(x.notes||''),emoji:String(x.emoji||'🍽️'),
-      createdBy:x.createdBy||x.who||null,createdAt:Number(x.createdAt)||now(),
-      updatedBy:x.updatedBy||x.createdBy||null,updatedAt:Number(x.updatedAt)||Number(x.createdAt)||now()
-    };
+  var VERSION='2.0.0';
+  var repoUnsubscribe=null;
+  var subscribers=[];
+  var rows=[];
+  var lastMeta={source:'idle',ready:false};
+
+  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
+  function repo(){return window.MealPlanHouseholdRepository||window.MealPlanRepository||null;}
+  function mirror(next){rows=Array.isArray(next)?next.map(clone):[];window.mealPlanData=rows.map(clone);window.mealPlanNextId=rows.length+1;return window.mealPlanData;}
+  function publish(next,meta){mirror(next);lastMeta=clone(meta||{})||{};subscribers.slice().forEach(function(fn){try{fn(rows.map(clone),clone(lastMeta));}catch(e){console.warn('[MealPlanStore] subscriber failed',e);}});try{window.dispatchEvent(new CustomEvent('familyapp:meals:changed',{detail:{source:'MealPlanStore',rows:rows.map(clone),meta:clone(lastMeta)}}));}catch(e){}}
+  function list(){var r=repo();return r&&typeof r.list==='function'?r.list():rows.map(clone);}
+  function get(id){var r=repo();if(r&&typeof r.get==='function')return r.get(id);var wanted=String(id||'');var row=rows.find(function(m){return String(m.id)===wanted||String(m._key)===wanted;});return row?clone(row):null;}
+  function subscribe(fn){if(typeof fn!=='function')return function(){};subscribers.push(fn);try{fn(list(),clone(lastMeta));}catch(e){}return function(){var i=subscribers.indexOf(fn);if(i>=0)subscribers.splice(i,1);};}
+  function boot(){
+    var r=repo();if(!r)return false;
+    if(typeof r.start==='function')r.start();
+    if(!repoUnsubscribe&&typeof r.subscribe==='function')repoUnsubscribe=r.subscribe(publish);
+    return true;
   }
-  function list(){return Object.keys(records).map(function(k){return normalize(records[k],k);}).filter(function(x){return x.date;}).sort(function(a,b){var d=String(a.date).localeCompare(String(b.date));return d||String(a.mealType).localeCompare(String(b.mealType));});}
-  function mirror(){window.mealPlanData=list();window.mealPlanNextId=window.mealPlanData.length+1;return window.mealPlanData;}
-  function emit(){var rows=mirror();listeners.slice().forEach(function(fn){try{fn(rows.slice());}catch(e){}});try{window.dispatchEvent(new CustomEvent('familyapp:meals:changed',{detail:{source:'MealPlanStore',rows:rows.slice()}}));}catch(e){}}
-  function get(id){return records[String(id)]?normalize(records[String(id)],String(id)):null;}
-  function subscribe(fn){if(typeof fn!=='function')return function(){};listeners.push(fn);Promise.resolve().then(function(){fn(list());});return function(){listeners=listeners.filter(function(x){return x!==fn;});};}
-  function create(input){var s=store();if(!s)return Promise.reject(new Error('Maaltijdopslag niet beschikbaar'));var id=s.makeId('meal'),t=now(),record=normalize(Object.assign({},input,{id:id,createdBy:uid(),createdAt:t,updatedBy:uid(),updatedAt:t}),id);records[id]=record;emit();return s.writeSharedRecord(COLLECTION,id,record).then(function(result){return{record:record,result:result};});}
-  function upsert(input){var s=store(),id=String(input&&input.id||'');if(!s||!id)return Promise.reject(new Error('Maaltijd ontbreekt'));var prev=get(id)||{},record=normalize(Object.assign({},prev,input,{id:id,createdBy:prev.createdBy||uid(),createdAt:prev.createdAt||now(),updatedBy:uid(),updatedAt:now()}),id);records[id]=record;emit();return s.writeSharedRecord(COLLECTION,id,record).then(function(result){return{record:record,result:result};});}
-  function remove(id){var s=store(),key=String(id||'');if(!s||!key)return Promise.reject(new Error('Maaltijd ontbreekt'));delete records[key];emit();return s.writeSharedRecord(COLLECTION,key,null);}
-  function removeSlot(date,mealType){var row=list().find(function(x){return x.date===date&&x.mealType===mealType;});return row?remove(row.id):Promise.resolve(false);}
-  function replaceSlot(input){var date=String(input&&input.date||''),mealType=String(input&&input.mealType||'dinner'),existing=list().find(function(x){return x.date===date&&x.mealType===mealType;});return existing?upsert(Object.assign({},input,{id:existing.id})):create(input);}
-  function migrateLegacy(){if(migrated||!ready()||!store())return Promise.resolve(false);migrated=true;return store().readShared(COLLECTION,{}).then(function(existing){if(existing&&Object.keys(existing).length)return false;var legacy=[];try{legacy=parse(localStorage.getItem(LEGACY_KEY),[]);}catch(e){}if(!Array.isArray(legacy)||!legacy.length)return false;var jobs=legacy.filter(function(x){return x&&x.date;}).map(function(x){return create(x);});return Promise.all(jobs).then(function(){return jobs.length>0;});});}
-  function boot(){if(booted||!store()||!ready())return false;booted=true;migrateLegacy().then(function(){if(unsub)unsub();unsub=store().subscribeShared(COLLECTION,function(value){records=value&&typeof value==='object'?value:{};emit();},{});});return true;}
-  function bootWhenReady(){if(boot())return;var tries=0,t=setInterval(function(){tries++;if(boot()||tries>300)clearInterval(t);},100);}
+  function requireRepo(method){var r=repo();if(!r||typeof r[method]!=='function')throw new Error('Maaltijdopslag is niet beschikbaar');return r;}
+  function create(input){var r;try{r=requireRepo('create');}catch(e){return Promise.reject(e);}return r.create(input||{}).then(function(record){return{record:clone(record),result:{mode:'firebase',source:'meal-plan-household-repository'}};});}
+  function upsert(input){input=input||{};var id=String(input.id||'');if(!id)return create(input);var r;try{r=requireRepo('updateOne');}catch(e){return Promise.reject(e);}return r.updateOne(id,input).then(function(record){return{record:clone(record),result:{mode:'firebase',source:'meal-plan-household-repository'}};});}
+  function remove(id){var r;try{r=requireRepo('remove');}catch(e){return Promise.reject(e);}return r.remove(id);}
+  function removeSlot(date,mealType){var row=list().find(function(x){return x&&x.date===String(date||'')&&x.mealType===String(mealType||'dinner');});return row?remove(row.id):Promise.resolve(false);}
+  function replaceSlot(input){input=input||{};var date=String(input.date||''),mealType=String(input.mealType||'dinner'),existing=list().find(function(x){return x&&x.date===date&&x.mealType===mealType;});return existing?upsert(Object.assign({},input,{id:existing.id})):create(input);}
+  function status(){var r=repo(),base=r&&typeof r.status==='function'?r.status():{};return Object.assign({version:VERSION,ready:!!(base&&base.ready),count:list().length},base);}
+  function stop(){if(repoUnsubscribe){try{repoUnsubscribe();}catch(e){}repoUnsubscribe=null;}rows=[];window.mealPlanData=[];}
 
-  window.MealPlanStore={version:VERSION,boot:boot,list:list,get:get,subscribe:subscribe,create:create,upsert:upsert,remove:remove,removeSlot:removeSlot,replaceSlot:replaceSlot,status:function(){return{ready:booted,count:list().length,householdReady:ready()};}};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootWhenReady);else bootWhenReady();
+  window.MealPlanStore={version:VERSION,boot:boot,stop:stop,list:list,get:get,subscribe:subscribe,create:create,upsert:upsert,remove:remove,removeSlot:removeSlot,replaceSlot:replaceSlot,status:status};
+  mirror([]);
+  if(!boot()){var tries=0,t=setInterval(function(){tries++;if(boot()||tries>200)clearInterval(t);},50);}
 })();
