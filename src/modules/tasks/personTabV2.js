@@ -1,7 +1,8 @@
 'use strict';
 (function(){
   if(window.PersonTabV2)return;
-  var VERSION='2.7.0',target=null,selectedUid=null,unsubscribe=null,lastModels=[],railSignature='';
+  var VERSION='2.8.0',target=null,selectedUid=null,unsubscribe=null,lastModels=[],railSignature='';
+  var resolvedUploads=Object.create(null),pendingUploads=Object.create(null);
   function esc(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function clamp(value){return Math.max(0,Math.min(100,Math.round(Number(value)||0)));}
   function icon(key,opts){try{return window.FamilyAppIconRenderer&&FamilyAppIconRenderer.render?FamilyAppIconRenderer.render(key,opts||{}):'';}catch(e){return'';}}
@@ -12,7 +13,24 @@
   function avatarHtml(model){var member=model.member||{},src=member.avatar||'';if(src)return'<img class="pt2-avatar" src="'+esc(src)+'" alt="'+esc(member.displayName||'Gezinslid')+'" decoding="async">';return'<div class="pt2-avatar pt2-avatar-fallback">'+esc(initials(member))+'</div>';}
   function railKey(models){return models.map(function(model){var m=model.member||{};return [model.uid,m.displayName||'',m.avatar||''].join('|');}).join('||');}
   function memberRail(models){return'<div class="pt2-members" role="list">'+models.map(function(model){var member=model.member||{},active=model.uid===selectedUid,state=presenceState(model);return'<button type="button" class="pt2-member'+(active?' is-active':'')+'" data-pt2-member="'+esc(model.uid)+'" role="listitem"><span class="pt2-avatar-shell">'+avatarHtml(model)+'<i class="pt2-status-dot is-'+esc(state)+'"></i></span><span class="pt2-member-name">'+esc(member.displayName||'Gezinslid')+'</span><span class="pt2-member-state">'+esc(state==='online'?'Online':state==='recent'?'Recent':state==='today'?'Vandaag':'Offline')+'</span></button>';}).join('')+'</div>';}
-  function resolvedBackdrop(member){try{if(window.HeroBackdropResolver&&typeof HeroBackdropResolver.resolve==='function')return HeroBackdropResolver.resolve(member&&member.heroBackground||null);}catch(e){}return{imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.webp',focalX:.60,focalY:.47,overlayStyle:'violet-night',sceneExposure:1.04,sceneSaturation:1.04,sceneContrast:1.03,overlayStrength:.34};}
+
+  function defaultBackdrop(){try{if(window.HeroBackdropResolver&&typeof HeroBackdropResolver.resolve==='function')return HeroBackdropResolver.resolve(null);}catch(e){}return{imageUrl:'src/assets/hero-backdrops/fantasy-castle-night.webp',focalX:.60,focalY:.47,overlayStyle:'violet-night',sceneExposure:1.04,sceneSaturation:1.04,sceneContrast:1.03,overlayStrength:.34};}
+  function rerenderSelected(){if(!target)return;var selected=currentModel(lastModels),dynamic=target.querySelector('.pt2-dynamic');if(dynamic&&selected){dynamic.innerHTML=dynamicHtml(selected);bindDynamic();}}
+  function ensureUploadedBackdrop(member){
+    var cfg=member&&member.heroBackground,path=cfg&&cfg.type==='upload'&&cfg.storagePath?String(cfg.storagePath):'';
+    if(!path||cfg.imageUrl||resolvedUploads[path]||pendingUploads[path])return;
+    var svc=window.HeroBackdropUploadService;if(!svc||typeof svc.resolveConfig!=='function')return;
+    pendingUploads[path]=true;
+    svc.resolveConfig(cfg).then(function(resolved){resolvedUploads[path]=resolved;delete pendingUploads[path];rerenderSelected();}).catch(function(err){delete pendingUploads[path];console.warn('[PersonTabV2] hero upload resolve failed',err);});
+  }
+  function resolvedBackdrop(member){
+    try{
+      var cfg=member&&member.heroBackground||null;
+      if(cfg&&cfg.type==='upload'&&cfg.storagePath&&!cfg.imageUrl){ensureUploadedBackdrop(member);cfg=resolvedUploads[String(cfg.storagePath)]||null;if(!cfg)return defaultBackdrop();}
+      if(window.HeroBackdropResolver&&typeof HeroBackdropResolver.resolve==='function')return HeroBackdropResolver.resolve(cfg);
+    }catch(e){}
+    return defaultBackdrop();
+  }
   function heroBackdropHtml(member){var backdrop=resolvedBackdrop(member||{}),url=backdrop&&backdrop.imageUrl||'';if(!url)return'';var x=Math.max(0,Math.min(1,Number(backdrop.focalX)));if(!isFinite(x))x=.5;var y=Math.max(0,Math.min(1,Number(backdrop.focalY)));if(!isFinite(y))y=.5;var exposure=Number(backdrop.sceneExposure);if(!isFinite(exposure))exposure=1;var saturation=Number(backdrop.sceneSaturation);if(!isFinite(saturation))saturation=1;var contrast=Number(backdrop.sceneContrast);if(!isFinite(contrast))contrast=1;var overlay=Number(backdrop.overlayStrength);if(!isFinite(overlay))overlay=.5;var style='--pt2-focal-x:'+(x*100).toFixed(2)+'%;--pt2-focal-y:'+(y*100).toFixed(2)+'%;--pt2-scene-exposure:'+exposure.toFixed(3)+';--pt2-scene-saturation:'+saturation.toFixed(3)+';--pt2-scene-contrast:'+contrast.toFixed(3)+';--pt2-overlay-strength:'+overlay.toFixed(3)+';';return'<div class="pt2-hero-backdrop-layer" data-overlay="'+esc(backdrop.overlayStyle||'violet-night')+'" style="'+style+'"><img src="'+esc(url)+'" alt="" decoding="async"></div>';}
   function characterPortraitHtml(member){if(member.avatar)return'<div class="pt2-hero-character"><img src="'+esc(member.avatar)+'" alt="'+esc(member.displayName||'Gezinslid')+'" decoding="async"></div>';return'<div class="pt2-hero-character pt2-hero-character-fallback">'+esc(initials(member))+'</div>';}
   function editButton(member){if(!member||!member.isCurrent)return'';return'<button type="button" class="pt2-hero-edit" data-pt2-edit-backdrop aria-label="Hero-achtergrond aanpassen">'+icon('edit',{size:'sm',label:false})+'</button>';}
@@ -29,6 +47,6 @@
   function renderModels(models){if(!target)return;lastModels=Array.isArray(models)?models.slice():[];var selected=currentModel(lastModels);if(!selected){target.innerHTML='<div class="person-tab-v2"><div class="pt2-empty pt2-empty-main">Geen gezinsleden beschikbaar.</div></div>';railSignature='';return;}var nextSignature=railKey(lastModels),root=target.querySelector('.person-tab-v2'),dynamic=target.querySelector('.pt2-dynamic');if(!root||!dynamic||railSignature!==nextSignature){target.innerHTML='<div class="person-tab-v2">'+memberRail(lastModels)+'<div class="pt2-dynamic">'+dynamicHtml(selected)+'</div></div>';railSignature=nextSignature;bindRail();bindDynamic();return;}updateRail(lastModels);dynamic.innerHTML=dynamicHtml(selected);bindDynamic();}
   function connectService(){if(!window.PersonDashboardService)return false;if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}unsubscribe=window.PersonDashboardService.subscribe(function(models){renderModels(models);});return true;}
   function render(el){target=el||document.getElementById('task-content');if(!target)return;target.innerHTML='<div class="person-tab-v2"><div class="pt2-loading">Persoonsdashboard laden…</div></div>';railSignature='';if(connectService())return;var tries=0,timer=setInterval(function(){tries++;if(connectService()||tries>=20)clearInterval(timer);},100);}
-  function destroy(){if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}target=null;lastModels=[];railSignature='';}
+  function destroy(){if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}target=null;lastModels=[];railSignature='';resolvedUploads=Object.create(null);pendingUploads=Object.create(null);}
   window.PersonTabV2={version:VERSION,render:render,destroy:destroy,selectedUid:function(){return selectedUid;}};
 })();
