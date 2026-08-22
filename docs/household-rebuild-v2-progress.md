@@ -44,8 +44,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
 - [x] STEP 3 Tasks core — accepted after isolation contracts, CI, READY preview and real iPhone/PWA gate.
+- [-] STEP 4 Recipes — canonical implementation and isolation contracts complete; current preview/device gate pending.
 
-**Next phase: STEP 4 Recipes. Production activation of STEP 2A Firebase rules / personal platform-admin provisioning remains separate and requires explicit approval.**
+**Current phase: STEP 4 Recipes device gate. Production activation of STEP 2A Firebase rules / personal platform-admin provisioning remains separate and requires explicit approval.**
 
 ## Phase checklist
 
@@ -171,11 +172,13 @@ Status: **accepted / closed / frozen prototype baseline**
 Status: **accepted on 2026-08-22. Canonical task persistence is separated from the legacy family-root sync. Generic local task/AppState data is never used to seed another household. Local task cache is UID + household scoped. Same-household historical task sources are transactionally reconciled so legacy copies cannot overwrite newer schema-v2 canonical task state. Household Rebuild Contracts, Vercel READY preview and the real iPhone/PWA gate all passed.**
 
 ### STEP 4 — Recipes
-- [ ] Firebase shared source of truth.
-- [ ] Realtime create/edit/delete.
-- [ ] Household rebind/cleanup.
-- [ ] Cross-household/lifecycle tests.
+- [x] Firebase shared source of truth.
+- [x] Realtime create/edit/delete.
+- [x] Household rebind/cleanup.
+- [x] Cross-household/lifecycle tests.
 - [ ] Tests/preview/device gate accepted.
+
+Status: **implementation ready for device gate on 2026-08-22. Canonical recipe persistence now lives at `families/{householdId}/recipes`. `RecipeHouseholdRepository` owns the single realtime Firebase binding and UID/household mutation boundary; the existing `RecipeStore` is retained only as a UI compatibility facade. Same-household `shared/recipes` and historical root records are reconciled once into schema v3, while unscoped legacy local recipe storage is explicitly never used as migration authority. Household Rebuild Contracts pass on `342804d53e4189486548b23abbab46770ee45126`. A current Vercel device-gate preview is still pending because the Hobby project hit its temporary build-rate limit.**
 
 ### STEP 5 — Meals
 - [ ] Household-bound meal-plan store.
@@ -352,6 +355,7 @@ For each functional phase verify:
 - 2026-08-22 — STEP 2A platform-admin identity foundation accepted after CI, READY preview and real iPhone smoke gate. Production Firebase Rules deployment and personal UID provisioning remain deliberately pending explicit approval.
 - 2026-08-22 — STEP 3 Tasks core implementation completed through `0d2c1ae45b3a36d05b8844faf90415dabb6253df`: canonical household task repository, UID/context mutation boundary, exact listener rebind, stale-callback protection, UID+household cache isolation, legacy task sync guard and transaction-safe historical source reconciliation. Household Rebuild Contracts and Vercel preview passed.
 - 2026-08-22 — STEP 3 real iPhone/PWA gate accepted by the product owner; Tasks core closed and STEP 4 Recipes becomes the next phase.
+- 2026-08-22 — STEP 4 Recipes canonical implementation completed through `342804d53e4189486548b23abbab46770ee45126`: direct `HouseholdContext` recipe repository, schema-v3 same-household reconciliation, exact realtime listener cleanup, stale-callback rejection, UID+household cache isolation and RecipeStore compatibility facade. Household Rebuild Contracts passed; current Vercel device gate remains pending due temporary Hobby build-rate limiting.
 
 ## Maintenance rule
 
