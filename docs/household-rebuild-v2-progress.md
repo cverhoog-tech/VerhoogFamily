@@ -37,14 +37,14 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [-] STEP 2B Person/UI identity modernization.
 - [x] STEP 2B.1 backdrop foundation.
 - [x] STEP 2B.2 preset picker.
-- [ ] STEP 2B.3 hero backdrop upload support.
+- [-] STEP 2B.3 hero backdrop upload support — implementation is on branch; Storage Rules production approval + device gate remain.
 - [x] STEP 2B.4 Global FamilyApp Icon System — current scope accepted; no further broad icon migration required.
 - [x] STEP 2B.5 Brand/PWA identity accepted and frozen.
 - [x] STEP 2B.6 Tasks icon/detail/create presentation accepted and frozen.
 - [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
 
-**Next planned functional work: STEP 2B.3 — hero backdrop upload support. After that, close STEP 2B and resume STEP 2A platform-admin identity foundation.**
+**Next gate: explicit approval to deploy the STEP 2B.3 Storage Rules, then real iPhone/PWA upload testing. If accepted, close STEP 2B and resume STEP 2A platform-admin identity foundation.**
 
 ## Phase checklist
 
@@ -96,12 +96,22 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] iPhone gate accepted.
 
 #### STEP 2B.3 — Upload support
-- [ ] Image-only upload service.
-- [ ] Size/type validation and compression/resize boundary.
-- [ ] Household/UID-scoped Firebase Storage path.
-- [ ] Upload preview and confirm flow.
-- [ ] Persist uploaded backdrop metadata to member profile.
-- [ ] Tests/preview/device gate accepted.
+- [x] Image-only upload service.
+- [x] Size/type validation and client-side compression/resize boundary.
+- [x] Household/UID-scoped Firebase Storage path using cryptographically random object ids.
+- [x] Upload preview, explicit confirm and progress flow.
+- [x] Persist whitelisted upload metadata + `storagePath` to the member profile.
+- [x] Firebase download-token URLs are not persisted in RTDB; they resolve in memory only for active-session rendering.
+- [x] Stale HouseholdContext protection during upload.
+- [x] Old uploaded object cleanup on preset/reset/replacement; failed profile persistence cleans up the new object.
+- [x] Storage SDK wired into served runtime.
+- [x] `storage.rules` authored and registered in `firebase.json` without production deployment.
+- [x] Storage listing denied; create/update/delete restricted to the member's UID path and image metadata validated.
+- [x] Upload/privacy regression contract script added.
+- [x] Rebuild contract-test CI workflow added for future branch/human pushes.
+- [x] Latest Vercel branch preview reached READY.
+- [!] Production Firebase Storage Rules deployment requires explicit product-owner approval.
+- [ ] Real iPhone/PWA upload + reload persistence + other-member visibility + reset/preset device gate accepted.
 
 #### STEP 2B.4 — Global FamilyApp Icon System
 - [x] Central semantic icon registry exists.
@@ -256,6 +266,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Platform admin restricted to sanitized operations data.
 - [ ] Normal household admin cannot gain platform privileges.
 - [ ] Storage paths audited.
+- [ ] Replace STEP 2B.3 authenticated exact-path media reads with true server-verifiable household authorization before broader multi-family beta.
 - [ ] Emulator/rule tests passed.
 - [ ] No production Rules deployment without explicit approval.
 
@@ -321,6 +332,8 @@ For each functional phase verify:
 - 2026-08-22 — STEP 2B.6 task icon/detail/create presentation accepted and frozen.
 - 2026-08-22 — STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
 - 2026-08-22 — Product decision: all other current app icons are acceptable for the prototype. STEP 2B.4 icon scope is closed at the current baseline and STEP 2B.8 is deliberately skipped/closed without code changes.
+- 2026-08-22 — STEP 2B.3 upload implementation added: client compression, UID/household-scoped random Storage objects, safe metadata persistence, in-memory URL resolution, preview/confirm flow and object cleanup.
+- 2026-08-22 — STEP 2B.3 Storage Rules are committed but intentionally not deployed pending explicit product-owner approval; broader-beta STEP 15 must harden exact-path reads to true household authorization.
 - 2026-08-22 — Multi-family readiness and privacy-safe personal platform administration are explicit broader-beta release gates.
 
 ## Maintenance rule
