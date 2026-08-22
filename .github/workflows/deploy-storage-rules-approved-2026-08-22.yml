@@ -6,6 +6,8 @@ on:
       - agent/household-rebuild-v2
     paths:
       - .github/workflows/deploy-storage-rules-approved-2026-08-22.yml
+      - storage.rules
+      - scripts/deploy-storage-rules-direct.js
 
 permissions:
   contents: read
