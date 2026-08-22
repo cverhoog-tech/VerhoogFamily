@@ -1,7 +1,9 @@
 # STEP 4 Recipes — iPhone/PWA device gate
 
 Branch: `agent/household-rebuild-v2`
-Status: pending real-device acceptance
+Status: accepted on real iPhone/PWA on 2026-08-22
+Accepted preview: `https://verhoog-family-ktc5t31fd-cverhoog-techs-projects.vercel.app`
+Accepted branch HEAD: `09106c4e20b60ab399f58733ead4280bc3f66b78`
 
 ## Purpose
 
@@ -20,15 +22,18 @@ Validate the STEP 4 canonical household recipe repository in the actual FamilyAp
 9. Confirm the existing Recipes UI, recipe-to-shopping action and meal-planning action still open normally.
 10. Confirm Tasks and the rest of the app still open normally after the recipe flow.
 
-## Acceptance criteria
+## Acceptance result
 
-- No white screen, freeze or repeated loading state.
-- Recipe create/edit/delete survives reloads correctly.
-- Existing recipes are not duplicated by the one-time migration.
-- No recipe from another account/household appears after an identity switch.
-- Existing premium Recipes UI remains intact; STEP 4 is an architecture migration, not a redesign.
+The product owner confirmed on a real iPhone/PWA on 2026-08-22 that the STEP 4 recipe flow works on the current READY preview. STEP 4 is therefore accepted.
 
-## Architecture already covered by CI
+Accepted behavior:
+- no white screen, freeze or repeated loading state observed during the device gate;
+- recipe create/edit/delete persisted correctly across reloads;
+- existing Recipes UI remained usable;
+- the accepted build served `recipeHouseholdRepository.js?v=1` before `recipeSharedLive.js?v=4`;
+- Vercel reported the branch-HEAD preview READY before the device test.
+
+## Architecture covered by CI
 
 The contract suite separately proves:
 - canonical source `families/{householdId}/recipes`;
@@ -41,4 +46,4 @@ The contract suite separately proves:
 - canonical schema-v3 conflict precedence;
 - isolated create, edit and delete behavior.
 
-Do not mark STEP 4 accepted until this device gate passes on an up-to-date READY preview containing the current rebuild branch HEAD.
+No merge to `main`, production deployment or production Firebase Rules deployment is part of this acceptance.
