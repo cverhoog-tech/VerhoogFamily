@@ -8,8 +8,8 @@ New chats/agents should read these three files before continuing development on 
 
 ## Current phase
 
-**STEP 8 — Finance: final product polish.**
-Do not start STEP 9 until the final premium PDF report template is implemented and STEP 8 is explicitly accepted/frozen.
+**STEP 8 — Finance: final verification after premium PDF implementation.**
+Do not start STEP 9 until the new premium PDF report is verified in a fresh preview/on iPhone and STEP 8 is explicitly accepted/frozen.
 
 ## STEP 8 — Finance
 
@@ -25,19 +25,26 @@ Do not start STEP 9 until the final premium PDF report template is implemented a
 - [x] PDF export/share foundation from Analyse.
 - [x] Data-driven `FamilyApp Assistent` recommendations.
 - [x] Advisor duplicate-install protection for runtime stability.
+- [x] Final premium Finance PDF report template implemented as a two-page A4 report.
+- [x] Premium PDF page 1: branded period/result hero, income/expense/savings KPIs, category bars and the live FamilyApp Assistent recommendation.
+- [x] Premium PDF page 2: fixed/variable/savings/receipt summary, category comparison table, savings progress and core insights.
+- [x] PDF layout rendered and visually QA'd locally with no clipping/overlap; PDF preflight opens as a valid two-page non-encrypted PDF.
+- [x] Added automated `test-finance-analysis-export.js` contract for two-page structure, report sections, advisor projection and retirement of placeholder template copy.
 
 ### Final STEP 8 checklist
 - [x] Confirm latest advisor changes in a fresh Vercel READY preview — verified on 2026-08-23; deployed asset serves `FinanceAnalysisAdvisor v1.0.1`.
-- [x] Real iPhone Safari/PWA smoke gate on the complete latest STEP 8 runtime accepted by product owner on 2026-08-23.
+- [x] Real iPhone Safari/PWA smoke gate on the pre-template complete STEP 8 runtime accepted by product owner on 2026-08-23.
 - [x] Finance navigation/interactions/reload/background-foreground behavior verified working on iPhone; no reported freeze/white screen/WebKit crash in the accepted test.
 - [x] Top `Verse start` card remains absent; bottom reset action remains available.
 - [x] FamilyApp Assistent behavior accepted in the iPhone test.
-- [x] PDF generation on iPhone accepted.
-- [x] Native share flow / WhatsApp PDF sharing accepted.
-- [ ] Design and implement the final premium PDF report template.
+- [x] Original PDF generation on iPhone accepted.
+- [x] Original native share flow / WhatsApp PDF sharing accepted.
+- [x] Design and implement the final premium PDF report template.
+- [ ] Confirm the new premium PDF template in a fresh Vercel READY preview (current Vercel Hobby build-rate limit can temporarily delay this deployment).
+- [ ] Final iPhone check of the new premium two-page PDF: open/render, scroll both pages, share to WhatsApp, confirm readable output.
 - [x] Extra-strict Finance privacy/isolation regression check — automated contracts cover household A→B switching, stale callbacks, household-scoped writes, active-household-only reset, logout projection clear, rejected logged-out writes, stale callback after logout, and reconnect into another household; Household Rebuild Contracts passed on 2026-08-23.
 - [ ] Update legacy `docs/household-rebuild-v2-progress.md` so it no longer incorrectly reports STEP 4 as the current phase.
-- [ ] Mark STEP 8 accepted/frozen after the premium PDF template and documentation sync are complete.
+- [ ] Mark STEP 8 accepted/frozen after the premium PDF verification and documentation sync are complete.
 
 ## STEP 9 — Progression / XP / Achievements
 
