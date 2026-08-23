@@ -14,9 +14,10 @@
 // calendar submissions still flow through CalendarSharedLive.
 //
 // STEP 8 Analysis order is deliberate:
-// FinanceAnalysisEngine -> FinanceAnalysisUI v2 -> Analysis shell style ->
-// FinanceNativeTabs. NativeTabs is the runtime owner that routes Analyse to
-// FinanceAnalysisUI instead of the historical renderAnalyse() implementation.
+// FinanceAnalysisEngine -> FinanceAnalysisUI v2 -> FinanceNativeTabs ->
+// Analysis runtime guard -> Analysis shell style. NativeTabs and the guard make
+// FinanceAnalysisUI the only real Analyse renderer; shell style loads last so
+// the reference-style tab presentation wins over older native-tab CSS.
 // ============================================================
 (function(){
   function load(src, done){
@@ -45,11 +46,13 @@
                       load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
                         load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
                           load('src/modules/finance/financeAnalysisUiV2.js?v=2', function(){
-                            load('src/modules/finance/financeAnalysisShellStyle.js?v=1', function(){
-                              load('src/modules/finance/financeNativeTabs.js?v=348', function(){
-                                if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
-                                load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                                  load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                            load('src/modules/finance/financeNativeTabs.js?v=348', function(){
+                              if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
+                              load('src/modules/finance/financeAnalysisRuntimeGuard.js?v=1', function(){
+                                load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
+                                  load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                                    load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                                  });
                                 });
                               });
                             });
