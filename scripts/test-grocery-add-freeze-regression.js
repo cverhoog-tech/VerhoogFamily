@@ -14,6 +14,7 @@ assert.ok(sheet.includes("if(typeof close==='function')close()"),'successful add
 assert.ok(shop.includes('GroceryAddSheet.open'),'shopping header add button must open the canonical grocery add sheet');
 assert.ok(!store.includes('FamilyDataStore'),'STEP 7 store must not route adds through legacy FamilyDataStore semantics');
 assert.ok(loader.includes('shoppingListStore.js?v=1'),'runtime must load the STEP 7 shopping boundary before the shopping renderer');
+assert.ok(loader.includes('shop.js?v=8'),'runtime must cache-bust the smooth checkbox + duplicate-resolution shopping UI on iPhone/PWA');
 assert.ok(store.includes('ShoppingListHouseholdRepository'),'ShoppingListStore bundle must install the canonical household repository boundary');
 assert.ok(store.indexOf('SHOPPING LIST HOUSEHOLD REPOSITORY')<store.indexOf('SHOPPING LIST STORE v2.0.0'),'repository boundary must be defined before the ShoppingListStore facade');
 console.log('grocery add freeze regression contract: PASS');
