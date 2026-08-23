@@ -1,10 +1,12 @@
 'use strict';
 (function(){
   if(window.FamilyAppIconRenderer)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
+  var ALIASES=Object.freeze({utilityProduct:'utilityCategory'});
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function render(key,opts){
     opts=opts||{};
+    key=ALIASES[String(key||'')]||key;
     var registry=window.FamilyAppIconRegistry;
     var row=registry&&registry.resolve?registry.resolve(key,opts.variant):(registry&&registry.get?registry.get(key):null);
     if(!row)return'';
