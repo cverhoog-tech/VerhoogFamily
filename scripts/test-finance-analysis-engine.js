@@ -4,13 +4,13 @@ const assert=require('assert');
 const vm=require('vm');
 
 const engineSource=fs.readFileSync('src/modules/finance/financeAnalysisEngine.js','utf8');
-const uiSource=fs.readFileSync('src/modules/finance/financeAnalysisUi.js','utf8');
+const uiSource=fs.readFileSync('src/modules/finance/financeAnalysisUiV2.js','utf8');
 const nativeTabs=fs.readFileSync('src/modules/finance/financeNativeTabs.js','utf8');
 const bootstrap=fs.readFileSync('src/modules/calendar/calendar.js','utf8');
 const sandbox={console,JSON,String,Array,Object,Number,Math,Date,Intl,globalThis:{}};
 vm.createContext(sandbox);
 vm.runInContext(engineSource,sandbox,{filename:'financeAnalysisEngine.js'});
-new vm.Script(uiSource,{filename:'financeAnalysisUi.js'});
+new vm.Script(uiSource,{filename:'financeAnalysisUiV2.js'});
 new vm.Script(nativeTabs,{filename:'financeNativeTabs.js'});
 const E=sandbox.globalThis.FinanceAnalysisEngine;
 
@@ -53,14 +53,23 @@ assert.ok(comparison.deltas.expenses,'metric deltas must be available to UI/expo
 assert.ok(Array.isArray(comparison.categories));
 assert.ok(Array.isArray(comparison.insights));
 
-assert.ok(uiSource.includes("VERSION='1.1.0'"),'freeze-safe analysis UI version must be installed');
-assert.ok(uiSource.includes("data-fa-mode=\"salary\""),'UI must offer salary-cycle analysis');
-assert.ok(uiSource.includes("data-fa-mode=\"custom\""),'UI must offer a custom date range');
+assert.ok(uiSource.includes("VERSION='2.0.0'"),'premium analysis UI v2 must be installed');
+assert.ok(uiSource.includes('data-fa-mode="salary"'),'UI must offer salary-cycle analysis');
+assert.ok(uiSource.includes('data-fa-mode="custom"'),'UI must offer a custom date range');
 assert.ok(uiSource.includes('Vorige even lange periode'),'UI must offer equal-length comparison');
-assert.ok(uiSource.includes('Geldstroom'),'UI must render trend analysis');
-assert.ok(uiSource.includes('Waar ging het geld heen?'),'UI must render category analysis');
+assert.ok(uiSource.includes('Periodeoverzicht'),'UI must render the premium period overview');
+assert.ok(uiSource.includes('Uitgaven per categorie'),'UI must render the reference-style category breakdown');
+assert.ok(uiSource.includes('Trend overzicht'),'UI must render trend analysis');
+assert.ok(uiSource.includes('Geldstroom'),'UI must describe the canonical trend data');
+assert.ok(uiSource.includes('Categorie trends'),'UI must render per-category comparison trends');
+assert.ok(uiSource.includes('Inzichten voor jou'),'UI must render deterministic insight cards');
+assert.ok(uiSource.includes('Spaardoelen'),'UI must render savings-goal progress');
+assert.ok(uiSource.includes('Waar ging het geld heen?'),'UI must retain category-analysis semantics');
 assert.ok(uiSource.includes('Vast versus variabel'),'UI must separate fixed and variable spending');
 assert.ok(uiSource.includes('Boodschappenbonnen'),'UI must consume retained receipt history');
+assert.ok(uiSource.includes('data-fa-category'),'category rows must support transaction drilldown');
+assert.ok(uiSource.includes('data-fa-point'),'trend chart must support touch-point inspection');
+assert.ok(uiSource.includes('html[data-theme$="-dark"]'),'light and dark variants must share one component implementation');
 assert.ok(uiSource.includes('if(rendering){pending=true;return false;}'),'analysis rendering must have a re-entry guard');
 assert.ok(!/new\s+(?:window\.)?MutationObserver\s*\(/.test(uiSource),'analysis UI must not create a DOM MutationObserver');
 
@@ -70,8 +79,8 @@ assert.ok(!analysisBranch.includes('renderFinance()'),'legacy renderFinance must
 assert.ok(nativeTabs.includes("window.finTab = activeTab"),'native tab state must stay aligned with legacy finance state');
 
 const engineIdx=bootstrap.indexOf('financeAnalysisEngine.js?v=1');
-const uiIdx=bootstrap.indexOf('financeAnalysisUi.js?v=2');
-assert.ok(engineIdx>=0&&uiIdx>engineIdx,'analysis engine must load before analysis UI');
+const uiIdx=bootstrap.indexOf('financeAnalysisUiV2.js?v=1');
+assert.ok(engineIdx>=0&&uiIdx>engineIdx,'analysis engine must load before premium analysis UI');
 assert.ok(bootstrap.indexOf('financeStore.js?v=4')<engineIdx,'canonical FinanceStore must load before analysis');
 
-console.log('STEP 8 finance period analysis regression: PASS');
+console.log('STEP 8 finance period analysis + premium UI regression: PASS');
