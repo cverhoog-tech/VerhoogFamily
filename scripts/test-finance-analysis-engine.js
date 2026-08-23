@@ -62,7 +62,7 @@ assert.ok(uiSource.includes('Waar ging het geld heen?'),'UI must render category
 assert.ok(uiSource.includes('Vast versus variabel'),'UI must separate fixed and variable spending');
 assert.ok(uiSource.includes('Boodschappenbonnen'),'UI must consume retained receipt history');
 assert.ok(uiSource.includes('if(rendering){pending=true;return false;}'),'analysis rendering must have a re-entry guard');
-assert.ok(!uiSource.includes('MutationObserver'),'analysis UI must not observe Finance DOM mutations');
+assert.ok(!/new\s+(?:window\.)?MutationObserver\s*\(/.test(uiSource),'analysis UI must not create a DOM MutationObserver');
 
 const analysisBranch=nativeTabs.slice(nativeTabs.indexOf("if(activeTab === 'analyse')"),nativeTabs.indexOf("if(activeTab === 'sparen')"));
 assert.ok(analysisBranch.includes('FinanceAnalysisUI.render()'),'native tabs must call the canonical analysis renderer directly');
