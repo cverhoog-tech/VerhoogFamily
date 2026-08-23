@@ -1,7 +1,8 @@
 'use strict';
 (function(){
   if(window.FamilyAppUtilityIconResolver)return;
-  var VERSION='1.4.0';
+  var VERSION='1.5.0';
+  var PRODUCT_BASKET='src/ui/icons/assets/familyapp-product-basket.svg?v=1';
   var BY_CATEGORY={
     'Zuivel':'utilityDairy','Brood':'utilityBread','Ontbijt':'utilityBread','Groente':'utilityVegetableBasket','Fruit':'utilityFruit',
     'Vlees':'utilityMeat','Vis':'utilityFish','Vega':'utilityVegetable','Voorraad':'utilityPantry','Dranken':'utilityDrinks',
@@ -26,10 +27,17 @@
     if(hit&&hit.iconKey)return hit.iconKey;
     return BY_EMOJI[String(legacyIcon||'')]||BY_CATEGORY[String(category||'')]||'utilityCategory';
   }
+  function renderProductBasket(opts){
+    opts=opts||{};
+    var size=String(opts.size||'lg');
+    var cls='fa-icon fa-icon-'+size+' fa-icon-tone-utility-green fa-icon-variant-default'+(opts.className?' '+String(opts.className):'');
+    return '<svg class="'+cls+'" viewBox="0 0 32 32" aria-hidden="true"><use href="'+PRODUCT_BASKET+'#utility-product-basket"></use></svg>';
+  }
   function render(category,legacyIcon,opts){
     opts=opts||{};
     var key=keyFor(category,legacyIcon,opts.name);
     var clean=Object.assign({},opts);delete clean.name;
+    if(key==='utilityCategory')return renderProductBasket(clean);
     return window.FamilyAppIconRenderer&&FamilyAppIconRenderer.render?FamilyAppIconRenderer.render(key,Object.assign({label:false,size:'lg',className:'fa-utility-icon'},clean)):'';
   }
   window.FamilyAppUtilityIconResolver={version:VERSION,keyFor:keyFor,render:render,categoryMap:Object.freeze(Object.assign({},BY_CATEGORY))};
