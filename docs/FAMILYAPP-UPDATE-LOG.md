@@ -17,6 +17,21 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-23 — STEP 8 Finance logout/reconnect isolation hardened
+
+- Added `scripts/test-finance-logout-reconnect-isolation.js`.
+- The new contract verifies that logout detaches the active Finance listener and immediately clears the prior household projection.
+- Writes are rejected while household/auth context is unavailable.
+- A stale callback captured before logout cannot repopulate old Finance data.
+- Reconnecting as another user/household loads only that household's Finance data.
+- Stale callbacks from the previous household remain ignored after reconnect.
+- New Finance mutations after reconnect write only to the active household.
+- Existing Finance contract coverage already verifies A→B switching, stale callback rejection, household-scoped writes, idempotent receipt upsert, safe same-household legacy migration, no generic legacy-data seeding, and active-household-only reset.
+- `Household Rebuild Contracts` passed for commit `e8d8ef7b03443f9c8ec754e299f6deddb6a29b27`.
+- The code-side STEP 8 Finance privacy/isolation regression gate is therefore complete; the real iPhone/device/export checks remain open.
+
+---
+
 ## 2026-08-23 — STEP 8 advisor preview verified
 
 - Latest `agent/household-rebuild-v2` Vercel preview reached READY after the advisor commits.
