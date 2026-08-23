@@ -23,7 +23,7 @@ assert.ok(facade.includes('function submitCalendarSheet()'),'calendar add sheet 
 assert.ok(facade.includes('return submitCalendarSheet();'),'calendar save compatibility path must delegate to canonical submit');
 assert.ok(facade.includes('button.onclick=function(ev)'),'visible calendar primary button must be directly bound to canonical submit');
 assert.ok(/resetCalendarButton\(button\);\s*state\.editingId=null;\s*if\(window\.closeAdd\)/.test(facade),'successful save must reset the button before closing the sheet');
-assert.ok(/catch\(function\(error\)\)\{\s*resetCalendarButton\(button/.test(facade),'failed save must also re-enable the button');
+assert.ok(/catch\(function\(error\)\{\s*resetCalendarButton\(button/.test(facade),'failed save must also re-enable the button');
 assert.ok(facade.includes('function projectAcknowledgedMutation(type,event)'),'calendar facade must be able to immediately project a server-acknowledged mutation');
 assert.ok(bootstrap.includes('calendarEventHouseholdRepository.js?v=2'),'Agenda repository cache key must be bumped for iPhone/PWA clients');
 assert.ok(bootstrap.includes('calendarPremiumUi.js?v=3'),'Agenda premium UI cache key must reflect final-owner ordering change');
