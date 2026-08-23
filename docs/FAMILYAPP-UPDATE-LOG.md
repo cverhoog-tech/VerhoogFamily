@@ -17,6 +17,15 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-23 — STEP 8 advisor preview verified
+
+- Latest `agent/household-rebuild-v2` Vercel preview reached READY after the advisor commits.
+- Verified the deployed asset directly from the current preview; it serves `FinanceAnalysisAdvisor v1.0.1`.
+- Advisor runtime therefore is confirmed present in the current Vercel preview.
+- STEP 8 is not closed yet: the real iPhone/PWA smoke gate, dynamic-advice behavior test, PDF generation/share test, final premium PDF template, Finance privacy/isolation regression check and progress-tracker update still remain.
+
+---
+
 ## 2026-08-23 — STEP 8 Finance feedback + analysis assistant
 
 ### Product/UI feedback processed
