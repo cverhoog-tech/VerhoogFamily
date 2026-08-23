@@ -13,9 +13,10 @@
 // add-sheet owner so special Finance sheets bypass the generic f1 guard while
 // calendar submissions still flow through CalendarSharedLive.
 //
-// FinanceAnalysisEngine + FinanceAnalysisUI load after the canonical Finance
-// stack and before the remaining calendar integrations. Analysis is a pure
-// read model over FinanceStore and never becomes persistence authority.
+// STEP 8 Analysis order is deliberate:
+// FinanceAnalysisEngine -> FinanceAnalysisUI v2 -> Analysis shell style ->
+// FinanceNativeTabs. NativeTabs is the runtime owner that routes Analyse to
+// FinanceAnalysisUI instead of the historical renderAnalyse() implementation.
 // ============================================================
 (function(){
   function load(src, done){
@@ -43,9 +44,14 @@
                     load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
                       load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
                         load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
-                          load('src/modules/finance/financeAnalysisUiV2.js?v=1', function(){
-                            load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                              load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                          load('src/modules/finance/financeAnalysisUiV2.js?v=2', function(){
+                            load('src/modules/finance/financeAnalysisShellStyle.js?v=1', function(){
+                              load('src/modules/finance/financeNativeTabs.js?v=348', function(){
+                                if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
+                                load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                                  load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                                });
+                              });
                             });
                           });
                         });
