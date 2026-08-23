@@ -17,6 +17,19 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-23 — STEP 8 iPhone / assistant / PDF-share checks accepted
+
+- Product owner confirmed the current Finance STEP 8 preview works on iPhone.
+- Finance navigation and interaction smoke test is accepted for the tested build.
+- The top `Verse start` card remains removed and the bottom reset action remains the intended reset surface.
+- FamilyApp Assistent behavior is accepted in the tested Analyse flow.
+- PDF generation on iPhone works.
+- Native share flow works and WhatsApp sharing is accepted.
+- Remaining STEP 8 product task: design + implement the final premium PDF report template.
+- Documentation sync/phase closure still remains after the template is complete.
+
+---
+
 ## 2026-08-23 — STEP 8 Finance logout/reconnect isolation hardened
 
 - Added `scripts/test-finance-logout-reconnect-isolation.js`.
