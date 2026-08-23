@@ -36,18 +36,59 @@ Implementation owner: `src/modules/shop/shoppingReceiptFinance.js` v1.5.2.
 
 The Analysis tab is intentionally **not accepted** in its current presentation. STEP 8 remains open until Analysis is redesigned/reviewed separately.
 
+### Period model
+
+Analysis must be based on a configurable **date range**, not only a calendar month. Different households/users receive income on different dates and may want to analyse a salary cycle instead of the first through last day of a month.
+
+Required period controls:
+
+- quick choice: calendar month;
+- quick choice: saved salary/financial cycle;
+- custom start date + end date;
+- remember a preferred/default cycle where appropriate;
+- comparison against the immediately preceding equal-length period;
+- optional comparison against another custom period;
+- all KPIs, category totals, trends and export data must derive from the selected period contract rather than hard-coded month boundaries.
+
+### Analysis content
+
 The redesign should explicitly cover:
 
-- selected-month overview;
-- comparison with another month / previous month;
+- selected-period overview;
+- comparison with previous equal-length period or another selected period;
 - income vs expenses vs disposable amount;
 - spending by fixed category taxonomy;
 - category trends over time;
 - budget vs actual where applicable;
+- fixed vs variable costs;
 - savings deposits/withdrawals without double-counting them as ordinary spending;
+- savings rate and savings progress;
 - receipt-driven Shopping history where useful;
-- clear, premium mobile-first charts and legends;
-- a premium export/monthly report direction.
+- clear premium mobile-first charts and legends;
+- insight cards such as largest increases/decreases and new recurring costs.
+
+### Premium export/report
+
+Export must be more than a simple transaction dump. The target is a high-quality branded FamilyApp financial analysis/report for the selected period.
+
+The export direction should include:
+
+- FamilyApp visual identity and typography/layout language;
+- selected period and comparison period clearly stated;
+- executive summary/KPIs;
+- income, expenses, disposable result and savings;
+- category breakdown with diagram(s) and legends;
+- line graph(s) for trends over time;
+- comparative bar/column charts where useful;
+- fixed vs variable cost analysis;
+- budget vs actual where data exists;
+- savings analysis;
+- notable changes/insights;
+- clean readable legends, labels, units and percentages;
+- polished multi-page PDF/report layout suitable for saving or sharing;
+- report generation must consume the same normalized Analysis data model as the in-app dashboard so calculations cannot drift between screen and export.
+
+Visual/template assistance from an external design/code model may be used for ideation or report-template generation, but the canonical calculations, period contract and data model remain owned by the FamilyApp Finance architecture.
 
 ## Destructive reset
 
