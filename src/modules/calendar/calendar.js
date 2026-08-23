@@ -5,8 +5,12 @@
 // finance mutation has one household-scoped source of truth from first use.
 //
 // STEP 6 calendar order is deliberate:
-// legacy UI -> canonical repository -> compatibility facade -> premium UI ->
-// virtual MealPlan projection -> per-user Google sync.
+// legacy UI -> canonical repository -> premium decoration -> compatibility
+// facade -> virtual MealPlan projection -> per-user Google sync.
+//
+// CalendarSharedLive MUST load after CalendarPremiumUi because both touch the
+// legacy add-sheet globals. The facade is the final owner of openAdd/saveItem/
+// closeAdd/openCalEdit so presentation code cannot swallow canonical CRUD.
 // ============================================================
 (function(){
   function load(src, done){
@@ -29,8 +33,8 @@
               if(window.FinanceTransactionsPremiumUi&&FinanceTransactionsPremiumUi.install)FinanceTransactionsPremiumUi.install();
               if(window.FinanceMaandplanGroups&&FinanceMaandplanGroups.install)FinanceMaandplanGroups.install();
               load('src/modules/calendar/calendarEventHouseholdRepository.js?v=2', function(){
-                load('src/modules/calendar/calendarSharedLive.js?v=5', function(){
-                  load('src/modules/calendar/calendarPremiumUi.js?v=2', function(){
+                load('src/modules/calendar/calendarPremiumUi.js?v=3', function(){
+                  load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
                     load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
                       load('src/modules/calendar/calendarGoogleSync.js?v=1');
                     });
