@@ -10,7 +10,7 @@ assert.ok(source.includes('IDLE_FLUSH_MS=420'),'rapid taps must be coalesced beh
 assert.ok(source.includes('lane.desiredDone=!lane.desiredDone'),'every tap must toggle the queued local end-state immediately');
 assert.ok(source.includes('repository.setItem(lane.scope,lane.listId,lane.itemKey,{done:desired})'),'flush must write only the final done patch through the canonical repository');
 assert.ok(source.includes("window.addEventListener('pagehide',flushAll)"),'queued taps must flush before page exit');
-assert.ok(source.includes("visibilitychange"),'queued taps must flush when the PWA backgrounds');
+assert.ok(source.includes('visibilitychange'),'queued taps must flush when the PWA backgrounds');
 assert.ok(source.includes('inset:-11px'),'checkbox touch target must extend beyond the visible circle');
 assert.ok(source.includes(':has(.shopping-conflict-list) .fam-modal-primary'),'duplicate resolver primary action must receive stronger contrast');
 assert.ok(source.includes(':has(.shopping-conflict-list) .fam-modal-secondary'),'duplicate resolver secondary action must receive its own contrasting treatment');
@@ -41,9 +41,8 @@ function classList(){const set=new Set();return{toggle(name,on){if(on)set.add(na
     getElementById(id){if(id==='shck-milk')return check;if(id==='si-milk')return visualRow;return null;}
   };
   const sandbox={window,document,console,setTimeout,clearTimeout,Object,Array,String,Promise,JSON,Date,Math};
-  window.window=window;window.document=document;Object.assign(sandbox,window);
   vm.createContext(sandbox);vm.runInContext(source,sandbox,{filename:'shopInteractionBurstPolish.js'});
-  sandbox.toggleShop('milk');sandbox.toggleShop('milk');sandbox.toggleShop('milk');
+  window.toggleShop('milk');window.toggleShop('milk');window.toggleShop('milk');
   assert.strictEqual(check.classList.contains('done'),true,'three rapid taps must paint the final checked state immediately');
   assert.strictEqual(writes.length,0,'rapid taps must not start Firebase writes before the idle window');
   await new Promise(resolve=>setTimeout(resolve,500));
