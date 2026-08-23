@@ -30,16 +30,19 @@ assert.ok(facadeSource.includes('CalendarEventHouseholdRepository'),'CalendarSha
 assert.ok(!facadeSource.includes('FamilyDataStore'),'CalendarSharedLive must not own the old generic family store');
 assert.ok(!facadeSource.includes('fbFamilyId'),'CalendarSharedLive must not derive household identity from fbFamilyId');
 assert.ok(facadeSource.includes("'familyapp:calendar-local-mutation'"),'local mutation event contract must remain for per-user Google sync');
+assert.ok(facadeSource.includes('submitCalendarSheet'),'calendar facade must own the final add-sheet submit path');
+assert.ok(facadeSource.includes('button.onclick=function(ev)'),'calendar primary button must bind directly to canonical submit logic');
+assert.ok(facadeSource.includes('selectedCalendarDate'),'calendar create flow must preserve selected-day prefill');
 assert.ok(mealIntegrationSource.includes('Projects MealPlanStore data into Agenda without duplicating records'),'meals must remain a virtual agenda projection');
 assert.ok(!mealIntegrationSource.includes('CalendarSharedLive.create'),'meal integration must not duplicate meals into calendar events');
 
 const legacyIndex=bootstrapSource.indexOf('calendarLegacy.js?v=3');
 const repoIndex=bootstrapSource.indexOf('calendarEventHouseholdRepository.js?v=2');
-const facadeIndex=bootstrapSource.indexOf('calendarSharedLive.js?v=5');
-const premiumIndex=bootstrapSource.indexOf('calendarPremiumUi.js?v=2');
+const premiumIndex=bootstrapSource.indexOf('calendarPremiumUi.js?v=3');
+const facadeIndex=bootstrapSource.indexOf('calendarSharedLive.js?v=6');
 const mealsIndex=bootstrapSource.indexOf('calendarMealPlanIntegration.js?v=1');
 const googleIndex=bootstrapSource.indexOf('calendarGoogleSync.js?v=1');
-assert.ok(legacyIndex>=0&&repoIndex>legacyIndex&&facadeIndex>repoIndex&&premiumIndex>facadeIndex&&mealsIndex>premiumIndex&&googleIndex>mealsIndex,'calendar runtime order must be legacy UI -> repository -> facade -> premium UI -> meals -> Google sync');
+assert.ok(legacyIndex>=0&&repoIndex>legacyIndex&&premiumIndex>repoIndex&&facadeIndex>premiumIndex&&mealsIndex>facadeIndex&&googleIndex>mealsIndex,'calendar runtime order must be legacy UI -> repository -> premium decoration -> canonical facade -> meals -> Google sync');
 assert.ok(rules.rules.families.$familyId.$sharedData,'family wildcard rules must protect canonical calendarEvents child');
 assert.ok(String(rules.rules.families.$familyId.$sharedData['.write']).includes("members').child(auth.uid).child('status').val() === 'active'"),'canonical calendar writes must require active household membership');
 
