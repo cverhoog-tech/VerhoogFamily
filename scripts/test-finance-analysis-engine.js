@@ -5,11 +5,13 @@ const vm=require('vm');
 
 const engineSource=fs.readFileSync('src/modules/finance/financeAnalysisEngine.js','utf8');
 const uiSource=fs.readFileSync('src/modules/finance/financeAnalysisUi.js','utf8');
+const nativeTabs=fs.readFileSync('src/modules/finance/financeNativeTabs.js','utf8');
 const bootstrap=fs.readFileSync('src/modules/calendar/calendar.js','utf8');
-new vm.Script(uiSource,{filename:'financeAnalysisUi.js'});
 const sandbox={console,JSON,String,Array,Object,Number,Math,Date,Intl,globalThis:{}};
 vm.createContext(sandbox);
 vm.runInContext(engineSource,sandbox,{filename:'financeAnalysisEngine.js'});
+new vm.Script(uiSource,{filename:'financeAnalysisUi.js'});
+new vm.Script(nativeTabs,{filename:'financeNativeTabs.js'});
 const E=sandbox.globalThis.FinanceAnalysisEngine;
 
 assert.ok(E,'analysis engine must register globally');
@@ -51,6 +53,7 @@ assert.ok(comparison.deltas.expenses,'metric deltas must be available to UI/expo
 assert.ok(Array.isArray(comparison.categories));
 assert.ok(Array.isArray(comparison.insights));
 
+assert.ok(uiSource.includes("VERSION='1.1.0'"),'freeze-safe analysis UI version must be installed');
 assert.ok(uiSource.includes("data-fa-mode=\"salary\""),'UI must offer salary-cycle analysis');
 assert.ok(uiSource.includes("data-fa-mode=\"custom\""),'UI must offer a custom date range');
 assert.ok(uiSource.includes('Vorige even lange periode'),'UI must offer equal-length comparison');
@@ -58,9 +61,16 @@ assert.ok(uiSource.includes('Geldstroom'),'UI must render trend analysis');
 assert.ok(uiSource.includes('Waar ging het geld heen?'),'UI must render category analysis');
 assert.ok(uiSource.includes('Vast versus variabel'),'UI must separate fixed and variable spending');
 assert.ok(uiSource.includes('Boodschappenbonnen'),'UI must consume retained receipt history');
+assert.ok(uiSource.includes('if(rendering){pending=true;return false;}'),'analysis rendering must have a re-entry guard');
+assert.ok(!uiSource.includes('MutationObserver'),'analysis UI must not observe Finance DOM mutations');
+
+const analysisBranch=nativeTabs.slice(nativeTabs.indexOf("if(activeTab === 'analyse')"),nativeTabs.indexOf("if(activeTab === 'sparen')"));
+assert.ok(analysisBranch.includes('FinanceAnalysisUI.render()'),'native tabs must call the canonical analysis renderer directly');
+assert.ok(!analysisBranch.includes('renderFinance()'),'legacy renderFinance must never execute before canonical analysis');
+assert.ok(nativeTabs.includes("window.finTab = activeTab"),'native tab state must stay aligned with legacy finance state');
 
 const engineIdx=bootstrap.indexOf('financeAnalysisEngine.js?v=1');
-const uiIdx=bootstrap.indexOf('financeAnalysisUi.js?v=1');
+const uiIdx=bootstrap.indexOf('financeAnalysisUi.js?v=2');
 assert.ok(engineIdx>=0&&uiIdx>engineIdx,'analysis engine must load before analysis UI');
 assert.ok(bootstrap.indexOf('financeStore.js?v=4')<engineIdx,'canonical FinanceStore must load before analysis');
 
