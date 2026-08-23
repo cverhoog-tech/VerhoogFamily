@@ -28,7 +28,7 @@ assert.ok(!guardSource.includes('data.tasks'),'legacy family-root sync must not 
 assert.ok(!/tasks\s*:/.test(guardSource),'legacy family-root sync must not write a tasks payload');
 const repoIndex=loaderSource.indexOf('taskHouseholdRepository.js?v=1');
 const facadeIndex=loaderSource.indexOf('taskSharedData.js?v=3');
-const guardIndex=loaderSource.indexOf('taskLegacySyncGuard.js?v=2');
+const guardIndex=loaderSource.indexOf('taskLegacySyncGuard.js?v=3');
 const sessionIndex=loaderSource.indexOf('authenticatedSessionController.js?v=1');
 assert.ok(repoIndex>=0&&facadeIndex>repoIndex,'runtime must load task repository before TaskSharedData');
 assert.ok(guardIndex>=0&&sessionIndex>guardIndex,'legacy task sync guard must load before session bootstrap');
