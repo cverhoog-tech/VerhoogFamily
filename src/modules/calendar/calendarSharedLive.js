@@ -1,16 +1,20 @@
 'use strict';
 // ============================================================
-// CALENDAR SHARED LIVE v2.0.2
+// CALENDAR SHARED LIVE v2.0.3
 // STEP 6 compatibility facade over CalendarEventHouseholdRepository.
 //
 // Existing agenda UI keeps window.calData/saveItem/openCalEdit/deleteCalEvent,
 // while persistence, realtime lifecycle and household isolation live only in
 // the canonical repository.
+//
+// iOS interaction rule: when the calendar add sheet is open, the visible
+// primary button is bound directly to submitCalendarSheet(). We do not rely on
+// a chain of global saveItem wrappers for the actual tap path.
 // ============================================================
 (function(){
-  if(window.CalendarSharedLive&&window.CalendarSharedLive.version==='2.0.2')return;
+  if(window.CalendarSharedLive&&window.CalendarSharedLive.version==='2.0.3')return;
 
-  var VERSION='2.0.2';
+  var VERSION='2.0.3';
   var state={editingId:null,repositoryUnsubscribe:null,bootTimer:null,lastMeta:{source:'idle',ready:false}};
 
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
@@ -84,6 +88,8 @@
     return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day;
   }
   function selectedCalendarDate(){
+    var explicit=String(window.__calendarSelectedDate||'');
+    if(isIsoDate(explicit))return explicit;
     var selected=String(window.calSelDay||'');
     return isIsoDate(selected)?selected:localToday();
   }
@@ -94,13 +100,56 @@
     button.removeAttribute('aria-busy');
     if(label)button.textContent=label;
   }
+  function restoreGenericSheetButton(){
+    var button=addSheetButton();
+    if(!button)return;
+    button.onclick=function(){return typeof window.saveItem==='function'?window.saveItem():false;};
+  }
+  function applySelectedDate(){
+    if(state.editingId!==null||window.currentAddType!=='cal')return;
+    var date=document.getElementById('f2');
+    if(date)date.value=selectedCalendarDate();
+  }
   function prepareCalendarAddSheet(isEditing){
     var button=addSheetButton();
     resetCalendarButton(button,isEditing?'Opslaan':'Toevoegen');
-    if(!isEditing){
-      var date=document.getElementById('f2');
-      if(date)date.value=selectedCalendarDate();
+    if(button){
+      button.onclick=function(ev){
+        if(ev&&typeof ev.preventDefault==='function')ev.preventDefault();
+        return submitCalendarSheet();
+      };
     }
+    if(!isEditing){
+      applySelectedDate();
+      setTimeout(applySelectedDate,0);
+      setTimeout(applySelectedDate,60);
+    }
+  }
+
+  function submitCalendarSheet(){
+    if(window.currentAddType!=='cal')return false;
+    var title=((document.getElementById('f1')||{}).value||'').trim();
+    var date=((document.getElementById('f2')||{}).value||'').trim();
+    var time=((document.getElementById('f3')||{}).value||'').trim();
+    var description=((document.getElementById('cal-description')||{}).value||'').trim();
+    var button=addSheetButton();
+    if(!title){resetCalendarButton(button,state.editingId!==null?'Opslaan':'Toevoegen');if(window.showToast)showToast('Vul een titel in');return false;}
+    if(!date){resetCalendarButton(button,state.editingId!==null?'Opslaan':'Toevoegen');if(window.showToast)showToast('Kies een datum');return false;}
+    if(button){button.disabled=true;button.setAttribute('aria-busy','true');}
+    var id=state.editingId,existing=id!==null?current(id):null;
+    var work=existing
+      ? updateEvent(existing.id,{title:title,date:date,time:time,description:description})
+      : createEvent({title:title,date:date,time:time,description:description,color:'#2d5a27',createdAt:now()});
+    work.then(function(){
+      resetCalendarButton(button);
+      state.editingId=null;
+      if(window.closeAdd)window.closeAdd();
+      if(window.showToast)showToast('Afspraak opgeslagen ✓');
+    }).catch(function(error){
+      resetCalendarButton(button,state.editingId!==null?'Opslaan':'Toevoegen');
+      if(window.showToast)showToast(error&&error.message||'Afspraak opslaan mislukt');
+    });
+    return false;
   }
 
   function patchAddSheet(){
@@ -109,7 +158,10 @@
       var wrappedOpen=function(type){
         var isCalendar=type==='cal',isEditing=isCalendar&&state.editingId!==null;
         var result=originalOpen.apply(this,arguments);
-        if(isCalendar)prepareCalendarAddSheet(isEditing);
+        if(isCalendar){
+          if(window.CalendarPremiumUi&&typeof CalendarPremiumUi.decorateSheet==='function')try{CalendarPremiumUi.decorateSheet();}catch(e){}
+          prepareCalendarAddSheet(isEditing);
+        }else restoreGenericSheetButton();
         return result;
       };
       wrappedOpen.__calendarRepositoryOpenWrapped=true;
@@ -120,28 +172,7 @@
       var originalSave=window.saveItem;
       function wrappedSaveItem(){
         if(window.currentAddType!=='cal')return originalSave.apply(this,arguments);
-        var title=((document.getElementById('f1')||{}).value||'').trim();
-        var date=((document.getElementById('f2')||{}).value||'').trim();
-        var time=((document.getElementById('f3')||{}).value||'').trim();
-        var description=((document.getElementById('cal-description')||{}).value||'').trim();
-        var button=addSheetButton();
-        if(!title){resetCalendarButton(button);if(window.showToast)showToast('Vul een titel in');return false;}
-        if(!date){resetCalendarButton(button);if(window.showToast)showToast('Kies een datum');return false;}
-        if(button){button.disabled=true;button.setAttribute('aria-busy','true');}
-        var id=state.editingId,existing=id!==null?current(id):null;
-        var work=existing
-          ? updateEvent(existing.id,{title:title,date:date,time:time,description:description})
-          : createEvent({title:title,date:date,time:time,description:description,color:'#2d5a27',createdAt:now()});
-        work.then(function(){
-          resetCalendarButton(button);
-          state.editingId=null;
-          if(window.closeAdd)window.closeAdd();
-          if(window.showToast)showToast('Afspraak opgeslagen ✓');
-        }).catch(function(error){
-          resetCalendarButton(button);
-          if(window.showToast)showToast(error&&error.message||'Afspraak opslaan mislukt');
-        });
-        return false;
+        return submitCalendarSheet();
       }
       wrappedSaveItem.__calendarRepositoryWrapped=true;
       window.saveItem=wrappedSaveItem;
@@ -152,7 +183,9 @@
       var wrappedClose=function(){
         resetCalendarButton(addSheetButton());
         state.editingId=null;
-        return originalClose.apply(this,arguments);
+        var result=originalClose.apply(this,arguments);
+        restoreGenericSheetButton();
+        return result;
       };
       wrappedClose.__calendarRepositoryWrapped=true;window.closeAdd=wrappedClose;
     }
@@ -167,7 +200,7 @@
       var event=current(id);if(!event||event._imported||typeof window.openAdd!=='function')return;
       state.editingId=event.id;window.openAdd('cal');
       var st=document.getElementById('sheet-title');if(st)st.textContent='Afspraak bewerken';
-      var btn=addSheetButton();if(btn){btn.textContent='Opslaan';btn.disabled=false;btn.removeAttribute('aria-busy');}
+      var btn=addSheetButton();if(btn){btn.textContent='Opslaan';btn.disabled=false;btn.removeAttribute('aria-busy');btn.onclick=function(ev){if(ev&&ev.preventDefault)ev.preventDefault();return submitCalendarSheet();};}
       var f1=document.getElementById('f1');if(f1)f1.value=event.title||'';
       var f2=document.getElementById('f2');if(f2)f2.value=event.date||'';
       var f3=document.getElementById('f3');if(f3)f3.value=event.time||'';
@@ -209,7 +242,7 @@
   }
   function status(){var r=repo(),base=r&&typeof r.status==='function'?r.status():{};return Object.assign({version:VERSION,editingId:state.editingId,count:(window.calData||[]).length,source:state.lastMeta.source||'idle'},base);}
 
-  window.CalendarSharedLive={version:VERSION,boot:boot,sync:function(){boot();return true;},save:saveCompatibility,create:createEvent,update:updateEvent,remove:removeEvent,status:status};
+  window.CalendarSharedLive={version:VERSION,boot:boot,sync:function(){boot();return true;},save:saveCompatibility,create:createEvent,update:updateEvent,remove:removeEvent,submitSheet:submitCalendarSheet,selectedDate:selectedCalendarDate,status:status};
   window.addEventListener('familyapp:household-context',boot);
   window.addEventListener('online',boot);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
