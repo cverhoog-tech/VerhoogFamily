@@ -1,7 +1,7 @@
 # STEP 8 Finance — iPhone/PWA device gate
 
 Branch: `agent/household-rebuild-v2`
-Status: **pending — core Finance/savings behavior accepted; receipt follow-up + Analysis redesign remain**
+Status: **pending — core Finance + receipt behavior accepted; Analysis redesign remains**
 
 ## Confirmed on real iPhone/PWA — 2026-08-23
 
@@ -10,10 +10,17 @@ Status: **pending — core Finance/savings behavior accepted; receipt follow-up 
 - Maandplan savings flow works after the special add-sheet routing fix.
 - Sparen interactions work after presentation-ID normalization and canonical-ID mapping.
 - Finance navigation/interactions no longer show the reported freeze/no-op behavior.
+- Shopping receipt flow is accepted on device.
+- Receipt transaction name remains editable.
+- Receipt category is now an optional fixed dropdown; free typing is removed and `Geen categorie` is available.
+- Receipt processing saves successfully to Finance.
+- After successful Finance processing, the exact processed items disappear from **Gekocht**.
+- Purchased-item snapshots are retained with the Finance receipt transaction for future history/Analysis use.
+- A later shopping trip on the same Shopping list can create a distinct Finance receipt transaction instead of overwriting older receipt history.
 
-## Receipt follow-up requested after functional acceptance
+## Accepted receipt contract
 
-The Shopping receipt flow must now behave as follows:
+The Shopping receipt flow behaves as follows:
 
 1. The user may edit the Finance transaction name.
 2. Category is an **optional fixed choice**, not free text.
@@ -25,19 +32,22 @@ The Shopping receipt flow must now behave as follows:
 
 Implementation owner: `src/modules/shop/shoppingReceiptFinance.js` v1.5.2.
 
-## Targeted receipt re-test
+## Analysis redesign — remaining STEP 8 gate
 
-1. Mark several Shopping items as bought and open the receipt flow.
-2. Confirm **Naam transactie** remains editable.
-3. Confirm **Categorie** is a select/dropdown: free typing is impossible and `Geen categorie` is available.
-4. Process the receipt and confirm the Finance transaction is saved with the selected category (or no category).
-5. Confirm the exact processed items disappear from **Gekocht** only after successful Finance processing.
-6. Add a new batch of Shopping items to the same list, mark them bought and process another receipt. Confirm this creates a second Finance transaction rather than replacing the earlier receipt.
-7. If processing fails before Finance persistence, confirm the bought items remain available for retry.
+The Analysis tab is intentionally **not accepted** in its current presentation. STEP 8 remains open until Analysis is redesigned/reviewed separately.
 
-## Analysis redesign
+The redesign should explicitly cover:
 
-The Analysis tab is intentionally **not accepted** in its current presentation. STEP 8 remains open until Analysis is redesigned/reviewed separately, including information architecture, month comparison, category trends, budget vs actual, savings treatment, charts and premium report/export direction.
+- selected-month overview;
+- comparison with another month / previous month;
+- income vs expenses vs disposable amount;
+- spending by fixed category taxonomy;
+- category trends over time;
+- budget vs actual where applicable;
+- savings deposits/withdrawals without double-counting them as ordinary spending;
+- receipt-driven Shopping history where useful;
+- clear, premium mobile-first charts and legends;
+- a premium export/monthly report direction.
 
 ## Destructive reset
 
