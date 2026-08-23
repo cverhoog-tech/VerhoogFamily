@@ -40,7 +40,7 @@ module.exports = async function handler(req, res) {
     html = html.replace('<script src="src/core/addSheet.js"></script>','<script src="src/core/addSheet.js?v=1"></script>');
     html = html.replace('<script src="src/core/search.js"></script>','<script src="src/core/search.js?v=1"></script>');
     html = html.replace('<script src="src/core/swipe.js"></script>','<script src="src/core/swipe.js?v=1"></script>');
-    html = html.replace('<script src="src/modules/calendar/calendar.js"></script>','<script src="src/modules/calendar/calendar.js?v=2"></script>');
+    html = html.replace('<script src="src/modules/calendar/calendar.js"></script>','<script src="src/modules/calendar/calendar.js?v=3"></script>');
 
     html = html.replace(/\s*<script src="src\/modules\/tasks\/quest-overlay\.js"><\/script>\s*/g, '\n');
     html = html.replace('<script src="src/modules/tasks/taskSharedData.js"></script>','<script src="src/modules/tasks/taskHouseholdRepository.js?v=1"></script>\n  <script src="src/modules/tasks/taskSharedData.js?v=3"></script>');
