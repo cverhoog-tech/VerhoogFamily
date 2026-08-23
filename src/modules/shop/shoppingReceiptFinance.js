@@ -1,14 +1,15 @@
 'use strict';
 // ============================================================
-// SHOPPING RECEIPT -> FINANCE v1.5.0
+// SHOPPING RECEIPT -> FINANCE v1.5.1
 // Adds one stable finance transaction per shopping list receipt.
-// Receipt metadata (transaction name + category) is user-editable while the
-// stable shopping source key keeps repeated processing idempotent.
+// Transaction name stays user-editable. Category is an optional fixed choice
+// so Finance/Analyse never fragment into spelling variants.
 // After Finance confirms the write, only the exact purchased-item snapshot
 // used for that receipt is removed from the canonical shopping list.
 // ============================================================
 (function(){
-  if(window.ShoppingReceiptFinance&&window.ShoppingReceiptFinance.version==='1.5.0')return;
+  if(window.ShoppingReceiptFinance&&window.ShoppingReceiptFinance.version==='1.5.1')return;
+  var RECEIPT_CATEGORIES=['Boodschappen','Uit eten','Thuisbezorgd','Uitjes','Transport','Gezondheid','Abonnementen','Kleding','Shopping','Wonen','Kinderen','Huisdieren','Overig'];
   function active(){return window.ShoppingListStore&&window.ShoppingListStore.active?window.ShoppingListStore.active():null;}
   function boughtItems(){var s=window.ShoppingListStore;if(!s||typeof s.projection!=='function')return[];return s.projection().doneItems||[];}
   function currentUserName(){return window.myName||'Gezin';}
@@ -21,7 +22,8 @@
   function ensureCard(){ensureStyles();var old=document.getElementById('shopping-receipt-card'),items=boughtItems(),anchor=v2Anchor()||legacyAnchor();if(!anchor||!items.length){if(old)old.remove();return;}var card=old||document.createElement('div');card.id='shopping-receipt-card';card.className='shopping-receipt-card';card.innerHTML='<div class="shopping-receipt-head"><div class="shopping-receipt-icon">'+icon()+'</div><div class="shopping-receipt-copy"><b>Bon van gekochte items</b><small>'+items.length+' gekocht · verwerk totaal in Financien</small></div><button class="shopping-receipt-btn">Totaal invoeren</button></div>';if(card.parentNode!==anchor.parent){if(card.parentNode)card.remove();anchor.parent.insertBefore(card,anchor.before||null);}else if(anchor.before&&card.nextSibling!==anchor.before){anchor.parent.insertBefore(card,anchor.before);}card.querySelector('button').onclick=openReceipt;}
   function ensureDeps(done){var jobs=[];if(!window.ModalManager)jobs.push(['receipt-modal-manager','src/core/modalManager.js']);function next(){if(!jobs.length)return done();var j=jobs.shift();if(document.getElementById(j[0]))return setTimeout(next,80);var s=document.createElement('script');s.id=j[0];s.src=j[1];s.onload=next;s.onerror=next;document.body.appendChild(s);}next();}
   function projectFinanceTransaction(record){if(!record)return;var list=Array.isArray(window.transData)?window.transData.slice():[];var idx=list.findIndex(function(t){return t&&(t.id===record.id||(record.sourceKey&&t.sourceKey===record.sourceKey));});if(idx>=0)list[idx]=record;else list.push(record);window.transData=(window.FinanceStore&&FinanceStore.sortTransactions)?FinanceStore.sortTransactions(list):list;if(window._currentScreen==='finance'&&typeof window.renderFinance==='function')window.renderFinance();}
-  function categoryOptions(){return['Boodschappen','Uit eten','Thuisbezorgd','Uitjes','Transport','Gezondheid','Abonnementen','Kleding','Shopping','Wonen','Kinderen','Huisdieren','Overig'].map(function(v){return'<option value="'+esc(v)+'"></option>';}).join('');}
+  function categoryOptions(){return'<option value="">Geen categorie</option>'+RECEIPT_CATEGORIES.map(function(v){return'<option value="'+esc(v)+'"'+(v==='Boodschappen'?' selected':'')+'>'+esc(v)+'</option>';}).join('');}
+  function normalizeCategory(value){value=String(value||'').trim();return RECEIPT_CATEGORIES.indexOf(value)>=0?value:'';}
   function itemSnapshot(item){return{key:String(item&&item._key||item&&item.id||''),name:String(item&&item.name||''),qty:item&&item.qty||null,amount:item&&item.amount!=null?item.amount:null,unit:item&&item.unit||null,cat:item&&item.cat||null,source:item&&item.source||null,sourceRecipeId:item&&item.sourceRecipeId||null};}
   function processedItemKeys(items){var seen={};return(items||[]).map(function(item){return String(item&&item._key||item&&item.id||'');}).filter(function(key){if(!key||seen[key])return false;seen[key]=true;return true;});}
   function clearProcessedItems(row,items){
@@ -40,7 +42,7 @@
     var defaultName=listName==='Boodschappen'?'Boodschappen':'Boodschappen - '+listName;
     var html=''
       +'<div class="fam-modal-field"><label>Naam transactie</label><input id="receipt-name" type="text" value="'+esc(defaultName)+'" placeholder="bijv. Dierentuin Breda"></div>'
-      +'<div class="fam-modal-field"><label>Categorie</label><input id="receipt-category" type="text" list="receipt-category-options" value="Boodschappen" placeholder="bijv. Uitjes"><datalist id="receipt-category-options">'+categoryOptions()+'</datalist></div>'
+      +'<div class="fam-modal-field"><label>Categorie <span style="font-weight:400;color:var(--c-text2)">(optioneel)</span></label><select id="receipt-category">'+categoryOptions()+'</select></div>'
       +'<div class="fam-modal-field"><label>Totaalbedrag bon (€)</label><input id="receipt-total" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00"></div>'
       +'<div class="fam-modal-field"><label>Datum</label><input id="receipt-date" type="date" value="'+today()+'"></div>'
       +'<div style="font-size:12px;line-height:1.5;color:var(--c-text2)"><b>'+esc(listName)+'</b><br>'+esc(names||'Gekochte items')+'</div>';
@@ -50,9 +52,8 @@
         var raw=(ctx.modal.querySelector('#receipt-total').value||'').replace(',','.');
         var amount=parseFloat(raw),date=ctx.modal.querySelector('#receipt-date').value||today();
         var transactionName=(ctx.modal.querySelector('#receipt-name').value||'').trim();
-        var category=(ctx.modal.querySelector('#receipt-category').value||'').trim();
+        var category=normalizeCategory(ctx.modal.querySelector('#receipt-category').value);
         if(!transactionName){if(window.showToast)showToast('Geef de transactie een naam');return false;}
-        if(!category)category='Overig';
         if(!(amount>0)){if(window.showToast)showToast('Vul een totaalbedrag in');return false;}
         var sourceId=row.key;
         var snapshot=bought.map(itemSnapshot);
@@ -73,7 +74,7 @@
     ]});
   });}
   function boot(){ensureCard();document.addEventListener('click',function(event){if(event.target&&event.target.closest&&event.target.closest('#screen-shop [data-shop-view]'))setTimeout(ensureCard,0);});}
-  window.ShoppingReceiptFinance={version:'1.5.0',boot:boot,render:ensureCard,open:openReceipt,clearProcessedItems:clearProcessedItems};
+  window.ShoppingReceiptFinance={version:'1.5.1',boot:boot,render:ensureCard,open:openReceipt,clearProcessedItems:clearProcessedItems,categories:RECEIPT_CATEGORIES.slice(),normalizeCategory:normalizeCategory};
   window.addEventListener('familyapp:data:shared:shoppingLists',function(){setTimeout(ensureCard,0);});
   window.addEventListener('familyapp:shopping:changed',function(){setTimeout(ensureCard,0);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
