@@ -20,6 +20,7 @@ assert.ok(source.includes('shoppingItemsSnapshot:snapshot'),'Finance receipt tra
 assert.ok(source.includes('shoppingItemCount:bought.length'),'Finance receipt transaction must retain purchased-item count');
 assert.ok(source.includes("sourceType:'shoppingReceipt'"),'receipt bridge must preserve stable source type');
 assert.ok(source.includes('receiptSourceId(row,bought)'),'receipt source id must identify the exact purchased batch, not only the shopping list');
+assert.ok(!source.includes('var sourceId=row.key;'),'list-level source ids would overwrite older receipts from the same shopping list');
 assert.ok(source.includes("keys=processedItemKeys(items).sort()"),'receipt batch identity must be deterministic across retries');
 assert.ok(source.includes("+'__receipt_'+hashText(keys.join('|'))"),'different purchased batches on one list must receive distinct source ids');
 assert.ok(source.includes('FinanceStore.upsertSourceTransaction'),'receipt bridge must remain idempotent through FinanceStore');
