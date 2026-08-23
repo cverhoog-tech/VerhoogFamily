@@ -9,8 +9,9 @@
 // facade -> virtual MealPlan projection -> per-user Google sync.
 //
 // CalendarSharedLive MUST load after CalendarPremiumUi because both touch the
-// legacy add-sheet globals. The facade is the final owner of openAdd/saveItem/
-// closeAdd/openCalEdit so presentation code cannot swallow canonical CRUD.
+// legacy add-sheet globals. FinanceSavingsInteraction then wraps the final
+// add-sheet owner so special Finance sheets bypass the generic f1 guard while
+// calendar submissions still flow through CalendarSharedLive.
 // ============================================================
 (function(){
   function load(src, done){
@@ -36,8 +37,10 @@
                 load('src/modules/calendar/calendarEventHouseholdRepository.js?v=2', function(){
                   load('src/modules/calendar/calendarPremiumUi.js?v=3', function(){
                     load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
-                      load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                        load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                      load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
+                        load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                          load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                        });
                       });
                     });
                   });

@@ -1,20 +1,43 @@
 # STEP 8 Finance — iPhone/PWA device gate
 
 Branch: `agent/household-rebuild-v2`
-Status: **pending**
+Status: **pending — savings interaction fixes + Analysis redesign still require device acceptance**
 
-Do not mark STEP 8 accepted until the real-device checks below have passed.
+## Confirmed on real iPhone/PWA — 2026-08-23
 
-## Required checks
+- Existing household Finance information remained present after reload.
+- Canonical household persistence/migration therefore passed the first real-device persistence check.
 
-1. Open **Financien** and confirm the screen renders normally with the existing premium layout.
-2. Existing household Finance data should still be present after the one-time same-household migration.
-3. Add or edit income/fixed-cost data, reload the app, and confirm the change persists.
-4. Add a manual transaction, reload, and confirm it remains present exactly once.
-5. Create or update a savings goal / savings transaction and confirm it remains correct after reload.
-6. From Shopping, process a bought-items receipt into Finance. Process that same list again with a changed amount and confirm Finance updates the existing receipt transaction instead of creating a duplicate.
-7. If a second test household/account is available, switch to it and confirm no Finance values from the prior household are visible, even briefly. Switch back and confirm the original household data returns.
-8. Confirm ordinary navigation between Finance tabs and back to other FamilyApp modules remains responsive on iPhone/PWA.
+## Issues reported during first gate
+
+1. **Maandplan → bedrag opzij zetten**: pressing the generic add/submit button could leave the app appearing frozen because the generic add-sheet `f1` guard ran before the special savings handler.
+2. **Sparen**: deposit/withdraw/edit flows could no-op for migrated goals whose canonical IDs were numeric while HTML `data-*` values were strings.
+3. **Analyse**: product owner wants a full redesign/rethink after the interaction fixes; do not accept the existing Analysis presentation as the final STEP 8 experience.
+4. **Shopping receipt → Finance**: receipt entry must allow an editable Finance transaction name and category instead of forcing a hard-coded `Boodschappen` label/category.
+
+## Fix contract
+
+The STEP 8 interaction fix must preserve the canonical Finance repository and existing premium layout while:
+
+- making savings special sheets bypass the generic `f1` validation path;
+- normalizing legacy numeric savings IDs at the presentation boundary and mapping them back to canonical IDs for writes;
+- keeping calendar add-sheet ownership intact;
+- retaining household-scoped realtime persistence;
+- allowing free transaction name + category metadata when processing a Shopping receipt;
+- keeping Shopping receipt re-processing idempotent through its stable source key.
+
+## Required re-test after fix preview
+
+1. Open **Financien → Maandplan** and use **Bedrag opzij zetten**. The sheet must submit, close normally and persist the savings movement.
+2. Open **Sparen** and test **Storting**, **Opname**, **Nieuw doel**, editing a goal and deleting a log entry where practical. Buttons must react immediately and survive reload.
+3. Confirm Maandplan/Transacties/Sparen navigation remains responsive and no add-sheet freeze occurs.
+4. In Shopping, process bought items into Finance and set a custom transaction name (for example `Dierentuin Breda`) plus a category (for example `Uitjes`). Confirm both appear in Finance after reload.
+5. Re-process the same Shopping list receipt with changed metadata/amount and confirm the existing source transaction is updated instead of duplicated.
+6. If a second household/account is available, confirm Finance values do not cross household boundaries during switching.
+
+## Analysis redesign
+
+The Analysis tab is intentionally **not accepted** in its current presentation. After the functional savings/receipt fixes pass, review the information architecture, charts, comparisons, filters and export direction separately before STEP 8 is closed.
 
 ## Destructive reset
 
