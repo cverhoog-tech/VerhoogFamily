@@ -1,12 +1,14 @@
 'use strict';
 // ============================================================
-// SHOPPING RECEIPT -> FINANCE v1.4.0
+// SHOPPING RECEIPT -> FINANCE v1.5.0
 // Adds one stable finance transaction per shopping list receipt.
 // Receipt metadata (transaction name + category) is user-editable while the
 // stable shopping source key keeps repeated processing idempotent.
+// After Finance confirms the write, only the exact purchased-item snapshot
+// used for that receipt is removed from the canonical shopping list.
 // ============================================================
 (function(){
-  if(window.ShoppingReceiptFinance&&window.ShoppingReceiptFinance.version==='1.4.0')return;
+  if(window.ShoppingReceiptFinance&&window.ShoppingReceiptFinance.version==='1.5.0')return;
   function active(){return window.ShoppingListStore&&window.ShoppingListStore.active?window.ShoppingListStore.active():null;}
   function boughtItems(){var s=window.ShoppingListStore;if(!s||typeof s.projection!=='function')return[];return s.projection().doneItems||[];}
   function currentUserName(){return window.myName||'Gezin';}
@@ -20,10 +22,20 @@
   function ensureDeps(done){var jobs=[];if(!window.ModalManager)jobs.push(['receipt-modal-manager','src/core/modalManager.js']);function next(){if(!jobs.length)return done();var j=jobs.shift();if(document.getElementById(j[0]))return setTimeout(next,80);var s=document.createElement('script');s.id=j[0];s.src=j[1];s.onload=next;s.onerror=next;document.body.appendChild(s);}next();}
   function projectFinanceTransaction(record){if(!record)return;var list=Array.isArray(window.transData)?window.transData.slice():[];var idx=list.findIndex(function(t){return t&&(t.id===record.id||(record.sourceKey&&t.sourceKey===record.sourceKey));});if(idx>=0)list[idx]=record;else list.push(record);window.transData=(window.FinanceStore&&FinanceStore.sortTransactions)?FinanceStore.sortTransactions(list):list;if(window._currentScreen==='finance'&&typeof window.renderFinance==='function')window.renderFinance();}
   function categoryOptions(){return['Boodschappen','Uit eten','Thuisbezorgd','Uitjes','Transport','Gezondheid','Abonnementen','Kleding','Shopping','Wonen','Kinderen','Huisdieren','Overig'].map(function(v){return'<option value="'+esc(v)+'"></option>';}).join('');}
+  function itemSnapshot(item){return{key:String(item&&item._key||item&&item.id||''),name:String(item&&item.name||''),qty:item&&item.qty||null,amount:item&&item.amount!=null?item.amount:null,unit:item&&item.unit||null,cat:item&&item.cat||null,source:item&&item.source||null,sourceRecipeId:item&&item.sourceRecipeId||null};}
+  function processedItemKeys(items){var seen={};return(items||[]).map(function(item){return String(item&&item._key||item&&item.id||'');}).filter(function(key){if(!key||seen[key])return false;seen[key]=true;return true;});}
+  function clearProcessedItems(row,items){
+    var repo=window.ShoppingListHouseholdRepository;
+    var keys=processedItemKeys(items);
+    if(!keys.length)return Promise.resolve(true);
+    if(!row||!row.list||!repo||typeof repo.clearDone!=='function')return Promise.reject(new Error('Boodschappenopslag is niet beschikbaar'));
+    return repo.clearDone(row.scope,row.list.id,keys);
+  }
   function openReceipt(){ensureDeps(function(){
     var row=active();
     if(!row||!row.list||!window.FinanceStore){if(window.showToast)showToast('Bon kan nu niet worden verwerkt');return;}
     var bought=boughtItems(),listName=row.list.name||'Boodschappen';
+    if(!bought.length){if(window.showToast)showToast('Er zijn geen gekochte items om te verwerken');return;}
     var names=bought.slice(0,4).map(function(i){return i.name;}).join(', ')+(bought.length>4?'...':'');
     var defaultName=listName==='Boodschappen'?'Boodschappen':'Boodschappen - '+listName;
     var html=''
@@ -43,13 +55,25 @@
         if(!category)category='Overig';
         if(!(amount>0)){if(window.showToast)showToast('Vul een totaalbedrag in');return false;}
         var sourceId=row.key;
-        var tx={name:transactionName,cat:category,amount:-Math.abs(amount),who:currentUserName(),date:date,note:'Bon voor '+bought.length+' gekochte items',shoppingListKey:row.key,shoppingListName:listName,shoppingItemNames:bought.map(function(i){return i.name;})};
-        FinanceStore.upsertSourceTransaction({sourceType:'shoppingReceipt',sourceId:sourceId,transaction:tx}).then(function(record){projectFinanceTransaction(record);if(window.showToast)showToast(transactionName+' verwerkt in Financien ✓');}).catch(function(error){if(window.showToast)showToast(error&&error.message||'Bon kon niet worden verwerkt');});
+        var snapshot=bought.map(itemSnapshot);
+        var tx={name:transactionName,cat:category,amount:-Math.abs(amount),who:currentUserName(),date:date,note:'Bon voor '+bought.length+' gekochte items',shoppingListKey:row.key,shoppingListName:listName,shoppingItemCount:bought.length,shoppingItemNames:bought.map(function(i){return i.name;}),shoppingItemsSnapshot:snapshot,receiptProcessedAt:Date.now()};
+        FinanceStore.upsertSourceTransaction({sourceType:'shoppingReceipt',sourceId:sourceId,transaction:tx}).then(function(record){
+          projectFinanceTransaction(record);
+          return clearProcessedItems(row,bought).then(function(){
+            ensureCard();
+            if(window.showToast)showToast(transactionName+' verwerkt · gekochte lijst opgeschoond ✓');
+            return record;
+          }).catch(function(error){
+            console.warn('[ShoppingReceiptFinance] receipt saved but purchased items could not be cleared',error);
+            if(window.showToast)showToast('Bon opgeslagen, maar gekochte items konden niet worden verwijderd');
+            return record;
+          });
+        }).catch(function(error){if(window.showToast)showToast(error&&error.message||'Bon kon niet worden verwerkt');});
       }}
     ]});
   });}
   function boot(){ensureCard();document.addEventListener('click',function(event){if(event.target&&event.target.closest&&event.target.closest('#screen-shop [data-shop-view]'))setTimeout(ensureCard,0);});}
-  window.ShoppingReceiptFinance={version:'1.4.0',boot:boot,render:ensureCard,open:openReceipt};
+  window.ShoppingReceiptFinance={version:'1.5.0',boot:boot,render:ensureCard,open:openReceipt,clearProcessedItems:clearProcessedItems};
   window.addEventListener('familyapp:data:shared:shoppingLists',function(){setTimeout(ensureCard,0);});
   window.addEventListener('familyapp:shopping:changed',function(){setTimeout(ensureCard,0);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
