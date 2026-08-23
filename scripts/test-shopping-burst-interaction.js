@@ -1,52 +1,38 @@
 'use strict';
 const fs=require('fs');
 const assert=require('assert');
-const vm=require('vm');
 
-const source=fs.readFileSync('src/modules/shop/shopInteractionBurstPolish.js','utf8');
+const page=fs.readFileSync('src/modules/shop/shoppingPageV2.js','utf8');
+const duplicates=fs.readFileSync('src/modules/shop/shoppingRecipeDuplicateResolver.js','utf8');
+const resolver=fs.readFileSync('src/ui/icons/familyAppUtilityIconResolver.js','utf8');
+const classifier=fs.readFileSync('src/modules/shop/groceryProductClassifier.js','utf8');
 const loader=fs.readFileSync('api/app.js','utf8');
 
-assert.ok(source.includes('IDLE_FLUSH_MS=420'),'rapid taps must be coalesced behind a short idle window');
-assert.ok(source.includes('lane.desiredDone=!lane.desiredDone'),'every tap must toggle the queued local end-state immediately');
-assert.ok(source.includes('repository.setItem(lane.scope,lane.listId,lane.itemKey,{done:desired})'),'flush must write only the final done patch through the canonical repository');
-assert.ok(source.includes("window.addEventListener('pagehide',flushAll)"),'queued taps must flush before page exit');
-assert.ok(source.includes('visibilitychange'),'queued taps must flush when the PWA backgrounds');
-assert.ok(source.includes('inset:-11px'),'checkbox touch target must extend beyond the visible circle');
-assert.ok(source.includes(':has(.shopping-conflict-list) .fam-modal-primary'),'duplicate resolver primary action must receive stronger contrast');
-assert.ok(source.includes(':has(.shopping-conflict-list) .fam-modal-secondary'),'duplicate resolver secondary action must receive its own contrasting treatment');
-const shopIndex=loader.indexOf('src/modules/shop/shop.js?v=8');
-const burstIndex=loader.indexOf('src/modules/shop/shopInteractionBurstPolish.js?v=1');
-const addIndex=loader.indexOf('src/modules/shop/groceryAddSheet.js?v=2');
-assert.ok(shopIndex>=0&&burstIndex>shopIndex&&addIndex>burstIndex,'burst interaction layer must load after shop renderer and before add sheet');
+assert.ok(page.includes("var VERSION='2.0.0'"),'STEP 7 must serve the rebuilt ShoppingPageV2 presentation');
+assert.ok(page.includes('FLUSH_IDLE_MS=220'),'canonical writes must be deferred behind a short idle window');
+assert.ok(page.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),'Te kopen and Gekocht controls must be exactly equal width');
+assert.ok(page.includes("height:56px"),'Te kopen and Gekocht controls must have the same fixed height');
+assert.ok(page.includes("<span>Te kopen</span>")&&page.includes("<span>Gekocht</span>"),'rebuilt status controls must use text labels');
+assert.ok(!page.includes('🛒 Te kopen')&&!page.includes('✅ Gekocht'),'rebuilt status controls must not use generic emoji icons');
+assert.ok(page.includes('item.done=lane.desiredDone;localItems[key]=item'),'tap must change local state synchronously before persistence');
+assert.ok(page.includes("if(el)el.remove();updateTabs();updateEmpty();scheduleFlush();"),'tap must remove the row from the current view immediately before the Firebase flush');
+assert.ok(page.includes("r.setItem(lane.scope,lane.listId,lane.itemKey,{done:desired})"),'idle flush must persist only the final done state through the canonical repository');
+assert.ok(page.includes("list.addEventListener('pointerdown'")&&page.includes("list.addEventListener('pointerup'"),'shopping list interaction must use direct delegated pointer events');
+assert.ok(!page.includes('innerHTML=view.openItems.map'),'rebuilt shopping page must not re-render complete columns on each change');
 
-function classList(){const set=new Set();return{toggle(name,on){if(on)set.add(name);else set.delete(name);},contains(name){return set.has(name);},add(name){set.add(name);},remove(name){set.delete(name);}};}
-(async function(){
-  const item={_key:'milk',name:'Melk',done:false};
-  const row={key:'shared:list',scope:'shared',list:{id:'list',items:{milk:item}}};
-  const writes=[];
-  const window={
-    ShoppingListStore:{active(){return row;}},
-    ShoppingListHouseholdRepository:{setItem(scope,listId,key,patch){writes.push({scope,listId,key,patch:Object.assign({},patch)});item.done=!!patch.done;return Promise.resolve(Object.assign({},item));}},
-    toggleShop(){throw new Error('fallback should not be used');},
-    addEventListener(){},
-    awardXP(){},addActivity(){},myName:'Test',
-    renderShop(){},showToast(){}
-  };
-  const check={classList:classList(),innerHTML:''};
-  const name={classList:classList()};
-  const visualRow={classList:classList(),offsetWidth:1,querySelector(){return name;}};
-  const document={
-    readyState:'complete',visibilityState:'visible',head:{appendChild(){}},addEventListener(){},
-    createElement(){return{id:'',textContent:''};},
-    getElementById(id){if(id==='shck-milk')return check;if(id==='si-milk')return visualRow;return null;}
-  };
-  const sandbox={window,document,console,setTimeout,clearTimeout,Object,Array,String,Promise,JSON,Date,Math};
-  vm.createContext(sandbox);vm.runInContext(source,sandbox,{filename:'shopInteractionBurstPolish.js'});
-  window.toggleShop('milk');window.toggleShop('milk');window.toggleShop('milk');
-  assert.strictEqual(check.classList.contains('done'),true,'three rapid taps must paint the final checked state immediately');
-  assert.strictEqual(writes.length,0,'rapid taps must not start Firebase writes before the idle window');
-  await new Promise(resolve=>setTimeout(resolve,500));
-  assert.strictEqual(writes.length,1,'three rapid taps on one item must coalesce to one canonical write');
-  assert.strictEqual(writes[0].patch.done,true,'coalesced write must persist the final checked state');
-  console.log('STEP 7 shopping burst interaction contract: PASS');
-})().catch(error=>{console.error(error);process.exit(1);});
+assert.ok(duplicates.includes("title:'Dubbele boodschappen'"),'recipe duplicate resolver must remain available after the UI rebuild');
+assert.ok(duplicates.includes(".shopping-conflict-modal .fam-modal-title{color:#111!important}"),'duplicate-dialog title must always render black');
+assert.ok(duplicates.includes(".shopping-conflict-intro b{color:#111!important}"),'duplicate-dialog lead text must remain black');
+assert.ok(resolver.includes("'Overig':'utilityCategory'"),'unknown products must use the canonical product/category fallback instead of a box');
+assert.ok(resolver.includes("'📦':'utilityCategory'"),'legacy box values must visually resolve to the product/category fallback');
+assert.ok(!classifier.includes("result('Overig','📦'"),'classifier must no longer emit a box for unknown products');
+
+const storeIndex=loader.indexOf('src/modules/shop/shoppingListStore.js?v=1');
+const pageIndex=loader.indexOf('src/modules/shop/shoppingPageV2.js?v=1');
+const duplicateIndex=loader.indexOf('src/modules/shop/shoppingRecipeDuplicateResolver.js?v=1');
+const addIndex=loader.indexOf('src/modules/shop/groceryAddSheet.js?v=3');
+assert.ok(storeIndex>=0&&pageIndex>storeIndex&&duplicateIndex>pageIndex&&addIndex>duplicateIndex,'ShoppingPageV2 runtime order must preserve canonical store, duplicate resolver and add sheet');
+assert.ok(!loader.includes('src/modules/shop/shop.js?v=8'),'legacy shopping renderer must not be served alongside ShoppingPageV2');
+assert.ok(!loader.includes('src/modules/shop/shopInteractionBurstPolish.js'),'obsolete burst overlay must not be served alongside the rebuilt page');
+
+console.log('STEP 7 ShoppingPageV2 instant interaction contract: PASS');
