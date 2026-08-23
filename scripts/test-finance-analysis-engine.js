@@ -6,6 +6,7 @@ const vm=require('vm');
 const engineSource=fs.readFileSync('src/modules/finance/financeAnalysisEngine.js','utf8');
 const uiSource=fs.readFileSync('src/modules/finance/financeAnalysisUi.js','utf8');
 const bootstrap=fs.readFileSync('src/modules/calendar/calendar.js','utf8');
+new vm.Script(uiSource,{filename:'financeAnalysisUi.js'});
 const sandbox={console,JSON,String,Array,Object,Number,Math,Date,Intl,globalThis:{}};
 vm.createContext(sandbox);
 vm.runInContext(engineSource,sandbox,{filename:'financeAnalysisEngine.js'});
