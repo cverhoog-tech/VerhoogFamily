@@ -1,14 +1,16 @@
 'use strict';
 // ============================================================
-// SHOPPING RECEIPT -> FINANCE v1.5.1
-// Adds one stable finance transaction per shopping list receipt.
+// SHOPPING RECEIPT -> FINANCE v1.5.2
+// Adds one stable finance transaction per processed shopping receipt.
 // Transaction name stays user-editable. Category is an optional fixed choice
 // so Finance/Analyse never fragment into spelling variants.
-// After Finance confirms the write, only the exact purchased-item snapshot
-// used for that receipt is removed from the canonical shopping list.
+// Receipt identity is derived from the exact purchased-item batch. Retrying the
+// same batch is idempotent, while a later trip on the same list stays distinct.
+// After Finance confirms the write, only that exact purchased-item snapshot is
+// removed from the canonical shopping list.
 // ============================================================
 (function(){
-  if(window.ShoppingReceiptFinance&&window.ShoppingReceiptFinance.version==='1.5.1')return;
+  if(window.ShoppingReceiptFinance&&window.ShoppingReceiptFinance.version==='1.5.2')return;
   var RECEIPT_CATEGORIES=['Boodschappen','Uit eten','Thuisbezorgd','Uitjes','Transport','Gezondheid','Abonnementen','Kleding','Shopping','Wonen','Kinderen','Huisdieren','Overig'];
   function active(){return window.ShoppingListStore&&window.ShoppingListStore.active?window.ShoppingListStore.active():null;}
   function boughtItems(){var s=window.ShoppingListStore;if(!s||typeof s.projection!=='function')return[];return s.projection().doneItems||[];}
@@ -26,6 +28,8 @@
   function normalizeCategory(value){value=String(value||'').trim();return RECEIPT_CATEGORIES.indexOf(value)>=0?value:'';}
   function itemSnapshot(item){return{key:String(item&&item._key||item&&item.id||''),name:String(item&&item.name||''),qty:item&&item.qty||null,amount:item&&item.amount!=null?item.amount:null,unit:item&&item.unit||null,cat:item&&item.cat||null,source:item&&item.source||null,sourceRecipeId:item&&item.sourceRecipeId||null};}
   function processedItemKeys(items){var seen={};return(items||[]).map(function(item){return String(item&&item._key||item&&item.id||'');}).filter(function(key){if(!key||seen[key])return false;seen[key]=true;return true;});}
+  function hashText(value){var h=2166136261;value=String(value||'');for(var i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36);}
+  function receiptSourceId(row,items){var keys=processedItemKeys(items).sort();return String(row&&row.key||'shopping')+'__receipt_'+hashText(keys.join('|'));}
   function clearProcessedItems(row,items){
     var repo=window.ShoppingListHouseholdRepository;
     var keys=processedItemKeys(items);
@@ -55,7 +59,7 @@
         var category=normalizeCategory(ctx.modal.querySelector('#receipt-category').value);
         if(!transactionName){if(window.showToast)showToast('Geef de transactie een naam');return false;}
         if(!(amount>0)){if(window.showToast)showToast('Vul een totaalbedrag in');return false;}
-        var sourceId=row.key;
+        var sourceId=receiptSourceId(row,bought);
         var snapshot=bought.map(itemSnapshot);
         var tx={name:transactionName,cat:category,amount:-Math.abs(amount),who:currentUserName(),date:date,note:'Bon voor '+bought.length+' gekochte items',shoppingListKey:row.key,shoppingListName:listName,shoppingItemCount:bought.length,shoppingItemNames:bought.map(function(i){return i.name;}),shoppingItemsSnapshot:snapshot,receiptProcessedAt:Date.now()};
         FinanceStore.upsertSourceTransaction({sourceType:'shoppingReceipt',sourceId:sourceId,transaction:tx}).then(function(record){
@@ -74,7 +78,7 @@
     ]});
   });}
   function boot(){ensureCard();document.addEventListener('click',function(event){if(event.target&&event.target.closest&&event.target.closest('#screen-shop [data-shop-view]'))setTimeout(ensureCard,0);});}
-  window.ShoppingReceiptFinance={version:'1.5.1',boot:boot,render:ensureCard,open:openReceipt,clearProcessedItems:clearProcessedItems,categories:RECEIPT_CATEGORIES.slice(),normalizeCategory:normalizeCategory};
+  window.ShoppingReceiptFinance={version:'1.5.2',boot:boot,render:ensureCard,open:openReceipt,clearProcessedItems:clearProcessedItems,categories:RECEIPT_CATEGORIES.slice(),normalizeCategory:normalizeCategory,receiptSourceId:receiptSourceId};
   window.addEventListener('familyapp:data:shared:shoppingLists',function(){setTimeout(ensureCard,0);});
   window.addEventListener('familyapp:shopping:changed',function(){setTimeout(ensureCard,0);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
