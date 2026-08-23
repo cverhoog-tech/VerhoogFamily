@@ -43,7 +43,7 @@ Do not start STEP 9 until STEP 8 is explicitly accepted after the final preview/
 - [ ] Verify PDF generation on iPhone.
 - [ ] Verify native share sheet and WhatsApp sharing of the PDF.
 - [ ] Design and implement the final premium PDF report template after Analyse UI is visually accepted.
-- [ ] Extra-strict Finance privacy/isolation regression check: household/account switch, logout/login, reload and reconnect must never expose or write another household's Finance data.
+- [x] Extra-strict Finance privacy/isolation regression check — automated contracts cover household A→B switching, stale callbacks, household-scoped writes, active-household-only reset, logout projection clear, rejected logged-out writes, stale callback after logout, and reconnect into another household; Household Rebuild Contracts passed on 2026-08-23.
 - [ ] Update legacy `docs/household-rebuild-v2-progress.md` so it no longer incorrectly reports STEP 4 as the current phase.
 - [ ] Mark STEP 8 accepted/frozen only after the required verification above.
 
