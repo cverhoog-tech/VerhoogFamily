@@ -58,8 +58,11 @@
       '#screen-shop .shopv2-tab.active{background:var(--c-surface);color:#285c2b;box-shadow:0 5px 14px rgba(39,70,35,.10),inset 0 0 0 1px rgba(75,132,56,.11)}',
       '#screen-shop .shopv2-tab.active strong{background:#dcefd5;color:#285c2b}',
 
-      '#screen-shop .shopv2-list{display:flex;flex-direction:column;gap:8px;min-height:72px;padding:1px 0 2px}',
-      '#screen-shop .shopv2-item{display:grid;grid-template-columns:minmax(0,1fr) 42px;align-items:stretch;border:0;background:var(--c-surface);border-radius:14px;min-height:58px;overflow:hidden;contain:layout paint;box-shadow:0 4px 14px rgba(34,45,35,.055),0 0 0 1px rgba(72,91,68,.045)}',
+      /* One continuous native-style list instead of a stack of cards. */
+      '#screen-shop .shopv2-list{display:flex;flex-direction:column;gap:0;min-height:72px;padding:0;background:var(--c-surface);border:1px solid rgba(72,91,68,.07);border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(34,45,35,.035)}',
+      '#screen-shop .shopv2-list:empty{display:none}',
+      '#screen-shop .shopv2-item{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 42px;align-items:stretch;border:0;background:transparent;border-radius:0;min-height:58px;overflow:visible;contain:layout paint;box-shadow:none}',
+      '#screen-shop .shopv2-item+.shopv2-item:before{content:"";position:absolute;left:73px;right:10px;top:0;height:1px;background:rgba(77,96,73,.105);pointer-events:none}',
       '#screen-shop .shopv2-item-main{min-width:0;border:0;background:transparent;display:grid;grid-template-columns:28px 38px minmax(0,1fr);align-items:center;gap:8px;padding:7px 4px 7px 10px;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent}',
 
       /* Deliberately slim visual checkbox; the whole product row remains the touch target. */
@@ -75,7 +78,8 @@
       '#screen-shop .shopv2-meta{display:block;width:100%;font-size:10.5px;line-height:1.25;color:var(--c-text2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '#screen-shop .shopv2-delete{align-self:center;width:30px;height:36px;margin-right:6px;border:0;border-radius:10px;background:transparent;color:#a1aaa0;font-size:15px;display:grid;place-items:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}',
       '#screen-shop .shopv2-delete:active{background:rgba(130,82,82,.08);color:#9b5757}',
-      '#screen-shop .shopv2-item-main:active,#screen-shop .shopv2-tab:active,#screen-shop .shopv2-add:active,#screen-shop .shopv2-picker:active{transform:scale(.99)}',
+      '#screen-shop .shopv2-item-main:active{background:rgba(75,132,56,.045)}',
+      '#screen-shop .shopv2-tab:active,#screen-shop .shopv2-add:active,#screen-shop .shopv2-picker:active{transform:scale(.99)}',
 
       '#screen-shop .shopv2-empty{display:none;text-align:center;padding:30px 18px 26px;color:var(--c-text2)}',
       '#screen-shop .shopv2-empty.show{display:block}',
@@ -91,7 +95,7 @@
       '.shopping-list-option .sl-icon{width:34px;height:34px;border-radius:11px;background:var(--c-surface2);display:grid;place-items:center;flex:0 0 auto}',
       '.shopping-list-create{width:100%;border:0;background:transparent;color:var(--c-primary);font-weight:800;padding:13px 10px;margin-top:4px;text-align:center}',
 
-      '@media(max-width:600px){#screen-shop .shopv2-shell{padding-left:12px;padding-right:12px}#screen-shop .shopv2-top{padding-top:5px}#screen-shop .shopv2-item{min-height:56px}#screen-shop .shopv2-item-main{grid-template-columns:27px 37px minmax(0,1fr);gap:7px;padding-left:8px}#screen-shop .shopv2-product{width:37px;height:37px}}',
+      '@media(max-width:600px){#screen-shop .shopv2-shell{padding-left:12px;padding-right:12px}#screen-shop .shopv2-top{padding-top:5px}#screen-shop .shopv2-item{min-height:56px}#screen-shop .shopv2-item-main{grid-template-columns:27px 37px minmax(0,1fr);gap:7px;padding-left:8px}#screen-shop .shopv2-item+.shopv2-item:before{left:69px}#screen-shop .shopv2-product{width:37px;height:37px}}',
       '@media(prefers-reduced-motion:reduce){#screen-shop *{transition:none!important;animation:none!important}}'
     ].join('\n');document.head.appendChild(css);
   }

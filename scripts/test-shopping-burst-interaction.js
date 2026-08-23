@@ -17,7 +17,9 @@ assert.ok(!page.includes('🛒 Te kopen')&&!page.includes('✅ Gekocht'),'rebuil
 assert.ok(page.includes('.shopv2-info{min-width:0;display:flex;flex-direction:column'),'product metadata must be vertically stacked under the product title');
 assert.ok(page.includes('.shopv2-picker{width:100%;display:flex;align-items:center;gap:9px;border:1px solid var(--c-border);background:var(--c-surface);border-radius:16px;min-height:54px'),'active-list picker must restore the lighter pre-rework list selector');
 assert.ok(page.includes('.shopv2-tabs{display:grid')&&page.includes('padding:4px;border:1px'),'status controls must remain a distinct segmented control rather than item-sized cards');
-assert.ok(page.includes('.shopv2-item{display:grid')&&page.includes('box-shadow:0 4px 14px'),'product rows must remain visually distinct from list picker and status control');
+assert.ok(page.includes('.shopv2-list{display:flex;flex-direction:column;gap:0'),'product rows must live in one continuous list without gaps between cards');
+assert.ok(page.includes('.shopv2-item{position:relative;display:grid')&&page.includes('background:transparent;border-radius:0')&&page.includes('box-shadow:none'),'individual product rows must be flat and must not render as separate cards');
+assert.ok(page.includes('.shopv2-item+.shopv2-item:before'),'continuous list must separate products with a subtle divider');
 assert.ok(page.includes('item.done=lane.desiredDone;localItems[key]=item'),'tap must change local state synchronously before persistence');
 assert.ok(page.includes("if(el)el.remove();updateTabs();updateEmpty();scheduleFlush();"),'tap must remove the row from the current view immediately before the Firebase flush');
 assert.ok(page.includes("r.setItem(lane.scope,lane.listId,lane.itemKey,{done:desired})"),'idle flush must persist only the final done state through the canonical repository');
@@ -40,4 +42,4 @@ assert.ok(storeIndex>=0&&pageIndex>storeIndex&&duplicateIndex>pageIndex&&addInde
 assert.ok(!loader.includes('src/modules/shop/shop.js?v=8'),'legacy shopping renderer must not be served alongside ShoppingPageV2');
 assert.ok(!loader.includes('src/modules/shop/shopInteractionBurstPolish.js'),'obsolete burst overlay must not be served alongside the rebuilt page');
 
-console.log('STEP 7 ShoppingPageV2 instant interaction + slim visual hierarchy contract: PASS');
+console.log('STEP 7 ShoppingPageV2 instant interaction + continuous-list hierarchy contract: PASS');
