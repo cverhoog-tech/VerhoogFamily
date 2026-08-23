@@ -8,16 +8,16 @@ const resolver=fs.readFileSync('src/ui/icons/familyAppUtilityIconResolver.js','u
 const classifier=fs.readFileSync('src/modules/shop/groceryProductClassifier.js','utf8');
 const loader=fs.readFileSync('api/app.js','utf8');
 
-assert.ok(page.includes("var VERSION='2.0.0'"),'STEP 7 must serve the rebuilt ShoppingPageV2 presentation');
+assert.ok(page.includes("var VERSION='2.1.0'"),'STEP 7 must serve the rebuilt ShoppingPageV2 presentation');
 assert.ok(page.includes('FLUSH_IDLE_MS=220'),'canonical writes must be deferred behind a short idle window');
 assert.ok(page.includes("grid-template-columns:repeat(2,minmax(0,1fr))"),'Te kopen and Gekocht controls must be exactly equal width');
 assert.ok(page.includes("height:48px"),'Te kopen and Gekocht controls must share the same compact fixed height');
 assert.ok(page.includes("<span>Te kopen</span>")&&page.includes("<span>Gekocht</span>"),'rebuilt status controls must use text labels');
 assert.ok(!page.includes('🛒 Te kopen')&&!page.includes('✅ Gekocht'),'rebuilt status controls must not use generic emoji icons');
 assert.ok(page.includes('.shopv2-info{min-width:0;display:flex;flex-direction:column'),'product metadata must be vertically stacked under the product title');
-assert.ok(page.includes('.shopv2-picker-kicker'),'active-list picker must have its own premium context-card hierarchy');
-assert.ok(page.includes('.shopv2-tabs{display:grid')&&page.includes('padding:4px;border:1px'),'status controls must render as a distinct segmented control rather than item-sized cards');
-assert.ok(page.includes('.shopv2-item{display:grid')&&page.includes('box-shadow:0 5px 16px'),'product rows must have a lighter elevated row treatment distinct from the list picker and status control');
+assert.ok(page.includes('.shopv2-picker{width:100%;display:flex;align-items:center;gap:9px;border:1px solid var(--c-border);background:var(--c-surface);border-radius:16px;min-height:54px'),'active-list picker must restore the lighter pre-rework list selector');
+assert.ok(page.includes('.shopv2-tabs{display:grid')&&page.includes('padding:4px;border:1px'),'status controls must remain a distinct segmented control rather than item-sized cards');
+assert.ok(page.includes('.shopv2-item{display:grid')&&page.includes('box-shadow:0 4px 14px'),'product rows must remain visually distinct from list picker and status control');
 assert.ok(page.includes('item.done=lane.desiredDone;localItems[key]=item'),'tap must change local state synchronously before persistence');
 assert.ok(page.includes("if(el)el.remove();updateTabs();updateEmpty();scheduleFlush();"),'tap must remove the row from the current view immediately before the Firebase flush');
 assert.ok(page.includes("r.setItem(lane.scope,lane.listId,lane.itemKey,{done:desired})"),'idle flush must persist only the final done state through the canonical repository');
@@ -29,6 +29,7 @@ assert.ok(duplicates.includes(".shopping-conflict-modal .fam-modal-title{color:#
 assert.ok(duplicates.includes(".shopping-conflict-intro b{color:#111!important}"),'duplicate-dialog lead text must remain black');
 assert.ok(resolver.includes("'Overig':'utilityCategory'"),'unknown products must use the canonical product/category fallback instead of a box');
 assert.ok(resolver.includes("'📦':'utilityCategory'"),'legacy box values must visually resolve to the product/category fallback');
+assert.ok(resolver.includes("if(key==='utilityCategory')return renderProductBasket(clean)"),'unknown products must render the dedicated mixed product basket');
 assert.ok(!classifier.includes("result('Overig','📦'"),'classifier must no longer emit a box for unknown products');
 
 const storeIndex=loader.indexOf('src/modules/shop/shoppingListStore.js?v=1');
@@ -39,4 +40,4 @@ assert.ok(storeIndex>=0&&pageIndex>storeIndex&&duplicateIndex>pageIndex&&addInde
 assert.ok(!loader.includes('src/modules/shop/shop.js?v=8'),'legacy shopping renderer must not be served alongside ShoppingPageV2');
 assert.ok(!loader.includes('src/modules/shop/shopInteractionBurstPolish.js'),'obsolete burst overlay must not be served alongside the rebuilt page');
 
-console.log('STEP 7 ShoppingPageV2 instant interaction + premium hierarchy contract: PASS');
+console.log('STEP 7 ShoppingPageV2 instant interaction + slim visual hierarchy contract: PASS');
