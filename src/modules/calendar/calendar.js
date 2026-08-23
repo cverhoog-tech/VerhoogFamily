@@ -12,6 +12,10 @@
 // legacy add-sheet globals. FinanceSavingsInteraction then wraps the final
 // add-sheet owner so special Finance sheets bypass the generic f1 guard while
 // calendar submissions still flow through CalendarSharedLive.
+//
+// FinanceAnalysisEngine + FinanceAnalysisUI load after the canonical Finance
+// stack and before the remaining calendar integrations. Analysis is a pure
+// read model over FinanceStore and never becomes persistence authority.
 // ============================================================
 (function(){
   function load(src, done){
@@ -38,8 +42,12 @@
                   load('src/modules/calendar/calendarPremiumUi.js?v=3', function(){
                     load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
                       load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
-                        load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                          load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                        load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
+                          load('src/modules/finance/financeAnalysisUi.js?v=1', function(){
+                            load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                              load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                            });
+                          });
                         });
                       });
                     });
