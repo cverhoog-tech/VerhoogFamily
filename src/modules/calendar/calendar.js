@@ -1,8 +1,8 @@
 'use strict';
 // ============================================================
 // CALENDAR + FINANCE BOOTSTRAP
-// FinanceStore is loaded before the legacy agenda/finance runtime so every
-// finance mutation has one household-scoped source of truth from first use.
+// FinanceHouseholdRepository owns STEP 8 persistence. FinanceStore is the
+// business/compatibility facade and must load before the legacy finance UI.
 //
 // STEP 6 calendar order is deliberate:
 // legacy UI -> canonical repository -> premium decoration -> compatibility
@@ -22,21 +22,23 @@
     document.head.appendChild(s);
   }
 
-  load('src/modules/finance/financeStore.js?v=3', function(){
-    load('src/modules/finance/financeRuntimeShell.js?v=2', function(){
-      load('src/modules/calendar/calendarLegacy.js?v=3', function(){
-        load('src/modules/finance/financeMaandplanPriority.js?v=1', function(){
-          load('src/modules/finance/financeTransactionsPremiumUi.js?v=1', function(){
-            load('src/modules/finance/financeMaandplanGroups.js?v=4', function(){
-              if(window.FinanceRuntimeShell&&FinanceRuntimeShell.ensure)FinanceRuntimeShell.ensure();
-              if(window.FinanceMaandplanPriority&&FinanceMaandplanPriority.install)FinanceMaandplanPriority.install();
-              if(window.FinanceTransactionsPremiumUi&&FinanceTransactionsPremiumUi.install)FinanceTransactionsPremiumUi.install();
-              if(window.FinanceMaandplanGroups&&FinanceMaandplanGroups.install)FinanceMaandplanGroups.install();
-              load('src/modules/calendar/calendarEventHouseholdRepository.js?v=2', function(){
-                load('src/modules/calendar/calendarPremiumUi.js?v=3', function(){
-                  load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
-                    load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                      load('src/modules/calendar/calendarGoogleSync.js?v=1');
+  load('src/modules/finance/financeHouseholdRepository.js?v=1', function(){
+    load('src/modules/finance/financeStore.js?v=4', function(){
+      load('src/modules/finance/financeRuntimeShell.js?v=2', function(){
+        load('src/modules/calendar/calendarLegacy.js?v=3', function(){
+          load('src/modules/finance/financeMaandplanPriority.js?v=1', function(){
+            load('src/modules/finance/financeTransactionsPremiumUi.js?v=1', function(){
+              load('src/modules/finance/financeMaandplanGroups.js?v=4', function(){
+                if(window.FinanceRuntimeShell&&FinanceRuntimeShell.ensure)FinanceRuntimeShell.ensure();
+                if(window.FinanceMaandplanPriority&&FinanceMaandplanPriority.install)FinanceMaandplanPriority.install();
+                if(window.FinanceTransactionsPremiumUi&&FinanceTransactionsPremiumUi.install)FinanceTransactionsPremiumUi.install();
+                if(window.FinanceMaandplanGroups&&FinanceMaandplanGroups.install)FinanceMaandplanGroups.install();
+                load('src/modules/calendar/calendarEventHouseholdRepository.js?v=2', function(){
+                  load('src/modules/calendar/calendarPremiumUi.js?v=3', function(){
+                    load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
+                      load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                        load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                      });
                     });
                   });
                 });
