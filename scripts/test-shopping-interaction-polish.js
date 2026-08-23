@@ -13,7 +13,6 @@ const toggleStart=page.indexOf('function toggleItem(key)');
 const localIndex=page.indexOf('item.done=lane.desiredDone;localItems[key]=item',toggleStart);
 const removeIndex=page.indexOf("if(el)el.remove()",toggleStart);
 const scheduleIndex=page.indexOf('scheduleFlush()',toggleStart);
-const writeIndex=page.indexOf('r.setItem(lane.scope,lane.listId,lane.itemKey',{); 
 assert.ok(toggleStart>=0&&localIndex>toggleStart,'rebuilt shopping toggle must update local state immediately');
 assert.ok(removeIndex>localIndex,'row must leave the current list immediately after local state changes');
 assert.ok(scheduleIndex>removeIndex,'Firebase flush scheduling must happen only after the visual move');
