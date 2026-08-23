@@ -27,7 +27,7 @@ Do not start STEP 9 until STEP 8 is explicitly accepted after the final preview/
 - [x] Advisor duplicate-install protection for runtime stability.
 
 ### Still required before STEP 8 can close
-- [ ] Confirm latest advisor changes in a fresh Vercel READY preview.
+- [x] Confirm latest advisor changes in a fresh Vercel READY preview — verified on 2026-08-23; deployed asset serves `FinanceAnalysisAdvisor v1.0.1`.
 - [ ] Real iPhone Safari/PWA smoke gate on the complete latest STEP 8 runtime:
   - cold load;
   - Finance tab open;
