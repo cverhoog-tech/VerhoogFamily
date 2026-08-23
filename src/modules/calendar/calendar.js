@@ -15,9 +15,9 @@
 //
 // STEP 8 Analysis order is deliberate:
 // FinanceAnalysisEngine -> FinanceAnalysisUI v2 -> FinanceNativeTabs ->
-// Analysis runtime guard -> Analysis shell style -> PDF export -> polish.
-// NativeTabs and the guard make FinanceAnalysisUI the only real Analyse
-// renderer; polish loads last so the approved visual feedback wins cleanly.
+// Analysis runtime guard -> Analysis shell style -> PDF export -> polish ->
+// data-driven advisor. NativeTabs and the guard make FinanceAnalysisUI the only
+// real Analyse renderer; polish/advisor decorate the canonical output last.
 // ============================================================
 (function(){
   function load(src, done){
@@ -52,8 +52,11 @@
                                 load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
                                   load('src/modules/finance/financeAnalysisExport.js?v=1', function(){
                                     load('src/modules/finance/financeAnalysisPolish.js?v=1', function(){
-                                      load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                                        load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                                      load('src/modules/finance/financeAnalysisAdvisor.js?v=1', function(){
+                                        if(window.FinanceAnalysisAdvisor&&FinanceAnalysisAdvisor.install)FinanceAnalysisAdvisor.install();
+                                        load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                                          load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                                        });
                                       });
                                     });
                                   });
