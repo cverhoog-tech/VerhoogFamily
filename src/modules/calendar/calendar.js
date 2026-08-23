@@ -43,7 +43,7 @@
                     load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
                       load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
                         load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
-                          load('src/modules/finance/financeAnalysisUi.js?v=2', function(){
+                          load('src/modules/finance/financeAnalysisUiV2.js?v=1', function(){
                             load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
                               load('src/modules/calendar/calendarGoogleSync.js?v=1');
                             });
