@@ -52,7 +52,6 @@
                                 load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
                                   load('src/modules/finance/financeAnalysisExport.js?v=1', function(){
                                     load('src/modules/finance/financeAnalysisPolish.js?v=1', function(){
-                                      if(window.FinanceAnalysisPolish&&FinanceAnalysisPolish.install)FinanceAnalysisPolish.install();
                                       load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
                                         load('src/modules/calendar/calendarGoogleSync.js?v=1');
                                       });
