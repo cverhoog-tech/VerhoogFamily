@@ -1,19 +1,20 @@
 'use strict';
 // ============================================================
-// FINANCE RUNTIME SHELL v1.1.0
+// FINANCE RUNTIME SHELL v1.2.0
 // Stable finance-shell controls outside renderable .fin-panel nodes.
+// The destructive reset action intentionally lives at the bottom of Finance.
 // ============================================================
 (function(){
   if(window.FinanceRuntimeShell)return;
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
 
   function ensureStyles(){
     if(document.getElementById('finance-runtime-shell-style'))return;
     var s=document.createElement('style');
     s.id='finance-runtime-shell-style';
     s.textContent=[
-      '.fin-shell-actions{padding:3px 16px 0;background:var(--c-bg);display:flex;justify-content:flex-end}',
-      '.fin-reset-btn{border:0;background:transparent;color:var(--c-text3);border-radius:10px;padding:6px 4px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px}',
+      '.fin-shell-actions{padding:12px 16px 24px;background:transparent;display:flex;justify-content:center}',
+      '.fin-reset-btn{border:1px solid var(--c-border);background:var(--c-surface);color:var(--c-text3);border-radius:999px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 3px 10px rgba(17,24,39,.035)}',
       '.fin-reset-btn:active{background:var(--c-surface2);color:var(--c-text2)}'
     ].join('\n');
     document.head.appendChild(s);
@@ -36,16 +37,16 @@
   function ensure(){
     ensureStyles();
     var screen=document.getElementById('screen-finance');
-    var tabs=screen&&screen.querySelector('.fin-tabs');
-    if(!screen||!tabs)return false;
+    if(!screen)return false;
     var host=document.getElementById('fin-shell-actions');
     if(!host){
       host=document.createElement('div');
       host.id='fin-shell-actions';
       host.className='fin-shell-actions';
       host.innerHTML='<button type="button" class="fin-reset-btn" id="fin-reset-btn" title="Alleen financiële gegevens opnieuw beginnen"><span aria-hidden="true">↺</span><span>Verse start</span></button>';
-      tabs.insertAdjacentElement('afterend',host);
     }
+    // Exactly one reset action, always after every Finance tab panel.
+    if(host.parentNode!==screen || host!==screen.lastElementChild)screen.appendChild(host);
     var btn=document.getElementById('fin-reset-btn');
     if(btn&&!btn._financeShellWired){btn._financeShellWired=true;btn.onclick=resetFinance;}
     return true;
