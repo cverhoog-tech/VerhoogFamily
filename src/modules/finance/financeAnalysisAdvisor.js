@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// FINANCE ANALYSIS ADVISOR v1.0.0
+// FINANCE ANALYSIS ADVISOR v1.0.1
 // Deterministic, explainable recommendations built from the same STEP 8
 // analysis model and canonical FinanceStore state. No external AI call.
 // ============================================================
 (function(){
   if(window.FinanceAnalysisAdvisor)return;
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var STYLE_ID='finance-analysis-advisor-style';
-  var scheduled=false;
+  var scheduled=false,installed=false;
 
   function num(v){v=Number(v);return Number.isFinite(v)?v:0;}
   function money(v){return '€ '+Math.round(Math.abs(num(v))).toLocaleString('nl-NL');}
@@ -185,6 +185,8 @@
     }
   }
   function install(){
+    if(installed){wrapUi();schedule();return;}
+    installed=true;
     ensureStyles();wrapUi();schedule();
     window.addEventListener('familyapp:finance:changed',schedule);
     window.addEventListener('familyapp:household-members-updated',schedule);
