@@ -17,6 +17,22 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-23 — Premium Finance PDF report implemented
+
+- Replaced the temporary STEP 8 PDF export layout with `FinanceAnalysisExport v2.0.0`.
+- Export is now a two-page A4 financial report rather than a simple functional export.
+- Page 1 contains a calm FamilyApp-branded period/result hero, income/expense/net-savings KPIs, top-category bar visualization and the current data-driven FamilyApp Assistent recommendation/action.
+- Page 2 contains fixed vs variable costs, savings rate, receipt count, category current-vs-previous comparison, savings goal progress and core insights.
+- Report remains generated directly from the canonical Finance Analysis model; it is not a screenshot of the screen.
+- Native share/download behavior is preserved, including WhatsApp-capable iOS share flow.
+- Added explicit line wrapping/limits for advisor copy so long recommendations remain within the report card.
+- Local sample report was generated, rendered to both page images and visually inspected; no overlap/clipping was found.
+- PDF preflight confirmed a valid two-page, non-encrypted, text-based PDF.
+- Added `scripts/test-finance-analysis-export.js` to guard two-page structure, report sections, advisor projection and removal of the old placeholder-template copy.
+- Vercel can temporarily report a Hobby build-rate-limit for these rapid commits; a fresh READY branch preview and one final iPhone render/share check of the new template are still required before STEP 8 closes.
+
+---
+
 ## 2026-08-23 — STEP 8 iPhone / assistant / PDF-share checks accepted
 
 - Product owner confirmed the current Finance STEP 8 preview works on iPhone.
