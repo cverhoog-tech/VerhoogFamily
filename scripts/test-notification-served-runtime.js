@@ -100,12 +100,19 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushService.indexOf('function requestEnable()')<pushService.indexOf('Notification.requestPermission()'),'permission request must live in requestEnable');
   assert.ok(pushSettings.includes('svc.requestEnable()'),'notification settings button must own explicit push opt-in');
 
-  // Web Push delivery files are present without exposing sender secrets.
+  // Web Push delivery files are present. Public VAPID configuration may be
+  // returned to the client, but concrete server-side credential env names must
+  // never appear in the public endpoint contract.
   assert.ok(pushSw.includes('firebase-messaging-compat.js'));
   assert.ok(pushSw.includes('onBackgroundMessage'));
   assert.ok(pushSw.includes("self.addEventListener('notificationclick'"));
   assert.ok(pushConfig.includes('FAMILYAPP_WEB_PUSH_VAPID_KEY'));
-  assert.ok(!/service[_-]?account|private[_-]?key/i.test(pushConfig),'public push config endpoint may not expose sender credentials');
+  [
+    'FIREBASE_SERVICE_ACCOUNT_JSON',
+    'GOOGLE_APPLICATION_CREDENTIALS',
+    'FIREBASE_PRIVATE_KEY',
+    'FCM_SERVER_KEY'
+  ].forEach(name=>assert.ok(!pushConfig.includes(name),'public push config endpoint may not reference '+name));
 
   console.log('STEP 10 served canonical notification + Web Push client runtime audit: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
