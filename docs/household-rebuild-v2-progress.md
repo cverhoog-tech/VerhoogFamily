@@ -26,10 +26,10 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 5 — Meals.
 - [x] STEP 6 — Agenda.
 - [x] STEP 7 — Shopping.
-- [-] STEP 8 — Finance: implementation complete; final premium PDF iPhone verification remains.
-- [ ] STEP 9 — Progression / XP / Achievements.
+- [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
+- [-] STEP 9 — Progression / XP / Achievements — current phase, audit first.
 
-**Current phase: STEP 8 Finance final iPhone verification. Do not start STEP 9 until the premium two-page PDF has been verified on iPhone and STEP 8 is explicitly frozen.**
+**Current phase: STEP 9 Progression / XP / Achievements. Begin with a read-only audit of the currently served XP/progression/achievement authorities and write paths before changing behavior.**
 
 ## Prototype end-goal gate
 
@@ -48,43 +48,45 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 8 — Finance
 
-### Accepted implementation
+**Status: accepted/frozen on 2026-08-24.**
 
 - [x] Household-scoped canonical Finance repository/store boundary.
 - [x] UID + household context lifecycle protection.
 - [x] Household-scoped transactions, recurring state, savings goals and reset semantics.
-- [x] `Verse start` retained only as the intended bottom reset action; old top reset card removed.
-- [x] Premium Analyse UI v2 with selected-period and comparison-period analysis.
-- [x] Analysis engine for income, expenses, fixed/variable costs, savings, categories, receipts and deltas.
-- [x] Data-driven FamilyApp Assistent with deterministic, explainable action recommendations.
-- [x] Finance PDF export/share flow with native iOS share/WhatsApp support.
-- [x] Final premium two-page A4 Finance report template implemented.
-- [x] PDF report includes period/result hero, KPIs, category analysis, FamilyApp Assistent advice, comparison data, savings progress and core insights.
-- [x] PDF rendered locally and visually checked for clipping/overlap.
-- [x] Automated premium PDF export contract added.
-- [x] Extra-strict Finance privacy/isolation contracts cover household switching, stale callbacks, logout projection clearing, rejected logged-out writes, reconnect into another household and active-household-only reset.
-- [x] Household Rebuild Contracts passed for the Finance privacy/export changes.
-- [x] Pre-template STEP 8 runtime/device gate accepted on real iPhone by the product owner on 2026-08-23.
-- [x] Original PDF generation/share flow accepted on iPhone/WhatsApp.
-- [x] Fresh Vercel READY preview contains the final premium PDF template; deployed asset verified as `FinanceAnalysisExport v2.0.0` on 2026-08-24.
-
-### Remaining before STEP 8 closes
-
-- [ ] Final iPhone verification of the premium two-page PDF: generate, open both pages, inspect readability and share to WhatsApp.
-- [ ] Mark STEP 8 accepted/frozen and promote STEP 9 to current phase.
+- [x] `Verse start` retained only as intended bottom reset action; top reset card removed.
+- [x] Premium Analyse UI v2 and comparison engine.
+- [x] Data-driven FamilyApp Assistent with deterministic recommendations.
+- [x] Native PDF export/share flow.
+- [x] Final premium two-page A4 Finance report template.
+- [x] Finance privacy/isolation and logout/reconnect contracts.
+- [x] Household Rebuild Contracts passed.
+- [x] Fresh Vercel READY preview contains `FinanceAnalysisExport v2.0.0`.
+- [x] Final premium PDF iPhone verification accepted by the product owner on 2026-08-24.
 
 ## STEP 9 — Progression / XP / Achievements
 
-**Next phase — not started.**
+**Current phase — opened 2026-08-24.**
 
-- [ ] Canonical UID progression store.
-- [ ] Idempotent reward mutations so one event cannot grant XP twice.
+### Audit first
+- [ ] Inventory currently served progression/XP/achievement files and bootstrap wiring.
+- [ ] Inventory every current XP/reward mutation call site and source event.
+- [ ] Map Firebase, local cache and legacy paths that currently act as progression authority or compatibility data.
+- [ ] Map current achievement projection/render dependencies.
+- [ ] Identify duplicate reward/race risks and any display-name based identity use.
+
+### Target implementation
+- [ ] Canonical UID progression store/repository.
+- [ ] Idempotent reward mutations so one logical event cannot grant XP twice.
 - [ ] Achievement projection from canonical progression state.
-- [ ] Retire legacy XP authority / retain compatibility reads only where necessary.
-- [ ] Household/account-switch lifecycle protection.
-- [ ] Cross-household/isolation regression tests.
-- [ ] Vercel preview.
-- [ ] Real iPhone device gate.
+- [ ] Legacy XP authority retired/read-only where compatibility requires it.
+- [ ] Household/account switch lifecycle protection and stale callback rejection.
+- [ ] Cross-household/isolation tests.
+- [ ] Duplicate-reward/idempotency tests.
+- [ ] Existing valid progression preserved safely during migration.
+- [ ] Household Rebuild Contracts pass.
+- [ ] Vercel READY preview.
+- [ ] Real iPhone Safari/PWA gate accepted.
+- [ ] STEP 9 frozen only after product acceptance.
 
 ## Later roadmap phases
 
@@ -107,6 +109,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - STEP 2B.3 unsigned Cloudinary upload remains prototype-only and must be replaced by an authorized/signed media boundary before broader beta.
 - Platform admin remains separate from household admin and must not imply generic raw household-content access.
 - Current accepted Brand/PWA/icon scope remains frozen unless a concrete regression or redesign is requested.
+- STEP 8 Finance is frozen; STEP 9 work must not casually refactor it.
+- STEP 9 progression identity is UID-based.
+- STEP 9 reward mutations must be idempotent and event-keyed.
 - Every meaningful development update must update both `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/FAMILYAPP-UPDATE-LOG.md`.
 
 ## Milestone summary
@@ -116,10 +121,10 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-22 — STEP 2A/2B foundation, Brand/PWA identity and accepted UI/icon scope closed for the prototype baseline.
 - 2026-08-22 — STEP 3 Tasks core accepted after isolation contracts, preview and real iPhone gate.
 - 2026-08-23 — Rebuild execution advanced through STEP 8 Finance on the active branch; central cross-chat TODO/update log introduced to prevent tracker drift.
-- 2026-08-23 — STEP 8 Finance Analyse polish, FamilyApp Assistent, reset placement, PDF share flow and Finance isolation contracts completed; pre-template iPhone gate accepted.
+- 2026-08-23 — STEP 8 Finance Analyse polish, FamilyApp Assistent, reset placement, PDF share flow and Finance isolation contracts completed.
 - 2026-08-23 — Final premium two-page Finance PDF implemented and automated export contract passed.
-- 2026-08-24 — Phase tracker synchronized to actual execution state.
-- 2026-08-24 — Vercel rate limit cleared; a fresh READY preview was built and the deployed `FinanceAnalysisExport v2.0.0` asset verified. Only the final premium-PDF iPhone verification remains before STEP 8 closure.
+- 2026-08-24 — Fresh Vercel preview verified with `FinanceAnalysisExport v2.0.0`.
+- 2026-08-24 — Final premium PDF iPhone test accepted; STEP 8 closed/frozen and STEP 9 opened.
 
 ## Maintenance rule
 
