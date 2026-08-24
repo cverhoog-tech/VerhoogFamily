@@ -53,8 +53,9 @@
     if(err){err.textContent='Opstarten mislukt. Controleer je verbinding en probeer opnieuw.';err.style.display='block';}
   }
   function needsSetup(error){
+    var code=String(error&&(error.code||error.name)||'');
     var msg=String(error&&error.message||'');
-    return /Geen gezin gevonden|Geen actief gezin|family/i.test(msg);
+    return /HOUSEHOLD_REQUIRED|HOUSEHOLD_ACCESS_REQUIRED|Geen gezin gevonden|Geen actief gezin/i.test(code+' '+msg);
   }
   function bootstrap(user){
     var token=++generation;
