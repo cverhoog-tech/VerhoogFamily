@@ -1,10 +1,11 @@
 # Household Rebuild v2 — Progress Tracker
 
-Roadmap: `docs/household-rebuild-v2-roadmap.md`
-Working branch: `agent/household-rebuild-v2`
-Baseline main SHA: `997eb0710f512857a3280e776ab38988a7ee5a86`
+Roadmap: `docs/household-rebuild-v2-roadmap.md`  
+Working branch: `agent/household-rebuild-v2`  
+Day-to-day execution source: `docs/FAMILYAPP-CURRENT-TODO.md`  
+Cross-chat history: `docs/FAMILYAPP-UPDATE-LOG.md`
 
-This is the living execution tracker for the current rebuild. The roadmap remains the architectural source of truth.
+This tracker is the compact phase-level view of the rebuild. The roadmap remains the architecture/scope source of truth; the current TODO is authoritative for the exact next action.
 
 ## Status legend
 
@@ -12,6 +13,23 @@ This is the living execution tracker for the current rebuild. The roadmap remain
 - `[-]` in progress
 - `[x]` completed / accepted or deliberately closed by product decision
 - `[!]` blocked / needs attention
+
+## Current position — synced 2026-08-24
+
+- [x] STEP 0 — Stable baseline.
+- [x] STEP 1 — Authenticated session / startup ownership.
+- [x] STEP 2 — HouseholdContext / UID identity / lifecycle.
+- [x] STEP 2A — Platform-admin identity foundation. Production activation remains a separate explicitly approved action.
+- [x] STEP 2B — Person/UI identity modernization and accepted Brand/PWA/icon scope.
+- [x] STEP 3 — Tasks core.
+- [x] STEP 4 — Recipes.
+- [x] STEP 5 — Meals.
+- [x] STEP 6 — Agenda.
+- [x] STEP 7 — Shopping.
+- [-] STEP 8 — Finance: implementation complete; final premium PDF preview + iPhone verification remain.
+- [ ] STEP 9 — Progression / XP / Achievements.
+
+**Current phase: STEP 8 Finance final verification. Do not start STEP 9 until the premium two-page PDF has been verified from a fresh Vercel preview on iPhone and STEP 8 is explicitly frozen.**
 
 ## Prototype end-goal gate
 
@@ -22,349 +40,93 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Privacy boundary defined: sanitized operational diagnostics by default, no generic raw household-content access.
 - [x] Admin authority must be tied to the product owner's authenticated personal UID via server-verifiable authorization.
 - [ ] At least three independent households pass end-to-end isolation/lifecycle acceptance.
-- [ ] Core modules prove no cross-household read/write/state leakage.
-- [ ] Account switch/logout/reconnect/removed-member behavior passes isolation tests.
+- [ ] Core modules prove no cross-household read/write/state leakage across the complete app.
+- [ ] Removed-member behavior passes final broader-beta isolation tests.
 - [ ] Sanitized platform operations/admin dashboard accepted.
 - [ ] Firebase Rules + media authorization prove household isolation and admin privacy boundary.
 - [ ] Broader family beta acceptance gate passed.
 
-## Current position
+## STEP 8 — Finance
 
-- [x] STEP 0 stable baseline.
-- [x] STEP 1 authenticated session / startup ownership.
-- [x] STEP 2 HouseholdContext / UID identity / lifecycle.
-- [x] STEP 2A platform-admin identity foundation — code/foundation accepted; production activation remains a separate explicitly approved action.
-- [x] STEP 2B Person/UI identity modernization — accepted and closed.
-- [x] STEP 2B.1 backdrop foundation.
-- [x] STEP 2B.2 preset picker.
-- [x] STEP 2B.3 hero backdrop upload support — Cloudinary Free prototype baseline accepted on real iPhone.
-- [x] STEP 2B.4 Global FamilyApp Icon System — current scope accepted; no further broad icon migration required.
-- [x] STEP 2B.5 Brand/PWA identity accepted and frozen.
-- [x] STEP 2B.6 Tasks icon/detail/create presentation accepted and frozen.
-- [x] STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
-- [x] STEP 2B.8 Feed / Notifications / Agenda / Finance / Achievements icon migration closed by product decision; current icons retained.
-- [x] STEP 3 Tasks core — accepted after isolation contracts, CI, READY preview and real iPhone/PWA gate.
-- [-] STEP 4 Recipes — canonical implementation and isolation contracts complete; current preview/device gate pending.
+### Accepted implementation
 
-**Current phase: STEP 4 Recipes device gate. Production activation of STEP 2A Firebase rules / personal platform-admin provisioning remains separate and requires explicit approval.**
+- [x] Household-scoped canonical Finance repository/store boundary.
+- [x] UID + household context lifecycle protection.
+- [x] Household-scoped transactions, recurring state, savings goals and reset semantics.
+- [x] `Verse start` retained only as the intended bottom reset action; old top reset card removed.
+- [x] Premium Analyse UI v2 with selected-period and comparison-period analysis.
+- [x] Analysis engine for income, expenses, fixed/variable costs, savings, categories, receipts and deltas.
+- [x] Data-driven FamilyApp Assistent with deterministic, explainable action recommendations.
+- [x] Finance PDF export/share flow with native iOS share/WhatsApp support.
+- [x] Final premium two-page A4 Finance report template implemented.
+- [x] PDF report includes period/result hero, KPIs, category analysis, FamilyApp Assistent advice, comparison data, savings progress and core insights.
+- [x] PDF rendered locally and visually checked for clipping/overlap.
+- [x] Automated premium PDF export contract added.
+- [x] Extra-strict Finance privacy/isolation contracts cover household switching, stale callbacks, logout projection clearing, rejected logged-out writes, reconnect into another household and active-household-only reset.
+- [x] Household Rebuild Contracts passed for the Finance privacy/export changes.
+- [x] Pre-template STEP 8 runtime/device gate accepted on real iPhone by the product owner on 2026-08-23.
+- [x] Original PDF generation/share flow accepted on iPhone/WhatsApp.
 
-## Phase checklist
+### Remaining before STEP 8 closes
 
-### STEP 0 — Stable baseline
-- [x] Baseline main SHA recorded.
-- [x] Rebuild branch created from exact stable baseline.
-- [x] Baseline checks and Vercel preview accepted.
-- [x] Real iPhone Safari smoke test accepted on 2026-08-20.
+- [ ] Fresh Vercel READY preview containing the final premium PDF template.
+- [ ] Final iPhone verification of the premium two-page PDF: generate, open both pages, inspect readability and share to WhatsApp.
+- [ ] Mark STEP 8 accepted/frozen and promote STEP 9 to current phase.
 
-### STEP 1 — Authenticated session / startup ownership
-- [x] Canonical authenticated-session controller.
-- [x] One auth/startup owner and one app-reveal pipeline.
-- [x] Stale bootstrap protection and deterministic cleanup.
-- [x] Legacy localStorage startup reveal retired from served runtime.
-- [x] Tests, preview and iPhone gate accepted.
+## STEP 9 — Progression / XP / Achievements
 
-### STEP 2 — HouseholdContext / UID identity / lifecycle
-- [x] Canonical UID + household context contract.
-- [x] `capture()` / `isCurrent()` stale-context protection.
-- [x] Explicit subscription/unsubscribe and household-switch rebind semantics.
-- [x] Tests, preview and iPhone gate accepted.
+**Next phase — not started.**
 
-### STEP 2A — Platform admin identity foundation
-- [x] Platform role separated from household role.
-- [x] Platform admin tied to protected authenticated personal UID authority.
-- [x] No client self-elevation.
-- [x] Dedicated platform permission contract.
-- [x] Audit-event contract.
-- [x] Privacy classification enforced.
-- [x] Normal admin API exposes sanitized operational data only.
-- [x] Tests prove household admin is not platform admin.
-- [x] Tests prove platform admin does not imply raw household-content access.
-- [x] Preview/device gate accepted where applicable.
-
-Status: **code/foundation accepted on 2026-08-22. Production Firebase Rules deployment and provisioning of the product owner's personal UID in `platformAdmins/{uid}` are not part of this acceptance and remain pending explicit approval.**
-
-### STEP 2B — Person/UI identity modernization
-
-Status: **accepted / closed / frozen prototype baseline**
-
-#### STEP 2B.1 — Backdrop foundation
-- [x] Canonical backdrop catalog and resolver.
-- [x] Backdrop separate from avatar/portrait media.
-- [x] Premium default backdrop asset.
-- [x] Person-tab integration and regression contract.
-- [x] iPhone gate accepted.
-
-#### STEP 2B.2 — Preset picker
-- [x] Own-card edit action.
-- [x] Premium picker UI.
-- [x] Preset selection/reset.
-- [x] UID/household-safe persistence and realtime rerender.
-- [x] iPhone gate accepted.
-
-#### STEP 2B.3 — Upload support
-- [x] Product decision: keep Firebase on Spark; do not enable Blaze solely for image storage.
-- [x] Existing Cloudinary Free account selected for prototype hero-backdrop uploads.
-- [x] Dedicated Cloudinary folder `familyapp/hero-uploads` created.
-- [x] Restricted unsigned preset `fa_hero_91c8f43ad0b6_v1` created in Cloudinary Console.
-- [x] Image-only upload service.
-- [x] Size/type validation and adaptive client-side compression/resize boundary.
-- [x] Own-profile + active UID/household gate.
-- [x] Stale HouseholdContext protection during upload.
-- [x] Upload preview, explicit confirm and progress flow.
-- [x] Cloudinary receives no householdId/UID/display-name metadata from the upload flow.
-- [x] Persist whitelisted Cloudinary provider/asset/delivery metadata to the household member profile.
-- [x] Replaced/retired Cloudinary assets are recorded in the user's private cleanup queue for later signed deletion.
-- [x] Firebase Storage compat SDK removed from served runtime.
-- [x] Firebase Storage config/rules/deploy workflow retired from this prototype path.
-- [x] Upload/privacy regression contract updated for the Cloudinary/Spark boundary.
-- [x] Rebuild contract-test CI workflow retained.
-- [x] Temporary Cloudinary probe endpoints removed after capability checks.
-- [x] Preset-backed upload verified through the live app.
-- [x] Real iPhone/PWA upload gate accepted on 2026-08-22 after adaptive compression fix.
-- [!] Before broader multi-family beta, replace the unsigned public-by-URL bridge with server-authorized/signed media access and process cleanup queue automatically.
-
-#### STEP 2B.4 — Global FamilyApp Icon System
-- [x] Central semantic icon registry exists.
-- [x] Central renderer/component boundary exists.
-- [x] Accepted migrated scopes use the shared system.
-- [x] Bottom navigation remains unchanged.
-- [x] More-menu icons remain unchanged.
-- [x] Remaining current app icons accepted as-is by product decision on 2026-08-22.
-- [x] No further broad Person/global icon audit required for the prototype.
-
-#### STEP 2B.5 — App Brand / Logo / PWA Identity
-- [x] Approved crest v5 wired across PWA/browser/login contexts.
-- [x] Transparent login crest accepted without white tile.
-- [x] Add-to-Home-Screen iPhone gate accepted.
-- [x] Frozen baseline.
-
-#### STEP 2B.6 — Tasks icon migration
-- [x] Task category/content icons migrated where approved.
-- [x] Help/party/status migration rejected and fully reverted.
-- [x] Detail/create controls migrated where approved.
-- [x] Regression contracts and iPhone gate accepted.
-- [x] Frozen baseline.
-
-#### STEP 2B.7 — Shopping / Recipes / Meals icon migration
-- [x] Canonical food/product icon resolver presentation wired.
-- [x] Visible generic fallbacks reduced while legacy stored emoji remains compatibility metadata.
-- [x] Behavior unchanged in accepted device smoke test.
-- [x] Regression contract and READY preview accepted.
-- [x] Frozen baseline.
-
-#### STEP 2B.8 — Feed / Notifications / Agenda / Finance / Achievements icon migration
-- [x] Closed by product decision on 2026-08-22.
-- [x] Current Feed icons retained.
-- [x] Current Notification icons retained.
-- [x] Current Agenda icons retained.
-- [x] Current Finance icons retained.
-- [x] Current Achievement/progression icons retained.
-- [x] No additional icon migration/device gate required because no code change is being made.
-
-### STEP 3 — Tasks core
-- [x] Household-scoped task repository at `families/{householdId}/tasks`.
-- [x] UID identity and mutation boundary through `HouseholdContext` capture/isCurrent protection.
-- [x] Realtime bind/unbind with exact-listener cleanup and stale-callback rejection.
-- [x] Existing premium UI contract retained through the `TaskSharedData` compatibility facade; no STEP 3 redesign introduced.
-- [x] Cross-household/lifecycle regression contract covers A → B switching, stale callbacks, local legacy leak prevention and same-household migration.
-- [x] Tests/preview/device gate accepted on real iPhone/PWA on 2026-08-22.
-
-Status: **accepted on 2026-08-22. Canonical task persistence is separated from the legacy family-root sync. Generic local task/AppState data is never used to seed another household. Local task cache is UID + household scoped. Same-household historical task sources are transactionally reconciled so legacy copies cannot overwrite newer schema-v2 canonical task state. Household Rebuild Contracts, Vercel READY preview and the real iPhone/PWA gate all passed.**
-
-### STEP 4 — Recipes
-- [x] Firebase shared source of truth.
-- [x] Realtime create/edit/delete.
-- [x] Household rebind/cleanup.
-- [x] Cross-household/lifecycle tests.
-- [ ] Tests/preview/device gate accepted.
-
-Status: **implementation ready for device gate on 2026-08-22. Canonical recipe persistence now lives at `families/{householdId}/recipes`. `RecipeHouseholdRepository` owns the single realtime Firebase binding and UID/household mutation boundary; the existing `RecipeStore` is retained only as a UI compatibility facade. Same-household `shared/recipes` and historical root records are reconciled once into schema v3, while unscoped legacy local recipe storage is explicitly never used as migration authority. Household Rebuild Contracts pass on `342804d53e4189486548b23abbab46770ee45126`. A current Vercel device-gate preview is still pending because the Hobby project hit its temporary build-rate limit.**
-
-### STEP 5 — Meals
-- [ ] Household-bound meal-plan store.
-- [ ] Stable recipe references.
-- [ ] Realtime sync/rebind.
-- [ ] Cross-household/lifecycle tests.
-- [ ] Tests/preview/device gate accepted.
-
-### STEP 6 — Agenda
-- [ ] Household-scoped calendar source of truth.
-- [ ] Explicit rebind and cleanup.
-- [ ] Meal integration after meal store is stable.
-- [ ] Cross-household/lifecycle tests.
-- [ ] Tests/preview/device gate accepted.
-
-### STEP 7 — Shopping
-- [ ] Stable grocery-add/freeze behavior preserved.
-- [ ] Household realtime shopping repository.
-- [ ] Recipe/meal projection integrated safely.
-- [ ] Grocery-add freeze regression test.
-- [ ] Cross-household/lifecycle tests.
-- [ ] Tests/preview/device gate accepted.
-
-### STEP 8 — Finance
-- [ ] Shared-vs-private data classification.
-- [ ] Household-scoped finance state where appropriate.
-- [ ] Transaction sync and reset semantics.
-- [ ] Extra-strict privacy/isolation tests.
-- [ ] Tests/preview/device gate accepted.
-
-### STEP 9 — Progression / XP / achievements
 - [ ] Canonical UID progression store.
-- [ ] Idempotent rewards.
-- [ ] Achievement projection.
-- [ ] Legacy XP authority retired/read-only.
-- [ ] Cross-household/lifecycle tests.
-- [ ] Tests/preview/device gate accepted.
+- [ ] Idempotent reward mutations so one event cannot grant XP twice.
+- [ ] Achievement projection from canonical progression state.
+- [ ] Retire legacy XP authority / retain compatibility reads only where necessary.
+- [ ] Household/account-switch lifecycle protection.
+- [ ] Cross-household/isolation regression tests.
+- [ ] Vercel preview.
+- [ ] Real iPhone device gate.
 
-### STEP 10 — Notifications
-- [ ] Canonical household notification store.
-- [ ] Per-UID read/dismiss state.
-- [ ] Domain-event projectors.
-- [ ] Single scoped listener with cleanup.
-- [ ] Native push-compatible separation.
-- [ ] Cross-household recipient/deep-link tests.
-- [ ] Tests/preview/device gate accepted.
+## Later roadmap phases
 
-### STEP 11 — Party quests
-- [ ] Invites and join/leave.
-- [ ] Help requests.
-- [ ] Completion/rewards.
-- [ ] Notifications and idempotency.
-- [ ] Cross-household participant/invite tests.
-- [ ] Tests/preview/device gate accepted.
+- [ ] STEP 10 — Notifications.
+- [ ] STEP 11 — Party quests.
+- [ ] STEP 12 — Profile / presence / avatars.
+- [ ] STEP 13 — Activity / feed.
+- [ ] STEP 14 — Search / autocomplete.
+- [ ] STEP 14A — Privacy-safe platform operations/admin dashboard.
+- [ ] STEP 15 — Firebase Rules + media authorization hardening.
+- [ ] STEP 16 — Legacy cleanup.
+- [ ] Multi-family broader-beta acceptance gate with at least three independent households.
+- [ ] STEP 17 — Store distribution readiness.
 
-### STEP 12 — Profile / presence / avatars
-- [ ] UID profile identity and household-member presentation.
-- [ ] Avatar sync/cache.
-- [ ] Exactly one presence binding per active context.
-- [ ] Exact listener cleanup.
-- [ ] Account-switch/household-isolation tests.
-- [ ] Tests/preview/device gate accepted.
+## Standing decisions / guardrails
 
-### STEP 13 — Activity / feed
-- [ ] Immutable household activity events.
-- [ ] Domain producers and dedupe/idempotency.
-- [ ] Feed presentation/interactions.
-- [ ] Household isolation/reconnect tests.
-- [ ] Tests/preview/device gate accepted.
+- Main stays untouched until explicit approval.
+- No production deploy or production Firebase Rules change without explicit approval.
+- Firebase remains on Spark unless a new product decision changes that.
+- STEP 2B.3 unsigned Cloudinary upload remains prototype-only and must be replaced by an authorized/signed media boundary before broader beta.
+- Platform admin remains separate from household admin and must not imply generic raw household-content access.
+- Current accepted Brand/PWA/icon scope remains frozen unless a concrete regression or redesign is requested.
+- Every meaningful development update must update both `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/FAMILYAPP-UPDATE-LOG.md`.
 
-### STEP 14 — Search / autocomplete
-- [ ] Household-scoped index.
-- [ ] Clear/rebuild on household switch.
-- [ ] No stale prior-household results.
-- [ ] Cross-household search-leak tests.
-- [ ] Tests/preview/device gate accepted.
-
-### STEP 14A — Platform operations dashboard
-- [ ] Dedicated sanitized platform operations projection/API.
-- [ ] Household technical health/status dashboard.
-- [ ] Member count/schema/migration health.
-- [ ] Startup/auth/sync/error summaries.
-- [ ] Deliberately collected device/browser/PWA technical context.
-- [ ] Notification-delivery health.
-- [ ] Beta cohort / feature-flag visibility.
-- [ ] Audit/support-case view.
-- [ ] No generic raw-family read capability.
-- [ ] Raw household content absent from normal admin API/projection.
-- [ ] Consent/audited mechanism for any future content-level support access.
-- [ ] Tests/preview/device gate accepted.
-
-### STEP 15 — Firebase Rules + media authorization hardening
-- [ ] Canonical path/rules matrix.
-- [ ] Shared collection allowlist.
-- [ ] Notification/activity/FCM rules.
-- [ ] Owner/member/revocation rules.
-- [ ] Cross-household reads/writes denied in emulator tests.
-- [ ] Removed-member access denied.
-- [ ] Platform admin restricted to sanitized operations data.
-- [ ] Normal household admin cannot gain platform privileges.
-- [ ] Replace prototype unsigned Cloudinary uploads with a server-authorized/signed media boundary or equivalent secure service.
-- [ ] Retired Cloudinary media cleanup queue processed by a signed server worker.
-- [ ] Media access/privacy boundary tested across households.
-- [ ] Emulator/rule tests passed.
-- [ ] No production Rules deployment without explicit approval.
-
-### STEP 16 — Legacy cleanup
-- [ ] my/partner authorities retired.
-- [ ] Guest-mode remnants removed.
-- [ ] Unused bridges/stores/listeners removed.
-- [ ] Deprecated duplicate code/assets removed only after proof of non-use.
-- [ ] Runtime wiring consolidated safely.
-- [ ] No global/single-family authority can bypass household isolation.
-- [ ] Tests/preview/device gate accepted.
-
-### Multi-family broader-beta acceptance gate
-- [ ] Household Alpha fixture accepted.
-- [ ] Household Beta fixture accepted.
-- [ ] Household Gamma fixture accepted.
-- [ ] Same-household collaboration allowed and realtime.
-- [ ] Cross-household reads invisible/denied.
-- [ ] Cross-household writes denied.
-- [ ] Same-device account switch has no stale prior-user/household data.
-- [ ] Logout/login/reload preserves correct context.
-- [ ] Offline/reconnect cannot flush to wrong household.
-- [ ] Removed member loses access.
-- [ ] Admin diagnostics support normal bug triage without raw household content.
-- [ ] Admin privileged actions authorized and audited.
-- [ ] Media authorization no longer relies on the STEP 2B.3 unsigned prototype bridge.
-- [ ] Real iPhone/PWA multi-account smoke gate accepted.
-
-### STEP 17 — Store distribution readiness
-- [ ] Re-check current Apple App Store and Google Play requirements.
-- [ ] Choose/validate iOS/Android shell strategy.
-- [ ] Signing/bundle/build pipeline.
-- [ ] App icons/launch/store assets.
-- [ ] TestFlight / Google internal testing.
-- [ ] Native push + deep links.
-- [ ] Secure platform credential storage.
-- [ ] Native lifecycle/background integration.
-- [ ] Apple-compliant login mix where required.
-- [ ] In-app account deletion + backend deletion lifecycle.
-- [ ] Privacy policy/legal/support surfaces.
-- [ ] App Store privacy + Play Data Safety inventory.
-- [ ] Permission/accessibility/device audit.
-- [ ] Crash/stability instrumentation.
-- [ ] Store reviewer/demo path.
-- [ ] Final submission checklist passed.
-
-## Store-readiness check applied to every relevant phase
-
-For each functional phase verify:
-- [ ] No unnecessary browser-only business logic introduced.
-- [ ] Service/repository contracts remain callable from a future native shell.
-- [ ] Data collection and permissions remain minimized.
-- [ ] Push/deep-link/lifecycle entry points can be added without duplicating domain logic.
-- [ ] Authenticated offline/reconnect behavior remains deterministic.
-
-## Milestone / decision log
+## Milestone summary
 
 - 2026-08-19 — Stable main baseline selected and rebuild branch created.
-- 2026-08-19 — Rebuild architecture, platform-admin privacy model and store-readiness direction recorded.
 - 2026-08-20 — STEP 0, STEP 1 and STEP 2 accepted on real iPhone Safari.
-- 2026-08-20 — STEP 2B opened; backdrop foundation and preset picker accepted.
-- 2026-08-20 — Global icon foundation and brand/PWA identity work introduced.
-- 2026-08-22 — STEP 2B.5 crest v5/PWA/login accepted and frozen.
-- 2026-08-22 — STEP 2B.6 task icon/detail/create presentation accepted and frozen.
-- 2026-08-22 — STEP 2B.7 Shopping / Recipes / Meals icon presentation accepted and frozen.
-- 2026-08-22 — Product decision: all other current app icons are acceptable for the prototype. STEP 2B.4 icon scope is closed and STEP 2B.8 deliberately closed without code changes.
-- 2026-08-22 — Multi-family readiness and privacy-safe personal platform administration made explicit broader-beta release gates.
-- 2026-08-22 — Firebase Storage path abandoned after Spark required a Blaze upgrade for Storage; product owner explicitly chose no billing exposure.
-- 2026-08-22 — STEP 2B.3 migrated to the existing Cloudinary Free account. Firebase remains Spark; unsigned Cloudinary upload is explicitly prototype-only pending signed media hardening before broader beta.
-- 2026-08-22 — Adaptive iPhone photo compression fix accepted on real device; STEP 2B.3 accepted/frozen and STEP 2B closed. STEP 2A resumes.
-- 2026-08-22 — STEP 2A platform-admin identity foundation accepted after CI, READY preview and real iPhone smoke gate. Production Firebase Rules deployment and personal UID provisioning remain deliberately pending explicit approval.
-- 2026-08-22 — STEP 3 Tasks core implementation completed through `0d2c1ae45b3a36d05b8844faf90415dabb6253df`: canonical household task repository, UID/context mutation boundary, exact listener rebind, stale-callback protection, UID+household cache isolation, legacy task sync guard and transaction-safe historical source reconciliation. Household Rebuild Contracts and Vercel preview passed.
-- 2026-08-22 — STEP 3 real iPhone/PWA gate accepted by the product owner; Tasks core closed and STEP 4 Recipes becomes the next phase.
-- 2026-08-22 — STEP 4 Recipes canonical implementation completed through `342804d53e4189486548b23abbab46770ee45126`: direct `HouseholdContext` recipe repository, schema-v3 same-household reconciliation, exact realtime listener cleanup, stale-callback rejection, UID+household cache isolation and RecipeStore compatibility facade. Household Rebuild Contracts passed; current Vercel device gate remains pending due temporary Hobby build-rate limiting.
+- 2026-08-22 — STEP 2A/2B foundation, Brand/PWA identity and accepted UI/icon scope closed for the prototype baseline.
+- 2026-08-22 — STEP 3 Tasks core accepted after isolation contracts, preview and real iPhone gate.
+- 2026-08-23 — Rebuild execution advanced through STEP 8 Finance on the active branch; central cross-chat TODO/update log introduced to prevent tracker drift.
+- 2026-08-23 — STEP 8 Finance Analyse polish, FamilyApp Assistent, reset placement, PDF share flow and Finance isolation contracts completed; pre-template iPhone gate accepted.
+- 2026-08-23 — Final premium two-page Finance PDF implemented and automated export contract passed.
+- 2026-08-24 — This tracker synchronized to the actual current execution state. STEP 8 awaits only fresh-preview + final premium-PDF iPhone verification before closure.
 
 ## Maintenance rule
 
 When implementation progresses:
 1. update the relevant checklist items;
-2. record important implementation/test commits in the milestone log;
-3. never mark a functional implementation complete before its required checks/preview/device gate;
-4. a deliberate product scope closure may be marked complete without a device gate when it makes no runtime/code change;
+2. append meaningful changes to `docs/FAMILYAPP-UPDATE-LOG.md`;
+3. update `docs/FAMILYAPP-CURRENT-TODO.md` in the same work session;
+4. never mark a functional phase accepted before its required tests/preview/device gate;
 5. keep the architecture roadmap synchronized when scope/order/constraints materially change;
 6. add household-isolation/lifecycle tests during each module migration rather than postponing them;
-7. never use unrestricted household-content access as a shortcut for platform diagnostics;
-8. keep the STEP 2B.3 unsigned media bridge clearly prototype-only until STEP 15 replaces it.
+7. never use unrestricted household-content access as a shortcut for platform diagnostics.
