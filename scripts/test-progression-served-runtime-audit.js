@@ -5,6 +5,9 @@ const appHandler=require('../api/app.js');
 
 function clean(src){return String(src||'').split('?')[0].replace(/^\.\//,'');}
 function local(src){const p=clean(src);return p.startsWith('src/')&&p.endsWith('.js')?p:null;}
+function executableLines(source){
+  return String(source||'').split('\n').filter(line=>!line.trim().startsWith('//')).join('\n');
+}
 
 async function getServedHtml(){
   let body='';
@@ -50,9 +53,9 @@ function servedFiles(html){
 
   const awardFiles=[],directAdds=[];
   served.forEach(f=>{
-    if(!fs.existsSync(f))return;const s=fs.readFileSync(f,'utf8');
-    if(/\bawardXP\s*\(/.test(s))awardFiles.push(f);
-    if(/\bmyXP\s*\+=/.test(s))directAdds.push(f);
+    if(!fs.existsSync(f))return;const s=fs.readFileSync(f,'utf8'),code=executableLines(s);
+    if(/\bawardXP\s*\(/.test(code))awardFiles.push(f);
+    if(/\bmyXP\s*\+=/.test(code))directAdds.push(f);
   });
   awardFiles.sort();directAdds.sort();
 
@@ -82,7 +85,7 @@ function servedFiles(html){
   assert.ok(!html.includes('onclick="openTradeSheet()"'));
   const tradeCallers=[],duoCallers=[];
   served.forEach(f=>{
-    if(!fs.existsSync(f))return;const s=fs.readFileSync(f,'utf8');
+    if(!fs.existsSync(f))return;const s=executableLines(fs.readFileSync(f,'utf8'));
     if(f!=='src/modules/achievements/achievements.js'&&/\bopenTradeSheet\s*\(/.test(s))tradeCallers.push(f);
     if(f!=='src/modules/tasks/duoQuests.js'&&/\btrackDuoProgress\s*\(/.test(s))duoCallers.push(f);
   });
