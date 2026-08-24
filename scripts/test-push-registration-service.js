@@ -61,7 +61,7 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
     HouseholdContext,PushDeviceRegistry,fbMsg,Notification,navigator,localStorage,isSecureContext:true,
     firebase:{messaging:{isSupported(){return true;}}},
     matchMedia(){return{matches:false};},
-    fetch(){return Promise.resolve({ok:true,json(){return Promise.resolve({configured:true,vapidKey:'PUBLIC_VAPID',serviceWorkerPath:'/firebase-messaging-sw.js'});}});},
+    fetch(){return Promise.resolve({ok:true,json(){return Promise.resolve({version:'1.1.0',configured:true,vapidConfigured:true,senderConfigured:true,vapidKey:'PUBLIC_VAPID',serviceWorkerPath:'/firebase-messaging-sw.js'});}});},
     addEventListener(type,fn){(windowListeners[type]||(windowListeners[type]=[])).push(fn);},
     dispatchEvent(event){events.push(event);(windowListeners[event.type]||[]).slice().forEach(fn=>fn(event));}
   };
@@ -73,7 +73,7 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
 
   const service=window.PushRegistrationService;
   assert.ok(service);
-  assert.strictEqual(service.version,'1.0.0');
+  assert.strictEqual(service.version,'1.1.0');
   assert.strictEqual(typeof window.setupPushNotifications,'function');
 
   // Legacy startup entrypoint is safe: it may initialize/configure the service,
@@ -83,6 +83,8 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   assert.strictEqual(permissionRequests,0,'startup must not request Notification permission');
   assert.strictEqual(getTokenCalls,0,'startup with no prior opt-in must not create a token');
   assert.strictEqual(service.status().configured,true);
+  assert.strictEqual(service.status().vapidConfigured,true);
+  assert.strictEqual(service.status().senderConfigured,true);
 
   // Explicit user action requests permission and registers exactly this UID/device.
   const enabled=await service.requestEnable();
@@ -136,5 +138,10 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   await assert.rejects(()=>service.requestEnable(),/PUSH_IOS_HOME_SCREEN_REQUIRED/);
   assert.strictEqual(permissionRequests,beforeIosPrompt,'non-installed iPhone flow must not show a doomed permission prompt');
 
-  console.log('STEP 10 Web Push explicit opt-in/account-switch contract: PASS');
+  // Readiness checks must run before permission. The static order guard prevents
+  // future refactors from prompting before VAPID/sender readiness is known.
+  assert.ok(source.includes('PUSH_SENDER_NOT_CONFIGURED'));
+  assert.ok(source.indexOf('assertDeliveryConfig();')<source.indexOf('Notification.requestPermission()'));
+
+  console.log('STEP 10 Web Push readiness/explicit opt-in/account-switch contract: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
