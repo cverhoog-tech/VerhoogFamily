@@ -17,6 +17,26 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-25 — Profiel/Meer: uitloggen + accountgescheiden profielwaarden; Verse start verwijderd
+
+- De product owner heeft de eerder toegevoegde **Gezin verlaten** flow voor een normaal gezinslid op Preview getest en bevestigd dat deze goed werkt. Die normal-member smoke gate is daarom geaccepteerd; de aparte owner-transfer smoke test blijft nog open.
+- Toegevoegd: `FamilySessionActions v1.1.0` als één expliciete Firebase sign-out boundary. De actie roept alleen Firebase Auth `signOut()` aan en maakt **geen** tweede `onAuthStateChanged` observer; `AuthenticatedSessionController` blijft eigenaar van de auth lifecycle en brengt een signed-out gebruiker terug naar het inlogscherm.
+- Profiel bevat nu een duidelijke **Uitloggen** rij. Deze verlaat het gezin niet, verwijdert het account niet en wist geen gedeelde gezinsdata.
+- Het **Meer** menu bevat nu eveneens **Uitloggen**. De knop wordt opnieuw gemount na dynamische Meer-menu rerenders, zodat hij niet verdwijnt wanneer `renderNav()` de grid opnieuw opbouwt.
+- De oude **Verse start** test/reset knop is uit de actieve `/api/app` runtime verwijderd. `freshStartReset.js` blijft alleen als dormant bronbestand aanwezig en injecteert niet langer een knop in Meer.
+- De profielnaam/partneropslag is accountveilig gemaakt. Voor een ingelogde gebruiker gebruikt Profile nu UID-scoped keys `familyapp-profile-name-v2:{uid}` en `familyapp-partner-name-v2:{uid}` in plaats van de browserbrede legacy defaults.
+- Een nieuw/ander account leest daardoor niet meer automatisch de `Shane` / `Esra` waarden van een eerder account op hetzelfde apparaat. Zonder ingestelde partner is het veld nu leeg en **Optioneel**; de profielnaam valt terug op de actuele Firebase/household identity in plaats van op `Shane`.
+- `ProfileScreen.target.js` schrijft via één `setProfileNames(...)` boundary en heeft cache cutover `?v=account2`; `avatarStore.js` krijgt `?v=profile2` zodat mobiele/PWA caches de accountveilige code ophalen.
+- Toegevoegd: `scripts/test-profile-session-actions.js`. Het contract bewaakt Firebase-only logout, geen extra auth observer, beide logout surfaces, UID-scoped profile keys, het ontbreken van Shane/Esra fallbacks en dat `freshStartReset.js` niet meer in de daadwerkelijk geserveerde HTML voorkomt.
+- Het bestaande household-leave contract is aangepast aan de nieuwe Profile cacheversie en blijft groen.
+- Volledige `Household Rebuild Contracts` is SUCCESS op codecommit `2ff8ecf2500702ca835531ff1c3f5c95ce9a1486`, workflow run `32787576487`.
+- Vercel Preview deployment `dpl_FDvW1mNDW5yC5RHidRVTzQTL1YDM` is READY voor dezelfde codecommit.
+- De gedeployde `/api/app` is direct gecontroleerd: `src/core/sessionActions.js?v=1` staat vóór Profile/Navigation in de runtime en `src/app/freshStartReset.js` ontbreekt.
+- Nog open voor echte device acceptance: Profile-uitloggen, Meer-uitloggen en een nieuw/ander account in Profile verifiëren. Daarna kan de eerder geblokkeerde tweede-account → iPhone push test verder.
+- `main` en production Firebase Rules zijn niet gewijzigd. STEP 10 blijft **in progress / not frozen**.
+
+---
+
 ## 2026-08-25 — Profile: veilige `Gezin verlaten` flow toegevoegd
 
 - Op verzoek is in Profiel een duidelijke destructieve actie **Gezin verlaten** toegevoegd.
@@ -30,7 +50,7 @@ Newest entries belong at the top.
 - Toegevoegd: `src/modules/profile/householdLeaveService.js`, gekoppeld via `profile.legacy.js`, plus `scripts/test-household-leave-profile.js` voor identity, owner-transfer, non-deletion van shared household data, profielwiring en Rules-contract.
 - Volledige `Household Rebuild Contracts` is SUCCESS op commit `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`, workflow run `32784256710`.
 - Vercel Preview deployment `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` is READY voor dezelfde codecommit.
-- Destructieve real-device smoke tests voor normaal lid verlaten en eigenaarsoverdracht staan nog open; STEP 10 blijft **in progress / not frozen**.
+- Destructieve real-device smoke tests voor normaal lid verlaten en eigenaarsoverdracht stonden op dit checkpoint nog open; de normal-member test is in het nieuwere logpunt hierboven inmiddels geaccepteerd.
 
 ---
 
@@ -69,7 +89,7 @@ Newest entries belong at the top.
 - `/api/push-config` on that configured Preview was directly verified and returned `configured=true`, `vapidConfigured=true` and `senderConfigured=true`, proving both the public Web Push transport and protected trusted sender configuration are present at runtime.
 - The first iPhone notification-screen test was performed in a normal Safari tab rather than from a Home Screen PWA. That correctly cannot be the final iOS Web Push context, but the UI exposed a presentation bug: it showed generic “Niet ondersteund” before the more useful iPhone Home Screen requirement.
 - The same test exposed a separate profile-navigation bug: the Profile → Meldingen row was still a placeholder toast and did not open the real notification screen.
-- Commit `caa5df5905ad354e5b271e96f36a60bd4d7786cc` fixes both issues. Profile → Meldingen now calls the canonical `showScreen('notif')` route, while `PushNotificationSettings v1.1.1` checks iPhone non-standalone state before generic browser support and therefore explains that FamilyApp must be opened from the Home Screen before push can be enabled.
+- Commit `caa5df5905ad354e5b271e96f36a60bd4d7786cc` fixes both issues. Profile → Meldingen now calls the canonical `showScreen('notif')` route, while `PushNotificationSettings v1.1.1` checks iPhone non-standalone state before generic browser support and therefore explains dat FamilyApp vanaf het beginscherm moet worden geopend voordat push kan worden ingeschakeld.
 - Bumped the served push-settings cache key to `pushNotificationSettings.js?v=3` and extended `test-notification-served-runtime.js` so both the profile route and iPhone-guidance ordering are guarded against regression.
 - `Household Rebuild Contracts` passed for `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, workflow run `32774000920`.
 - Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` is READY for the same fix commit. Its deployed `/api/app` was directly inspected and confirmed the current runtime with `pushNotificationSettings.js?v=3`.
