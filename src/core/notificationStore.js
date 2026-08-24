@@ -1,16 +1,17 @@
 'use strict';
 // ============================================================
-// NOTIFICATION STORE v2.0.0 — STEP 10 canonical facade
+// NOTIFICATION STORE v2.1.0 — STEP 10 canonical facade
 //
 // Persistence/listener authority: NotificationHouseholdRepository.
 // Identity authority: HouseholdContext.
 // Domain producers publish deterministic event keys; presentation and push
-// delivery remain downstream concerns.
+// delivery remain downstream concerns. Push delivery is best-effort and can
+// never redefine canonical inbox success.
 // ============================================================
 (function(){
   if(window.NotificationStore)return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var records={};
   var listeners=[];
   var repositoryUnsubscribe=null;
@@ -83,12 +84,7 @@
   function applyRepository(value,meta){
     meta=meta||{};
     var key=identityKey(meta);
-    if(key!==activeIdentity){
-      activeIdentity=key;
-      records={};
-      readySnapshotSeen=false;
-      subscriptionStartedAt=key?now():0;
-    }
+    if(key!==activeIdentity){activeIdentity=key;records={};readySnapshotSeen=false;subscriptionStartedAt=key?now():0;}
     var previous=records;
     records=normalizeMap(value);
     var isFirstReady=!!(meta.ready&&!readySnapshotSeen);
@@ -128,23 +124,34 @@
     payload.audience=payload.audience||audienceSelf();
     payload.entity=payload.entity||null;
     payload.data=payload.data&&typeof payload.data==='object'?payload.data:{};
-    payload.channels=Array.isArray(payload.channels)?payload.channels.slice():['inApp'];
+    payload.channels=Array.isArray(payload.channels)?payload.channels.slice():['inApp','push'];
     payload.createdAt=Number(payload.createdAt)||now();
     payload.readBy=payload.readBy&&typeof payload.readBy==='object'?payload.readBy:{};
     payload.dismissedBy=payload.dismissedBy&&typeof payload.dismissedBy==='object'?payload.dismissedBy:{};
     return payload;
   }
 
+  function dispatchPushIfCreated(result,event){
+    if(!result||!result.created||!event)return;
+    if(Array.isArray(event.channels)&&event.channels.indexOf('push')<0)return;
+    var bridge=window.PushDeliveryBridge;
+    if(!bridge||typeof bridge.dispatchCreated!=='function')return;
+    Promise.resolve().then(function(){return bridge.dispatchCreated(clone(event));}).catch(function(error){
+      console.warn('[NotificationStore] push delivery failed; canonical inbox preserved',error&&error.message||error);
+    });
+  }
+
   function publishOnce(eventKey,input){
     var r=repo();if(!r||typeof r.publishOnce!=='function')return Promise.reject(new Error('NotificationHouseholdRepository niet beschikbaar'));
     ensureSubscription();
     var payload=normalizeForPublish(eventKey,input);
-    return r.publishOnce(eventKey,payload).then(function(result){return result&&result.event?clone(result.event):null;});
+    return r.publishOnce(eventKey,payload).then(function(result){
+      var event=result&&result.event?clone(result.event):null;
+      dispatchPushIfCreated(result,event);
+      return event;
+    });
   }
 
-  // Compatibility entry points remain, but random/unkeyed notification creation
-  // is deliberately forbidden. Old callers must supply input.eventKey or migrate
-  // to the explicit *Once APIs below.
   function publish(input){input=input||{};return publishOnce(input.eventKey,input);}
   function publishSelf(type,payload){payload=Object.assign({},payload||{},{type:type,audience:audienceSelf()});return publish(payload);}
   function publishHousehold(type,payload){payload=Object.assign({},payload||{},{type:type,audience:audienceHousehold()});return publish(payload);}
@@ -163,33 +170,7 @@
   function stop(){if(repositoryUnsubscribe){try{repositoryUnsubscribe();}catch(e){}repositoryUnsubscribe=null;}activeIdentity=null;readySnapshotSeen=false;subscriptionStartedAt=0;records={};emit({source:'stopped',ready:false});}
   function status(){var c=context(),r=repo(),rs=r&&r.status?r.status():{};return{version:VERSION,uid:c&&c.uid||null,householdId:c&&c.householdId||null,count:Object.keys(records).length,visible:sortedVisible().length,unread:unreadCount(),subscribed:!!repositoryUnsubscribe,repositoryReady:!!rs.ready,repositoryVersion:rs.version||null};}
 
-  window.NotificationStore={
-    version:VERSION,
-    types:TYPES,
-    status:status,
-    ensureSubscription:ensureSubscription,
-    stop:stop,
-    registerType:registerType,
-    publish:publish,
-    publishOnce:publishOnce,
-    publishSelf:publishSelf,
-    publishHousehold:publishHousehold,
-    publishToUids:publishToUids,
-    publishSelfOnce:publishSelfOnce,
-    publishHouseholdOnce:publishHouseholdOnce,
-    publishToUidsOnce:publishToUidsOnce,
-    list:list,
-    unreadCount:unreadCount,
-    markRead:markRead,
-    markAllRead:markAllRead,
-    dismiss:dismiss,
-    clearVisible:clearVisible,
-    subscribe:subscribe,
-    isRead:isRead,
-    audienceSelf:audienceSelf,
-    audienceHousehold:audienceHousehold,
-    audienceUids:audienceUids
-  };
+  window.NotificationStore={version:VERSION,types:TYPES,status:status,ensureSubscription:ensureSubscription,stop:stop,registerType:registerType,publish:publish,publishOnce:publishOnce,publishSelf:publishSelf,publishHousehold:publishHousehold,publishToUids:publishToUids,publishSelfOnce:publishSelfOnce,publishHouseholdOnce:publishHouseholdOnce,publishToUidsOnce:publishToUidsOnce,list:list,unreadCount:unreadCount,markRead:markRead,markAllRead:markAllRead,dismiss:dismiss,clearVisible:clearVisible,subscribe:subscribe,isRead:isRead,audienceSelf:audienceSelf,audienceHousehold:audienceHousehold,audienceUids:audienceUids};
 
   ensureSubscription();
 })();
