@@ -1,19 +1,21 @@
 'use strict';
 // ============================================================
-// PROGRESSION RUNTIME v1.0.0 — STEP 9 canonical compatibility layer
+// PROGRESSION RUNTIME v1.1.0 — STEP 9 canonical compatibility layer
 //
 // Keeps existing UI entry points (`awardXP`, `checkAchievements`) while moving
 // their mutations to ProgressionStore. Domain producers should pass a stable
-// `{key, source, sourceId}` as the third awardXP argument. Calls without a key
-// still work during migration, but receive a clearly marked transient key and
-// are counted as remaining legacy producers.
+// `{key, source, sourceId}` as the third awardXP argument. For legacy async UI
+// paths that cannot yet pass that third argument directly, queueLegacyReward()
+// can attach a short-lived, identity-bound deterministic context.
 // ============================================================
 (function(){
   if(window.ProgressionRuntime)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var fallbackSeq=0;
   var fallbackCount=0;
+  var pendingSeq=0;
+  var pendingLegacy={};
   var checking=Promise.resolve();
   var legacyAward=typeof window.awardXP==='function'?window.awardXP:null;
   var legacyCheck=typeof window.checkAchievements==='function'?window.checkAchievements:null;
@@ -45,6 +47,67 @@
     var key='legacy:'+identityPart()+':'+clean+':'+Date.now().toString(36)+':'+fallbackSeq;
     try{console.warn('[ProgressionRuntime] reward producer without deterministic key:',reason||'XP');}catch(e){}
     return key;
+  }
+  function reasonBucket(reason){
+    return safeText(reason||'xp').trim().toLowerCase().replace(/\s+/g,' ');
+  }
+  function copyRewardOptions(options){
+    options=optionsOf(options);
+    return{
+      key:safeText(options.key||'').trim(),
+      reason:options.reason==null?undefined:safeText(options.reason),
+      source:options.source==null?undefined:safeText(options.source),
+      sourceId:options.sourceId==null?null:safeText(options.sourceId)
+    };
+  }
+  function queueLegacyReward(reason,options,ttlMs){
+    var opts=copyRewardOptions(options);
+    if(!opts.key)throw new Error('PROGRESSION_PENDING_REWARD_KEY_REQUIRED');
+    var bucket=reasonBucket(reason);
+    var token={
+      id:++pendingSeq,
+      bucket:bucket,
+      identity:identityPart(),
+      options:opts,
+      expiresAt:Date.now()+Math.max(250,Math.min(10000,Math.round(safeNum(ttlMs)||2000))),
+      cancelled:false
+    };
+    if(!pendingLegacy[bucket])pendingLegacy[bucket]=[];
+    pendingLegacy[bucket].push(token);
+    return token.id;
+  }
+  function cancelLegacyReward(tokenId){
+    Object.keys(pendingLegacy).some(function(bucket){
+      var row=(pendingLegacy[bucket]||[]).find(function(token){return token.id===tokenId;});
+      if(!row)return false;
+      row.cancelled=true;
+      return true;
+    });
+  }
+  function consumeLegacyReward(reason){
+    var bucket=reasonBucket(reason),queue=pendingLegacy[bucket]||[],identity=identityPart(),now=Date.now();
+    while(queue.length){
+      var token=queue.shift();
+      if(!token||token.cancelled||token.expiresAt<now||token.identity!==identity)continue;
+      return token.options;
+    }
+    return null;
+  }
+  function pendingCount(){
+    var now=Date.now(),identity=identityPart(),count=0;
+    Object.keys(pendingLegacy).forEach(function(bucket){
+      (pendingLegacy[bucket]||[]).forEach(function(token){
+        if(token&&!token.cancelled&&token.expiresAt>=now&&token.identity===identity)count++;
+      });
+    });
+    return count;
+  }
+  function mergePending(options,pending){
+    var out={};
+    pending=pending||{};options=optionsOf(options);
+    Object.keys(pending).forEach(function(k){if(pending[k]!==undefined)out[k]=pending[k];});
+    Object.keys(options).forEach(function(k){if(options[k]!==undefined)out[k]=options[k];});
+    return out;
   }
 
   function uiAward(amount,label,prevXp,newXp){
@@ -126,6 +189,10 @@
     var s=store();
     var delta=Math.max(0,Math.round(safeNum(amount)));
     var opts=optionsOf(options);
+    if(!safeText(opts.key||'').trim()){
+      var pending=consumeLegacyReward(label);
+      if(pending)opts=mergePending(opts,pending);
+    }
     var key=safeText(opts.key||'').trim()||fallbackKey(label);
     var prevXp=currentXp();
 
@@ -162,11 +229,14 @@
     awardXP:awardXP,
     checkAchievements:checkAchievements,
     currentXp:currentXp,
+    queueLegacyReward:queueLegacyReward,
+    cancelLegacyReward:cancelLegacyReward,
     status:function(){
       return{
         installed:window.awardXP===awardXP&&window.checkAchievements===checkAchievements,
         authority:store()?'ProgressionStore':'unavailable',
         fallbackRewardCount:fallbackCount,
+        pendingRewardCount:pendingCount(),
         legacyAwardCaptured:!!legacyAward,
         legacyCheckCaptured:!!legacyCheck
       };
