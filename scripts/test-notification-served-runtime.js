@@ -87,7 +87,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(repository.includes('HouseholdContext.isCurrent'));
   assert.ok(store.includes('publishOnce'));
   assert.ok(store.includes('NOTIFICATION_EVENT_KEY_REQUIRED'));
-  assert.ok(store.includes('PushDeliveryBridge.dispatchCreated'),'canonical creation must hand new events to best-effort push delivery');
+  assert.ok(store.includes('var bridge=window.PushDeliveryBridge')&&store.includes('bridge.dispatchCreated'),'canonical creation must hand new events to best-effort push delivery');
   assert.ok(events.includes('publishToUidsOnce'));
   assert.ok(events.includes('publishHouseholdOnce'));
 
@@ -114,9 +114,9 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushSw.includes("self.addEventListener('notificationclick'"));
   assert.ok(pushConfig.includes('FAMILYAPP_WEB_PUSH_VAPID_KEY'));
   [
-    'FIREBASE_SERVICE_ACCOUNT_JSON',
+    'FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL',
+    'FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY',
     'GOOGLE_APPLICATION_CREDENTIALS',
-    'FIREBASE_PRIVATE_KEY',
     'FCM_SERVER_KEY'
   ].forEach(name=>assert.ok(!pushConfig.includes(name),'public push config endpoint may not reference '+name));
 
@@ -128,7 +128,8 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(!pushBridge.includes('token:')&&!pushBridge.includes('title:String'),'client bridge must not send raw token/title authority');
   assert.ok(pushSend.includes('sendCanonicalNotification'));
   assert.ok(pushSender.includes('sendCanonicalNotification'));
-  assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_ACCOUNT_JSON'),'trusted sender credentials must be server env based');
+  assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL'));
+  assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY'));
 
   console.log('STEP 10 served canonical notification + Web Push sender runtime audit: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
