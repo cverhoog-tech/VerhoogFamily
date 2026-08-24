@@ -1,17 +1,17 @@
 'use strict';
 // ============================================================
-// PUSH REGISTRATION SERVICE v1.0.0 — STEP 10
+// PUSH REGISTRATION SERVICE v1.1.0 — STEP 10
 // Platform-neutral-ish web adapter around FCM registration. Starting the
 // service NEVER requests notification permission. Permission is requested only
 // through requestEnable(), which must be called from a user gesture.
 // ============================================================
 (function(){
   if(window.PushRegistrationService)return;
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var OPTIN_PREFIX='familyapp_push_optin_v1:';
   var started=false,contextUnsubscribe=null,onMessageUnsubscribe=null;
   var activeUid=null,generation=0,config=null,configPromise=null;
-  var state={status:'idle',supported:false,configured:false,permission:'default',enabled:false,reason:null};
+  var state={status:'idle',supported:false,configured:false,vapidConfigured:false,senderConfigured:false,permission:'default',enabled:false,reason:null};
 
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function ctx(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
@@ -32,6 +32,9 @@
   function hasOptin(uid){try{return localStorage.getItem(optinKey(uid))==='1';}catch(e){return false;}}
   function setOptin(uid,value){try{if(value)localStorage.setItem(optinKey(uid),'1');else localStorage.removeItem(optinKey(uid));}catch(e){}}
   function registry(){return window.PushDeviceRegistry||null;}
+  function vapidReady(){return !!(config&&config.vapidConfigured&&config.vapidKey);}
+  function senderReady(){return !!(config&&config.senderConfigured);}
+  function deliveryReady(){return !!(config&&config.configured&&vapidReady()&&senderReady());}
   function emit(reason){
     var c=ctx(),r=registry();
     var next=Object.assign({},state,{
@@ -39,7 +42,9 @@
       uid:c&&c.uid||null,
       householdId:c&&c.householdId||null,
       supported:supported(),
-      configured:!!(config&&config.configured&&config.vapidKey),
+      configured:deliveryReady(),
+      vapidConfigured:vapidReady(),
+      senderConfigured:senderReady(),
       permission:permission(),
       enabled:!!state.enabled,
       standalone:standalone(),
@@ -57,7 +62,7 @@
   function loadConfig(){
     if(config)return Promise.resolve(config);
     if(configPromise)return configPromise;
-    configPromise=(window.fetch?window.fetch('/api/push-config',{cache:'no-store'}):Promise.reject(new Error('PUSH_FETCH_UNAVAILABLE'))).then(function(res){if(!res||!res.ok)throw new Error('PUSH_CONFIG_UNAVAILABLE');return res.json();}).then(function(value){config=value||{};emit('config-loaded');return config;}).catch(function(error){config={configured:false,vapidKey:'',serviceWorkerPath:'/firebase-messaging-sw.js',error:error&&error.message||'PUSH_CONFIG_UNAVAILABLE'};emit('config-error');return config;}).finally(function(){configPromise=null;});
+    configPromise=(window.fetch?window.fetch('/api/push-config',{cache:'no-store'}):Promise.reject(new Error('PUSH_FETCH_UNAVAILABLE'))).then(function(res){if(!res||!res.ok)throw new Error('PUSH_CONFIG_UNAVAILABLE');return res.json();}).then(function(value){config=value||{};emit('config-loaded');return config;}).catch(function(error){config={configured:false,vapidConfigured:false,senderConfigured:false,vapidKey:'',serviceWorkerPath:'/firebase-messaging-sw.js',error:error&&error.message||'PUSH_CONFIG_UNAVAILABLE'};emit('config-error');return config;}).finally(function(){configPromise=null;});
     return configPromise;
   }
 
@@ -108,11 +113,17 @@
     });
   }
 
+  function assertDeliveryConfig(){
+    if(!config||!vapidReady())throw new Error('PUSH_VAPID_NOT_CONFIGURED');
+    if(!senderReady())throw new Error('PUSH_SENDER_NOT_CONFIGURED');
+    if(!deliveryReady())throw new Error('PUSH_DELIVERY_NOT_CONFIGURED');
+  }
+
   function registerTransport(uid,reason){
     var g=++generation;
     if(!valid(ctx())||String(ctx().uid)!==String(uid))return Promise.reject(new Error('PUSH_CONTEXT_NOT_READY'));
     if(!supported())return Promise.reject(new Error('PUSH_NOT_SUPPORTED'));
-    if(!config||!config.configured||!config.vapidKey)return Promise.reject(new Error('PUSH_VAPID_NOT_CONFIGURED'));
+    try{assertDeliveryConfig();}catch(error){return Promise.reject(error);}
     if(permission()!=='granted')return Promise.reject(new Error('PUSH_PERMISSION_NOT_GRANTED'));
     setStatus('registering',{enabled:false,reason:reason||'registering'});
     return serviceWorker().then(function(reg){
@@ -134,7 +145,7 @@
     if(!valid(c))return Promise.reject(new Error('PUSH_CONTEXT_NOT_READY'));
     if(!supported())return Promise.reject(new Error('PUSH_NOT_SUPPORTED'));
     if(iosLike()&&!standalone())return Promise.reject(new Error('PUSH_IOS_HOME_SCREEN_REQUIRED'));
-    if(!config||!config.configured||!config.vapidKey)return Promise.reject(new Error('PUSH_VAPID_NOT_CONFIGURED'));
+    try{assertDeliveryConfig();}catch(error){return Promise.reject(error);}
 
     // Keep the permission request as the first async operation after the user's
     // button tap so iOS/iPadOS can recognize it as a direct user interaction.
@@ -155,7 +166,7 @@
 
   function restoreIfAllowed(uid){
     if(!uid||!hasOptin(uid)||permission()!=='granted')return Promise.resolve(false);
-    if(!config||!config.configured||!config.vapidKey)return Promise.resolve(false);
+    if(!deliveryReady())return Promise.resolve(false);
     return registerTransport(uid,'restore').then(function(){return true;}).catch(function(){return false;});
   }
 
@@ -187,7 +198,7 @@
     if(onMessageUnsubscribe){try{onMessageUnsubscribe();}catch(e){}onMessageUnsubscribe=null;}
     started=false;activeUid=null;state.enabled=false;return emit('stopped');
   }
-  function status(){return clone(Object.assign({},state,{version:VERSION,uid:activeUid,configured:!!(config&&config.configured&&config.vapidKey),supported:supported(),permission:permission(),standalone:standalone(),iosLike:iosLike()}));}
+  function status(){return clone(Object.assign({},state,{version:VERSION,uid:activeUid,configured:deliveryReady(),vapidConfigured:vapidReady(),senderConfigured:senderReady(),supported:supported(),permission:permission(),standalone:standalone(),iosLike:iosLike()}));}
 
   var api={version:VERSION,start:start,stop:stop,status:status,requestEnable:requestEnable,disable:disable,loadConfig:loadConfig,isSupported:supported,isStandalone:standalone,isIOSLike:iosLike};
   window.PushRegistrationService=api;
