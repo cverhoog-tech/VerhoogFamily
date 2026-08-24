@@ -17,6 +17,7 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   const publishCalls=[];
   const readCalls=[];
   const dismissCalls=[];
+  const pushDispatches=[];
 
   const HouseholdContext={snapshot(){return clone(current);}};
   const NotificationHouseholdRepository={
@@ -48,6 +49,7 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   const window={
     HouseholdContext,
     NotificationHouseholdRepository,
+    PushDeliveryBridge:{dispatchCreated(event){pushDispatches.push(clone(event));return Promise.resolve({sent:true});}},
     TaskSharedData:{members(){return members;}},
     myName:'Alice',
     dispatchEvent(event){if(event.type==='familyapp:notification-received')received.push(event.detail.event);},
@@ -63,7 +65,7 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
 
   const store=window.NotificationStore,events=window.NotificationEvents;
   assert.ok(store&&events);
-  assert.strictEqual(store.version,'2.0.0');
+  assert.strictEqual(store.version,'2.1.0');
   assert.strictEqual(events.version,'2.0.0');
 
   // Unkeyed/random notification creation is deliberately no longer accepted.
@@ -72,11 +74,13 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   const helpTask={id:'task42',title:'Badkamer',helpRequestedAt:111,updatedAt:111};
   const help1=await events.taskHelpRequested(helpTask,'userB');
   const help2=await events.taskHelpRequested(helpTask,'userB');
+  await tick();
   const helpKey='task.help.requested:task42:111:userB';
   assert.strictEqual(help1.eventKey,helpKey);
   assert.strictEqual(help2.id,help1.id,'same transition must resolve to same canonical event');
   assert.strictEqual(Object.keys(records).filter(id=>records[id].eventKey===helpKey).length,1,'same help transition may exist only once');
   assert.strictEqual(publishCalls.filter(x=>x.key===helpKey).length,2,'duplicate callers may race but repository receives same idempotency key');
+  assert.strictEqual(pushDispatches.filter(x=>x.eventKey===helpKey).length,1,'push handoff must run only for the newly created canonical event');
   assert.strictEqual(store.list().length,0,'actor A must not see B-only help request');
 
   // Switch to recipient B. Store visibility/read state is per current UID while
@@ -122,5 +126,5 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   assert.strictEqual(finance.eventKey,'finance.savings.updated:goal1:tx55');
 
   assert.ok(publishCalls.every(x=>x.key&&String(x.key).indexOf('unknown')<0),'tested typed producers must publish deterministic keys');
-  console.log('STEP 10 canonical NotificationStore + deterministic events contract: PASS');
+  console.log('STEP 10 canonical NotificationStore v2.1 + deterministic events/push handoff contract: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
