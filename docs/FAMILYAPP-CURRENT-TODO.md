@@ -9,9 +9,9 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 9 — Progression / XP / Achievements: code/contract gate complete; final real-iPhone gate open.**
+**STEP 10 — Notifications: opened after accepted STEP 9 device gate; read-only audit is the next action.**
 
-STEP 8 Finance is accepted/frozen. STEP 9 now has one canonical UID + household progression authority, deterministic/idempotent served reward producers and a served-runtime audit. The next action is the real iPhone Safari/PWA smoke test. Do not start STEP 10 until that gate is accepted and STEP 9 is explicitly frozen.
+STEP 8 Finance and STEP 9 Progression / XP / Achievements are accepted/frozen. Do not start notification implementation by guessing at the current state. First audit the actually served notification runtime, current `addNotif`/producer paths, read/dismiss behavior, household/UID scoping, listener ownership and existing push/FCM code. Notification state and push delivery must remain separate architectural concerns.
 
 ## STEP 8 — Finance
 
@@ -43,9 +43,9 @@ STEP 8 Finance is accepted/frozen. STEP 9 now has one canonical UID + household 
 
 ## STEP 9 — Progression / XP / Achievements
 
-**Status: CURRENT PHASE — implementation and automated verification complete; device acceptance pending.**
+**Status: ACCEPTED / FROZEN on 2026-08-24.**
 
-### Audit / canonical authority
+### Accepted authority / implementation
 - [x] Audit currently served progression, XP and achievement files/write paths.
 - [x] Detailed authority audit stored in `docs/step9-progression-audit.md`.
 - [x] Canonical path defined at `families/{householdId}/members/{uid}/progression`.
@@ -59,7 +59,7 @@ STEP 8 Finance is accepted/frozen. STEP 9 now has one canonical UID + household 
 - [x] `ProgressionUidBridge v3.0.0` and `AchievementUidBridge v2.0.0` are compatibility-only; neither remains a Firebase progression authority.
 - [x] Existing achievement UI consumes canonical projections without a redesign.
 
-### Deterministic/idempotent served reward producers
+### Accepted deterministic/idempotent served rewards
 - [x] One-off task completion: `task:{taskId}` across both legacy toggle and shared UID popup/update path.
 - [x] Recurring task completion: task + week/month occurrence key.
 - [x] Recurring task day completion: task + week + day occurrence key; old direct `myXP += 2` is neutralized/rerouted canonically.
@@ -76,34 +76,51 @@ STEP 8 Finance is accepted/frozen. STEP 9 now has one canonical UID + household 
 - [x] Weekly quest bonus/claim rewards: week + quest ID keys.
 - [x] Ability XP paths: deterministic copycat/auto-done/triple-use keys; old Triple-XP direct `myXP += 4` is neutralized/rerouted canonically.
 - [x] Finance XP side rewards use FinanceStore record/goal/update IDs without changing accepted STEP 8 Finance calculations/UI/data behavior.
-- [x] Legacy trade/duo/group/shop alternative XP paths are explicitly classified by the served-runtime audit: currently unreachable/unserved and reserved for STEP 16 cleanup rather than silently treated as live producers.
+- [x] Legacy trade/duo/group/shop alternative XP paths are explicitly classified by the served-runtime audit as currently unreachable/unserved and reserved for STEP 16 cleanup.
 
-### Automated verification
-- [x] `scripts/test-progression-store.js` — migration isolation, logout clear, stale callback rejection, A→B reconnect, cross-household writes, duplicate reward and duplicate achievement protection.
-- [x] `scripts/test-progression-runtime.js` — canonical runtime cutover, bridge retirement, achievement evaluation, identity-safe pending reward context and task replay protection.
-- [x] `scripts/test-progression-producer-keys.js` — daily/Party Quest deterministic keys and Party Quest failed-write recovery.
-- [x] `scripts/test-recurring-progression-rewards.js` — recurring week/month/day keys and direct legacy XP neutralization.
-- [x] `scripts/test-progression-entity-producers.js` — Feed, note, manual/imported recipe and task-template reward contexts.
-- [x] `scripts/test-skills-progression-bridge.js` — skill, weekly quest, claim and ability reward paths.
-- [x] `scripts/test-finance-progression-bridge.js` — deterministic Finance side rewards including both extra-income entry labels.
-- [x] `scripts/test-progression-served-runtime-audit.js` — builds the actual `/api/app` served load graph, discovers served `awardXP`/direct-XP paths and fails on unexpected producers or resurrected legacy trade/duo paths.
-- [x] First served-runtime audit correctly found two previously missed live producers (`recipeServerlessLinkImport.js`, `taskUidCreateBridge.js`); both were fixed rather than merely allowlisted.
+### Accepted verification / device gate
+- [x] `scripts/test-progression-store.js`.
+- [x] `scripts/test-progression-runtime.js`.
+- [x] `scripts/test-progression-producer-keys.js`.
+- [x] `scripts/test-recurring-progression-rewards.js`.
+- [x] `scripts/test-progression-entity-producers.js`.
+- [x] `scripts/test-skills-progression-bridge.js`.
+- [x] `scripts/test-finance-progression-bridge.js`.
+- [x] `scripts/test-progression-served-runtime-audit.js`.
 - [x] Final complete Household Rebuild Contracts PASS on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
-- [x] Vercel deployment `dpl_AvwGkzdhsFbHUgFk3zKaMpNXWWF` reached READY for the same code commit.
-- [x] Served runtime wiring is contract-verified against the actual `api/app.js` output, including cache-busted STEP 9 runtime/adapters and the final task/import fixes.
+- [x] Vercel deployment `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` READY for the same code commit.
+- [x] Served HTML/runtime wiring verified with the current cache-busted STEP 9 assets/adapters.
+- [x] Real iPhone Safari/PWA smoke accepted by the product owner on 2026-08-24: app/session/Home XP normal, normal-task reward path works, duplicate completion cannot farm the same task reward, Achievements renders, multi-module navigation/reload/background→foreground remains stable with no freeze/white screen/crash.
+- [x] STEP 9 accepted/frozen.
 
-### Final STEP 9 gate
-- [ ] Real iPhone Safari/PWA smoke: app/session opens normally and Home XP is visible/stable.
-- [ ] Complete one normal task and confirm XP increases once.
-- [ ] Reopen/uncheck/re-complete that same task where the UI allows it and confirm the same task cannot grant XP again.
-- [ ] Open Achievements and confirm level/XP/unlocked state renders normally.
-- [ ] Navigate across a few modules, reload, background → foreground, reload again; no freeze/white screen/WebKit crash.
-- [ ] Product owner accepts the STEP 9 device gate.
-- [ ] Mark STEP 9 accepted/frozen; only then open STEP 10 Notifications.
+## STEP 10 — Notifications
+
+**Status: CURRENT PHASE — audit not yet completed.**
+
+### Required first action: read-only notification audit
+- [ ] Inventory the actually served notification modules and bootstrap/runtime wiring.
+- [ ] Find all current `addNotif`/notification creation producers and classify their source domain/event.
+- [ ] Identify current notification data authority: globals/localStorage/Firebase/member/household paths.
+- [ ] Map read, unread, dismiss/delete and `Alles gelezen` behavior.
+- [ ] Map current household/UID scoping and identify any display-name/global-state leakage risk.
+- [ ] Identify listener/subscription owners and cleanup behavior across logout/account/household switch.
+- [ ] Inventory existing browser push / FCM registration, token storage, service-worker hooks and delivery code separately from in-app notification state.
+- [ ] Persist the audit in a dedicated STEP 10 architecture/audit document before mutation work starts.
+
+### Target architecture from the rebuild roadmap
+- [ ] One canonical household notification store.
+- [ ] Per-UID read/dismiss state.
+- [ ] Domain-event projection rather than ad-hoc UI-only notification mutation.
+- [ ] Exactly one household notification listener with explicit cleanup/unsubscribe.
+- [ ] Household/account switch clears stale notification projection and stale callbacks cannot repopulate prior household data.
+- [ ] Push delivery remains separate from canonical notification state.
+- [ ] Notification domain/repository contract remains platform-neutral so later APNs/FCM/native notification actions can attach without rewriting notification state.
+- [ ] Add notification isolation/lifecycle/idempotency contract tests before device gate.
+- [ ] Fresh Vercel branch preview + real iPhone Safari/PWA gate before STEP 11.
+- [ ] Freeze STEP 10 only after product acceptance.
 
 ## Later roadmap phases
 
-- [ ] STEP 10 — Notifications.
 - [ ] STEP 11 — Party quests.
 - [ ] STEP 12 — Profile / presence / avatars.
 - [ ] STEP 13 — Activity / feed.
@@ -121,10 +138,10 @@ STEP 8 Finance is accepted/frozen. STEP 9 now has one canonical UID + household 
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless a new product decision changes that.
 - Current accepted icon scope and Brand/PWA identity remain frozen unless a concrete regression/redesign is requested.
-- STEP 8 Finance is frozen; STEP 9 may only touch Finance through narrowly scoped progression adapters that preserve accepted Finance behavior.
+- STEP 8 Finance and STEP 9 Progression are frozen; STEP 10 must not casually refactor them.
 - Platform admin remains separate from household admin and must not imply unrestricted raw household-content access.
-- STEP 9 progression identity is UID-based, not display-name based.
-- Every served XP/reward mutation must have a deterministic idempotency boundary.
-- Browser globals/localStorage are compatibility projections only; they are never cross-identity migration authority.
-- `ProgressionRuntime.status().fallbackRewardCount` is a diagnostic fallback only, not an accepted producer design; tested served reward paths are now explicitly keyed.
+- Notifications must be household-scoped where shared and UID-scoped where user-specific.
+- Notification state and push delivery are separate layers; a delivery failure must not redefine canonical notification state.
+- Realtime notification subscriptions require explicit teardown and stale-context protection.
+- New notification architecture must remain callable from a future native shell and must not depend on web-only notification APIs for domain correctness.
 - Every meaningful development update must append to `docs/FAMILYAPP-UPDATE-LOG.md` and update this TODO in the same work session.
