@@ -1,7 +1,7 @@
 'use strict';
 (function(){
-  if(window.__partyQuestCompletionRewardV2)return;
-  window.__partyQuestCompletionRewardV2=true;
+  if(window.__partyQuestCompletionRewardV3)return;
+  window.__partyQuestCompletionRewardV3=true;
 
   var pendingEnd={},rewarding={};
 
@@ -15,18 +15,38 @@
     var me=uid(),d=db();if(!me||!d||rewarding[q.id])return Promise.resolve(false);rewarding[q.id]=true;
     var xp=rewardXp(t),claim=d.ref('families/'+hid()+'/partyQuests/'+q.id+'/rewardsClaimed/'+me);
     return claim.transaction(function(current){if(current)return;return{xp:xp,claimedAt:firebase.database.ServerValue.TIMESTAMP};}).then(function(result){
-      if(result&&result.committed){
-        try{if(typeof window.awardXP==='function')window.awardXP(xp,'Party Quest voltooid');}catch(e){}
-        try{if(typeof window.addActivity==='function')window.addActivity('🏆','#efe9fb','Party Quest voltooid: “'+(q.questTitle||'Quest')+'”');}catch(e){}
-        try{if(typeof window.showToast==='function')window.showToast('Party Quest voltooid! +'+xp+' XP');}catch(e){}
+      var hasClaim=!!(result&&result.snapshot&&typeof result.snapshot.val==='function'&&result.snapshot.val());
+      if(!hasClaim){rewarding[q.id]=false;return false;}
+      var rewardResult;
+      try{
+        rewardResult=typeof window.awardXP==='function'?window.awardXP(xp,'Party Quest voltooid',{
+          key:'partyQuest:'+String(q.id),
+          source:'party-quest',
+          sourceId:String(q.id)
+        }):null;
+      }catch(error){
+        console.error('[PartyQuestCompletionReward] XP reward failed',error);
+        rewarding[q.id]=false;
+        return false;
       }
-      rewarding[q.id]=false;return !!(result&&result.committed);
-    }).catch(function(){rewarding[q.id]=false;return false;});
+      return Promise.resolve(rewardResult).then(function(xpResult){
+        var failed=!!(xpResult&&xpResult.error);
+        if(!failed&&result&&result.committed&&(!xpResult||xpResult.awarded!==false)){
+          try{if(typeof window.addActivity==='function')window.addActivity('🏆','#efe9fb','Party Quest voltooid: “'+(q.questTitle||'Quest')+'”');}catch(e){}
+          try{if(typeof window.showToast==='function')window.showToast('Party Quest voltooid! +'+xp+' XP');}catch(e){}
+        }
+        rewarding[q.id]=false;
+        // Existing claim + duplicate canonical reward is still a successful,
+        // already-settled completion. A canonical write error is not.
+        return !failed;
+      });
+    }).catch(function(error){console.error('[PartyQuestCompletionReward] claim failed',error);rewarding[q.id]=false;return false;});
   }
   function finish(q,t){
     if(!q||pendingEnd[q.id])return;
     pendingEnd[q.id]=true;
-    reward(q,t).finally(function(){
+    reward(q,t).then(function(ok){
+      if(!ok){delete pendingEnd[q.id];return;}
       setTimeout(function(){
         try{
           if(window.PartyQuestActiveView&&typeof PartyQuestActiveView.endQuest==='function'){
@@ -34,11 +54,11 @@
           }else delete pendingEnd[q.id];
         }catch(e){delete pendingEnd[q.id];}
       },250);
-    });
+    }).catch(function(){delete pendingEnd[q.id];});
   }
   function scan(){active().forEach(function(q){var t=taskById(q.questId);if(t&&t.done)finish(q,t);});}
   window.addEventListener('familyapp:tasks-updated',function(){setTimeout(scan,0);});
   window.addEventListener('familyapp:progression-updated',function(){setTimeout(scan,0);});
   setTimeout(scan,600);
-  window.PartyQuestCompletionReward={scan:scan,rewardXp:function(task){return rewardXp(task);}};
+  window.PartyQuestCompletionReward={version:'3.0.0',scan:scan,rewardXp:function(task){return rewardXp(task);}};
 })();
