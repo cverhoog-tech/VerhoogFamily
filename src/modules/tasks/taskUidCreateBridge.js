@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// TASK UID CREATE BRIDGE v1.2
+// TASK UID CREATE BRIDGE v1.3
 // UID assignment + shared create. Recurring tasks remain legacy.
 // ============================================================
 (function(){
@@ -27,6 +27,6 @@
 (function(){
   if(window.__taskSharedUpdateContractV1)return;window.__taskSharedUpdateContractV1=true;
   function rewardFor(task){var raw=task&&(task.xpAmount||task.xpReward||task.xp)||20,m=String(raw).match(/(\d+)/);return m?parseInt(m[1],10):20;}
-  function install(){var api=window.TaskSharedData;if(!api||typeof api.update!=='function')return false;if(api.update.__returnsSavedTask)return true;var raw=api.update;api.update=function(id,patch){var before=(window.taskData||[]).find(function(t){return String(t.id)===String(id);}),wasDone=before?!!before.done:false;return raw.apply(api,arguments).then(function(result){var saved=result&&result.value&&typeof result.value==='object'?result.value:result,isDone=saved&&typeof saved==='object'?!!saved.done:!!(patch&&patch.done);if(!wasDone&&isDone){try{if(window.awardXP)awardXP(rewardFor(saved||before),'Taak');}catch(e){}try{if(window.addActivity)addActivity('✅','#e8f5e3',(window.myName||'Gezinslid')+' voltooide "'+((saved&&saved.title)||(before&&before.title)||'Taak')+'"');}catch(e){}}return saved;});};api.update.__returnsSavedTask=true;return true;}
+  function install(){var api=window.TaskSharedData;if(!api||typeof api.update!=='function')return false;if(api.update.__returnsSavedTask)return true;var raw=api.update;api.update=function(id,patch){var before=(window.taskData||[]).find(function(t){return String(t.id)===String(id);}),wasDone=before?!!before.done:false;return raw.apply(api,arguments).then(function(result){var saved=result&&result.value&&typeof result.value==='object'?result.value:result,isDone=saved&&typeof saved==='object'?!!saved.done:!!(patch&&patch.done);if(!wasDone&&isDone){var rewardTask=saved||before,taskId=rewardTask&&rewardTask.id!=null?rewardTask.id:id;try{if(window.awardXP)awardXP(rewardFor(rewardTask),'Taak',{key:'task:'+String(taskId),source:'task',sourceId:String(taskId)});}catch(e){}try{if(window.addActivity)addActivity('✅','#e8f5e3',(window.myName||'Gezinslid')+' voltooide "'+((saved&&saved.title)||(before&&before.title)||'Taak')+'"');}catch(e){}}return saved;});};api.update.__returnsSavedTask=true;return true;}
   if(!install()){var tries=0,timer=setInterval(function(){tries++;if(install()||tries>80)clearInterval(timer);},50);}
 })();
