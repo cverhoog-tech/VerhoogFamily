@@ -29,9 +29,9 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
     'src/core/notificationCenter.js?v=2',
     'src/core/notificationDelivery.js?v=2',
     'src/core/pushDeviceRegistry.js?v=1',
-    'src/core/pushRegistrationService.js?v=1',
+    'src/core/pushRegistrationService.js?v=2',
     'src/core/pushDeliveryBridge.js?v=1',
-    'src/core/pushNotificationSettings.js?v=1',
+    'src/core/pushNotificationSettings.js?v=2',
     'src/modules/tasks/taskNotificationProjector.js?v=2',
     'src/modules/tasks/taskSwapNotificationProjector.js?v=2',
     'src/modules/tasks/partyQuestNotificationProjector.js?v=2',
@@ -70,15 +70,13 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(center.includes("VERSION='2.0.0'"));
   assert.ok(delivery.includes("VERSION='2.0.0'"));
   assert.ok(pushRegistry.includes("VERSION='1.0.0'"));
-  assert.ok(pushService.includes("VERSION='1.0.0'"));
+  assert.ok(pushService.includes("VERSION='1.1.0'"));
   assert.ok(pushBridge.includes("VERSION='1.0.0'"));
-  assert.ok(pushSettings.includes("VERSION='1.0.0'"));
+  assert.ok(pushSettings.includes("VERSION='1.1.0'"));
   assert.ok(taskProjector.includes("VERSION='2.0.0'"));
   assert.ok(swapProjector.includes("VERSION='2.0.0'"));
   assert.ok(partyProjector.includes("VERSION='2.0.0'"));
 
-  // Canonical notification/push client modules may not silently restore older
-  // household/auth identity owners after activation.
   [repository,store,events,actions,center,delivery,pushRegistry,pushService,pushBridge,taskProjector,swapProjector,partyProjector].forEach((source,i)=>{
     assert.ok(!/window\.fbUser/.test(source),'served STEP 10 module '+i+' must not use legacy fbUser identity');
     assert.ok(!/\bfbFamilyId\b/.test(source),'served STEP 10 module '+i+' must not use legacy fbFamilyId identity');
@@ -91,37 +89,36 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(events.includes('publishToUidsOnce'));
   assert.ok(events.includes('publishHouseholdOnce'));
 
-  // Notification UI must be active instead of the old permanent loading state.
   assert.ok(indexOfScript(list,'src/core/notificationCenter.js')>indexOfScript(list,'src/modules/finance/finance.js'),'NotificationCenter must load after legacy finance renderer so it owns renderNotifs');
 
-  // Push registry is private per UID/device, never household-shared.
   assert.ok(pushRegistry.includes("'users/'+uid+'/private/pushDevices/'"),'push tokens must live in the user-private registry');
   assert.ok(!/families\/.*fcmTokens/.test(pushRegistry),'new push registry must not restore household-shared token storage');
 
-  // The legacy session controller still calls setupPushNotifications(), but the
-  // later push service deliberately replaces that global with start() only.
-  // Permission is requested exclusively through requestEnable() after a user tap.
+  // Startup remains prompt-free and readiness is checked before the only
+  // Notification.requestPermission call.
   assert.ok(pushService.includes('window.setupPushNotifications=function(){return api.start();};'),'legacy startup push entrypoint must be neutralized');
   assert.strictEqual((pushService.match(/Notification\.requestPermission\(\)/g)||[]).length,1,'only explicit requestEnable flow may request permission');
-  assert.ok(pushService.indexOf('function requestEnable()')<pushService.indexOf('Notification.requestPermission()'),'permission request must live in requestEnable');
+  assert.ok(pushService.indexOf('assertDeliveryConfig();')<pushService.indexOf('Notification.requestPermission()'),'delivery readiness must be checked before permission');
+  assert.ok(pushService.includes('PUSH_SENDER_NOT_CONFIGURED'));
+  assert.ok(pushSettings.includes('st.senderConfigured===false'));
+  assert.ok(pushSettings.includes('st.vapidConfigured===false'));
   assert.ok(pushSettings.includes('svc.requestEnable()'),'notification settings button must own explicit push opt-in');
 
-  // Web Push delivery files are present. Public VAPID configuration may be
-  // returned to the client, but concrete server-side credential env names must
-  // never appear in the public endpoint contract.
+  // Web Push delivery files are present. The public readiness endpoint may read
+  // protected env vars server-side, but returns only readiness booleans plus the
+  // intentionally public VAPID key. The executable handler contract is covered
+  // separately by test-push-config-readiness.js.
   assert.ok(pushSw.includes('firebase-messaging-compat.js'));
   assert.ok(pushSw.includes('onBackgroundMessage'));
   assert.ok(pushSw.includes("self.addEventListener('notificationclick'"));
   assert.ok(pushConfig.includes('FAMILYAPP_WEB_PUSH_VAPID_KEY'));
-  [
-    'FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL',
-    'FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY',
-    'GOOGLE_APPLICATION_CREDENTIALS',
-    'FCM_SERVER_KEY'
-  ].forEach(name=>assert.ok(!pushConfig.includes(name),'public push config endpoint may not reference '+name));
+  assert.ok(pushConfig.includes('vapidConfigured:vapidConfigured'));
+  assert.ok(pushConfig.includes('senderConfigured:senderConfigured'));
+  assert.ok(!pushConfig.includes('senderEmail:senderEmail'),'public response may not expose sender email');
+  assert.ok(!pushConfig.includes('senderPrivateKey:senderPrivateKey'),'public response may not expose private key');
 
-  // Trusted sender boundary accepts only canonical notification identity from
-  // the client; it resolves recipients/tokens server-side.
+  // Trusted sender accepts only canonical notification identity from the client
+  // and resolves recipients/tokens server-side.
   assert.ok(pushBridge.includes("window.fetch('/api/push-send'"));
   assert.ok(pushBridge.includes('householdId:String(c.householdId)'));
   assert.ok(pushBridge.includes('notificationId:String(event.id)'));
@@ -131,5 +128,5 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL'));
   assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY'));
 
-  console.log('STEP 10 served canonical notification + Web Push sender runtime audit: PASS');
+  console.log('STEP 10 served notification + readiness-aware Web Push sender audit: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
