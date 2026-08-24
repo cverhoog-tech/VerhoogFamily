@@ -27,9 +27,9 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 6 — Agenda.
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
-- [-] STEP 9 — Progression / XP / Achievements — current phase, audit first.
+- [-] STEP 9 — Progression / XP / Achievements — canonical foundation active; deterministic producer migration in progress.
 
-**Current phase: STEP 9 Progression / XP / Achievements. Begin with a read-only audit of the currently served XP/progression/achievement authorities and write paths before changing behavior.**
+**Current phase: STEP 9 Progression / XP / Achievements. Canonical store/runtime are active on the rebuild branch. Continue migrating every served XP producer to deterministic event keys before final preview/iPhone acceptance.**
 
 ## Prototype end-goal gate
 
@@ -65,27 +65,53 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 9 — Progression / XP / Achievements
 
-**Current phase — opened 2026-08-24.**
+**Current phase — canonical foundation implemented; reward-producer migration continues.**
 
-### Audit first
-- [ ] Inventory currently served progression/XP/achievement files and bootstrap wiring.
-- [ ] Inventory every current XP/reward mutation call site and source event.
-- [ ] Map Firebase, local cache and legacy paths that currently act as progression authority or compatibility data.
-- [ ] Map current achievement projection/render dependencies.
-- [ ] Identify duplicate reward/race risks and any display-name based identity use.
+### Audit
+- [x] Inventory currently served progression/XP/achievement files and bootstrap wiring.
+- [x] Inventory current XP/reward mutation call sites and source events.
+- [x] Map Firebase, local cache and legacy paths acting as progression authority/compatibility data.
+- [x] Map achievement projection/render dependencies.
+- [x] Identify duplicate reward/race risks and display-name/unscoped-cache identity risks.
+- [x] Detailed audit stored in `docs/step9-progression-audit.md`.
 
-### Target implementation
-- [ ] Canonical UID progression store/repository.
-- [ ] Idempotent reward mutations so one logical event cannot grant XP twice.
-- [ ] Achievement projection from canonical progression state.
-- [ ] Legacy XP authority retired/read-only where compatibility requires it.
-- [ ] Household/account switch lifecycle protection and stale callback rejection.
-- [ ] Cross-household/isolation tests.
-- [ ] Duplicate-reward/idempotency tests.
-- [ ] Existing valid progression preserved safely during migration.
-- [ ] Household Rebuild Contracts pass.
-- [ ] Vercel READY preview.
-- [ ] Real iPhone Safari/PWA gate accepted.
+### Canonical foundation
+- [x] Canonical UID + household progression path: `families/{householdId}/members/{uid}/progression`.
+- [x] `ProgressionStore v1.0.0` with exact bind/unbind, stale-context rejection and compatibility projection clearing.
+- [x] Same-member Firebase legacy XP/achievement migration only; unscoped localStorage is not migration authority.
+- [x] Atomic deterministic reward ledger via `awardOnce`.
+- [x] Atomic achievement unlock + badge XP transaction.
+- [x] `ProgressionRuntime v1.0.0` owns served `awardXP`/`checkAchievements` mutation behavior.
+- [x] Legacy `ProgressionUidBridge` and `AchievementUidBridge` retired as mutation/data authorities; compatibility-only adapters remain.
+- [x] Achievement UI can consume canonical projection without redesign.
+- [x] Logout/login/account/household switch protection and stale callback rejection covered by contracts.
+- [x] Cross-household/isolation contract coverage.
+- [x] Duplicate-reward/idempotency contract coverage.
+- [x] Existing active-member Firebase progression preserved during migration.
+
+### Deterministic producer migration
+- [x] One-off tasks: `task:{taskId}`.
+- [x] Achievement rewards: `achievement:{badgeId}`.
+- [x] Daily bonus: `daily:{YYYY-MM-DD}`.
+- [x] Party Quest completion: `partyQuest:{questId}` with failed-write retry behavior.
+- [ ] Recurring task occurrences.
+- [ ] Feed post / reaction rewards.
+- [ ] Recipe creation rewards.
+- [ ] Note creation rewards.
+- [ ] Skills / weekly quests / abilities.
+- [ ] Finance XP side rewards, preserving frozen Finance product behavior.
+- [ ] Legacy trade/duo/group paths that remain served.
+- [ ] No fallback reward calls during final served-runtime smoke path.
+
+### Verification
+- [x] `scripts/test-progression-store.js`.
+- [x] `scripts/test-progression-runtime.js`.
+- [x] `scripts/test-progression-producer-keys.js`.
+- [x] Full Household Rebuild Contracts green at code checkpoint `b81b936c8b7185b461268a663098f85339e4d2bd`.
+- [x] Vercel branch deployment for that code checkpoint READY.
+- [ ] Final complete contract run after all producer migrations.
+- [ ] Fresh final Vercel READY preview with served asset/version verification.
+- [ ] Real iPhone Safari/PWA STEP 9 gate accepted.
 - [ ] STEP 9 frozen only after product acceptance.
 
 ## Later roadmap phases
@@ -112,6 +138,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - STEP 8 Finance is frozen; STEP 9 work must not casually refactor it.
 - STEP 9 progression identity is UID-based.
 - STEP 9 reward mutations must be idempotent and event-keyed.
+- Browser XP/achievement globals/localStorage are compatibility projections only, never cross-identity migration authority.
 - Every meaningful development update must update both `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/FAMILYAPP-UPDATE-LOG.md`.
 
 ## Milestone summary
@@ -125,6 +152,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-23 — Final premium two-page Finance PDF implemented and automated export contract passed.
 - 2026-08-24 — Fresh Vercel preview verified with `FinanceAnalysisExport v2.0.0`.
 - 2026-08-24 — Final premium PDF iPhone test accepted; STEP 8 closed/frozen and STEP 9 opened.
+- 2026-08-24 — STEP 9 audit completed; canonical UID progression store/runtime activated with first deterministic task/daily/achievement/Party Quest reward paths and green contracts.
 
 ## Maintenance rule
 
