@@ -1,16 +1,15 @@
 'use strict';
 // ============================================================
-// PROGRESSION PRODUCER BRIDGE v1.0.0 — STEP 9
+// PROGRESSION PRODUCER BRIDGE v1.1.0 — STEP 9
 //
-// Adds deterministic reward context to a few legacy UI producers without
-// changing their accepted UI/business flow. Contexts are queued only after the
-// producer has a real stable entity id and are identity-bound by
-// ProgressionRuntime.
+// Adds deterministic reward context to legacy UI producers without changing
+// their accepted UI/business flow. Contexts use real stable entity/batch ids
+// and are identity-bound by ProgressionRuntime.
 // ============================================================
 (function(){
   if(window.ProgressionProducerBridge)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function runtime(){return window.ProgressionRuntime||null;}
   function queue(reason,options){
@@ -39,8 +38,6 @@
         });
       }
       try{return raw.apply(this,arguments);}finally{
-        // The legacy awardXP call is synchronous inside saveNote(), so a token
-        // still present after the call means it was not consumed.
         if(token!=null)cancel(token);
       }
     };
@@ -126,11 +123,35 @@
     return true;
   }
 
+  function wrapTaskTemplates(){
+    if(typeof window.activateTemplate!=='function')return false;
+    if(window.activateTemplate.__progressionProducerBridge)return true;
+    var raw=window.activateTemplate;
+    var wrapped=function(id){
+      var tmpl=(window.taskTemplates||[]).find(function(t){return t&&String(t.id)===String(id);});
+      var firstTaskId=window.taskNextId;
+      var token=null;
+      if(tmpl&&firstTaskId!=null){
+        token=queue('Template',{
+          key:'taskTemplate:'+String(id)+':activation:'+String(firstTaskId),
+          source:'task-template',
+          sourceId:String(id)
+        });
+      }
+      try{return raw.apply(this,arguments);}finally{if(token!=null)cancel(token);}
+    };
+    wrapped.__progressionProducerBridge=true;
+    wrapped.__wrappedActivateTemplate=raw;
+    window.activateTemplate=wrapped;
+    return true;
+  }
+
   function install(){
     return{
       notes:wrapNotes(),
       feed:wrapFeed(),
-      recipes:wrapRecipes()
+      recipes:wrapRecipes(),
+      taskTemplates:wrapTaskTemplates()
     };
   }
 
@@ -143,7 +164,8 @@
         notes:!!(window.saveNote&&window.saveNote.__progressionProducerBridge),
         feedPost:!!(feed&&feed.createPost&&feed.createPost.__progressionProducerBridge),
         feedLike:!!(feed&&feed.toggleReaction&&feed.toggleReaction.__progressionProducerBridge),
-        recipe:!!(recipes&&recipes.create&&recipes.create.__progressionProducerBridge)
+        recipe:!!(recipes&&recipes.create&&recipes.create.__progressionProducerBridge),
+        taskTemplates:!!(window.activateTemplate&&window.activateTemplate.__progressionProducerBridge)
       };
     }
   };
@@ -151,6 +173,7 @@
   window.addEventListener('familyapp:progression-updated',install);
   window.addEventListener('familyapp:feed-updated',install);
   window.addEventListener('familyapp:recipes-synced',install);
+  window.addEventListener('familyapp:tasks-updated',install);
   window.addEventListener('load',install,{once:true});
   if(document.readyState==='complete')install();else Promise.resolve().then(install);
 })();
