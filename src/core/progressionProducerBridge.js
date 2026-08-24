@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// PROGRESSION PRODUCER BRIDGE v1.1.0 — STEP 9
+// PROGRESSION PRODUCER BRIDGE v1.1.1 — STEP 9
 //
 // Adds deterministic reward context to legacy UI producers without changing
 // their accepted UI/business flow. Contexts use real stable entity/batch ids
@@ -9,7 +9,7 @@
 (function(){
   if(window.ProgressionProducerBridge)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.1.1';
 
   function runtime(){return window.ProgressionRuntime||null;}
   function queue(reason,options){
@@ -104,10 +104,15 @@
     if(recipes.create.__progressionProducerBridge)return true;
     var raw=recipes.create;
     var wrapped=function(){
-      var self=this,args=arguments;
+      var self=this,args=arguments,input=args&&args[0]&&typeof args[0]==='object'?args[0]:{};
+      var provider=String(input.sourceProvider||'').trim().toLowerCase();
+      var imported=!!String(input.sourceUrl||'').trim()||(provider&&provider!=='manual');
       return Promise.resolve(raw.apply(self,args)).then(function(result){
         var recipe=result&&result.recipe;
-        if(recipe&&recipe.id!=null){
+        // Imported recipes have their own explicit `Recept geïmporteerd` reward
+        // after the real saved id is known. Do not queue a second manual-create
+        // context that could be consumed by an unrelated later recipe action.
+        if(!imported&&recipe&&recipe.id!=null){
           queue('Recept aangemaakt',{
             key:'recipe:'+String(recipe.id),
             source:'recipe',
