@@ -28,9 +28,9 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen on 2026-08-24.
-- [-] STEP 10 — Notifications — in-app + Web Push + trusted sender + readiness gating implemented, Preview configuration active, and iPhone standalone opt-in accepted; real delivery/isolation acceptance remains.
+- [-] STEP 10 — Notifications — in-app + Web Push + trusted sender + readiness gating implemented, Preview configuration active and iPhone standalone opt-in accepted; auth/household onboarding hotfix READY, real second-account and delivery/isolation acceptance remain.
 
-**Current phase: STEP 10 Notifications. The notification/inbox authority, Web Push registration lifecycle, trusted sender, permission-readiness gate and protected Preview configuration are in place. The iPhone Preview has now been opened as a Home Screen PWA, iOS permission was accepted, and the push card reports the account/device as enabled. The next gate is actual PC/browser → iPhone delivery while backgrounded/closed, followed by canonical read/dismiss/action and account-isolation checks. Do not freeze STEP 10 before those gates pass.**
+**Current phase: STEP 10 Notifications. The iPhone standalone Web Push registration gate passed. The attempted PC→iPhone test then exposed an auth/household onboarding regression for a second account. Commit `fae24eddef6163e9ac9180792167d847381e3b6d` restores canonical Google/FamilyHousehold runtime ordering, deterministic onboarding and safe stale-membership re-onboarding; contracts and Vercel are green. Next verify a real second/wife account can reach/join the household on Preview, then continue background push delivery. Do not freeze STEP 10 before those gates pass.**
 
 ## Prototype end-goal gate
 
@@ -57,7 +57,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 10 — Notifications
 
-**Current phase — implementation, code, protected Preview configuration, fresh deployment and standalone iPhone opt-in gates complete; real delivery/isolation acceptance remains.**
+**Current phase — implementation, protected Preview configuration and iPhone opt-in complete; auth/join hotfix deployed; real second-account, delivery and isolation acceptance remain.**
 
 ### Canonical notification state
 - [x] `NotificationHouseholdRepository v1.0.0` on household-scoped notification path.
@@ -90,6 +90,16 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Push client modules activated in served runtime with cache versions `pushRegistrationService.js?v=2` and `pushNotificationSettings.js?v=3`.
 - [x] Real iPhone standalone-PWA explicit opt-in accepted; the UI reached enabled state after the registration path completed.
 
+### Auth / household onboarding regression hotfix
+- [x] Cross-device test identified generic startup failure while signing in/joining with a second account.
+- [x] Active `/api/app` now serves `googleAuthMobileFix.js`, canonical `householdPlatform.js` and `HouseholdOnboardingBridge v1.0.0` before `AuthenticatedSessionController`.
+- [x] Missing household (`HOUSEHOLD_REQUIRED`) enters the household chooser instead of generic startup failure.
+- [x] Permission-denied stale household pointers become `HOUSEHOLD_ACCESS_REQUIRED` and enter safe re-onboarding; rejoin still requires a valid fresh invite.
+- [x] Auth startup contract guards deterministic script order and onboarding markers.
+- [x] Household Rebuild Contracts PASS on `fae24eddef6163e9ac9180792167d847381e3b6d`, run `32781652282`.
+- [x] Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` READY for the hotfix.
+- [ ] Real second/wife account login + join re-test on Preview.
+
 ### Trusted sender / delivery health
 - [x] `PushDeliveryBridge v1.0.0` sends only canonical notification identity to the backend.
 - [x] Vercel `api/push-send.js` trusted POST boundary.
@@ -115,9 +125,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Push config readiness contract: no config → not ready; VAPID only → not ready; VAPID + protected sender env → ready; no sender value exposure.
 - [x] Served runtime audit covers in-app + readiness-aware Web Push + trusted sender wiring and no-auto-permission behavior.
 - [x] Served runtime audit guards Profile → Meldingen routing and the iPhone Home Screen guidance ordering.
-- [x] Latest code-side Household Rebuild Contracts PASS on `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, run `32774000920`.
-- [x] Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` READY for the same code commit.
-- [x] Deployed `/api/app` directly inspected and confirmed `pushNotificationSettings.js?v=3` in the current STEP 10 runtime.
+- [x] Latest full Household Rebuild Contracts PASS on `fae24eddef6163e9ac9180792167d847381e3b6d`, run `32781652282`.
+- [x] Latest Vercel Preview `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` READY.
 - [x] Post-config deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` directly verified `/api/push-config` with `configured=true`, `vapidConfigured=true` and `senderConfigured=true`.
 
 ### Protected runtime configuration — complete
@@ -133,6 +142,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 ### Device acceptance — open
 - [x] Preview opened from an iPhone Home Screen icon and Push card exposed the explicit enable action.
 - [x] Real iPhone standalone-PWA push opt-in succeeded and iOS notification permission was accepted.
+- [ ] Second household account authenticates and joins successfully on hotfixed Preview.
 - [ ] PC/browser account A → iPhone account B cross-device in-app notification/read/dismiss/action test.
 - [ ] Background push reaches the iPhone and opens/focuses notification screen without duplicate canonical inbox state.
 - [ ] Account-switch push/inbox isolation test.
@@ -180,6 +190,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-24 — protected Vercel Preview push configuration completed and runtime readiness verified.
 - 2026-08-24 — Profile → Meldingen navigation and iPhone Safari/Home Screen guidance corrected; latest contracts and preview READY.
 - 2026-08-24 — iPhone Home Screen Preview Web Push permission accepted and account/device reached enabled registration state.
+- 2026-08-24 — second-account test exposed auth/household onboarding regression; canonical runtime ordering hotfix deployed and contract-green.
 
 ## Maintenance rule
 

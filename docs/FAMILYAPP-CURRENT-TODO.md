@@ -9,11 +9,11 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications: implementation, trusted sender, Preview configuration and iPhone standalone Web Push opt-in are complete; real cross-device/background delivery and isolation acceptance remain.**
+**STEP 10 — Notifications: implementation, trusted sender, Preview configuration and iPhone standalone Web Push opt-in are complete; an auth/household onboarding hotfix is READY and must be device-retested before the real cross-device/background delivery gate continues.**
 
 STEP 8 Finance and STEP 9 Progression are accepted/frozen. STEP 10 has one HouseholdContext-native notification authority, deterministic/idempotent events, UID-specific read/dismiss state, a private multi-device push registry, explicit Web Push opt-in, service-worker/FCM transport, best-effort push handoff, a trusted Vercel sender and a readiness endpoint that blocks the permission prompt until both the public VAPID key and protected sender credentials are present.
 
-The Vercel **Preview** environment contains the public VAPID key and protected Firebase sender credentials, and the configured runtime previously returned `configured=true`, `vapidConfigured=true` and `senderConfigured=true`. The iPhone Home Screen gate has now also passed: the Preview was opened as a standalone PWA, iOS notification permission was accepted, and the notification card now reports `Pushmeldingen staan aan voor dit account op dit apparaat`. In the current registration flow that enabled state is reached only after FCM token acquisition and a successful `PushDeviceRegistry.upsert`, so the standalone registration path is accepted at runtime level. The next gate is actual PC/browser → iPhone delivery while the PWA is backgrounded/closed, followed by read/dismiss/action and account-isolation checks. Do **not** freeze STEP 10 yet.
+The iPhone Home Screen Web Push opt-in is accepted. During setup of the second account for the PC→iPhone delivery test, the login flow exposed a served-runtime household onboarding regression: the canonical `householdPlatform.js` / Google auth adapter were not in the active `/api/app` load graph and the session controller did not explicitly recognize the canonical `HOUSEHOLD_REQUIRED` setup marker. Commit `fae24eddef6163e9ac9180792167d847381e3b6d` restores deterministic auth/household ordering, adds `HouseholdOnboardingBridge v1.0.0`, recognizes missing/inaccessible household setup markers and routes stale permission-denied household pointers into safe re-onboarding rather than a generic startup error. `Household Rebuild Contracts` passed (run `32781652282`) and Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` is READY. The next gate is user verification that the second/wife account can reach the create/join household chooser and join via invite; only then continue the actual background push delivery test. Do **not** freeze STEP 10 yet.
 
 ## Frozen phases
 
@@ -22,7 +22,7 @@ The Vercel **Preview** environment contains the public VAPID key and protected F
 
 ## STEP 10 — Notifications
 
-**Status: CURRENT PHASE — implementation/code/deployment-config/standalone opt-in gates complete; real delivery and isolation acceptance remain open.**
+**Status: CURRENT PHASE — notification/push implementation and standalone iPhone opt-in complete; auth/join hotfix is deployed and awaits real account re-test before delivery/isolation acceptance.**
 
 ### Audit / architecture
 - [x] Read-only notification + push audit stored in `docs/step10-notifications-audit.md`.
@@ -65,6 +65,18 @@ The Vercel **Preview** environment contains the public VAPID key and protected F
 - [x] `PushRegistrationService` checks full delivery readiness before the only `Notification.requestPermission()` call, so incomplete server config cannot trigger a misleading OS permission prompt.
 - [x] Served loader uses `pushRegistrationService.js?v=2` and `pushNotificationSettings.js?v=3`.
 
+### Auth / household onboarding blocker discovered during delivery test
+- [x] Audited the PC second-account startup failure shown as generic `Opstarten mislukt`.
+- [x] Restored `googleAuthMobileFix.js` and canonical `householdPlatform.js` to the actual served `/api/app` runtime before session startup.
+- [x] Added `HouseholdOnboardingBridge v1.0.0` before `AuthenticatedSessionController` so `loadUserFamily`, setup and join/create onboarding are deterministic rather than dependent on DOMContentLoaded timing.
+- [x] `AuthenticatedSessionController` now recognizes `HOUSEHOLD_REQUIRED` and `HOUSEHOLD_ACCESS_REQUIRED` as setup states instead of generic connection failures.
+- [x] A stale/inaccessible household pointer that returns Firebase `PERMISSION_DENIED` is normalized to safe re-onboarding; no removed account is silently reactivated and a fresh invite is still required to join.
+- [x] Auth startup contract now verifies served order: legacy Firebase bootstrap → Google adapter → FamilyHousehold → onboarding bridge → session controller → HouseholdContext.
+- [x] Full Household Rebuild Contracts PASS on `fae24eddef6163e9ac9180792167d847381e3b6d`, run `32781652282`.
+- [x] Vercel Preview `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` READY for the hotfix commit.
+- [ ] Real PC/browser retest: new Google account reaches `Nieuw gezin maken / Deelnemen aan gezin` instead of generic startup error.
+- [ ] Real wife-account retest: existing account either resolves the household normally or is safely offered re-onboarding and can rejoin using a fresh invite.
+
 ### Trusted push sender / delivery health
 - [x] `PushDeliveryBridge v1.0.0` sends only canonical `{householdId, notificationId}` identity after obtaining the current Firebase ID token.
 - [x] Client bridge never submits raw recipient tokens/title/body as authority.
@@ -89,9 +101,8 @@ The Vercel **Preview** environment contains the public VAPID key and protected F
 - [x] `test-push-config-readiness.js` proves: no config → not ready; VAPID only → not ready; VAPID + sender env → ready; sender values never appear in response.
 - [x] Served runtime audit covers current notification + readiness-aware Web Push + trusted sender wiring.
 - [x] Profile notification navigation and iPhone Home Screen guidance ordering are guarded in the served-runtime contract.
-- [x] Latest code-side `Household Rebuild Contracts` PASS on `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, run `32774000920`.
-- [x] Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` READY for the same code commit.
-- [x] Deployed `/api/app` directly verified with `pushNotificationSettings.js?v=3` and the current STEP 10 runtime graph.
+- [x] Latest full `Household Rebuild Contracts` PASS on `fae24eddef6163e9ac9180792167d847381e3b6d`, run `32781652282`.
+- [x] Latest Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` READY for the auth/household hotfix commit.
 - [x] Earlier post-config Preview deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` directly verified `/api/push-config` with `configured=true`, `vapidConfigured=true`, `senderConfigured=true`.
 
 ### Protected runtime configuration — complete
@@ -105,9 +116,9 @@ The Vercel **Preview** environment contains the public VAPID key and protected F
 - [x] Standalone iPhone PWA explicit opt-in completed; UI reached enabled state only after the current registration path completed its private-device upsert.
 
 ### Preview / device gates
-- [x] Fresh READY preview for the latest Profile/iPhone guidance fix.
 - [x] Preview opened from an **iPhone Home Screen icon** rather than a normal Safari tab; push enablement became available.
 - [x] Explicit iPhone Home Screen push opt-in succeeded; iOS permission was accepted and the card reports push enabled for this account/device.
+- [ ] Second household account can authenticate/join on PC using the hotfixed Preview.
 - [ ] Cross-device inbox: PC/browser account A creates event for iPhone account B; B sees exactly one unread event.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner only for intended current identity.

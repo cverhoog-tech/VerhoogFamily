@@ -17,6 +17,22 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 second-account auth/household onboarding regression hotfixed
+
+- The first PC→iPhone delivery attempt was blocked before push could be tested: an existing second household account could not complete login, and a newly selected Google account fell back to the generic `Opstarten mislukt. Controleer je verbinding en probeer opnieuw.` screen instead of being offered household create/join onboarding.
+- Code audit found two concrete served-runtime defects: the active `/api/app` graph did not include the canonical `householdPlatform.js` or `googleAuthMobileFix.js`, and `AuthenticatedSessionController.needsSetup()` did not recognize the canonical `HOUSEHOLD_REQUIRED` marker emitted by `FamilyHousehold.resolve()`.
+- Added `HouseholdOnboardingBridge v1.0.0`. It is served after `FamilyHousehold` but before the session controller and deterministically owns the legacy `loadUserFamily`, `setupNewFamily` and `showNameSetupStep` compatibility entrypoints, removing the old DOMContentLoaded/load-order race.
+- The bridge converts only Firebase permission-denied household-resolution failures into `HOUSEHOLD_ACCESS_REQUIRED`. This gives stale/inaccessible legacy household pointers a safe path back to the create/join chooser; it does **not** silently restore a removed member, and joining still requires a valid fresh invite.
+- Updated `AuthenticatedSessionController` to recognize both `HOUSEHOLD_REQUIRED` and `HOUSEHOLD_ACCESS_REQUIRED` as onboarding/setup states rather than generic connection failures.
+- `/api/app` now serves the deterministic auth order: legacy Firebase bootstrap → Google auth adapter → canonical FamilyHousehold → onboarding bridge → `AuthenticatedSessionController v2` → HouseholdContext.
+- Extended `scripts/test-auth-startup-ownership.js` to execute the real `/api/app` transformation and guard this exact ordering plus the missing/stale household onboarding markers.
+- Full `Household Rebuild Contracts` passed on commit `fae24eddef6163e9ac9180792167d847381e3b6d`, workflow run `32781652282`.
+- Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` is READY for the same hotfix commit.
+- No production Firebase Rules or `main` changes were made. Real verification remains open: retry the new Google account and wife account on Preview, join with a fresh invite if the chooser is shown, then resume the background push test.
+- STEP 10 remains **in progress / not frozen**.
+
+---
+
 ## 2026-08-24 — STEP 10 iPhone standalone Web Push opt-in accepted
 
 - Product owner opened the configured Preview from an iPhone Home Screen icon and accepted the iOS notification permission prompt.
