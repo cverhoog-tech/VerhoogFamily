@@ -17,6 +17,26 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 notification + push audit completed
+
+- Completed the required read-only STEP 10 audit and stored the full authority/delivery map in `docs/step10-notifications-audit.md`.
+- Confirmed that push notifications are part of STEP 10, but push is a delivery channel and must remain separate from canonical notification inbox/read state.
+- Found an existing typed notification architecture in the repository: `NotificationStore`, `NotificationEvents`, `NotificationActions`, `NotificationCenter`, `NotificationDelivery` and task/swap/Party Quest projectors.
+- The existing stack is currently dormant/not loaded by the actual rebuild `/api/app` runtime, so active code that conditionally calls `NotificationEvents`/`NotificationStore` can silently do nothing.
+- Legacy `addNotif(...)` is already deliberately neutralized as a no-op and `notifData` is only leftover demo state; neither will be revived as authority.
+- Dormant `NotificationStore v1.4.0` already models household events with per-UID `readBy` and `dismissedBy`, but its identity/listener ownership still relies on `fbFamilyId`/generic `FamilyDataStore` rather than accepted `HouseholdContext` capture/isCurrent lifecycle semantics.
+- The dormant store also generates random event IDs, so the same state transition observed on multiple devices/tabs can create duplicate notification events. STEP 10 will add deterministic event keys / `publishOnce()` semantics.
+- Existing `NotificationDelivery v1.2.0` is correctly separated as an in-app live-banner presentation channel; it is not OS push.
+- Push/FCM audit found only an incomplete legacy stub in `duoQuests.js`: browser permission request, `getToken()` and a single household-shared `fcmTokens/{uid}` write.
+- No complete messaging service worker, foreground `onMessage`, token rotation/revocation lifecycle, multi-device registry or trusted server-side FCM sender was found; reliable push is therefore not currently operational.
+- Target push-device registry is user-private and multi-device, logically `users/{uid}/private/pushDevices/{deviceId}`, so another household member never reads delivery credentials.
+- Browser/client code will not own FCM server/service-account credentials. While Firebase remains on Spark, a Vercel server-side delivery boundary is the first candidate to evaluate for trusted sending.
+- Push failure must never delete or corrupt the canonical notification event; inbox state and delivery health remain separate.
+- Current next action is the code foundation: build and contract-test a HouseholdContext-native `NotificationHouseholdRepository` before wiring the dormant notification UI/runtime back into `/api/app`.
+- No production Firebase Rules were changed or deployed during this audit.
+
+---
+
 ## 2026-08-24 — STEP 9 iPhone gate accepted/frozen; STEP 10 Notifications opened
 
 - Product owner confirmed the final STEP 9 iPhone test works.
