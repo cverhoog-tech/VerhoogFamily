@@ -26,10 +26,10 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 5 — Meals.
 - [x] STEP 6 — Agenda.
 - [x] STEP 7 — Shopping.
-- [-] STEP 8 — Finance: implementation complete; final premium PDF preview + iPhone verification remain.
+- [-] STEP 8 — Finance: implementation complete; final premium PDF iPhone verification remains.
 - [ ] STEP 9 — Progression / XP / Achievements.
 
-**Current phase: STEP 8 Finance final verification. Do not start STEP 9 until the premium two-page PDF has been verified from a fresh Vercel preview on iPhone and STEP 8 is explicitly frozen.**
+**Current phase: STEP 8 Finance final iPhone verification. Do not start STEP 9 until the premium two-page PDF has been verified on iPhone and STEP 8 is explicitly frozen.**
 
 ## Prototype end-goal gate
 
@@ -66,10 +66,10 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Household Rebuild Contracts passed for the Finance privacy/export changes.
 - [x] Pre-template STEP 8 runtime/device gate accepted on real iPhone by the product owner on 2026-08-23.
 - [x] Original PDF generation/share flow accepted on iPhone/WhatsApp.
+- [x] Fresh Vercel READY preview contains the final premium PDF template; deployed asset verified as `FinanceAnalysisExport v2.0.0` on 2026-08-24.
 
 ### Remaining before STEP 8 closes
 
-- [ ] Fresh Vercel READY preview containing the final premium PDF template.
 - [ ] Final iPhone verification of the premium two-page PDF: generate, open both pages, inspect readability and share to WhatsApp.
 - [ ] Mark STEP 8 accepted/frozen and promote STEP 9 to current phase.
 
@@ -118,7 +118,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-23 — Rebuild execution advanced through STEP 8 Finance on the active branch; central cross-chat TODO/update log introduced to prevent tracker drift.
 - 2026-08-23 — STEP 8 Finance Analyse polish, FamilyApp Assistent, reset placement, PDF share flow and Finance isolation contracts completed; pre-template iPhone gate accepted.
 - 2026-08-23 — Final premium two-page Finance PDF implemented and automated export contract passed.
-- 2026-08-24 — This tracker synchronized to the actual current execution state. STEP 8 awaits only fresh-preview + final premium-PDF iPhone verification before closure.
+- 2026-08-24 — Phase tracker synchronized to actual execution state.
+- 2026-08-24 — Vercel rate limit cleared; a fresh READY preview was built and the deployed `FinanceAnalysisExport v2.0.0` asset verified. Only the final premium-PDF iPhone verification remains before STEP 8 closure.
 
 ## Maintenance rule
 
