@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// PUSH NOTIFICATION SETTINGS v1.0.0 — STEP 10
+// PUSH NOTIFICATION SETTINGS v1.1.0 — STEP 10
 // Explicit user-controlled opt-in surface. Never requests permission on load.
 // ============================================================
 (function(){
   if(window.PushNotificationSettings)return;
-  var VERSION='1.0.0',installed=false,busy=false;
+  var VERSION='1.1.0',installed=false,busy=false;
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function service(){return window.PushRegistrationService||null;}
@@ -34,7 +34,9 @@
     st=st||{};
     if(!st.supported)return{status:'Pushmeldingen worden op dit apparaat of in deze browser niet ondersteund.',label:'Niet ondersteund',disabled:true,secondary:true,note:''};
     if(st.iosLike&&!st.standalone)return{status:'Op iPhone werken pushmeldingen nadat FamilyApp aan het beginscherm is toegevoegd en vanaf het app-icoon wordt geopend.',label:'Eerst op beginscherm zetten',disabled:true,secondary:true,note:'Open FamilyApp daarna via het beginscherm en schakel push hier in.'};
-    if(!st.configured)return{status:'De app is klaar voor Web Push, maar de publieke Firebase Web Push-sleutel moet nog in de deploymentconfiguratie worden geactiveerd.',label:'Pushconfiguratie ontbreekt',disabled:true,secondary:true,note:'Er wordt geen toestemming gevraagd zolang de delivery-configuratie niet compleet is.'};
+    if(st.vapidConfigured===false)return{status:'De Web Push-sleutel ontbreekt nog in de deploymentconfiguratie.',label:'Web Push-config ontbreekt',disabled:true,secondary:true,note:'FamilyApp vraagt geen notificatierechten zolang de publieke VAPID-configuratie niet klaar is.'};
+    if(st.senderConfigured===false)return{status:'Web Push is voorbereid, maar de beveiligde FamilyApp sender is nog niet geactiveerd.',label:'Push sender ontbreekt',disabled:true,secondary:true,note:'Er wordt geen toestemming gevraagd totdat de serverdelivery veilig is geconfigureerd.'};
+    if(!st.configured)return{status:'De push-deliveryconfiguratie is nog niet volledig beschikbaar.',label:'Pushconfiguratie ontbreekt',disabled:true,secondary:true,note:'Er wordt geen toestemming gevraagd zolang de delivery-configuratie niet compleet is.'};
     if(st.permission==='denied')return{status:'Pushmeldingen zijn door het apparaat geblokkeerd. Je kunt dit wijzigen in de notificatie-instellingen van FamilyApp.',label:'Geblokkeerd in instellingen',disabled:true,secondary:true,note:''};
     if(st.enabled)return{status:'Pushmeldingen staan aan voor dit account op dit apparaat.',label:'Pushmeldingen uitschakelen',disabled:false,secondary:true,note:'In-app meldingen blijven gewoon beschikbaar als push wordt uitgeschakeld.'};
     if(st.status==='registering')return{status:'Dit apparaat wordt veilig geregistreerd voor pushmeldingen…',label:'Bezig…',disabled:true,secondary:false,note:''};
@@ -52,7 +54,8 @@
         var msg=String(error&&error.message||'');
         if(typeof window.showToast==='function'){
           if(/HOME_SCREEN_REQUIRED/.test(msg))window.showToast('Zet FamilyApp eerst op je beginscherm');
-          else if(/VAPID_NOT_CONFIGURED/.test(msg))window.showToast('Pushconfiguratie is nog niet compleet');
+          else if(/VAPID_NOT_CONFIGURED/.test(msg))window.showToast('Web Push-configuratie ontbreekt nog');
+          else if(/SENDER_NOT_CONFIGURED|DELIVERY_NOT_CONFIGURED/.test(msg))window.showToast('Push sender is nog niet geconfigureerd');
           else if(/PERMISSION_DENIED/.test(msg))window.showToast('Pushmeldingen zijn geblokkeerd');
           else window.showToast('Pushmeldingen konden niet worden aangepast');
         }
