@@ -17,6 +17,22 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 Preview push configured; iPhone notification UX corrected
+
+- The required Web Push values were configured directly in the Vercel **Preview** environment: public `FAMILYAPP_WEB_PUSH_VAPID_KEY` plus protected `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL` and `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`. The private key was not placed in chat, GitHub or public config.
+- A clean branch redeploy was triggered with no product-code change on commit `85715c7de103cba6edfd5bb8be385c069eba1bba`. Vercel deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` reached READY.
+- `/api/push-config` on that configured Preview was directly verified and returned `configured=true`, `vapidConfigured=true` and `senderConfigured=true`, proving both the public Web Push transport and protected trusted sender configuration are present at runtime.
+- The first iPhone notification-screen test was performed in a normal Safari tab rather than from a Home Screen PWA. That correctly cannot be the final iOS Web Push context, but the UI exposed a presentation bug: it showed generic “Niet ondersteund” before the more useful iPhone Home Screen requirement.
+- The same test exposed a separate profile-navigation bug: the Profile → Meldingen row was still a placeholder toast and did not open the real notification screen.
+- Commit `caa5df5905ad354e5b271e96f36a60bd4d7786cc` fixes both issues. Profile → Meldingen now calls the canonical `showScreen('notif')` route, while `PushNotificationSettings v1.1.1` checks iPhone non-standalone state before generic browser support and therefore explains that FamilyApp must be opened from the Home Screen before push can be enabled.
+- Bumped the served push-settings cache key to `pushNotificationSettings.js?v=3` and extended `test-notification-served-runtime.js` so both the profile route and iPhone-guidance ordering are guarded against regression.
+- `Household Rebuild Contracts` passed for `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, workflow run `32774000920`.
+- Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` is READY for the same fix commit. Its deployed `/api/app` was directly inspected and confirmed the current runtime with `pushNotificationSettings.js?v=3`.
+- The remaining STEP 10 gate is now device acceptance, not deployment configuration: add/open the Preview from the iPhone Home Screen, explicitly enable push, verify the private device registration, then use a PC/browser account as sender and the iPhone account as receiver for real cross-device/background delivery and action/isolation checks.
+- STEP 10 remains **in progress / not frozen**. Main and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-24 — STEP 10 push readiness gate hardened before iPhone permission
 
 - Upgraded `/api/push-config` to `v1.1.0` so the client receives safe readiness booleans for both halves of the delivery path: `vapidConfigured` and `senderConfigured`. The endpoint returns the public VAPID key but never returns the protected sender email/private key values.
