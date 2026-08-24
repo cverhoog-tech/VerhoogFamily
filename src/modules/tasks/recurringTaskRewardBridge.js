@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// RECURRING TASK REWARD BRIDGE v1.0.0 — STEP 9
+// RECURRING TASK REWARD BRIDGE v1.0.1 — STEP 9
 //
 // Legacy recurring-task UI is retained, but XP is routed through the canonical
 // ProgressionRuntime with stable occurrence keys. The old toggleRecDay() still
@@ -10,7 +10,7 @@
 (function(){
   if(window.RecurringTaskRewardBridge)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var installedToggle=false;
   var installedDay=false;
   var rawToggle=null;
@@ -67,10 +67,11 @@
     if(window.toggleRec.__canonicalRecurringReward)return true;
     rawToggle=window.toggleRec;
     var wrapped=function(id){
+      var self=this;
       var r=recurring(id);
-      if(!r)return rawToggle.apply(this,arguments);
+      if(!r)return rawToggle.apply(self,arguments);
       var occurrence=r.freq==='weekly'?'week:'+weekKey()+':complete':'month:'+monthKey()+':complete';
-      return withRecurringAward(r,occurrence,function(){return rawToggle.apply(this,arguments);}.bind(this));
+      return withRecurringAward(r,occurrence,function(){return rawToggle.call(self,id);});
     };
     wrapped.__canonicalRecurringReward=true;
     wrapped.__wrappedRecurringToggle=rawToggle;
