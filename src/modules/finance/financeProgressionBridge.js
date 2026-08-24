@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FINANCE PROGRESSION BRIDGE v1.0.0 — STEP 9
+// FINANCE PROGRESSION BRIDGE v1.0.1 — STEP 9
 //
 // STEP 8 Finance remains frozen. This adapter changes no Finance calculation,
 // storage shape or UI behavior; it only attaches deterministic canonical XP
@@ -9,7 +9,7 @@
 (function(){
   if(window.FinanceProgressionBridge)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
 
   function runtime(){return window.ProgressionRuntime||null;}
   function finance(){return window.FinanceStore||null;}
@@ -94,12 +94,13 @@
     if(f.addExtraIncome.__progressionFinanceBridge)return true;
     var raw=f.addExtraIncome;
     var wrapped=function(data){
-      var self=this,args=arguments,input=data&&typeof data==='object'?data:{};
+      var self=this,args=arguments,input=data&&typeof data==='object'?data:{},mode=String(window.currentAddType||'');
       return Promise.resolve(raw.apply(self,args)).then(function(record){
-        // Budget -> savings linkage intentionally has no existing 'Eenmalig' XP
+        // Budget -> savings linkage intentionally has no existing extra-income XP
         // call, so do not leave a pending context for that internal record.
         if(!input._savingsBudgetRef&&record&&record.id!=null){
-          queue('Eenmalig',{
+          var reason=mode==='extraincome'?'Extra inkomen':'Eenmalig';
+          queue(reason,{
             key:'finance:extraIncome:'+String(record.id),
             source:'finance-extra-income',
             sourceId:String(record.id)
