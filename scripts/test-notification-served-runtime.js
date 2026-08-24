@@ -28,6 +28,9 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
     'src/core/notificationActions.js?v=3',
     'src/core/notificationCenter.js?v=2',
     'src/core/notificationDelivery.js?v=2',
+    'src/core/pushDeviceRegistry.js?v=1',
+    'src/core/pushRegistrationService.js?v=1',
+    'src/core/pushNotificationSettings.js?v=1',
     'src/modules/tasks/taskNotificationProjector.js?v=2',
     'src/modules/tasks/taskSwapNotificationProjector.js?v=2',
     'src/modules/tasks/partyQuestNotificationProjector.js?v=2',
@@ -37,7 +40,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   expected.forEach(src=>{
     const idx=list.indexOf(src);
     assert.ok(idx>=0,src+' must be present in actual served HTML');
-    assert.ok(idx>previous,src+' must load in canonical notification order');
+    assert.ok(idx>previous,src+' must load in canonical STEP 10 order');
     previous=idx;
   });
 
@@ -47,6 +50,11 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   const actions=fs.readFileSync('src/core/notificationActions.js','utf8');
   const center=fs.readFileSync('src/core/notificationCenter.js','utf8');
   const delivery=fs.readFileSync('src/core/notificationDelivery.js','utf8');
+  const pushRegistry=fs.readFileSync('src/core/pushDeviceRegistry.js','utf8');
+  const pushService=fs.readFileSync('src/core/pushRegistrationService.js','utf8');
+  const pushSettings=fs.readFileSync('src/core/pushNotificationSettings.js','utf8');
+  const pushSw=fs.readFileSync('firebase-messaging-sw.js','utf8');
+  const pushConfig=fs.readFileSync('api/push-config.js','utf8');
   const taskProjector=fs.readFileSync('src/modules/tasks/taskNotificationProjector.js','utf8');
   const swapProjector=fs.readFileSync('src/modules/tasks/taskSwapNotificationProjector.js','utf8');
   const partyProjector=fs.readFileSync('src/modules/tasks/partyQuestNotificationProjector.js','utf8');
@@ -57,15 +65,18 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(actions.includes("VERSION='3.0.0'"));
   assert.ok(center.includes("VERSION='2.0.0'"));
   assert.ok(delivery.includes("VERSION='2.0.0'"));
+  assert.ok(pushRegistry.includes("VERSION='1.0.0'"));
+  assert.ok(pushService.includes("VERSION='1.0.0'"));
+  assert.ok(pushSettings.includes("VERSION='1.0.0'"));
   assert.ok(taskProjector.includes("VERSION='2.0.0'"));
   assert.ok(swapProjector.includes("VERSION='2.0.0'"));
   assert.ok(partyProjector.includes("VERSION='2.0.0'"));
 
-  // Canonical notification modules may not silently restore older identity
-  // owners after activation.
-  [repository,store,events,actions,center,delivery,taskProjector,swapProjector,partyProjector].forEach((source,i)=>{
-    assert.ok(!/window\.fbUser/.test(source),'served notification module '+i+' must not use legacy fbUser identity');
-    assert.ok(!/\bfbFamilyId\b/.test(source),'served notification module '+i+' must not use legacy fbFamilyId identity');
+  // Canonical notification/push client modules may not silently restore older
+  // household/auth identity owners after activation.
+  [repository,store,events,actions,center,delivery,pushRegistry,pushService,taskProjector,swapProjector,partyProjector].forEach((source,i)=>{
+    assert.ok(!/window\.fbUser/.test(source),'served STEP 10 module '+i+' must not use legacy fbUser identity');
+    assert.ok(!/\bfbFamilyId\b/.test(source),'served STEP 10 module '+i+' must not use legacy fbFamilyId identity');
   });
   assert.ok(repository.includes('HouseholdContext.capture'));
   assert.ok(repository.includes('HouseholdContext.isCurrent'));
@@ -77,9 +88,24 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   // Notification UI must be active instead of the old permanent loading state.
   assert.ok(indexOfScript(list,'src/core/notificationCenter.js')>indexOfScript(list,'src/modules/finance/finance.js'),'NotificationCenter must load after legacy finance renderer so it owns renderNotifs');
 
-  // STEP 10 push delivery is intentionally not activated by this in-app cutover.
-  // No messaging service worker is injected by api/app at this checkpoint.
-  assert.ok(!list.some(x=>/firebase-messaging-sw|pushDelivery|pushDevice/i.test(x)),'push adapter must remain separate until its own contract is implemented');
+  // Push registry is private per UID/device, never household-shared.
+  assert.ok(pushRegistry.includes("'users/'+uid+'/private/pushDevices/'"),'push tokens must live in the user-private registry');
+  assert.ok(!/families\/.*fcmTokens/.test(pushRegistry),'new push registry must not restore household-shared token storage');
 
-  console.log('STEP 10 served canonical notification runtime audit: PASS');
+  // The legacy session controller still calls setupPushNotifications(), but the
+  // later push service deliberately replaces that global with start() only.
+  // Permission is requested exclusively through requestEnable() after a user tap.
+  assert.ok(pushService.includes('window.setupPushNotifications=function(){return api.start();};'),'legacy startup push entrypoint must be neutralized');
+  assert.strictEqual((pushService.match(/Notification\.requestPermission\(\)/g)||[]).length,1,'only explicit requestEnable flow may request permission');
+  assert.ok(pushService.indexOf('function requestEnable()')<pushService.indexOf('Notification.requestPermission()'),'permission request must live in requestEnable');
+  assert.ok(pushSettings.includes('svc.requestEnable()'),'notification settings button must own explicit push opt-in');
+
+  // Web Push delivery files are present without exposing sender secrets.
+  assert.ok(pushSw.includes('firebase-messaging-compat.js'));
+  assert.ok(pushSw.includes('onBackgroundMessage'));
+  assert.ok(pushSw.includes("self.addEventListener('notificationclick'"));
+  assert.ok(pushConfig.includes('FAMILYAPP_WEB_PUSH_VAPID_KEY'));
+  assert.ok(!/service[_-]?account|private[_-]?key/i.test(pushConfig),'public push config endpoint may not expose sender credentials');
+
+  console.log('STEP 10 served canonical notification + Web Push client runtime audit: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
