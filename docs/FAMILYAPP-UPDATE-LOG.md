@@ -17,6 +17,32 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 9 canonical progression foundation + first idempotent producers
+
+- Completed the required read-only STEP 9 progression audit and stored it in `docs/step9-progression-audit.md`.
+- Audit confirmed the previous effective authority was split between `fam_myxp_v1`/`window.myXP`, legacy member `xp`, `ProgressionUidBridge`, `AchievementUidBridge`, legacy `checkAchievements()` and multiple `awardXP()` wrapper layers.
+- Highest-risk legacy behavior identified: a missing member XP value could be seeded from an unscoped browser XP cache, and achievement projections could merge across account changes instead of replacing the previous identity projection.
+- Added `src/core/progressionStore.js` (`ProgressionStore v1.0.0`) as the STEP 9 canonical authority at `families/{householdId}/members/{uid}/progression`.
+- Canonical schema contains XP, deterministic reward ledger, achievements, migration metadata and update metadata.
+- Safe migration reads only the active household member's existing Firebase `xp` and `achievements`; it never imports unscoped localStorage/browser XP into another UID/household.
+- Store lifecycle is bound through `HouseholdContext`; logout/account/household switch detaches the exact listener, clears XP/achievement compatibility projections and rejects stale callbacks/writes.
+- Added atomic `awardOnce(key, amount, metadata)` and `unlockAchievementOnce(...)` transaction semantics so reward claim + XP mutation live in one canonical transaction.
+- Added `src/core/progressionRuntime.js` (`ProgressionRuntime v1.0.0`), replacing mutation behavior behind the existing `awardXP` and `checkAchievements` UI entry points.
+- Achievement evaluation now projects unlocks through the canonical store; badge XP is no longer a separate legacy member-XP write.
+- `ProgressionUidBridge v3.0.0` and `AchievementUidBridge v2.0.0` are now compatibility-only adapters and own no Firebase progression authority.
+- `TaskRewardBridge v3.0.0` gives one-off task completion the deterministic key `task:{taskId}`.
+- Daily login bonus now uses `daily:{YYYY-MM-DD}` and only stores the local claim marker after the canonical reward settles.
+- Party Quest completion now uses `partyQuest:{questId}`; an XP persistence failure leaves the quest active so the reward can be retried/repaired after reconnect instead of being silently lost.
+- Added three STEP 9 contracts: `test-progression-store.js`, `test-progression-runtime.js` and `test-progression-producer-keys.js`.
+- The new tests cover migration isolation, A→B account/household switching, stale callbacks, duplicate rewards, duplicate achievement unlocks, legacy bridge retirement, task replay protection, daily bonus key reuse and Party Quest failed-write recovery.
+- One first run of the producer test failed because the Node VM harness did not mirror browser `window` globals as bare global bindings; the harness was corrected without changing app behavior.
+- Full `Household Rebuild Contracts` subsequently passed on commit `b81b936c8b7185b461268a663098f85339e4d2bd`.
+- Vercel branch deployment for that same code checkpoint reached READY.
+- STEP 9 is not complete yet. Remaining served reward producers still need deterministic keys, notably recurring tasks, Feed, recipes, notes, skills/weekly quests/abilities, Finance reward call sites and any legacy trade/duo/group paths proven to still be served.
+- `ProgressionRuntime.status().fallbackRewardCount` intentionally tracks transitional unkeyed reward calls; final STEP 9 acceptance requires eliminating those from the tested served runtime before the iPhone gate.
+
+---
+
 ## 2026-08-24 — STEP 8 Finance accepted/frozen; STEP 9 opened
 
 - Product owner confirmed the final premium two-page Finance PDF works in the latest iPhone test.
