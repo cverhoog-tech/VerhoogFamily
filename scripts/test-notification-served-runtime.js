@@ -23,13 +23,14 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   const expected=[
     'src/core/householdContext.js?v=1',
     'src/core/notificationHouseholdRepository.js?v=1',
-    'src/core/notificationStore.js?v=2',
+    'src/core/notificationStore.js?v=3',
     'src/core/notificationEvents.js?v=2',
     'src/core/notificationActions.js?v=3',
     'src/core/notificationCenter.js?v=2',
     'src/core/notificationDelivery.js?v=2',
     'src/core/pushDeviceRegistry.js?v=1',
     'src/core/pushRegistrationService.js?v=1',
+    'src/core/pushDeliveryBridge.js?v=1',
     'src/core/pushNotificationSettings.js?v=1',
     'src/modules/tasks/taskNotificationProjector.js?v=2',
     'src/modules/tasks/taskSwapNotificationProjector.js?v=2',
@@ -52,21 +53,25 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   const delivery=fs.readFileSync('src/core/notificationDelivery.js','utf8');
   const pushRegistry=fs.readFileSync('src/core/pushDeviceRegistry.js','utf8');
   const pushService=fs.readFileSync('src/core/pushRegistrationService.js','utf8');
+  const pushBridge=fs.readFileSync('src/core/pushDeliveryBridge.js','utf8');
   const pushSettings=fs.readFileSync('src/core/pushNotificationSettings.js','utf8');
   const pushSw=fs.readFileSync('firebase-messaging-sw.js','utf8');
   const pushConfig=fs.readFileSync('api/push-config.js','utf8');
+  const pushSend=fs.readFileSync('api/push-send.js','utf8');
+  const pushSender=fs.readFileSync('src/server/firebasePushSender.js','utf8');
   const taskProjector=fs.readFileSync('src/modules/tasks/taskNotificationProjector.js','utf8');
   const swapProjector=fs.readFileSync('src/modules/tasks/taskSwapNotificationProjector.js','utf8');
   const partyProjector=fs.readFileSync('src/modules/tasks/partyQuestNotificationProjector.js','utf8');
 
   assert.ok(repository.includes("VERSION='1.0.0'"));
-  assert.ok(store.includes("VERSION='2.0.0'"));
+  assert.ok(store.includes("VERSION='2.1.0'"));
   assert.ok(events.includes("VERSION='2.0.0'"));
   assert.ok(actions.includes("VERSION='3.0.0'"));
   assert.ok(center.includes("VERSION='2.0.0'"));
   assert.ok(delivery.includes("VERSION='2.0.0'"));
   assert.ok(pushRegistry.includes("VERSION='1.0.0'"));
   assert.ok(pushService.includes("VERSION='1.0.0'"));
+  assert.ok(pushBridge.includes("VERSION='1.0.0'"));
   assert.ok(pushSettings.includes("VERSION='1.0.0'"));
   assert.ok(taskProjector.includes("VERSION='2.0.0'"));
   assert.ok(swapProjector.includes("VERSION='2.0.0'"));
@@ -74,7 +79,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
 
   // Canonical notification/push client modules may not silently restore older
   // household/auth identity owners after activation.
-  [repository,store,events,actions,center,delivery,pushRegistry,pushService,taskProjector,swapProjector,partyProjector].forEach((source,i)=>{
+  [repository,store,events,actions,center,delivery,pushRegistry,pushService,pushBridge,taskProjector,swapProjector,partyProjector].forEach((source,i)=>{
     assert.ok(!/window\.fbUser/.test(source),'served STEP 10 module '+i+' must not use legacy fbUser identity');
     assert.ok(!/\bfbFamilyId\b/.test(source),'served STEP 10 module '+i+' must not use legacy fbFamilyId identity');
   });
@@ -82,6 +87,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(repository.includes('HouseholdContext.isCurrent'));
   assert.ok(store.includes('publishOnce'));
   assert.ok(store.includes('NOTIFICATION_EVENT_KEY_REQUIRED'));
+  assert.ok(store.includes('PushDeliveryBridge.dispatchCreated'),'canonical creation must hand new events to best-effort push delivery');
   assert.ok(events.includes('publishToUidsOnce'));
   assert.ok(events.includes('publishHouseholdOnce'));
 
@@ -114,5 +120,15 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
     'FCM_SERVER_KEY'
   ].forEach(name=>assert.ok(!pushConfig.includes(name),'public push config endpoint may not reference '+name));
 
-  console.log('STEP 10 served canonical notification + Web Push client runtime audit: PASS');
+  // Trusted sender boundary accepts only canonical notification identity from
+  // the client; it resolves recipients/tokens server-side.
+  assert.ok(pushBridge.includes("window.fetch('/api/push-send'"));
+  assert.ok(pushBridge.includes('householdId:String(c.householdId)'));
+  assert.ok(pushBridge.includes('notificationId:String(event.id)'));
+  assert.ok(!pushBridge.includes('token:')&&!pushBridge.includes('title:String'),'client bridge must not send raw token/title authority');
+  assert.ok(pushSend.includes('sendCanonicalNotification'));
+  assert.ok(pushSender.includes('sendCanonicalNotification'));
+  assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_ACCOUNT_JSON'),'trusted sender credentials must be server env based');
+
+  console.log('STEP 10 served canonical notification + Web Push sender runtime audit: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
