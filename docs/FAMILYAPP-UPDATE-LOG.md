@@ -17,6 +17,29 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 Web Push client foundation implemented
+
+- Added `PushDeviceRegistry v1.0.0` with user-private multi-device storage at `users/{uid}/private/pushDevices/{deviceId}`. Push tokens are no longer part of the household-shared design.
+- Added `PushRegistrationService v1.0.0` with an explicit opt-in flow, per-account local opt-in state, service-worker registration, FCM token registration, foreground handling and app-badge synchronization where supported.
+- Important audit correction: `AuthenticatedSessionController` does call legacy `setupPushNotifications()` during app reveal. The new service now deliberately replaces that global with a safe `start()` compatibility entrypoint, so startup/login can never request Notification permission automatically.
+- `Notification.requestPermission()` now exists only inside explicit `requestEnable()` after the user taps the push settings action.
+- On iPhone/iPad the enable flow first requires the Home Screen/standalone PWA context; a normal Safari tab is rejected before showing a doomed permission prompt.
+- Same-browser account/UID changes invalidate the previous FCM token and browser Push subscription. A second user is never silently enrolled from the first user's registration and must explicitly opt in unless that UID already has its own prior opt-in state.
+- Added `firebase-messaging-sw.js` using the current Firebase compat runtime. It handles background data-only payloads and notification-click focus/open routing to FamilyApp notifications.
+- Foreground FCM messages are delivery signals only; they do not create a second canonical NotificationStore event and therefore cannot duplicate inbox state.
+- Added `PushNotificationSettings v1.0.0` as an explicit premium opt-in/disable surface on the notification screen. It shows unsupported, iOS-not-installed, missing-config, denied, registering, enabled and retry states without prompting on load.
+- Added `/api/push-config`. It returns only public Web Push configuration and reads the public VAPID key from protected deployment configuration `FAMILYAPP_WEB_PUSH_VAPID_KEY`. Server/service-account credentials are not returned from this endpoint.
+- Activated the push registry, registration service and settings UI in the actual `/api/app` served runtime after the canonical notification store/delivery layers.
+- Added `scripts/test-push-device-registry.js` and `scripts/test-push-registration-service.js`; extended the real served-runtime audit to cover push module order, private token storage, no automatic permission prompt, service-worker presence and public-config boundaries.
+- One served-runtime security test initially produced a false positive because it matched the words “service-account/private key” in explanatory source comments. The test was narrowed to concrete forbidden server credential environment identifiers; no app/public-endpoint behavior needed changing.
+- Full `Household Rebuild Contracts` passed on commit `d89057f0b78caf4f1acb00106cd9d03f2d9ed538`, including the new push registry/registration tests.
+- Vercel remains blocked by the Hobby `build-rate-limit`, so no fresh READY preview or real push delivery is claimed yet.
+- Web Push is not yet operational end-to-end: a trusted server-side sender and protected deployment credentials/public VAPID configuration still need to be implemented/configured and tested.
+- Push failure remains architecturally separate from canonical notification inbox/read/dismiss state.
+- No production Firebase Rules were changed or deployed.
+
+---
+
 ## 2026-08-24 — STEP 10 canonical in-app notification runtime implemented
 
 - Added `NotificationHouseholdRepository v1.0.0` as the canonical STEP 10 persistence/listener boundary at `families/{householdId}/shared/notifications`.
