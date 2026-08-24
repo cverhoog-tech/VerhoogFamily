@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FIREBASE PUSH SENDER v1.0.0 — STEP 10 server-only delivery service
+// FIREBASE PUSH SENDER v1.0.1 — STEP 10 server-only delivery service
 //
 // Canonical notification state stays in RTDB. This service accepts only a
 // canonical householdId + notificationId, verifies the Firebase caller, reads
@@ -9,21 +9,34 @@
 // ============================================================
 const crypto=require('crypto');
 
-const VERSION='1.0.0';
+const VERSION='1.0.1';
 const DEFAULT_DB='https://verhoog-family-default-rtdb.europe-west1.firebasedatabase.app';
 const DEFAULT_PROJECT='verhoog-family';
 const DEFAULT_WEB_API_KEY='AIzaSyA4vXaF85pfv2Cxy5VG-KJXxsOG14UeN1s'; // public Firebase web config
 const TOKEN_AUD='https://oauth2.googleapis.com/token';
 const SCOPES='https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/firebase.messaging';
 
+function unwrapEnvString(value){
+  let text=String(value==null?'':value).trim();
+  if(text.length>=2&&text[0]==='"'&&text[text.length-1]==='"'){
+    try{const parsed=JSON.parse(text);if(typeof parsed==='string')return parsed.trim();}catch(e){}
+    text=text.slice(1,-1).trim();
+  }else if(text.length>=2&&text[0]==="'"&&text[text.length-1]==="'"){
+    text=text.slice(1,-1).trim();
+  }
+  return text;
+}
+function normalizePrivateKey(value){
+  return unwrapEnvString(value).replace(/\\n/g,'\n').trim();
+}
 function envConfig(env){
   env=env||process.env;
   return{
-    projectId:String(env.FAMILYAPP_FIREBASE_SERVICE_PROJECT_ID||DEFAULT_PROJECT).trim(),
-    clientEmail:String(env.FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL||'').trim(),
-    privateKey:String(env.FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY||'').replace(/\\n/g,'\n').trim(),
-    databaseUrl:String(env.FAMILYAPP_FIREBASE_DATABASE_URL||DEFAULT_DB).replace(/\/$/,'').trim(),
-    webApiKey:String(env.FAMILYAPP_FIREBASE_WEB_API_KEY||DEFAULT_WEB_API_KEY).trim()
+    projectId:unwrapEnvString(env.FAMILYAPP_FIREBASE_SERVICE_PROJECT_ID||DEFAULT_PROJECT),
+    clientEmail:unwrapEnvString(env.FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL||''),
+    privateKey:normalizePrivateKey(env.FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY||''),
+    databaseUrl:unwrapEnvString(env.FAMILYAPP_FIREBASE_DATABASE_URL||DEFAULT_DB).replace(/\/$/,''),
+    webApiKey:unwrapEnvString(env.FAMILYAPP_FIREBASE_WEB_API_KEY||DEFAULT_WEB_API_KEY)
   };
 }
 function requireConfig(config){
@@ -49,13 +62,19 @@ async function jsonFetch(fetchImpl,url,options){
   let body=null;try{body=await response.json();}catch(e){try{body=await response.text();}catch(_){} }
   return{ok:response.ok,status:response.status,headers:response.headers,body};
 }
+function oauthFailureDetail(result){
+  const body=result&&result.body;
+  const error=body&&typeof body==='object'&&body.error?String(body.error):'';
+  const description=body&&typeof body==='object'&&body.error_description?String(body.error_description):'';
+  return ['http='+String(result&&result.status||0),error&&('error='+error.slice(0,80)),description&&('description='+description.slice(0,280))].filter(Boolean).join(' ');
+}
 async function serviceAccessToken(config,fetchImpl){
   const assertion=serviceAssertion(config);
   const result=await jsonFetch(fetchImpl,TOKEN_AUD,{
     method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion}).toString()
   });
-  if(!result.ok||!result.body||!result.body.access_token)throw coded('PUSH_SERVER_OAUTH_FAILED',502,String(result.status));
+  if(!result.ok||!result.body||!result.body.access_token)throw coded('PUSH_SERVER_OAUTH_FAILED',502,oauthFailureDetail(result));
   return String(result.body.access_token);
 }
 async function verifyFirebaseUser(idToken,config,fetchImpl){
