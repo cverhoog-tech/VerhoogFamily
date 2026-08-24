@@ -66,7 +66,7 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   assert.strictEqual(events.version,'2.0.0');
 
   // Unkeyed/random notification creation is deliberately no longer accepted.
-  await assert.rejects(()=>store.publish({type:'system.message',title:'Legacy'}),/EVENT_KEY_REQUIRED/i);
+  assert.throws(()=>store.publish({type:'system.message',title:'Legacy'}),/EVENT_KEY_REQUIRED/i);
 
   const helpTask={id:'task42',title:'Badkamer',helpRequestedAt:111,updatedAt:111};
   const help1=await events.taskHelpRequested(helpTask,'userB');
