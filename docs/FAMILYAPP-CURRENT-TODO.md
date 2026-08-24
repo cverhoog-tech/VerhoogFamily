@@ -9,8 +9,8 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 8 — Finance: final verification after premium PDF implementation.**
-Do not start STEP 9 until the premium two-page PDF report is verified in a fresh Vercel preview/on iPhone and STEP 8 is explicitly accepted/frozen.
+**STEP 8 — Finance: final iPhone verification after premium PDF deployment.**
+Do not start STEP 9 until the premium two-page PDF report is verified on iPhone and STEP 8 is explicitly accepted/frozen.
 
 ## STEP 8 — Finance
 
@@ -42,7 +42,7 @@ Do not start STEP 9 until the premium two-page PDF report is verified in a fresh
 - [x] Original PDF generation on iPhone accepted.
 - [x] Original native share flow / WhatsApp PDF sharing accepted.
 - [x] Design and implement the final premium PDF report template.
-- [ ] Confirm the new premium PDF template in a fresh Vercel READY preview.
+- [x] Confirm the new premium PDF template in a fresh Vercel READY preview — verified 2026-08-24 on deployment `dpl_2JCsQxBNKDXd9dkfvtDVCurRyaNy`; deployed asset serves `FinanceAnalysisExport v2.0.0`.
 - [ ] Final iPhone check of the new premium two-page PDF: open/render, scroll both pages, share to WhatsApp, confirm readable output.
 - [x] Extra-strict Finance privacy/isolation regression check — automated contracts cover household A→B switching, stale callbacks, household-scoped writes, active-household-only reset, logout projection clear, rejected logged-out writes, stale callback after logout, and reconnect into another household; Household Rebuild Contracts passed on 2026-08-23.
 - [x] Update legacy `docs/household-rebuild-v2-progress.md` so it reflects STEP 8 as the current phase.
