@@ -17,6 +17,24 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 push readiness gate hardened before iPhone permission
+
+- Upgraded `/api/push-config` to `v1.1.0` so the client receives safe readiness booleans for both halves of the delivery path: `vapidConfigured` and `senderConfigured`. The endpoint returns the public VAPID key but never returns the protected sender email/private key values.
+- `configured=true` now requires both the public Web Push/VAPID configuration and the protected trusted-sender credentials. A partially configured deployment can no longer look push-ready.
+- Upgraded `PushRegistrationService` to `v1.1.0`. Full delivery readiness is checked before the only `Notification.requestPermission()` call; missing VAPID, missing sender credentials or otherwise incomplete delivery config therefore cannot trigger a misleading iOS/browser permission prompt.
+- Upgraded `PushNotificationSettings` to `v1.1.0`. The UI now distinguishes “Web Push-config ontbreekt” from “Push sender ontbreekt”, while keeping both states non-interactive until deployment configuration is complete.
+- Updated the served loader to `pushRegistrationService.js?v=2` and `pushNotificationSettings.js?v=2` so the readiness-aware behavior cannot be hidden behind stale browser/PWA assets once a fresh deployment is available.
+- Added `scripts/test-push-config-readiness.js`: no config => not ready; VAPID only => not ready; VAPID + protected sender env => ready; sender email/private-key values must never appear in the public response.
+- Updated the push registration and served-runtime contracts to guard the readiness-before-permission ordering and the new cache/version wiring.
+- Complete `Household Rebuild Contracts` passed on commit `9b99e95f50e4cd79b5ebdef50e28e855abd30b44`, workflow run `32760089951`.
+- The rapid readiness-hardening commit sequence hit Vercel Hobby `build-rate-limit` again for this exact latest cut. Therefore no fresh READY preview is claimed yet for `PushRegistrationService v1.1.0` / `PushNotificationSettings v1.1.0`.
+- The immediately previous complete trusted-sender deployment remains READY: `dpl_3z8j32rjZDG3x41LSNMuPuLUhT2G` on code commit `6c616aea701175ae6d9e8039c5f33574ba37c9c7`. Its `/api/app` was directly verified, but it predates this final readiness-aware permission gate.
+- Next gate is configuration, not more domain architecture: set the Preview VAPID key and protected Firebase sender credentials in Vercel without putting the private key in chat/GitHub, then obtain a fresh READY deployment and perform the cross-device/iPhone Home Screen delivery tests.
+- STEP 10 remains **in progress / not frozen**.
+- No production Firebase Rules were changed or deployed.
+
+---
+
 ## 2026-08-24 — STEP 10 trusted push sender contract-green and latest preview READY
 
 - Upgraded `NotificationStore` to `v2.1.0`. Canonical event creation remains the source of truth; only a newly created canonical event is handed to Web Push, while a replay/duplicate `publishOnce()` resolves the same inbox event without a second push dispatch.
