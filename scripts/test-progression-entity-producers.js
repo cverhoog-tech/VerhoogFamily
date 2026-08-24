@@ -52,6 +52,14 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
     RecipeStore:{
       create(){recipeSeq++;return Promise.resolve({recipe:{id:'recipe_'+recipeSeq}});}
     },
+    taskTemplates:[{id:7,name:'Schoonmaak',tasks:['A','B']}],
+    taskNextId:200,
+    activateTemplate(id){
+      const tmpl=window.taskTemplates.find(t=>String(t.id)===String(id));
+      if(!tmpl)return;
+      tmpl.tasks.forEach(title=>window.taskData.unshift({id:window.taskNextId++,title}));
+      return window.awardXP(5,'Template');
+    },
     addEventListener(){},dispatchEvent(){}
   };
   const document={readyState:'complete',getElementById(){return null;}};
@@ -62,12 +70,13 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
 
   const bridge=window.ProgressionProducerBridge;
   assert.ok(bridge);
-  assert.strictEqual(bridge.version,'1.0.0');
+  assert.strictEqual(bridge.version,'1.1.0');
   const bridgeStatus=bridge.status();
   assert.strictEqual(bridgeStatus.notes,true);
   assert.strictEqual(bridgeStatus.feedPost,true);
   assert.strictEqual(bridgeStatus.feedLike,true);
   assert.strictEqual(bridgeStatus.recipe,true);
+  assert.strictEqual(bridgeStatus.taskTemplates,true);
   assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,0);
 
   // New note: the id known before insertion becomes the stable reward key.
@@ -106,14 +115,23 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   assert.strictEqual(recipeReward.key,'recipe:recipe_1');
   assert.ok(rewards['recipe:recipe_1']);
 
-  assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,0,'all bridged entity producers must remain deterministic');
+  // A task-template activation is a distinct batch identified by the first task
+  // id allocated to that activation. Re-activating later creates a new batch/key.
+  const template1=await window.activateTemplate(7);
+  assert.strictEqual(template1.key,'taskTemplate:7:activation:200');
+  assert.ok(rewards['taskTemplate:7:activation:200']);
+  const template2=await window.activateTemplate(7);
+  assert.strictEqual(template2.key,'taskTemplate:7:activation:202');
+  assert.ok(rewards['taskTemplate:7:activation:202']);
+
+  assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,0,'all bridged entity/batch producers must remain deterministic');
   assert.strictEqual(window.ProgressionRuntime.status().pendingRewardCount,0,'all queued producer contexts must be consumed');
 
   if(loaderSource.includes('progressionProducerBridge.js')){
     const runtimeIdx=loaderSource.indexOf('src/core/progressionRuntime.js?v=2');
-    const bridgeIdx=loaderSource.indexOf('src/core/progressionProducerBridge.js?v=1');
+    const bridgeIdx=loaderSource.indexOf('src/core/progressionProducerBridge.js?v=2');
     assert.ok(runtimeIdx>-1&&bridgeIdx>runtimeIdx,'producer bridge must be served after ProgressionRuntime v1.1');
   }
 
-  console.log('STEP 9 feed/recipe/note progression producer contract: PASS');
+  console.log('STEP 9 feed/recipe/note/template progression producer contract: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
