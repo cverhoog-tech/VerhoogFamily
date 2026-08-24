@@ -17,6 +17,21 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 9 iPhone gate accepted/frozen; STEP 10 Notifications opened
+
+- Product owner confirmed the final STEP 9 iPhone test works.
+- The real-device acceptance covers the agreed smoke path: normal app/session startup with Home XP visible, one normal task reward, no second XP reward for the same task completion event, Achievements rendering, multi-module navigation, reload and background/foreground stability without freeze/white screen/crash.
+- STEP 9 Progression / XP / Achievements is therefore formally **ACCEPTED / FROZEN** on `agent/household-rebuild-v2`.
+- Accepted STEP 9 includes the canonical UID + household progression store, atomic/idempotent reward ledger, canonical achievement projection, identity-safe lifecycle handling, deterministic served reward keys and the final served-runtime audit.
+- Final complete `Household Rebuild Contracts` passed on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
+- Vercel deployment `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` is READY for that code commit and its served HTML was verified with the current STEP 9 runtime/adapters.
+- `docs/FAMILYAPP-CURRENT-TODO.md` now marks STEP 10 as the current phase.
+- STEP 10 — Notifications is opened, but no notification implementation change is made as part of this closure update.
+- The first STEP 10 action is a read-only audit of current notification state, `addNotif`/notification producers, read/dismiss behavior, household/UID scoping, listener ownership and any existing push/FCM delivery code.
+- STEP 10 must preserve the roadmap separation between canonical notification state and push delivery: notification state must remain platform-neutral so native APNs/FCM delivery and notification actions can be attached later without another domain rewrite.
+
+---
+
 ## 2026-08-24 — STEP 9 deterministic producer migration complete; final iPhone gate next
 
 - Completed the remaining served XP/reward producer migration on `agent/household-rebuild-v2`.
@@ -38,9 +53,9 @@ Newest entries belong at the top.
 - A later audit failure was test-only: comment text containing `myXP +=` was counted as executable code. The audit was made comment-insensitive; no app behavior changed for that correction.
 - Legacy alternative paths are now explicitly classified: old `shop.js`, `groupQuests.js`, `groupQuestRewardPolish.js` and `recipeBottomSheetBridge.js` are not in the current served graph; task-trade entry UI remains removed; no served module calls legacy `trackDuoProgress`. These are STEP 16 cleanup candidates rather than hidden live progression authorities.
 - Final complete `Household Rebuild Contracts` passed on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
-- Vercel deployment `dpl_AvwGkzdhsFbHUgFk3zKaMpNXWWF` is READY for that same code commit.
-- Served STEP 9 runtime wiring/cache versions are guarded by the served-runtime contract. Direct network asset inspection from the protected preview is SSO-gated, but the READY deployment metadata points to the exact green code commit.
-- STEP 9 is NOT frozen yet. The only remaining release gate is the real iPhone Safari/PWA smoke test and explicit product-owner acceptance.
+- Vercel deployment `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` is READY for that same code commit.
+- Served STEP 9 runtime wiring/cache versions are guarded by the served-runtime contract and the current served HTML was verified from the READY deployment.
+- At this historical checkpoint STEP 9 was not yet frozen; the subsequent real iPhone gate was accepted later on 2026-08-24.
 
 ---
 
@@ -65,8 +80,7 @@ Newest entries belong at the top.
 - One first run of the producer test failed because the Node VM harness did not mirror browser `window` globals as bare global bindings; the harness was corrected without changing app behavior.
 - Full `Household Rebuild Contracts` subsequently passed on commit `b81b936c8b7185b461268a663098f85339e4d2bd`.
 - Vercel branch deployment for that same code checkpoint reached READY.
-- STEP 9 is not complete yet. Remaining served reward producers still need deterministic keys, notably recurring tasks, Feed, recipes, notes, skills/weekly quests/abilities, Finance reward call sites and any legacy trade/duo/group paths proven to still be served.
-- `ProgressionRuntime.status().fallbackRewardCount` intentionally tracks transitional unkeyed reward calls; final STEP 9 acceptance requires eliminating those from the tested served runtime before the iPhone gate.
+- At this historical checkpoint STEP 9 was still in progress and more served reward producers remained to migrate.
 
 ---
 
