@@ -9,9 +9,9 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications: opened after accepted STEP 9 device gate; read-only audit is the next action.**
+**STEP 10 — Notifications: read-only notification + push audit complete; canonical repository foundation is the next action.**
 
-STEP 8 Finance and STEP 9 Progression / XP / Achievements are accepted/frozen. Do not start notification implementation by guessing at the current state. First audit the actually served notification runtime, current `addNotif`/producer paths, read/dismiss behavior, household/UID scoping, listener ownership and existing push/FCM code. Notification state and push delivery must remain separate architectural concerns.
+STEP 8 Finance and STEP 9 Progression / XP / Achievements are accepted/frozen. The STEP 10 audit is stored in `docs/step10-notifications-audit.md`. It found that a useful typed notification stack already exists in the repository but is currently dormant/not served, while the old FCM code is only an incomplete legacy registration stub. Do not simply reactivate the old stack unchanged: first rebuild its persistence/listener ownership on HouseholdContext, add deterministic event idempotency and contract-test lifecycle/isolation. Notification state and push delivery remain separate architectural concerns.
 
 ## STEP 8 — Finance
 
@@ -95,28 +95,55 @@ STEP 8 Finance and STEP 9 Progression / XP / Achievements are accepted/frozen. D
 
 ## STEP 10 — Notifications
 
-**Status: CURRENT PHASE — audit not yet completed.**
+**Status: CURRENT PHASE — audit complete; canonical HouseholdContext notification foundation next.**
 
-### Required first action: read-only notification audit
-- [ ] Inventory the actually served notification modules and bootstrap/runtime wiring.
-- [ ] Find all current `addNotif`/notification creation producers and classify their source domain/event.
-- [ ] Identify current notification data authority: globals/localStorage/Firebase/member/household paths.
-- [ ] Map read, unread, dismiss/delete and `Alles gelezen` behavior.
-- [ ] Map current household/UID scoping and identify any display-name/global-state leakage risk.
-- [ ] Identify listener/subscription owners and cleanup behavior across logout/account/household switch.
-- [ ] Inventory existing browser push / FCM registration, token storage, service-worker hooks and delivery code separately from in-app notification state.
-- [ ] Persist the audit in a dedicated STEP 10 architecture/audit document before mutation work starts.
+### Read-only audit
+- [x] Inventory the actually served notification modules and bootstrap/runtime wiring.
+- [x] Find current `addNotif`/notification creation producers and classify their source domain/event.
+- [x] Identify current notification data authority: globals/localStorage/Firebase/member/household paths.
+- [x] Map read, unread, dismiss/delete and `Alles gelezen` behavior.
+- [x] Map current household/UID scoping and identify display-name/global-state/stale-context risks.
+- [x] Identify listener/subscription owners and cleanup behavior across logout/account/household switch.
+- [x] Inventory existing browser push / FCM registration, token storage, service-worker hooks and delivery code separately from in-app notification state.
+- [x] Persist the audit in `docs/step10-notifications-audit.md`.
 
-### Target architecture from the rebuild roadmap
-- [ ] One canonical household notification store.
-- [ ] Per-UID read/dismiss state.
-- [ ] Domain-event projection rather than ad-hoc UI-only notification mutation.
-- [ ] Exactly one household notification listener with explicit cleanup/unsubscribe.
-- [ ] Household/account switch clears stale notification projection and stale callbacks cannot repopulate prior household data.
-- [ ] Push delivery remains separate from canonical notification state.
-- [ ] Notification domain/repository contract remains platform-neutral so later APNs/FCM/native notification actions can attach without rewriting notification state.
-- [ ] Add notification isolation/lifecycle/idempotency contract tests before device gate.
-- [ ] Fresh Vercel branch preview + real iPhone Safari/PWA gate before STEP 11.
+### Audit findings
+- [x] Existing `NotificationStore`, `NotificationEvents`, `NotificationActions`, `NotificationCenter`, `NotificationDelivery` and task/Party Quest notification projectors are useful prior architecture but are currently dormant/not loaded by the served rebuild runtime.
+- [x] Legacy `addNotif(...)` is already a no-op compatibility facade; `notifData` remains legacy demo state only.
+- [x] Existing dormant notification persistence is `families/{householdId}/shared/notifications` with per-UID `readBy` / `dismissedBy`, but it still relies on `fbFamilyId`/generic FamilyDataStore rather than HouseholdContext stale-context protection.
+- [x] Existing notification publishing uses random IDs and therefore lacks cross-device/domain-event idempotency.
+- [x] Existing `NotificationDelivery` is an in-app live banner channel, not OS push.
+- [x] Existing FCM code in `duoQuests.js` is an incomplete legacy token-registration stub; reliable push is not currently operational.
+- [x] No complete messaging service worker, foreground `onMessage`, token lifecycle, trusted sender or multi-device private token registry was found.
+
+### Canonical in-app notification foundation
+- [ ] Add `NotificationHouseholdRepository` bound to `HouseholdContext` at the existing household notification path.
+- [ ] Exactly one household + UID listener with explicit detach and stale-callback rejection.
+- [ ] Clear stale projection immediately on logout/account/household switch.
+- [ ] Convert `NotificationStore` into the canonical facade over that repository while preserving per-UID read/dismiss semantics.
+- [ ] Add deterministic `eventKey` / `publishOnce()` so one domain transition cannot create duplicate notification events across devices/tabs.
+- [ ] Migrate typed NotificationEvents/projectors to stable keys.
+- [ ] Add notification repository lifecycle/isolation/idempotency contracts before serving the new runtime.
+- [ ] Wire the notification stack into the actual `/api/app` served graph only after contracts are green.
+- [ ] Add served-runtime notification audit.
+- [ ] Verify inbox, unread badge, live banner and actionable task/Party Quest notifications cross-device.
+
+### Push delivery — part of STEP 10, separate layer
+- [ ] Add a user-private multi-device push registry, logically `users/{uid}/private/pushDevices/{deviceId}`.
+- [ ] Keep tokens out of household-shared notification state.
+- [ ] Add platform-neutral push registration/delivery service contract for web now and native iOS/Android later.
+- [ ] Add deliberate user opt-in/permission flow; do not request notification permission opportunistically during startup.
+- [ ] Add Web/PWA service worker + FCM registration/foreground handling.
+- [ ] Add token refresh/revocation/logout/account-switch lifecycle handling.
+- [ ] Add trusted server-side sender; client must never contain FCM server/service-account credentials.
+- [ ] Evaluate Vercel server-side delivery boundary first while Firebase remains on Spark.
+- [ ] Push delivery failure must not remove/corrupt canonical notification inbox state.
+- [ ] Add sanitized delivery-health status separately from per-user read/dismiss state.
+
+### Final STEP 10 gates
+- [ ] Full Household Rebuild Contracts after in-app + push implementation.
+- [ ] Fresh Vercel branch preview with served notification/push assets verified.
+- [ ] Real iPhone Safari/PWA gate: inbox, unread/read state, cross-device incoming notification, actionable notification, permission/push path where supported, reload/background→foreground stability.
 - [ ] Freeze STEP 10 only after product acceptance.
 
 ## Later roadmap phases
@@ -142,6 +169,7 @@ STEP 8 Finance and STEP 9 Progression / XP / Achievements are accepted/frozen. D
 - Platform admin remains separate from household admin and must not imply unrestricted raw household-content access.
 - Notifications must be household-scoped where shared and UID-scoped where user-specific.
 - Notification state and push delivery are separate layers; a delivery failure must not redefine canonical notification state.
-- Realtime notification subscriptions require explicit teardown and stale-context protection.
+- Realtime notification subscriptions require explicit teardown and HouseholdContext stale-context protection.
+- Push/device credentials are user-private technical data, never household-shared content.
 - New notification architecture must remain callable from a future native shell and must not depend on web-only notification APIs for domain correctness.
 - Every meaningful development update must append to `docs/FAMILYAPP-UPDATE-LOG.md` and update this TODO in the same work session.
