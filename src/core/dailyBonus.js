@@ -21,11 +21,30 @@ function checkDailyBonus(){
 function claimDailyBonus(){
   var ov=document.getElementById('daily-bonus-overlay');if(!ov)return;
   var xp=ov._pendingXP||5;
-  dailyBonusData.lastClaim=todayStr();
-  localStorage.setItem('familie_daily_bonus',JSON.stringify(dailyBonusData));
-  ov.style.display='none';
-  awardXP(xp,'Dagelijkse bonus');
-  showToast('🎁 +'+xp+' XP dagelijkse bonus!');
-  spawnConfetti();
+  var day=todayStr();
+  var reward;
+  try{
+    reward=awardXP(xp,'Dagelijkse bonus',{
+      key:'daily:'+day,
+      source:'daily-bonus',
+      sourceId:day
+    });
+  }catch(error){
+    console.error('[DailyBonus] reward failed',error);
+    showToast('Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.');
+    return;
+  }
+  Promise.resolve(reward).then(function(result){
+    if(result&&result.error){
+      showToast('Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.');
+      return;
+    }
+    dailyBonusData.lastClaim=day;
+    localStorage.setItem('familie_daily_bonus',JSON.stringify(dailyBonusData));
+    ov.style.display='none';
+    if(!result||result.awarded!==false)showToast('🎁 +'+xp+' XP dagelijkse bonus!');
+    else showToast('🎁 Dagelijkse bonus was al geclaimd');
+    spawnConfetti();
+  });
 }
 
