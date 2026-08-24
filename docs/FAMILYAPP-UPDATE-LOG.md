@@ -17,6 +17,32 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 trusted push sender contract-green and latest preview READY
+
+- Upgraded `NotificationStore` to `v2.1.0`. Canonical event creation remains the source of truth; only a newly created canonical event is handed to Web Push, while a replay/duplicate `publishOnce()` resolves the same inbox event without a second push dispatch.
+- Push dispatch is best-effort and occurs after the canonical notification transaction. A push/server/FCM failure cannot undo or redefine inbox/read/dismiss state.
+- Added `PushDeliveryBridge v1.0.0`. The client sends only the active `householdId` and canonical `notificationId` to the trusted sender after obtaining the current Firebase ID token; recipient tokens/title/body are not accepted as client authority.
+- Added `api/push-send.js` as the Vercel POST boundary and `src/server/firebasePushSender.js v1.0.0` as the server-only FCM HTTP v1 sender.
+- The sender verifies the Firebase caller, requires active household membership and requires the caller to be the canonical notification actor, preventing another household member from replaying someone else's event.
+- Intended recipients are resolved server-side from the canonical event audience. The actor is excluded and only enabled private FCM device registrations for intended recipient UIDs are read.
+- Trusted Firebase sender credentials are read only from protected server environment variables (`FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL`, `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`, optional project configuration). No sender credential is present in client code, public config or repository files.
+- FCM messages are data-only and carry canonical notification/event identity and route metadata. The realtime NotificationStore remains the inbox authority.
+- Added private delivery-health receipts at `users/{uid}/private/pushDelivery/{notificationId}/{deviceId}`. Receipts contain sanitized status/provider/timestamps, not the device token.
+- A successful per-device receipt makes delivery idempotent: retrying the same canonical event skips a second FCM send to that device. FCM `UNREGISTERED` devices are disabled in the private device registry.
+- Extended `test-notification-store-events.js` for `NotificationStore v2.1.0` and one-time push handoff semantics.
+- Extended `test-notification-served-runtime.js` for the active `pushDeliveryBridge`, trusted sender boundary, public-config secret separation and current loader cache versions.
+- Added `test-push-server-sender.js` covering Firebase caller authorization, actor-only replay protection, canonical recipient resolution, data-only FCM payloads, private receipt idempotency and no token leakage.
+- Two intermediate failures were test expectation issues, not product regressions: one assertion expected a literal `PushDeliveryBridge.dispatchCreated` call although the store uses a local bridge variable; another security assertion referenced a superseded credential-env naming assumption. Both tests were aligned to the implemented boundary.
+- Final complete `Household Rebuild Contracts` passed on commit `6c616aea701175ae6d9e8039c5f33574ba37c9c7`, workflow run `32759246722`.
+- Vercel is no longer blocked by the Hobby build-rate-limit for the current branch. Deployment `dpl_3z8j32rjZDG3x41LSNMuPuLUhT2G` is READY for the same commit.
+- The deployed `/api/app` response was directly inspected and contains the current STEP 10 runtime: `notificationStore.js?v=3`, `pushDeviceRegistry.js?v=1`, `pushRegistrationService.js?v=1`, `pushDeliveryBridge.js?v=1`, `pushNotificationSettings.js?v=1` and current notification projectors.
+- Direct isolated connector fetches of `/api/push-config` and `/firebase-messaging-sw.js` were redirected by Vercel preview SSO, so the READY build alone is **not** treated as proof that VAPID/service credentials are configured.
+- Remaining STEP 10 gate: confirm/configure protected Vercel VAPID + Firebase sender environment variables, create/verify the resulting runtime, then perform real cross-device inbox/action and iPhone Home Screen push tests.
+- STEP 10 is **not frozen yet**.
+- No production Firebase Rules were changed or deployed.
+
+---
+
 ## 2026-08-24 — STEP 10 Web Push client foundation implemented
 
 - Added `PushDeviceRegistry v1.0.0` with user-private multi-device storage at `users/{uid}/private/pushDevices/{deviceId}`. Push tokens are no longer part of the household-shared design.
@@ -33,8 +59,8 @@ Newest entries belong at the top.
 - Added `scripts/test-push-device-registry.js` and `scripts/test-push-registration-service.js`; extended the real served-runtime audit to cover push module order, private token storage, no automatic permission prompt, service-worker presence and public-config boundaries.
 - One served-runtime security test initially produced a false positive because it matched the words “service-account/private key” in explanatory source comments. The test was narrowed to concrete forbidden server credential environment identifiers; no app/public-endpoint behavior needed changing.
 - Full `Household Rebuild Contracts` passed on commit `d89057f0b78caf4f1acb00106cd9d03f2d9ed538`, including the new push registry/registration tests.
-- Vercel remains blocked by the Hobby `build-rate-limit`, so no fresh READY preview or real push delivery is claimed yet.
-- Web Push is not yet operational end-to-end: a trusted server-side sender and protected deployment credentials/public VAPID configuration still need to be implemented/configured and tested.
+- At this historical checkpoint Vercel was still blocked by the Hobby `build-rate-limit`; the later trusted-sender checkpoint above has since produced a fresh READY deployment.
+- Web Push was not yet operational end-to-end at this checkpoint: a trusted server-side sender and protected deployment credentials/public VAPID configuration still needed implementation/configuration.
 - Push failure remains architecturally separate from canonical notification inbox/read/dismiss state.
 - No production Firebase Rules were changed or deployed.
 
