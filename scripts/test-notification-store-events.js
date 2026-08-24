@@ -57,6 +57,7 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   vm.createContext(sandbox);
   vm.runInContext(storeSource,sandbox,{filename:'notificationStore.js'});
   sandbox.NotificationStore=window.NotificationStore;
+  sandbox.TaskSharedData=window.TaskSharedData;
   vm.runInContext(eventsSource,sandbox,{filename:'notificationEvents.js'});
   sandbox.NotificationEvents=window.NotificationEvents;
 
