@@ -9,11 +9,11 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications: in-app notifications, Web Push client, trusted sender and deployment-readiness gating are code/contract-green; protected Preview configuration is active and final iPhone/cross-device gates remain.**
+**STEP 10 — Notifications: implementation, trusted sender, Preview configuration and iPhone standalone Web Push opt-in are complete; real cross-device/background delivery and isolation acceptance remain.**
 
 STEP 8 Finance and STEP 9 Progression are accepted/frozen. STEP 10 has one HouseholdContext-native notification authority, deterministic/idempotent events, UID-specific read/dismiss state, a private multi-device push registry, explicit Web Push opt-in, service-worker/FCM transport, best-effort push handoff, a trusted Vercel sender and a readiness endpoint that blocks the permission prompt until both the public VAPID key and protected sender credentials are present.
 
-The Vercel **Preview** environment now contains the public VAPID key and protected Firebase sender credentials. Deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` proved `/api/push-config` returns `configured=true`, `vapidConfigured=true` and `senderConfigured=true`. After the first iPhone attempt exposed two UX issues, commit `caa5df5905ad354e5b271e96f36a60bd4d7786cc` fixed Profile → Meldingen routing and changed the iPhone Safari state to explain that push requires the Home Screen PWA instead of incorrectly showing generic “Niet ondersteund”. Household Rebuild Contracts are green for that commit (run `32774000920`) and Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` is READY; its served `/api/app` was verified with `pushNotificationSettings.js?v=3`. Do **not** freeze STEP 10 yet.
+The Vercel **Preview** environment contains the public VAPID key and protected Firebase sender credentials, and the configured runtime previously returned `configured=true`, `vapidConfigured=true` and `senderConfigured=true`. The iPhone Home Screen gate has now also passed: the Preview was opened as a standalone PWA, iOS notification permission was accepted, and the notification card now reports `Pushmeldingen staan aan voor dit account op dit apparaat`. In the current registration flow that enabled state is reached only after FCM token acquisition and a successful `PushDeviceRegistry.upsert`, so the standalone registration path is accepted at runtime level. The next gate is actual PC/browser → iPhone delivery while the PWA is backgrounded/closed, followed by read/dismiss/action and account-isolation checks. Do **not** freeze STEP 10 yet.
 
 ## Frozen phases
 
@@ -22,7 +22,7 @@ The Vercel **Preview** environment now contains the public VAPID key and protect
 
 ## STEP 10 — Notifications
 
-**Status: CURRENT PHASE — implementation/code/deployment-config gates complete; real device acceptance remains open.**
+**Status: CURRENT PHASE — implementation/code/deployment-config/standalone opt-in gates complete; real delivery and isolation acceptance remain open.**
 
 ### Audit / architecture
 - [x] Read-only notification + push audit stored in `docs/step10-notifications-audit.md`.
@@ -89,8 +89,8 @@ The Vercel **Preview** environment now contains the public VAPID key and protect
 - [x] `test-push-config-readiness.js` proves: no config → not ready; VAPID only → not ready; VAPID + sender env → ready; sender values never appear in response.
 - [x] Served runtime audit covers current notification + readiness-aware Web Push + trusted sender wiring.
 - [x] Profile notification navigation and iPhone Home Screen guidance ordering are guarded in the served-runtime contract.
-- [x] Latest `Household Rebuild Contracts` PASS on `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, run `32774000920`.
-- [x] Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` READY for the same commit.
+- [x] Latest code-side `Household Rebuild Contracts` PASS on `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, run `32774000920`.
+- [x] Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` READY for the same code commit.
 - [x] Deployed `/api/app` directly verified with `pushNotificationSettings.js?v=3` and the current STEP 10 runtime graph.
 - [x] Earlier post-config Preview deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` directly verified `/api/push-config` with `configured=true`, `vapidConfigured=true`, `senderConfigured=true`.
 
@@ -102,12 +102,12 @@ The Vercel **Preview** environment now contains the public VAPID key and protect
 - [x] Private key was not pasted into chat/GitHub/public config.
 - [x] Fresh READY preview obtained after environment configuration.
 - [x] Public readiness endpoint verified full delivery readiness on the configured Preview environment.
-- [ ] Verify explicit standalone-PWA push registration creates a real private device record.
+- [x] Standalone iPhone PWA explicit opt-in completed; UI reached enabled state only after the current registration path completed its private-device upsert.
 
 ### Preview / device gates
 - [x] Fresh READY preview for the latest Profile/iPhone guidance fix.
-- [ ] Open the Preview from an **iPhone Home Screen icon**, not a normal Safari tab; confirm the card offers `Pushmeldingen inschakelen`.
-- [ ] Explicit iPhone Home Screen push opt-in succeeds and creates a private device registration.
+- [x] Preview opened from an **iPhone Home Screen icon** rather than a normal Safari tab; push enablement became available.
+- [x] Explicit iPhone Home Screen push opt-in succeeded; iOS permission was accepted and the card reports push enabled for this account/device.
 - [ ] Cross-device inbox: PC/browser account A creates event for iPhone account B; B sees exactly one unread event.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner only for intended current identity.

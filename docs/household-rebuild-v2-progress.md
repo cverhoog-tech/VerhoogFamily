@@ -28,9 +28,9 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen on 2026-08-24.
-- [-] STEP 10 — Notifications — in-app + Web Push + trusted sender + readiness gating implemented, Preview configuration active and latest fix preview READY; real device acceptance remains.
+- [-] STEP 10 — Notifications — in-app + Web Push + trusted sender + readiness gating implemented, Preview configuration active, and iPhone standalone opt-in accepted; real delivery/isolation acceptance remains.
 
-**Current phase: STEP 10 Notifications. The notification/inbox authority, Web Push registration lifecycle, trusted sender, permission-readiness gate and protected Preview configuration are in place. The first iPhone attempt was made from a normal Safari tab, which cannot be the final iOS Web Push gate; the UI now gives correct Home Screen guidance and Profile → Meldingen opens the canonical notification screen. Next complete standalone-PWA opt-in and PC→iPhone cross-device/background delivery acceptance. Do not freeze STEP 10 before those gates pass.**
+**Current phase: STEP 10 Notifications. The notification/inbox authority, Web Push registration lifecycle, trusted sender, permission-readiness gate and protected Preview configuration are in place. The iPhone Preview has now been opened as a Home Screen PWA, iOS permission was accepted, and the push card reports the account/device as enabled. The next gate is actual PC/browser → iPhone delivery while backgrounded/closed, followed by canonical read/dismiss/action and account-isolation checks. Do not freeze STEP 10 before those gates pass.**
 
 ## Prototype end-goal gate
 
@@ -57,7 +57,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 10 — Notifications
 
-**Current phase — implementation, code, protected Preview configuration and fresh deployment gates complete; real device acceptance remains.**
+**Current phase — implementation, code, protected Preview configuration, fresh deployment and standalone iPhone opt-in gates complete; real delivery/isolation acceptance remains.**
 
 ### Canonical notification state
 - [x] `NotificationHouseholdRepository v1.0.0` on household-scoped notification path.
@@ -88,6 +88,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Full `configured=true` requires VAPID and sender credentials; sender values are never returned.
 - [x] Delivery readiness is checked before the only `Notification.requestPermission()` call.
 - [x] Push client modules activated in served runtime with cache versions `pushRegistrationService.js?v=2` and `pushNotificationSettings.js?v=3`.
+- [x] Real iPhone standalone-PWA explicit opt-in accepted; the UI reached enabled state after the registration path completed.
 
 ### Trusted sender / delivery health
 - [x] `PushDeliveryBridge v1.0.0` sends only canonical notification identity to the backend.
@@ -114,7 +115,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Push config readiness contract: no config → not ready; VAPID only → not ready; VAPID + protected sender env → ready; no sender value exposure.
 - [x] Served runtime audit covers in-app + readiness-aware Web Push + trusted sender wiring and no-auto-permission behavior.
 - [x] Served runtime audit guards Profile → Meldingen routing and the iPhone Home Screen guidance ordering.
-- [x] Latest full Household Rebuild Contracts PASS on `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, run `32774000920`.
+- [x] Latest code-side Household Rebuild Contracts PASS on `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, run `32774000920`.
 - [x] Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` READY for the same code commit.
 - [x] Deployed `/api/app` directly inspected and confirmed `pushNotificationSettings.js?v=3` in the current STEP 10 runtime.
 - [x] Post-config deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` directly verified `/api/push-config` with `configured=true`, `vapidConfigured=true` and `senderConfigured=true`.
@@ -127,11 +128,11 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Private key was not placed in chat/GitHub/public config.
 - [x] Fresh READY deployment obtained after environment configuration.
 - [x] Public readiness endpoint verified all required Preview configuration ready.
-- [ ] Verify standalone-PWA opt-in creates a real private push-device registration.
+- [x] Standalone-PWA opt-in completed and the runtime reached the enabled push state for the current account/device.
 
 ### Device acceptance — open
-- [ ] Open Preview from an iPhone Home Screen icon and confirm the Push card offers `Pushmeldingen inschakelen` rather than Safari-only guidance.
-- [ ] Real iPhone standalone-PWA push opt-in succeeds.
+- [x] Preview opened from an iPhone Home Screen icon and Push card exposed the explicit enable action.
+- [x] Real iPhone standalone-PWA push opt-in succeeded and iOS notification permission was accepted.
 - [ ] PC/browser account A → iPhone account B cross-device in-app notification/read/dismiss/action test.
 - [ ] Background push reaches the iPhone and opens/focuses notification screen without duplicate canonical inbox state.
 - [ ] Account-switch push/inbox isolation test.
@@ -178,6 +179,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-24 — push readiness gate hardened before permission.
 - 2026-08-24 — protected Vercel Preview push configuration completed and runtime readiness verified.
 - 2026-08-24 — Profile → Meldingen navigation and iPhone Safari/Home Screen guidance corrected; latest contracts and preview READY.
+- 2026-08-24 — iPhone Home Screen Preview Web Push permission accepted and account/device reached enabled registration state.
 
 ## Maintenance rule
 

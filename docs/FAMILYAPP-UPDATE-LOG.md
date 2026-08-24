@@ -17,6 +17,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 iPhone standalone Web Push opt-in accepted
+
+- Product owner opened the configured Preview from an iPhone Home Screen icon and accepted the iOS notification permission prompt.
+- The notification screen now reports `Pushmeldingen staan aan voor dit account op dit apparaat` and exposes the explicit `Pushmeldingen uitschakelen` action, confirming the UI is in the enabled standalone-PWA state rather than the Safari-only guidance state.
+- In `PushRegistrationService v1.1.0`, the enabled state is set only after FCM token acquisition and a successful `PushDeviceRegistry.upsert`; this therefore accepts the standalone registration path at runtime level for the tested account/device.
+- The two earlier iPhone gates are now complete: Home Screen/standalone detection works and explicit user-initiated notification permission/registration succeeds.
+- No notification domain or product code was changed for this checkpoint; only persistent phase/TODO documentation is being advanced.
+- The next STEP 10 gate is real delivery: keep the iPhone PWA backgrounded/closed, create a canonical targeted notification from a second household account in a PC/browser session, verify exactly one OS push and one canonical unread inbox item, then test open/focus, read/dismiss/action, account-switch isolation and background→foreground stability.
+- STEP 10 remains **in progress / not frozen**. Main and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-24 — STEP 10 Preview push configured; iPhone notification UX corrected
 
 - The required Web Push values were configured directly in the Vercel **Preview** environment: public `FAMILYAPP_WEB_PUSH_VAPID_KEY` plus protected `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL` and `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`. The private key was not placed in chat, GitHub or public config.
