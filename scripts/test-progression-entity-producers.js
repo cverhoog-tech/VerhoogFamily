@@ -1,0 +1,115 @@
+'use strict';
+const fs=require('fs');
+const assert=require('assert');
+const vm=require('vm');
+
+const runtimeSource=fs.readFileSync('src/core/progressionRuntime.js','utf8');
+const bridgeSource=fs.readFileSync('src/core/progressionProducerBridge.js','utf8');
+const loaderSource=fs.readFileSync('api/app.js','utf8');
+
+function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
+
+(async function(){
+  let xp=10;
+  const rewards={};
+  const ProgressionStore={
+    getCurrentXp(){return xp;},
+    status(){return{uid:'userA',householdId:'houseA',attached:true,xp};},
+    hasReward(key){return !!rewards[key];},
+    hasAchievement(){return false;},
+    awardOnce(key,amount,meta){
+      if(rewards[key])return Promise.resolve({awarded:false,key,amount:0,xp});
+      rewards[key]={amount,meta};xp+=amount;window.myXP=xp;
+      return Promise.resolve({awarded:true,key,amount,xp});
+    },
+    unlockAchievementOnce(){return Promise.resolve({unlocked:false,awarded:false,xp});}
+  };
+
+  let liked=false;
+  let postSeq=0;
+  let recipeSeq=0;
+  const window={
+    ProgressionStore,
+    myXP:xp,
+    unlockedBadges:{},newBadges:{},BADGES:[],taskData:[],noteData:[],feedData:[],recurData:[],tradesCount:0,visitedScreens:new Set(),
+    getLevel(){return 1;},
+    updateHomeXP(){},showXPPopup(){},showAchievementToast(){},
+    awardXP(){throw new Error('legacy awardXP must be replaced');},
+    checkAchievements(){},
+    activeNoteId:null,
+    noteNextId:5,
+    saveNote(){
+      if(!window.activeNoteId){
+        const id=window.noteNextId++;
+        window.activeNoteId=id;
+        return window.awardXP(4,'Notitie');
+      }
+    },
+    FeedSharedData:{
+      createPost(){postSeq++;return Promise.resolve({id:'post_'+postSeq});},
+      toggleReaction(){liked=!liked;return Promise.resolve({liked});}
+    },
+    RecipeStore:{
+      create(){recipeSeq++;return Promise.resolve({recipe:{id:'recipe_'+recipeSeq}});}
+    },
+    addEventListener(){},dispatchEvent(){}
+  };
+  const document={readyState:'complete',getElementById(){return null;}};
+  const sandbox={window,document,console,setTimeout,clearTimeout,Promise,Date,Math,JSON,Object,String,Number,Array,Set,isFinite};
+  vm.createContext(sandbox);
+  vm.runInContext(runtimeSource,sandbox,{filename:'progressionRuntime.js'});
+  vm.runInContext(bridgeSource,sandbox,{filename:'progressionProducerBridge.js'});
+
+  const bridge=window.ProgressionProducerBridge;
+  assert.ok(bridge);
+  assert.strictEqual(bridge.version,'1.0.0');
+  assert.deepStrictEqual(bridge.status(),{notes:true,feedPost:true,feedLike:true,recipe:true});
+  assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,0);
+
+  // New note: the id known before insertion becomes the stable reward key.
+  const noteResult=await window.saveNote();
+  await tick();
+  assert.strictEqual(noteResult.awarded,true);
+  assert.ok(rewards['note:5']);
+  assert.strictEqual(rewards['note:5'].meta.source,'note');
+  const xpAfterNote=xp;
+  await window.saveNote(); // edit/save existing note -> no new XP
+  assert.strictEqual(xp,xpAfterNote);
+
+  // Manual Feed post gets its Firebase/entity id before the legacy UI awards XP.
+  const created=await window.FeedSharedData.createPost({text:'Hallo'});
+  const postReward=await window.awardXP(3,'Post');
+  assert.strictEqual(created.id,'post_1');
+  assert.strictEqual(postReward.key,'feedPost:post_1');
+  assert.ok(rewards['feedPost:post_1']);
+
+  // Like -> unlike -> like again reuses the same per-user/per-post key.
+  let reaction=await window.FeedSharedData.toggleReaction('post_1');
+  assert.strictEqual(reaction.liked,true);
+  const like1=await window.awardXP(1,'Like');
+  assert.strictEqual(like1.key,'feedLike:post_1');
+  await window.FeedSharedData.toggleReaction('post_1'); // unlike: no UI awardXP call
+  reaction=await window.FeedSharedData.toggleReaction('post_1');
+  assert.strictEqual(reaction.liked,true);
+  const like2=await window.awardXP(1,'Like');
+  assert.strictEqual(like2.key,'feedLike:post_1');
+  assert.strictEqual(like2.awarded,false,'re-like must not farm XP');
+
+  // RecipeStore returns the real recipe id before RecipeEditorPopup runs awardXP.
+  const recipeResult=await window.RecipeStore.create({name:'Pasta'});
+  const recipeReward=await window.awardXP(4,'Recept aangemaakt');
+  assert.strictEqual(recipeResult.recipe.id,'recipe_1');
+  assert.strictEqual(recipeReward.key,'recipe:recipe_1');
+  assert.ok(rewards['recipe:recipe_1']);
+
+  assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,0,'all bridged entity producers must remain deterministic');
+  assert.strictEqual(window.ProgressionRuntime.status().pendingRewardCount,0,'all queued producer contexts must be consumed');
+
+  if(loaderSource.includes('progressionProducerBridge.js')){
+    const runtimeIdx=loaderSource.indexOf('src/core/progressionRuntime.js?v=2');
+    const bridgeIdx=loaderSource.indexOf('src/core/progressionProducerBridge.js?v=1');
+    assert.ok(runtimeIdx>-1&&bridgeIdx>runtimeIdx,'producer bridge must be served after ProgressionRuntime v1.1');
+  }
+
+  console.log('STEP 9 feed/recipe/note progression producer contract: PASS');
+})().catch(error=>{console.error(error);process.exit(1);});
