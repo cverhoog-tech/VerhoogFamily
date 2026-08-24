@@ -2,7 +2,7 @@
 
 Branch: `agent/household-rebuild-v2`
 
-Purpose: persistent handoff log for FamilyApp development. New chats/agents should read this file together with `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/household-rebuild-v2-roadmap.md` before changing the current rebuild branch.
+Purpose: persistent handoff log for FamilyApp development. New chats/agents should read this file together with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md` and `docs/household-rebuild-v2-roadmap.md` before changing the current rebuild branch.
 
 ## Logging rule
 
@@ -14,6 +14,17 @@ For every meaningful FamilyApp code/product update on this branch:
 5. keep the roadmap as architecture scope; use the current TODO as the day-to-day execution state.
 
 Newest entries belong at the top.
+
+---
+
+## 2026-08-24 — Phase tracker synchronized to actual STEP 8 state
+
+- Replaced the stale phase-level status that still reported STEP 4 Recipes as current.
+- `docs/household-rebuild-v2-progress.md` now reflects the actual execution position: STEP 0 through STEP 7 passed in the active rebuild line, STEP 8 Finance in final verification, STEP 9 not started.
+- STEP 8 implementation summary now includes the premium Analyse UI, deterministic FamilyApp Assistent, household isolation contracts, final two-page premium PDF report and prior iPhone/share acceptance.
+- The only remaining STEP 8 release gate is a fresh Vercel preview containing the premium PDF followed by one final iPhone render/share verification.
+- `docs/FAMILYAPP-CURRENT-TODO.md` was synchronized in the same work session.
+- This documentation commit also intentionally provides a new branch push to see whether Vercel's temporary Hobby build-rate limit has cleared.
 
 ---
 
