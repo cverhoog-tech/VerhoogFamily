@@ -28,9 +28,9 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen on 2026-08-24.
-- [-] STEP 10 — Notifications — canonical in-app stack implemented/served in code with green contracts; push-delivery foundation + preview/device gates remain.
+- [-] STEP 10 — Notifications — canonical in-app + Web Push client foundation implemented with green contracts; trusted sender/configuration/preview/device gates remain.
 
-**Current phase: STEP 10 Notifications. In-app notification state is now HouseholdContext/UID-safe and deterministic. Next build the separate user-private push delivery layer while waiting for a fresh Vercel READY preview of the active in-app stack.**
+**Current phase: STEP 10 Notifications. The canonical inbox and Web Push client/device lifecycle are built. Next is the trusted server-side delivery boundary; do not claim operational push until server credentials/public VAPID deployment config and real-device delivery are verified.**
 
 ## Prototype end-goal gate
 
@@ -39,7 +39,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Multi-family readiness is an explicit prototype end goal.
 - [x] Personal platform-admin capability is an explicit prototype end goal.
 - [x] Privacy boundary defined: sanitized operational diagnostics by default, no generic raw household-content access.
-- [x] Admin authority must be tied to the product owner's authenticated personal UID via server-verifiable authorization.
+- [x] Admin authority tied to the product owner's authenticated personal UID via server-verifiable authorization.
 - [ ] At least three independent households pass end-to-end isolation/lifecycle acceptance.
 - [ ] Core modules prove no cross-household read/write/state leakage across the complete app.
 - [ ] Removed-member behavior passes final broader-beta isolation tests.
@@ -47,79 +47,73 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Firebase Rules + media authorization prove household isolation and admin privacy boundary.
 - [ ] Broader family beta acceptance gate passed.
 
-## STEP 8 — Finance
+## Frozen phases
 
-**Status: accepted/frozen on 2026-08-24.**
+### STEP 8 — Finance
+- [x] Accepted/frozen on 2026-08-24 after contracts, READY preview and real iPhone premium PDF gate.
 
-- [x] Household-scoped canonical Finance source of truth and lifecycle isolation.
-- [x] Premium Analyse + deterministic FamilyApp Assistent.
-- [x] Premium two-page PDF/native share flow.
-- [x] Contract suite + fresh preview + iPhone gate accepted.
-
-## STEP 9 — Progression / XP / Achievements
-
-**Status: accepted/frozen on 2026-08-24.**
-
-- [x] Canonical UID + household progression authority.
-- [x] Atomic/idempotent reward/achievement mutations.
-- [x] Deterministic served reward producers.
-- [x] Logout/account/household switch and stale-callback isolation.
-- [x] Served-runtime audit and complete contract suite.
-- [x] Real iPhone Safari/PWA gate accepted.
+### STEP 9 — Progression / XP / Achievements
+- [x] Accepted/frozen on 2026-08-24 after canonical UID progression, idempotent rewards, served-runtime audit and real iPhone gate.
 
 ## STEP 10 — Notifications
 
-**Current phase — canonical in-app foundation code/contract checkpoint complete; push delivery next.**
+**Current phase — in-app + Web Push client code/contract checkpoint complete.**
 
-### Audit
-- [x] Current served notification/runtime wiring inventoried.
-- [x] Notification producers, legacy `addNotif` and demo state classified.
-- [x] Read/unread/dismiss semantics mapped.
-- [x] Identity/listener/stale-context risks mapped.
-- [x] Push/FCM/token/service-worker/server-sender state audited separately.
-- [x] Detailed audit stored in `docs/step10-notifications-audit.md`.
+### Canonical notification state
+- [x] `NotificationHouseholdRepository v1.0.0` on household-scoped notification path.
+- [x] HouseholdContext UID/household/revision identity.
+- [x] Exact listener cleanup, immediate projection clear and stale-callback rejection.
+- [x] Per-UID read/dismiss semantics.
+- [x] Deterministic event keys / `publishOnce` idempotency.
+- [x] Canonical `NotificationStore v2.0.0`.
+- [x] Deterministic `NotificationEvents v2.0.0`.
+- [x] HouseholdContext-safe task/swap/Party Quest projectors.
+- [x] HouseholdContext-safe actions, notification center and in-app live banner.
+- [x] Canonical notification stack activated in actual `/api/app` load graph.
 
-### Canonical in-app notification state
-- [x] `NotificationHouseholdRepository v1.0.0` on `families/{householdId}/shared/notifications`.
-- [x] HouseholdContext UID + household + revision binding.
-- [x] Exact listener detach and stale-callback rejection.
-- [x] Immediate projection clear on logout/account/household switch.
-- [x] Per-UID `readBy` / `dismissedBy` semantics retained.
-- [x] Deterministic `eventKey` / `publishOnce` idempotency.
-- [x] `NotificationStore v2.0.0` canonical facade; random/unkeyed publishing rejected.
-- [x] `NotificationEvents v2.0.0` deterministic task/swap/Party Quest/Finance event keys.
-- [x] Task/swap/Party Quest notification projectors upgraded to HouseholdContext-safe `v2.0.0`.
-- [x] `NotificationActions v3.0.0` uses HouseholdContext identity.
-- [x] `NotificationCenter v2.0.0` clears stale detail presentation on identity change.
-- [x] `NotificationDelivery v2.0.0` is in-app banner delivery only and clears stale queue/banner state on identity change.
-- [x] Canonical notification stack activated in actual `/api/app` served graph.
+### Web Push client/device foundation
+- [x] Private multi-device registry: `users/{uid}/private/pushDevices/{deviceId}`.
+- [x] Push credentials removed from household-shared design.
+- [x] Explicit opt-in registration service; startup never requests notification permission.
+- [x] Legacy startup `setupPushNotifications()` auto-call neutralized by a safe start-only compatibility override.
+- [x] Per-account opt-in marker; account switch invalidates prior browser transport.
+- [x] iPhone/iPad enable flow requires Home Screen/standalone context before permission prompt.
+- [x] FCM service worker for background data payload + notification click routing.
+- [x] Foreground FCM copy does not create duplicate canonical inbox state.
+- [x] Explicit notification-screen push settings UI.
+- [x] Public Web Push config endpoint uses only public VAPID configuration.
+- [x] Push client modules activated in actual served runtime.
 
-### Verification checkpoint
-- [x] Notification household repository lifecycle/isolation/idempotency contract.
-- [x] Notification store + deterministic events contract.
-- [x] Notification projector lifecycle contract.
-- [x] Notification presentation/action identity contract.
-- [x] Served notification runtime audit against actual `/api/app` output.
-- [x] Complete Household Rebuild Contracts green on code commit `15ca6bca994ea5852815cad7f3e811261a783152`.
-- [!] Latest Vercel build for this checkpoint blocked by Hobby `build-rate-limit`; fresh READY preview not yet available.
-- [ ] Cross-device in-app inbox/unread/read/dismiss verification.
-- [ ] Actionable task-help / Party Quest notification verification.
-- [ ] Real iPhone reload/background→foreground stability verification for active notification runtime.
+### Contracts
+- [x] Notification repository lifecycle/isolation/idempotency.
+- [x] Notification store + deterministic event contract.
+- [x] Notification projector lifecycle.
+- [x] Notification presentation/action identity.
+- [x] Private push-device registry isolation.
+- [x] Explicit Web Push opt-in / account-switch cleanup.
+- [x] Served runtime audit covers in-app + push client wiring and no-auto-permission behavior.
+- [x] Full Household Rebuild Contracts PASS on `d89057f0b78caf4f1acb00106cd9d03f2d9ed538`.
+- [!] Vercel fresh build still blocked by Hobby `build-rate-limit`.
 
-### Push delivery
-- [ ] User-private multi-device push-device registry.
-- [ ] Platform-neutral web/native registration and delivery contract.
-- [ ] Deliberate user opt-in/permission flow.
-- [ ] Web/PWA service worker + FCM foreground/background adapter.
-- [ ] Token refresh/revocation/logout/account-switch lifecycle.
-- [ ] Trusted server-side sender; no client-side server/service-account credentials.
-- [ ] Push failure independent from canonical inbox state.
-- [ ] Sanitized delivery-health state separate from read/dismiss.
+### Trusted push sender / delivery health — open
+- [ ] Trusted server-side FCM sender.
+- [ ] Server-only credential configuration; no secret in repo/client/public endpoint.
+- [ ] Authorized recipient resolution from canonical notification audience.
+- [ ] Enabled private device lookup for intended recipient UIDs only.
+- [ ] Data-only push payload linked to canonical notification ID/event key.
+- [ ] Delivery failure independent from canonical inbox state.
+- [ ] Sanitized delivery-health record separate from read/dismiss.
+- [ ] Sender authorization/delivery/failure contracts.
+- [ ] Public VAPID key configured in deployment environment.
+- [ ] Trusted sender credentials configured in deployment environment.
 
-### Final STEP 10 gate
-- [ ] Complete in-app + push contract suite.
-- [ ] Fresh Vercel preview containing all final STEP 10 assets.
-- [ ] Real iPhone Safari/PWA STEP 10 acceptance.
+### Preview / device acceptance — open
+- [ ] Fresh READY Vercel preview containing all current STEP 10 code.
+- [ ] Deployed asset/config/service-worker verification.
+- [ ] Cross-device in-app notification/read/dismiss/action tests.
+- [ ] Real iPhone Home Screen push opt-in + background delivery test.
+- [ ] Account-switch push/inbox isolation test.
+- [ ] Reload/background→foreground stability test.
 - [ ] STEP 10 frozen only after explicit product acceptance.
 
 ## Later roadmap phases
@@ -134,37 +128,38 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Multi-family broader-beta acceptance gate with at least three independent households.
 - [ ] STEP 17 — Store distribution readiness.
 
-## Standing decisions / guardrails
+## Standing guardrails
 
-- Main stays untouched until explicit approval.
+- Main untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
-- Firebase remains on Spark unless a new product decision changes that.
-- Platform admin remains separate from household admin and must not imply generic raw household-content access.
-- STEP 8 Finance and STEP 9 Progression are frozen.
-- STEP 10 notification identity is HouseholdContext/UID based.
+- Firebase remains on Spark unless explicitly changed.
+- STEP 8 and STEP 9 remain frozen.
+- Notification identity is HouseholdContext/UID-based.
 - Notification state and push delivery are separate layers.
-- Realtime notification subscriptions require exact cleanup and stale-context protection.
-- Push/device credentials are user-private technical data.
-- Browser/native delivery adapters must never become the notification domain authority.
-- Every meaningful development update must update both `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/FAMILYAPP-UPDATE-LOG.md`.
+- Realtime subscriptions require exact cleanup/stale-context protection.
+- Push/device credentials are private technical data.
+- Browser/native delivery adapters never become notification domain authority.
+- Server secrets never enter client code/public config/repository.
+- Every meaningful development update updates both central TODO and update log.
 
 ## Milestone summary
 
-- 2026-08-19 — Stable main baseline selected and rebuild branch created.
-- 2026-08-20 — STEP 0, STEP 1 and STEP 2 accepted on real iPhone Safari.
-- 2026-08-22 — STEP 2A/2B foundation and STEP 3 Tasks accepted.
-- 2026-08-23/24 — STEP 8 Finance completed and accepted.
-- 2026-08-24 — STEP 9 canonical progression completed and real-iPhone accepted.
+- 2026-08-19 — rebuild branch created from stable baseline.
+- 2026-08-20 — STEP 0–2 accepted on real iPhone.
+- 2026-08-22 — STEP 2A/2B and STEP 3 accepted.
+- 2026-08-24 — STEP 8 Finance accepted/frozen.
+- 2026-08-24 — STEP 9 Progression accepted/frozen.
 - 2026-08-24 — STEP 10 notification/push audit completed.
-- 2026-08-24 — STEP 10 canonical in-app notification repository/store/events/projectors/presentation implemented and activated in the served loader; full contracts green, fresh Vercel preview waiting on Hobby build-rate limit.
+- 2026-08-24 — canonical in-app notification runtime implemented and contract-green.
+- 2026-08-24 — Web Push client/device foundation implemented; startup permission regression neutralized; complete contracts green; trusted sender and real-device delivery remain.
 
 ## Maintenance rule
 
 When implementation progresses:
-1. update the relevant checklist items;
+1. update relevant checklist items;
 2. append meaningful changes to `docs/FAMILYAPP-UPDATE-LOG.md`;
 3. update `docs/FAMILYAPP-CURRENT-TODO.md` in the same work session;
-4. never mark a functional phase accepted before its required tests/preview/device gate;
-5. keep the architecture roadmap synchronized when scope/order/constraints materially change;
-6. add household-isolation/lifecycle tests during each module migration rather than postponing them;
+4. never mark a functional phase accepted before required tests/preview/device gate;
+5. keep roadmap synchronized when scope/order/constraints materially change;
+6. add lifecycle/isolation tests during each module migration;
 7. never use unrestricted household-content access as a shortcut for platform diagnostics.
