@@ -172,7 +172,7 @@ function renderProfile(){
   if(!document.querySelector('link[href*="profile.target.css"]')){
     var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css'; document.head.appendChild(link);
   }
-  import('/src/modules/profile/ProfileScreen.target.js?v=leave1').then(function(mod){
+  import('/src/modules/profile/ProfileScreen.target.js?v=account2').then(function(mod){
     mod.renderProfileScreen(container); _profileMounted=true; mountHouseholdLeave(container); if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   }).catch(function(err){ console.error('[ProfileBridge] Kon nieuwe profielmodule niet laden:',err); });
 }
@@ -183,7 +183,7 @@ function updateHeaderAvatar(){
     var centralUrl=window.HouseholdIdentity.getActiveAvatar();
     if(centralUrl){ av.innerHTML='<img src="'+centralUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\'none\'">'; return; }
   }
-  import('/src/modules/profile/avatarStore.js').then(function(store){
+  import('/src/modules/profile/avatarStore.js?v=profile2').then(function(store){
     var url=store.getCurrentAvatarUrl();
     if(url) av.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
     else av.textContent=(typeof myInitials!=='undefined')?myInitials:'?';
@@ -195,6 +195,6 @@ window.addEventListener('familyapp:avatar-updated',function(){
   if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   if(_profileMounted){
     var container=document.getElementById('screen-profile');
-    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=leave1').then(function(mod){ mod.renderProfileScreen(container); mountHouseholdLeave(container); });
+    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=account2').then(function(mod){ mod.renderProfileScreen(container); mountHouseholdLeave(container); });
   }
 });

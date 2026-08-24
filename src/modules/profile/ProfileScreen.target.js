@@ -6,11 +6,10 @@ import {
   getCurrentAvatarUrl,
   getPartnerName,
   getProfileName,
-  nameKey,
-  partnerKey,
+  setProfileNames,
   setPresetAvatar,
   setUploadedAvatar,
-} from './avatarStore.js';
+} from './avatarStore.js?v=profile2';
 
 const activeCategoryKey = 'familyapp-avatar-category-v1';
 
@@ -24,6 +23,14 @@ function setActiveCategory(category) {
 
 function categories() {
   return ['Alle', ...Array.from(new Set(animeAvatarCollection.map((avatar) => avatar.category)))];
+}
+
+function escapeAttribute(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function toast(message) {
@@ -135,10 +142,25 @@ function bindProfileActions(container) {
   const saveButton = container.querySelector('[data-save-profile]');
   if (saveButton) {
     saveButton.onclick = () => {
-      localStorage.setItem(nameKey, nameInput.value.trim() || 'Shane');
-      localStorage.setItem(partnerKey, partnerInput.value.trim() || 'Esra');
+      setProfileNames(nameInput.value.trim(), partnerInput.value.trim());
       renderProfileScreen(container);
       toast('Profiel opgeslagen');
+    };
+  }
+
+  const logoutButton = container.querySelector('[data-profile-logout]');
+  if (logoutButton) {
+    logoutButton.onclick = async () => {
+      if (!window.FamilySessionActions || typeof window.FamilySessionActions.signOut !== 'function') {
+        toast('Uitloggen is tijdelijk niet beschikbaar');
+        return;
+      }
+      logoutButton.disabled = true;
+      try {
+        await window.FamilySessionActions.signOut();
+      } catch (error) {
+        logoutButton.disabled = false;
+      }
     };
   }
 
@@ -281,10 +303,10 @@ export function renderProfileScreen(container, options = {}) {
     <section class="profile-target">
       <section class="profile-hero-card">
         <div class="profile-avatar-wrap">
-          <img class="profile-main-avatar" src="${avatar}" alt="${name}" style="object-position:${mainObjectPosition}">
+          <img class="profile-main-avatar" src="${avatar}" alt="${escapeAttribute(name)}" style="object-position:${mainObjectPosition}">
           <button class="profile-camera-btn" data-camera-avatar aria-label="Avatar wijzigen">📷</button>
         </div>
-        <h1>${name}</h1>
+        <h1>${escapeAttribute(name)}</h1>
         <div class="profile-level-pill">Level 2 · Uitgebroed</div>
         <div class="profile-xp-bar"><span></span></div>
         <p>143 XP</p>
@@ -292,9 +314,9 @@ export function renderProfileScreen(container, options = {}) {
 
       <section class="profile-card profile-names-card">
         <label>Mijn naam</label>
-        <div class="profile-input-row"><input data-profile-name value="${name}"><span>✎</span></div>
+        <div class="profile-input-row"><input data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
         <label>Partner naam</label>
-        <div class="profile-input-row"><input data-partner-name value="${partner}"><span>✎</span></div>
+        <div class="profile-input-row"><input data-partner-name value="${escapeAttribute(partner)}" placeholder="Optioneel"><span>✎</span></div>
         <div class="profile-info-note"><span>ⓘ</span> Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.</div>
         <button class="profile-save-btn" data-save-profile>Opslaan</button>
       </section>
@@ -327,6 +349,7 @@ export function renderProfileScreen(container, options = {}) {
         <button data-profile-row="Account instellingen"><span>♙</span><b>Account instellingen</b><em>›</em></button>
         <button data-profile-row="Privacy"><span>▣</span><b>Privacy</b><em>›</em></button>
         <button data-profile-row="Meldingen"><span>♧</span><b>Meldingen</b><em>›</em></button>
+        <button data-profile-logout style="color:#dc2626"><span>↪</span><b>Uitloggen</b><em>›</em></button>
       </section>
     </section>
     ${popupHtml}
