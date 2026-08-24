@@ -96,7 +96,17 @@ async function testPartyQuest(){
   };
   firebase.database.ServerValue={TIMESTAMP:123};
   function scheduled(fn,ms){if(ms===600)return 1;Promise.resolve().then(fn);return 1;}
-  const sandbox={window,firebase,console,Promise,Date,Math,JSON,Object,String,Number,Array,setTimeout:scheduled,clearTimeout(){}};
+  // Browser scripts can reference window properties through bare global names.
+  // Mirror those bindings explicitly in Node's vm test context.
+  const sandbox={
+    window,firebase,console,Promise,Date,Math,JSON,Object,String,Number,Array,
+    setTimeout:scheduled,clearTimeout(){},
+    PartyQuestActiveView:window.PartyQuestActiveView,
+    ProgressionUidBridge:window.ProgressionUidBridge,
+    awardXP:window.awardXP,
+    addActivity:window.addActivity,
+    showToast:window.showToast
+  };
   vm.createContext(sandbox);
   vm.runInContext(partySource,sandbox,{filename:'partyQuestCompletionReward.js'});
 
