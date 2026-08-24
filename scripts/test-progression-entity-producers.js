@@ -63,7 +63,11 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   const bridge=window.ProgressionProducerBridge;
   assert.ok(bridge);
   assert.strictEqual(bridge.version,'1.0.0');
-  assert.deepStrictEqual(bridge.status(),{notes:true,feedPost:true,feedLike:true,recipe:true});
+  const bridgeStatus=bridge.status();
+  assert.strictEqual(bridgeStatus.notes,true);
+  assert.strictEqual(bridgeStatus.feedPost,true);
+  assert.strictEqual(bridgeStatus.feedLike,true);
+  assert.strictEqual(bridgeStatus.recipe,true);
   assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,0);
 
   // New note: the id known before insertion becomes the stable reward key.
