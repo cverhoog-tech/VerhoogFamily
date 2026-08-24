@@ -1,14 +1,16 @@
 'use strict';
 // ============================================================
-// NOTIFICATION ACTIONS v2.2.0
+// NOTIFICATION ACTIONS v3.0.0 — STEP 10
 // Presentation-agnostic action service for actionable notification events.
-// NotificationCenter and NotificationDelivery own all DOM and interaction UI.
+// Identity is owned by HouseholdContext; domain mutations remain delegated to
+// the accepted TaskSharedData / PartyQuestInvites services.
 // ============================================================
 (function(){
   if(window.NotificationActions)return;
-  var VERSION='2.2.0';
+  var VERSION='3.0.0';
 
-  function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
+  function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
+  function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
   function taskByEvent(event){var id=event&&event.data&&(event.data.taskId||event.data.taskKey)||(event&&event.entity&&event.entity.id)||'';return (window.taskData||[]).find(function(t){return String(t.id||t._key)===String(id);})||null;}
   function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'||event.type==='partyQuest.created'));}
   function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
@@ -34,11 +36,6 @@
     return PartyQuestInvites.revokeInvite(questId,inviteeUid).then(function(){return markRead(event);});
   }
 
-  // Accept/decline a received Party Quest invite from the notification
-  // center. Reuses PartyQuestInvites.getById()/respond() — the same
-  // transaction-backed domain action the auto-popup and Taken-overview
-  // party card already use — so there is a single invitation state and a
-  // single acceptance/decline code path regardless of which UI triggered it.
   function respondPartyQuestInvite(event,status){
     var questId=event&&event.data&&event.data.questId;
     if(!questId)return Promise.reject(new Error('Uitnodigingsgegevens ontbreken'));
@@ -50,6 +47,7 @@
 
   function run(event,action){
     if(!event)return Promise.resolve(false);
+    if(!currentUid())return Promise.reject(new Error('Niet ingelogd'));
     if(event.type==='task.help.requested')return acceptTaskHelp(event).then(function(){return true;});
     if(event.type==='partyQuest.invitation.sent')return revokePartyInvitation(event).then(function(){return true;});
     if(event.type==='partyQuest.created')return respondPartyQuestInvite(event,action==='decline'?'declined':'active').then(function(){return true;});
@@ -57,11 +55,6 @@
   }
   function byId(id){if(!window.NotificationStore)return null;return NotificationStore.list().find(function(n){return String(n.id)===String(id);})||null;}
 
-  // Resolves what a notification's *current* domain state actually is, so
-  // a detail view can show "open / geaccepteerd / geweigerd / ingetrokken /
-  // niet meer actief" instead of just read/unread, and only offer actions
-  // that are still valid. Pure read of TaskSharedData/PartyQuestInvites
-  // state — no separate invitation state is introduced here.
   function describeStatus(event){
     if(!event)return{statusLabel:'',detail:'',actions:[]};
     if(event.type==='task.help.requested'){
@@ -95,11 +88,8 @@
       if(inv2.status==='revoked')return{statusLabel:'Al ingetrokken',detail:'',actions:[]};
       return{statusLabel:'',detail:'',actions:[]};
     }
-    // Informational types (task.help.joined, partyQuest.joined,
-    // partyQuest.completed, task.swap.*, finance.savings.updated): no
-    // status/action concept, just the existing body text.
     return{statusLabel:'',detail:event.body||'',actions:[]};
   }
 
-  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId};
+  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId,currentUid:currentUid};
 })();
