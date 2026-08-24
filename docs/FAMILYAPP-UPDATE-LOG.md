@@ -17,6 +17,32 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 10 canonical in-app notification runtime implemented
+
+- Added `NotificationHouseholdRepository v1.0.0` as the canonical STEP 10 persistence/listener boundary at `families/{householdId}/shared/notifications`.
+- Repository identity is bound through `HouseholdContext` UID + household + revision; same-household account switch, cross-household switch and logout all detach the exact listener and clear stale projection.
+- Captured stale callbacks are rejected with `HouseholdContext.capture()/isCurrent()` and notification writes are rejected when context is unavailable/stale.
+- Added deterministic `eventKey` / `publishOnce()` transactions so one domain transition observed by multiple devices/tabs cannot create duplicate canonical inbox events.
+- Per-UID `readBy` / `dismissedBy` semantics were preserved and repository marker APIs always write for the active UID only.
+- Reworked `NotificationStore` to `v2.0.0`; it is now a facade over `NotificationHouseholdRepository` and random/unkeyed notification creation is deliberately rejected.
+- Reworked `NotificationEvents` to `v2.0.0` with deterministic keys for task-help request/join, task-swap request/result, Party Quest create/sent-invite/join/complete and Finance savings events.
+- `TaskNotificationProjector`, `TaskSwapNotificationProjector` and `PartyQuestNotificationProjector` are now `v2.0.0`, HouseholdContext-bound and protected against stale callbacks/account switches.
+- `NotificationActions v3.0.0` now reads active identity from HouseholdContext instead of `fbUser`/Firebase auth and continues to delegate mutations to the accepted TaskSharedData / PartyQuestInvites services.
+- `NotificationCenter v2.0.0` uses HouseholdContext identity and clears an open detail sheet when the active identity changes.
+- `NotificationDelivery v2.0.0` remains an **in-app live-banner channel only** and clears queued/active banners on account/household/logout identity changes. It is not Web Push/OS push.
+- Activated the canonical notification stack in the actual `/api/app` served load graph, immediately after HouseholdContext and before progression runtime, with explicit cache versions.
+- Added contracts: `test-notification-household-repository.js`, `test-notification-store-events.js`, `test-notification-projector-lifecycle.js`, `test-notification-presentation-identity.js` and `test-notification-served-runtime.js`.
+- Tests cover A→B same-household switching, cross-household isolation, logout clearing, stale callbacks, per-UID read/dismiss markers, duplicate event idempotency, typed deterministic event keys, projector lifecycle, presentation identity boundaries and the real `/api/app` script order/version wiring.
+- Two intermediate test failures were harness-only: one test expected an unkeyed publish rejection as an async rejection even though the store correctly throws synchronously; another Node VM needed `TaskSharedData` mirrored as a browser global. No app behavior change was needed for either correction.
+- During loader activation a missing closing parenthesis in the `/api/app` error handler was spotted immediately and corrected before the served-runtime checkpoint was considered valid.
+- Complete `Household Rebuild Contracts` passed on code commit `15ca6bca994ea5852815cad7f3e811261a783152`, including the served notification runtime audit.
+- Vercel did **not** produce a fresh preview for that latest code checkpoint because the Hobby `build-rate-limit` was hit again; this is a deployment-rate limitation, not a contract/runtime failure.
+- In-app notification code is therefore contract-ready but still awaits a fresh READY preview and real cross-device/iPhone verification.
+- Push notifications remain part of STEP 10 and are the next implementation area: user-private multi-device token registry, deliberate opt-in, Web/PWA service worker/FCM adapter and trusted server-side sender, all separate from canonical inbox state.
+- No production Firebase Rules were changed or deployed.
+
+---
+
 ## 2026-08-24 — STEP 10 notification + push audit completed
 
 - Completed the required read-only STEP 10 audit and stored the full authority/delivery map in `docs/step10-notifications-audit.md`.
