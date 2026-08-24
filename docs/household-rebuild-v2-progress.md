@@ -28,9 +28,9 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen on 2026-08-24.
-- [-] STEP 10 — Notifications — canonical in-app + Web Push client foundation implemented with green contracts; trusted sender/configuration/preview/device gates remain.
+- [-] STEP 10 — Notifications — in-app + Web Push client + trusted sender code complete, contracts green and latest Vercel preview READY; runtime configuration/device gates remain.
 
-**Current phase: STEP 10 Notifications. The canonical inbox and Web Push client/device lifecycle are built. Next is the trusted server-side delivery boundary; do not claim operational push until server credentials/public VAPID deployment config and real-device delivery are verified.**
+**Current phase: STEP 10 Notifications. The notification/inbox authority, Web Push registration lifecycle and trusted sender boundary are implemented and code/contract-green. Next verify/configure Vercel VAPID + Firebase sender credentials and complete real cross-device/iPhone acceptance. Do not claim operational push or freeze STEP 10 before those gates pass.**
 
 ## Prototype end-goal gate
 
@@ -57,7 +57,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 10 — Notifications
 
-**Current phase — in-app + Web Push client code/contract checkpoint complete.**
+**Current phase — implementation/code gate complete; runtime configuration and device acceptance remain.**
 
 ### Canonical notification state
 - [x] `NotificationHouseholdRepository v1.0.0` on household-scoped notification path.
@@ -65,7 +65,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Exact listener cleanup, immediate projection clear and stale-callback rejection.
 - [x] Per-UID read/dismiss semantics.
 - [x] Deterministic event keys / `publishOnce` idempotency.
-- [x] Canonical `NotificationStore v2.0.0`.
+- [x] Canonical `NotificationStore v2.1.0`.
+- [x] Push handoff occurs only for newly created canonical events; duplicate event writes cannot double-send.
+- [x] Push failure cannot mutate or invalidate canonical inbox success.
 - [x] Deterministic `NotificationEvents v2.0.0`.
 - [x] HouseholdContext-safe task/swap/Party Quest projectors.
 - [x] HouseholdContext-safe actions, notification center and in-app live banner.
@@ -84,34 +86,45 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [x] Public Web Push config endpoint uses only public VAPID configuration.
 - [x] Push client modules activated in actual served runtime.
 
-### Contracts
+### Trusted sender / delivery health
+- [x] `PushDeliveryBridge v1.0.0` sends only canonical notification identity to the backend.
+- [x] Vercel `api/push-send.js` trusted POST boundary.
+- [x] Server-only `firebasePushSender.js v1.0.0` using FCM HTTP v1.
+- [x] Firebase ID-token verification + active household membership check.
+- [x] Canonical event actor authorization prevents replay by another household member.
+- [x] Recipient UIDs resolved server-side from canonical audience; actor excluded.
+- [x] Enabled device registry read limited to intended recipient UIDs.
+- [x] Data-only push payload linked to canonical notification/event identity.
+- [x] Sanitized private delivery receipt separate from notification read/dismiss state.
+- [x] Per-device receipt idempotency suppresses repeat push delivery.
+- [x] FCM unregistered devices disabled in private registry.
+- [x] Server credentials are environment-only and absent from client/public repository code.
+
+### Contracts / deployment
 - [x] Notification repository lifecycle/isolation/idempotency.
-- [x] Notification store + deterministic event contract.
+- [x] Notification store v2.1 + deterministic event + one-time push handoff contract.
 - [x] Notification projector lifecycle.
 - [x] Notification presentation/action identity.
 - [x] Private push-device registry isolation.
 - [x] Explicit Web Push opt-in / account-switch cleanup.
-- [x] Served runtime audit covers in-app + push client wiring and no-auto-permission behavior.
-- [x] Full Household Rebuild Contracts PASS on `d89057f0b78caf4f1acb00106cd9d03f2d9ed538`.
-- [!] Vercel fresh build still blocked by Hobby `build-rate-limit`.
+- [x] Trusted sender authorization/idempotency/no-token-leakage contract.
+- [x] Served runtime audit covers in-app + Web Push + trusted sender wiring and no-auto-permission behavior.
+- [x] Full Household Rebuild Contracts PASS on `6c616aea701175ae6d9e8039c5f33574ba37c9c7`, run `32759246722`.
+- [x] Vercel SUCCESS for the same commit.
+- [x] Deployment `dpl_3z8j32rjZDG3x41LSNMuPuLUhT2G` READY for the exact green commit.
+- [x] Deployed `/api/app` inspected directly and confirmed current notification/push runtime assets.
+- [ ] Isolated `/api/push-config` + service-worker runtime verification remains open because the protected preview redirected connector fetches through Vercel SSO.
 
-### Trusted push sender / delivery health — open
-- [ ] Trusted server-side FCM sender.
-- [ ] Server-only credential configuration; no secret in repo/client/public endpoint.
-- [ ] Authorized recipient resolution from canonical notification audience.
-- [ ] Enabled private device lookup for intended recipient UIDs only.
-- [ ] Data-only push payload linked to canonical notification ID/event key.
-- [ ] Delivery failure independent from canonical inbox state.
-- [ ] Sanitized delivery-health record separate from read/dismiss.
-- [ ] Sender authorization/delivery/failure contracts.
-- [ ] Public VAPID key configured in deployment environment.
-- [ ] Trusted sender credentials configured in deployment environment.
+### Runtime configuration — open
+- [ ] Confirm/configure `FAMILYAPP_WEB_PUSH_VAPID_KEY` in Vercel Preview environment.
+- [ ] Confirm/configure protected Firebase sender client email/private key environment variables.
+- [ ] Create/verify a fresh READY deployment after any environment-variable change.
+- [ ] Verify explicit PWA push registration creates a real private device record.
 
-### Preview / device acceptance — open
-- [ ] Fresh READY Vercel preview containing all current STEP 10 code.
-- [ ] Deployed asset/config/service-worker verification.
-- [ ] Cross-device in-app notification/read/dismiss/action tests.
+### Device acceptance — open
+- [ ] Cross-device in-app notification/read/dismiss/action test.
 - [ ] Real iPhone Home Screen push opt-in + background delivery test.
+- [ ] Background push opens/focuses notification screen without duplicate canonical inbox state.
 - [ ] Account-switch push/inbox isolation test.
 - [ ] Reload/background→foreground stability test.
 - [ ] STEP 10 frozen only after explicit product acceptance.
@@ -151,7 +164,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-24 — STEP 9 Progression accepted/frozen.
 - 2026-08-24 — STEP 10 notification/push audit completed.
 - 2026-08-24 — canonical in-app notification runtime implemented and contract-green.
-- 2026-08-24 — Web Push client/device foundation implemented; startup permission regression neutralized; complete contracts green; trusted sender and real-device delivery remain.
+- 2026-08-24 — Web Push client/device foundation implemented; startup permission regression neutralized.
+- 2026-08-24 — trusted Vercel FCM sender + private delivery-health/idempotency implemented; full contracts green and exact latest preview READY. Runtime config/device acceptance remains.
 
 ## Maintenance rule
 
