@@ -98,10 +98,9 @@ const loaderSource=fs.readFileSync('api/app.js','utf8');
   await Promise.resolve();
   assert.strictEqual(canonicalXp,xpBeforeDay+2,'same recurring day occurrence may not farm XP');
 
-  // Wiring assertion is activated in a follow-up app loader commit.
   if(loaderSource.includes('recurringTaskRewardBridge.js')){
     assert.ok(loaderSource.includes('src/modules/tasks/recurringTaskRewardBridge.js?v=1'));
-    assert.ok(loaderSource.indexOf('src/core/progressionRuntime.js?v=1')<loaderSource.indexOf('src/modules/tasks/recurringTaskRewardBridge.js?v=1'),'recurring bridge must load after canonical runtime');
+    assert.ok(loaderSource.indexOf('src/core/progressionRuntime.js?v=2')<loaderSource.indexOf('src/modules/tasks/recurringTaskRewardBridge.js?v=1'),'recurring bridge must load after canonical runtime v1.1');
   }
 
   console.log('STEP 9 recurring task progression reward contract: PASS');
