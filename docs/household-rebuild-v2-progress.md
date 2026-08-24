@@ -28,9 +28,9 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen on 2026-08-24.
-- [-] STEP 10 — Notifications — opened; read-only audit is the current next action.
+- [-] STEP 10 — Notifications — read-only notification/push audit complete; canonical HouseholdContext repository foundation next.
 
-**Current phase: STEP 10 Notifications. Start with the actually served notification runtime/data audit before implementing a canonical notification store. Notification state and push delivery remain separate architectural layers.**
+**Current phase: STEP 10 Notifications. The existing typed notification stack is useful but dormant/not served and predates the accepted HouseholdContext lifecycle contract. Build/test the canonical repository and deterministic event layer before runtime activation; push remains a separate delivery adapter.**
 
 ## Prototype end-goal gate
 
@@ -106,29 +106,44 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 10 — Notifications
 
-**Current phase — audit first.**
+**Current phase — audit complete; canonical notification repository foundation next.**
 
-### Required audit
-- [ ] Inventory the currently served notification files/bootstrap wiring.
-- [ ] Inventory all notification creation producers (`addNotif` and alternatives).
-- [ ] Map current notification data authority and any local/global/Firebase/member/household paths.
-- [ ] Map per-user unread/read/dismiss/delete/all-read behavior.
-- [ ] Map household/UID identity assumptions and stale-state risks.
-- [ ] Map notification listener ownership and teardown across logout/account/household switch.
-- [ ] Inventory browser push/FCM/token/service-worker delivery code separately from in-app state.
-- [ ] Persist the audit before implementation.
+### Audit
+- [x] Inventory current served notification/runtime wiring.
+- [x] Inventory `addNotif` and typed notification producers.
+- [x] Map notification authority, read/unread/dismiss behavior and legacy demo state.
+- [x] Map household/UID identity assumptions, listeners and stale-context risks.
+- [x] Audit browser push/FCM/token/service-worker/sender state separately from in-app notification state.
+- [x] Persist detailed findings in `docs/step10-notifications-audit.md`.
+- [x] Existing typed store/events/actions/center/delivery/projectors classified as useful but currently dormant/not served.
+- [x] Legacy `addNotif` classified as intentionally non-authoritative.
+- [x] Push classified as not operational: only incomplete legacy FCM registration stub exists; no complete service-worker/server-sender/device lifecycle.
 
-### Target implementation
-- [ ] Canonical household notification store.
-- [ ] Per-UID read/dismiss state.
-- [ ] Domain-event projection.
-- [ ] Exactly one household listener with explicit cleanup.
-- [ ] Stale-context and cross-household isolation protection.
-- [ ] Push delivery separate from canonical state.
-- [ ] Platform-neutral notification repository/service contract for future APNs/FCM/native actions.
-- [ ] Contract/isolation/lifecycle tests.
-- [ ] Fresh Vercel preview.
-- [ ] Real iPhone Safari/PWA gate.
+### Canonical in-app foundation
+- [ ] HouseholdContext-bound `NotificationHouseholdRepository` on the existing household notification path.
+- [ ] Exact listener cleanup + stale callback rejection for logout/account/household switch.
+- [ ] Per-UID read/dismiss projection retained.
+- [ ] Deterministic notification event key / `publishOnce` idempotency.
+- [ ] Typed NotificationEvents/projectors migrated to deterministic events.
+- [ ] Isolation/lifecycle/idempotency contract coverage.
+- [ ] Notification stack activated in actual `/api/app` served runtime only after contracts are green.
+- [ ] Served-runtime notification audit.
+- [ ] Cross-device in-app inbox/unread/live-banner/action verification.
+
+### Push delivery
+- [ ] User-private multi-device push-device registry.
+- [ ] Platform-neutral registration/delivery boundary for web and future native shells.
+- [ ] Deliberate opt-in/permission flow.
+- [ ] Web/PWA service worker + FCM foreground/background support.
+- [ ] Token refresh/revocation/logout/account-switch lifecycle.
+- [ ] Trusted server-side sender; no service-account/server credentials in client code.
+- [ ] Push failure independent from canonical inbox state.
+- [ ] Sanitized delivery-health status separate from read/dismiss state.
+
+### Verification
+- [ ] Full Household Rebuild Contracts after STEP 10 implementation.
+- [ ] Fresh Vercel preview with served notification/push wiring verified.
+- [ ] Real iPhone Safari/PWA STEP 10 gate.
 - [ ] STEP 10 frozen only after product acceptance.
 
 ## Later roadmap phases
@@ -152,10 +167,11 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - Platform admin remains separate from household admin and must not imply generic raw household-content access.
 - Current accepted Brand/PWA/icon scope remains frozen unless a concrete regression or redesign is requested.
 - STEP 8 Finance and STEP 9 Progression are frozen.
-- STEP 10 notification identity must be household/UID aware.
+- STEP 10 notification identity is HouseholdContext/UID based.
 - Notification state and push delivery are separate layers.
 - Realtime notification subscriptions require explicit cleanup and stale-context protection.
 - Browser/native delivery adapters must not become the domain authority for notification state.
+- Push delivery credentials are user-private technical data.
 - Every meaningful development update must update both `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/FAMILYAPP-UPDATE-LOG.md`.
 
 ## Milestone summary
@@ -168,6 +184,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-24 — Final premium PDF iPhone test accepted; STEP 8 closed/frozen and STEP 9 opened.
 - 2026-08-24 — STEP 9 canonical UID progression foundation and deterministic producer migration completed with green served-runtime contracts.
 - 2026-08-24 — STEP 9 real iPhone gate accepted; STEP 9 frozen and STEP 10 Notifications opened.
+- 2026-08-24 — STEP 10 notification + push audit completed; dormant prior notification stack mapped and canonical HouseholdContext foundation selected as next implementation step.
 
 ## Maintenance rule
 
