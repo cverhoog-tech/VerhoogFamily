@@ -222,7 +222,14 @@ function bindProfileActions(container) {
   });
 
   container.querySelectorAll('[data-profile-row]').forEach((button) => {
-    button.onclick = () => toast(button.dataset.profileRow + ' openen');
+    button.onclick = () => {
+      if (button.dataset.profileRow === 'Meldingen') {
+        if (typeof window.showScreen === 'function') window.showScreen('notif');
+        else toast('Meldingen openen is tijdelijk niet beschikbaar');
+        return;
+      }
+      toast(button.dataset.profileRow + ' openen');
+    };
   });
 }
 

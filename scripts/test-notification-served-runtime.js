@@ -31,7 +31,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
     'src/core/pushDeviceRegistry.js?v=1',
     'src/core/pushRegistrationService.js?v=2',
     'src/core/pushDeliveryBridge.js?v=1',
-    'src/core/pushNotificationSettings.js?v=2',
+    'src/core/pushNotificationSettings.js?v=3',
     'src/modules/tasks/taskNotificationProjector.js?v=2',
     'src/modules/tasks/taskSwapNotificationProjector.js?v=2',
     'src/modules/tasks/partyQuestNotificationProjector.js?v=2',
@@ -59,6 +59,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   const pushConfig=fs.readFileSync('api/push-config.js','utf8');
   const pushSend=fs.readFileSync('api/push-send.js','utf8');
   const pushSender=fs.readFileSync('src/server/firebasePushSender.js','utf8');
+  const profileTarget=fs.readFileSync('src/modules/profile/ProfileScreen.target.js','utf8');
   const taskProjector=fs.readFileSync('src/modules/tasks/taskNotificationProjector.js','utf8');
   const swapProjector=fs.readFileSync('src/modules/tasks/taskSwapNotificationProjector.js','utf8');
   const partyProjector=fs.readFileSync('src/modules/tasks/partyQuestNotificationProjector.js','utf8');
@@ -72,7 +73,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushRegistry.includes("VERSION='1.0.0'"));
   assert.ok(pushService.includes("VERSION='1.1.0'"));
   assert.ok(pushBridge.includes("VERSION='1.0.0'"));
-  assert.ok(pushSettings.includes("VERSION='1.1.0'"));
+  assert.ok(pushSettings.includes("VERSION='1.1.1'"));
   assert.ok(taskProjector.includes("VERSION='2.0.0'"));
   assert.ok(swapProjector.includes("VERSION='2.0.0'"));
   assert.ok(partyProjector.includes("VERSION='2.0.0'"));
@@ -103,6 +104,9 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushSettings.includes('st.senderConfigured===false'));
   assert.ok(pushSettings.includes('st.vapidConfigured===false'));
   assert.ok(pushSettings.includes('svc.requestEnable()'),'notification settings button must own explicit push opt-in');
+  assert.ok(pushSettings.indexOf('st.iosLike&&!st.standalone')<pushSettings.indexOf('!st.supported'),'iPhone Safari must show Home Screen guidance before generic unsupported messaging');
+  assert.ok(profileTarget.includes("button.dataset.profileRow === 'Meldingen'"),'profile notification row must have a real navigation branch');
+  assert.ok(profileTarget.includes("window.showScreen('notif')"),'profile notification row must navigate to the canonical notification screen');
 
   // Web Push delivery files are present. The public readiness endpoint may read
   // protected env vars server-side, but returns only readiness booleans plus the

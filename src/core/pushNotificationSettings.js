@@ -1,11 +1,11 @@
 'use strict';
 // ============================================================
-// PUSH NOTIFICATION SETTINGS v1.1.0 — STEP 10
+// PUSH NOTIFICATION SETTINGS v1.1.1 — STEP 10
 // Explicit user-controlled opt-in surface. Never requests permission on load.
 // ============================================================
 (function(){
   if(window.PushNotificationSettings)return;
-  var VERSION='1.1.0',installed=false,busy=false;
+  var VERSION='1.1.1',installed=false,busy=false;
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function service(){return window.PushRegistrationService||null;}
@@ -32,8 +32,8 @@
   }
   function view(st){
     st=st||{};
-    if(!st.supported)return{status:'Pushmeldingen worden op dit apparaat of in deze browser niet ondersteund.',label:'Niet ondersteund',disabled:true,secondary:true,note:''};
     if(st.iosLike&&!st.standalone)return{status:'Op iPhone werken pushmeldingen nadat FamilyApp aan het beginscherm is toegevoegd en vanaf het app-icoon wordt geopend.',label:'Eerst op beginscherm zetten',disabled:true,secondary:true,note:'Open FamilyApp daarna via het beginscherm en schakel push hier in.'};
+    if(!st.supported)return{status:'Pushmeldingen worden op dit apparaat of in deze browser niet ondersteund.',label:'Niet ondersteund',disabled:true,secondary:true,note:''};
     if(st.vapidConfigured===false)return{status:'De Web Push-sleutel ontbreekt nog in de deploymentconfiguratie.',label:'Web Push-config ontbreekt',disabled:true,secondary:true,note:'FamilyApp vraagt geen notificatierechten zolang de publieke VAPID-configuratie niet klaar is.'};
     if(st.senderConfigured===false)return{status:'Web Push is voorbereid, maar de beveiligde FamilyApp sender is nog niet geactiveerd.',label:'Push sender ontbreekt',disabled:true,secondary:true,note:'Er wordt geen toestemming gevraagd totdat de serverdelivery veilig is geconfigureerd.'};
     if(!st.configured)return{status:'De push-deliveryconfiguratie is nog niet volledig beschikbaar.',label:'Pushconfiguratie ontbreekt',disabled:true,secondary:true,note:'Er wordt geen toestemming gevraagd zolang de delivery-configuratie niet compleet is.'};
