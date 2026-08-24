@@ -75,6 +75,6 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store, max-age=0');
     res.status(200).send(html);
   } catch (error) {
-    res.status(500).send('FamilyApp loader error: ' + (error && error.message ? error.message : String(error));
+    res.status(500).send('FamilyApp loader error: ' + (error && error.message ? error.message : String(error)));
   }
 };
