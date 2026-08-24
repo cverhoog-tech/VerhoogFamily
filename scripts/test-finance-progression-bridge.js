@@ -40,7 +40,7 @@ const loaderSource=fs.readFileSync('api/app.js','utf8');
 
   const sandbox={
     console,Promise,Date,Math,JSON,Object,String,Number,Array,Set,isFinite,setTimeout,clearTimeout,
-    ProgressionStore,FinanceStore,
+    ProgressionStore,FinanceStore,currentAddType:'eenmalig',
     myXP:xp,unlockedBadges:{},newBadges:{},BADGES:[],taskData:[],noteData:[],feedData:[],recurData:[],tradesCount:0,visitedScreens:new Set(),
     getLevel(){return 1;},showXPPopup(){},updateHomeXP(){},showAchievementToast(){},
     awardXP(){throw new Error('legacy award must be replaced');},checkAchievements(){},
@@ -52,7 +52,7 @@ const loaderSource=fs.readFileSync('api/app.js','utf8');
   vm.runInContext(runtimeSource,sandbox,{filename:'progressionRuntime.js'});
   vm.runInContext(bridgeSource,sandbox,{filename:'financeProgressionBridge.js'});
 
-  assert.strictEqual(sandbox.FinanceProgressionBridge.version,'1.0.0');
+  assert.strictEqual(sandbox.FinanceProgressionBridge.version,'1.0.1');
   const status=sandbox.FinanceProgressionBridge.status();
   assert.strictEqual(status.savingsTransaction,true);
   assert.strictEqual(status.savingsGoal,true);
@@ -91,12 +91,21 @@ const loaderSource=fs.readFileSync('api/app.js','utf8');
   const goalReward=await sandbox.awardXP(5,'Spaardoel aangemaakt');
   assert.strictEqual(goalReward.key,'finance:savingsGoalCreated:'+goal.id);
 
+  // Current Maandplan one-off flow labels this reward 'Eenmalig'.
+  sandbox.currentAddType='eenmalig';
   const extra=await sandbox.FinanceStore.addExtraIncome({name:'Bonus',amount:100});
   const extraReward=await sandbox.awardXP(2,'Eenmalig');
   assert.strictEqual(extraReward.key,'finance:extraIncome:'+extra.id);
 
+  // Generic add-sheet extra-income entry point uses the older label
+  // 'Extra inkomen' but must resolve to the same stable Finance record scheme.
+  sandbox.currentAddType='extraincome';
+  const genericExtra=await sandbox.FinanceStore.addExtraIncome({name:'Vakantiegeld',amount:500});
+  const genericReward=await sandbox.awardXP(3,'Extra inkomen');
+  assert.strictEqual(genericReward.key,'finance:extraIncome:'+genericExtra.id);
+
   // Internal linked extra-income record has no corresponding legacy XP call and
-  // must therefore not poison a later manual Eenmalig context.
+  // must therefore not poison a later manual context.
   const pendingBeforeInternal=sandbox.ProgressionRuntime.status().pendingRewardCount;
   await sandbox.FinanceStore.addExtraIncome({name:'Sparen',amount:-10,_savingsBudgetRef:'log3'});
   assert.strictEqual(sandbox.ProgressionRuntime.status().pendingRewardCount,pendingBeforeInternal);
