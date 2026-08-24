@@ -70,7 +70,7 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
 
   const bridge=window.ProgressionProducerBridge;
   assert.ok(bridge);
-  assert.strictEqual(bridge.version,'1.1.0');
+  assert.strictEqual(bridge.version,'1.1.1');
   const bridgeStatus=bridge.status();
   assert.strictEqual(bridgeStatus.notes,true);
   assert.strictEqual(bridgeStatus.feedPost,true);
@@ -108,12 +108,22 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   assert.strictEqual(like2.key,'feedLike:post_1');
   assert.strictEqual(like2.awarded,false,'re-like must not farm XP');
 
-  // RecipeStore returns the real recipe id before RecipeEditorPopup runs awardXP.
-  const recipeResult=await window.RecipeStore.create({name:'Pasta'});
+  // Manual RecipeStore create queues the existing `Recept aangemaakt` context.
+  const recipeResult=await window.RecipeStore.create({name:'Pasta',sourceProvider:'manual'});
   const recipeReward=await window.awardXP(4,'Recept aangemaakt');
   assert.strictEqual(recipeResult.recipe.id,'recipe_1');
   assert.strictEqual(recipeReward.key,'recipe:recipe_1');
   assert.ok(rewards['recipe:recipe_1']);
+
+  // Link/import creates use the same store but must NOT queue the manual-create
+  // reason. Their importer awards directly with the saved recipe id.
+  const pendingBeforeImport=window.ProgressionRuntime.status().pendingRewardCount;
+  const imported=await window.RecipeStore.create({name:'Import',sourceUrl:'https://example.com/recept',sourceProvider:'generic'});
+  assert.strictEqual(imported.recipe.id,'recipe_2');
+  assert.strictEqual(window.ProgressionRuntime.status().pendingRewardCount,pendingBeforeImport,'imported recipe must not leave a manual Recept aangemaakt context');
+  const importReward=await window.awardXP(5,'Recept geïmporteerd',{key:'recipe:'+imported.recipe.id,source:'recipe-import',sourceId:imported.recipe.id});
+  assert.strictEqual(importReward.key,'recipe:recipe_2');
+  assert.ok(rewards['recipe:recipe_2']);
 
   // A task-template activation is a distinct batch identified by the first task
   // id allocated to that activation. Re-activating later creates a new batch/key.
@@ -129,7 +139,7 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
 
   if(loaderSource.includes('progressionProducerBridge.js')){
     const runtimeIdx=loaderSource.indexOf('src/core/progressionRuntime.js?v=2');
-    const bridgeIdx=loaderSource.indexOf('src/core/progressionProducerBridge.js?v=2');
+    const bridgeIdx=loaderSource.indexOf('src/core/progressionProducerBridge.js?v=3');
     assert.ok(runtimeIdx>-1&&bridgeIdx>runtimeIdx,'producer bridge must be served after ProgressionRuntime v1.1');
   }
 
