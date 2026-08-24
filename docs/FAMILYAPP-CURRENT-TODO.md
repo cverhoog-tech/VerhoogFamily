@@ -9,9 +9,9 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 9 — Progression / XP / Achievements: canonical foundation active; producer-key migration in progress.**
+**STEP 9 — Progression / XP / Achievements: code/contract gate complete; final real-iPhone gate open.**
 
-STEP 8 Finance is accepted/frozen. STEP 9 now has a canonical UID + household progression store and runtime; remaining work is to migrate every served XP producer to deterministic event keys, eliminate transitional fallback rewards, then perform the full preview/device gate.
+STEP 8 Finance is accepted/frozen. STEP 9 now has one canonical UID + household progression authority, deterministic/idempotent served reward producers and a served-runtime audit. The next action is the real iPhone Safari/PWA smoke test. Do not start STEP 10 until that gate is accepted and STEP 9 is explicitly frozen.
 
 ## STEP 8 — Finance
 
@@ -43,55 +43,63 @@ STEP 8 Finance is accepted/frozen. STEP 9 now has a canonical UID + household pr
 
 ## STEP 9 — Progression / XP / Achievements
 
-**Status: CURRENT PHASE — canonical foundation implemented, idempotent producer migration in progress.**
+**Status: CURRENT PHASE — implementation and automated verification complete; device acceptance pending.**
 
-### Audit / authority map
-- [x] Audit the currently served progression, XP and achievements runtime and identify current authority/write paths.
-- [x] Map Firebase/local/legacy paths and current modules that award or mutate XP/progression.
-- [x] Identify current achievement projection/rendering dependencies and compatibility requirements.
-- [x] Identify duplicate reward/race risks and display-name/localStorage progression risks.
-- [x] Persist detailed audit in `docs/step9-progression-audit.md`.
+### Audit / canonical authority
+- [x] Audit currently served progression, XP and achievement files/write paths.
+- [x] Detailed authority audit stored in `docs/step9-progression-audit.md`.
+- [x] Canonical path defined at `families/{householdId}/members/{uid}/progression`.
+- [x] `ProgressionStore v1.0.0` owns XP, deterministic reward ledger, achievements and migration metadata.
+- [x] Binding uses `HouseholdContext`; exact listener cleanup and stale-context rejection are enforced.
+- [x] Logout/account/household switch immediately clears previous XP/achievement compatibility projections.
+- [x] Safe migration reads only the active member's Firebase legacy `xp`/`achievements`; unscoped `fam_myxp_v1`/browser globals never seed another identity.
+- [x] `awardOnce(key, amount, metadata)` makes reward claim + XP increment one canonical transaction.
+- [x] `unlockAchievementOnce(...)` makes badge unlock + badge XP one canonical transaction.
+- [x] `ProgressionRuntime v1.1.0` owns served `awardXP` / `checkAchievements` mutation behavior while retaining compatible UI entry points.
+- [x] `ProgressionUidBridge v3.0.0` and `AchievementUidBridge v2.0.0` are compatibility-only; neither remains a Firebase progression authority.
+- [x] Existing achievement UI consumes canonical projections without a redesign.
 
-### Canonical foundation
-- [x] Define canonical UID progression data contract at `families/{householdId}/members/{uid}/progression`.
-- [x] Implement `ProgressionStore v1.0.0` with one household/UID binding, exact listener cleanup and stale-context rejection.
-- [x] Safe one-time migration reads only the active member's Firebase `xp`/`achievements`; unscoped browser/localStorage XP is never migration authority.
-- [x] Logout/account/household switch clears XP and achievement compatibility projections immediately.
-- [x] Canonical reward ledger supports atomic `awardOnce(key, amount, metadata)` mutations.
-- [x] Canonical achievement unlock supports atomic achievement record + XP reward mutation.
-- [x] `ProgressionRuntime v1.0.0` replaces legacy `awardXP` / `checkAchievements` mutation behavior while preserving existing UI entry points.
-- [x] `ProgressionUidBridge v3.0.0` is compatibility-only; it owns no Firebase XP listener or local XP seeding.
-- [x] `AchievementUidBridge v2.0.0` is compatibility-only; it owns no legacy achievement listener or XP increment.
-- [x] Existing achievement UI reads canonical projections without needing a redesign.
-- [x] Transitional reward calls without a deterministic key remain canonical but are counted/warned via `ProgressionRuntime.status().fallbackRewardCount`; STEP 9 cannot freeze until served producers are keyed.
+### Deterministic/idempotent served reward producers
+- [x] One-off task completion: `task:{taskId}` across both legacy toggle and shared UID popup/update path.
+- [x] Recurring task completion: task + week/month occurrence key.
+- [x] Recurring task day completion: task + week + day occurrence key; old direct `myXP += 2` is neutralized/rerouted canonically.
+- [x] Achievement XP: `achievement:{badgeId}`.
+- [x] Daily bonus: `daily:{YYYY-MM-DD}`.
+- [x] Party Quest completion: `partyQuest:{questId}`; failed XP persistence leaves the quest recoverable instead of silently closing it.
+- [x] Feed post: `feedPost:{postId}`.
+- [x] Feed reaction/like: `feedLike:{postId}`; unlike/re-like cannot farm XP.
+- [x] Manual recipe creation: `recipe:{recipeId}`.
+- [x] Recipe link import: direct `recipe:{savedRecipeId}` reward; importer does not leave a second manual-create reward context.
+- [x] Note creation: `note:{noteId}`.
+- [x] Task-template activation: template + activation batch/first-task ID.
+- [x] Skills account-XP side rewards: deterministic skill log sequence keys; local/name-based skill state is not treated as account progression authority.
+- [x] Weekly quest bonus/claim rewards: week + quest ID keys.
+- [x] Ability XP paths: deterministic copycat/auto-done/triple-use keys; old Triple-XP direct `myXP += 4` is neutralized/rerouted canonically.
+- [x] Finance XP side rewards use FinanceStore record/goal/update IDs without changing accepted STEP 8 Finance calculations/UI/data behavior.
+- [x] Legacy trade/duo/group/shop alternative XP paths are explicitly classified by the served-runtime audit: currently unreachable/unserved and reserved for STEP 16 cleanup rather than silently treated as live producers.
 
-### Deterministic reward producers completed
-- [x] One-off task completion uses `task:{taskId}` and cannot farm XP by reopen/re-complete.
-- [x] Achievement rewards use `achievement:{badgeId}` atomically.
-- [x] Daily bonus uses `daily:{YYYY-MM-DD}`; a second device/handler call reuses the same canonical key.
-- [x] Party Quest completion uses `partyQuest:{questId}`.
-- [x] Party Quest completion does not end the quest if canonical XP persistence fails, allowing retry/repair after reconnect.
+### Automated verification
+- [x] `scripts/test-progression-store.js` — migration isolation, logout clear, stale callback rejection, A→B reconnect, cross-household writes, duplicate reward and duplicate achievement protection.
+- [x] `scripts/test-progression-runtime.js` — canonical runtime cutover, bridge retirement, achievement evaluation, identity-safe pending reward context and task replay protection.
+- [x] `scripts/test-progression-producer-keys.js` — daily/Party Quest deterministic keys and Party Quest failed-write recovery.
+- [x] `scripts/test-recurring-progression-rewards.js` — recurring week/month/day keys and direct legacy XP neutralization.
+- [x] `scripts/test-progression-entity-producers.js` — Feed, note, manual/imported recipe and task-template reward contexts.
+- [x] `scripts/test-skills-progression-bridge.js` — skill, weekly quest, claim and ability reward paths.
+- [x] `scripts/test-finance-progression-bridge.js` — deterministic Finance side rewards including both extra-income entry labels.
+- [x] `scripts/test-progression-served-runtime-audit.js` — builds the actual `/api/app` served load graph, discovers served `awardXP`/direct-XP paths and fails on unexpected producers or resurrected legacy trade/duo paths.
+- [x] First served-runtime audit correctly found two previously missed live producers (`recipeServerlessLinkImport.js`, `taskUidCreateBridge.js`); both were fixed rather than merely allowlisted.
+- [x] Final complete Household Rebuild Contracts PASS on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
+- [x] Vercel deployment `dpl_AvwGkzdhsFbHUgFk3zKaMpNXWWF` reached READY for the same code commit.
+- [x] Served runtime wiring is contract-verified against the actual `api/app.js` output, including cache-busted STEP 9 runtime/adapters and the final task/import fixes.
 
-### Reward producers still to migrate before STEP 9 freeze
-- [ ] Recurring task occurrence rewards: stable task + occurrence/week key.
-- [ ] Feed post and like rewards: stable post/reaction keys.
-- [ ] Recipe creation rewards: stable recipe ID key.
-- [ ] Note creation rewards: stable note ID key.
-- [ ] Skills / weekly quests / ability reward paths: stable log/week/action keys and UID-safe account XP routing.
-- [ ] Finance reward call sites still using legacy two-argument `awardXP`: stable transaction/goal/action keys without changing accepted Finance behavior.
-- [ ] Legacy trade/duo/group-quest reward paths that are still served: stable event/cycle keys or explicit retirement if proven unused.
-- [ ] Drive `ProgressionRuntime.status().fallbackRewardCount` to zero during the final served-runtime smoke path.
-
-### Tests / gates
-- [x] `scripts/test-progression-store.js`: migration isolation, logout clear, stale callback rejection, A→B reconnect, cross-household write isolation, duplicate reward and duplicate achievement protection.
-- [x] `scripts/test-progression-runtime.js`: canonical runtime cutover, legacy bridge retirement, canonical achievement evaluation and deterministic one-off task reward.
-- [x] `scripts/test-progression-producer-keys.js`: daily/Party Quest deterministic keys and Party Quest failed-write recovery behavior.
-- [x] Household Rebuild Contracts green at STEP 9 checkpoint (`b81b936c8b7185b461268a663098f85339e4d2bd`).
-- [x] Vercel branch deployment for the same checkpoint is READY.
-- [ ] After all served producers are keyed, rerun complete Household Rebuild Contracts.
-- [ ] Verify final served runtime assets/version wiring in a fresh READY preview.
-- [ ] Pass real iPhone Safari/PWA STEP 9 smoke test: login/session, Home XP, task reward once, achievements, reload, background/foreground, no freeze/white screen.
-- [ ] Freeze STEP 9 only after product acceptance.
+### Final STEP 9 gate
+- [ ] Real iPhone Safari/PWA smoke: app/session opens normally and Home XP is visible/stable.
+- [ ] Complete one normal task and confirm XP increases once.
+- [ ] Reopen/uncheck/re-complete that same task where the UI allows it and confirm the same task cannot grant XP again.
+- [ ] Open Achievements and confirm level/XP/unlocked state renders normally.
+- [ ] Navigate across a few modules, reload, background → foreground, reload again; no freeze/white screen/WebKit crash.
+- [ ] Product owner accepts the STEP 9 device gate.
+- [ ] Mark STEP 9 accepted/frozen; only then open STEP 10 Notifications.
 
 ## Later roadmap phases
 
@@ -113,9 +121,10 @@ STEP 8 Finance is accepted/frozen. STEP 9 now has a canonical UID + household pr
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless a new product decision changes that.
 - Current accepted icon scope and Brand/PWA identity remain frozen unless a concrete regression/redesign is requested.
-- STEP 8 Finance is frozen; do not casually redesign or refactor it during STEP 9 unless a concrete regression is found.
+- STEP 8 Finance is frozen; STEP 9 may only touch Finance through narrowly scoped progression adapters that preserve accepted Finance behavior.
 - Platform admin remains separate from household admin and must not imply unrestricted raw household-content access.
-- STEP 9 progression identity must be UID-based, not display-name based.
-- Every XP/reward mutation introduced in STEP 9 must have a deterministic idempotency boundary.
-- Browser globals/localStorage may remain temporary presentation caches only; they must never seed another UID/household's canonical progression.
+- STEP 9 progression identity is UID-based, not display-name based.
+- Every served XP/reward mutation must have a deterministic idempotency boundary.
+- Browser globals/localStorage are compatibility projections only; they are never cross-identity migration authority.
+- `ProgressionRuntime.status().fallbackRewardCount` is a diagnostic fallback only, not an accepted producer design; tested served reward paths are now explicitly keyed.
 - Every meaningful development update must append to `docs/FAMILYAPP-UPDATE-LOG.md` and update this TODO in the same work session.
