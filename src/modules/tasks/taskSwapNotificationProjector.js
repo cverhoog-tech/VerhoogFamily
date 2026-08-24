@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// TASK SWAP NOTIFICATION PROJECTOR v1.0.0
+// TASK SWAP NOTIFICATION PROJECTOR v1.1.0
 // Projects the existing UID-based taskSwapRequests state into typed
-// NotificationEvents. Read-only observer: request ownership stays with the
-// task swap module, notification persistence stays with NotificationStore.
+// NotificationEvents. The request record is passed through so STEP 10 can use
+// the stable swap-request id as notification idempotency identity.
 // ============================================================
 (function(){
   if(window.TaskSwapNotificationProjector)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var ref=null,handler=null,householdId=null,snapshot={},initialized=false;
 
   function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
@@ -25,13 +25,13 @@
       var row=next[k],prev=snapshot[k]||null;
       if(!row||!window.NotificationEvents)return;
       if(!prev&&row.status==='pending'&&String(row.requesterUid||'')===String(me)){
-        safe(NotificationEvents.taskSwapRequested(task(row.taskId),row.targetUid));
+        safe(NotificationEvents.taskSwapRequested(task(row.taskId),row.targetUid,row));
         return;
       }
       if(!prev||prev.status===row.status)return;
       if(String(row.targetUid||'')!==String(me))return;
-      if(row.status==='accepted')safe(NotificationEvents.taskSwapResolved(task(row.taskId),row.requesterUid,true));
-      else if(row.status==='declined')safe(NotificationEvents.taskSwapResolved(task(row.taskId),row.requesterUid,false));
+      if(row.status==='accepted')safe(NotificationEvents.taskSwapResolved(task(row.taskId),row.requesterUid,true,row));
+      else if(row.status==='declined')safe(NotificationEvents.taskSwapResolved(task(row.taskId),row.requesterUid,false,row));
     });
     snapshot=next;
   }
