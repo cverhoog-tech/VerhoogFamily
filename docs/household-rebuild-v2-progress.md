@@ -27,9 +27,10 @@ This tracker is the compact phase-level view of the rebuild. The roadmap remains
 - [x] STEP 6 — Agenda.
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen on 2026-08-24.
-- [-] STEP 9 — Progression / XP / Achievements — canonical foundation active; deterministic producer migration in progress.
+- [x] STEP 9 — Progression / XP / Achievements — accepted/frozen on 2026-08-24.
+- [-] STEP 10 — Notifications — opened; read-only audit is the current next action.
 
-**Current phase: STEP 9 Progression / XP / Achievements. Canonical store/runtime are active on the rebuild branch. Continue migrating every served XP producer to deterministic event keys before final preview/iPhone acceptance.**
+**Current phase: STEP 10 Notifications. Start with the actually served notification runtime/data audit before implementing a canonical notification store. Notification state and push delivery remain separate architectural layers.**
 
 ## Prototype end-goal gate
 
@@ -65,58 +66,73 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 
 ## STEP 9 — Progression / XP / Achievements
 
-**Current phase — canonical foundation implemented; reward-producer migration continues.**
-
-### Audit
-- [x] Inventory currently served progression/XP/achievement files and bootstrap wiring.
-- [x] Inventory current XP/reward mutation call sites and source events.
-- [x] Map Firebase, local cache and legacy paths acting as progression authority/compatibility data.
-- [x] Map achievement projection/render dependencies.
-- [x] Identify duplicate reward/race risks and display-name/unscoped-cache identity risks.
-- [x] Detailed audit stored in `docs/step9-progression-audit.md`.
+**Status: accepted/frozen on 2026-08-24.**
 
 ### Canonical foundation
+- [x] Served progression/XP/achievement authority audit completed and documented.
 - [x] Canonical UID + household progression path: `families/{householdId}/members/{uid}/progression`.
 - [x] `ProgressionStore v1.0.0` with exact bind/unbind, stale-context rejection and compatibility projection clearing.
 - [x] Same-member Firebase legacy XP/achievement migration only; unscoped localStorage is not migration authority.
 - [x] Atomic deterministic reward ledger via `awardOnce`.
 - [x] Atomic achievement unlock + badge XP transaction.
-- [x] `ProgressionRuntime v1.0.0` owns served `awardXP`/`checkAchievements` mutation behavior.
+- [x] `ProgressionRuntime v1.1.0` owns served `awardXP`/`checkAchievements` mutation behavior.
 - [x] Legacy `ProgressionUidBridge` and `AchievementUidBridge` retired as mutation/data authorities; compatibility-only adapters remain.
-- [x] Achievement UI can consume canonical projection without redesign.
+- [x] Achievement UI consumes canonical projection without redesign.
 - [x] Logout/login/account/household switch protection and stale callback rejection covered by contracts.
-- [x] Cross-household/isolation contract coverage.
-- [x] Duplicate-reward/idempotency contract coverage.
-- [x] Existing active-member Firebase progression preserved during migration.
+- [x] Cross-household/isolation and duplicate-reward/idempotency coverage.
 
-### Deterministic producer migration
-- [x] One-off tasks: `task:{taskId}`.
-- [x] Achievement rewards: `achievement:{badgeId}`.
-- [x] Daily bonus: `daily:{YYYY-MM-DD}`.
-- [x] Party Quest completion: `partyQuest:{questId}` with failed-write retry behavior.
-- [ ] Recurring task occurrences.
-- [ ] Feed post / reaction rewards.
-- [ ] Recipe creation rewards.
-- [ ] Note creation rewards.
-- [ ] Skills / weekly quests / abilities.
-- [ ] Finance XP side rewards, preserving frozen Finance product behavior.
-- [ ] Legacy trade/duo/group paths that remain served.
-- [ ] No fallback reward calls during final served-runtime smoke path.
+### Deterministic served producers
+- [x] One-off tasks.
+- [x] Recurring task occurrences/day rewards.
+- [x] Achievement rewards.
+- [x] Daily bonus.
+- [x] Party Quest completion.
+- [x] Feed posts/reactions.
+- [x] Manual and imported recipes.
+- [x] Note creation.
+- [x] Task-template activations.
+- [x] Skills / weekly quests / abilities.
+- [x] Finance XP side rewards without changing frozen Finance behavior.
+- [x] Legacy trade/duo/group/shop alternatives classified as unreachable/unserved in the current served runtime and deferred to STEP 16 cleanup.
 
 ### Verification
-- [x] `scripts/test-progression-store.js`.
-- [x] `scripts/test-progression-runtime.js`.
-- [x] `scripts/test-progression-producer-keys.js`.
-- [x] Full Household Rebuild Contracts green at code checkpoint `b81b936c8b7185b461268a663098f85339e4d2bd`.
-- [x] Vercel branch deployment for that code checkpoint READY.
-- [ ] Final complete contract run after all producer migrations.
-- [ ] Fresh final Vercel READY preview with served asset/version verification.
-- [ ] Real iPhone Safari/PWA STEP 9 gate accepted.
-- [ ] STEP 9 frozen only after product acceptance.
+- [x] Progression store/runtime/producer/recurring/entity/skills/Finance contracts.
+- [x] Served-runtime audit against actual `/api/app` load graph.
+- [x] Final complete Household Rebuild Contracts green on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
+- [x] Vercel deployment `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` READY for the same code commit.
+- [x] Served HTML/runtime wiring verified with current STEP 9 assets.
+- [x] Real iPhone Safari/PWA gate accepted on 2026-08-24: session/Home XP/task reward/Achievements/module navigation/reload/background→foreground stable with no freeze/white screen/crash.
+- [x] STEP 9 frozen.
+
+## STEP 10 — Notifications
+
+**Current phase — audit first.**
+
+### Required audit
+- [ ] Inventory the currently served notification files/bootstrap wiring.
+- [ ] Inventory all notification creation producers (`addNotif` and alternatives).
+- [ ] Map current notification data authority and any local/global/Firebase/member/household paths.
+- [ ] Map per-user unread/read/dismiss/delete/all-read behavior.
+- [ ] Map household/UID identity assumptions and stale-state risks.
+- [ ] Map notification listener ownership and teardown across logout/account/household switch.
+- [ ] Inventory browser push/FCM/token/service-worker delivery code separately from in-app state.
+- [ ] Persist the audit before implementation.
+
+### Target implementation
+- [ ] Canonical household notification store.
+- [ ] Per-UID read/dismiss state.
+- [ ] Domain-event projection.
+- [ ] Exactly one household listener with explicit cleanup.
+- [ ] Stale-context and cross-household isolation protection.
+- [ ] Push delivery separate from canonical state.
+- [ ] Platform-neutral notification repository/service contract for future APNs/FCM/native actions.
+- [ ] Contract/isolation/lifecycle tests.
+- [ ] Fresh Vercel preview.
+- [ ] Real iPhone Safari/PWA gate.
+- [ ] STEP 10 frozen only after product acceptance.
 
 ## Later roadmap phases
 
-- [ ] STEP 10 — Notifications.
 - [ ] STEP 11 — Party quests.
 - [ ] STEP 12 — Profile / presence / avatars.
 - [ ] STEP 13 — Activity / feed.
@@ -135,10 +151,11 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - STEP 2B.3 unsigned Cloudinary upload remains prototype-only and must be replaced by an authorized/signed media boundary before broader beta.
 - Platform admin remains separate from household admin and must not imply generic raw household-content access.
 - Current accepted Brand/PWA/icon scope remains frozen unless a concrete regression or redesign is requested.
-- STEP 8 Finance is frozen; STEP 9 work must not casually refactor it.
-- STEP 9 progression identity is UID-based.
-- STEP 9 reward mutations must be idempotent and event-keyed.
-- Browser XP/achievement globals/localStorage are compatibility projections only, never cross-identity migration authority.
+- STEP 8 Finance and STEP 9 Progression are frozen.
+- STEP 10 notification identity must be household/UID aware.
+- Notification state and push delivery are separate layers.
+- Realtime notification subscriptions require explicit cleanup and stale-context protection.
+- Browser/native delivery adapters must not become the domain authority for notification state.
 - Every meaningful development update must update both `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/FAMILYAPP-UPDATE-LOG.md`.
 
 ## Milestone summary
@@ -148,11 +165,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-22 — STEP 2A/2B foundation, Brand/PWA identity and accepted UI/icon scope closed for the prototype baseline.
 - 2026-08-22 — STEP 3 Tasks core accepted after isolation contracts, preview and real iPhone gate.
 - 2026-08-23 — Rebuild execution advanced through STEP 8 Finance on the active branch; central cross-chat TODO/update log introduced to prevent tracker drift.
-- 2026-08-23 — STEP 8 Finance Analyse polish, FamilyApp Assistent, reset placement, PDF share flow and Finance isolation contracts completed.
-- 2026-08-23 — Final premium two-page Finance PDF implemented and automated export contract passed.
-- 2026-08-24 — Fresh Vercel preview verified with `FinanceAnalysisExport v2.0.0`.
 - 2026-08-24 — Final premium PDF iPhone test accepted; STEP 8 closed/frozen and STEP 9 opened.
-- 2026-08-24 — STEP 9 audit completed; canonical UID progression store/runtime activated with first deterministic task/daily/achievement/Party Quest reward paths and green contracts.
+- 2026-08-24 — STEP 9 canonical UID progression foundation and deterministic producer migration completed with green served-runtime contracts.
+- 2026-08-24 — STEP 9 real iPhone gate accepted; STEP 9 frozen and STEP 10 Notifications opened.
 
 ## Maintenance rule
 
