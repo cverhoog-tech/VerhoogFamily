@@ -1,50 +1,21 @@
 'use strict';
 // ============================================================
-// PROGRESSION UID BRIDGE v2.0
-// Event-driven Firebase XP binding. No polling boot loop.
+// PROGRESSION UID BRIDGE v3.0.0 — STEP 9 compatibility adapter
+//
+// ProgressionStore is the canonical authority. This bridge intentionally owns
+// no Firebase listener, no localStorage migration and no awardXP mutation.
+// It remains only because existing task/achievement presentation code asks it
+// for reward values/current XP.
 // ============================================================
 (function(){
-  if(window.__progressionUidBridgeV2)return;
-  window.__progressionUidBridgeV2=true;
+  if(window.__progressionUidBridgeV3)return;
+  window.__progressionUidBridgeV3=true;
 
-  var ref=null,baseAward=null,bridged=false,lastUid=null,lastHid=null;
-
-  function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
-  function uid(){try{var u=window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser);return u&&u.uid||null;}catch(e){return null;}}
-  function hid(){return window.fbFamilyId||null;}
-  function localXp(){var n=Number(window.myXP);return isFinite(n)?Math.max(0,Math.round(n)):0;}
-  function applyXp(value){
-    var n=Math.max(0,Math.round(Number(value)||0));
-    window.myXP=n;
-    try{if(typeof myXP!=='undefined')myXP=n;}catch(e){}
-    try{localStorage.setItem('fam_myxp_v1',String(n));}catch(e){}
-    try{window.dispatchEvent(new CustomEvent('familyapp:progression-updated',{detail:{uid:uid(),xp:n}}));}catch(e){}
-  }
-  function detach(){if(ref)try{ref.off();}catch(e){}ref=null;lastUid=null;lastHid=null;}
-  function attach(){
-    var d=db(),me=uid(),family=hid();
-    if(!d||!me||!family)return false;
-    if(ref&&lastUid===me&&lastHid===family)return true;
-    detach();
-    lastUid=me;lastHid=family;
-    ref=d.ref('families/'+family+'/members/'+me+'/xp');
-    ref.on('value',function(s){var v=s.val();if(v===null||v===undefined){ref.set(localXp());return;}applyXp(v);});
-    return true;
-  }
-  function bridgeAward(){
-    if(bridged)return true;
-    if(typeof window.awardXP!=='function')return false;
-    baseAward=window.awardXP;
-    window.awardXP=function(amount,reason){
-      var delta=Math.max(0,Math.round(Number(amount)||0));
-      var result=baseAward.apply(this,arguments);
-      var d=db(),me=uid(),family=hid();
-      if(delta&&d&&me&&family)d.ref('families/'+family+'/members/'+me+'/xp').set(firebase.database.ServerValue.increment(delta));
-      return result;
-    };
-    window.awardXP.__uidProgression=true;
-    bridged=true;
-    return true;
+  function store(){return window.ProgressionStore||null;}
+  function currentXp(){
+    var s=store();
+    try{if(s&&typeof s.getCurrentXp==='function')return Math.max(0,Math.round(Number(s.getCurrentXp())||0));}catch(e){}
+    var n=Number(window.myXP);return isFinite(n)?Math.max(0,Math.round(n)):0;
   }
   function rewardXp(task){
     if(!task)return 4;
@@ -53,19 +24,31 @@
     var m=String(task.xpReward||task.xp||'').match(/(\d+)/);
     return m?Math.max(1,parseInt(m[1],10)):4;
   }
-  function boot(){attach();bridgeAward();}
+  function start(){
+    var s=store();
+    try{if(s&&typeof s.start==='function')s.start();}catch(e){}
+    return !!s;
+  }
 
   window.ProgressionUidBridge={
-    version:'2.0.0',
-    start:function(){boot();return !!ref;},
-    xp:localXp,
+    version:'3.0.0',
+    start:start,
+    xp:currentXp,
+    getCurrentXp:currentXp,
     rewardXp:rewardXp,
-    status:function(){return{uid:uid(),householdId:hid(),xp:localXp(),attached:!!ref,awardBridged:bridged};}
+    status:function(){
+      var s=store(),status=null;
+      try{status=s&&typeof s.status==='function'?s.status():null;}catch(e){}
+      return{
+        authority:s?'ProgressionStore':'legacy-projection',
+        uid:status&&status.uid||null,
+        householdId:status&&status.householdId||null,
+        xp:currentXp(),
+        attached:!!(status&&status.attached),
+        awardBridged:false
+      };
+    }
   };
 
-  window.addEventListener('familyapp:household-identity-synced',boot);
-  window.addEventListener('familyapp:household-changed',boot);
-  window.addEventListener('familyapp:auth-ready',boot);
-  window.addEventListener('load',boot,{once:true});
-  if(document.readyState==='complete')boot();else Promise.resolve().then(boot);
+  window.addEventListener('familyapp:progression-updated',start);
 })();
