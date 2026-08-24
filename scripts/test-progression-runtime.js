@@ -25,20 +25,22 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   // use cache-busted compatibility bridge versions.
   const hIdx=loaderSource.indexOf('src/core/householdContext.js?v=1');
   const sIdx=loaderSource.indexOf('src/core/progressionStore.js?v=1');
-  const rIdx=loaderSource.indexOf('src/core/progressionRuntime.js?v=1');
+  const rIdx=loaderSource.indexOf('src/core/progressionRuntime.js?v=2');
   assert.ok(hIdx>-1&&sIdx>hIdx&&rIdx>sIdx,'loader order must be HouseholdContext -> ProgressionStore -> ProgressionRuntime');
   assert.ok(loaderSource.includes('src/core/progressionUidBridge.js?v=3'));
   assert.ok(loaderSource.includes('src/modules/achievements/achievementUidBridge.js?v=2'));
   assert.ok(loaderSource.includes('src/modules/tasks/taskRewardBridge.js?v=3'));
 
   let xp=100;
+  let identityUid='userA';
+  let identityHousehold='houseA';
   const rewards={};
   const achievements={};
   const calls={legacyAward:0,legacyCheck:0,popup:0,levelup:0,achievementToast:0,home:0};
 
   const ProgressionStore={
     getCurrentXp(){return xp;},
-    status(){return{uid:'userA',householdId:'houseA',attached:true,xp};},
+    status(){return{uid:identityUid,householdId:identityHousehold,attached:true,xp};},
     hasReward(key){return !!rewards[key];},
     hasAchievement(id){return !!achievements[id];},
     awardOnce(key,amount,meta){
@@ -87,7 +89,7 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   vm.runInContext(runtimeSource,sandbox,{filename:'progressionRuntime.js'});
 
   assert.ok(window.ProgressionRuntime,'ProgressionRuntime must install');
-  assert.strictEqual(window.ProgressionRuntime.version,'1.0.0');
+  assert.strictEqual(window.ProgressionRuntime.version,'1.1.0');
   assert.strictEqual(window.awardXP.__canonicalProgression,true,'global awardXP must be canonicalized');
   assert.strictEqual(window.checkAchievements.__canonicalProgression,true,'global checkAchievements must be canonicalized');
 
@@ -111,6 +113,28 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   assert.strictEqual(xp,124,'duplicate reward/achievement checks must not change XP');
   assert.strictEqual(calls.popup,1,'duplicate reward must not show a second XP popup');
   assert.strictEqual(calls.achievementToast,2,'already unlocked badges must not toast twice');
+
+  // Async legacy producers can queue an identity-bound deterministic context.
+  // The next matching legacy reason consumes it without increasing fallback count.
+  const fallbackBeforePending=window.ProgressionRuntime.status().fallbackRewardCount;
+  window.ProgressionRuntime.queueLegacyReward('Post',{key:'feedPost:p1',source:'feed-post',sourceId:'p1'});
+  assert.strictEqual(window.ProgressionRuntime.status().pendingRewardCount,1);
+  const pendingReward=await window.awardXP(3,'Post');
+  assert.strictEqual(pendingReward.key,'feedPost:p1');
+  assert.strictEqual(pendingReward.awarded,true);
+  assert.strictEqual(rewards['feedPost:p1'].meta.source,'feed-post');
+  assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,fallbackBeforePending,'consumed deterministic context must not count as fallback');
+  assert.strictEqual(window.ProgressionRuntime.status().pendingRewardCount,0);
+
+  // A context queued under user A must never be consumed after an identity switch.
+  window.ProgressionRuntime.queueLegacyReward('Like',{key:'feedLike:p2',source:'feed-like',sourceId:'p2'});
+  identityUid='userB';identityHousehold='houseB';
+  const staleContextFallbackBefore=window.ProgressionRuntime.status().fallbackRewardCount;
+  const switchedReward=await window.awardXP(1,'Like');
+  assert.ok(switchedReward.key.startsWith('legacy:userB:houseB:like:'),'stale queued context must not cross identity boundaries');
+  assert.strictEqual(window.ProgressionRuntime.status().fallbackRewardCount,staleContextFallbackBefore+1);
+  assert.ok(!rewards['feedLike:p2'],'A pending key must not be consumed by B');
+  identityUid='userA';identityHousehold='houseA';
 
   // Transitional callers without a deterministic key stay canonical but are
   // explicitly counted so STEP 9 can drive that number to zero before freeze.
