@@ -17,23 +17,34 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 8 Finance accepted/frozen; STEP 9 opened
+
+- Product owner confirmed the final premium two-page Finance PDF works in the latest iPhone test.
+- Final STEP 8 release gate is accepted.
+- STEP 8 Finance is now formally accepted/frozen on `agent/household-rebuild-v2`.
+- Accepted STEP 8 includes: household-scoped Finance state, transaction/reset semantics, premium Analyse UI, period comparisons, deterministic FamilyApp Assistent, strict household isolation contracts, native iOS/WhatsApp PDF sharing and the final premium two-page Finance report.
+- `docs/FAMILYAPP-CURRENT-TODO.md` now marks STEP 9 as the current phase.
+- `docs/household-rebuild-v2-progress.md` now marks STEP 8 complete and STEP 9 in progress.
+- STEP 9 must begin with a read-only audit of all currently served progression/XP/achievement authorities and mutation paths before implementation changes.
+- STEP 9 target remains: canonical UID progression store, event-keyed/idempotent rewards, canonical achievement projection, safe legacy migration, lifecycle/isolation tests, preview and iPhone gate.
+
+---
+
 ## 2026-08-24 — Vercel rate limit cleared; premium PDF preview READY
 
 - A new branch push was accepted by Vercel instead of failing with `build-rate-limit`.
 - Fresh deployment `dpl_2JCsQxBNKDXd9dkfvtDVCurRyaNy` reached READY.
 - Verified the deployed Finance export asset directly from that preview; it serves `FinanceAnalysisExport v2.0.0`.
 - Therefore the final premium two-page Finance PDF implementation is confirmed present in a fresh Vercel preview.
-- The only remaining STEP 8 acceptance action is the real-iPhone verification of the new premium PDF: generate it, inspect both pages, confirm readability and share to WhatsApp.
-- Phase tracker and current TODO were synchronized in the same work session.
+- The final real-iPhone verification was subsequently accepted and STEP 8 has since been closed.
 
 ---
 
 ## 2026-08-24 — Phase tracker synchronized to actual STEP 8 state
 
 - Replaced the stale phase-level status that still reported STEP 4 Recipes as current.
-- `docs/household-rebuild-v2-progress.md` now reflects the actual execution position: STEP 0 through STEP 7 passed in the active rebuild line, STEP 8 Finance in final verification, STEP 9 not started.
-- STEP 8 implementation summary now includes the premium Analyse UI, deterministic FamilyApp Assistent, household isolation contracts, final two-page premium PDF report and prior iPhone/share acceptance.
-- The remaining STEP 8 release gate is final iPhone verification of the premium PDF from a fresh READY preview.
+- `docs/household-rebuild-v2-progress.md` was synchronized to the actual execution position.
+- STEP 8 implementation summary was brought up to date before final acceptance.
 - `docs/FAMILYAPP-CURRENT-TODO.md` was synchronized in the same work session.
 
 ---
@@ -61,7 +72,6 @@ Newest entries belong at the top.
 - FamilyApp Assistent behavior is accepted in the tested Analyse flow.
 - PDF generation on iPhone works.
 - Native share flow works and WhatsApp sharing is accepted.
-- Remaining STEP 8 product task at that point was the final premium PDF report template.
 
 ---
 
