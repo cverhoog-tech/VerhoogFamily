@@ -13,7 +13,7 @@ New chats/agents should read these four files before continuing development on t
 
 STEP 8 Finance and STEP 9 Progression are accepted/frozen. STEP 10 has one HouseholdContext-native notification authority, deterministic/idempotent events, UID-specific read/dismiss state, a private multi-device push registry, explicit Web Push opt-in, service-worker/FCM transport, best-effort push handoff, a trusted Vercel sender and a readiness endpoint that blocks the permission prompt until both the public VAPID key and protected sender credentials are present.
 
-The iPhone Home Screen Web Push opt-in is accepted. During setup of the second account for the PC→iPhone delivery test, the login flow exposed a served-runtime household onboarding regression: the canonical `householdPlatform.js` / Google auth adapter were not in the active `/api/app` load graph and the session controller did not explicitly recognize the canonical `HOUSEHOLD_REQUIRED` setup marker. Commit `fae24eddef6163e9ac9180792167d847381e3b6d` restores deterministic auth/household ordering, adds `HouseholdOnboardingBridge v1.0.0`, recognizes missing/inaccessible household setup markers and routes stale permission-denied household pointers into safe re-onboarding rather than a generic startup error. `Household Rebuild Contracts` passed (run `32781652282`) and Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` is READY. The next gate is user verification that the second/wife account can reach the create/join household chooser and join via invite; only then continue the actual background push delivery test. Do **not** freeze STEP 10 yet.
+The iPhone Home Screen Web Push opt-in is accepted. During setup of the second account for the PC→iPhone delivery test, the login flow exposed a served-runtime household onboarding regression: the canonical `householdPlatform.js` / Google auth adapter were not in the active `/api/app` load graph and the session controller did not explicitly recognize the canonical `HOUSEHOLD_REQUIRED` setup marker. Commit `fae24eddef6163e9ac9180792167d847381e3b6d` restores deterministic auth/household ordering, adds `HouseholdOnboardingBridge v1.0.0`, recognizes missing/inaccessible household setup markers and routes stale permission-denied household pointers into safe re-onboarding rather than a generic startup error. A separate requested profile lifecycle action is now also implemented on commit `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`: Profile contains a guarded **Gezin verlaten** flow that removes only the current membership/pointers and prevents an owner from orphaning a household. `Household Rebuild Contracts` passed for that latest code commit (run `32784256710`) and Vercel deployment `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` is READY. The next STEP 10 gate remains user verification that the second/wife account can reach the create/join household chooser and join via invite; only then continue the actual background push delivery test. Do **not** freeze STEP 10 yet.
 
 ## Frozen phases
 
@@ -77,6 +77,21 @@ The iPhone Home Screen Web Push opt-in is accepted. During setup of the second a
 - [ ] Real PC/browser retest: new Google account reaches `Nieuw gezin maken / Deelnemen aan gezin` instead of generic startup error.
 - [ ] Real wife-account retest: existing account either resolves the household normally or is safely offered re-onboarding and can rejoin using a fresh invite.
 
+### Profile / household lifecycle side request
+- [x] Profile contains a clear destructive action **Gezin verlaten**.
+- [x] The flow first reads the active UID/household through `HouseholdContext` and rejects stale identity changes.
+- [x] A normal member leaves by removing only their own `families/{householdId}/members/{uid}` membership and their own current household pointers under `users/{uid}`.
+- [x] Leaving does **not** delete the household or shared tasks/boodschappen/agenda/finance/notification data.
+- [x] An owner cannot orphan a household. The flow requires an active adult/admin successor, transfers `meta.ownerUid` and promotes that member to `owner` before removing the leaving owner.
+- [x] An owner with no eligible adult/admin successor is blocked with guidance instead of deleting/orphaning the household.
+- [x] Presence is cleared best-effort before membership removal and the canonical authenticated session is resumed afterwards so the leaving account returns to household create/join onboarding.
+- [x] Existing Firebase Rules already permit the required self-membership removal and owner-managed ownership transfer; no production Rules change was made.
+- [x] `scripts/test-household-leave-profile.js` guards identity, ownership transfer, non-deletion of shared household data, profile wiring and existing Rules support.
+- [x] Latest full Household Rebuild Contracts PASS on `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`, run `32784256710`.
+- [x] Vercel Preview `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` READY for the household-leave feature commit.
+- [ ] Real Preview smoke test: normal member leaves and reaches onboarding without data leakage/freeze.
+- [ ] Real Preview owner smoke test: ownership transfer is required and the successor retains the household.
+
 ### Trusted push sender / delivery health
 - [x] `PushDeliveryBridge v1.0.0` sends only canonical `{householdId, notificationId}` identity after obtaining the current Firebase ID token.
 - [x] Client bridge never submits raw recipient tokens/title/body as authority.
@@ -101,8 +116,8 @@ The iPhone Home Screen Web Push opt-in is accepted. During setup of the second a
 - [x] `test-push-config-readiness.js` proves: no config → not ready; VAPID only → not ready; VAPID + sender env → ready; sender values never appear in response.
 - [x] Served runtime audit covers current notification + readiness-aware Web Push + trusted sender wiring.
 - [x] Profile notification navigation and iPhone Home Screen guidance ordering are guarded in the served-runtime contract.
-- [x] Latest full `Household Rebuild Contracts` PASS on `fae24eddef6163e9ac9180792167d847381e3b6d`, run `32781652282`.
-- [x] Latest Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` READY for the auth/household hotfix commit.
+- [x] Latest full `Household Rebuild Contracts` PASS on `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`, run `32784256710`.
+- [x] Latest Vercel deployment `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` READY for the same code commit.
 - [x] Earlier post-config Preview deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` directly verified `/api/push-config` with `configured=true`, `vapidConfigured=true`, `senderConfigured=true`.
 
 ### Protected runtime configuration — complete

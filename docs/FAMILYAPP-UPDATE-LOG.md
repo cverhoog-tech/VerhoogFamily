@@ -17,6 +17,23 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-25 — Profile: veilige `Gezin verlaten` flow toegevoegd
+
+- Op verzoek is in Profiel een duidelijke destructieve actie **Gezin verlaten** toegevoegd.
+- De flow is HouseholdContext/UID-gebonden en controleert de actuele identity vóór de mutatie; een stale account/household context wordt geweigerd.
+- Voor een normaal gezinslid wordt alleen de eigen membership onder `families/{householdId}/members/{uid}` verwijderd en worden de eigen `users/{uid}`-household pointers naar het verlaten gezin gewist. Het FamilyApp-account zelf blijft bestaan.
+- Gedeelde gezinsdata wordt niet verwijderd: taken, boodschappen, agenda, finance, notifications en overige household data blijven bij het gezin.
+- Een eigenaar mag het gezin niet verweesd achterlaten. De bevestigingsflow vereist eerst een actieve volwassen/admin-opvolger; `meta.ownerUid` en de opvolgerrol worden naar die UID overgedragen vóór de vertrekkende eigenaar uit membership wordt verwijderd.
+- Als er geen geschikte volwassen/admin-opvolger is, wordt `Gezin verlaten` voor de eigenaar geblokkeerd met uitleg in plaats van het gezin te verwijderen.
+- Presence wordt best-effort opgeruimd vóór de membership-write. Na succesvol verlaten wordt de canonical authenticated session hervat zodat de gebruiker terugkomt in de bestaande **Nieuw gezin maken / Deelnemen aan gezin** onboarding.
+- De huidige Firebase Rules ondersteunen de benodigde self-membership removal en owner-managed ownership transfer al; er is **geen** production Rules-wijziging gedaan.
+- Toegevoegd: `src/modules/profile/householdLeaveService.js`, gekoppeld via `profile.legacy.js`, plus `scripts/test-household-leave-profile.js` voor identity, owner-transfer, non-deletion van shared household data, profielwiring en Rules-contract.
+- Volledige `Household Rebuild Contracts` is SUCCESS op commit `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`, workflow run `32784256710`.
+- Vercel Preview deployment `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` is READY voor dezelfde codecommit.
+- Destructieve real-device smoke tests voor normaal lid verlaten en eigenaarsoverdracht staan nog open; STEP 10 blijft **in progress / not frozen**.
+
+---
+
 ## 2026-08-24 — STEP 10 second-account auth/household onboarding regression hotfixed
 
 - The first PC→iPhone delivery attempt was blocked before push could be tested: an existing second household account could not complete login, and a newly selected Google account fell back to the generic `Opstarten mislukt. Controleer je verbinding en probeer opnieuw.` screen instead of being offered household create/join onboarding.
