@@ -17,6 +17,33 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-24 — STEP 9 deterministic producer migration complete; final iPhone gate next
+
+- Completed the remaining served XP/reward producer migration on `agent/household-rebuild-v2`.
+- Added `RecurringTaskRewardBridge v1.0.1`: recurring weekly/monthly completion and individual recurring-day completion now use stable occurrence keys. The legacy direct `myXP += 2` day mutation is immediately restored to the canonical projection and rerouted through progression.
+- Added `ProgressionRuntime v1.1.0` identity-safe pending reward contexts so large asynchronous legacy UI flows can attach a real entity ID after Firebase/storage creation without inventing timestamp pseudo-keys or crossing UID/household boundaries.
+- Added `ProgressionProducerBridge v1.1.1` for note creation, Feed posts, Feed likes, manual recipe creation and task-template activation.
+- Feed like XP now uses one per-user/post canonical reward key; unlike/re-like cannot farm XP.
+- Manual recipe creation uses the saved recipe ID. Imported recipes are deliberately excluded from the manual `Recept aangemaakt` context so import cannot leave a stray pending reward.
+- Recipe link import (`recipeServerlessLinkImport v0.504`) now awards directly with `recipe:{savedRecipeId}` and source `recipe-import`.
+- Shared task completion through `taskUidCreateBridge v1.3` now uses the same `task:{taskId}` key as other task completion paths, closing a second UI path that previously bypassed TaskRewardBridge.
+- Added/activated `SkillsProgressionBridge v4.0.0`: legacy local/name-based skill data remains compatibility state, but account-XP side effects from skill logs, weekly quest bonus/claim, copycat, auto-done and Triple-XP are canonical and deterministic.
+- The legacy Triple-XP ability direct `myXP += 4` mutation is neutralized and the same hidden +4 is recorded once through the canonical store.
+- The bridge also supplies the missing legacy `ability` binding during weekly-quest claim so the intended existing claim flow continues while the legacy module awaits STEP 16 cleanup.
+- Added `FinanceProgressionBridge v1.0.1`. It changes no accepted STEP 8 Finance calculations/UI/data behavior; it only keys existing XP side rewards by FinanceStore transaction/goal/update IDs.
+- Finance keys cover savings transactions, one-time goal-reached reward, savings-goal creation, both one-off income entry labels and income updates. Internal savings-linked extra-income records deliberately create no orphan XP context.
+- Added `scripts/test-recurring-progression-rewards.js`, `scripts/test-progression-entity-producers.js`, `scripts/test-skills-progression-bridge.js`, `scripts/test-finance-progression-bridge.js` and `scripts/test-progression-served-runtime-audit.js`.
+- The served-runtime audit executes the real `/api/app` transformation, follows statically served and literal dynamic-load scripts, enumerates served `awardXP` and direct `myXP +=` paths, and fails on unexpected producers or resurrected legacy trade/duo paths.
+- Its first run correctly discovered two previously missed live producers: `recipeServerlessLinkImport.js` and `taskUidCreateBridge.js`. Both were fixed with stable entity-ID reward keys rather than merely being added to an allowlist.
+- A later audit failure was test-only: comment text containing `myXP +=` was counted as executable code. The audit was made comment-insensitive; no app behavior changed for that correction.
+- Legacy alternative paths are now explicitly classified: old `shop.js`, `groupQuests.js`, `groupQuestRewardPolish.js` and `recipeBottomSheetBridge.js` are not in the current served graph; task-trade entry UI remains removed; no served module calls legacy `trackDuoProgress`. These are STEP 16 cleanup candidates rather than hidden live progression authorities.
+- Final complete `Household Rebuild Contracts` passed on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
+- Vercel deployment `dpl_AvwGkzdhsFbHUgFk3zKaMpNXWWF` is READY for that same code commit.
+- Served STEP 9 runtime wiring/cache versions are guarded by the served-runtime contract. Direct network asset inspection from the protected preview is SSO-gated, but the READY deployment metadata points to the exact green code commit.
+- STEP 9 is NOT frozen yet. The only remaining release gate is the real iPhone Safari/PWA smoke test and explicit product-owner acceptance.
+
+---
+
 ## 2026-08-24 — STEP 9 canonical progression foundation + first idempotent producers
 
 - Completed the required read-only STEP 9 progression audit and stored it in `docs/step9-progression-audit.md`.
