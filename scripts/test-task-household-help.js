@@ -5,7 +5,7 @@ const vm=require('vm');
 
 const sharedSource=fs.readFileSync('src/modules/tasks/taskSharedData.js','utf8');
 const uiSource=fs.readFileSync('src/modules/tasks/taskHouseholdHelpUi.js','utf8');
-const eventsSource=fs.readFileSync('src/core/notificationEvents.js','utf8');
+const experienceSource=fs.readFileSync('src/core/notificationExperience.js','utf8');
 const appSource=fs.readFileSync('api/app.js','utf8');
 
 function clone(v){return JSON.parse(JSON.stringify(v));}
@@ -123,9 +123,9 @@ function makeHarness(){
   assert.ok(uiSource.includes('data-household-help-join'));
   assert.ok(uiSource.includes('data-household-help-decline'));
   assert.ok(uiSource.includes('Niet voor mij'));
-  assert.ok(eventsSource.includes("targetUid?[String(targetUid)]:otherMemberUids()"));
-  assert.ok(eventsSource.includes("targetUid||'household'"));
-  assert.ok(eventsSource.includes('occurrence:String(occurrence)'));
+  assert.ok(experienceSource.includes("targetUid?[String(targetUid)]:otherMemberUids()"));
+  assert.ok(experienceSource.includes("targetUid||'household'"));
+  assert.ok(experienceSource.includes('occurrence:String(occurrence)'));
   assert.ok(appSource.includes('taskSharedData.js?v=5'));
   assert.ok(appSource.includes('taskHouseholdHelpUi.js?v=2'));
   assert.ok(appSource.includes('notificationActions.js?v=4'));
