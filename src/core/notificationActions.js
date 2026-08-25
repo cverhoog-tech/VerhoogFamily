@@ -83,10 +83,10 @@
     if(event.type==='task.help.requested'){
       var task=taskByEvent(event),me=currentUid();
       if(!task)return{statusLabel:'Taak niet gevonden',detail:'Deze taak bestaat niet meer.',actions:[]};
+      if(!sameHelpOccurrence(event,task))return{statusLabel:'Niet meer actief',detail:'Deze melding hoort bij een eerdere hulpvraag.',actions:[]};
       if(isHelper(task,me))return{statusLabel:'Je helpt al mee',detail:'Je bent al toegevoegd aan “'+String(task.title||task.name||'deze taak')+'”.',actions:[]};
       if(targetedDeclinedForEvent(task,event,me))return{statusLabel:'Afgewezen',detail:'Je hebt deze hulpvraag afgewezen.',actions:[]};
       if(householdDeclinedForEvent(task,event,me))return{statusLabel:'Niet voor mij',detail:'Je hebt aangegeven dat deze hulpvraag niet voor jou is. Andere gezinsleden kunnen nog steeds helpen.',actions:[]};
-      if(!sameHelpOccurrence(event,task))return{statusLabel:'Niet meer actief',detail:'Deze melding hoort bij een eerdere hulpvraag.',actions:[]};
       var householdOpen=!!task.helpRequested&&task.helpAudience==='household'&&!task.helpRequestedForUid;
       if(householdOpen){
         if(isOwner(task,me)||isAssigned(task,me))return{statusLabel:'Je neemt al deel',detail:'Je bent al betrokken bij deze taak.',actions:[]};
