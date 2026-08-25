@@ -9,105 +9,79 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. Canonical in-app notifications, iPhone standalone registration and the task-help notification flow work. The JWT signature bug is fixed and confirmed by real-device retest (Preview logs no longer show `Invalid JWT Signature`). The pipeline now reaches the RTDB stage and fails with `PUSH_DATABASE_READ_FAILED 401`: the service-account OAuth scope was missing `userinfo.email`, which Firebase's Realtime Database REST auth requires alongside `firebase.database`. Fixed on `agent/household-rebuild-v2` (not yet real-device accepted).**
+**STEP 10 — Notifications remains in progress. External iOS Web Push is now real-device proven on the iPhone Home Screen PWA. The remaining new functional gate is task-help response handling: targeted help must support `Hulp geven` / `Afwijzen`, while household-wide help must support `Hulp geven` / `Niet voor mij` without closing the broadcast for other family members. This lifecycle is implemented and contract-green, but still needs real-device acceptance before STEP 10 may freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
-### Latest verified product state
+## Latest verified product state
 
-- [x] Second/alternate Google account can authenticate and participate in the same household; the product owner successfully sent a help request from another account to Shane.
-- [x] Cross-account canonical notification state reaches the iPhone/PWA far enough to update the red unread app badge.
-- [x] Profile → **Gezin verlaten** normal-member flow real-tested and accepted.
-- [x] Profile → **Uitloggen** works and returns to login.
-- [x] Meer → **Uitloggen** works.
-- [x] **Verse start** removed from the active Meer menu.
-- [x] New/alternate account no longer inherits browser-wide `Shane` / `Esra` Profile values.
-- [x] Task help now has a **Heel het gezin** option. A creator can broadcast one help request to all eligible household members and multiple willing family members may join; accepted helpers remain participants until they leave, while the creator can retract the still-open broadcast.
-- [ ] Real-device smoke test for **Heel het gezin** UI/interaction still required.
-- [ ] Owner-transfer variant of **Gezin verlaten** still requires a real smoke test.
+- [x] Alternate Google account can authenticate and participate in the same household.
+- [x] Canonical cross-account notification state reaches the intended iPhone/PWA account.
+- [x] **External iOS Web Push works outside FamilyApp**: real lock-screen/banner notification observed on 2026-08-26 while the Home Screen PWA was backgrounded/closed.
+- [x] JWT signature bug fixed and real-device confirmed.
+- [x] RTDB OAuth scope bug (`userinfo.email`) fixed and real-device confirmed by successful downstream push delivery.
+- [x] Profile/Meer **Uitloggen** works; `Verse start` removed.
+- [x] UID-scoped Profile values prevent Shane/Esra browser leakage to another account.
+- [x] Normal-member **Gezin verlaten** accepted.
+- [x] Whole-family task help (`Heel het gezin`) exists and supports multiple willing helpers.
+- [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
 
 ## STEP 10 — Notifications
 
-### Canonical notification state — complete
-- [x] `NotificationHouseholdRepository v1.0.0` at `families/{householdId}/shared/notifications`.
-- [x] HouseholdContext UID + household + revision identity.
-- [x] Exact listener teardown, immediate projection clear and stale-callback rejection.
-- [x] Per-UID `readBy` / `dismissedBy` state.
-- [x] Deterministic `eventKey` / `publishOnce()` idempotency.
-- [x] `NotificationStore v2.1.0`; unkeyed publishing rejected.
-- [x] Push handoff only for newly created canonical events; push failure cannot undo inbox success.
-- [x] Deterministic Task / Swap / Party Quest / Finance events and HouseholdContext-safe projectors/actions/presentation.
-- [x] Profile → Meldingen opens the canonical notification screen.
+### Canonical notification + Web Push foundation — complete
+- [x] Household-scoped canonical notification repository with HouseholdContext UID/household/revision identity.
+- [x] Exact listener teardown, stale-callback rejection and immediate projection clear.
+- [x] Per-UID read/dismiss state.
+- [x] Deterministic event keys / publish-once idempotency.
+- [x] `NotificationStore v2.1.0` canonical facade.
+- [x] Push failure cannot invalidate canonical inbox state.
+- [x] Task / Swap / Party Quest / Finance producers use the canonical notification path.
+- [x] Profile → Meldingen opens the canonical notification center.
+- [x] User-private multi-device FCM registry.
+- [x] Explicit push opt-in only; iPhone requires Home Screen/standalone context.
+- [x] Same-browser UID switch invalidates the prior browser push transport.
+- [x] Background service worker + notification click routing present.
+- [x] Foreground FCM does not duplicate canonical inbox events.
+- [x] Trusted Vercel sender verifies caller, household membership and event actor; recipients/tokens are resolved server-side.
+- [x] Private per-device delivery receipts and invalid-token cleanup.
 
-### Web Push client/device — complete
-- [x] Private multi-device registry at `users/{uid}/private/pushDevices/{deviceId}`.
-- [x] Explicit opt-in only; startup never prompts for Notification permission.
-- [x] iPhone requires Home Screen / standalone context before opt-in.
-- [x] Same-browser UID switch invalidates previous browser push transport.
-- [x] `firebase-messaging-sw.js` handles background data payloads and notification click routing.
-- [x] Foreground FCM never creates a duplicate canonical inbox event.
-- [x] Real iPhone Home Screen opt-in accepted; device reached enabled registration state.
+### Push blockers — resolved and real-device proven
+- [x] `Invalid JWT Signature` root cause: RSA signature `Buffer` was JSON-stringified before base64url encoding. Fixed by encoding raw bytes.
+- [x] Cryptographic JWT regression test added; old implementation fails, fixed implementation passes.
+- [x] `PUSH_DATABASE_READ_FAILED 401` root cause: RTDB REST OAuth token missed `userinfo.email`; scope set now includes `userinfo.email`, `firebase.database`, `firebase.messaging`.
+- [x] Safe RTDB 401/403 diagnostics added without logging request URL/access token.
+- [x] Real iPhone Home Screen PWA received an external FamilyApp push on the lock screen after both fixes.
 
-### Trusted sender — code complete, Preview credential pair blocked
-- [x] `PushDeliveryBridge` sends only canonical `{householdId, notificationId}` plus the current Firebase ID token.
-- [x] Vercel `api/push-send.js` verifies the caller through the server-only `firebasePushSender` boundary.
-- [x] Sender verifies active household membership and canonical event actor.
-- [x] Recipient UIDs and enabled device tokens are resolved server-side; browser cannot choose raw recipient tokens/title/body.
-- [x] Private per-device delivery receipts provide idempotency and delivery health.
-- [x] FCM unregistered devices are disabled.
-- [x] Sender credentials remain server-only.
-- [x] `firebasePushSender v1.0.2` normalizes quoted/newline env values and logs safe Google OAuth diagnostics (HTTP status/error/description + JWT segment **lengths only**, never key/signature/token content) without logging secrets.
-- [x] **Root cause diagnosed from live Preview runtime logs, not assumption.** The `PUSH_SERVER_OAUTH_FAILED invalid_grant / Invalid JWT Signature` error persisted on `dpl_8gMDiJ1BnJqXzXK6k7z6uz2JpgML` (commit `01358b2c5b8...`) even after a full service-account key rotation — proving the private key itself was never the problem.
-- [x] **Actual bug:** `b64url()` only special-cased `typeof value==='string'`; for the `Buffer` returned by `crypto.Sign#sign()` it fell through to `JSON.stringify(value)`, base64url-encoding a JSON blob like `{"type":"Buffer","data":[...]}` instead of the raw 256-byte RSA signature. Every JWT built by `serviceAssertion()` therefore had a syntactically valid but cryptographically meaningless signature, regardless of which key signed it.
-- [x] Fix: `b64url()` now encodes `Buffer` input as raw bytes. Minimal, scoped fix — existing manual-JWT architecture and security model kept intact, no new dependency added.
-- [x] Regression coverage: `scripts/test-push-jwt-signature-contract.js` generates a throwaway RSA keypair, builds a real JWT via `serviceAssertion()`, decodes header/payload/signature, and cryptographically verifies the signature against the matching public key (plus a negative check against an unrelated key). Confirmed this test fails against the pre-fix code and passes against the fix.
-- [x] Full relevant STEP 10 push/notification contract suite green locally (jwt-signature, push-server-sender, push-config-readiness, push-device-registry, push-registration-service, notification-store-events/household-repository/served-runtime/projector-lifecycle/presentation-identity, task-household-help).
-- [x] **Real-device retest confirmed the JWT fix.** Preview logs on the fixed commit no longer show `Invalid JWT Signature`; OAuth now succeeds.
-- [x] **Next stage diagnosed from live Preview logs:** `PUSH_DATABASE_READ_FAILED 401` at the RTDB read step. Verified against Firebase's official Realtime Database REST auth documentation (`firebase.google.com/docs/database/rest/auth`): a service-account OAuth token for RTDB REST requires **both** `userinfo.email` and `firebase.database` scopes. The sender's scope list was missing `userinfo.email`.
-- [x] Fix: `firebasePushSender v1.0.3` adds `https://www.googleapis.com/auth/userinfo.email` to `SCOPES`, alongside the existing `firebase.database` and `firebase.messaging`.
-- [x] RTDB failure diagnostics improved: a new `rtdbFailureDetail()` classifies failures as `invalid-auth` (401), `insufficient-permission` (403) or `other`, and surfaces Firebase's own (non-secret) error message — without ever logging the request URL, which carries the OAuth access token in its query string.
-- [x] Regression coverage: `scripts/test-push-jwt-signature-contract.js` now asserts the JWT scope contains exactly the three required scopes (`userinfo.email`, `firebase.database`, `firebase.messaging`), order-independent. New `scripts/test-push-rtdb-diagnostics.js` asserts 401→`invalid-auth` and 403→`insufficient-permission` classification, that Firebase's error message is surfaced, and that the access token never appears in any error detail/message.
-- [ ] **Real-device retest still required** for this RTDB scope fix. OAuth + RTDB read succeeding is necessary but not sufficient — background/closed-PWA push must actually arrive on iPhone before STEP 10 push delivery is considered accepted.
-- [ ] If the RTDB scope fix does not fully resolve the 401, next check the service account's IAM permissions and its association with the `verhoog-family` Firebase project — do not jump ahead to FCM/service-worker/iOS display fixes until RTDB reads succeed.
+### Task-help response lifecycle — implemented, device acceptance open
+- [x] `TaskSharedData v2.2.0` adds occurrence-scoped `declineHelp(id)` state.
+- [x] Targeted help: recipient gets **Hulp geven** + **Afwijzen**.
+- [x] Targeted **Afwijzen** closes only that invitation and stores the recipient/occurrence so it remains resolved after reload/reconnect.
+- [x] Household-wide help: recipient gets **Hulp geven** + **Niet voor mij**.
+- [x] **Niet voor mij** is UID-local; it does **not** close the household broadcast for other eligible family members.
+- [x] A UID that opted out cannot accept the same help occurrence afterward.
+- [x] A later help request on the same task starts a new occurrence and clears old decline/opt-out state.
+- [x] Stale notifications from an earlier help occurrence can never become actionable against a newer request.
+- [x] `NotificationActions v3.1.0` exposes resolved `Afgewezen` / `Niet voor mij` status and removes actions after response.
+- [x] `TaskHouseholdHelpUi v1.1.0` adds **Niet voor mij** in the household help UI.
+- [x] New regressions: `test-notification-help-actions.js` plus extended `test-task-household-help.js`.
+- [x] Full `Household Rebuild Contracts` SUCCESS on code checkpoint `884a8eb7878067143efbd4394a7f76c0de461581`, run `32910497000`.
+- [ ] **Real-device targeted test:** receive a brand-new one-person help request → notification center shows **Hulp geven / Afwijzen** → tap **Afwijzen** → reload/reopen → remains resolved and task invitation is closed.
+- [ ] **Real-device household test:** receive `Heel het gezin` help request → notification center shows **Hulp geven / Niet voor mij** → tap **Niet voor mij** → that UID is resolved while another eligible family member can still choose **Hulp geven**.
 
-> Note: `/api/push-config configured=true` proves required variables are present, not that Google accepts the private-key signature. The runtime delivery call is the validity gate.
-
-### Whole-family task help — code complete, device acceptance open
-- [x] `TaskSharedData v2.1.0` adds `requestHouseholdHelp(id)` and `helpAudience='household'`.
-- [x] Existing targeted one-person help semantics remain supported.
-- [x] Broadcast helper candidates exclude creator, existing assignees and existing helpers.
-- [x] A household broadcast remains open after the first helper joins so additional eligible family members may help.
-- [x] Duplicate helper joins do not duplicate a helper entry.
-- [x] Creator can retract the broadcast without removing helpers who already joined.
-- [x] `TaskHouseholdHelpUi v1.0.0` adds **Heel het gezin** to the current task-card/detail help picker and makes household-wide requests actionable for eligible viewers.
-- [x] Existing `NotificationEvents.taskHelpRequested(task, null)` fans the request out to all other active household members.
-- [x] Served runtime cache cutover: `taskSharedData.js?v=4` + `taskHouseholdHelpUi.js?v=1`.
-- [x] `scripts/test-task-household-help.js` covers broadcast + multi-helper + targeted compatibility behavior.
-- [ ] Product owner device check: open a task → Hulp vragen → **Heel het gezin**; another member can choose **Hulp geven** and a second eligible member can also join.
-
-### Auth / account lifecycle — accepted for current test path
-- [x] `HOUSEHOLD_REQUIRED` / `HOUSEHOLD_ACCESS_REQUIRED` route to household onboarding instead of generic startup failure.
-- [x] Canonical served auth order restored before `AuthenticatedSessionController` / HouseholdContext.
-- [x] Real alternate-account login/join path is now usable (confirmed by cross-account help-request test).
-- [x] `FamilySessionActions v1.1.0` owns explicit Firebase sign-out without adding another auth observer.
-- [x] Profile and Meer expose **Uitloggen**.
-- [x] Profile name and optional partner values are UID-scoped; no Shane/Esra leakage to a new account.
-
-### Latest contracts / deployment
-- [x] Latest code head: `f6bb9c7eee3801221cded3d236dd995460adc66d`.
-- [x] Full `Household Rebuild Contracts` SUCCESS, run `32792327306`.
-- [x] Latest Vercel Preview `dpl_3to6czrBXjgtceK7jeEPtN4ov4ds` READY.
-- [x] Stable branch alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+### Latest code / CI / Preview
+- [x] Contract-verified code checkpoint: `884a8eb7878067143efbd4394a7f76c0de461581`.
+- [x] `Household Rebuild Contracts` SUCCESS — run `32910497000`.
+- [x] Vercel Preview `dpl_RHJZQZdZPfxMvVMUMDXF2orP7UrY` READY for that code checkpoint.
+- [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] No production Firebase Rules change and no `main` change.
 
 ### Remaining STEP 10 acceptance
-- [x] Diagnose and fix the JWT signature encoding root cause; redeploy Preview.
-- [x] Diagnose and fix the RTDB 401 (missing userinfo.email OAuth scope); redeploy Preview.
-- [ ] Background/closed-PWA OS push reaches iPhone (real-device retest still pending).
-- [ ] Tapping push opens/focuses FamilyApp notifications with exactly one canonical inbox item.
+- [x] Background/closed-PWA external OS push reaches iPhone.
+- [ ] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner visible only for intended identity.
-- [ ] Actionable targeted and household-wide task-help notification behavior accepted.
+- [ ] Targeted help **Hulp geven / Afwijzen** real-device accepted.
+- [ ] Household help **Hulp geven / Niet voor mij** real-device accepted, including another member still being able to join.
 - [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID.
 - [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
