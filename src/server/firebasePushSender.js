@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FIREBASE PUSH SENDER v1.0.1 — STEP 10 server-only delivery service
+// FIREBASE PUSH SENDER v1.0.2 — STEP 10 server-only delivery service
 //
 // Canonical notification state stays in RTDB. This service accepts only a
 // canonical householdId + notificationId, verifies the Firebase caller, reads
@@ -9,7 +9,7 @@
 // ============================================================
 const crypto=require('crypto');
 
-const VERSION='1.0.1';
+const VERSION='1.0.2';
 const DEFAULT_DB='https://verhoog-family-default-rtdb.europe-west1.firebasedatabase.app';
 const DEFAULT_PROJECT='verhoog-family';
 const DEFAULT_WEB_API_KEY='AIzaSyA4vXaF85pfv2Cxy5VG-KJXxsOG14UeN1s'; // public Firebase web config
@@ -48,7 +48,10 @@ function requireConfig(config){
   return config;
 }
 function coded(code,status,detail){var e=new Error(code);e.code=code;e.status=status||500;if(detail)e.detail=detail;return e;}
-function b64url(value){return Buffer.from(typeof value==='string'?value:JSON.stringify(value)).toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
+function b64url(value){
+  var buf=Buffer.isBuffer(value)?value:Buffer.from(typeof value==='string'?value:JSON.stringify(value));
+  return buf.toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+}
 function serviceAssertion(config,nowSeconds){
   const iat=Number(nowSeconds)||Math.floor(Date.now()/1000);
   const header={alg:'RS256',typ:'JWT'};
@@ -74,7 +77,12 @@ async function serviceAccessToken(config,fetchImpl){
     method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion}).toString()
   });
-  if(!result.ok||!result.body||!result.body.access_token)throw coded('PUSH_SERVER_OAUTH_FAILED',502,oauthFailureDetail(result));
+  if(!result.ok||!result.body||!result.body.access_token){
+    // Length-only diagnostics (never the raw segments) so a future OAuth
+    // failure can be triaged from logs without exposing key/signature material.
+    const segLens=assertion.split('.').map(s=>s.length).join(',');
+    throw coded('PUSH_SERVER_OAUTH_FAILED',502,oauthFailureDetail(result)+' jwtSegmentLengths='+segLens);
+  }
   return String(result.body.access_token);
 }
 async function verifyFirebaseUser(idToken,config,fetchImpl){
@@ -200,4 +208,4 @@ async function sendCanonicalNotification(input,deps){
 }
 function safeId(value,label){const s=String(value||'').trim();if(!s||s.length>500||!/^[A-Za-z0-9_.:%-]+$/.test(s))throw coded('PUSH_'+String(label||'id').toUpperCase()+'_INVALID',400);return s;}
 
-module.exports={VERSION,envConfig,requireConfig,verifyFirebaseUser,serviceAssertion,serviceAccessToken,resolveRecipients,enabledDevices,fcmData,fcmErrorCode,sendCanonicalNotification};
+module.exports={VERSION,envConfig,requireConfig,verifyFirebaseUser,serviceAssertion,serviceAccessToken,resolveRecipients,enabledDevices,fcmData,fcmErrorCode,sendCanonicalNotification,b64url};

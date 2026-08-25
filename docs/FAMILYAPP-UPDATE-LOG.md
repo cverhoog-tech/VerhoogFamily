@@ -15,6 +15,19 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 push OAuth root cause diagnosed and fixed (device retest pending)
+
+- Live Preview runtime logs on `dpl_8gMDiJ1BnJqXzXK6k7z6uz2JpgML` (commit `01358b2c5b8...`, "redeploy STEP 10 preview after verified credential refresh") still showed `PUSH_SERVER_OAUTH_FAILED invalid_grant / Invalid JWT Signature` **after** a full Firebase Admin SDK service-account key rotation — ruling out a bad/mismatched key.
+- Root cause: `b64url()` in `src/server/firebasePushSender.js` only handled `string` input explicitly; the `Buffer` returned by `crypto.Sign#sign()` fell through to `JSON.stringify(value)`, base64url-encoding a JSON object like `{"type":"Buffer","data":[...]}` instead of the raw 256-byte RSA signature. Every JWT built by `serviceAssertion()` had a well-formed but cryptographically invalid signature, independent of the configured key — explaining why key rotation had no effect.
+- Fix: `b64url()` now encodes `Buffer` input as raw bytes; architecture, security model and manual-JWT approach kept unchanged; no new dependency added. Bumped to `firebasePushSender v1.0.2`.
+- Added `scripts/test-push-jwt-signature-contract.js`: generates a temporary RSA keypair, builds a JWT via `serviceAssertion()`, decodes header/payload/signature, and cryptographically verifies the signature against the matching public key (plus a negative check against an unrelated key). Verified this test fails against the pre-fix code (`53 !== 9` byte-length assertion) and passes against the fix.
+- Added length-only (non-secret) JWT segment-length diagnostics to the OAuth failure error detail for faster future triage.
+- Ran the full relevant STEP 10 push/notification contract suite locally — all green.
+- Committed only to `agent/household-rebuild-v2`; `main` and production Firebase Rules untouched.
+- **STEP 10 push delivery is NOT yet marked accepted.** OAuth succeeding does not by itself prove FCM delivery or iOS display; a real iPhone Home Screen PWA background/closed test is still required, with fresh `/api/push-send` runtime logs inspected immediately after to confirm which stage (if any) fails next.
+
+---
+
 ## 2026-08-25 — STEP 10 real push test isolated to invalid service-account JWT; whole-family task help added
 
 - The product owner successfully reached the real cross-account notification test: a help request was sent from another household account to Shane.
@@ -122,8 +135,8 @@ Earlier detailed checkpoints for STEP 0–7, person/identity modernization, Shop
 
 ## Current next action
 
-1. Replace the two protected Preview Firebase service-account values from **one newly generated Admin SDK JSON**; never paste the private key into chat or repository.
-2. Redeploy Preview.
-3. Retest a brand-new help request while the iPhone PWA is backgrounded/closed.
+1. Real iPhone test: brand-new help request while the Home Screen PWA is backgrounded/closed.
+2. Immediately inspect fresh `/api/push-send` Preview runtime logs from that test.
+3. If OAuth now succeeds but no push arrives, report the exact next failing stage (RTDB device lookup, FCM response, token registration, service worker/background handling, or iOS notification display) from evidence, not assumption, before touching any further code.
 4. In the same Preview, smoke-test Task → Hulp vragen → **Heel het gezin** and verify more than one eligible family member can join.
 5. Continue push tap/read/dismiss/action/account-isolation/stability acceptance; freeze STEP 10 only after explicit product acceptance.

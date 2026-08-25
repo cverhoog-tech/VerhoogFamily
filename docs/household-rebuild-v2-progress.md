@@ -27,9 +27,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox + Web Push client + trusted sender implemented; iPhone registration and cross-account canonical notification/badge path verified. Actual OS push is blocked by invalid Preview service-account JWT credentials and must be repaired before final delivery/isolation acceptance.
+- [-] STEP 10 — Notifications — canonical inbox + Web Push client + trusted sender implemented; iPhone registration and cross-account canonical notification/badge path verified. The Google OAuth `Invalid JWT Signature` blocker has a diagnosed root cause (JWT signature encoding bug, not a credential problem) and a code fix on `agent/household-rebuild-v2`; a real-device retest is still required before final delivery/isolation acceptance.
 
-**Current phase: STEP 10 Notifications.** A real cross-account help request now reaches the iPhone/PWA canonical unread path (red badge), proving the household notification event path is alive. Vercel runtime shows that OS delivery then fails at the trusted sender before FCM: Google OAuth returns `invalid_grant` / `Invalid JWT Signature.` The next environment gate is to generate a new Firebase Admin SDK service-account JSON and replace the Preview `client_email` and `private_key` together from that same file, redeploy, then repeat the background push test. Do not freeze STEP 10 yet.
+**Current phase: STEP 10 Notifications.** A real cross-account help request now reaches the iPhone/PWA canonical unread path (red badge), proving the household notification event path is alive. Vercel runtime showed OS delivery failing at the trusted sender before FCM with Google OAuth `invalid_grant` / `Invalid JWT Signature.` — and this persisted even after a full service-account key rotation, which pointed away from the credentials themselves. Live-log + code inspection found the actual cause: `b64url()` JSON-stringified the RSA signature `Buffer` instead of encoding its raw bytes, corrupting every JWT signature regardless of key. Fixed and covered by a cryptographic regression test; Preview redeployed. Do not freeze STEP 10 yet — a real iPhone background/closed-PWA retest is still required.
 
 ## Frozen phases
 
@@ -76,11 +76,10 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Data-only FCM payload linked to canonical notification identity.
 - [x] Private delivery receipts provide per-device idempotency/health.
 - [x] Unregistered FCM device cleanup implemented.
-- [x] `firebasePushSender v1.0.1` handles quoted/newline env formatting and emits safe OAuth failure diagnostics without secret material.
-- [!] Latest real Preview sender attempts fail with `PUSH_SERVER_OAUTH_FAILED`, HTTP 400, `invalid_grant`, `Invalid JWT Signature.`
-- [!] `/api/push-config configured=true` only proves env values are present; it cannot prove the key actually signs for the configured service-account identity.
-- [ ] Replace `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL` and `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY` together from one newly generated Admin SDK JSON.
-- [ ] Revoke/delete obsolete key, redeploy Preview, then rerun OS-push acceptance.
+- [x] `firebasePushSender v1.0.2` handles quoted/newline env formatting and emits safe OAuth failure diagnostics (HTTP status/error/description + JWT segment lengths only) without secret material.
+- [x] Root cause found and fixed: `b64url()` fell through to `JSON.stringify(Buffer)` for the RSA signature bytes instead of raw-byte encoding, corrupting every JWT signature independent of the configured key — confirmed by the fact that a full key rotation did not change the `Invalid JWT Signature` error.
+- [x] `scripts/test-push-jwt-signature-contract.js` cryptographically verifies a real generated JWT's signature against its matching public key; confirmed failing pre-fix, passing post-fix.
+- [ ] Real-device retest: background/closed-PWA OS push must actually reach iPhone before this row is accepted.
 
 ### Household-wide task help extension
 - [x] `TaskSharedData v2.1.0` adds first-class `helpAudience='household'` and `requestHouseholdHelp(id)`.
@@ -149,6 +148,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-25 — Profile/Meer logout and UID-scoped Profile values accepted; normal-member household leave accepted.
 - 2026-08-25 — real cross-account notification test reached iPhone unread badge but exposed Google OAuth `Invalid JWT Signature` blocker before FCM.
 - 2026-08-25 — household-wide task-help broadcast implemented, contract-green and Preview READY.
+- 2026-08-26 — Root cause of the `Invalid JWT Signature` OAuth blocker found from live Preview logs: `b64url()` in `firebasePushSender.js` JSON-stringified the RSA signature `Buffer` instead of encoding its raw bytes, corrupting every service-account JWT regardless of key (explains why key rotation didn't help). Fixed, cryptographic regression test added, full relevant STEP 10 suite green, Preview redeployed. **Not yet marked accepted — pending real iPhone background/closed-PWA push retest.**
 
 ## Standing guardrails
 - Main untouched until explicit approval.

@@ -9,7 +9,7 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. Canonical in-app notifications, iPhone standalone registration and the task-help notification flow work; actual OS push is currently blocked by an invalid Firebase service-account JWT signature in the Vercel Preview sender credentials.**
+**STEP 10 — Notifications remains in progress. Canonical in-app notifications, iPhone standalone registration and the task-help notification flow work. The Google OAuth `Invalid JWT Signature` blocker has a diagnosed root cause and a code fix on `agent/household-rebuild-v2` (not yet real-device accepted): `b64url()` in `src/server/firebasePushSender.js` fell through to `JSON.stringify(Buffer)` for the RSA signature bytes instead of encoding them as raw bytes, corrupting every service-account JWT signature independent of which private key was configured. This is why the earlier full service-account key rotation did not resolve it.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -56,14 +56,14 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Private per-device delivery receipts provide idempotency and delivery health.
 - [x] FCM unregistered devices are disabled.
 - [x] Sender credentials remain server-only.
-- [x] `firebasePushSender v1.0.1` normalizes quoted/newline env values and logs safe Google OAuth diagnostics without logging secrets.
-- [!] **Real Preview OS push is blocked before FCM.** Latest real sends return `POST /api/push-send 502` with Google OAuth `invalid_grant` / `Invalid JWT Signature.`
-- [!] This means the configured service-account private key is not valid for the configured service-account identity (most likely mismatched or revoked). The iPhone permission/PWA registration is not the failing layer.
-- [ ] Generate a **new Firebase Admin SDK service-account JSON** and replace BOTH Preview values from that same file:
-  - `client_email` → `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL`
-  - `private_key` → `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`
-- [ ] Do not paste the private key into chat/GitHub. Revoke/delete the obsolete key after replacement.
-- [ ] Redeploy Preview after the environment update and repeat the background/closed-PWA help-request push test.
+- [x] `firebasePushSender v1.0.2` normalizes quoted/newline env values and logs safe Google OAuth diagnostics (HTTP status/error/description + JWT segment **lengths only**, never key/signature/token content) without logging secrets.
+- [x] **Root cause diagnosed from live Preview runtime logs, not assumption.** The `PUSH_SERVER_OAUTH_FAILED invalid_grant / Invalid JWT Signature` error persisted on `dpl_8gMDiJ1BnJqXzXK6k7z6uz2JpgML` (commit `01358b2c5b8...`) even after a full service-account key rotation — proving the private key itself was never the problem.
+- [x] **Actual bug:** `b64url()` only special-cased `typeof value==='string'`; for the `Buffer` returned by `crypto.Sign#sign()` it fell through to `JSON.stringify(value)`, base64url-encoding a JSON blob like `{"type":"Buffer","data":[...]}` instead of the raw 256-byte RSA signature. Every JWT built by `serviceAssertion()` therefore had a syntactically valid but cryptographically meaningless signature, regardless of which key signed it.
+- [x] Fix: `b64url()` now encodes `Buffer` input as raw bytes. Minimal, scoped fix — existing manual-JWT architecture and security model kept intact, no new dependency added.
+- [x] Regression coverage: `scripts/test-push-jwt-signature-contract.js` generates a throwaway RSA keypair, builds a real JWT via `serviceAssertion()`, decodes header/payload/signature, and cryptographically verifies the signature against the matching public key (plus a negative check against an unrelated key). Confirmed this test fails against the pre-fix code and passes against the fix.
+- [x] Full relevant STEP 10 push/notification contract suite green locally (jwt-signature, push-server-sender, push-config-readiness, push-device-registry, push-registration-service, notification-store-events/household-repository/served-runtime/projector-lifecycle/presentation-identity, task-household-help).
+- [ ] **Real-device retest still required.** OAuth succeeding is necessary but not sufficient — background/closed-PWA push must actually arrive on iPhone before STEP 10 push delivery is considered accepted.
+- [ ] If OAuth now succeeds but the push still doesn't arrive, inspect fresh `/api/push-send` runtime logs immediately and report the exact next failing stage (RTDB device lookup, FCM response, token registration, service worker/background handling, or iOS notification display) rather than assuming — then fix only that layer.
 
 > Note: `/api/push-config configured=true` proves required variables are present, not that Google accepts the private-key signature. The runtime delivery call is the validity gate.
 
@@ -96,8 +96,8 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] No production Firebase Rules change and no `main` change.
 
 ### Remaining STEP 10 acceptance
-- [ ] Replace invalid Preview Firebase service-account email/private-key pair and redeploy.
-- [ ] Background/closed-PWA OS push reaches iPhone.
+- [x] Diagnose and fix the JWT signature encoding root cause; redeploy Preview.
+- [ ] Background/closed-PWA OS push reaches iPhone (real-device retest still pending).
 - [ ] Tapping push opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner visible only for intended identity.
