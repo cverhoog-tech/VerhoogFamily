@@ -16,7 +16,7 @@
   }
   load('src/core/notificationExperience.js?v=1',function(){
     load('src/core/notificationFinanceCompat.js?v=1',function(){
-      load('src/core/householdDomainNotificationProjector.js?v=1');
+      load('src/core/householdDomainNotificationProjectorV2.js?v=1');
     });
   });
   window.NotificationEventsBootstrap={version:VERSION};
