@@ -1,14 +1,15 @@
 'use strict';
 // ============================================================
-// TASK HOUSEHOLD HELP UI v1.0.0
+// TASK HOUSEHOLD HELP UI v1.1.0
 // Adds a first-class "Heel het gezin" help choice to the accepted task popup
 // and makes household-wide help requests actionable from compact task cards.
-// Domain mutation remains owned by TaskSharedData/TaskHouseholdRepository.
+// v1.1 adds per-UID "Niet voor mij" handling without closing the broadcast for
+// other family members. Domain mutation remains owned by TaskSharedData.
 // ============================================================
 (function(){
   if(window.TaskHouseholdHelpUi)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var activeTaskId=null;
   var observer=null;
   var scheduled=false;
@@ -27,7 +28,9 @@
   function isOwner(task,uid){try{return !!(window.TaskSharedData&&TaskSharedData.isTaskCreator&&TaskSharedData.isTaskCreator(task,uid));}catch(e){return false;}}
   function isAssigned(task,uid){try{return !!(window.TaskSharedData&&TaskSharedData.isAssignedTo&&TaskSharedData.isAssignedTo(task,uid));}catch(e){return false;}}
   function isBroadcast(task){return !!(task&&task.helpRequested&&task.helpAudience==='household'&&!task.helpRequestedForUid);}
-  function eligible(task,uid){return !!(task&&uid&&!isOwner(task,uid)&&!isAssigned(task,uid)&&!isHelper(task,uid));}
+  function helpOccurrence(task){return String(task&&task.helpRequestedAt||'');}
+  function declinedBroadcast(task,uid){var map=task&&task.helpDeclinedByUids;return !!(uid&&map&&typeof map==='object'&&String(map[String(uid)]||'')===helpOccurrence(task));}
+  function eligible(task,uid){return !!(task&&uid&&!isOwner(task,uid)&&!isAssigned(task,uid)&&!isHelper(task,uid)&&!declinedBroadcast(task,uid));}
   function memberName(uid){
     try{
       var list=window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];
@@ -49,6 +52,7 @@
       '.tdp-household-help-copy{min-width:0;flex:1}.tdp-household-help-copy strong{display:block;font-size:11.5px;font-weight:900}.tdp-household-help-copy small{display:block;margin-top:2px;font-size:9.5px;line-height:1.3;color:var(--tdp-text2)}',
       '.tdp-household-help-action{font-size:9.5px;font-weight:900;color:var(--tdp-purple);white-space:nowrap}',
       '.tdp-household-help-divider{flex:1 0 100%;width:100%;height:1px;background:var(--tdp-border-soft);margin:2px 0}',
+      '.tdp-help-btn.tdp-help-decline{background:var(--tdp-surface2);color:var(--tdp-text2);border:1px solid var(--tdp-border-soft)}',
       '[data-theme*="dark"] .tdp-household-help-pick{border-color:rgba(196,181,253,.28);background:linear-gradient(135deg,rgba(109,40,217,.24),rgba(168,85,247,.10))}'
     ].join('\n');
     document.head.appendChild(style);
@@ -91,20 +95,39 @@
       if(status&&status.textContent!=='Open voor het hele gezin')status.textContent='Open voor het hele gezin';
       return;
     }
+    if(declinedBroadcast(task,me)){
+      if(title)title.textContent='Niet voor mij';
+      if(sub)sub.textContent='Je hebt aangegeven dat deze hulpvraag niet voor jou is. Andere gezinsleden kunnen nog helpen.';
+      if(status)status.textContent='Afgehandeld voor jou';
+      if(row)row.querySelectorAll('[data-household-help-join],[data-household-help-decline]').forEach(function(btn){btn.remove();});
+      return;
+    }
     if(!eligible(task,me))return;
     var owner=memberName(task.helpRequestedByUid||task.createdByUid);
     if(title&&title.textContent!=='Hulp gevraagd')title.textContent='Hulp gevraagd';
     var message=owner+' vraagt het hele gezin om hulp bij deze quest.';
     if(sub&&sub.textContent!==message)sub.textContent=message;
-    if(!row||row.querySelector('[data-household-help-join]'))return;
-    var join=document.createElement('button');join.type='button';join.className='tdp-help-btn';join.setAttribute('data-household-help-join','1');join.textContent='Hulp geven';
-    join.onclick=function(e){
-      e.preventDefault();e.stopPropagation();join.disabled=true;
-      var service=window.TaskSharedData;
-      if(!service||typeof service.joinHelp!=='function'){join.disabled=false;toast('Hulp geven is nog niet klaar');return;}
-      Promise.resolve(service.joinHelp(task.id||task._key)).then(function(){toast('Je helpt nu mee 🤝');refreshPopup(task.id||task._key);}).catch(function(err){join.disabled=false;toast((err&&err.message)||'Actie mislukt');});
-    };
-    row.appendChild(join);
+    if(!row)return;
+    if(!row.querySelector('[data-household-help-join]')){
+      var join=document.createElement('button');join.type='button';join.className='tdp-help-btn';join.setAttribute('data-household-help-join','1');join.textContent='Hulp geven';
+      join.onclick=function(e){
+        e.preventDefault();e.stopPropagation();join.disabled=true;
+        var service=window.TaskSharedData;
+        if(!service||typeof service.joinHelp!=='function'){join.disabled=false;toast('Hulp geven is nog niet klaar');return;}
+        Promise.resolve(service.joinHelp(task.id||task._key)).then(function(){toast('Je helpt nu mee 🤝');refreshPopup(task.id||task._key);}).catch(function(err){join.disabled=false;toast((err&&err.message)||'Actie mislukt');});
+      };
+      row.appendChild(join);
+    }
+    if(!row.querySelector('[data-household-help-decline]')){
+      var decline=document.createElement('button');decline.type='button';decline.className='tdp-help-btn tdp-help-decline';decline.setAttribute('data-household-help-decline','1');decline.textContent='Niet voor mij';
+      decline.onclick=function(e){
+        e.preventDefault();e.stopPropagation();decline.disabled=true;
+        var service=window.TaskSharedData;
+        if(!service||typeof service.declineHelp!=='function'){decline.disabled=false;toast('Deze actie is nog niet klaar');return;}
+        Promise.resolve(service.declineHelp(task.id||task._key)).then(function(){toast('Deze hulpvraag is niet meer voor jou');refreshPopup(task.id||task._key);}).catch(function(err){decline.disabled=false;toast((err&&err.message)||'Actie mislukt');});
+      };
+      row.appendChild(decline);
+    }
   }
 
   function patchDetail(){
@@ -116,8 +139,15 @@
   function patchCompact(){
     var me=currentUid();if(!me)return;
     document.querySelectorAll('#task-content .tch-row[data-task-id]').forEach(function(row){
-      var task=findTask(row.getAttribute('data-task-id'));if(!isBroadcast(task)||!eligible(task,me))return;
-      var button=row.querySelector('.tch-help-indicator[data-collab-action="other"]');if(!button||button.getAttribute('data-household-help-actionable')==='1')return;
+      var task=findTask(row.getAttribute('data-task-id'));if(!isBroadcast(task))return;
+      var button=row.querySelector('.tch-help-indicator');if(!button)return;
+      if(!eligible(task,me)){
+        if(declinedBroadcast(task,me)){
+          button.removeAttribute('data-household-help-actionable');button.classList.remove('is-actionable');button.dataset.collabAction='other';button.setAttribute('aria-label','Hulpvraag gemarkeerd als niet voor mij');button.onclick=null;
+        }
+        return;
+      }
+      if(button.getAttribute('data-household-help-actionable')==='1')return;
       button.setAttribute('data-household-help-actionable','1');button.dataset.collabAction='invitee-household';button.classList.add('is-actionable');button.setAttribute('aria-label','Het gezin is om hulp gevraagd — bekijk');
       button.onclick=function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();if(window.TaskDetailPopup&&typeof TaskDetailPopup.open==='function')TaskDetailPopup.open(task.id||task._key);};
     });
@@ -135,7 +165,7 @@
   }
 
   function start(){
-    var ready=wrapPopup()&&window.TaskSharedData&&typeof TaskSharedData.requestHouseholdHelp==='function';
+    var ready=wrapPopup()&&window.TaskSharedData&&typeof TaskSharedData.requestHouseholdHelp==='function'&&typeof TaskSharedData.declineHelp==='function';
     if(!ready){if(!installTimer){var tries=0;installTimer=setInterval(function(){tries++;if(start()||tries>160){clearInterval(installTimer);installTimer=null;}},50);}return false;}
     if(installTimer){clearInterval(installTimer);installTimer=null;}
     if(!observer&&document.body){observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true});}
