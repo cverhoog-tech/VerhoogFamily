@@ -1,17 +1,28 @@
 'use strict';
 // ============================================================
-// NOTIFICATION ACTIONS v3.0.0 — STEP 10
+// NOTIFICATION ACTIONS v3.1.0 — STEP 10
 // Presentation-agnostic action service for actionable notification events.
 // Identity is owned by HouseholdContext; domain mutations remain delegated to
 // the accepted TaskSharedData / PartyQuestInvites services.
+// v3.1 adds occurrence-safe accept/decline actions for targeted and household
+// task-help notifications.
 // ============================================================
 (function(){
   if(window.NotificationActions)return;
-  var VERSION='3.0.0';
+  var VERSION='3.1.0';
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
   function taskByEvent(event){var id=event&&event.data&&(event.data.taskId||event.data.taskKey)||(event&&event.entity&&event.entity.id)||'';return (window.taskData||[]).find(function(t){return String(t.id||t._key)===String(id);})||null;}
+  function eventOccurrence(event){return String(event&&event.data&&event.data.occurrence||'');}
+  function taskOccurrence(task){return String(task&&task.helpRequestedAt||'');}
+  function sameHelpOccurrence(event,task){var expected=eventOccurrence(event),live=taskOccurrence(task);return expected?!!live&&expected===live:true;}
+  function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
+  function isHelper(task,uid){return (Array.isArray(task&&task.helpers)?task.helpers:[]).some(function(h){return helperUid(h)===String(uid||'');});}
+  function isOwner(task,uid){return String(task&&(task.createdByUid||task.ownerUid)||'')===String(uid||'');}
+  function isAssigned(task,uid){var id=String(uid||'');return !!(id&&task&&((task.assignedToUids&&task.assignedToUids[id])||String(task.assignedToUid||'')===id));}
+  function householdDeclinedForEvent(task,event,uid){var map=task&&task.helpDeclinedByUids;return !!(map&&typeof map==='object'&&eventOccurrence(event)&&String(map[String(uid||'')]||'')===eventOccurrence(event));}
+  function targetedDeclinedForEvent(task,event,uid){return !!(task&&eventOccurrence(event)&&String(task.helpDeclinedByUid||'')===String(uid||'')&&String(task.helpDeclinedOccurrence||'')===eventOccurrence(event));}
   function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'||event.type==='partyQuest.created'));}
   function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
   function markRead(event){return window.NotificationStore&&event&&event.id?NotificationStore.markRead(event.id):Promise.resolve();}
@@ -20,12 +31,24 @@
     var me=currentUid(),task=taskByEvent(event);
     if(!me)return Promise.reject(new Error('Niet ingelogd'));
     if(!task)return Promise.reject(new Error('Taak niet gevonden'));
+    if(!sameHelpOccurrence(event,task))return Promise.reject(new Error('Deze hulpvraag is niet meer actief'));
     if(!window.TaskSharedData||typeof TaskSharedData.joinHelp!=='function')return Promise.reject(new Error('Taakdata is nog niet klaar'));
-    var existed=Array.isArray(task.helpers)&&task.helpers.some(function(h){return String(h&&(h.uid||h.memberId||h.id)||'')===String(me);});
+    var existed=isHelper(task,me);
     return TaskSharedData.joinHelp(task.id||task._key).then(function(saved){
       var requester=task.helpRequestedByUid||task.createdByUid||null;
       if(!existed&&window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,requester).catch(function(){});
       return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(existed?'Je helpt al mee ✓':'Je bent aan de quest toegevoegd 🤝');return saved;});
+    });
+  }
+
+  function declineTaskHelp(event){
+    var me=currentUid(),task=taskByEvent(event),household=task&&task.helpAudience==='household'&&!task.helpRequestedForUid;
+    if(!me)return Promise.reject(new Error('Niet ingelogd'));
+    if(!task)return Promise.reject(new Error('Taak niet gevonden'));
+    if(!sameHelpOccurrence(event,task))return Promise.reject(new Error('Deze hulpvraag is niet meer actief'));
+    if(!window.TaskSharedData||typeof TaskSharedData.declineHelp!=='function')return Promise.reject(new Error('Taakdata is nog niet klaar'));
+    return TaskSharedData.declineHelp(task.id||task._key).then(function(saved){
+      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(household?'Deze hulpvraag is niet meer voor jou':'Hulpvraag afgewezen');return saved;});
     });
   }
 
@@ -48,7 +71,7 @@
   function run(event,action){
     if(!event)return Promise.resolve(false);
     if(!currentUid())return Promise.reject(new Error('Niet ingelogd'));
-    if(event.type==='task.help.requested')return acceptTaskHelp(event).then(function(){return true;});
+    if(event.type==='task.help.requested')return (action==='decline'?declineTaskHelp(event):acceptTaskHelp(event)).then(function(){return true;});
     if(event.type==='partyQuest.invitation.sent')return revokePartyInvitation(event).then(function(){return true;});
     if(event.type==='partyQuest.created')return respondPartyQuestInvite(event,action==='decline'?'declined':'active').then(function(){return true;});
     return markRead(event).then(function(){return false;});
@@ -60,11 +83,18 @@
     if(event.type==='task.help.requested'){
       var task=taskByEvent(event),me=currentUid();
       if(!task)return{statusLabel:'Taak niet gevonden',detail:'Deze taak bestaat niet meer.',actions:[]};
-      var already=Array.isArray(task.helpers)&&task.helpers.some(function(h){return String(h&&(h.uid||h.memberId||h.id)||'')===String(me);});
-      if(already)return{statusLabel:'Je helpt al mee',detail:'Je bent al toegevoegd aan “'+String(task.title||task.name||'deze taak')+'”.',actions:[]};
-      var stillOpen=!!task.helpRequested&&String(task.helpRequestedForUid||'')===String(me);
-      if(stillOpen)return{statusLabel:'Open — wacht op jouw reactie',detail:event.body||'Er is hulp gevraagd.',actions:[{label:'Hulp geven',action:'run',cls:''}]};
-      return{statusLabel:'Niet meer actief',detail:'Deze hulpvraag is ingetrokken, of is al door iemand anders opgepakt.',actions:[]};
+      if(isHelper(task,me))return{statusLabel:'Je helpt al mee',detail:'Je bent al toegevoegd aan “'+String(task.title||task.name||'deze taak')+'”.',actions:[]};
+      if(targetedDeclinedForEvent(task,event,me))return{statusLabel:'Afgewezen',detail:'Je hebt deze hulpvraag afgewezen.',actions:[]};
+      if(householdDeclinedForEvent(task,event,me))return{statusLabel:'Niet voor mij',detail:'Je hebt aangegeven dat deze hulpvraag niet voor jou is. Andere gezinsleden kunnen nog steeds helpen.',actions:[]};
+      if(!sameHelpOccurrence(event,task))return{statusLabel:'Niet meer actief',detail:'Deze melding hoort bij een eerdere hulpvraag.',actions:[]};
+      var householdOpen=!!task.helpRequested&&task.helpAudience==='household'&&!task.helpRequestedForUid;
+      if(householdOpen){
+        if(isOwner(task,me)||isAssigned(task,me))return{statusLabel:'Je neemt al deel',detail:'Je bent al betrokken bij deze taak.',actions:[]};
+        return{statusLabel:'Open — voor het gezin',detail:event.body||'Het gezin is om hulp gevraagd.',actions:[{label:'Hulp geven',action:'accept',cls:''},{label:'Niet voor mij',action:'decline',cls:'is-danger'}]};
+      }
+      var targetedOpen=!!task.helpRequested&&task.helpAudience==='uid'&&String(task.helpRequestedForUid||'')===String(me);
+      if(targetedOpen)return{statusLabel:'Open — wacht op jouw reactie',detail:event.body||'Er is hulp gevraagd.',actions:[{label:'Hulp geven',action:'accept',cls:''},{label:'Afwijzen',action:'decline',cls:'is-danger'}]};
+      return{statusLabel:'Niet meer actief',detail:'Deze hulpvraag is ingetrokken, afgehandeld of niet meer voor jou bestemd.',actions:[]};
     }
     if(event.type==='partyQuest.created'){
       var questId=event.data&&event.data.questId,me2=currentUid();
@@ -91,5 +121,5 @@
     return{statusLabel:'',detail:event.body||'',actions:[]};
   }
 
-  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId,currentUid:currentUid};
+  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,declineTaskHelp:declineTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId,currentUid:currentUid};
 })();
