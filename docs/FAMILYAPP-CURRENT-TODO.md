@@ -9,24 +9,22 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains the current phase. Notification/Web Push implementation and iPhone opt-in are complete; real second-account/cross-device delivery and isolation acceptance remain open.**
+**STEP 10 — Notifications remains in progress. Canonical in-app notifications, iPhone standalone registration and the task-help notification flow work; actual OS push is currently blocked by an invalid Firebase service-account JWT signature in the Vercel Preview sender credentials.**
 
-STEP 8 Finance and STEP 9 Progression are accepted/frozen. Main and production Firebase Rules remain untouched.
+STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
-The latest side-request checkpoint also hardens account/session UX needed for the STEP 10 cross-device test: Profile and Meer now expose canonical Firebase **Uitloggen**, `Verse start` is removed from the served Meer runtime, and authenticated Profile name/partner values are UID-scoped so a new browser account cannot inherit another account's `Shane` / `Esra` local profile defaults. The earlier **Gezin verlaten** normal-member flow has been real-tested by the product owner and accepted; owner-transfer smoke testing remains open.
+### Latest verified product state
 
-Latest code checkpoint:
-- commit `2ff8ecf2500702ca835531ff1c3f5c95ce9a1486`
-- `Household Rebuild Contracts` SUCCESS, run `32787576487`
-- Vercel Preview `dpl_FDvW1mNDW5yC5RHidRVTzQTL1YDM` READY
-- deployed `/api/app` directly verified with `sessionActions.js?v=1` before Profile/Navigation and **without** `freshStartReset.js`
-
-Do **not** freeze STEP 10 yet.
-
-## Frozen phases
-
-- [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
-- [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
+- [x] Second/alternate Google account can authenticate and participate in the same household; the product owner successfully sent a help request from another account to Shane.
+- [x] Cross-account canonical notification state reaches the iPhone/PWA far enough to update the red unread app badge.
+- [x] Profile → **Gezin verlaten** normal-member flow real-tested and accepted.
+- [x] Profile → **Uitloggen** works and returns to login.
+- [x] Meer → **Uitloggen** works.
+- [x] **Verse start** removed from the active Meer menu.
+- [x] New/alternate account no longer inherits browser-wide `Shane` / `Esra` Profile values.
+- [x] Task help now has a **Heel het gezin** option. A creator can broadcast one help request to all eligible household members and multiple willing family members may join; accepted helpers remain participants until they leave, while the creator can retract the still-open broadcast.
+- [ ] Real-device smoke test for **Heel het gezin** UI/interaction still required.
+- [ ] Owner-transfer variant of **Gezin verlaten** still requires a real smoke test.
 
 ## STEP 10 — Notifications
 
@@ -37,74 +35,75 @@ Do **not** freeze STEP 10 yet.
 - [x] Per-UID `readBy` / `dismissedBy` state.
 - [x] Deterministic `eventKey` / `publishOnce()` idempotency.
 - [x] `NotificationStore v2.1.0`; unkeyed publishing rejected.
-- [x] Push handoff only for newly created canonical events.
-- [x] Push failure cannot undo canonical inbox success.
-- [x] Deterministic Task / Swap / Party Quest / Finance notification events and projectors.
-- [x] Notification actions, center and live in-app delivery use HouseholdContext identity.
-- [x] Profile → Meldingen routes to the canonical notification screen.
+- [x] Push handoff only for newly created canonical events; push failure cannot undo inbox success.
+- [x] Deterministic Task / Swap / Party Quest / Finance events and HouseholdContext-safe projectors/actions/presentation.
+- [x] Profile → Meldingen opens the canonical notification screen.
 
-### Web Push client / sender — complete in code/config
+### Web Push client/device — complete
 - [x] Private multi-device registry at `users/{uid}/private/pushDevices/{deviceId}`.
-- [x] Explicit opt-in only; startup never requests Notification permission.
+- [x] Explicit opt-in only; startup never prompts for Notification permission.
 - [x] iPhone requires Home Screen / standalone context before opt-in.
-- [x] Account/UID switch invalidates previous browser push transport.
-- [x] FCM service worker handles background delivery + click routing.
-- [x] Foreground FCM does not create duplicate canonical inbox events.
-- [x] `/api/push-config` requires both VAPID and trusted sender readiness.
-- [x] Sender credentials remain server-only and are never returned publicly.
-- [x] Vercel trusted sender verifies Firebase identity, household membership and canonical event actor.
-- [x] Server resolves intended recipients and enabled private devices; client cannot choose raw recipient tokens/title/body.
+- [x] Same-browser UID switch invalidates previous browser push transport.
+- [x] `firebase-messaging-sw.js` handles background data payloads and notification click routing.
+- [x] Foreground FCM never creates a duplicate canonical inbox event.
+- [x] Real iPhone Home Screen opt-in accepted; device reached enabled registration state.
+
+### Trusted sender — code complete, Preview credential pair blocked
+- [x] `PushDeliveryBridge` sends only canonical `{householdId, notificationId}` plus the current Firebase ID token.
+- [x] Vercel `api/push-send.js` verifies the caller through the server-only `firebasePushSender` boundary.
+- [x] Sender verifies active household membership and canonical event actor.
+- [x] Recipient UIDs and enabled device tokens are resolved server-side; browser cannot choose raw recipient tokens/title/body.
 - [x] Private per-device delivery receipts provide idempotency and delivery health.
-- [x] Preview environment has required VAPID + protected Firebase sender credentials.
-- [x] Runtime readiness previously verified `configured=true`, `vapidConfigured=true`, `senderConfigured=true`.
-- [x] Real iPhone Home Screen opt-in accepted; device reached enabled push-registration state.
+- [x] FCM unregistered devices are disabled.
+- [x] Sender credentials remain server-only.
+- [x] `firebasePushSender v1.0.1` normalizes quoted/newline env values and logs safe Google OAuth diagnostics without logging secrets.
+- [!] **Real Preview OS push is blocked before FCM.** Latest real sends return `POST /api/push-send 502` with Google OAuth `invalid_grant` / `Invalid JWT Signature.`
+- [!] This means the configured service-account private key is not valid for the configured service-account identity (most likely mismatched or revoked). The iPhone permission/PWA registration is not the failing layer.
+- [ ] Generate a **new Firebase Admin SDK service-account JSON** and replace BOTH Preview values from that same file:
+  - `client_email` → `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL`
+  - `private_key` → `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`
+- [ ] Do not paste the private key into chat/GitHub. Revoke/delete the obsolete key after replacement.
+- [ ] Redeploy Preview after the environment update and repeat the background/closed-PWA help-request push test.
 
-### Auth / household onboarding blocker — fixed, real retest open
-- [x] `HOUSEHOLD_REQUIRED` and `HOUSEHOLD_ACCESS_REQUIRED` route to household onboarding rather than generic network/startup failure.
-- [x] Canonical served order: Google auth adapter → FamilyHousehold → onboarding bridge → AuthenticatedSessionController → HouseholdContext.
-- [x] A stale/inaccessible household pointer is offered safe re-onboarding; no membership is silently restored.
-- [ ] Real PC/browser retest: alternate Google account reaches **Nieuw gezin maken / Deelnemen aan gezin**.
-- [ ] Join alternate account to the existing household using a fresh invite.
-- [ ] Existing second household account retest; inspect actual membership/pointer state if it still fails.
+> Note: `/api/push-config configured=true` proves required variables are present, not that Google accepts the private-key signature. The runtime delivery call is the validity gate.
 
-### Profile / account lifecycle side requests
-- [x] Profile → **Gezin verlaten** implemented with HouseholdContext/stale-identity protection.
-- [x] Normal member leave removes only own membership + own household pointers; shared household data remains intact.
-- [x] Owner leave requires an eligible successor and transfers ownership before removal.
-- [x] Existing Rules support the leave/owner-transfer writes; no production Rules change was needed.
-- [x] **Real normal-member Gezin verlaten test accepted by product owner on 2026-08-25.**
-- [ ] Real owner-transfer leave smoke test remains open.
-- [x] Added `FamilySessionActions v1.1.0` as the explicit Firebase sign-out boundary; it creates no second auth observer.
-- [x] Profile contains **Uitloggen** and delegates to `FamilySessionActions.signOut()`.
-- [x] Meer contains **Uitloggen** and survives dynamic More-menu rerenders.
-- [x] Uitloggen only signs out the Firebase account; it does not leave the household, delete the account or delete shared data. `AuthenticatedSessionController` owns return to the login screen.
-- [x] `Verse start` is removed from the actual served `/api/app` runtime / Meer menu; the old source file remains dormant only.
-- [x] Authenticated Profile names use UID-scoped `familyapp-profile-name-v2:{uid}` storage.
-- [x] Authenticated partner names use UID-scoped `familyapp-partner-name-v2:{uid}` storage and default to blank/optional instead of `Esra`.
-- [x] A new authenticated account no longer reads the previous browser account's unscoped `Shane` / `Esra` Profile values.
-- [x] `scripts/test-profile-session-actions.js` guards logout ownership, served load order, removal of Verse start and UID-scoped Profile fields.
-- [ ] Real Preview test: Profile → Uitloggen returns to login screen and relogin works.
-- [ ] Real Preview test: Meer → Uitloggen returns to login screen and relogin works.
-- [ ] Real Preview test: alternate/new account Profile shows its own identity and blank partner instead of Shane / Esra.
+### Whole-family task help — code complete, device acceptance open
+- [x] `TaskSharedData v2.1.0` adds `requestHouseholdHelp(id)` and `helpAudience='household'`.
+- [x] Existing targeted one-person help semantics remain supported.
+- [x] Broadcast helper candidates exclude creator, existing assignees and existing helpers.
+- [x] A household broadcast remains open after the first helper joins so additional eligible family members may help.
+- [x] Duplicate helper joins do not duplicate a helper entry.
+- [x] Creator can retract the broadcast without removing helpers who already joined.
+- [x] `TaskHouseholdHelpUi v1.0.0` adds **Heel het gezin** to the current task-card/detail help picker and makes household-wide requests actionable for eligible viewers.
+- [x] Existing `NotificationEvents.taskHelpRequested(task, null)` fans the request out to all other active household members.
+- [x] Served runtime cache cutover: `taskSharedData.js?v=4` + `taskHouseholdHelpUi.js?v=1`.
+- [x] `scripts/test-task-household-help.js` covers broadcast + multi-helper + targeted compatibility behavior.
+- [ ] Product owner device check: open a task → Hulp vragen → **Heel het gezin**; another member can choose **Hulp geven** and a second eligible member can also join.
+
+### Auth / account lifecycle — accepted for current test path
+- [x] `HOUSEHOLD_REQUIRED` / `HOUSEHOLD_ACCESS_REQUIRED` route to household onboarding instead of generic startup failure.
+- [x] Canonical served auth order restored before `AuthenticatedSessionController` / HouseholdContext.
+- [x] Real alternate-account login/join path is now usable (confirmed by cross-account help-request test).
+- [x] `FamilySessionActions v1.1.0` owns explicit Firebase sign-out without adding another auth observer.
+- [x] Profile and Meer expose **Uitloggen**.
+- [x] Profile name and optional partner values are UID-scoped; no Shane/Esra leakage to a new account.
 
 ### Latest contracts / deployment
-- [x] Household leave contract remains green after Profile cache cutover.
-- [x] Profile/session action contract added.
-- [x] Full `Household Rebuild Contracts` SUCCESS on `2ff8ecf2500702ca835531ff1c3f5c95ce9a1486`, run `32787576487`.
-- [x] Vercel deployment `dpl_FDvW1mNDW5yC5RHidRVTzQTL1YDM` READY for the same code commit.
-- [x] Deployed `/api/app` verified with `src/core/sessionActions.js?v=1` before `profile.legacy.js` / `navigation.js`.
-- [x] Deployed `/api/app` verified with no `src/app/freshStartReset.js` script.
+- [x] Latest code head: `f6bb9c7eee3801221cded3d236dd995460adc66d`.
+- [x] Full `Household Rebuild Contracts` SUCCESS, run `32792327306`.
+- [x] Latest Vercel Preview `dpl_3to6czrBXjgtceK7jeEPtN4ov4ds` READY.
+- [x] Stable branch alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- [x] No production Firebase Rules change and no `main` change.
 
-### Remaining STEP 10 device acceptance
-- [ ] Second household account authenticates and joins from PC/browser.
-- [ ] PC/browser account A creates a targeted event for iPhone account B; B sees exactly one canonical unread inbox item.
-- [ ] Background/closed-PWA OS push reaches the iPhone.
-- [ ] Tapping push opens/focuses FamilyApp notifications without duplicate canonical inbox state.
+### Remaining STEP 10 acceptance
+- [ ] Replace invalid Preview Firebase service-account email/private-key pair and redeploy.
+- [ ] Background/closed-PWA OS push reaches iPhone.
+- [ ] Tapping push opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
-- [ ] Live in-app banner is visible only for the intended current identity.
-- [ ] Actionable Task-help / Party Quest notification executes the canonical action.
-- [ ] Account switch/logout never leaks inbox/banner/push registration from the previous UID.
-- [ ] Reload/background→foreground remains stable: no freeze/white screen/WebKit crash.
+- [ ] Live in-app banner visible only for intended identity.
+- [ ] Actionable targeted and household-wide task-help notification behavior accepted.
+- [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID.
+- [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
 
 ## Later roadmap phases
@@ -125,9 +124,9 @@ Do **not** freeze STEP 10 yet.
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless explicitly changed.
 - STEP 8 and STEP 9 remain frozen.
-- UID/household identity comes from HouseholdContext / Firebase Auth, not browser-global demo defaults.
-- Realtime subscriptions require exact cleanup + stale-context protection.
+- UID/household identity comes from HouseholdContext / Firebase Auth.
 - Notification state and push delivery remain separate layers.
-- Push/device credentials remain private technical user data.
-- Server secrets never enter client/public repository code.
-- Every meaningful development update updates both this TODO and `docs/FAMILYAPP-UPDATE-LOG.md` in the same work session.
+- Realtime subscriptions require exact cleanup + stale-context protection.
+- Push/device credentials remain private technical data.
+- Server secrets never enter client/public repository code or chat.
+- Every meaningful development update updates this TODO, the progress tracker and `docs/FAMILYAPP-UPDATE-LOG.md` in the same work session.
