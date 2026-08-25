@@ -73,7 +73,7 @@ const actions=window.NotificationActions;
 
 function setTask(next){task=next;window.taskData=[task];}
 function event(id,occurrence){return{id,type:'task.help.requested',title:'Hulp gevraagd',body:'Owner vraagt hulp.',data:{taskId:'task-1',occurrence:String(occurrence)},entity:{type:'task',id:'task-1'}};}
-function labels(state){return (state.actions||[]).map(a=>String(a.label));}
+function labels(state){return Array.from(state.actions||[],a=>String(a.label));}
 
 (async function(){
   assert.strictEqual(actions.version,'3.1.0');
