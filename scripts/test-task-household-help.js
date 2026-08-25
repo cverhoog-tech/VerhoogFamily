@@ -74,7 +74,7 @@ function makeHarness(){
   assert.strictEqual(row.helpers.filter(h=>h.uid==='member-b').length,1,'same helper is not duplicated');
 
   w.setActiveUid('owner');
-  await assert.rejects(()=>w.TaskSharedData.joinHelp('task-1'),/neemt al deel/);
+  assert.throws(()=>w.TaskSharedData.joinHelp('task-1'),/neemt al deel/);
   await w.TaskSharedData.retractHelp('task-1');
   row=w.getTask();
   assert.strictEqual(row.helpRequested,false);
