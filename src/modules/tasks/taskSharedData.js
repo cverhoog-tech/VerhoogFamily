@@ -1,14 +1,16 @@
 'use strict';
 // ============================================================
-// SHARED TASK DATA COMPATIBILITY FACADE v2.0.0
-// STEP 3: TaskHouseholdRepository is the only task persistence/listener owner.
+// SHARED TASK DATA COMPATIBILITY FACADE v2.1.0
+// STEP 3/10: TaskHouseholdRepository is the only task persistence/listener owner.
 // This facade preserves the existing task UI/collaboration API while routing
 // every mutation through the canonical UID + HouseholdContext boundary.
+// v2.1 adds first-class household-wide help requests: multiple eligible family
+// members may join while the request stays open until the creator retracts it.
 // ============================================================
 (function(){
-  if(window.TaskSharedData&&window.TaskSharedData.version==='2.0.0')return;
+  if(window.TaskSharedData&&window.TaskSharedData.version==='2.1.0')return;
 
-  var VERSION='2.0.0';
+  var VERSION='2.1.0';
   var projectionUnsubscribe=null;
   var startTimer=null;
   var bridgesInstalled=false;
@@ -81,6 +83,7 @@
   }
   function update(id,patch){
     var next=clone(patch||{})||{};
+    if(next.helpRequested===true&&next.helpAudience==='household')return requestHouseholdHelp(id);
     if(next.helpRequested===true&&next.helpRequestedForUid)return requestHelp(id,next.helpRequestedForUid);
     var r=repo();if(!r||typeof r.updateOne!=='function')return Promise.reject(new Error('Task repository is not ready'));
     var current=localTask(id);
@@ -106,6 +109,20 @@
     var r=repo();if(!r||typeof r.mutateOne!=='function')return Promise.reject(new Error('Task repository is not ready'));
     return r.mutateOne(id,function(row){var next=mutator(normalize(row));if(!next)return;return normalize(next);});
   }
+  function ensureNoOpenHelp(row){
+    if(!row.helpRequested)return;
+    if(row.helpAudience==='household')throw new Error('Er staat al een hulpvraag open voor het hele gezin');
+    if(row.helpRequestedForUid){var pending=member(row.helpRequestedForUid);throw new Error('Er staat al een hulpuitnodiging open voor '+((pending&&(pending.displayName||pending.name))||'dit gezinslid'));}
+    throw new Error('Er staat al een hulpvraag open');
+  }
+  function eligibleHouseholdHelper(row,memberRow,me){
+    var id=String(memberRow&&(memberRow.uid||memberRow.id)||'');
+    if(!id||id===String(me||''))return false;
+    if(memberRow.status&&memberRow.status!=='active')return false;
+    if(isTaskCreator(row,id)||isAssignedTo(row,id))return false;
+    if((row.helpers||[]).some(function(h){return helperUid(h)===id;}))return false;
+    return true;
+  }
   function requestHelp(id,targetUid){
     var me=uid(),target=String(targetUid||'');
     if(!me)return Promise.reject(new Error('Niet ingelogd'));
@@ -114,11 +131,29 @@
       if(!isTaskCreator(row,me))throw new Error('Alleen de maker kan hulp vragen voor deze taak');
       if(String(me)===target||isTaskCreator(row,target)||isAssignedTo(row,target))throw new Error('Deze persoon neemt al deel aan de taak');
       if((row.helpers||[]).some(function(h){return helperUid(h)===target;}))throw new Error('Deze persoon helpt al mee');
-      if(row.helpRequested&&row.helpRequestedForUid){var pending=member(row.helpRequestedForUid);throw new Error('Er staat al een hulpuitnodiging open voor '+((pending&&(pending.displayName||pending.name))||'dit gezinslid'));}
+      ensureNoOpenHelp(row);
       if(!member(target))throw new Error('Dit gezinslid is niet meer beschikbaar');
       row.helpRequested=true;
       row.helpRequestedByUid=me;
       row.helpRequestedForUid=target;
+      row.helpAudience='uid';
+      row.helpRequestedAt=now();
+      row.helpRetractedAt=null;
+      return row;
+    });
+  }
+  function requestHouseholdHelp(id){
+    var me=uid();
+    if(!me)return Promise.reject(new Error('Niet ingelogd'));
+    return mutateCollaboration(id,function(row){
+      if(!isTaskCreator(row,me))throw new Error('Alleen de maker kan hulp vragen voor deze taak');
+      ensureNoOpenHelp(row);
+      var available=members().some(function(m){return eligibleHouseholdHelper(row,m,me);});
+      if(!available)throw new Error('Er is nu niemand extra beschikbaar om hulp te vragen');
+      row.helpRequested=true;
+      row.helpRequestedByUid=me;
+      row.helpRequestedForUid=null;
+      row.helpAudience='household';
       row.helpRequestedAt=now();
       row.helpRetractedAt=null;
       return row;
@@ -128,16 +163,30 @@
     var me=uid();if(!me)return Promise.reject(new Error('Niet ingelogd'));
     return mutateCollaboration(id,function(row){
       if(!row.helpRequested)throw new Error('De hulpvraag is niet meer actief');
-      if(row.helpRequestedForUid&&String(row.helpRequestedForUid)!==String(me))throw new Error('Deze hulpuitnodiging is voor een ander gezinslid');
+      var householdRequest=row.helpAudience==='household'&&!row.helpRequestedForUid;
+      if(!householdRequest&&row.helpRequestedForUid&&String(row.helpRequestedForUid)!==String(me))throw new Error('Deze hulpuitnodiging is voor een ander gezinslid');
       if(isTaskCreator(row,me)||isAssignedTo(row,me))throw new Error('Je neemt al deel aan deze taak');
+      if(!member(me))throw new Error('Je bent geen actief gezinslid meer');
       var helpers=Array.isArray(row.helpers)?row.helpers.slice():[];
       if(!helpers.some(function(h){return helperUid(h)===String(me);})){var m=member(me)||{},name=m.displayName||m.name||window.myName||'Gezinslid';helpers.push({uid:me,memberId:me,name:name,initials:String(name).trim().split(/\s+/).map(function(p){return p.charAt(0);}).join('').slice(0,2).toUpperCase(),joinedAt:now()});}
       row.helpers=helpers;
-      row.helpRequested=false;
-      row.helpAcceptedByUid=me;
-      row.helpAcceptedAt=now();
-      row.helpRequestedForUid=null;
-      row.helpRequestedByUid=null;
+      if(householdRequest){
+        row.helpRequested=true;
+        row.helpRequestedForUid=null;
+        row.helpAudience='household';
+        row.lastHelpAcceptedByUid=me;
+        row.lastHelpAcceptedAt=now();
+        var accepted=row.helpAcceptedByUids&&typeof row.helpAcceptedByUids==='object'?Object.assign({},row.helpAcceptedByUids):{};
+        accepted[me]=row.lastHelpAcceptedAt;
+        row.helpAcceptedByUids=accepted;
+      }else{
+        row.helpRequested=false;
+        row.helpAcceptedByUid=me;
+        row.helpAcceptedAt=now();
+        row.helpRequestedForUid=null;
+        row.helpRequestedByUid=null;
+        row.helpAudience=null;
+      }
       return row;
     });
   }
@@ -152,6 +201,7 @@
       row.helpRequested=false;
       row.helpRequestedForUid=null;
       row.helpRequestedByUid=null;
+      row.helpAudience=null;
       row.helpRetractedAt=now();
       return row;
     });
@@ -216,6 +266,7 @@
     isTaskCreator:isTaskCreator,
     isTaskOwner:isTaskOwner,
     requestHelp:requestHelp,
+    requestHouseholdHelp:requestHouseholdHelp,
     joinHelp:joinHelp,
     leaveHelp:leaveHelp,
     retractHelp:retractHelp,
