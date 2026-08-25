@@ -4,7 +4,9 @@ const assert=require('assert');
 const vm=require('vm');
 
 const storeSource=fs.readFileSync('src/core/notificationStore.js','utf8');
-const eventsSource=fs.readFileSync('src/core/notificationEvents.js','utf8');
+const bootstrapSource=fs.readFileSync('src/core/notificationEvents.js','utf8');
+const experienceSource=fs.readFileSync('src/core/notificationExperience.js','utf8');
+const financeCompatSource=fs.readFileSync('src/core/notificationFinanceCompat.js','utf8');
 
 function clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
 function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
@@ -51,22 +53,36 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
     NotificationHouseholdRepository,
     PushDeliveryBridge:{dispatchCreated(event){pushDispatches.push(clone(event));return Promise.resolve({sent:true});}},
     TaskSharedData:{members(){return members;}},
+    NotificationEvents:{version:'2.0.0'},
     myName:'Alice',
     dispatchEvent(event){if(event.type==='familyapp:notification-received')received.push(event.detail.event);},
     addEventListener(){}
   };
-  const sandbox={window,HouseholdContext,document,CustomEvent,console,setTimeout,clearTimeout,Promise,Date,Math,JSON,Object,String,Number,Array,Set,encodeURIComponent};
+  const sandbox={window,HouseholdContext,document,CustomEvent,console,setTimeout,clearTimeout,Promise,Date,Math,JSON,Object,String,Number,Array,Set,encodeURIComponent,Intl,isNaN};
   vm.createContext(sandbox);
   vm.runInContext(storeSource,sandbox,{filename:'notificationStore.js'});
   sandbox.NotificationStore=window.NotificationStore;
   sandbox.TaskSharedData=window.TaskSharedData;
-  vm.runInContext(eventsSource,sandbox,{filename:'notificationEvents.js'});
   sandbox.NotificationEvents=window.NotificationEvents;
+
+  // notificationEvents.js is now only the stable bootstrap. The executable
+  // producer implementation lives in notificationExperience.js, with finance
+  // compatibility layered afterward. Test those runtime modules directly while
+  // separately asserting the served bootstrap contract.
+  assert.ok(bootstrapSource.includes("var VERSION='2.0.0'"));
+  assert.ok(bootstrapSource.includes("load('src/core/notificationExperience.js?v=1'"));
+  assert.ok(bootstrapSource.includes("load('src/core/notificationFinanceCompat.js?v=1'"));
+  assert.ok(bootstrapSource.includes('window.NotificationEventsBootstrap={version:VERSION}'));
+  vm.runInContext(experienceSource,sandbox,{filename:'notificationExperience.js'});
+  sandbox.NotificationEvents=window.NotificationEvents;
+  vm.runInContext(financeCompatSource,sandbox,{filename:'notificationFinanceCompat.js'});
 
   const store=window.NotificationStore,events=window.NotificationEvents;
   assert.ok(store&&events);
   assert.strictEqual(store.version,'2.1.0');
   assert.strictEqual(events.version,'2.0.0');
+  assert.ok(window.NotificationExperience);
+  assert.strictEqual(window.NotificationExperience.version,'1.0.0');
 
   // Unkeyed/random notification creation is deliberately no longer accepted.
   assert.throws(()=>store.publish({type:'system.message',title:'Legacy'}),/EVENT_KEY_REQUIRED/i);
@@ -126,5 +142,5 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   assert.strictEqual(finance.eventKey,'finance.savings.updated:goal1:tx55');
 
   assert.ok(publishCalls.every(x=>x.key&&String(x.key).indexOf('unknown')<0),'tested typed producers must publish deterministic keys');
-  console.log('STEP 10 canonical NotificationStore v2.1 + deterministic events/push handoff contract: PASS');
+  console.log('STEP 10 canonical NotificationStore v2.1 + experience/bootstrap deterministic events contract: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
