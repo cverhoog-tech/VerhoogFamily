@@ -2,387 +2,128 @@
 
 Branch: `agent/household-rebuild-v2`
 
-Purpose: persistent handoff log for FamilyApp development. New chats/agents should read this file together with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md` and `docs/household-rebuild-v2-roadmap.md` before changing the current rebuild branch.
+Purpose: persistent handoff log for FamilyApp development. Read this together with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md` and `docs/household-rebuild-v2-roadmap.md` before changing the rebuild branch.
 
 ## Logging rule
-
-For every meaningful FamilyApp code/product update on this branch:
-1. append a dated entry here;
-2. update `docs/FAMILYAPP-CURRENT-TODO.md` in the same work session;
-3. record branch/deployment/device-gate status when relevant;
-4. never mark a phase accepted until its required verification/device gate is actually accepted;
-5. keep the roadmap as architecture scope; use the current TODO as the day-to-day execution state.
+1. Append/record every meaningful product/code checkpoint.
+2. Synchronize the central TODO and phase tracker in the same work session.
+3. Never mark a device/release gate accepted without real verification.
+4. Keep `main` and production Firebase Rules untouched unless explicitly approved.
+5. Never put service-account private keys or push-device tokens in chat, client code or repository files.
 
 Newest entries belong at the top.
 
 ---
 
-## 2026-08-25 — Profiel/Meer: uitloggen + accountgescheiden profielwaarden; Verse start verwijderd
+## 2026-08-25 — STEP 10 real push test isolated to invalid service-account JWT; whole-family task help added
 
-- De product owner heeft de eerder toegevoegde **Gezin verlaten** flow voor een normaal gezinslid op Preview getest en bevestigd dat deze goed werkt. Die normal-member smoke gate is daarom geaccepteerd; de aparte owner-transfer smoke test blijft nog open.
-- Toegevoegd: `FamilySessionActions v1.1.0` als één expliciete Firebase sign-out boundary. De actie roept alleen Firebase Auth `signOut()` aan en maakt **geen** tweede `onAuthStateChanged` observer; `AuthenticatedSessionController` blijft eigenaar van de auth lifecycle en brengt een signed-out gebruiker terug naar het inlogscherm.
-- Profiel bevat nu een duidelijke **Uitloggen** rij. Deze verlaat het gezin niet, verwijdert het account niet en wist geen gedeelde gezinsdata.
-- Het **Meer** menu bevat nu eveneens **Uitloggen**. De knop wordt opnieuw gemount na dynamische Meer-menu rerenders, zodat hij niet verdwijnt wanneer `renderNav()` de grid opnieuw opbouwt.
-- De oude **Verse start** test/reset knop is uit de actieve `/api/app` runtime verwijderd. `freshStartReset.js` blijft alleen als dormant bronbestand aanwezig en injecteert niet langer een knop in Meer.
-- De profielnaam/partneropslag is accountveilig gemaakt. Voor een ingelogde gebruiker gebruikt Profile nu UID-scoped keys `familyapp-profile-name-v2:{uid}` en `familyapp-partner-name-v2:{uid}` in plaats van de browserbrede legacy defaults.
-- Een nieuw/ander account leest daardoor niet meer automatisch de `Shane` / `Esra` waarden van een eerder account op hetzelfde apparaat. Zonder ingestelde partner is het veld nu leeg en **Optioneel**; de profielnaam valt terug op de actuele Firebase/household identity in plaats van op `Shane`.
-- `ProfileScreen.target.js` schrijft via één `setProfileNames(...)` boundary en heeft cache cutover `?v=account2`; `avatarStore.js` krijgt `?v=profile2` zodat mobiele/PWA caches de accountveilige code ophalen.
-- Toegevoegd: `scripts/test-profile-session-actions.js`. Het contract bewaakt Firebase-only logout, geen extra auth observer, beide logout surfaces, UID-scoped profile keys, het ontbreken van Shane/Esra fallbacks en dat `freshStartReset.js` niet meer in de daadwerkelijk geserveerde HTML voorkomt.
-- Het bestaande household-leave contract is aangepast aan de nieuwe Profile cacheversie en blijft groen.
-- Volledige `Household Rebuild Contracts` is SUCCESS op codecommit `2ff8ecf2500702ca835531ff1c3f5c95ce9a1486`, workflow run `32787576487`.
-- Vercel Preview deployment `dpl_FDvW1mNDW5yC5RHidRVTzQTL1YDM` is READY voor dezelfde codecommit.
-- De gedeployde `/api/app` is direct gecontroleerd: `src/core/sessionActions.js?v=1` staat vóór Profile/Navigation in de runtime en `src/app/freshStartReset.js` ontbreekt.
-- Nog open voor echte device acceptance: Profile-uitloggen, Meer-uitloggen en een nieuw/ander account in Profile verifiëren. Daarna kan de eerder geblokkeerde tweede-account → iPhone push test verder.
-- `main` en production Firebase Rules zijn niet gewijzigd. STEP 10 blijft **in progress / not frozen**.
+- The product owner successfully reached the real cross-account notification test: a help request was sent from another household account to Shane.
+- On the iPhone PWA, no OS push banner arrived, but the red unread badge appeared on the installed FamilyApp icon. This confirms the canonical household notification/unread path is alive while the transport layer fails later.
+- Vercel runtime inspection found the exact server failure on repeated real requests to `/api/push-send`: HTTP `502` from FamilyApp because Google OAuth returns HTTP `400`, `invalid_grant`, `Invalid JWT Signature.`
+- This failure occurs **before FCM send**, so the current blocker is not iOS notification permission, Home Screen PWA support or canonical NotificationStore state.
+- `firebasePushSender v1.0.1` (commit `fe9fd97dda0eea6bee464ca1d97b822ad55b841e`) already normalized quoted/newline environment values and added safe OAuth diagnostics. The hardened runtime still returns `Invalid JWT Signature`, proving the remaining issue is the configured service-account credential pair itself: the private key is mismatched to the configured service account, revoked, or otherwise no longer valid.
+- Required environment repair: generate a new Firebase Admin SDK service-account JSON and replace **both** Preview values from the same file: `client_email` → `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL`, `private_key` → `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`. Do not paste the key into chat/GitHub. Revoke/delete the obsolete key, then redeploy Preview.
+- Important readiness nuance: `/api/push-config configured=true` only checks that required environment values are present; it does not cryptographically validate the key with Google. Real `/api/push-send` remains the actual credential-validity gate.
 
----
-
-## 2026-08-25 — Profile: veilige `Gezin verlaten` flow toegevoegd
-
-- Op verzoek is in Profiel een duidelijke destructieve actie **Gezin verlaten** toegevoegd.
-- De flow is HouseholdContext/UID-gebonden en controleert de actuele identity vóór de mutatie; een stale account/household context wordt geweigerd.
-- Voor een normaal gezinslid wordt alleen de eigen membership onder `families/{householdId}/members/{uid}` verwijderd en worden de eigen `users/{uid}`-household pointers naar het verlaten gezin gewist. Het FamilyApp-account zelf blijft bestaan.
-- Gedeelde gezinsdata wordt niet verwijderd: taken, boodschappen, agenda, finance, notifications en overige household data blijven bij het gezin.
-- Een eigenaar mag het gezin niet verweesd achterlaten. De bevestigingsflow vereist eerst een actieve volwassen/admin-opvolger; `meta.ownerUid` en de opvolgerrol worden naar die UID overgedragen vóór de vertrekkende eigenaar uit membership wordt verwijderd.
-- Als er geen geschikte volwassen/admin-opvolger is, wordt `Gezin verlaten` voor de eigenaar geblokkeerd met uitleg in plaats van het gezin te verwijderen.
-- Presence wordt best-effort opgeruimd vóór de membership-write. Na succesvol verlaten wordt de canonical authenticated session hervat zodat de gebruiker terugkomt in de bestaande **Nieuw gezin maken / Deelnemen aan gezin** onboarding.
-- De huidige Firebase Rules ondersteunen de benodigde self-membership removal en owner-managed ownership transfer al; er is **geen** production Rules-wijziging gedaan.
-- Toegevoegd: `src/modules/profile/householdLeaveService.js`, gekoppeld via `profile.legacy.js`, plus `scripts/test-household-leave-profile.js` voor identity, owner-transfer, non-deletion van shared household data, profielwiring en Rules-contract.
-- Volledige `Household Rebuild Contracts` is SUCCESS op commit `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`, workflow run `32784256710`.
-- Vercel Preview deployment `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` is READY voor dezelfde codecommit.
-- Destructieve real-device smoke tests voor normaal lid verlaten en eigenaarsoverdracht stonden op dit checkpoint nog open; de normal-member test is in het nieuwere logpunt hierboven inmiddels geaccepteerd.
+### Whole-family help request
+- Product owner also requested that a task help request can target **the whole family**, so anyone willing may help.
+- Implemented `TaskSharedData v2.1.0` with `requestHouseholdHelp(id)` and `helpAudience='household'` while keeping the existing one-person invite semantics intact.
+- Household broadcast excludes creator/current assignees/current helpers from new helper eligibility.
+- Unlike a targeted invite, a household broadcast stays open after the first helper joins. Multiple different eligible household members can therefore join the same task. Duplicate joins do not duplicate helper records.
+- Retracting the open broadcast stops new joins but does not eject helpers who already accepted.
+- Added `TaskHouseholdHelpUi v1.0.0`: the existing task **Hulp vragen** picker now includes a prominent **Heel het gezin** choice with explanatory copy. Eligible recipients can open the task and choose **Hulp geven**; the compact help indicator becomes actionable for a household broadcast.
+- Existing `NotificationEvents.taskHelpRequested(task, null)` already fans a null-target help event to all other active household members, so the new domain state reuses the accepted notification architecture instead of adding a parallel notification authority.
+- Served runtime cutover: `taskSharedData.js?v=4`, plus `taskHouseholdHelpUi.js?v=1` after collaboration lifecycle.
+- Added `scripts/test-task-household-help.js` covering broadcast creation, multiple helpers, duplicate prevention, owner restrictions, retract behavior and targeted backwards compatibility.
+- Two CI failures during implementation were contract-harness/version-expectation issues, not product behavior regressions: synchronous owner rejection was initially asserted as a Promise rejection, and the existing repository test still expected the old `taskSharedData.js?v=3` cache key. Both tests were corrected.
+- Final code head: `f6bb9c7eee3801221cded3d236dd995460adc66d`.
+- Full `Household Rebuild Contracts`: SUCCESS, run `32792327306`.
+- Vercel Preview `dpl_3to6czrBXjgtceK7jeEPtN4ov4ds`: READY.
+- Stable Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- Real-device **Heel het gezin** acceptance remains open. STEP 10 remains **in progress / not frozen**.
 
 ---
 
-## 2026-08-24 — STEP 10 second-account auth/household onboarding regression hotfixed
+## 2026-08-25 — Profile/Meer logout + UID-scoped profile values; Verse start removed
 
-- The first PC→iPhone delivery attempt was blocked before push could be tested: an existing second household account could not complete login, and a newly selected Google account fell back to the generic `Opstarten mislukt. Controleer je verbinding en probeer opnieuw.` screen instead of being offered household create/join onboarding.
-- Code audit found two concrete served-runtime defects: the active `/api/app` graph did not include the canonical `householdPlatform.js` or `googleAuthMobileFix.js`, and `AuthenticatedSessionController.needsSetup()` did not recognize the canonical `HOUSEHOLD_REQUIRED` marker emitted by `FamilyHousehold.resolve()`.
-- Added `HouseholdOnboardingBridge v1.0.0`. It is served after `FamilyHousehold` but before the session controller and deterministically owns the legacy `loadUserFamily`, `setupNewFamily` and `showNameSetupStep` compatibility entrypoints, removing the old DOMContentLoaded/load-order race.
-- The bridge converts only Firebase permission-denied household-resolution failures into `HOUSEHOLD_ACCESS_REQUIRED`. This gives stale/inaccessible legacy household pointers a safe path back to the create/join chooser; it does **not** silently restore a removed member, and joining still requires a valid fresh invite.
-- Updated `AuthenticatedSessionController` to recognize both `HOUSEHOLD_REQUIRED` and `HOUSEHOLD_ACCESS_REQUIRED` as onboarding/setup states rather than generic connection failures.
-- `/api/app` now serves the deterministic auth order: legacy Firebase bootstrap → Google auth adapter → canonical FamilyHousehold → onboarding bridge → `AuthenticatedSessionController v2` → HouseholdContext.
-- Extended `scripts/test-auth-startup-ownership.js` to execute the real `/api/app` transformation and guard this exact ordering plus the missing/stale household onboarding markers.
-- Full `Household Rebuild Contracts` passed on commit `fae24eddef6163e9ac9180792167d847381e3b6d`, workflow run `32781652282`.
-- Vercel deployment `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` is READY for the same hotfix commit.
-- No production Firebase Rules or `main` changes were made. Real verification remains open: retry the new Google account and wife account on Preview, join with a fresh invite if the chooser is shown, then resume the background push test.
-- STEP 10 remains **in progress / not frozen**.
+- Product owner confirmed the requested account/profile changes work on Preview.
+- `FamilySessionActions v1.1.0` is the explicit Firebase sign-out boundary; no second auth observer is created.
+- Profile and Meer both expose **Uitloggen**, returning the user to the login flow without leaving the household or deleting shared data.
+- Old **Verse start** was removed from the active served Meer runtime.
+- Authenticated profile name/partner values are UID-scoped, so a new account on the same browser no longer inherits `Shane` / `Esra`; partner defaults to blank/optional.
+- Normal-member **Gezin verlaten** had already been real-tested and accepted.
+- Code checkpoint `2ff8ecf2500702ca835531ff1c3f5c95ce9a1486`, contracts run `32787576487`, Preview `dpl_FDvW1mNDW5yC5RHidRVTzQTL1YDM` READY.
 
 ---
 
-## 2026-08-24 — STEP 10 iPhone standalone Web Push opt-in accepted
+## 2026-08-25 — Profile: safe `Gezin verlaten` flow
 
-- Product owner opened the configured Preview from an iPhone Home Screen icon and accepted the iOS notification permission prompt.
-- The notification screen now reports `Pushmeldingen staan aan voor dit account op dit apparaat` and exposes the explicit `Pushmeldingen uitschakelen` action, confirming the UI is in the enabled standalone-PWA state rather than the Safari-only guidance state.
-- In `PushRegistrationService v1.1.0`, the enabled state is set only after FCM token acquisition and a successful `PushDeviceRegistry.upsert`; this therefore accepts the standalone registration path at runtime level for the tested account/device.
-- The two earlier iPhone gates are now complete: Home Screen/standalone detection works and explicit user-initiated notification permission/registration succeeds.
-- No notification domain or product code was changed for this checkpoint; only persistent phase/TODO documentation is being advanced.
-- The next STEP 10 gate is real delivery: keep the iPhone PWA backgrounded/closed, create a canonical targeted notification from a second household account in a PC/browser session, verify exactly one OS push and one canonical unread inbox item, then test open/focus, read/dismiss/action, account-switch isolation and background→foreground stability.
-- STEP 10 remains **in progress / not frozen**. Main and production Firebase Rules remain untouched.
-
----
-
-## 2026-08-24 — STEP 10 Preview push configured; iPhone notification UX corrected
-
-- The required Web Push values were configured directly in the Vercel **Preview** environment: public `FAMILYAPP_WEB_PUSH_VAPID_KEY` plus protected `FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL` and `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`. The private key was not placed in chat, GitHub or public config.
-- A clean branch redeploy was triggered with no product-code change on commit `85715c7de103cba6edfd5bb8be385c069eba1bba`. Vercel deployment `dpl_Cgrd2UhguAs6aVWrjjjc4jGH9CLu` reached READY.
-- `/api/push-config` on that configured Preview was directly verified and returned `configured=true`, `vapidConfigured=true` and `senderConfigured=true`, proving both the public Web Push transport and protected trusted sender configuration are present at runtime.
-- The first iPhone notification-screen test was performed in a normal Safari tab rather than from a Home Screen PWA. That correctly cannot be the final iOS Web Push context, but the UI exposed a presentation bug: it showed generic “Niet ondersteund” before the more useful iPhone Home Screen requirement.
-- The same test exposed a separate profile-navigation bug: the Profile → Meldingen row was still a placeholder toast and did not open the real notification screen.
-- Commit `caa5df5905ad354e5b271e96f36a60bd4d7786cc` fixes both issues. Profile → Meldingen now calls the canonical `showScreen('notif')` route, while `PushNotificationSettings v1.1.1` checks iPhone non-standalone state before generic browser support and therefore explains dat FamilyApp vanaf het beginscherm moet worden geopend voordat push kan worden ingeschakeld.
-- Bumped the served push-settings cache key to `pushNotificationSettings.js?v=3` and extended `test-notification-served-runtime.js` so both the profile route and iPhone-guidance ordering are guarded against regression.
-- `Household Rebuild Contracts` passed for `caa5df5905ad354e5b271e96f36a60bd4d7786cc`, workflow run `32774000920`.
-- Vercel deployment `dpl_HcmhUXWqWasRuP1jZH5EfhbeskND` is READY for the same fix commit. Its deployed `/api/app` was directly inspected and confirmed the current runtime with `pushNotificationSettings.js?v=3`.
-- The remaining STEP 10 gate is now device acceptance, not deployment configuration: add/open the Preview from the iPhone Home Screen, explicitly enable push, verify the private device registration, then use a PC/browser account as sender and the iPhone account as receiver for real cross-device/background delivery and action/isolation checks.
-- STEP 10 remains **in progress / not frozen**. Main and production Firebase Rules remain untouched.
+- Added a clear destructive **Gezin verlaten** action in Profile.
+- A normal member removes only their own household membership/pointers; the account and shared household data remain.
+- An owner cannot orphan a household: an eligible adult/admin successor must receive ownership before the owner leaves.
+- Presence is cleared best-effort and the signed-in account returns to create/join household onboarding after leaving.
+- Existing Firebase Rules already support the required writes; no production Rules change was made.
+- Product owner later real-tested the normal-member variant successfully; owner-transfer real-device smoke remains open.
+- Code checkpoint `a3b17bbff075dbe00b4f9048b76ddadb2bc84e16`, contracts run `32784256710`, Preview `dpl_BzCAsgZyQpn1J4fF1qb24ZVa7brW` READY.
 
 ---
 
-## 2026-08-24 — STEP 10 push readiness gate hardened before iPhone permission
+## 2026-08-24/25 — Second-account auth/household onboarding blocker fixed
 
-- Upgraded `/api/push-config` to `v1.1.0` so the client receives safe readiness booleans for both halves of the delivery path: `vapidConfigured` and `senderConfigured`. The endpoint returns the public VAPID key but never returns the protected sender email/private key values.
-- `configured=true` now requires both the public Web Push/VAPID configuration and the protected trusted-sender credentials. A partially configured deployment can no longer look push-ready.
-- Upgraded `PushRegistrationService` to `v1.1.0`. Full delivery readiness is checked before the only `Notification.requestPermission()` call; missing VAPID, missing sender credentials or otherwise incomplete delivery config therefore cannot trigger a misleading iOS/browser permission prompt.
-- Upgraded `PushNotificationSettings` to `v1.1.0`. The UI now distinguishes “Web Push-config ontbreekt” from “Push sender ontbreekt”, while keeping both states non-interactive until deployment configuration is complete.
-- Updated the served loader to `pushRegistrationService.js?v=2` and `pushNotificationSettings.js?v=2` so the readiness-aware behavior cannot be hidden behind stale browser/PWA assets once a fresh deployment is available.
-- Added `scripts/test-push-config-readiness.js`: no config => not ready; VAPID only => not ready; VAPID + protected sender env => ready; sender email/private-key values must never appear in the public response.
-- Updated the push registration and served-runtime contracts to guard the readiness-before-permission ordering and the new cache/version wiring.
-- Complete `Household Rebuild Contracts` passed on commit `9b99e95f50e4cd79b5ebdef50e28e855abd30b44`, workflow run `32760089951`.
-- The rapid readiness-hardening commit sequence hit Vercel Hobby `build-rate-limit` again for this exact latest cut. Therefore no fresh READY preview is claimed yet for `PushRegistrationService v1.1.0` / `PushNotificationSettings v1.1.0`.
-- The immediately previous complete trusted-sender deployment remains READY: `dpl_3z8j32rjZDG3x41LSNMuPuLUhT2G` on code commit `6c616aea701175ae6d9e8039c5f33574ba37c9c7`. Its `/api/app` was directly verified, but it predates this final readiness-aware permission gate.
-- Next gate is configuration, not more domain architecture: set the Preview VAPID key and protected Firebase sender credentials in Vercel without putting the private key in chat/GitHub, then obtain a fresh READY deployment and perform the cross-device/iPhone Home Screen delivery tests.
-- STEP 10 remains **in progress / not frozen**.
-- No production Firebase Rules were changed or deployed.
+- A second/new Google account authenticated but incorrectly fell into generic `Opstarten mislukt` instead of household create/join onboarding.
+- Root cause: canonical `HOUSEHOLD_REQUIRED`/stale-household setup states were not recognized by the session controller and canonical Google/household runtime ordering was incomplete.
+- Added `HouseholdOnboardingBridge`, restored deterministic Google → FamilyHousehold → onboarding → AuthenticatedSessionController → HouseholdContext ordering and normalized inaccessible stale household pointers to safe re-onboarding.
+- No membership is silently restored; joining still requires the normal household flow.
+- Code checkpoint `fae24eddef6163e9ac9180792167d847381e3b6d`, contracts run `32781652282`, Vercel `dpl_4zbDas7UbGEnoV1oiWG1UsipbBta` READY.
+- The later real cross-account help-request test proves an alternate account is now usable in the household.
 
 ---
 
-## 2026-08-24 — STEP 10 trusted push sender contract-green and latest preview READY
+## 2026-08-24 — iPhone standalone Web Push opt-in accepted
 
-- Upgraded `NotificationStore` to `v2.1.0`. Canonical event creation remains the source of truth; only a newly created canonical event is handed to Web Push, while a replay/duplicate `publishOnce()` resolves the same inbox event without a second push dispatch.
-- Push dispatch is best-effort and occurs after the canonical notification transaction. A push/server/FCM failure cannot undo or redefine inbox/read/dismiss state.
-- Added `PushDeliveryBridge v1.0.0`. The client sends only the active `householdId` and canonical `notificationId` to the trusted sender after obtaining the current Firebase ID token; recipient tokens/title/body are not accepted as client authority.
-- Added `api/push-send.js` as the Vercel POST boundary and `src/server/firebasePushSender.js v1.0.0` as the server-only FCM HTTP v1 sender.
-- The sender verifies the Firebase caller, requires active household membership and requires the caller to be the canonical notification actor, preventing another household member from replaying someone else's event.
-- Intended recipients are resolved server-side from the canonical event audience. The actor is excluded and only enabled private FCM device registrations for intended recipient UIDs are read.
-- Trusted Firebase sender credentials are read only from protected server environment variables (`FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL`, `FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY`, optional project configuration). No sender credential is present in client code, public config or repository files.
-- FCM messages are data-only and carry canonical notification/event identity and route metadata. The realtime NotificationStore remains the inbox authority.
-- Added private delivery-health receipts at `users/{uid}/private/pushDelivery/{notificationId}/{deviceId}`. Receipts contain sanitized status/provider/timestamps, not the device token.
-- A successful per-device receipt makes delivery idempotent: retrying the same canonical event skips a second FCM send to that device. FCM `UNREGISTERED` devices are disabled in the private device registry.
-- Extended `test-notification-store-events.js` for `NotificationStore v2.1.0` and one-time push handoff semantics.
-- Extended `test-notification-served-runtime.js` for the active `pushDeliveryBridge`, trusted sender boundary, public-config secret separation and current loader cache versions.
-- Added `test-push-server-sender.js` covering Firebase caller authorization, actor-only replay protection, canonical recipient resolution, data-only FCM payloads, private receipt idempotency and no token leakage.
-- Two intermediate failures were test expectation issues, not product regressions: one assertion expected a literal `PushDeliveryBridge.dispatchCreated` call although the store uses a local bridge variable; another security assertion referenced a superseded credential-env naming assumption. Both tests were aligned to the implemented boundary.
-- Final complete `Household Rebuild Contracts` passed on commit `6c616aea701175ae6d9e8039c5f33574ba37c9c7`, workflow run `32759246722`.
-- Vercel is no longer blocked by the Hobby build-rate-limit for the current branch. Deployment `dpl_3z8j32rjZDG3x41LSNMuPuLUhT2G` is READY for the same commit.
-- The deployed `/api/app` response was directly inspected and contains the current STEP 10 runtime: `notificationStore.js?v=3`, `pushDeviceRegistry.js?v=1`, `pushRegistrationService.js?v=1`, `pushDeliveryBridge.js?v=1`, `pushNotificationSettings.js?v=1` and current notification projectors.
-- Direct isolated connector fetches of `/api/push-config` and `/firebase-messaging-sw.js` were redirected by Vercel preview SSO, so the READY build alone is **not** treated as proof that VAPID/service credentials are configured.
-- Remaining STEP 10 gate: confirm/configure protected Vercel VAPID + Firebase sender environment variables, create/verify the resulting runtime, then perform real cross-device inbox/action and iPhone Home Screen push tests.
-- STEP 10 is **not frozen yet**.
-- No production Firebase Rules were changed or deployed.
+- Preview was opened from the iPhone Home Screen and iOS notification permission was accepted.
+- Notification settings reported `Pushmeldingen staan aan voor dit account op dit apparaat`.
+- `PushRegistrationService` only reaches that enabled state after FCM token acquisition and private `PushDeviceRegistry.upsert`, so the client-side registration gate is accepted.
+- This did not yet prove server-to-device delivery; that later test exposed the separate sender credential issue described above.
 
 ---
 
-## 2026-08-24 — STEP 10 Web Push client foundation implemented
+## 2026-08-24 — STEP 10 trusted notification/push architecture implemented
 
-- Added `PushDeviceRegistry v1.0.0` with user-private multi-device storage at `users/{uid}/private/pushDevices/{deviceId}`. Push tokens are no longer part of the household-shared design.
-- Added `PushRegistrationService v1.0.0` with an explicit opt-in flow, per-account local opt-in state, service-worker registration, FCM token registration, foreground handling and app-badge synchronization where supported.
-- Important audit correction: `AuthenticatedSessionController` does call legacy `setupPushNotifications()` during app reveal. The new service now deliberately replaces that global with a safe `start()` compatibility entrypoint, so startup/login can never request Notification permission automatically.
-- `Notification.requestPermission()` now exists only inside explicit `requestEnable()` after the user taps the push settings action.
-- On iPhone/iPad the enable flow first requires the Home Screen/standalone PWA context; a normal Safari tab is rejected before showing a doomed permission prompt.
-- Same-browser account/UID changes invalidate the previous FCM token and browser Push subscription. A second user is never silently enrolled from the first user's registration and must explicitly opt in unless that UID already has its own prior opt-in state.
-- Added `firebase-messaging-sw.js` using the current Firebase compat runtime. It handles background data-only payloads and notification-click focus/open routing to FamilyApp notifications.
-- Foreground FCM messages are delivery signals only; they do not create a second canonical NotificationStore event and therefore cannot duplicate inbox state.
-- Added `PushNotificationSettings v1.0.0` as an explicit premium opt-in/disable surface on the notification screen. It shows unsupported, iOS-not-installed, missing-config, denied, registering, enabled and retry states without prompting on load.
-- Added `/api/push-config`. It returns only public Web Push configuration and reads the public VAPID key from protected deployment configuration `FAMILYAPP_WEB_PUSH_VAPID_KEY`. Server/service-account credentials are not returned from this endpoint.
-- Activated the push registry, registration service and settings UI in the actual `/api/app` served runtime after the canonical notification store/delivery layers.
-- Added `scripts/test-push-device-registry.js` and `scripts/test-push-registration-service.js`; extended the real served-runtime audit to cover push module order, private token storage, no automatic permission prompt, service-worker presence and public-config boundaries.
-- One served-runtime security test initially produced a false positive because it matched the words “service-account/private key” in explanatory source comments. The test was narrowed to concrete forbidden server credential environment identifiers; no app/public-endpoint behavior needed changing.
-- Full `Household Rebuild Contracts` passed on commit `d89057f0b78caf4f1acb00106cd9d03f2d9ed538`, including the new push registry/registration tests.
-- At this historical checkpoint Vercel was still blocked by the Hobby `build-rate-limit`; the later trusted-sender checkpoint above has since produced a fresh READY deployment.
-- Web Push was not yet operational end-to-end at this checkpoint: a trusted server-side sender and protected deployment credentials/public VAPID configuration still needed implementation/configuration.
-- Push failure remains architecturally separate from canonical notification inbox/read/dismiss state.
-- No production Firebase Rules were changed or deployed.
+- Canonical notification state moved to one HouseholdContext-native repository with deterministic/idempotent event IDs and per-UID read/dismiss state.
+- Notification state and push delivery are separate: push failure cannot delete/corrupt canonical inbox state.
+- Private multi-device push registry lives under the user's private subtree rather than household-shared data.
+- Web Push is explicit opt-in only; startup cannot request notification permission.
+- Added iPhone standalone-PWA requirement, FCM service worker, foreground de-duplication, private device lifecycle and account-switch invalidation.
+- Added trusted Vercel `/api/push-send` boundary. Client submits canonical household/notification identity only; server verifies Firebase caller + household membership + event actor and resolves recipients/tokens server-side.
+- Added private delivery receipts/idempotency and FCM invalid-token cleanup.
+- Preview VAPID and protected Firebase sender environment variables were configured. `/api/push-config` originally verified presence/readiness booleans; real delivery later revealed the credential-signature mismatch.
 
 ---
 
-## 2026-08-24 — STEP 10 canonical in-app notification runtime implemented
+## 2026-08-24 — STEP 9 Progression accepted/frozen
 
-- Added `NotificationHouseholdRepository v1.0.0` as the canonical STEP 10 persistence/listener boundary at `families/{householdId}/shared/notifications`.
-- Repository identity is bound through `HouseholdContext` UID + household + revision; same-household account switch, cross-household switch and logout all detach the exact listener and clear stale projection.
-- Captured stale callbacks are rejected with `HouseholdContext.capture()/isCurrent()` and notification writes are rejected when context is unavailable/stale.
-- Added deterministic `eventKey` / `publishOnce()` transactions so one domain transition observed by multiple devices/tabs cannot create duplicate canonical inbox events.
-- Per-UID `readBy` / `dismissedBy` semantics were preserved and repository marker APIs always write for the active UID only.
-- Reworked `NotificationStore` to `v2.0.0`; it is now a facade over `NotificationHouseholdRepository` and random/unkeyed notification creation is deliberately rejected.
-- Reworked `NotificationEvents` to `v2.0.0` with deterministic keys for task-help request/join, task-swap request/result, Party Quest create/sent-invite/join/complete and Finance savings events.
-- `TaskNotificationProjector`, `TaskSwapNotificationProjector` and `PartyQuestNotificationProjector` are now `v2.0.0`, HouseholdContext-bound and protected against stale callbacks/account switches.
-- `NotificationActions v3.0.0` now reads active identity from HouseholdContext instead of `fbUser`/Firebase auth and continues to delegate mutations to the accepted TaskSharedData / PartyQuestInvites services.
-- `NotificationCenter v2.0.0` uses HouseholdContext identity and clears an open detail sheet when the active identity changes.
-- `NotificationDelivery v2.0.0` remains an **in-app live-banner channel only** and clears queued/active banners on account/household/logout identity changes. It is not Web Push/OS push.
-- Activated the canonical notification stack in the actual `/api/app` served load graph, immediately after HouseholdContext and before progression runtime, with explicit cache versions.
-- Added contracts: `test-notification-household-repository.js`, `test-notification-store-events.js`, `test-notification-projector-lifecycle.js`, `test-notification-presentation-identity.js` and `test-notification-served-runtime.js`.
-- Tests cover A→B same-household switching, cross-household isolation, logout clearing, stale callbacks, per-UID read/dismiss markers, duplicate event idempotency, typed deterministic event keys, projector lifecycle, presentation identity boundaries and the real `/api/app` script order/version wiring.
-- Two intermediate test failures were harness-only: one test expected an unkeyed publish rejection as an async rejection even though the store correctly throws synchronously; another Node VM needed `TaskSharedData` mirrored as a browser global. No app behavior change was needed for either correction.
-- During loader activation a missing closing parenthesis in the `/api/app` error handler was spotted immediately and corrected before the served-runtime checkpoint was considered valid.
-- Complete `Household Rebuild Contracts` passed on code commit `15ca6bca994ea5852815cad7f3e811261a783152`, including the served notification runtime audit.
-- Vercel did **not** produce a fresh preview for that latest code checkpoint because the Hobby `build-rate-limit` was hit again; this is a deployment-rate limitation, not a contract/runtime failure.
-- In-app notification code is therefore contract-ready but still awaits a fresh READY preview and real cross-device/iPhone verification.
-- Push notifications remain part of STEP 10 and are the next implementation area: user-private multi-device token registry, deliberate opt-in, Web/PWA service worker/FCM adapter and trusted server-side sender, all separate from canonical inbox state.
-- No production Firebase Rules were changed or deployed.
+- Canonical UID + household progression store, deterministic reward ledger, canonical achievements and lifecycle/isolation protection accepted.
+- Real iPhone smoke test passed with normal task XP, duplicate-reward protection, achievements, navigation and background/foreground stability.
+- Accepted code checkpoint `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`; Vercel `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` READY.
 
 ---
 
-## 2026-08-24 — STEP 10 notification + push audit completed
+## 2026-08-24 — STEP 8 Finance accepted/frozen
 
-- Completed the required read-only STEP 10 audit and stored the full authority/delivery map in `docs/step10-notifications-audit.md`.
-- Confirmed that push notifications are part of STEP 10, but push is a delivery channel and must remain separate from canonical notification inbox/read state.
-- Found an existing typed notification architecture in the repository: `NotificationStore`, `NotificationEvents`, `NotificationActions`, `NotificationCenter`, `NotificationDelivery` and task/swap/Party Quest projectors.
-- The existing stack is currently dormant/not loaded by the actual rebuild `/api/app` runtime, so active code that conditionally calls `NotificationEvents`/`NotificationStore` can silently do nothing.
-- Legacy `addNotif(...)` is already deliberately neutralized as a no-op and `notifData` is only leftover demo state; neither will be revived as authority.
-- Dormant `NotificationStore v1.4.0` already models household events with per-UID `readBy` and `dismissedBy`, but its identity/listener ownership still relies on `fbFamilyId`/generic `FamilyDataStore` rather than accepted `HouseholdContext` capture/isCurrent lifecycle semantics.
-- The dormant store also generates random event IDs, so the same state transition observed on multiple devices/tabs can create duplicate notification events. STEP 10 will add deterministic event keys / `publishOnce()` semantics.
-- Existing `NotificationDelivery v1.2.0` is correctly separated as an in-app live-banner presentation channel; it is not OS push.
-- Push/FCM audit found only an incomplete legacy stub in `duoQuests.js`: browser permission request, `getToken()` and a single household-shared `fcmTokens/{uid}` write.
-- No complete messaging service worker, foreground `onMessage`, token rotation/revocation lifecycle, multi-device registry or trusted server-side FCM sender was found; reliable push is therefore not currently operational.
-- Target push-device registry is user-private and multi-device, logically `users/{uid}/private/pushDevices/{deviceId}`, so another household member never reads delivery credentials.
-- Browser/client code will not own FCM server/service-account credentials. While Firebase remains on Spark, a Vercel server-side delivery boundary is the first candidate to evaluate for trusted sending.
-- Push failure must never delete or corrupt the canonical notification event; inbox state and delivery health remain separate.
-- Current next action is the code foundation: build and contract-test a HouseholdContext-native `NotificationHouseholdRepository` before wiring the dormant notification UI/runtime back into `/api/app`.
-- No production Firebase Rules were changed or deployed during this audit.
+- Household-scoped Finance state, transaction/reset semantics, Analyse UI, comparisons, deterministic FamilyApp Assistent, isolation contracts and premium two-page PDF/share flow accepted.
+- Real iPhone PDF/native share test passed.
 
 ---
 
-## 2026-08-24 — STEP 9 iPhone gate accepted/frozen; STEP 10 Notifications opened
+## Earlier rebuild history
 
-- Product owner confirmed the final STEP 9 iPhone test works.
-- The real-device acceptance covers the agreed smoke path: normal app/session startup with Home XP visible, one normal task reward, no second XP reward for the same task completion event, Achievements rendering, multi-module navigation, reload and background/foreground stability without freeze/white screen/crash.
-- STEP 9 Progression / XP / Achievements is therefore formally **ACCEPTED / FROZEN** on `agent/household-rebuild-v2`.
-- Accepted STEP 9 includes the canonical UID + household progression store, atomic/idempotent reward ledger, canonical achievement projection, identity-safe lifecycle handling, deterministic served reward keys and the final served-runtime audit.
-- Final complete `Household Rebuild Contracts` passed on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
-- Vercel deployment `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` is READY for that code commit and its served HTML was verified with the current STEP 9 runtime/adapters.
-- `docs/FAMILYAPP-CURRENT-TODO.md` now marks STEP 10 as the current phase.
-- STEP 10 — Notifications is opened, but no notification implementation change is made as part of this closure update.
-- The first STEP 10 action is a read-only audit of current notification state, `addNotif`/notification producers, read/dismiss behavior, household/UID scoping, listener ownership and any existing push/FCM delivery code.
-- STEP 10 must preserve the roadmap separation between canonical notification state and push delivery: notification state must remain platform-neutral so native APNs/FCM delivery and notification actions can be attached later without another domain rewrite.
+Earlier detailed checkpoints for STEP 0–7, person/identity modernization, Shopping, Recipes, Meals, Agenda, task migration, icon/brand work and the full intermediate STEP 8/9 implementation sequence remain preserved in the Git history of this file and the roadmap/progress tracker. This file is intentionally kept focused on the current rebuild handoff and major accepted milestones.
 
----
+## Current next action
 
-## 2026-08-24 — STEP 9 deterministic producer migration complete; final iPhone gate next
-
-- Completed the remaining served XP/reward producer migration on `agent/household-rebuild-v2`.
-- Added `RecurringTaskRewardBridge v1.0.1`: recurring weekly/monthly completion and individual recurring-day completion now use stable occurrence keys. The legacy direct `myXP += 2` day mutation is immediately restored to the canonical projection and rerouted through progression.
-- Added `ProgressionRuntime v1.1.0` identity-safe pending reward contexts so large asynchronous legacy UI flows can attach a real entity ID after Firebase/storage creation without inventing timestamp pseudo-keys or crossing UID/household boundaries.
-- Added `ProgressionProducerBridge v1.1.1` for note creation, Feed posts, Feed likes, manual recipe creation and task-template activation.
-- Feed like XP now uses one per-user/post canonical reward key; unlike/re-like cannot farm XP.
-- Manual recipe creation uses the saved recipe ID. Imported recipes are deliberately excluded from the manual `Recept aangemaakt` context so import cannot leave a stray pending reward.
-- Recipe link import (`recipeServerlessLinkImport v0.504`) now awards directly with `recipe:{savedRecipeId}` and source `recipe-import`.
-- Shared task completion through `taskUidCreateBridge v1.3` now uses the same `task:{taskId}` key as other task completion paths, closing a second UI path that previously bypassed TaskRewardBridge.
-- Added/activated `SkillsProgressionBridge v4.0.0`: legacy local/name-based skill data remains compatibility state, but account-XP side effects from skill logs, weekly quest bonus/claim, copycat, auto-done and Triple-XP are canonical and deterministic.
-- The legacy Triple-XP ability direct `myXP += 4` mutation is neutralized and the same hidden +4 is recorded once through the canonical store.
-- The bridge also supplies the missing legacy `ability` binding during weekly-quest claim so the intended existing claim flow continues while the legacy module awaits STEP 16 cleanup.
-- Added `FinanceProgressionBridge v1.0.1`. It changes no accepted STEP 8 Finance calculations/UI/data behavior; it only keys existing XP side rewards by FinanceStore transaction/goal/update IDs.
-- Finance keys cover savings transactions, one-time goal-reached reward, savings-goal creation, both one-off income entry labels and income updates. Internal savings-linked extra-income records deliberately create no orphan XP context.
-- Added `scripts/test-recurring-progression-rewards.js`, `scripts/test-progression-entity-producers.js`, `scripts/test-skills-progression-bridge.js`, `scripts/test-finance-progression-bridge.js` and `scripts/test-progression-served-runtime-audit.js`.
-- The served-runtime audit executes the real `/api/app` transformation, follows statically served and literal dynamic-load scripts, enumerates served `awardXP` and direct `myXP +=` paths, and fails on unexpected producers or resurrected legacy trade/duo paths.
-- Its first run correctly discovered two previously missed live producers: `recipeServerlessLinkImport.js` and `taskUidCreateBridge.js`. Both were fixed with stable entity-ID reward keys rather than merely being added to an allowlist.
-- A later audit failure was test-only: comment text containing `myXP +=` was counted as executable code. The audit was made comment-insensitive; no app behavior changed for that correction.
-- Legacy alternative paths are now explicitly classified: old `shop.js`, `groupQuests.js`, `groupQuestRewardPolish.js` and `recipeBottomSheetBridge.js` are not in the current served graph; task-trade entry UI remains removed; no served module calls legacy `trackDuoProgress`. These are STEP 16 cleanup candidates rather than hidden live progression authorities.
-- Final complete `Household Rebuild Contracts` passed on code commit `843cbb5f5662cfee6e9aa32164b90b1cd7aa7e18`.
-- Vercel deployment `dpl_6FfiZeywGvDMz9nZtHrmQCXib97n` is READY for that same code commit.
-- Served STEP 9 runtime wiring/cache versions are guarded by the served-runtime contract and the current served HTML was verified from the READY deployment.
-- At this historical checkpoint STEP 9 was not yet frozen; the subsequent real iPhone gate was accepted later on 2026-08-24.
-
----
-
-## 2026-08-24 — STEP 9 canonical progression foundation + first idempotent producers
-
-- Completed the required read-only STEP 9 progression audit and stored it in `docs/step9-progression-audit.md`.
-- Audit confirmed the previous effective authority was split between `fam_myxp_v1`/`window.myXP`, legacy member `xp`, `ProgressionUidBridge`, `AchievementUidBridge`, legacy `checkAchievements()` and multiple `awardXP()` wrapper layers.
-- Highest-risk legacy behavior identified: a missing member XP value could be seeded from an unscoped browser XP cache, and achievement projections could merge across account changes instead of replacing the previous identity projection.
-- Added `src/core/progressionStore.js` (`ProgressionStore v1.0.0`) as the STEP 9 canonical authority at `families/{householdId}/members/{uid}/progression`.
-- Canonical schema contains XP, deterministic reward ledger, achievements, migration metadata and update metadata.
-- Safe migration reads only the active household member's existing Firebase `xp` and `achievements`; it never imports unscoped localStorage/browser XP into another UID/household.
-- Store lifecycle is bound through `HouseholdContext`; logout/account/household switch detaches the exact listener, clears XP/achievement compatibility projections and rejects stale callbacks/writes.
-- Added atomic `awardOnce(key, amount, metadata)` and `unlockAchievementOnce(...)` transaction semantics so reward claim + XP mutation live in one canonical transaction.
-- Added `src/core/progressionRuntime.js` (`ProgressionRuntime v1.0.0`), replacing mutation behavior behind the existing `awardXP` and `checkAchievements` UI entry points.
-- Achievement evaluation now projects unlocks through the canonical store; badge XP is no longer a separate legacy member-XP write.
-- `ProgressionUidBridge v3.0.0` and `AchievementUidBridge v2.0.0` are now compatibility-only adapters and own no Firebase progression authority.
-- `TaskRewardBridge v3.0.0` gives one-off task completion the deterministic key `task:{taskId}`.
-- Daily login bonus now uses `daily:{YYYY-MM-DD}` and only stores the local claim marker after the canonical reward settles.
-- Party Quest completion now uses `partyQuest:{questId}`; an XP persistence failure leaves the quest active so the reward can be retried/repaired after reconnect instead of being silently lost.
-- Added three STEP 9 contracts: `test-progression-store.js`, `test-progression-runtime.js` and `test-progression-producer-keys.js`.
-- The new tests cover migration isolation, A→B account/household switching, stale callbacks, duplicate rewards, duplicate achievement unlocks, legacy bridge retirement, task replay protection, daily bonus key reuse and Party Quest failed-write recovery.
-- One first run of the producer test failed because the Node VM harness did not mirror browser `window` globals as bare global bindings; the harness was corrected without changing app behavior.
-- Full `Household Rebuild Contracts` subsequently passed on commit `b81b936c8b7185b461268a663098f85339e4d2bd`.
-- Vercel branch deployment for that same code checkpoint reached READY.
-- At this historical checkpoint STEP 9 was still in progress and more served reward producers remained to migrate.
-
----
-
-## 2026-08-24 — STEP 8 Finance accepted/frozen; STEP 9 opened
-
-- Product owner confirmed the final premium two-page Finance PDF works in the latest iPhone test.
-- Final STEP 8 release gate is accepted.
-- STEP 8 Finance is now formally accepted/frozen on `agent/household-rebuild-v2`.
-- Accepted STEP 8 includes: household-scoped Finance state, transaction/reset semantics, premium Analyse UI, period comparisons, deterministic FamilyApp Assistent, strict household isolation contracts, native iOS/WhatsApp PDF sharing and the final premium two-page Finance report.
-- `docs/FAMILYAPP-CURRENT-TODO.md` now marks STEP 9 as the current phase.
-- `docs/household-rebuild-v2-progress.md` now marks STEP 8 complete and STEP 9 in progress.
-- STEP 9 must begin with a read-only audit of all currently served progression/XP/achievement authorities and mutation paths before implementation changes.
-- STEP 9 target remains: canonical UID progression store, event-keyed/idempotent rewards, canonical achievement projection, safe legacy migration, lifecycle/isolation tests, preview and iPhone gate.
-
----
-
-## 2026-08-24 — Vercel rate limit cleared; premium PDF preview READY
-
-- A new branch push was accepted by Vercel instead of failing with `build-rate-limit`.
-- Fresh deployment `dpl_2JCsQxBNKDXd9dkfvtDVCurRyaNy` reached READY.
-- Verified the deployed Finance export asset directly from that preview; it serves `FinanceAnalysisExport v2.0.0`.
-- Therefore the final premium two-page Finance PDF implementation is confirmed present in a fresh Vercel preview.
-- The final real-iPhone verification was subsequently accepted and STEP 8 has since been closed.
-
----
-
-## 2026-08-24 — Phase tracker synchronized to actual STEP 8 state
-
-- Replaced the stale phase-level status that still reported STEP 4 Recipes as current.
-- `docs/household-rebuild-v2-progress.md` was synchronized to the actual execution position.
-- STEP 8 implementation summary was brought up to date before final acceptance.
-- `docs/FAMILYAPP-CURRENT-TODO.md` was synchronized in the same work session.
-
----
-
-## 2026-08-23 — Premium Finance PDF report implemented
-
-- Replaced the temporary STEP 8 PDF export layout with `FinanceAnalysisExport v2.0.0`.
-- Export is now a two-page A4 financial report rather than a simple functional export.
-- Page 1 contains a calm FamilyApp-branded period/result hero, income/expense/net-savings KPIs, top-category bar visualization and the current data-driven FamilyApp Assistent recommendation/action.
-- Page 2 contains fixed vs variable costs, savings rate, receipt count, category current-vs-previous comparison, savings goal progress and core insights.
-- Report remains generated directly from the canonical Finance Analysis model; it is not a screenshot of the screen.
-- Native share/download behavior is preserved, including WhatsApp-capable iOS share flow.
-- Added explicit line wrapping/limits for advisor copy so long recommendations remain within the report card.
-- Local sample report was generated, rendered to both page images and visually inspected; no overlap/clipping was found.
-- PDF preflight confirmed a valid two-page, non-encrypted, text-based PDF.
-- Added `scripts/test-finance-analysis-export.js` to guard two-page structure, report sections, advisor projection and removal of the old placeholder-template copy.
-
----
-
-## 2026-08-23 — STEP 8 iPhone / assistant / PDF-share checks accepted
-
-- Product owner confirmed the current Finance STEP 8 preview works on iPhone.
-- Finance navigation and interaction smoke test is accepted for the tested build.
-- The top `Verse start` card remains removed and the bottom reset action remains the intended reset surface.
-- FamilyApp Assistent behavior is accepted in the tested Analyse flow.
-- PDF generation on iPhone works.
-- Native share flow works and WhatsApp sharing is accepted.
-
----
-
-## 2026-08-23 — STEP 8 Finance logout/reconnect isolation hardened
-
-- Added `scripts/test-finance-logout-reconnect-isolation.js`.
-- The new contract verifies that logout detaches the active Finance listener and immediately clears the prior household projection.
-- Writes are rejected while household/auth context is unavailable.
-- A stale callback captured before logout cannot repopulate old Finance data.
-- Reconnecting as another user/household loads only that household's Finance data.
-- Stale callbacks from the previous household remain ignored after reconnect.
-- New Finance mutations after reconnect write only to the active household.
-- Existing Finance contract coverage already verifies A→B switching, stale callback rejection, household-scoped writes, idempotent receipt upsert, safe same-household legacy migration, no generic legacy-data seeding, and active-household-only reset.
-- `Household Rebuild Contracts` passed for commit `e8d8ef7b03443f9c8ec754e299f6deddb6a29b27`.
-- The code-side STEP 8 Finance privacy/isolation regression gate is complete.
-
----
-
-## 2026-08-23 — STEP 8 advisor preview verified
-
-- Latest `agent/household-rebuild-v2` Vercel preview reached READY after the advisor commits.
-- Verified the deployed asset directly from the current preview; it serves `FinanceAnalysisAdvisor v1.0.1`.
-- Advisor runtime therefore is confirmed present in the current Vercel preview.
-
----
-
-## 2026-08-23 — STEP 8 Finance feedback + analysis assistant
-
-### Product/UI feedback processed
-- Finance `Verse start` must not appear as a large card at the top of Finance tabs.
-- The remaining reset action belongs only at the bottom of the Finance page.
-- Analyse colors should have more depth and premium hierarchy without becoming busy.
-- `Periode overzicht` should function as the primary calm Hero Card.
-- Buttons may have richer depth/states, but Finance must remain readable and not become an image-heavy page.
-- A PDF export/share action is required from Analyse.
-
-### Implemented
-- Added STEP 8 Finance analysis visual polish on `agent/household-rebuild-v2`.
-- Added a calmer premium period Hero and richer button/card depth.
-- Added Finance analysis PDF export/share foundation intended to use the native mobile share sheet when supported.
-- Moved the bottom reset action into `FinanceRuntimeShell` and removed the old top `Verse start` reset card from `financeControls.js`.
-- Added `FinanceAnalysisAdvisor` with deterministic, explainable recommendations based on the same canonical Finance analysis data.
-- Advisor can reason about negative period result/break-even gap, largest category increase/decrease, per-week correction required to return toward comparison level, available positive result, net saving behavior, and open savings goals.
-- Advisor intentionally does not use a generative AI API yet; recommendations are traceable to actual Finance numbers and selected comparison periods.
-- Added duplicate-install protection to the advisor runtime to reduce risk of duplicate event listeners/render behavior on iPhone Safari.
-
----
-
-## 2026-08-23 — Cross-chat handoff convention introduced
-
-- Added this persistent update log.
-- Added `docs/FAMILYAPP-CURRENT-TODO.md` as the current execution checklist.
-- Future FamilyApp work should update both files after meaningful changes so separate chats can recover the exact current state from the repository instead of relying on conversation memory alone.
+1. Replace the two protected Preview Firebase service-account values from **one newly generated Admin SDK JSON**; never paste the private key into chat or repository.
+2. Redeploy Preview.
+3. Retest a brand-new help request while the iPhone PWA is backgrounded/closed.
+4. In the same Preview, smoke-test Task → Hulp vragen → **Heel het gezin** and verify more than one eligible family member can join.
+5. Continue push tap/read/dismiss/action/account-isolation/stability acceptance; freeze STEP 10 only after explicit product acceptance.
