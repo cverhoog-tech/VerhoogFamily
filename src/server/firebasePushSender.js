@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FIREBASE PUSH SENDER v1.0.2 — STEP 10 server-only delivery service
+// FIREBASE PUSH SENDER v1.0.3 — STEP 10 server-only delivery service
 //
 // Canonical notification state stays in RTDB. This service accepts only a
 // canonical householdId + notificationId, verifies the Firebase caller, reads
@@ -9,12 +9,12 @@
 // ============================================================
 const crypto=require('crypto');
 
-const VERSION='1.0.2';
+const VERSION='1.0.3';
 const DEFAULT_DB='https://verhoog-family-default-rtdb.europe-west1.firebasedatabase.app';
 const DEFAULT_PROJECT='verhoog-family';
 const DEFAULT_WEB_API_KEY='AIzaSyA4vXaF85pfv2Cxy5VG-KJXxsOG14UeN1s'; // public Firebase web config
 const TOKEN_AUD='https://oauth2.googleapis.com/token';
-const SCOPES='https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/firebase.messaging';
+const SCOPES='https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/firebase.messaging';
 
 function unwrapEnvString(value){
   let text=String(value==null?'':value).trim();
@@ -96,10 +96,20 @@ async function verifyFirebaseUser(idToken,config,fetchImpl){
 }
 function segment(v){return encodeURIComponent(String(v));}
 function rtdbUrl(config,path,accessToken){return config.databaseUrl+'/'+String(path).split('/').filter(Boolean).map(segment).join('/')+'.json?access_token='+encodeURIComponent(accessToken);}
+function rtdbFailureDetail(result){
+  // Never include the request URL here: it carries the access_token in its
+  // query string. Only the HTTP status and Firebase's own JSON/text error
+  // body (e.g. "Permission denied", "Invalid access token") are safe to log.
+  const status=Number(result&&result.status||0);
+  const body=result&&result.body;
+  const message=body&&typeof body==='object'&&body.error?String(body.error):typeof body==='string'?body:'';
+  const kind=status===401?'invalid-auth':status===403?'insufficient-permission':status?'other':'no-response';
+  return ['http='+String(status),'kind='+kind,message&&('message='+message.slice(0,200))].filter(Boolean).join(' ');
+}
 async function rtdbGet(config,path,token,fetchImpl,etag){
   const headers={};if(etag)headers['X-Firebase-ETag']='true';
   const result=await jsonFetch(fetchImpl,rtdbUrl(config,path,token),{method:'GET',headers});
-  if(!result.ok)throw coded('PUSH_DATABASE_READ_FAILED',502,String(result.status));
+  if(!result.ok)throw coded('PUSH_DATABASE_READ_FAILED',502,rtdbFailureDetail(result));
   return{value:result.body,etag:result.headers&&typeof result.headers.get==='function'?result.headers.get('etag'):null};
 }
 async function rtdbPutIfMatch(config,path,value,token,fetchImpl,etag){
@@ -107,12 +117,12 @@ async function rtdbPutIfMatch(config,path,value,token,fetchImpl,etag){
     method:'PUT',headers:{'Content-Type':'application/json','if-match':etag||'null_etag'},body:JSON.stringify(value)
   });
   if(result.status===412)return{committed:false,value:result.body};
-  if(!result.ok)throw coded('PUSH_DATABASE_LOCK_FAILED',502,String(result.status));
+  if(!result.ok)throw coded('PUSH_DATABASE_LOCK_FAILED',502,rtdbFailureDetail(result));
   return{committed:true,value:result.body};
 }
 async function rtdbPatch(config,path,value,token,fetchImpl){
   const result=await jsonFetch(fetchImpl,rtdbUrl(config,path,token),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});
-  if(!result.ok)throw coded('PUSH_DATABASE_WRITE_FAILED',502,String(result.status));
+  if(!result.ok)throw coded('PUSH_DATABASE_WRITE_FAILED',502,rtdbFailureDetail(result));
   return result.body;
 }
 function activeMember(row){return !!(row&&row.status!=='inactive'&&row.status!=='removed');}

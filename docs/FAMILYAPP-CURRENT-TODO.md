@@ -9,7 +9,7 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. Canonical in-app notifications, iPhone standalone registration and the task-help notification flow work. The Google OAuth `Invalid JWT Signature` blocker has a diagnosed root cause and a code fix on `agent/household-rebuild-v2` (not yet real-device accepted): `b64url()` in `src/server/firebasePushSender.js` fell through to `JSON.stringify(Buffer)` for the RSA signature bytes instead of encoding them as raw bytes, corrupting every service-account JWT signature independent of which private key was configured. This is why the earlier full service-account key rotation did not resolve it.**
+**STEP 10 — Notifications remains in progress. Canonical in-app notifications, iPhone standalone registration and the task-help notification flow work. The JWT signature bug is fixed and confirmed by real-device retest (Preview logs no longer show `Invalid JWT Signature`). The pipeline now reaches the RTDB stage and fails with `PUSH_DATABASE_READ_FAILED 401`: the service-account OAuth scope was missing `userinfo.email`, which Firebase's Realtime Database REST auth requires alongside `firebase.database`. Fixed on `agent/household-rebuild-v2` (not yet real-device accepted).**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -62,8 +62,13 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Fix: `b64url()` now encodes `Buffer` input as raw bytes. Minimal, scoped fix — existing manual-JWT architecture and security model kept intact, no new dependency added.
 - [x] Regression coverage: `scripts/test-push-jwt-signature-contract.js` generates a throwaway RSA keypair, builds a real JWT via `serviceAssertion()`, decodes header/payload/signature, and cryptographically verifies the signature against the matching public key (plus a negative check against an unrelated key). Confirmed this test fails against the pre-fix code and passes against the fix.
 - [x] Full relevant STEP 10 push/notification contract suite green locally (jwt-signature, push-server-sender, push-config-readiness, push-device-registry, push-registration-service, notification-store-events/household-repository/served-runtime/projector-lifecycle/presentation-identity, task-household-help).
-- [ ] **Real-device retest still required.** OAuth succeeding is necessary but not sufficient — background/closed-PWA push must actually arrive on iPhone before STEP 10 push delivery is considered accepted.
-- [ ] If OAuth now succeeds but the push still doesn't arrive, inspect fresh `/api/push-send` runtime logs immediately and report the exact next failing stage (RTDB device lookup, FCM response, token registration, service worker/background handling, or iOS notification display) rather than assuming — then fix only that layer.
+- [x] **Real-device retest confirmed the JWT fix.** Preview logs on the fixed commit no longer show `Invalid JWT Signature`; OAuth now succeeds.
+- [x] **Next stage diagnosed from live Preview logs:** `PUSH_DATABASE_READ_FAILED 401` at the RTDB read step. Verified against Firebase's official Realtime Database REST auth documentation (`firebase.google.com/docs/database/rest/auth`): a service-account OAuth token for RTDB REST requires **both** `userinfo.email` and `firebase.database` scopes. The sender's scope list was missing `userinfo.email`.
+- [x] Fix: `firebasePushSender v1.0.3` adds `https://www.googleapis.com/auth/userinfo.email` to `SCOPES`, alongside the existing `firebase.database` and `firebase.messaging`.
+- [x] RTDB failure diagnostics improved: a new `rtdbFailureDetail()` classifies failures as `invalid-auth` (401), `insufficient-permission` (403) or `other`, and surfaces Firebase's own (non-secret) error message — without ever logging the request URL, which carries the OAuth access token in its query string.
+- [x] Regression coverage: `scripts/test-push-jwt-signature-contract.js` now asserts the JWT scope contains exactly the three required scopes (`userinfo.email`, `firebase.database`, `firebase.messaging`), order-independent. New `scripts/test-push-rtdb-diagnostics.js` asserts 401→`invalid-auth` and 403→`insufficient-permission` classification, that Firebase's error message is surfaced, and that the access token never appears in any error detail/message.
+- [ ] **Real-device retest still required** for this RTDB scope fix. OAuth + RTDB read succeeding is necessary but not sufficient — background/closed-PWA push must actually arrive on iPhone before STEP 10 push delivery is considered accepted.
+- [ ] If the RTDB scope fix does not fully resolve the 401, next check the service account's IAM permissions and its association with the `verhoog-family` Firebase project — do not jump ahead to FCM/service-worker/iOS display fixes until RTDB reads succeed.
 
 > Note: `/api/push-config configured=true` proves required variables are present, not that Google accepts the private-key signature. The runtime delivery call is the validity gate.
 
@@ -97,6 +102,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 
 ### Remaining STEP 10 acceptance
 - [x] Diagnose and fix the JWT signature encoding root cause; redeploy Preview.
+- [x] Diagnose and fix the RTDB 401 (missing userinfo.email OAuth scope); redeploy Preview.
 - [ ] Background/closed-PWA OS push reaches iPhone (real-device retest still pending).
 - [ ] Tapping push opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [ ] UID-specific read/dismiss survives reload/reconnect.

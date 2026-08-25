@@ -15,6 +15,22 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 RTDB 401 root cause diagnosed and fixed (device retest pending)
+
+- Real iPhone retest on commit `9cdf1987409fc592114bd813c1f121d03fd7f1a1` (Preview `dpl_358szdK3x8EVBLeXaQVJ4sGZ9y4U`) confirmed the JWT signature fix: fresh Preview runtime logs no longer show `Invalid JWT Signature`.
+- The pipeline now advances past OAuth and fails one stage later: `PUSH_SERVER_OAUTH_FAILED` is gone, replaced by `PUSH_DATABASE_READ_FAILED 401` on `/api/push-send`.
+- Verified against Firebase's official Realtime Database REST authentication documentation (`firebase.google.com/docs/database/rest/auth`, `firebase.google.com/docs/reference/rest/database/user-auth`): a service-account OAuth token used against the RTDB REST API must carry **both** `https://www.googleapis.com/auth/userinfo.email` and `https://www.googleapis.com/auth/firebase.database`. The sender's `SCOPES` constant only requested `firebase.database` and `firebase.messaging` — `userinfo.email` was missing.
+- Fix: added `userinfo.email` to `SCOPES` in `src/server/firebasePushSender.js`, keeping `firebase.database` and `firebase.messaging` unchanged. Bumped to `firebasePushSender v1.0.3`.
+- Improved RTDB failure diagnostics: a new `rtdbFailureDetail()` classifies a failure as `invalid-auth` (401), `insufficient-permission` (403) or `other`, and surfaces Firebase's own (non-secret) error message text. The request URL — which carries the OAuth access token in its query string — is never included in any logged/thrown error.
+- Extended `scripts/test-push-jwt-signature-contract.js` to assert the JWT scope contains exactly the three required scopes (`userinfo.email`, `firebase.database`, `firebase.messaging`), order-independent, so a future edit can't silently drop one.
+- Added `scripts/test-push-rtdb-diagnostics.js`: asserts 401→`invalid-auth` and 403→`insufficient-permission` classification, that Firebase's error message is surfaced for triage, and that the OAuth access token never appears in any thrown error's `code`, `detail` or `message`.
+- Ran the full relevant STEP 10 push/notification contract suite locally — all green, including the end-to-end `test-push-server-sender.js` mock-fetch flow (confirms the scope change doesn't break existing sender behavior).
+- Firebase Rules were **not** touched or weakened as a workaround, per instruction.
+- Committed only to `agent/household-rebuild-v2`; `main` and production Firebase Rules untouched; no Production deploy.
+- **STEP 10 push delivery is still NOT marked accepted.** The scope fix should resolve the 401, but this must be confirmed by a real iPhone retest before proceeding. If the 401 persists after this fix, the next step (per instruction, not yet undertaken) is to inspect the service account's IAM permissions and its association with the `verhoog-family` Firebase project — not to jump ahead to FCM/service-worker/iOS display work.
+
+---
+
 ## 2026-08-26 — STEP 10 push OAuth root cause diagnosed and fixed (device retest pending)
 
 - Live Preview runtime logs on `dpl_8gMDiJ1BnJqXzXK6k7z6uz2JpgML` (commit `01358b2c5b8...`, "redeploy STEP 10 preview after verified credential refresh") still showed `PUSH_SERVER_OAUTH_FAILED invalid_grant / Invalid JWT Signature` **after** a full Firebase Admin SDK service-account key rotation — ruling out a bad/mismatched key.
@@ -135,8 +151,9 @@ Earlier detailed checkpoints for STEP 0–7, person/identity modernization, Shop
 
 ## Current next action
 
-1. Real iPhone test: brand-new help request while the Home Screen PWA is backgrounded/closed.
+1. Real iPhone test: brand-new help request while the Home Screen PWA is backgrounded/closed, on the Preview built from commit with the RTDB scope fix.
 2. Immediately inspect fresh `/api/push-send` Preview runtime logs from that test.
-3. If OAuth now succeeds but no push arrives, report the exact next failing stage (RTDB device lookup, FCM response, token registration, service worker/background handling, or iOS notification display) from evidence, not assumption, before touching any further code.
-4. In the same Preview, smoke-test Task → Hulp vragen → **Heel het gezin** and verify more than one eligible family member can join.
-5. Continue push tap/read/dismiss/action/account-isolation/stability acceptance; freeze STEP 10 only after explicit product acceptance.
+3. If the 401 is resolved but no push arrives, report the exact next failing stage (FCM response, token registration, service worker/background handling, or iOS notification display) from evidence, not assumption, before touching any further code.
+4. If the 401 persists, inspect the service account's IAM permissions and its association with the `verhoog-family` Firebase project next — do not jump ahead to FCM/service-worker/iOS fixes.
+5. In the same Preview, smoke-test Task → Hulp vragen → **Heel het gezin** and verify more than one eligible family member can join.
+6. Continue push tap/read/dismiss/action/account-isolation/stability acceptance; freeze STEP 10 only after explicit product acceptance.

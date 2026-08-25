@@ -67,9 +67,27 @@ function b64urlDecode(segment){
   assert.strictEqual(claims.iss,config.clientEmail);
   assert.strictEqual(claims.sub,config.clientEmail);
   assert.strictEqual(claims.aud,'https://oauth2.googleapis.com/token');
-  assert.strictEqual(claims.scope,'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/firebase.messaging');
+  assert.strictEqual(claims.scope,'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/firebase.messaging');
   assert.strictEqual(claims.iat,nowSeconds);
   assert.strictEqual(claims.exp,nowSeconds+3600);
+
+  // Firebase's official Realtime Database REST auth docs
+  // (firebase.google.com/docs/database/rest/auth) require the service-account
+  // JWT to carry BOTH userinfo.email and firebase.database — omitting
+  // userinfo.email causes RTDB REST reads/writes to fail with 401 even though
+  // the OAuth token exchange itself succeeds. firebase.messaging is required
+  // separately for the FCM HTTP v1 send. Assert all three are present,
+  // order-independent, so a future edit can't silently drop one.
+  var scopeList=String(claims.scope||'').split(' ').filter(Boolean);
+  var requiredScopes=[
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/firebase.database',
+    'https://www.googleapis.com/auth/firebase.messaging'
+  ];
+  requiredScopes.forEach(function(requiredScope){
+    assert.ok(scopeList.includes(requiredScope),'service-account JWT scope must include '+requiredScope);
+  });
+  assert.strictEqual(scopeList.length,requiredScopes.length,'service-account JWT scope must contain exactly the required scopes, no more/fewer');
 
   // A JSON.stringify(Buffer)-style corrupted signature is on the order of
   // several hundred bytes of JSON text; a real RSA-2048 signature is exactly
