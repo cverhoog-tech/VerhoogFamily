@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "FamilieApp",
-  "short_name": "FamilieApp",
+  "name": "FamilyApp",
+  "short_name": "FamilyApp",
   "description": "Jouw gezins-app voor taken, planning, boodschappen en familie-avonturen.",
   "lang": "nl",
   "start_url": "/?brand=v5",
@@ -11,23 +11,8 @@
   "theme_color": "#140724",
   "orientation": "portrait-primary",
   "icons": [
-    {
-      "src": "/api/brand-icon?variant=192&v=5",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/brand-icon?variant=512&v=5",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/brand-icon?variant=maskable&v=5",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    {"src":"/api/brand-icon?variant=192&v=5","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"/api/brand-icon?variant=512&v=5","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"/api/brand-icon?variant=maskable&v=5","sizes":"512x512","type":"image/png","purpose":"maskable"}
   ]
 }
