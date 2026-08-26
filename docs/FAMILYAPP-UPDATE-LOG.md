@@ -2,7 +2,7 @@
 
 Branch: `agent/household-rebuild-v2`
 
-Purpose: persistent handoff log for FamilyApp development. Read this together with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md` and `docs/household-rebuild-v2-roadmap.md` before changing the rebuild branch.
+Purpose: persistent handoff log for FamilyApp development. Read this together with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md`, `docs/household-rebuild-v2-roadmap.md` and `docs/FAMILYAPP-FIX-LIST.md` before changing the rebuild branch.
 
 ## Logging rule
 1. Record every meaningful product/code checkpoint.
@@ -12,6 +12,27 @@ Purpose: persistent handoff log for FamilyApp development. Read this together wi
 5. Never put service-account private keys or push-device tokens in chat, client code or repository files.
 
 Newest entries belong at the top.
+
+---
+
+## 2026-08-26 — Running FamilyApp fix list centralized; account B verified and three STEP 10 blockers captured
+
+- Product owner provided the current five-item FamilyApp running fix list. It is now persisted verbatim in intent and acceptance detail in `docs/FAMILYAPP-FIX-LIST.md`.
+- The five open main product/fix items are:
+  1. Home hero card backgrounds for Taken, Boodschappen and Posts/Feed using the already-generated assets, with per-card crop/position and readable light/dark contrast.
+  2. Scalable internationalisation for Dutch, English, Turkish, German and French, including remembered user language choice and non-hardcoded UI strings.
+  3. Make the task name/title clearly larger and visually dominant in the task-create popup/card.
+  4. Recipe → propose meal to a household member, choose member/date, realtime open/accepted/rejected status, notification accept/reject actions, and auto-plan on acceptance.
+  5. Shopping → **Boodschappen afronden** with optional receipt, a durable completed-shopping-round record, feed eligibility, and failure-safe cleanup where only items already in **Gekocht** are removed after successful persistence while **Te kopen** remains untouched.
+- These five running product items remain separate from STEP 10 notification acceptance and currently count as **5 open main backlog items**.
+- Same-iPhone identity switching has now been verified: after sign-out/re-login, Profile **Actief account** shows account B, proving Firebase Auth is genuinely B.
+- Real-device screenshot/feedback then exposed three separate blockers that must be resolved before STEP 10 freeze:
+  - installed iOS PWA header does not respect the top safe area, so search/notification controls can sit behind iPhone system status icons;
+  - the small top-left header avatar can remain from account A after Firebase Auth has switched to B, making this an account-state/isolation bug rather than cosmetic-only polish;
+  - Home dark mode is incomplete: header/navigation become dark while large Home surfaces/background remain white.
+- These three blockers are now explicit in `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/household-rebuild-v2-progress.md`.
+- No code fix for these three items has been started yet; product owner is still providing feedback and asked to finish feedback collection first.
+- STEP 10 remains **in progress**, not frozen. `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -25,7 +46,7 @@ Newest entries belong at the top.
 - The first CI pass failed only because the household-leave test still expected the old `account2` cache key. That stale test expectation was corrected; no product logic rollback was needed.
 - Final code checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`: full `Household Rebuild Contracts` **SUCCESS**, run `32916523638`.
 - Vercel Preview `dpl_J9aCVRQc1PaF6m4864fv8h6ayGeM` is READY; stable branch alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- Account isolation is **not accepted yet**. Next device step: open Profile, note **Actief account**, sign out/re-login, and verify the displayed e-mail actually changes to the intended second account before judging notification isolation.
+- Follow-up real-device test subsequently confirmed the displayed active e-mail changes to account B after re-login.
 - `main` and production Firebase Rules remain untouched.
 
 ---
@@ -49,7 +70,7 @@ Newest entries belong at the top.
 - Tapping a real external FamilyApp iOS notification opens/focuses the FamilyApp **Meldingen** screen correctly.
 - The corresponding canonical inbox event appears **exactly once**; no duplicate canonical notification was created by the push tap/open flow.
 - This accepts the push click-routing/de-duplication gate for the current STEP 10 Preview path.
-- Remaining STEP 10 acceptance gates: UID-specific read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation across inbox/banner/push transport, and final reload/background→foreground stability.
+- Remaining STEP 10 acceptance gates: UID-specific read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation across inbox/banner/push transport, and final background/foreground stability.
 - STEP 10 remains **in progress** and is not frozen yet. `main` and production Firebase Rules remain untouched.
 
 ---
@@ -178,8 +199,8 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Open Profile on the stable rebuild Preview and note the read-only **Actief account** e-mail.
-2. Sign out and attempt to sign in as the second Google account on the same iPhone; return to Profile and verify the e-mail really changed before judging any notification/account isolation result.
-3. Once identity switch is proven, verify the live in-app banner/inbox/unread badge/push registration never leaks from the previous UID.
+1. Finish collecting the product owner's remaining real-device feedback before changing the three newly observed blockers.
+2. Then fix and re-test: iOS PWA safe area, stale prior-UID header avatar, and full Home dark mode.
+3. Verify the live in-app banner/inbox/unread badge/push registration never leaks across A → B account switching.
 4. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
 5. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
