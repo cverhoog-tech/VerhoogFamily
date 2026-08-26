@@ -27,9 +27,11 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
-- [-] STEP 11 — Party quests — in progress; STEP 11.1 and 11.2 complete, STEP 11.3 not started.
+- [-] STEP 11 — Party quests — in progress; STEP 11.1 and 11.2 complete, STEP 11.2 real-device functional PASS, STEP 11.3 not started.
 
-**Current position: STEP 10 remains frozen. STEP 11.2 implementation/contract gate is complete. The next approval-gated checkpoint is STEP 11.3 — leave semantics + ActiveView lifecycle.**
+**Current position: STEP 10 remains frozen. STEP 11.2 is implementation/contract complete and has passed the first real-device Party Quest invite/acceptance smoke. The next approval-gated checkpoint is STEP 11.3 — leave semantics + ActiveView lifecycle.**
+
+A non-blocking UI issue was observed during the 11.2 smoke: the acceptance confirmation toast is a mostly empty white bar with the handshake icon visible. It is tracked separately on the FamilyApp fix list and does not invalidate the functional 11.2 PASS.
 
 The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog test and is not a STEP 11 blocker.
 
@@ -69,7 +71,7 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] Contract CI run `33019925699`: SUCCESS.
 - [x] Vercel Preview `dpl_13JQpQe8MkvCy3vZKtZPycfT3WzG`: READY.
 
-### STEP 11.2 — PartyQuestService + invite/join state machine — COMPLETE
+### STEP 11.2 — PartyQuestService + invite/join state machine — COMPLETE + REAL-DEVICE FUNCTIONAL PASS
 - [x] Product owner approved GO 11.2 only.
 - [x] `PartyQuestService v1.0.0` added as domain authorization/state-machine layer.
 - [x] `PartyQuestRepository v1.1.0` adds guarded ID allocation and whole-collection transactions.
@@ -86,8 +88,8 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] Code checkpoint before docs sync `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - [x] `Household Rebuild Contract Tests` run `33021739099`: SUCCESS.
 - [x] Vercel Preview `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: READY.
-- [x] Preview HTTP 200; served scripts confirm HouseholdContext → Repository → Service → frozen notification layer.
-- [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- [x] Real-device smoke 2026-08-27: Party Quest invite + accept flow works exactly as intended.
+- [!] UI-only follow-up: acceptance toast is visually broken/empty; handshake icon remains visible. Tracked on fix list and non-blocking for 11.2.
 - [x] Main, production Firebase Rules and production deployment untouched.
 
 ### STEP 11.3 — Leave semantics + ActiveView lifecycle — NOT STARTED
@@ -112,14 +114,13 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 
 Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 
-**Open main items: 5**
+**Open main items: 6**
 1. Home hero card backgrounds.
 2. Internationalisation: NL / EN / TR / DE / FR.
 3. Task title more prominent in task-create popup.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
-
-None of these five product items was changed by STEP 11.2.
+6. Party Quest acceptance toast: white/empty bar; handshake icon visible but confirmation text/styling missing.
 
 ## Later roadmap phases
 - [-] STEP 11 — Party quests.
@@ -137,6 +138,7 @@ None of these five product items was changed by STEP 11.2.
 - 2026-08-26 — STEP 10 Notifications explicitly accepted/frozen after all functional + real-device gates.
 - 2026-08-27 — STEP 11.1 PartyQuestRepository foundation implemented and contract-verified.
 - 2026-08-27 — STEP 11.2 PartyQuestService + invite/join state machine implemented; full CI success and READY Preview verified.
+- 2026-08-27 — STEP 11.2 real-device Party Quest invite/acceptance flow functionally accepted; non-blocking toast styling issue added to fix backlog.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.

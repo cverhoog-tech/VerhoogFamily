@@ -17,6 +17,19 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — STEP 11.2 real-device functional acceptance; toast UI issue captured
+
+- Product owner completed the first real-device smoke for STEP 11.2 and reported that the Party Quest invitation/acceptance flow works exactly as intended.
+- STEP 11.2 is therefore recorded as **functional PASS on real device** in addition to its already-green implementation/contract gate.
+- During the acceptance action, a separate visual issue was observed in the confirmation toast: it renders as a mostly empty **white bar**, while the handshake/handdruk icon remains visible.
+- This indicates the action itself and icon path work, but the confirmation text and/or toast surface styling is not rendering/readable correctly.
+- The toast problem is tracked as a separate non-blocking product/UI fix in `docs/FAMILYAPP-FIX-LIST.md`.
+- The issue does **not** reopen frozen STEP 10 Notifications and does **not** invalidate STEP 11.2 functional acceptance.
+- STEP 11.3 remains **not started** and still requires explicit product-owner approval.
+- `main`, production Firebase Rules and production deployment remain untouched.
+
+---
+
 ## 2026-08-27 — STEP 11.2 PartyQuestService + invite/join state machine implemented
 
 - Product owner explicitly approved **GO 11.2** only. STEP 11.3 and later checkpoints were not started.
@@ -33,19 +46,15 @@ Newest entries belong at the top.
 - Reworked `src/modules/tasks/partyQuestInvites.js` as v6.0 presentation/compatibility facade. It reads from `PartyQuestRepository` and delegates create/respond/revoke/cancel mutations to `PartyQuestService`; it no longer owns direct Party Quest Firebase transactions/listeners.
 - Preserved frozen STEP 10 compatibility methods used by `NotificationActions`: `PartyQuestInvites.getById`, `.respond`, `.revokeInvite`.
 - Frozen `src/core/notificationActions.js` was not modified and remains blob `60a48daa628bc56531395d188a0811711d82a328`.
-- Runtime now serves `partyQuestInvites.js?v=6`, `partyQuestRepository.js?v=2` and `partyQuestService.js?v=1`; the frozen notification runtime remains downstream.
+- Runtime serves `partyQuestInvites.js?v=6`, `partyQuestRepository.js?v=2` and `partyQuestService.js?v=1`; the frozen notification runtime remains downstream.
 - Added `scripts/test-party-quest-service.js` with authorization, duplicate invite, double-response, wrong-recipient, non-inviter revoke, occurrence-aware reinvite and stale account/household mutation negative coverage.
-- Updated the STEP 11.1 repository contract test for the v2 repository/service loader chain.
-- One intermediate CI run failed because the older STEP 11.1 test still expected `partyQuestRepository.js?v=1`; that stale test expectation was corrected without rolling back product logic.
 - Final code checkpoint before documentation sync: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - `Household Rebuild Contract Tests` run `33021739099`: **SUCCESS**.
 - Vercel deployment `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: **READY** on branch `agent/household-rebuild-v2` (`target: null`, Preview).
-- Direct deployment URL returned HTTP 200. Served HTML was verified to contain `partyQuestInvites.js?v=6`, `householdContext.js?v=1`, `partyQuestRepository.js?v=2`, `partyQuestService.js?v=1`, `notificationActions.js?v=4`, and `partyQuestNotificationProjector.js?v=2` in the expected runtime chain.
+- Direct deployment URL returned HTTP 200 and served the expected HouseholdContext → PartyQuestRepository → PartyQuestService → frozen notification chain.
 - Stable branch Preview remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- `docs/FAMILYAPP-FIX-LIST.md` remains unchanged: all five separate product/fix backlog items remain open and were not folded into STEP 11.2.
 - Separate owner-transfer **Gezin verlaten** real-device smoke remains open and is not a STEP 11 blocker.
 - `main`, production Firebase Rules and production deployment were not changed. Firebase remains on Spark.
-- Next approval-gated checkpoint: **STEP 11.3 — leave semantics + ActiveView lifecycle cleanup**.
 
 ---
 

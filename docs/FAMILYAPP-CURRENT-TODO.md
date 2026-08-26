@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 and STEP 11.2 are implementation/contract complete. STEP 11.3 has not started and requires explicit product-owner approval.**
+**STEP 11 — Party quests is in progress. STEP 11.1 and STEP 11.2 are complete. STEP 11.2 also passed the first real-device functional invite/acceptance smoke on 2026-08-27. STEP 11.3 has not started and requires explicit product-owner approval.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -22,20 +22,12 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] STEP 10 real-device acceptance includes external iOS push, push-tap de-duplication, UID-specific notification state, account/push/avatar isolation, PWA safe-area, Home dark mode and repeated resume/reload stability.
 - [x] STEP 11.1 canonical `PartyQuestRepository` foundation implemented with HouseholdContext lifecycle guards.
 - [x] STEP 11.2 `PartyQuestService` invite/join state machine implemented and full contract CI green.
-- [x] STEP 11.2 Preview serves the intended HouseholdContext → PartyQuestRepository → PartyQuestService → frozen notification runtime chain.
+- [x] STEP 11.2 real-device functional smoke PASS: account A can send a Party Quest invitation and the accept flow behaves as intended.
+- [!] Non-blocking UI backlog found during STEP 11.2 smoke: after acceptance the confirmation toast appears as a mostly empty white bar; handshake icon is visible but text/styling is not. Tracked separately in `docs/FAMILYAPP-FIX-LIST.md`.
 - [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; it is not a STEP 11 blocker.
 
 ## STEP 11 — Party quests — IN PROGRESS
-
-Roadmap scope:
-- invites;
-- join/leave;
-- help requests;
-- completion;
-- rewards;
-- notifications;
-- idempotency.
 
 Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications and HouseholdContext/Firebase Auth UID identity. It must not introduce a second task, XP, notification or identity authority.
 
@@ -53,10 +45,9 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Contract CI run `33019925699`: SUCCESS.
 - [x] Preview `dpl_13JQpQe8MkvCy3vZKtZPycfT3WzG`: READY.
 
-### STEP 11.2 — PartyQuestService + invite/join state machine — COMPLETE
+### STEP 11.2 — PartyQuestService + invite/join state machine — COMPLETE + REAL-DEVICE FUNCTIONAL PASS
 
-Product owner approved **GO 11.2**. Scope was limited to 11.2.
-
+- [x] Product owner approved **GO 11.2** only.
 - [x] Added `src/modules/tasks/partyQuestService.js` v1.0.0 as the Party Quest domain mutation/state-machine layer.
 - [x] Service identity is exclusively HouseholdContext; persistence is exclusively PartyQuestRepository.
 - [x] `PartyQuestRepository` upgraded to v1.1.0 with guarded `allocateId()` and whole-collection `mutateCollection()` transaction support.
@@ -68,16 +59,15 @@ Product owner approved **GO 11.2**. Scope was limited to 11.2.
 - [x] Double accept/decline cannot apply the transition twice.
 - [x] Only the inviter can revoke a pending invite or manually stop the Party Quest.
 - [x] Manual stop resolves to `cancelled`, never `completed`; canonical task-driven completion stays reserved for STEP 11.5.
-- [x] `partyQuestInvites.js` is now presentation/compatibility facade v6.0 and routes create/respond/revoke/cancel through PartyQuestService.
+- [x] `partyQuestInvites.js` is presentation/compatibility facade v6.0 and routes create/respond/revoke/cancel through PartyQuestService.
 - [x] Frozen compatibility methods remain available: `PartyQuestInvites.getById`, `.respond`, `.revokeInvite`.
 - [x] Frozen `NotificationActions` was not modified.
-- [x] Added `scripts/test-party-quest-service.js` for authorization, duplicate/double-tap behavior, occurrence-aware reinvite and stale-context negative tests.
-- [x] Updated STEP 11.1 repository contract for runtime v2/service loader order.
+- [x] `scripts/test-party-quest-service.js` covers authorization, duplicate/double-tap behavior, occurrence-aware reinvite and stale-context negative cases.
 - [x] Code checkpoint before documentation sync: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - [x] `Household Rebuild Contract Tests` run `33021739099`: SUCCESS.
 - [x] Vercel Preview `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: READY.
-- [x] Direct Preview returned HTTP 200 and serves `partyQuestInvites.js?v=6`, `householdContext.js?v=1`, `partyQuestRepository.js?v=2`, `partyQuestService.js?v=1`, `notificationActions.js?v=4` and `partyQuestNotificationProjector.js?v=2`.
-- [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- [x] Real-device functional test 2026-08-27: Party Quest invitation/acceptance behaves exactly as intended.
+- [!] Separate UI polish issue: acceptance toast renders as white/empty bar with visible handshake icon; function is correct and this does not reopen/block STEP 11.2.
 - [x] No `main`, production Firebase Rules or production deployment change.
 
 ### STEP 11.3 — Leave semantics + ActiveView lifecycle — NOT STARTED
@@ -108,14 +98,13 @@ Planned scope only:
 
 Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 
-**Open main items: 5**
+**Open main items: 6**
 1. Home hero card backgrounds.
 2. Internationalisation: NL / EN / TR / DE / FR.
 3. Task title more prominent in task-create popup.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
-
-These five items remain separate from STEP 11 and were not changed by STEP 11.2.
+6. Party Quest acceptance toast: white/empty bar; handshake icon visible but confirmation text/styling missing.
 
 ## Standing guardrails
 

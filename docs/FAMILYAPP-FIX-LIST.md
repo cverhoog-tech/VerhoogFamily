@@ -2,7 +2,7 @@
 
 Branch: `agent/household-rebuild-v2`
 
-Dit document bewaart de doorlopende product/fixlijst die door de product owner is aangeleverd. De STEP 10 notification acceptance-blockers worden afzonderlijk bijgehouden in `docs/FAMILYAPP-CURRENT-TODO.md` en tellen niet mee in het onderstaande totaal van vijf hoofdpunten.
+Dit document bewaart de doorlopende product/fixlijst die door de product owner is aangeleverd. Rebuild-acceptanceblockers worden afzonderlijk bijgehouden in `docs/FAMILYAPP-CURRENT-TODO.md`; visuele/productproblemen die niet blokkeren blijven hier als losse backlog staan.
 
 ## 1. Home — Hero card backgrounds
 
@@ -93,12 +93,23 @@ Technische eisen:
 - Bij een Firebase/netwerkfout mogen gekochte items niet verloren gaan.
 - Boodschappen afronden behandelen als één consistente workflow/transactie.
 
+## 6. Party Quest / notificaties — acceptatie-toast visueel herstellen
+
+- Na het accepteren van een Party Quest-uitnodiging werkt de actie functioneel correct.
+- Op de real-device test verschijnt daarna echter een vrijwel lege **witte toast/balk**.
+- Het handdruk-/handshake-icoon is wel zichtbaar.
+- De begeleidende tekst en/of toast-styling is niet goed leesbaar/zichtbaar.
+- De toast moet weer een duidelijke bevestiging tonen, bijvoorbeeld dat de Party Quest-uitnodiging is geaccepteerd.
+- Styling moet correct werken in zowel lichte als donkere modus en aansluiten bij de premium FamilyApp-toaststijl.
+- Dit is een losse UI-fix en blokkeert de functionele STEP 11.2-acceptatie niet.
+
 ## Status
 
-**Open hoofdpunten: 5**
+**Open hoofdpunten: 6**
 
 1. Home hero card backgrounds
 2. Meertaligheid: NL / EN / TR / DE / FR
 3. Taaknaam prominenter in taak-aanmaken pop-up
 4. Recept als maaltijd voorstellen aan gezinslid
 5. Boodschappen afronden + optionele bon + gekocht-mandje leegmaken
+6. Party Quest acceptatie-toast: witte balk/tekst onzichtbaar, handshake-icoon wel zichtbaar
