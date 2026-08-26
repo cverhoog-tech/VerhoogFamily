@@ -27,9 +27,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender and external iOS Web Push are real-device proven. Targeted/household task-help decline/opt-out lifecycle is implemented and contract-green; real-device action acceptance remains open.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender and external iOS Web Push are real-device proven. Targeted **Afwijzen** and household **Niet voor mij** task-help responses are now also real-device accepted. Remaining final notification acceptance is push-tap routing/de-duplication, read/dismiss reconnect persistence, identity-isolated in-app banners/account switch, and background/foreground stability before freeze.
 
-**Current phase: STEP 10 Notifications.** The Home Screen PWA has now received a real external iOS lock-screen notification, proving the complete server → FCM → service-worker/iOS delivery path after fixing the JWT Buffer encoding bug and missing RTDB `userinfo.email` scope. The current gate is functional help-response behavior: one-person requests need `Hulp geven / Afwijzen`, household broadcasts need `Hulp geven / Niet voor mij`, with UID-local persistence and stale-occurrence protection. Code + full rebuild contracts are green; device acceptance is still required before freeze.
+**Current phase: STEP 10 Notifications.** The Home Screen PWA has received a real external iOS lock-screen notification, proving the complete server → FCM → service-worker/iOS delivery path after fixing the JWT Buffer encoding bug and missing RTDB `userinfo.email` scope. The targeted help response flow and household-wide opt-out flow have now both passed real-device acceptance as well. STEP 10 is not frozen yet because the remaining lifecycle/isolation/stability gates still need explicit device verification.
 
 ## Frozen phases
 
@@ -69,8 +69,8 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Stale notification occurrence is never actionable against a newer request.
 - [x] `NotificationActions v3.1.0` and `TaskHouseholdHelpUi v1.1.0` wired into served runtime.
 - [x] Help-action regressions green.
-- [ ] Real-device targeted decline acceptance.
-- [ ] Real-device household `Niet voor mij` acceptance plus another member still able to help.
+- [x] Real-device targeted **Afwijzen** acceptance: request stays resolved after reload/reopen and invitation is closed.
+- [x] Real-device household **Niet voor mij** acceptance: opted-out UID stays resolved while another eligible member can still choose **Hulp geven**.
 
 ### Auth / account lifecycle
 - [x] Alternate Google account can authenticate/join/use household.
@@ -93,8 +93,8 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Background/closed-PWA OS push reaches iPhone.
 - [ ] Push tap opens/focuses notification screen without duplicate inbox event.
 - [ ] UID-specific read/dismiss survives reconnect.
-- [ ] Targeted **Hulp geven / Afwijzen** real-device acceptance.
-- [ ] Household **Hulp geven / Niet voor mij** real-device acceptance.
+- [x] Targeted **Hulp geven / Afwijzen** real-device acceptance.
+- [x] Household **Hulp geven / Niet voor mij** real-device acceptance.
 - [ ] Account-switch/logout isolation across inbox/banner/push registration.
 - [ ] Reload/background→foreground stability.
 - [ ] Explicit product acceptance/freeze of STEP 10.
@@ -129,7 +129,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-20 — STEP 0–2 accepted on iPhone.
 - 2026-08-22 — STEP 2A/2B and STEP 3 accepted.
 - 2026-08-24 — STEP 8 Finance accepted/frozen.
-- 2026-08-24 — STEP 9 Progression accepted/frozen.
+- 2026-08-24 — STEP 9 Progression / XP / Achievements accepted/frozen.
 - 2026-08-24 — STEP 10 canonical notification + Web Push + trusted sender foundations implemented.
 - 2026-08-24 — iPhone standalone push permission/device registration accepted.
 - 2026-08-25 — alternate-account auth/onboarding, logout/profile isolation and normal-member household leave accepted.
@@ -137,7 +137,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — JWT Buffer encoding root cause fixed and cryptographically regression-tested.
 - 2026-08-26 — RTDB 401 traced to missing `userinfo.email` scope and fixed.
 - 2026-08-26 — **real external iOS lock-screen FamilyApp push received; Web Push end-to-end accepted.**
-- 2026-08-26 — targeted **Afwijzen** + household **Niet voor mij** help-response lifecycle implemented with occurrence safety; full rebuild contracts SUCCESS at `884a8eb7...`; real-device action acceptance pending.
+- 2026-08-26 — targeted **Afwijzen** + household **Niet voor mij** help-response lifecycle implemented with occurrence safety; full rebuild contracts SUCCESS at `884a8eb7...`.
+- 2026-08-26 — **real-device targeted Afwijzen and household Niet voor mij tests both accepted.** STEP 10 remains open only for the remaining push-tap/read-dismiss/account-isolation/stability gates.
 
 ## Standing guardrails
 - Main untouched until explicit approval.
