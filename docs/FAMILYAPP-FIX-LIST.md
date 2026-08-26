@@ -95,13 +95,17 @@ Technische eisen:
 
 ## 6. Party Quest / notificaties — acceptatie-toast visueel herstellen
 
+Status: **fix candidate deployed — real-device visual verification pending**.
+
 - Na het accepteren van een Party Quest-uitnodiging werkt de actie functioneel correct.
-- Op de real-device test verschijnt daarna echter een vrijwel lege **witte toast/balk**.
-- Het handdruk-/handshake-icoon is wel zichtbaar.
-- De begeleidende tekst en/of toast-styling is niet goed leesbaar/zichtbaar.
-- De toast moet weer een duidelijke bevestiging tonen, bijvoorbeeld dat de Party Quest-uitnodiging is geaccepteerd.
-- Styling moet correct werken in zowel lichte als donkere modus en aansluiten bij de premium FamilyApp-toaststijl.
-- Dit is een losse UI-fix en blokkeert de functionele STEP 11.2-acceptatie niet.
+- Op de real-device test verscheen daarna echter een vrijwel lege **witte toast/balk**; het handshake-icoon bleef wel zichtbaar.
+- Root cause bevestigd: de gedeelde `.toast`-achtergrond gebruikte `var(--c-text)`, terwijl donkere thema's deze token bijna wit maken. De toasttekst was eveneens wit en werd daardoor onleesbaar.
+- De gedeelde `showToast()`-presentatie gebruikt nu een vaste donkere transparante surface met witte tekst, subtiele border/shadow, mobiele tekst-wrapping en iOS safe-area spacing.
+- Party Quest-state, frozen NotificationActions en notificatiepersistence zijn niet gewijzigd.
+- Contracttest `scripts/test-toast-theme-contrast.js` toegevoegd.
+- CI run `33023131272`: **SUCCESS**.
+- Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6`: **READY**.
+- Punt blijft open totdat de product owner op echte iPhone bevestigt dat de acceptatie-toast visueel correct en leesbaar is.
 
 ## Status
 
@@ -112,4 +116,4 @@ Technische eisen:
 3. Taaknaam prominenter in taak-aanmaken pop-up
 4. Recept als maaltijd voorstellen aan gezinslid
 5. Boodschappen afronden + optionele bon + gekocht-mandje leegmaken
-6. Party Quest acceptatie-toast: witte balk/tekst onzichtbaar, handshake-icoon wel zichtbaar
+6. Party Quest acceptatie-toast — fix candidate klaar, wacht op real-device visuele bevestiging
