@@ -27,10 +27,10 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 6 — Agenda.
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
-- [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence and A → B Firebase account switching are real-device proven. The three blockers found afterward now have contract-green code fixes: UID-scoped avatar lifecycle, installed-PWA top safe area, and Home dark shell. Real-iPhone acceptance of those fixes plus banner/account-switch isolation and background/foreground stability remain open.
+- [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence, A → B Firebase account switching, UID-scoped avatar lifecycle, installed-PWA safe area and Home dark mode are now real-device proven. Intended-identity banner/account-switch isolation, final background/foreground stability, owner-transfer leave smoke if required, and explicit freeze remain open.
 
-**Current phase: STEP 10 Notifications.** Code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641` passes the complete rebuild contract suite and is READY on the stable branch Preview. The immediate next gate is a real-iPhone re-test of avatar isolation, safe-area layout and Home dark mode; implementation is not considered accepted until that device smoke passes.
+**Current phase: STEP 10 Notifications.** The three blockers from the previous A → B account-isolation smoke — stale prior-UID avatar, iOS standalone safe-area overlap and incomplete Home dark mode — are now accepted on the real iPhone. STEP 10 stays open until the remaining notification/account-isolation and stability gates pass.
 
 ## Frozen phases
 
@@ -68,9 +68,10 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Profile **Actief account** reads Firebase Auth e-mail directly.
 - [x] Same-iPhone A → B account switch verified using that e-mail indicator.
 - [x] Normal-member **Gezin verlaten** accepted.
+- [x] Header/Home avatar follows account B after A → B switch on real iPhone.
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
 
-### Avatar account isolation — implementation complete, device gate open
+### Avatar account isolation — accepted
 - [x] Authenticated avatar URL + avatar ID use UID-scoped storage.
 - [x] Unscoped v1 avatar is no longer authenticated identity authority.
 - [x] UID-safe `avatarIdentityBridge v2.0.1` follows HouseholdContext and blocks stale v1 execution.
@@ -78,9 +79,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] `legacyProfileUidBridge v1.0.0` keeps unscoped compatibility keys projected to the current UID only.
 - [x] Served runtime uses `avatarIdentityBridge.js?v=2`, `householdIdentityFirebaseBridge.js?v=5`, `legacyProfileUidBridge.js?v=1`.
 - [x] `test-avatar-account-isolation.js` regression contract added and green.
-- [ ] Real iPhone A → B header/Home avatar re-test.
+- [x] Real iPhone A → B header/Home avatar re-test accepted.
 
-### Installed PWA safe area + Home dark shell — implementation complete, device gate open
+### Installed PWA safe area + Home dark shell — accepted
 - [x] `homePwaShellFix.css?v=1` served after `app.css`.
 - [x] Standalone header top padding uses `env(safe-area-inset-top)`.
 - [x] Sticky task/finance tabs use matching safe-area offset.
@@ -88,14 +89,14 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Default `dark` and named `*-dark` themes covered.
 - [x] Home heading/day/XP/activity/carousel fallback surfaces use dark-theme tokens.
 - [x] `test-home-pwa-shell.js` regression contract added and green.
-- [ ] Real iPhone installed-PWA safe-area re-test.
-- [ ] Real iPhone Home dark-mode re-test.
+- [x] Real iPhone installed-PWA safe-area re-test accepted.
+- [x] Real iPhone Home dark-mode re-test accepted.
 
 ### Latest code / CI / Preview
 - [x] Current code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
 - [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
 - [x] Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj` READY.
-- [x] Served HTML verified to include the new shell CSS after app.css and UID-safe avatar runtime.
+- [x] Served HTML verified to include the shell CSS after app.css and UID-safe avatar runtime.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] Main untouched; no production Firebase Rules change.
 
@@ -108,12 +109,13 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Targeted **Hulp geven / Afwijzen** real-device acceptance.
 - [x] Household **Hulp geven / Niet voor mij** real-device acceptance.
 - [x] Same-iPhone active Firebase Auth identity switches to B.
-- [ ] Avatar A → B isolation on current Preview.
-- [ ] Installed PWA header safe area on current Preview.
-- [ ] Home dark mode on current Preview.
+- [x] Avatar A → B isolation on current Preview.
+- [x] Installed PWA header safe area on current Preview.
+- [x] Home dark mode on current Preview.
 - [ ] Live in-app banner visible only for intended identity.
 - [ ] Account-switch/logout isolation across inbox/banner/push registration.
 - [ ] Reload/background→foreground stability.
+- [ ] Owner-transfer household-leave smoke if required for phase gate.
 - [ ] Explicit product acceptance/freeze of STEP 10.
 
 ## Running product/fix backlog
@@ -168,7 +170,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — UID-specific read/dismiss persistence accepted.
 - 2026-08-26 — Profile **Actief account** indicator added; A → B active Firebase identity verified on same iPhone.
 - 2026-08-26 — real-device feedback exposed prior-UID avatar, PWA safe-area and Home dark-mode blockers.
-- 2026-08-26 — all three blockers received contract-green code fixes at checkpoint `538a5b89...`; device acceptance remains open.
+- 2026-08-26 — all three blockers received contract-green code fixes at checkpoint `538a5b89...`.
+- 2026-08-26 — **real iPhone accepted all three fixes: A → B avatar isolation, installed-PWA safe-area layout, and complete Home dark mode.**
 
 ## Standing guardrails
 - Main untouched until explicit approval.
