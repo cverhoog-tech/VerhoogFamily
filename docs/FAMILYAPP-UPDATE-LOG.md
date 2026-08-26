@@ -15,6 +15,19 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 final stability gate real-device accepted
+
+- Product owner completed the final installed-iPhone-PWA stability smoke and reported **“Stabiliteit goed”**.
+- Repeated full close/open cycles completed without freeze or white screen.
+- Repeated background → foreground transitions completed without PWA/WebKit crash.
+- FamilyApp remained responsive after resume; navigation and **Meldingen** continued to work normally.
+- This completes the last functional/real-device acceptance gate for STEP 10 Notifications.
+- Roadmap review confirms the separately open owner-transfer **Gezin verlaten** smoke is not part of the STEP 10 Notifications scope. It remains an account/household lifecycle backlog item but does not block STEP 10.
+- STEP 10 is now **ready for explicit product acceptance/freeze**. Do not start STEP 11 until that explicit freeze is given and recorded.
+- `main` and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-26 — STEP 10 prior-UID push-registration isolation real-device accepted
 
 - Product owner completed the dedicated push-transport isolation smoke and again reported **“Isolatie goed”**.
@@ -22,8 +35,8 @@ Newest entries belong at the top.
 - FamilyApp was backgrounded/closed and another session generated a brand-new notification targeted only to account B.
 - Result: **PASS** — the iPhone did not receive a B-only iOS OS push while the installed PWA was authenticated as A.
 - Together with the previously accepted inbox/unread/banner negative-isolation test, this completes the STEP 10 account-switch/logout isolation gate across canonical inbox state, live UI state and push transport.
-- Remaining STEP 10 acceptance: final reload/background→foreground stability smoke, owner-transfer household-leave smoke if still required for the phase gate, and explicit product freeze.
-- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+- Remaining STEP 10 acceptance at that point: final reload/background→foreground stability smoke and explicit product freeze.
+- `main` and production Firebase Rules remain untouched. STEP 10 remained **in progress** pending the later stability pass.
 
 ---
 
@@ -36,9 +49,8 @@ Newest entries belong at the top.
 - **PASS — live banner isolation:** no stale B banner remained visible under A.
 - While A remained the active Firebase identity, a brand-new notification targeted only to B did not surface to A as a live notification, unread increment or canonical inbox item.
 - This accepts the UI/inbox portion of account-switch/logout isolation on the current stable Preview.
-- Push transport remains a separate gate: prior-B push registration must still be proven not to deliver a B-only iOS OS notification after B → A switch/logout.
-- After push-registration isolation, STEP 10 still needs the final reload/background→foreground stability smoke, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.
-- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+- Push transport remained a separate gate at that point and was accepted in the later entry above.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -51,9 +63,8 @@ Newest entries belong at the top.
 - B's red unread notification count updated immediately.
 - The corresponding canonical notification appeared exactly once under **Meldingen**; no duplicate inbox event was observed.
 - This accepts the intended-recipient foreground notification path on the current stable Preview.
-- The remaining identity gate is negative isolation after switching/logging out: B's inbox/banner state must not remain under A, B-targeted events must not surface while A is active, and the prior-B push registration must not receive B-only OS push after the switch.
-- After that, STEP 10 still needs the final reload/background→foreground stability smoke, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.
-- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+- Negative isolation and push transport were verified in the later entries above.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -66,8 +77,7 @@ Newest entries belong at the top.
 - These three blockers are therefore accepted for the current STEP 10 Preview path.
 - Implementation checkpoint remains `538a5b89ab270bfdfc2c9f3a3d97093260133641`; full `Household Rebuild Contracts` run `32954316879` was SUCCESS.
 - Stable Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- Remaining STEP 10 gates: intended-identity live in-app banner behavior, A → B/logout isolation across inbox/banner/push registration, reload/background→foreground stability, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.
-- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**, not frozen yet.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -91,9 +101,7 @@ Newest entries belong at the top.
 - Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj`: **READY**.
 - Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - Served Preview was additionally fetched and verified to contain `homePwaShellFix.css?v=1` after `app.css?v=3`, plus the UID-safe avatar runtime scripts.
-- These three blockers are **implemented but not yet accepted**. Required device gate: real iPhone must confirm A → B avatar isolation, header controls below the system status area, and fully dark Home background/surfaces.
-- If account B still displays account A's avatar, do not auto-delete server data: this may mean B's Firebase member avatar was already polluted by the old migration before the fix and must be inspected/repaired with evidence.
-- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -108,13 +116,8 @@ Newest entries belong at the top.
   5. Shopping → **Boodschappen afronden** with optional receipt, a durable completed-shopping-round record, feed eligibility, and failure-safe cleanup where only items already in **Gekocht** are removed after successful persistence while **Te kopen** remains untouched.
 - These five running product items remain separate from STEP 10 notification acceptance and currently count as **5 open main backlog items**.
 - Same-iPhone identity switching has now been verified: after sign-out/re-login, Profile **Actief account** shows account B, proving Firebase Auth is genuinely B.
-- Real-device screenshot/feedback then exposed three separate blockers that must be resolved before STEP 10 freeze:
-  - installed iOS PWA header does not respect the top safe area, so search/notification controls can sit behind iPhone system status icons;
-  - the small top-left header avatar can remain from account A after Firebase Auth has switched to B, making this an account-state/isolation bug rather than cosmetic-only polish;
-  - Home dark mode is incomplete: header/navigation become dark while large Home surfaces/background remain white.
-- These three blockers are explicit in `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/household-rebuild-v2-progress.md`.
-- Follow-up implementation is recorded in the newer entry above.
-- STEP 10 remains **in progress**, not frozen. `main` and production Firebase Rules remain untouched.
+- Real-device screenshot/feedback then exposed three separate blockers that were resolved and accepted in later entries above.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -140,8 +143,7 @@ Newest entries belong at the top.
 - One notification was marked read and left in the inbox; after fully closing and reopening the Home Screen PWA, it remained read.
 - A second notification was dismissed; after fully closing and reopening, it remained absent.
 - This accepts the UID-specific read/dismiss reconnect/persistence gate for the current STEP 10 Preview path.
-- Remaining STEP 10 acceptance gates: intended-identity in-app banner behavior, account-switch/logout isolation across inbox/banner/push transport, and final reload/background→foreground stability.
-- STEP 10 remains **in progress**, not frozen yet. `main` and production Firebase Rules remain untouched.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -151,9 +153,7 @@ Newest entries belong at the top.
 - Result: **PASS**.
 - Tapping a real external FamilyApp iOS notification opens/focuses the FamilyApp **Meldingen** screen correctly.
 - The corresponding canonical inbox event appears **exactly once**; no duplicate canonical notification was created by the push tap/open flow.
-- This accepts the push click-routing/de-duplication gate for the current STEP 10 Preview path.
-- Remaining STEP 10 acceptance gates: UID-specific read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation across inbox/banner/push transport, and final background/foreground stability.
-- STEP 10 remains **in progress** and is not frozen yet. `main` and production Firebase Rules remain untouched.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -164,7 +164,6 @@ Newest entries belong at the top.
 - **Household help test: PASS.** A brand-new `Heel het gezin` request showed **Hulp geven / Niet voor mij**. After one UID chose **Niet voor mij**, that UID stayed resolved while another eligible household member could still choose **Hulp geven**.
 - This real-device result accepts the occurrence-scoped decline/opt-out semantics implemented by `TaskSharedData v2.2.0`, `NotificationActions v3.1.0` and `TaskHouseholdHelpUi v1.1.0`.
 - Contract-verified implementation checkpoint remains `884a8eb7878067143efbd4394a7f76c0de461581`; full `Household Rebuild Contracts` run `32910497000` passed.
-- STEP 10 remains **in progress**, not frozen yet. Remaining acceptance gates are intended-identity in-app banner/account-switch isolation and final background/foreground stability.
 - `main` and production Firebase Rules remain untouched.
 
 ---
@@ -220,8 +219,8 @@ Newest entries belong at the top.
 - Alternate Google account onboarding/auth regression fixed and cross-account household usage proven.
 - Profile and Meer expose **Uitloggen**.
 - `Verse start` removed from active Meer runtime.
-- Profile values are UID-scoped; a new account no longer inherits Shane/Esra browser values.
-- Normal-member **Gezin verlaten** real-tested and accepted; owner-transfer variant still open.
+- Profile values are UID-scoped; a new account no longer inherits browser values from another UID.
+- Normal-member **Gezin verlaten** real-tested and accepted; owner-transfer variant remains a separate lifecycle backlog item.
 
 ---
 
@@ -253,7 +252,6 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Run the final real-iPhone reload/background→foreground stability smoke on the current stable Preview: reload/reopen, background the Home Screen PWA, foreground it again, and repeat several times.
-2. Verify there is no freeze, white screen or WebKit crash and that FamilyApp remains responsive after returning.
-3. Complete owner-transfer household-leave smoke if still required for the phase gate.
-4. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
+1. Obtain explicit product acceptance to freeze STEP 10 Notifications.
+2. After that freeze is recorded, STEP 11 Party quests may begin.
+3. Keep owner-transfer **Gezin verlaten** as a separate account/household lifecycle backlog test; it does not block STEP 10.
