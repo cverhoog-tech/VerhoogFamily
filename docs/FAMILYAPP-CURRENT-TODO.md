@@ -6,138 +6,25 @@ Phase tracker: `docs/household-rebuild-v2-progress.md`
 Update history: `docs/FAMILYAPP-UPDATE-LOG.md`
 Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 
-New chats/agents should read these files before continuing development on the rebuild branch.
+New chats/agents should read these files before changing the rebuild branch.
 
 ## Current phase
 
-**STEP 10 — Notifications is accepted and frozen as of 2026-08-26.** Product owner explicitly approved the phase after all functional and real-device gates passed: external iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, same-iPhone account switching, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, Home dark mode, intended-recipient live notifications, full B → A inbox/unread/banner/push isolation, and repeated reload/background→foreground stability.
+**STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is now in progress. STEP 11.1 PartyQuestRepository foundation is implemented and contract-verified; STEP 11.2 has not started and requires explicit approval.** Do not alter the frozen STEP 10 contracts except for a clearly identified regression fix.
+**STEP 11 — Party quests is in progress. STEP 11.1 and STEP 11.2 are implementation/contract complete. STEP 11.3 has not started and requires explicit product-owner approval.**
 
-The previously tracked owner-transfer **Gezin verlaten** smoke remains open as a separate account/household lifecycle test. A roadmap check confirms it is not part of STEP 11 and does not block Party Quest work.
+`main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
-STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications remain accepted/frozen. `main` and production Firebase Rules remain untouched.
+## Latest verified state
 
-## Latest verified product state
-
-- [x] Alternate Google account can authenticate and participate in the same household.
-- [x] Same-iPhone Google/Firebase account switch to account B has been verified using the **Actief account** e-mail indicator.
-- [x] Canonical cross-account notification state reaches the intended iPhone/PWA account.
-- [x] External iOS Web Push works outside FamilyApp on the Home Screen PWA.
-- [x] Push tap opens/focuses Meldingen and produces exactly one canonical inbox item.
-- [x] UID-specific read/dismiss persistence survives full close/reopen.
-- [x] Profile/Meer **Uitloggen** works; `Verse start` removed.
-- [x] UID-scoped Profile values prevent browser profile-name leakage.
-- [x] Profile shows **Actief account** from Firebase Auth directly.
-- [x] Normal-member **Gezin verlaten** accepted.
-- [x] Targeted task-help **Afwijzen** and household **Niet voor mij** accepted on real device.
-- [x] **STEP 10 account avatar isolation accepted:** after A → B switching, the top-left/Home avatar follows account B and no longer remains account A.
-- [x] **STEP 10 iOS PWA safe area accepted:** installed-PWA search/notification controls sit correctly below the iPhone system status area.
-- [x] **STEP 10 Home dark mode accepted:** Home now follows dark mode consistently without the previous large white shell/background surfaces.
-- [x] **STEP 10 live in-app notification accepted for intended recipient:** with account B active in the foreground, a new targeted help request from account A produced the live notification, updated the red unread count, and appeared exactly once in Meldingen.
-- [x] **STEP 10 account UI isolation accepted:** after B → A switch/logout, B's inbox/unread/banner state is absent under A, and a new B-only event while A is active does not produce a live banner, unread increment or inbox item for A.
-- [x] **STEP 10 push-registration isolation accepted:** with the same installed PWA authenticated as A and backgrounded/closed, a new notification targeted only to B did not produce a B-only iOS OS push on that iPhone.
-- [x] **STEP 10 stability accepted:** repeated close/open and background→foreground use on the installed iPhone PWA produced no freeze, white screen or crash, and navigation/notifications remained usable.
-- [x] **STEP 10 explicit product acceptance/freeze recorded:** product owner said **“Step 10 akkoord”** on 2026-08-26.
-- [x] **STEP 11.1 repository foundation implemented:** household-scoped Party Quest persistence/lifecycle boundary is present in served runtime with stale-context protection and compatibility normalization.
-- [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test, but does not block STEP 11.
-
-## STEP 10 — Notifications — FROZEN
-
-### Canonical notification + Web Push foundation — complete
-- [x] Household-scoped canonical notification repository with HouseholdContext UID/household/revision identity.
-- [x] Exact listener teardown, stale-callback rejection and immediate projection clear.
-- [x] Per-UID read/dismiss state.
-- [x] Deterministic event keys / publish-once idempotency.
-- [x] `NotificationStore v2.1.0` canonical facade.
-- [x] Push failure cannot invalidate canonical inbox state.
-- [x] Task / Swap / Party Quest / Finance producers use the canonical notification path.
-- [x] Profile → Meldingen opens the canonical notification center.
-- [x] User-private multi-device FCM registry.
-- [x] Explicit push opt-in only; iPhone requires Home Screen/standalone context.
-- [x] Same-browser UID switch invalidates the prior browser push transport.
-- [x] Background service worker + notification click routing present.
-- [x] Foreground FCM does not duplicate canonical inbox events.
-- [x] Trusted Vercel sender verifies caller, household membership and event actor; recipients/tokens are resolved server-side.
-- [x] Private per-device delivery receipts and invalid-token cleanup.
-
-### Push blockers — resolved and real-device proven
-- [x] JWT RSA signature bytes are base64url-encoded correctly.
-- [x] RTDB service-account OAuth includes `userinfo.email`, `firebase.database`, `firebase.messaging`.
-- [x] Safe RTDB 401/403 diagnostics do not log secrets.
-- [x] Real iPhone Home Screen PWA received an external FamilyApp push.
-- [x] Real push-tap smoke opens/focuses Meldingen with one canonical item.
-
-### Task-help response lifecycle — real-device accepted
-- [x] `TaskSharedData v2.2.0` adds occurrence-scoped `declineHelp(id)` state.
-- [x] Targeted help exposes **Hulp geven / Afwijzen**.
-- [x] Household help exposes **Hulp geven / Niet voor mij** and opt-out is UID-local.
-- [x] Old decline/opt-out state resets on a later help occurrence.
-- [x] Stale occurrence notifications cannot act on a newer request.
-- [x] Real-device targeted and household response tests accepted.
-
-### Active-account identity diagnostic — accepted
-- [x] Profile reads the current e-mail from Firebase Auth, never from local profile fields.
-- [x] Profile exposes a read-only **Actief account** row.
-- [x] Real iPhone test confirmed A → B changes the displayed active e-mail to account B.
-
-### Avatar account-isolation fix — real-device accepted
-- [x] `avatarStore.js` now stores authenticated avatar URL and avatar ID under UID-scoped keys.
-- [x] Authenticated avatar resolution never treats unscoped `familyapp-current-user-avatar-v1` as current-user authority.
-- [x] `avatarIdentityBridge v2.0.1` resolves the active avatar from canonical HouseholdContext/Firebase UID and blocks a stale cached v1 bridge from running afterward.
-- [x] `householdIdentityFirebaseBridge v5.0.1` migrates/projects avatars only from UID-scoped state and rejects avatar events for a different UID.
-- [x] New `legacyProfileUidBridge v1.0.0` keeps remaining unscoped compatibility keys as a projection of the current UID rather than shared identity authority.
-- [x] Served runtime cache cutover: `avatarIdentityBridge.js?v=2`, `householdIdentityFirebaseBridge.js?v=5`, `legacyProfileUidBridge.js?v=1`.
-- [x] `scripts/test-avatar-account-isolation.js` added and full suite green.
-- [x] Real iPhone acceptance: A → B switch no longer retains account A's top-left/Home avatar.
-
-### Installed PWA safe-area + Home dark-mode fix — real-device accepted
-- [x] New `src/styles/homePwaShellFix.css?v=1` is served after `app.css`.
-- [x] Installed standalone header uses `env(safe-area-inset-top)` instead of device-specific pixel offsets.
-- [x] Sticky task/finance tabs include the same safe-area offset.
-- [x] Dark theme restores `var(--c-bg)`, `var(--c-text)`, header/nav theme tokens over the legacy `#fff !important` refresh layer.
-- [x] Home heading/day/XP/activity/fallback carousel surfaces are dark-theme aware.
-- [x] Named dark themes (`*-dark`) receive the same shell fix.
-- [x] `scripts/test-home-pwa-shell.js` added; full contract suite green.
-- [x] Real iPhone acceptance: installed PWA controls sit fully below the system status icons.
-- [x] Real iPhone acceptance: Home dark mode contains no unintended large white shell/background areas.
-
-### Live notification identity — account and push isolation accepted
-- [x] Account B active in foreground receives a new targeted task-help live notification from account A.
-- [x] Red unread notification count updates immediately.
-- [x] Canonical item appears exactly once in Meldingen.
-- [x] After B → A switch/logout, B's inbox/unread/banner state is not visible under A.
-- [x] While A is active in the same PWA, a new event targeted only to B does not surface to A as live banner, unread increment or inbox item.
-- [x] With A still active and the PWA backgrounded/closed, a new B-only event does not produce a B-only iOS OS push on the device; prior-B push registration isolation is real-device accepted.
-
-### Device stability — accepted
-- [x] Repeated full PWA close/open succeeds without freeze or white screen.
-- [x] Repeated background→foreground transitions succeed without WebKit/PWA crash.
-- [x] Navigation and Meldingen remain usable after resume.
-
-### Frozen STEP 10 code / CI / Preview
-- [x] Frozen STEP 10 code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
-- [x] Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj` READY.
-- [x] Served Preview verified to include `homePwaShellFix.css?v=1` after `app.css?v=3` and the UID-safe avatar runtime scripts.
-- [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- [x] No production Firebase Rules change and no `main` change.
-
-### STEP 10 acceptance gate
-- [x] Background/closed-PWA external OS push reaches iPhone.
-- [x] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
-- [x] UID-specific read/dismiss survives reload/reconnect.
-- [x] Same-iPhone account switch changes active Firebase Auth identity to B.
-- [x] Targeted **Hulp geven / Afwijzen** real-device accepted.
-- [x] Household **Hulp geven / Niet voor mij** real-device accepted.
-- [x] Avatar A → B account-isolation accepted on current Preview.
-- [x] Installed PWA header safe-area accepted on current Preview.
-- [x] Home dark-mode accepted on current Preview.
-- [x] Live in-app notification reaches the intended active UID, updates unread count, and appears once in canonical inbox.
-- [x] Account switch/logout isolates prior UID inbox, unread count and live banner; B-only events do not surface while A is active.
-- [x] Prior-UID push-registration isolation accepted after account switch/logout.
-- [x] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
-- [x] Explicit product acceptance/freeze — **2026-08-26**.
+- [x] STEP 10 frozen code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
+- [x] STEP 10 real-device acceptance includes external iOS push, push-tap de-duplication, UID-specific notification state, account/push/avatar isolation, PWA safe-area, Home dark mode and repeated resume/reload stability.
+- [x] STEP 11.1 canonical `PartyQuestRepository` foundation implemented with HouseholdContext lifecycle guards.
+- [x] STEP 11.2 `PartyQuestService` invite/join state machine implemented and full contract CI green.
+- [x] STEP 11.2 Preview serves the intended HouseholdContext → PartyQuestRepository → PartyQuestService → frozen notification runtime chain.
+- [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
+- [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; it is not a STEP 11 blocker.
 
 ## STEP 11 — Party quests — IN PROGRESS
 
@@ -150,42 +37,72 @@ Roadmap scope:
 - notifications;
 - idempotency.
 
-STEP 11 must build on the frozen Tasks + Progression + Notifications contracts without reopening them casually.
+Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications and HouseholdContext/Firebase Auth UID identity. It must not introduce a second task, XP, notification or identity authority.
 
 ### STEP 11.1 — PartyQuestRepository foundation — COMPLETE
 
-- [x] Added `src/modules/tasks/partyQuestRepository.js` v1.0.0 as the canonical Party Quest persistence/realtime boundary.
-- [x] Canonical path remains `families/{householdId}/partyQuests/{partyQuestId}`; no parallel Party Quest store introduced.
-- [x] Identity comes only from `HouseholdContext` UID + household + revision.
-- [x] Realtime binding stores the exact Firebase ref + handler, detaches it on context changes, clears projection immediately and rejects stale callbacks.
-- [x] Mutation primitives capture the active HouseholdContext and reject stale writes after account/household switching.
-- [x] Existing Party Quest v1 rows are normalized in memory to the v2-shaped read model; no eager/destructive database migration is performed.
-- [x] Legacy/unknown fields are preserved during normalization for compatibility.
-- [x] No localStorage, `fbFamilyId`, `fbUser` or parallel Firebase Auth authority is used by the repository.
-- [x] Runtime loads `partyQuestRepository.js?v=1` after `householdContext.js?v=1` and before the frozen STEP 10 Party Quest notification projector.
-- [x] Added `scripts/test-party-quest-household-repository.js` covering A → B same-household switching, H1 → H2 switching, exact listener teardown, stale callbacks and a delayed stale transaction that must not commit after a context switch.
-- [x] Existing Party Quest UI/mutation modules remain untouched in this checkpoint: `partyQuestInvites`, `partyQuestActiveView`, `partyQuestCompletionReward` and the frozen notification projector still behave as before until later STEP 11 checkpoints.
+- [x] Canonical source remains `families/{householdId}/partyQuests/{partyQuestId}`.
+- [x] `PartyQuestRepository` owns Party Quest Firebase persistence/realtime lifecycle.
+- [x] HouseholdContext UID + household + revision is the identity authority.
+- [x] Exact Firebase listener teardown, projection clear and stale-callback guards are present.
+- [x] Mutations reject stale account/household context.
+- [x] Existing v1 Party Quest rows normalize in memory to the v2-shaped model without eager/destructive migration.
+- [x] Legacy/unknown fields are preserved for compatibility.
+- [x] Contract coverage includes same-household A → B, H1 → H2, exact teardown and delayed stale-write rejection.
 - [x] Code checkpoint: `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
-- [x] `Household Rebuild Contract Tests` SUCCESS — run `33019925699`.
-- [x] Vercel Preview `dpl_13JQpQe8MkvCy3vZKtZPycfT3WzG` READY.
-- [x] Served branch Preview verified HTTP 200 and confirmed `partyQuestRepository.js?v=1` is present after HouseholdContext and before `partyQuestNotificationProjector.js?v=2`.
+- [x] Contract CI run `33019925699`: SUCCESS.
+- [x] Preview `dpl_13JQpQe8MkvCy3vZKtZPycfT3WzG`: READY.
+
+### STEP 11.2 — PartyQuestService + invite/join state machine — COMPLETE
+
+Product owner approved **GO 11.2**. Scope was limited to 11.2.
+
+- [x] Added `src/modules/tasks/partyQuestService.js` v1.0.0 as the Party Quest domain mutation/state-machine layer.
+- [x] Service identity is exclusively HouseholdContext; persistence is exclusively PartyQuestRepository.
+- [x] `PartyQuestRepository` upgraded to v1.1.0 with guarded `allocateId()` and whole-collection `mutateCollection()` transaction support.
+- [x] Invite creation rechecks task ownership/open state inside the canonical transaction.
+- [x] Self, task owner, currently assigned users, inactive members and pending/active duplicates are not eligible invitees.
+- [x] Duplicate/concurrent pending invites are transactionally blocked.
+- [x] Reinvites after decline/revoke create a fresh occurrence with incremented `inviteVersion` and `inviteOccurrenceId`.
+- [x] Only the invited UID may accept/decline its own pending invite.
+- [x] Double accept/decline cannot apply the transition twice.
+- [x] Only the inviter can revoke a pending invite or manually stop the Party Quest.
+- [x] Manual stop resolves to `cancelled`, never `completed`; canonical task-driven completion stays reserved for STEP 11.5.
+- [x] `partyQuestInvites.js` is now presentation/compatibility facade v6.0 and routes create/respond/revoke/cancel through PartyQuestService.
+- [x] Frozen compatibility methods remain available: `PartyQuestInvites.getById`, `.respond`, `.revokeInvite`.
+- [x] Frozen `NotificationActions` was not modified.
+- [x] Added `scripts/test-party-quest-service.js` for authorization, duplicate/double-tap behavior, occurrence-aware reinvite and stale-context negative tests.
+- [x] Updated STEP 11.1 repository contract for runtime v2/service loader order.
+- [x] Code checkpoint before documentation sync: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
+- [x] `Household Rebuild Contract Tests` run `33021739099`: SUCCESS.
+- [x] Vercel Preview `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: READY.
+- [x] Direct Preview returned HTTP 200 and serves `partyQuestInvites.js?v=6`, `householdContext.js?v=1`, `partyQuestRepository.js?v=2`, `partyQuestService.js?v=1`, `notificationActions.js?v=4` and `partyQuestNotificationProjector.js?v=2`.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] No `main`, production Firebase Rules or production deployment change.
 
-### STEP 11.2 — PartyQuestService + invite/join state machine — NOT STARTED
+### STEP 11.3 — Leave semantics + ActiveView lifecycle — NOT STARTED
 
 Requires explicit product-owner approval before implementation.
 
 Planned scope only:
-- introduce PartyQuestService domain state machine;
-- route existing invite/respond/revoke mutations through Repository + Service;
-- preserve the frozen `PartyQuestInvites.getById/respond/revokeInvite` compatibility facade used by NotificationActions;
-- transactional duplicate/concurrent invite protection, owner checks and occurrence-aware reinvites;
-- no rewrite of Tasks, Progression or Notifications foundations.
+- introduce distinct invitee `left` semantics for a participant leaving an active Party Quest;
+- route ActiveView mutations through PartyQuestService/Repository;
+- remove direct Party Quest Firebase ownership from `partyQuestActiveView.js`;
+- add exact subscription cleanup and stale account/household callback guards;
+- preserve frozen Tasks/Progression/Notifications authority.
+
+### Later STEP 11 checkpoints
+
+- [ ] STEP 11.4 — Party Quest targeted/household help.
+- [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement.
+- [ ] STEP 11.6 — Party Quest notification event extensions on the frozen notification layer.
+- [ ] STEP 11.7 — compatibility/legacy guard.
+- [ ] STEP 11.8 — integrated CI + Preview candidate.
+- [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
 
 ## Separate account/household lifecycle backlog
 
-- [ ] Owner-transfer **Gezin verlaten** real smoke test. This remains important but is not part of STEP 11.
+- [ ] Owner-transfer **Gezin verlaten** real smoke test. Important, but not a STEP 11 gate.
 
 ## Running product/fix backlog
 
@@ -195,32 +112,20 @@ Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 1. Home hero card backgrounds.
 2. Internationalisation: NL / EN / TR / DE / FR.
 3. Task title more prominent in task-create popup.
-4. Recipe → propose meal to household member with realtime accept/reject workflow.
+4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 
-These five items remain separate from the rebuild phase acceptance and were not changed by STEP 11.1.
-
-## Later roadmap phases
-
-- [-] STEP 11 — Party quests.
-- [ ] STEP 12 — Profile / presence / avatars.
-- [ ] STEP 13 — Activity / feed.
-- [ ] STEP 14 — Search / autocomplete.
-- [ ] STEP 14A — Privacy-safe platform operations/admin dashboard.
-- [ ] STEP 15 — Firebase Rules + media authorization hardening.
-- [ ] STEP 16 — Legacy cleanup.
-- [ ] Multi-family broader-beta gate with at least three independent households.
-- [ ] STEP 17 — Store distribution readiness.
+These five items remain separate from STEP 11 and were not changed by STEP 11.2.
 
 ## Standing guardrails
 
+- Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
 - Main stays untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless explicitly changed.
 - STEP 8, STEP 9 and STEP 10 remain frozen.
 - UID/household identity comes from HouseholdContext / Firebase Auth.
-- Notification state and push delivery remain separate layers.
-- Realtime subscriptions require exact cleanup + stale-context protection.
-- Push/device credentials remain private technical data.
-- Server secrets never enter client/public repository code or chat.
-- Every meaningful development update updates this TODO, the progress tracker and `docs/FAMILYAPP-UPDATE-LOG.md` in the same work session.
+- Tasks, Progression and Notifications retain their frozen canonical authorities.
+- Realtime subscriptions require exact cleanup and stale-context protection.
+- Server secrets and push/device credentials never enter client/public repository code or chat.
+- Every meaningful development checkpoint synchronizes this TODO, the progress tracker and `docs/FAMILYAPP-UPDATE-LOG.md`.
