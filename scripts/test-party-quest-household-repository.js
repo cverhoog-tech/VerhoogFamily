@@ -19,10 +19,12 @@ assert.ok(!repoSource.includes('fbUser'),'repository must not use the legacy use
 assert.ok(!repoSource.includes('firebase.auth'),'repository must not create a parallel auth authority');
 assert.ok(!repoSource.includes('localStorage'),'repository must not use legacy/local Party Quest persistence');
 const contextIndex=loaderSource.indexOf('householdContext.js?v=1');
-const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=1');
+const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=2');
+const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=1');
 const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex,'runtime must load PartyQuestRepository after HouseholdContext');
-assert.ok(projectorIndex>repoIndex,'runtime must load PartyQuestRepository before the frozen Party Quest notification projector');
+assert.ok(serviceIndex>repoIndex,'runtime must load PartyQuestService after PartyQuestRepository');
+assert.ok(projectorIndex>serviceIndex,'runtime must load the frozen Party Quest notification projector after PartyQuestService');
 
 function makeDb(initial){
   const data=Object.assign({},initial||{});
@@ -40,6 +42,7 @@ function makeDb(initial){
       on(event,handler,errorHandler){assert.strictEqual(event,'value');handlers.push(handler);node.errorHandler=errorHandler;},
       off(event,handler){offCalls.push({event,handler});const i=handlers.indexOf(handler);if(i>=0)handlers.splice(i,1);},
       child(key){return ref(path+'/'+String(key));},
+      push(){return {key:'push_'+Math.random().toString(36).slice(2)};},
       transaction(updater,done){
         const run=()=>{
           const current=data[path]===undefined?null:data[path];
