@@ -79,7 +79,23 @@ function showToast(msg) {
   }
   var t=document.createElement('div');
   t.className='toast';t.textContent=msg;
+  // Do not derive the toast background from --c-text: dark themes intentionally
+  // make that token light, which previously produced white text on a white toast.
+  // Keep the transient confirmation surface contrast-safe in every theme.
   t.style.zIndex='12050';
+  t.style.background='rgba(28,28,30,.96)';
+  t.style.color='#fff';
+  t.style.border='1px solid rgba(255,255,255,.12)';
+  t.style.boxShadow='0 10px 30px rgba(0,0,0,.28)';
+  t.style.maxWidth='calc(100vw - 32px)';
+  t.style.whiteSpace='normal';
+  t.style.textAlign='center';
+  t.style.lineHeight='1.35';
+  t.style.bottom='calc(80px + env(safe-area-inset-bottom))';
+  t.style.backdropFilter='blur(14px)';
+  t.style.webkitBackdropFilter='blur(14px)';
+  t.setAttribute('role','status');
+  t.setAttribute('aria-live','polite');
   document.body.appendChild(t);
   setTimeout(function(){t.remove();},2000);
 }
