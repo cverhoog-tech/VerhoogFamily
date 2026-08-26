@@ -17,6 +17,24 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — Party Quest acceptance-toast contrast fix candidate
+
+- Product owner approved fixing the non-blocking Party Quest acceptance-toast visual issue before starting STEP 11.3.
+- Root cause confirmed in the shared toast styling: `.toast` uses `background: var(--c-text)` while dark themes intentionally set `--c-text` to a near-white value. Since toast foreground is white, this creates the observed white/near-white bar with unreadable text; emoji such as the handshake remains visible.
+- Fixed the shared `showToast()` presentation in `src/core/utils.js` without touching Party Quest state transitions, `PartyQuestService`, `PartyQuestRepository`, frozen `NotificationActions`, or notification persistence/projector behavior.
+- The shared toast now forces a dark translucent high-contrast surface with white text, a subtle border/shadow, mobile wrapping, centered multiline text, iOS bottom safe-area spacing, backdrop blur and polite `aria-live` semantics.
+- Added `scripts/test-toast-theme-contrast.js` to guard against reintroducing theme-derived white-on-white toast styling and to assert mobile/safe-area/accessibility behavior.
+- Toast implementation commit: `ca1d0897b6ad145c88626c5099d9f78f288073d3`.
+- Toast contract-test commit: `9475bb348008c2c672e19beaaa2ce6d8076300b1`.
+- `Household Rebuild Contract Tests` run `33023131272`: **SUCCESS**.
+- Vercel Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6`: **READY**.
+- Direct Preview fetch of `src/core/utils.js?v=1` returned HTTP 200 and served the corrected toast code. Vercel response uses `Cache-Control: public, max-age=0, must-revalidate`, so the updated asset is revalidated instead of relying on a permanently stale copy.
+- The toast fix remains **open/pending real-device visual verification** until the product owner confirms the acceptance toast is readable on iPhone. It must not be marked closed before that check.
+- STEP 11.2 remains functionally accepted; STEP 10 remains frozen; STEP 11.3 remains not started.
+- `main`, production Firebase Rules and production deployment remain untouched.
+
+---
+
 ## 2026-08-27 — STEP 11.2 real-device functional acceptance; toast UI issue captured
 
 - Product owner completed the first real-device smoke for STEP 11.2 and reported that the Party Quest invitation/acceptance flow works exactly as intended.
