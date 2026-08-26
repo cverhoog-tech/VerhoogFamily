@@ -28,9 +28,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence, A → B Firebase account switching, UID-scoped avatar lifecycle, installed-PWA safe area, Home dark mode, intended-recipient foreground notification, B → A inbox/unread/banner isolation and prior-UID push-registration isolation are now real-device proven. Final reload/background→foreground stability, owner-transfer leave smoke if required, and explicit freeze remain open.
+- [-] STEP 10 — Notifications — all functional/real-device acceptance gates are now complete, including external iOS Web Push, help responses, push-tap/de-duplication, read/dismiss persistence, same-iPhone account switching, UID-scoped avatar lifecycle, installed-PWA safe area, Home dark mode, intended-recipient foreground notification, B → A inbox/unread/banner isolation, prior-UID push-registration isolation, and final reload/background→foreground stability. Only explicit product acceptance/freeze remains.
 
-**Current phase: STEP 10 Notifications.** The complete account-isolation path is now accepted on the real iPhone, including the push transport layer: after B → A switch/logout, a brand-new B-only event does not produce a B-only iOS push while the installed PWA is authenticated as A. The immediate next gate is final reload/background→foreground stability.
+**Current phase: STEP 10 Notifications.** The final real-iPhone stability smoke passed: repeated close/open and background→foreground cycles produced no freeze, white screen or crash, and FamilyApp remained usable after resume. A roadmap review confirms the still-open owner-transfer **Gezin verlaten** smoke is a separate account/household lifecycle test rather than part of STEP 10 Notifications, so it no longer blocks the STEP 10 freeze.
 
 ## Frozen phases
 
@@ -70,7 +70,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Same-iPhone A → B account switch verified using that e-mail indicator.
 - [x] Normal-member **Gezin verlaten** accepted.
 - [x] Header/Home avatar follows account B after A → B switch on real iPhone.
-- [ ] Owner-transfer **Gezin verlaten** real smoke test.
+- [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** real smoke test; not a STEP 10 Notifications gate.
 
 ### Avatar account isolation — accepted
 - [x] Authenticated avatar URL + avatar ID use UID-scoped storage.
@@ -101,6 +101,11 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] While A is active in the same PWA, a new B-targeted event does not surface to A.
 - [x] With A active and the PWA backgrounded/closed, a new B-only event does not produce a B-only iOS OS push; prior-B push registration isolation is accepted.
 
+### Final device stability — accepted
+- [x] Repeated full PWA close/open succeeds without freeze or white screen.
+- [x] Repeated background→foreground transitions succeed without WebKit/PWA crash.
+- [x] FamilyApp remains responsive; navigation and Meldingen continue to work after resume.
+
 ### Latest code / CI / Preview
 - [x] Current code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
 - [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
@@ -109,7 +114,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] Main untouched; no production Firebase Rules change.
 
-### Device acceptance still open
+### Device acceptance
 - [x] Standalone iPhone permission/registration.
 - [x] Cross-account canonical notification reaches intended UID.
 - [x] Background/closed-PWA OS push reaches iPhone.
@@ -124,9 +129,12 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Intended-recipient live in-app notification/unread/inbox path on current Preview.
 - [x] Account-switch/logout UI isolation across prior UID inbox/unread/banner state.
 - [x] Prior-UID push-registration isolation after switch/logout.
-- [ ] Reload/background→foreground stability.
-- [ ] Owner-transfer household-leave smoke if required for phase gate.
-- [ ] Explicit product acceptance/freeze of STEP 10.
+- [x] Reload/background→foreground stability.
+- [ ] **Only remaining STEP 10 gate: explicit product acceptance/freeze.**
+
+## Separate account/household lifecycle backlog
+
+- [ ] Owner-transfer **Gezin verlaten** real smoke test. Important lifecycle coverage, but not a STEP 10 Notifications gate in the roadmap.
 
 ## Running product/fix backlog
 
@@ -184,7 +192,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — real iPhone accepted all three fixes: A → B avatar isolation, installed-PWA safe-area layout, and complete Home dark mode.
 - 2026-08-26 — real iPhone accepted the intended-recipient foreground notification path.
 - 2026-08-26 — real iPhone accepted B → A UI/inbox notification isolation.
-- 2026-08-26 — **real iPhone accepted prior-UID push-registration isolation: B-only OS push does not reach the device after switch/logout to A.**
+- 2026-08-26 — real iPhone accepted prior-UID push-registration isolation.
+- 2026-08-26 — **real iPhone accepted the final reload/background→foreground stability smoke; all functional STEP 10 device gates are complete.**
 
 ## Standing guardrails
 - Main untouched until explicit approval.
