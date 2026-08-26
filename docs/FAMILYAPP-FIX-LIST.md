@@ -95,7 +95,7 @@ Technische eisen:
 
 ## 6. Party Quest / notificaties — acceptatie-toast visueel herstellen
 
-Status: **fix candidate deployed — real-device visual verification pending**.
+Status: **fix candidate deployed/contract green — real-device visual verification door product owner uitgesteld tot later**.
 
 - Na het accepteren van een Party Quest-uitnodiging werkt de actie functioneel correct.
 - Op de real-device test verscheen daarna echter een vrijwel lege **witte toast/balk**; het handshake-icoon bleef wel zichtbaar.
@@ -104,8 +104,9 @@ Status: **fix candidate deployed — real-device visual verification pending**.
 - Party Quest-state, frozen NotificationActions en notificatiepersistence zijn niet gewijzigd.
 - Contracttest `scripts/test-toast-theme-contrast.js` toegevoegd.
 - CI run `33023131272`: **SUCCESS**.
-- Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6`: **READY**.
-- Punt blijft open totdat de product owner op echte iPhone bevestigt dat de acceptatie-toast visueel correct en leesbaar is.
+- De toast-fix wordt inmiddels met `src/core/utils.js?v=2` in de STEP 11.3 Preview geladen.
+- Product owner heeft op 2026-08-27 expliciet gekozen om de real-device visuele test voor later te bewaren en ondertussen door te gaan met STEP 11.3.
+- Punt blijft daarom open totdat op een echte iPhone is bevestigd dat de acceptatie-toast visueel correct en leesbaar is.
 
 ## Status
 
@@ -116,4 +117,4 @@ Status: **fix candidate deployed — real-device visual verification pending**.
 3. Taaknaam prominenter in taak-aanmaken pop-up
 4. Recept als maaltijd voorstellen aan gezinslid
 5. Boodschappen afronden + optionele bon + gekocht-mandje leegmaken
-6. Party Quest acceptatie-toast — fix candidate klaar, wacht op real-device visuele bevestiging
+6. Party Quest acceptatie-toast — fix candidate klaar, real-device visuele bevestiging uitgesteld/pending
