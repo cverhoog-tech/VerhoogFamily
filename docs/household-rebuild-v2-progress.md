@@ -28,9 +28,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, task-help response handling, push-tap routing/de-duplication, read/dismiss persistence and real same-iPhone account switching to account B are proven. Real-device feedback exposed three blockers before freeze: installed-PWA safe-area overlap, stale prior-UID header avatar after account switch, and incomplete Home dark mode. Intended-identity banner/account-switch isolation and background/foreground stability remain open.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence and A → B Firebase account switching are real-device proven. The three blockers found afterward now have contract-green code fixes: UID-scoped avatar lifecycle, installed-PWA top safe area, and Home dark shell. Real-iPhone acceptance of those fixes plus banner/account-switch isolation and background/foreground stability remain open.
 
-**Current phase: STEP 10 Notifications.** Account B has now been verified as the actually active Firebase Auth identity on the same iPhone using the Profile **Actief account** row. This exposed a genuine UI/state isolation bug: the small top-left avatar can still remain from account A even though Firebase Auth is account B. Together with the iOS Home Screen safe-area overlap and incomplete Home dark mode, these must be fixed before STEP 10 can freeze.
+**Current phase: STEP 10 Notifications.** Code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641` passes the complete rebuild contract suite and is READY on the stable branch Preview. The immediate next gate is a real-iPhone re-test of avatar isolation, safe-area layout and Home dark mode; implementation is not considered accepted until that device smoke passes.
 
 ## Frozen phases
 
@@ -51,49 +51,51 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Trusted sender verifies caller/member/event actor and resolves recipients/tokens server-side.
 - [x] Private delivery receipts and invalid-token cleanup.
 - [x] External iOS Web Push real-device accepted on Home Screen PWA.
-- [x] Real push-tap routing/de-duplication accepted: tapping an external push opens/focuses Meldingen with exactly one canonical inbox item.
+- [x] Push-tap routing/de-duplication real-device accepted.
 - [x] UID-specific read/dismiss persistence accepted across full app close/reopen.
 
-### Delivery blockers resolved
-- [x] JWT signature root cause fixed: raw RSA `Buffer` bytes now base64url encode correctly instead of JSON-stringifying the Buffer.
-- [x] Cryptographic JWT regression test added.
-- [x] RTDB 401 root cause fixed: `userinfo.email` added alongside `firebase.database` and `firebase.messaging`.
-- [x] Safe RTDB failure diagnostics added.
-- [x] Real iPhone lock-screen/banner notification proves both fixes work end-to-end.
-
 ### Task-help response lifecycle
-- [x] `TaskSharedData v2.2.0` adds occurrence-scoped `declineHelp(id)` state.
 - [x] Targeted request exposes **Hulp geven / Afwijzen**.
-- [x] Targeted decline closes only that invite and persists recipient + occurrence.
 - [x] Household broadcast exposes **Hulp geven / Niet voor mij**.
-- [x] Household opt-out is UID-local and keeps the broadcast open for others.
-- [x] Opted-out UID cannot accept the same occurrence.
-- [x] Later help cycle resets old decline state.
-- [x] Stale notification occurrence is never actionable against a newer request.
-- [x] `NotificationActions v3.1.0` and `TaskHouseholdHelpUi v1.1.0` wired into served runtime.
-- [x] Help-action regressions green.
-- [x] Real-device targeted **Afwijzen** acceptance: request stays resolved after reload/reopen and invitation is closed.
-- [x] Real-device household **Niet voor mij** acceptance: opted-out UID stays resolved while another eligible member can still choose **Hulp geven**.
+- [x] Decline/opt-out is occurrence-safe and UID-local where appropriate.
+- [x] Real-device targeted and household response tests accepted.
 
 ### Auth / account lifecycle
 - [x] Alternate Google account can authenticate/join/use household.
 - [x] Profile/Meer **Uitloggen** accepted.
 - [x] `Verse start` removed.
 - [x] UID-scoped profile values prevent account leakage.
-- [x] Profile shows read-only **Actief account** from the current Firebase Auth e-mail.
-- [x] Same-iPhone account switch verified: Profile shows account B after sign-out/re-login.
+- [x] Profile **Actief account** reads Firebase Auth e-mail directly.
+- [x] Same-iPhone A → B account switch verified using that e-mail indicator.
 - [x] Normal-member **Gezin verlaten** accepted.
-- [ ] Header avatar lifecycle/isolation: after switching A → B, top-left avatar must not retain account A.
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
 
-### Current real-device blockers before STEP 10 freeze
-- [!] Installed iOS PWA safe area: top-right search/notification controls overlap the system status icons.
-- [!] Header avatar identity: current Firebase Auth is B, but top-left avatar can remain from A.
-- [!] Home dark mode: header/navigation are dark while large Home surfaces/background remain white.
+### Avatar account isolation — implementation complete, device gate open
+- [x] Authenticated avatar URL + avatar ID use UID-scoped storage.
+- [x] Unscoped v1 avatar is no longer authenticated identity authority.
+- [x] UID-safe `avatarIdentityBridge v2.0.1` follows HouseholdContext and blocks stale v1 execution.
+- [x] UID-safe `householdIdentityFirebaseBridge v5.0.1` only migrates scoped avatar state and rejects wrong-UID avatar events.
+- [x] `legacyProfileUidBridge v1.0.0` keeps unscoped compatibility keys projected to the current UID only.
+- [x] Served runtime uses `avatarIdentityBridge.js?v=2`, `householdIdentityFirebaseBridge.js?v=5`, `legacyProfileUidBridge.js?v=1`.
+- [x] `test-avatar-account-isolation.js` regression contract added and green.
+- [ ] Real iPhone A → B header/Home avatar re-test.
+
+### Installed PWA safe area + Home dark shell — implementation complete, device gate open
+- [x] `homePwaShellFix.css?v=1` served after `app.css`.
+- [x] Standalone header top padding uses `env(safe-area-inset-top)`.
+- [x] Sticky task/finance tabs use matching safe-area offset.
+- [x] Hard-coded white body/Home/header/nav layers are overridden by dark theme variables.
+- [x] Default `dark` and named `*-dark` themes covered.
+- [x] Home heading/day/XP/activity/carousel fallback surfaces use dark-theme tokens.
+- [x] `test-home-pwa-shell.js` regression contract added and green.
+- [ ] Real iPhone installed-PWA safe-area re-test.
+- [ ] Real iPhone Home dark-mode re-test.
 
 ### Latest code / CI / Preview
-- [x] Contract-verified code checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`.
-- [x] `Household Rebuild Contracts` SUCCESS — run `32916523638`.
+- [x] Current code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
+- [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
+- [x] Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj` READY.
+- [x] Served HTML verified to include the new shell CSS after app.css and UID-safe avatar runtime.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] Main untouched; no production Firebase Rules change.
 
@@ -105,11 +107,12 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] UID-specific read/dismiss survives reconnect.
 - [x] Targeted **Hulp geven / Afwijzen** real-device acceptance.
 - [x] Household **Hulp geven / Niet voor mij** real-device acceptance.
-- [x] Same-iPhone active Firebase Auth identity switches to account B.
+- [x] Same-iPhone active Firebase Auth identity switches to B.
+- [ ] Avatar A → B isolation on current Preview.
+- [ ] Installed PWA header safe area on current Preview.
+- [ ] Home dark mode on current Preview.
 - [ ] Live in-app banner visible only for intended identity.
-- [ ] Account-switch/logout isolation across inbox/banner/push registration/avatar state.
-- [ ] Installed PWA header respects iOS safe area.
-- [ ] Home dark mode fully consistent.
+- [ ] Account-switch/logout isolation across inbox/banner/push registration.
 - [ ] Reload/background→foreground stability.
 - [ ] Explicit product acceptance/freeze of STEP 10.
 
@@ -125,7 +128,7 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 
-These five product items stay separate from the three current STEP 10 acceptance blockers above.
+These five product items stay separate from STEP 10 acceptance.
 
 ## Prototype end-goal gate
 
@@ -157,21 +160,15 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-20 — STEP 0–2 accepted on iPhone.
 - 2026-08-22 — STEP 2A/2B and STEP 3 accepted.
 - 2026-08-24 — STEP 8 Finance accepted/frozen.
-- 2026-08-24 — STEP 9 Progression / XP / Achievements accepted/frozen.
+- 2026-08-24 — STEP 9 Progression accepted/frozen.
 - 2026-08-24 — STEP 10 canonical notification + Web Push + trusted sender foundations implemented.
-- 2026-08-24 — iPhone standalone push permission/device registration accepted.
-- 2026-08-25 — alternate-account auth/onboarding, logout/profile isolation and normal-member household leave accepted.
-- 2026-08-25 — real cross-account test isolated invalid JWT signature before FCM.
-- 2026-08-26 — JWT Buffer encoding root cause fixed and cryptographically regression-tested.
-- 2026-08-26 — RTDB 401 traced to missing `userinfo.email` scope and fixed.
-- 2026-08-26 — **real external iOS lock-screen FamilyApp push received; Web Push end-to-end accepted.**
-- 2026-08-26 — targeted **Afwijzen** + household **Niet voor mij** help-response lifecycle implemented with occurrence safety.
-- 2026-08-26 — **real-device targeted Afwijzen and household Niet voor mij tests both accepted.**
-- 2026-08-26 — **real-device push-tap routing/de-duplication accepted.**
-- 2026-08-26 — **real-device UID-specific read/dismiss persistence accepted across full close/reopen.**
-- 2026-08-26 — Profile **Actief account** indicator added and contract-green at `58d46b46...`.
-- 2026-08-26 — **same-iPhone switch to account B verified**; screenshot/feedback exposed stale account-A header avatar plus PWA safe-area and Home dark-mode blockers.
-- 2026-08-26 — running five-item FamilyApp product/fix backlog centralized in `docs/FAMILYAPP-FIX-LIST.md`.
+- 2026-08-26 — real external iOS lock-screen push accepted.
+- 2026-08-26 — targeted **Afwijzen** + household **Niet voor mij** accepted on device.
+- 2026-08-26 — push-tap routing/de-duplication accepted.
+- 2026-08-26 — UID-specific read/dismiss persistence accepted.
+- 2026-08-26 — Profile **Actief account** indicator added; A → B active Firebase identity verified on same iPhone.
+- 2026-08-26 — real-device feedback exposed prior-UID avatar, PWA safe-area and Home dark-mode blockers.
+- 2026-08-26 — all three blockers received contract-green code fixes at checkpoint `538a5b89...`; device acceptance remains open.
 
 ## Standing guardrails
 - Main untouched until explicit approval.
