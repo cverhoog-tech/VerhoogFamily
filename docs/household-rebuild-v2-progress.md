@@ -28,9 +28,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence, A → B Firebase account switching, UID-scoped avatar lifecycle, installed-PWA safe area, Home dark mode and the intended-recipient foreground notification path are real-device proven. Account-switch/logout isolation, final background/foreground stability, owner-transfer leave smoke if required, and explicit freeze remain open.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence, A → B Firebase account switching, UID-scoped avatar lifecycle, installed-PWA safe area, Home dark mode, intended-recipient foreground notification, and B → A inbox/unread/banner isolation are real-device proven. Prior-UID push-registration isolation, final background/foreground stability, owner-transfer leave smoke if required, and explicit freeze remain open.
 
-**Current phase: STEP 10 Notifications.** Account B has now also passed the foreground live-notification gate on the real iPhone: a targeted help request from account A produced the live notification, updated the unread count and appeared exactly once in Meldingen. The immediate next gate is proving that switching away from B clears/isolate its inbox/banner state and that B-targeted events do not surface while the same PWA is authenticated as A.
+**Current phase: STEP 10 Notifications.** The real-iPhone negative UI isolation gate is now accepted: after B → A switch/logout, B's inbox/unread/banner state is absent under A, and a brand-new event targeted only to B does not surface to A as a live notification, unread increment or canonical inbox item. The immediate next gate is proving that the prior B push registration also cannot deliver a B-only OS notification after the same switch/logout.
 
 ## Frozen phases
 
@@ -53,7 +53,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] External iOS Web Push real-device accepted on Home Screen PWA.
 - [x] Push-tap routing/de-duplication real-device accepted.
 - [x] UID-specific read/dismiss persistence accepted across full app close/reopen.
-- [x] Intended-recipient foreground live notification accepted on real iPhone: banner/live state, unread count and exactly-one canonical inbox item all passed.
+- [x] Intended-recipient foreground live notification accepted on real iPhone.
 
 ### Task-help response lifecycle
 - [x] Targeted request exposes **Hulp geven / Afwijzen**.
@@ -93,12 +93,12 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Real iPhone installed-PWA safe-area re-test accepted.
 - [x] Real iPhone Home dark-mode re-test accepted.
 
-### Live notification identity — intended recipient accepted, switch isolation next
+### Live notification identity — UI/inbox isolation accepted, push isolation next
 - [x] Account B in foreground receives a newly targeted task-help notification from account A.
 - [x] The red unread count updates on B.
 - [x] The canonical notification appears exactly once in B's Meldingen.
-- [ ] After B → A switch/logout, B's inbox/unread/banner state must not remain visible under A.
-- [ ] While A is active in the same PWA, a new B-targeted event must not surface to A.
+- [x] After B → A switch/logout, B's inbox/unread/banner state does not remain visible under A.
+- [x] While A is active in the same PWA, a new B-targeted event does not surface to A.
 - [ ] Prior-B push registration must not deliver B-only OS push after switch/logout.
 
 ### Latest code / CI / Preview
@@ -122,7 +122,8 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Installed PWA header safe area on current Preview.
 - [x] Home dark mode on current Preview.
 - [x] Intended-recipient live in-app notification/unread/inbox path on current Preview.
-- [ ] Account-switch/logout isolation across inbox/banner/push registration.
+- [x] Account-switch/logout UI isolation across prior UID inbox/unread/banner state.
+- [ ] Prior-UID push-registration isolation after switch/logout.
 - [ ] Reload/background→foreground stability.
 - [ ] Owner-transfer household-leave smoke if required for phase gate.
 - [ ] Explicit product acceptance/freeze of STEP 10.
@@ -181,7 +182,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — real-device feedback exposed prior-UID avatar, PWA safe-area and Home dark-mode blockers.
 - 2026-08-26 — all three blockers received contract-green code fixes at checkpoint `538a5b89...`.
 - 2026-08-26 — real iPhone accepted all three fixes: A → B avatar isolation, installed-PWA safe-area layout, and complete Home dark mode.
-- 2026-08-26 — **real iPhone accepted the intended-recipient foreground notification path: B received the live targeted notification, unread count updated and the canonical item appeared once.**
+- 2026-08-26 — real iPhone accepted the intended-recipient foreground notification path.
+- 2026-08-26 — **real iPhone accepted B → A UI/inbox notification isolation: no prior B state under A and no B-only live/unread/inbox leak while A is active.**
 
 ## Standing guardrails
 - Main untouched until explicit approval.
