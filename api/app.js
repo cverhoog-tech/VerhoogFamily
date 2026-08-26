@@ -27,6 +27,10 @@ module.exports = async function handler(req, res) {
       '  <link id="shortcut-icon" rel="shortcut icon" type="image/png" href="' + brandIcon32 + '">'
     );
     html = html.replace(
+      '<link rel="stylesheet" href="src/styles/app.css?v=3">',
+      '<link rel="stylesheet" href="src/styles/app.css?v=3">\n  <link rel="stylesheet" href="src/styles/homePwaShellFix.css?v=1">'
+    );
+    html = html.replace(
       '<div id="login-logo" style="font-size:56px;margin-bottom:8px">🏠</div>',
       '<div id="login-logo" style="width:108px;height:108px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;box-shadow:none;overflow:visible">' +
       '<img src="' + brandLogin + '" width="108" height="108" alt="FamilieApp" ' +
