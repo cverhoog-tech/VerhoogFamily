@@ -10,7 +10,7 @@ New chats/agents should read these files before continuing development on the re
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, and real same-iPhone account switching to account B are proven. The three blockers found during that account-isolation smoke now have code fixes on the rebuild branch: UID-scoped avatar state/migration, installed-iOS-PWA safe-area handling, and full Home dark-mode shell overrides. Full contract CI is green and the branch Preview is READY, but none of these three fixes is accepted until the product owner re-tests them on the real iPhone. Remaining STEP 10 gates are intended-identity in-app banner/account-switch isolation, these three device re-tests, final background/foreground stability, and explicit freeze.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, real same-iPhone account switching to account B, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, and full Home dark-mode behavior are now real-device proven. The three UI/account blockers found during the account-isolation smoke are accepted on the real iPhone. Remaining STEP 10 gates are intended-identity in-app banner/account-switch isolation, final background/foreground stability, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -27,9 +27,9 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Profile shows **Actief account** from Firebase Auth directly.
 - [x] Normal-member **Gezin verlaten** accepted.
 - [x] Targeted task-help **Afwijzen** and household **Niet voor mij** accepted on real device.
-- [-] **STEP 10 device re-test — account avatar isolation:** code now scopes avatar storage/migration by Firebase UID and blocks stale v1/v4 bridge code, but A → B must be re-tested on iPhone.
-- [-] **STEP 10 device re-test — iOS PWA safe area:** code now uses `env(safe-area-inset-top)` in standalone mode so header controls should sit below the status area; real iPhone re-test open.
-- [-] **STEP 10 device re-test — Home dark mode:** the legacy hard-coded white Home/body/header/nav overrides are now superseded by dark-theme tokens; real iPhone re-test open.
+- [x] **STEP 10 account avatar isolation accepted:** after A → B switching, the top-left/Home avatar follows account B and no longer remains account A.
+- [x] **STEP 10 iOS PWA safe area accepted:** installed-PWA search/notification controls sit correctly below the iPhone system status area.
+- [x] **STEP 10 Home dark mode accepted:** Home now follows dark mode consistently without the previous large white shell/background surfaces.
 - [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
 
 ## STEP 10 — Notifications
@@ -71,18 +71,17 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Profile exposes a read-only **Actief account** row.
 - [x] Real iPhone test confirmed A → B changes the displayed active e-mail to account B.
 
-### Avatar account-isolation fix — code complete, device acceptance open
+### Avatar account-isolation fix — real-device accepted
 - [x] `avatarStore.js` now stores authenticated avatar URL and avatar ID under UID-scoped keys.
 - [x] Authenticated avatar resolution never treats unscoped `familyapp-current-user-avatar-v1` as current-user authority.
 - [x] `avatarIdentityBridge v2.0.1` resolves the active avatar from canonical HouseholdContext/Firebase UID and blocks a stale cached v1 bridge from running afterward.
-- [x] `householdIdentityFirebaseBridge v5.0.1` migrates/project avatars only from UID-scoped state and rejects avatar events for a different UID.
+- [x] `householdIdentityFirebaseBridge v5.0.1` migrates/projects avatars only from UID-scoped state and rejects avatar events for a different UID.
 - [x] New `legacyProfileUidBridge v1.0.0` keeps remaining unscoped compatibility keys as a projection of the current UID rather than shared identity authority.
 - [x] Served runtime cache cutover: `avatarIdentityBridge.js?v=2`, `householdIdentityFirebaseBridge.js?v=5`, `legacyProfileUidBridge.js?v=1`.
 - [x] `scripts/test-avatar-account-isolation.js` added and full suite green.
-- [ ] Real iPhone acceptance: switch A → B and verify the top-left/header/Home avatar never remains A or flashes back to A after reopen.
-- [ ] If B still shows A, inspect whether B's Firebase member avatar had already been polluted before this fix; do not destructively auto-reset it without evidence.
+- [x] Real iPhone acceptance: A → B switch no longer retains account A's top-left/Home avatar.
 
-### Installed PWA safe-area + Home dark-mode fix — code complete, device acceptance open
+### Installed PWA safe-area + Home dark-mode fix — real-device accepted
 - [x] New `src/styles/homePwaShellFix.css?v=1` is served after `app.css`.
 - [x] Installed standalone header uses `env(safe-area-inset-top)` instead of device-specific pixel offsets.
 - [x] Sticky task/finance tabs include the same safe-area offset.
@@ -90,8 +89,8 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Home heading/day/XP/activity/fallback carousel surfaces are dark-theme aware.
 - [x] Named dark themes (`*-dark`) receive the same shell fix.
 - [x] `scripts/test-home-pwa-shell.js` added; full contract suite green.
-- [ ] Real iPhone acceptance: installed PWA search/notification controls sit fully below system status icons.
-- [ ] Real iPhone acceptance: Home dark mode has no unintended large white background/surface areas.
+- [x] Real iPhone acceptance: installed PWA controls sit fully below the system status icons.
+- [x] Real iPhone acceptance: Home dark mode contains no unintended large white shell/background areas.
 
 ### Latest code / CI / Preview
 - [x] Current code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
@@ -108,12 +107,13 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Same-iPhone account switch changes active Firebase Auth identity to B.
 - [x] Targeted **Hulp geven / Afwijzen** real-device accepted.
 - [x] Household **Hulp geven / Niet voor mij** real-device accepted.
-- [ ] Avatar A → B account-isolation re-test on current Preview.
-- [ ] Installed PWA header safe-area re-test on current Preview.
-- [ ] Home dark-mode re-test on current Preview.
+- [x] Avatar A → B account-isolation accepted on current Preview.
+- [x] Installed PWA header safe-area accepted on current Preview.
+- [x] Home dark-mode accepted on current Preview.
 - [ ] Live in-app banner visible only for intended identity.
 - [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID.
 - [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
+- [ ] Owner-transfer household-leave smoke if still required for the STEP 10 phase gate.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
 
 ## Running product/fix backlog
