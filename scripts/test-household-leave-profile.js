@@ -24,7 +24,7 @@ assert.ok(service.includes('AuthenticatedSessionController.resume'),'leave compl
 assert.ok(service.includes('data-leave-household'),'profile UI must expose the leave-household action');
 assert.ok(service.includes('Gezin verlaten'),'profile UI must label the destructive action clearly');
 assert.ok(profile.includes("householdLeaveService.js?v=1"),'profile bridge must load the household leave service');
-assert.ok(profile.includes("ProfileScreen.target.js?v=account2"),'profile bridge must load the current account-safe profile module');
+assert.ok(profile.includes("ProfileScreen.target.js?v=account3"),'profile bridge must load the current account-safe profile module');
 
 assert.ok(rules.includes("($memberUid === auth.uid && data.child('status').val() === 'active')"),'rules must allow an active member to remove their own membership');
 assert.ok(rules.includes("data.parent().child('members').child(auth.uid).child('role').val() === 'owner'"),'rules must allow the current owner to transfer meta ownership');
