@@ -10,7 +10,7 @@ New chats/agents should read these files before continuing development on the re
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, real same-iPhone account switching to account B, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, full Home dark-mode behavior, the intended-recipient live in-app notification path, and B → A inbox/unread/banner isolation are now real-device proven. Remaining STEP 10 gates are prior-UID push-registration isolation, final background/foreground stability, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, real same-iPhone account switching to account B, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, full Home dark-mode behavior, intended-recipient live in-app notifications, B → A inbox/unread/banner isolation, and prior-UID push-registration isolation are now real-device proven. Remaining STEP 10 gates are final reload/background→foreground stability, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -32,6 +32,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] **STEP 10 Home dark mode accepted:** Home now follows dark mode consistently without the previous large white shell/background surfaces.
 - [x] **STEP 10 live in-app notification accepted for intended recipient:** with account B active in the foreground, a new targeted help request from account A produced the live notification, updated the red unread count, and appeared exactly once in Meldingen.
 - [x] **STEP 10 account UI isolation accepted:** after B → A switch/logout, B's inbox/unread/banner state is absent under A, and a new B-only event while A is active does not produce a live banner, unread increment or inbox item for A.
+- [x] **STEP 10 push-registration isolation accepted:** with the same installed PWA authenticated as A and backgrounded/closed, a new notification targeted only to B did not produce a B-only iOS OS push on that iPhone.
 - [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
 
 ## STEP 10 — Notifications
@@ -94,13 +95,13 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Real iPhone acceptance: installed PWA controls sit fully below the system status icons.
 - [x] Real iPhone acceptance: Home dark mode contains no unintended large white shell/background areas.
 
-### Live notification identity — UI/inbox isolation accepted, push isolation next
+### Live notification identity — account and push isolation accepted
 - [x] Account B active in foreground receives a new targeted task-help live notification from account A.
 - [x] Red unread notification count updates immediately.
 - [x] Canonical item appears exactly once in Meldingen.
 - [x] After B → A switch/logout, B's inbox/unread/banner state is not visible under A.
 - [x] While A is active in the same PWA, a new event targeted only to B does not surface to A as live banner, unread increment or inbox item.
-- [ ] Prior-B push registration must still be proven not to deliver a B-only OS push after B → A switch/logout.
+- [x] With A still active and the PWA backgrounded/closed, a new B-only event does not produce a B-only iOS OS push on the device; prior-B push registration isolation is real-device accepted.
 
 ### Latest code / CI / Preview
 - [x] Current code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
@@ -122,7 +123,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Home dark-mode accepted on current Preview.
 - [x] Live in-app notification reaches the intended active UID, updates unread count, and appears once in canonical inbox.
 - [x] Account switch/logout isolates prior UID inbox, unread count and live banner; B-only events do not surface while A is active.
-- [ ] Prior UID push-registration isolation after account switch/logout.
+- [x] Prior-UID push-registration isolation accepted after account switch/logout.
 - [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
 - [ ] Owner-transfer household-leave smoke if still required for the STEP 10 phase gate.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
