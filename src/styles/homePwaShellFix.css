@@ -1,4 +1,4 @@
-/* FamilyApp Home / installed-PWA shell fixes v1.0.0
+/* FamilyApp Home / installed-PWA shell fixes v1.0.1
    Loaded after app.css so these rules intentionally override the old
    WHITE REFRESH and LIVE HOME hard-coded light surfaces. */
 
@@ -20,18 +20,6 @@
       top: calc(54px + env(safe-area-inset-top)) !important;
     }
   }
-}
-
-/* iOS exposes navigator.standalone as well as display-mode. mobileUxFixes
-   adds this class at runtime as a fallback for WebKit versions where the
-   standalone media query is slow to settle on first paint. */
-html.familyapp-standalone .app-header {
-  padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
-  min-height: calc(54px + env(safe-area-inset-top, 0px)) !important;
-}
-html.familyapp-standalone .task-tabs,
-html.familyapp-standalone .fin-tabs {
-  top: calc(54px + env(safe-area-inset-top, 0px)) !important;
 }
 
 /* The legacy white-refresh layer hard-coded #fff with !important, which
