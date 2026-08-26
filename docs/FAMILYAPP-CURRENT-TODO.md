@@ -23,7 +23,11 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] STEP 11.1 canonical `PartyQuestRepository` foundation implemented with HouseholdContext lifecycle guards.
 - [x] STEP 11.2 `PartyQuestService` invite/join state machine implemented and full contract CI green.
 - [x] STEP 11.2 real-device functional smoke PASS: account A can send a Party Quest invitation and the accept flow behaves as intended.
-- [!] Non-blocking UI backlog found during STEP 11.2 smoke: after acceptance the confirmation toast appears as a mostly empty white bar; handshake icon is visible but text/styling is not. Tracked separately in `docs/FAMILYAPP-FIX-LIST.md`.
+- [-] Non-blocking Party Quest acceptance-toast UI fix is implemented as a Preview candidate and awaits one real-device visual verification before being removed from the running fix backlog.
+- [x] Root cause of the white toast identified: baseline `.toast` used `background: var(--c-text)` while dark themes intentionally make `--c-text` near-white, creating white text on a white/near-white surface.
+- [x] Shared `showToast()` now forces a contrast-safe dark translucent surface, white text, mobile wrapping, iOS bottom safe-area spacing and polite live-region semantics without touching Party Quest or frozen notification domain logic.
+- [x] Toast contrast contract CI run `33023131272`: SUCCESS.
+- [x] Toast Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6`: READY and directly serves the corrected `src/core/utils.js`.
 - [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; it is not a STEP 11 blocker.
 
@@ -67,7 +71,7 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] `Household Rebuild Contract Tests` run `33021739099`: SUCCESS.
 - [x] Vercel Preview `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: READY.
 - [x] Real-device functional test 2026-08-27: Party Quest invitation/acceptance behaves exactly as intended.
-- [!] Separate UI polish issue: acceptance toast renders as white/empty bar with visible handshake icon; function is correct and this does not reopen/block STEP 11.2.
+- [-] Acceptance-toast UI polish candidate is implemented and contract-verified; one iPhone visual recheck remains before closing that separate fix-list item.
 - [x] No `main`, production Firebase Rules or production deployment change.
 
 ### STEP 11.3 — Leave semantics + ActiveView lifecycle — NOT STARTED
@@ -104,7 +108,7 @@ Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 3. Task title more prominent in task-create popup.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
-6. Party Quest acceptance toast: white/empty bar; handshake icon visible but confirmation text/styling missing.
+6. Party Quest acceptance toast: fix candidate deployed/green; awaiting real-device visual confirmation before closure.
 
 ## Standing guardrails
 
