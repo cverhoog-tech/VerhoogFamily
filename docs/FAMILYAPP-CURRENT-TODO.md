@@ -9,7 +9,7 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push is real-device proven, and the new task-help response lifecycle is now also real-device accepted: targeted requests support `Hulp geven / Afwijzen`, and household-wide requests support `Hulp geven / Niet voor mij` while leaving the broadcast open for other eligible family members. Remaining STEP 10 gates are push-tap routing/de-duplication, read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, and push-tap routing/de-duplication are now real-device proven. Remaining STEP 10 gates are UID-specific read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -18,6 +18,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Alternate Google account can authenticate and participate in the same household.
 - [x] Canonical cross-account notification state reaches the intended iPhone/PWA account.
 - [x] **External iOS Web Push works outside FamilyApp**: real lock-screen/banner notification observed on 2026-08-26 while the Home Screen PWA was backgrounded/closed.
+- [x] **Push tap routing works on iPhone**: tapping a real external iOS push opens/focuses FamilyApp Meldingen and the canonical inbox item appears exactly once.
 - [x] JWT signature bug fixed and real-device confirmed.
 - [x] RTDB OAuth scope bug (`userinfo.email`) fixed and real-device confirmed by successful downstream push delivery.
 - [x] Profile/Meer **Uitloggen** works; `Verse start` removed.
@@ -53,6 +54,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] `PUSH_DATABASE_READ_FAILED 401` root cause: RTDB REST OAuth token missed `userinfo.email`; scope set now includes `userinfo.email`, `firebase.database`, `firebase.messaging`.
 - [x] Safe RTDB 401/403 diagnostics added without logging request URL/access token.
 - [x] Real iPhone Home Screen PWA received an external FamilyApp push on the lock screen after both fixes.
+- [x] Real push-tap smoke accepted: tapping the external notification opens/focuses Meldingen with exactly one canonical inbox item.
 
 ### Task-help response lifecycle — real-device accepted
 - [x] `TaskSharedData v2.2.0` adds occurrence-scoped `declineHelp(id)` state.
@@ -79,7 +81,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 
 ### Remaining STEP 10 acceptance
 - [x] Background/closed-PWA external OS push reaches iPhone.
-- [ ] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
+- [x] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner visible only for intended identity.
 - [x] Targeted help **Hulp geven / Afwijzen** real-device accepted.
