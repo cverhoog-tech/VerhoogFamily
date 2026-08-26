@@ -1,7 +1,7 @@
 'use strict';
 // ============================================================
-// PARTY QUEST SERVICE v1.0.0
-// STEP 11.2 domain state machine for invites/join responses.
+// PARTY QUEST SERVICE v1.1.0
+// STEP 11.2/11.3 domain state machine for invites, join and leave.
 //
 // Persistence authority: PartyQuestRepository only.
 // Identity authority: HouseholdContext only.
@@ -10,7 +10,7 @@
 (function(){
   if(window.PartyQuestService)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function now(){return Date.now();}
   function clone(value){try{return JSON.parse(JSON.stringify(value));}catch(e){return value;}}
@@ -96,7 +96,8 @@
             inviteOccurrenceId:String(id)+':'+target+':v'+version,
             invitedAt:now(),
             respondedAt:null,
-            revokedAt:null
+            revokedAt:null,
+            leftAt:null
           };
           blocked[target]=true;
           totalTargets++;
@@ -144,6 +145,33 @@
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
 
+  function leaveQuest(questId){
+    var auth=requireContext(),r=requireRepo(),me=String(auth.ctx.uid),id=String(questId||'');
+    if(!id)return Promise.reject(error('PARTY_QUEST_ID_REQUIRED','Party Quest ontbreekt'));
+    return r.mutateOne(id,function(q){
+      assertToken(auth.token);
+      if(!q||q.status==='cancelled'||q.status==='completed')throw error('PARTY_QUEST_NOT_ACTIVE','Deze Party Quest is niet meer actief');
+      if(String(q.inviterUid||'')===me)throw error('PARTY_QUEST_INVITER_CANNOT_LEAVE','De maker kan de Party Quest niet verlaten; beeindig hem in plaats daarvan');
+      var inv=invitees(q)[me];
+      if(!inv)throw error('PARTY_QUEST_NOT_PARTICIPANT','Je neemt niet deel aan deze Party Quest');
+      if(inv.status!=='active')throw error('PARTY_QUEST_PARTICIPANT_NOT_ACTIVE','Je bent geen actieve deelnemer meer');
+      var leftAt=now(),name=inv.name||creatorName(me),nextStatus;
+      q.invitees=clone(invitees(q));
+      q.invitees[me]=Object.assign({},inv,{status:'left',leftAt:leftAt});
+      nextStatus=recomputeQuestStatus(q);
+      q.status=nextStatus;
+      if(nextStatus==='cancelled'&&!q.endedAt){q.endedAt=leftAt;q.endedByUid=me;q.endReason='no-active-or-pending-invitees';}
+      q.lastEvent={
+        id:'leave:'+id+':'+me+':'+leftAt,
+        type:'partyQuest.participant.left',
+        actorUid:me,
+        message:name+' heeft “'+String(q.questTitle||'Party Quest')+'” verlaten',
+        time:leftAt
+      };
+      return q;
+    }).then(function(saved){assertToken(auth.token);return saved;});
+  }
+
   function revokeInvite(questId,targetUid){
     var auth=requireContext(),r=requireRepo(),me=String(auth.ctx.uid),id=String(questId||''),target=String(targetUid||'');
     if(!id||!target)return Promise.reject(error('PARTY_QUEST_INVITE_REQUIRED','Uitnodiging ontbreekt'));
@@ -184,6 +212,7 @@
     version:VERSION,
     createInvites:createInvites,
     respond:respond,
+    leaveQuest:leaveQuest,
     revokeInvite:revokeInvite,
     cancelQuest:cancelQuest,
     getById:getById,
