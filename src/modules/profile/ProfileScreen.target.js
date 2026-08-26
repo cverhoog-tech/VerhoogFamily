@@ -56,6 +56,17 @@ function getInstallState() {
     : { status: 'browser', installed: false, ios: false, canPrompt: false };
 }
 
+function getActiveAuthEmail() {
+  try {
+    const directUser = window.fbAuth && window.fbAuth.currentUser;
+    const fallbackAuth = !directUser && window.firebase && firebase.auth ? firebase.auth() : null;
+    const user = directUser || (fallbackAuth && fallbackAuth.currentUser) || null;
+    return user && user.email ? String(user.email).trim() : '';
+  } catch (error) {
+    return '';
+  }
+}
+
 function installCardMarkup(state) {
   if (state.installed) {
     return `
@@ -285,6 +296,7 @@ export function renderProfileScreen(container, options = {}) {
   const avatarMeta = avatarMetaForId(avatarId);
   const name = getProfileName();
   const partner = getPartnerName();
+  const activeEmail = getActiveAuthEmail();
   const activeCategory = getActiveCategory();
   const visibleAvatars = activeCategory === 'Alle'
     ? animeAvatarCollection
@@ -313,6 +325,13 @@ export function renderProfileScreen(container, options = {}) {
       </section>
 
       <section class="profile-card profile-names-card">
+        <div data-active-auth-email style="display:flex;align-items:center;gap:11px;padding:11px 12px;margin-bottom:14px;border:1px solid var(--c-border);border-radius:13px;background:var(--c-surface2)">
+          <span aria-hidden="true" style="width:34px;height:34px;border-radius:10px;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">@</span>
+          <div style="min-width:0;flex:1">
+            <small style="display:block;color:var(--c-text2);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">Actief account</small>
+            <strong style="display:block;color:var(--c-text);font-size:13px;line-height:1.35;overflow-wrap:anywhere">${escapeAttribute(activeEmail || 'E-mailadres niet beschikbaar')}</strong>
+          </div>
+        </div>
         <label>Mijn naam</label>
         <div class="profile-input-row"><input data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
         <label>Partner naam</label>
