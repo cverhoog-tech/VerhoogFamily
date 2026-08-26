@@ -15,6 +15,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 read/dismiss persistence real-device accepted
+
+- Product owner completed the requested real iPhone notification-state persistence smoke on the stable rebuild Preview.
+- Result: **PASS**.
+- One notification was marked read and left in the inbox; after fully closing and reopening the Home Screen PWA, it remained read.
+- A second notification was dismissed; after fully closing and reopening, it remained absent.
+- This accepts the UID-specific read/dismiss reconnect/persistence gate for the current STEP 10 Preview path.
+- Remaining STEP 10 acceptance gates: intended-identity in-app banner behavior, account-switch/logout isolation across inbox/banner/push transport, and final reload/background→foreground stability.
+- STEP 10 remains **in progress**, not frozen yet. `main` and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-26 — STEP 10 push-tap routing/de-duplication real-device accepted
 
 - Product owner completed the real iPhone push-tap smoke on the stable rebuild Preview.
@@ -151,7 +163,6 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Verify UID-specific read/dismiss survives reload/reconnect on the real iPhone Preview.
-2. Verify the live in-app banner is visible only for the intended identity, including account switch/logout isolation for inbox/banner/push registration.
-3. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
-4. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
+1. Verify the live in-app banner is visible only for the intended identity, including account switch/logout isolation for inbox/banner/push registration.
+2. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+3. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
