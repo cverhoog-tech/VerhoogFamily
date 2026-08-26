@@ -2,6 +2,8 @@
 (function(){
   if(window.__householdIdentityFirebaseBridgeV5) return;
   window.__householdIdentityFirebaseBridgeV5 = true;
+  // Claim the previous guard too, so a stale cached v4 script cannot run later.
+  window.__householdIdentityFirebaseBridgeV4 = true;
 
   var membersRef=null,presenceRef=null,membersCb=null,presenceCb=null;
   var currentHouseholdId=null,currentUid=null,lastMembers={},lastPresence={};
@@ -114,7 +116,7 @@
     updateOwnMemberProfile({avatar:url}).catch(function(err){console.warn('[HouseholdIdentityFirebaseBridge] avatar sync failed',err);});
   });
 
-  window.HouseholdIdentityFirebaseBridge={version:'5.0',sync:sync,apply:apply,detach:detach,getMembers:function(){return normalizedMembers();},getCurrentUid:function(){return context().uid||null;},subscribe:subscribe,updateOwnMemberProfile:updateOwnMemberProfile,status:function(){return{householdId:currentHouseholdId,uid:currentUid,attached:!!membersRef,memberCount:Object.keys(lastMembers||{}).length};}};
+  window.HouseholdIdentityFirebaseBridge={version:'5.0.1',sync:sync,apply:apply,detach:detach,getMembers:function(){return normalizedMembers();},getCurrentUid:function(){return context().uid||null;},subscribe:subscribe,updateOwnMemberProfile:updateOwnMemberProfile,status:function(){return{householdId:currentHouseholdId,uid:currentUid,attached:!!membersRef,memberCount:Object.keys(lastMembers||{}).length};}};
 
   if(!bindContext())window.addEventListener('familyapp:household-context',function(e){var d=e&&e.detail&&e.detail.context;attach(d||context());});
 })();
