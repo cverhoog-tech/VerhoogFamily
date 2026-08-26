@@ -15,6 +15,21 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — Profile shows active Firebase Auth e-mail for same-device account isolation
+
+- During the STEP 10 account-isolation smoke, product owner found that after signing out on the iPhone Home Screen PWA and pressing Google login again, Google appeared to reconnect the previous account automatically.
+- The app UI only indicated that Google was connected, without showing which Google/Firebase identity was actually active; the visible household data still looked like account A.
+- To make the isolation test evidence-based, Profile now contains a read-only **Actief account** row showing the current Firebase Auth user's e-mail address directly from `fbAuth.currentUser` (with Firebase Auth fallback), never from local profile fields.
+- `ProfileScreen.target.js` gained `getActiveAuthEmail()` and the visible account row. The profile module cache key was bumped to `ProfileScreen.target.js?v=account3`.
+- Regression coverage was extended in `scripts/test-profile-session-actions.js`; `scripts/test-household-leave-profile.js` was updated to the current profile cache contract.
+- The first CI pass failed only because the household-leave test still expected the old `account2` cache key. That stale test expectation was corrected; no product logic rollback was needed.
+- Final code checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`: full `Household Rebuild Contracts` **SUCCESS**, run `32916523638`.
+- Vercel Preview `dpl_J9aCVRQc1PaF6m4864fv8h6ayGeM` is READY; stable branch alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- Account isolation is **not accepted yet**. Next device step: open Profile, note **Actief account**, sign out/re-login, and verify the displayed e-mail actually changes to the intended second account before judging notification isolation.
+- `main` and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-26 — STEP 10 read/dismiss persistence real-device accepted
 
 - Product owner completed the requested real iPhone notification-state persistence smoke on the stable rebuild Preview.
@@ -163,6 +178,8 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Verify the live in-app banner is visible only for the intended identity, including account switch/logout isolation for inbox/banner/push registration.
-2. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
-3. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
+1. Open Profile on the stable rebuild Preview and note the read-only **Actief account** e-mail.
+2. Sign out and attempt to sign in as the second Google account on the same iPhone; return to Profile and verify the e-mail really changed before judging any notification/account isolation result.
+3. Once identity switch is proven, verify the live in-app banner/inbox/unread badge/push registration never leaks from the previous UID.
+4. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+5. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
