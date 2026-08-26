@@ -28,9 +28,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence, A → B Firebase account switching, UID-scoped avatar lifecycle, installed-PWA safe area, Home dark mode, intended-recipient foreground notification, and B → A inbox/unread/banner isolation are real-device proven. Prior-UID push-registration isolation, final background/foreground stability, owner-transfer leave smoke if required, and explicit freeze remain open.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, help responses, push-tap, read/dismiss persistence, A → B Firebase account switching, UID-scoped avatar lifecycle, installed-PWA safe area, Home dark mode, intended-recipient foreground notification, B → A inbox/unread/banner isolation and prior-UID push-registration isolation are now real-device proven. Final reload/background→foreground stability, owner-transfer leave smoke if required, and explicit freeze remain open.
 
-**Current phase: STEP 10 Notifications.** The real-iPhone negative UI isolation gate is now accepted: after B → A switch/logout, B's inbox/unread/banner state is absent under A, and a brand-new event targeted only to B does not surface to A as a live notification, unread increment or canonical inbox item. The immediate next gate is proving that the prior B push registration also cannot deliver a B-only OS notification after the same switch/logout.
+**Current phase: STEP 10 Notifications.** The complete account-isolation path is now accepted on the real iPhone, including the push transport layer: after B → A switch/logout, a brand-new B-only event does not produce a B-only iOS push while the installed PWA is authenticated as A. The immediate next gate is final reload/background→foreground stability.
 
 ## Frozen phases
 
@@ -93,13 +93,13 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Real iPhone installed-PWA safe-area re-test accepted.
 - [x] Real iPhone Home dark-mode re-test accepted.
 
-### Live notification identity — UI/inbox isolation accepted, push isolation next
+### Live notification identity — full account isolation accepted
 - [x] Account B in foreground receives a newly targeted task-help notification from account A.
 - [x] The red unread count updates on B.
 - [x] The canonical notification appears exactly once in B's Meldingen.
 - [x] After B → A switch/logout, B's inbox/unread/banner state does not remain visible under A.
 - [x] While A is active in the same PWA, a new B-targeted event does not surface to A.
-- [ ] Prior-B push registration must not deliver B-only OS push after switch/logout.
+- [x] With A active and the PWA backgrounded/closed, a new B-only event does not produce a B-only iOS OS push; prior-B push registration isolation is accepted.
 
 ### Latest code / CI / Preview
 - [x] Current code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
@@ -123,7 +123,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Home dark mode on current Preview.
 - [x] Intended-recipient live in-app notification/unread/inbox path on current Preview.
 - [x] Account-switch/logout UI isolation across prior UID inbox/unread/banner state.
-- [ ] Prior-UID push-registration isolation after switch/logout.
+- [x] Prior-UID push-registration isolation after switch/logout.
 - [ ] Reload/background→foreground stability.
 - [ ] Owner-transfer household-leave smoke if required for phase gate.
 - [ ] Explicit product acceptance/freeze of STEP 10.
@@ -183,7 +183,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — all three blockers received contract-green code fixes at checkpoint `538a5b89...`.
 - 2026-08-26 — real iPhone accepted all three fixes: A → B avatar isolation, installed-PWA safe-area layout, and complete Home dark mode.
 - 2026-08-26 — real iPhone accepted the intended-recipient foreground notification path.
-- 2026-08-26 — **real iPhone accepted B → A UI/inbox notification isolation: no prior B state under A and no B-only live/unread/inbox leak while A is active.**
+- 2026-08-26 — real iPhone accepted B → A UI/inbox notification isolation.
+- 2026-08-26 — **real iPhone accepted prior-UID push-registration isolation: B-only OS push does not reach the device after switch/logout to A.**
 
 ## Standing guardrails
 - Main untouched until explicit approval.
