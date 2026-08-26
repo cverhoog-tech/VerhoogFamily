@@ -15,6 +15,21 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 B → A UI/inbox notification isolation real-device accepted
+
+- Product owner completed the next real-iPhone account-isolation smoke and reported **“Isolatie goed”**.
+- After switching/logging out from account B to account A on the same Home Screen PWA, B's prior notification state did not remain visible under A.
+- **PASS — inbox isolation:** B's notification was not present in A's Meldingen.
+- **PASS — unread isolation:** B's unread badge/count did not carry over to A.
+- **PASS — live banner isolation:** no stale B banner remained visible under A.
+- While A remained the active Firebase identity, a brand-new notification targeted only to B did not surface to A as a live notification, unread increment or canonical inbox item.
+- This accepts the UI/inbox portion of account-switch/logout isolation on the current stable Preview.
+- Push transport remains a separate gate: prior-B push registration must still be proven not to deliver a B-only iOS OS notification after B → A switch/logout.
+- After push-registration isolation, STEP 10 still needs the final reload/background→foreground stability smoke, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.
+- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+
+---
+
 ## 2026-08-26 — STEP 10 intended-recipient live in-app notification real-device accepted
 
 - Product owner completed the real-iPhone foreground notification smoke with account B active in FamilyApp.
@@ -226,9 +241,9 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. On the same iPhone PWA, switch from account B back to account A and verify B's inbox/unread/banner state is gone under A.
-2. While A remains active, generate a brand-new notification targeted only to B and verify A does not receive a live banner, unread increment or inbox item.
-3. Then verify prior-B push registration isolation with the app backgrounded/closed.
-4. Run reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+1. With the iPhone still authenticated as account A, fully background/close the Home Screen PWA.
+2. From another session, create a brand-new notification targeted only to account B.
+3. Verify the iPhone does **not** receive a B-only OS push while the installed PWA is authenticated as A; this is the remaining prior-UID push-registration isolation gate.
+4. Then run reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
 5. Complete owner-transfer household-leave smoke if still required for the phase gate.
 6. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
