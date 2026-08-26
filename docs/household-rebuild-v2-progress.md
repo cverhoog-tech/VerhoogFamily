@@ -14,7 +14,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - `[x]` accepted/completed
 - `[!]` blocked / needs attention
 
-## Current position — synced 2026-08-26
+## Current position — synced 2026-08-27
 
 - [x] STEP 0 — Stable baseline.
 - [x] STEP 1 — Authenticated session / startup ownership.
@@ -29,11 +29,11 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26 after explicit product approval and completion of all functional + real-device gates.
-- [ ] STEP 11 — Party quests — next roadmap phase; not started.
+- [-] STEP 11 — Party quests — in progress; STEP 11.1 repository foundation complete, STEP 11.2 not started.
 
-**Current position: STEP 10 is frozen. STEP 11 Party quests is next and has not started yet.** Frozen STEP 10 contracts should only be changed for clearly identified regressions.
+**Current position: STEP 10 remains frozen. STEP 11 Party quests is in progress. STEP 11.1 is complete and contract-verified; STEP 11.2 requires explicit approval before work starts.**
 
-The still-open owner-transfer **Gezin verlaten** smoke remains a separate account/household lifecycle backlog test. Roadmap review confirms it is not a STEP 10 Notifications gate.
+The still-open owner-transfer **Gezin verlaten** smoke remains a separate account/household lifecycle backlog test and is not a STEP 11 blocker.
 
 ## Frozen phases
 
@@ -72,9 +72,7 @@ The still-open owner-transfer **Gezin verlaten** smoke remains a separate accoun
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] Main untouched; no production Firebase Rules change.
 
-## STEP 11 — Party quests — next
-
-Status: **not started**.
+## STEP 11 — Party quests — IN PROGRESS
 
 Roadmap scope:
 - invites;
@@ -85,11 +83,43 @@ Roadmap scope:
 - notifications;
 - idempotency.
 
-STEP 11 must build on the frozen Tasks + Progression + Notifications contracts without reopening them casually.
+STEP 11 builds on the frozen Tasks + Progression + Notifications contracts without reopening those authorities.
+
+### STEP 11.1 — PartyQuestRepository foundation
+- [x] Added `PartyQuestRepository v1.0.0` as the household-scoped Party Quest persistence/realtime boundary.
+- [x] Source of truth remains `families/{householdId}/partyQuests/{partyQuestId}`.
+- [x] HouseholdContext UID/household/revision is the identity authority; no parallel auth or legacy user/household globals.
+- [x] Exact Firebase listener teardown, immediate projection clear and stale callback rejection implemented.
+- [x] Mutation primitives reject stale context writes after account/household switching.
+- [x] Existing Firebase Party Quest v1 rows normalize in memory to the v2-shaped read model; no eager/destructive migration.
+- [x] Legacy fields remain preserved during normalization.
+- [x] Repository served after HouseholdContext and before the frozen Party Quest notification projector.
+- [x] Added `scripts/test-party-quest-household-repository.js` with A → B, H1 → H2 and delayed stale-write negative coverage.
+- [x] Existing Party Quest UI behavior and existing mutation modules deliberately remain unchanged in STEP 11.1.
+- [x] Code checkpoint `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
+- [x] `Household Rebuild Contract Tests` SUCCESS — run `33019925699`.
+- [x] Vercel deployment `dpl_13JQpQe8MkvCy3vZKtZPycfT3WzG` READY.
+- [x] Stable branch Preview HTTP 200 and served loader order verified.
+- [x] Main untouched; no production Firebase Rules or production deployment changes.
+
+### STEP 11.2 — PartyQuestService + invite/join state machine
+- [ ] Not started. Requires explicit product-owner approval.
+- [ ] Add domain authorization/state-machine layer over PartyQuestRepository.
+- [ ] Route invite/respond/revoke behind service while preserving frozen NotificationActions compatibility facade.
+- [ ] Add transactional duplicate/concurrent invite protection and occurrence-aware reinvites.
+
+### Later STEP 11 checkpoints
+- [ ] STEP 11.3 — Leave semantics + ActiveView lifecycle cleanup.
+- [ ] STEP 11.4 — Party Quest targeted/household help.
+- [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement.
+- [ ] STEP 11.6 — Party Quest notification event extensions on frozen notification layer.
+- [ ] STEP 11.7 — compatibility/legacy guard.
+- [ ] STEP 11.8 — integrated CI + Preview candidate.
+- [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
 
 ## Separate account/household lifecycle backlog
 
-- [ ] Owner-transfer **Gezin verlaten** real smoke test. Important lifecycle coverage, but not a STEP 10 Notifications gate in the roadmap.
+- [ ] Owner-transfer **Gezin verlaten** real smoke test. Important lifecycle coverage, but not a STEP 11 Party Quest gate.
 
 ## Running product/fix backlog
 
@@ -103,7 +133,7 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 
-These five product items stay separate from rebuild phase acceptance.
+These five product items stay separate from rebuild phase acceptance and were not changed by STEP 11.1.
 
 ## Prototype end-goal gate
 
@@ -120,7 +150,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - [ ] Broader family beta acceptance gate passed.
 
 ## Later roadmap phases
-- [ ] STEP 11 — Party quests.
+- [-] STEP 11 — Party quests.
 - [ ] STEP 12 — Profile / presence / avatars.
 - [ ] STEP 13 — Activity / feed.
 - [ ] STEP 14 — Search / autocomplete.
@@ -148,6 +178,7 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — real iPhone accepted prior-UID push-registration isolation.
 - 2026-08-26 — real iPhone accepted the final reload/background→foreground stability smoke.
 - 2026-08-26 — **product owner explicitly approved STEP 10; Notifications is frozen.**
+- 2026-08-27 — STEP 11 started; STEP 11.1 PartyQuestRepository foundation implemented, full contract CI passed, and Preview served/verified.
 
 ## Standing guardrails
 - Main untouched until explicit approval.

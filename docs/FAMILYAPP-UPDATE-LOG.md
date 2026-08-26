@@ -15,6 +15,29 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — STEP 11.1 PartyQuestRepository foundation implemented
+
+- Product owner explicitly approved **GO 11.1** only; no later STEP 11 checkpoint was started.
+- Added `src/modules/tasks/partyQuestRepository.js` v1.0.0 as the canonical Party Quest persistence/realtime boundary on `agent/household-rebuild-v2`.
+- Party Quest data remains at `families/{householdId}/partyQuests/{partyQuestId}`; STEP 11.1 introduced no second store and no localStorage authority.
+- Repository identity is exclusively `HouseholdContext` UID + household + revision. It does not use `fbFamilyId`, `fbUser` or a parallel Firebase Auth authority.
+- Realtime lifecycle now has an explicit active binding, generation guard, exact `ref.off('value', handler)` teardown, immediate projection clear and stale-callback rejection across account/household changes.
+- Repository mutation primitives capture the active context and reject stale writes. Contract coverage includes a delayed H2 transaction that is released only after H3 becomes canonical; it must reject and commit no H2 write.
+- Existing Firebase Party Quest v1 records normalize **in memory only** to the v2-shaped read model (`schemaVersion`, `invitees`, `helpRequests`, `completion`, `rewardSettlements`) while preserving unknown/legacy fields. No eager/destructive database migration was performed.
+- Existing Party Quest UI/mutation modules were deliberately left untouched in this checkpoint: `partyQuestInvites`, `partyQuestActiveView`, `partyQuestCompletionReward`, and the frozen STEP 10 Party Quest notification projector continue to behave as before until later STEP 11 checkpoints.
+- `api/app.js` now serves `partyQuestRepository.js?v=1` after `householdContext.js?v=1` and before the frozen `partyQuestNotificationProjector.js?v=2`.
+- Added `scripts/test-party-quest-household-repository.js` with static architecture checks plus A → B same-household isolation, H1 → H2 isolation, exact listener teardown, stale callback rejection and stale-write rejection.
+- Local repository contract test passed before commit.
+- Code checkpoint: `e5ce389e30ed2848e0fca5715339639f17ebd8cf` (parent `cb9f81604439ad70d92a30c1e07b5de6cdaa98fa`).
+- `Household Rebuild Contract Tests` run `33019925699`: **SUCCESS**.
+- Vercel deployment `dpl_13JQpQe8MkvCy3vZKtZPycfT3WzG`: **READY**.
+- Stable branch Preview `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app` returned HTTP 200 and was verified to serve the new repository in the intended loader order.
+- `docs/FAMILYAPP-FIX-LIST.md` remains unchanged: none of the five separate product/fix backlog items were silently folded into STEP 11.1.
+- `main`, production Firebase Rules and production deployment were not changed. Firebase remains on Spark.
+- Next checkpoint is **STEP 11.2 — PartyQuestService + invite/join state machine**, but it remains **not started** until explicit product-owner approval.
+
+---
+
 ## 2026-08-26 — STEP 10 Notifications explicitly accepted and frozen
 
 - Product owner explicitly said **“Step 10 akkoord”** after all functional and real-device acceptance gates had passed.
@@ -22,7 +45,7 @@ Newest entries belong at the top.
 - Frozen acceptance includes canonical household notification state, per-UID read/dismiss, external iOS Web Push, push-tap routing/de-duplication, task-help response actions, same-iPhone account switching, UID-scoped avatar isolation, installed-PWA safe-area behavior, Home dark mode, intended-recipient live notifications, B → A inbox/unread/banner isolation, prior-UID push-registration isolation, and repeated close/open + background→foreground stability.
 - Frozen code checkpoint remains `538a5b89ab270bfdfc2c9f3a3d97093260133641`; full `Household Rebuild Contracts` run `32954316879` was SUCCESS.
 - Stable rebuild Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- STEP 11 **Party quests** is now the next roadmap phase but has **not started yet**.
+- STEP 11 **Party quests** follows this frozen phase; its repository foundation was subsequently started in the 2026-08-27 entry above.
 - Do not reopen frozen STEP 10 contracts except for a clearly identified regression fix.
 - Owner-transfer **Gezin verlaten** remains a separate account/household lifecycle backlog smoke; roadmap review confirms it was not a STEP 10 Notifications gate.
 - `main` and production Firebase Rules remain untouched.
@@ -266,6 +289,7 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. STEP 10 is frozen; preserve its accepted contracts.
-2. STEP 11 Party quests is the next roadmap phase and may begin when explicitly started.
-3. Keep owner-transfer **Gezin verlaten** as a separate account/household lifecycle backlog test.
+1. STEP 10 stays frozen; preserve Tasks/Progression/Notifications authorities.
+2. STEP 11.1 PartyQuestRepository foundation is complete and contract-verified.
+3. Do **not** start STEP 11.2 until explicit approval. The next planned checkpoint is PartyQuestService + invite/join state machine while preserving the frozen NotificationActions compatibility facade.
+4. Keep owner-transfer **Gezin verlaten** as a separate account/household lifecycle backlog test.
