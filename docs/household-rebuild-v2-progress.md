@@ -3,7 +3,8 @@
 Roadmap: `docs/household-rebuild-v2-roadmap.md`  
 Working branch: `agent/household-rebuild-v2`  
 Day-to-day execution source: `docs/FAMILYAPP-CURRENT-TODO.md`  
-Cross-chat history: `docs/FAMILYAPP-UPDATE-LOG.md`
+Cross-chat history: `docs/FAMILYAPP-UPDATE-LOG.md`  
+Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 
 This is the compact phase-level tracker. The roadmap remains the architecture/scope source; the current TODO is authoritative for the exact next action.
 
@@ -27,9 +28,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, task-help response handling, push-tap routing/de-duplication and read/dismiss reconnect persistence are real-device proven. Same-iPhone account isolation is still open because Google may reconnect the prior session without making the active identity obvious; Profile now shows the current Firebase Auth e-mail to make the identity gate verifiable. Final acceptance still needs intended-identity banner/account-switch isolation and background/foreground stability.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, task-help response handling, push-tap routing/de-duplication, read/dismiss persistence and real same-iPhone account switching to account B are proven. Real-device feedback exposed three blockers before freeze: installed-PWA safe-area overlap, stale prior-UID header avatar after account switch, and incomplete Home dark mode. Intended-identity banner/account-switch isolation and background/foreground stability remain open.
 
-**Current phase: STEP 10 Notifications.** The Home Screen PWA has passed external push delivery, push-tap, task-help response and read/dismiss persistence gates. During same-iPhone account-isolation testing, sign-out followed by Google login appeared to reuse the prior Google identity. To avoid judging isolation against the wrong account, Profile now displays **Actief account** from Firebase Auth directly. The next real-device check is to confirm which e-mail is truly authenticated before continuing the isolation gate.
+**Current phase: STEP 10 Notifications.** Account B has now been verified as the actually active Firebase Auth identity on the same iPhone using the Profile **Actief account** row. This exposed a genuine UI/state isolation bug: the small top-left avatar can still remain from account A even though Firebase Auth is account B. Together with the iOS Home Screen safe-area overlap and incomplete Home dark mode, these must be fixed before STEP 10 can freeze.
 
 ## Frozen phases
 
@@ -80,14 +81,19 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] `Verse start` removed.
 - [x] UID-scoped profile values prevent account leakage.
 - [x] Profile shows read-only **Actief account** from the current Firebase Auth e-mail.
+- [x] Same-iPhone account switch verified: Profile shows account B after sign-out/re-login.
 - [x] Normal-member **Gezin verlaten** accepted.
-- [ ] Same-iPhone Google account switch: verify displayed **Actief account** changes to the intended second account after re-login.
+- [ ] Header avatar lifecycle/isolation: after switching A → B, top-left avatar must not retain account A.
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
+
+### Current real-device blockers before STEP 10 freeze
+- [!] Installed iOS PWA safe area: top-right search/notification controls overlap the system status icons.
+- [!] Header avatar identity: current Firebase Auth is B, but top-left avatar can remain from A.
+- [!] Home dark mode: header/navigation are dark while large Home surfaces/background remain white.
 
 ### Latest code / CI / Preview
 - [x] Contract-verified code checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`.
 - [x] `Household Rebuild Contracts` SUCCESS — run `32916523638`.
-- [x] Vercel Preview `dpl_J9aCVRQc1PaF6m4864fv8h6ayGeM` READY for that checkpoint.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] Main untouched; no production Firebase Rules change.
 
@@ -99,10 +105,27 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] UID-specific read/dismiss survives reconnect.
 - [x] Targeted **Hulp geven / Afwijzen** real-device acceptance.
 - [x] Household **Hulp geven / Niet voor mij** real-device acceptance.
+- [x] Same-iPhone active Firebase Auth identity switches to account B.
 - [ ] Live in-app banner visible only for intended identity.
-- [ ] Account-switch/logout isolation across inbox/banner/push registration; first verify the same-iPhone active Firebase Auth e-mail truly changes.
+- [ ] Account-switch/logout isolation across inbox/banner/push registration/avatar state.
+- [ ] Installed PWA header respects iOS safe area.
+- [ ] Home dark mode fully consistent.
 - [ ] Reload/background→foreground stability.
 - [ ] Explicit product acceptance/freeze of STEP 10.
+
+## Running product/fix backlog
+
+Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
+
+**Open main items: 5**
+
+1. Home hero card backgrounds.
+2. Internationalisation: NL / EN / TR / DE / FR.
+3. Task name more prominent in task-create popup.
+4. Recipe → propose meal to a household member with realtime accept/reject workflow.
+5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
+
+These five product items stay separate from the three current STEP 10 acceptance blockers above.
 
 ## Prototype end-goal gate
 
@@ -146,7 +169,9 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — **real-device targeted Afwijzen and household Niet voor mij tests both accepted.**
 - 2026-08-26 — **real-device push-tap routing/de-duplication accepted.**
 - 2026-08-26 — **real-device UID-specific read/dismiss persistence accepted across full close/reopen.**
-- 2026-08-26 — same-iPhone account-isolation test exposed ambiguous Google account reuse; Profile **Actief account** e-mail indicator added and contract-green at `58d46b46...`.
+- 2026-08-26 — Profile **Actief account** indicator added and contract-green at `58d46b46...`.
+- 2026-08-26 — **same-iPhone switch to account B verified**; screenshot/feedback exposed stale account-A header avatar plus PWA safe-area and Home dark-mode blockers.
+- 2026-08-26 — running five-item FamilyApp product/fix backlog centralized in `docs/FAMILYAPP-FIX-LIST.md`.
 
 ## Standing guardrails
 - Main untouched until explicit approval.
