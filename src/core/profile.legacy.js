@@ -172,7 +172,7 @@ function renderProfile(){
   if(!document.querySelector('link[href*="profile.target.css"]')){
     var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css'; document.head.appendChild(link);
   }
-  import('/src/modules/profile/ProfileScreen.target.js?v=account2').then(function(mod){
+  import('/src/modules/profile/ProfileScreen.target.js?v=account3').then(function(mod){
     mod.renderProfileScreen(container); _profileMounted=true; mountHouseholdLeave(container); if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   }).catch(function(err){ console.error('[ProfileBridge] Kon nieuwe profielmodule niet laden:',err); });
 }
@@ -195,6 +195,6 @@ window.addEventListener('familyapp:avatar-updated',function(){
   if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   if(_profileMounted){
     var container=document.getElementById('screen-profile');
-    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=account2').then(function(mod){ mod.renderProfileScreen(container); mountHouseholdLeave(container); });
+    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=account3').then(function(mod){ mod.renderProfileScreen(container); mountHouseholdLeave(container); });
   }
 });
