@@ -34,7 +34,11 @@ assert.ok(!profileScreen.includes("partnerInput.value.trim() || 'Esra'"),'profil
 assert.ok(profileScreen.includes('data-profile-logout'),'Profile must expose an Uitloggen action');
 assert.ok(profileScreen.includes('window.FamilySessionActions.signOut()'),'Profile logout must use the shared session action');
 assert.ok(profileScreen.includes('placeholder="Optioneel"'),'partner field must be empty/optional for accounts without a configured partner');
-assert.ok(profileBridge.includes('ProfileScreen.target.js?v=account2'),'profile bridge must cache-bust the account-safe profile UI');
+assert.ok(profileScreen.includes('function getActiveAuthEmail()'),'Profile must resolve the active auth email from Firebase Auth');
+assert.ok(profileScreen.includes('window.fbAuth && window.fbAuth.currentUser'),'active account email must prefer the current Firebase Auth user');
+assert.ok(profileScreen.includes('data-active-auth-email'),'Profile must visibly expose the active account identity');
+assert.ok(profileScreen.includes('Actief account'),'active auth email must have a clear user-facing label');
+assert.ok(profileBridge.includes('ProfileScreen.target.js?v=account3'),'profile bridge must cache-bust the active-account profile UI');
 
 assert.ok(loader.includes('sessionActions.js?v=1'),'served runtime must load session actions before interactive navigation');
 assert.ok(!loader.includes('src/app/freshStartReset.js'),'Verse start must no longer be part of the served runtime');
@@ -51,5 +55,5 @@ assert.ok(!loader.includes('src/app/freshStartReset.js'),'Verse start must no lo
   assert.ok(profileIndex>=0&&navIndex>=0,'profile/navigation must still be served');
   assert.ok(actionsIndex<profileIndex&&actionsIndex<navIndex,'session actions must exist before Profile and More interactions');
   assert.strictEqual(indexOfScript(list,'src/app/freshStartReset.js'),-1,'actual served HTML must not load Verse start reset');
-  console.log('profile identity + logout + More-menu contract: PASS');
+  console.log('profile identity + active auth email + logout + More-menu contract: PASS');
 })().catch((error)=>{console.error(error);process.exit(1);});
