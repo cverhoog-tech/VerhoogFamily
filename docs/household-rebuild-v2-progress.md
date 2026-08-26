@@ -27,11 +27,11 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
-- [-] STEP 11 — Party quests — in progress; STEP 11.1 and 11.2 complete, STEP 11.2 real-device functional PASS, STEP 11.3 not started.
+- [-] STEP 11 — Party quests — in progress; STEP 11.1, 11.2 and 11.3 implementation/contract complete. STEP 11.2 has a real-device invite/accept PASS; STEP 11.3 leave smoke is still pending. STEP 11.4 not started.
 
-**Current position: STEP 10 remains frozen. STEP 11.2 is implementation/contract complete and has passed the first real-device Party Quest invite/acceptance smoke. The next roadmap checkpoint remains STEP 11.3, but a small non-blocking toast UI fix is currently at its real-device visual verification gate.**
+**Current position: STEP 10 remains frozen. STEP 11.3 is implementation/contract complete with canonical `left` semantics and a repository/service-backed ActiveView. The next roadmap checkpoint is STEP 11.4, but it requires explicit product-owner approval.**
 
-The acceptance-toast root cause was the shared `.toast` background using `var(--c-text)`: dark themes make that token near-white, so white toast text became unreadable. The shared `showToast()` presentation now uses a contrast-safe dark translucent surface, preserves white text, wraps on mobile and respects the iOS bottom safe area. No Party Quest state machine or frozen notification action logic was changed.
+The separate Party Quest acceptance-toast fix remains open because the product owner chose to defer its real-device visual verification. The code fix and contract gate are green, but it must not be marked visually accepted yet.
 
 The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog test and is not a STEP 11 blocker.
 
@@ -52,7 +52,7 @@ The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog
 - [x] Same-iPhone account, avatar, inbox/unread/banner and prior-UID push-registration isolation accepted.
 - [x] Installed PWA safe-area, Home dark mode and repeated resume/reload stability accepted.
 - [x] Frozen code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` during STEP 11.2/toast polish.
+- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.3.
 
 ## STEP 11 — Party quests — IN PROGRESS
 
@@ -73,8 +73,8 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 
 ### STEP 11.2 — PartyQuestService + invite/join state machine — COMPLETE + REAL-DEVICE FUNCTIONAL PASS
 - [x] Product owner approved GO 11.2 only.
-- [x] `PartyQuestService v1.0.0` added as domain authorization/state-machine layer.
-- [x] `PartyQuestRepository v1.1.0` adds guarded ID allocation and whole-collection transactions.
+- [x] PartyQuestService domain authorization/state-machine layer established.
+- [x] PartyQuestRepository v1.1.0 provides guarded ID allocation and whole-collection transactions.
 - [x] Invite creation transactionally enforces task owner/open state and participant eligibility.
 - [x] Pending/active duplicates are blocked; declined/revoked users can be reinvited as a new occurrence.
 - [x] Reinvite occurrence uses incrementing `inviteVersion` plus `inviteOccurrenceId`.
@@ -84,23 +84,33 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] `PartyQuestInvites v6.0` is presentation/compatibility facade and delegates mutations to the service.
 - [x] Frozen facade methods `getById/respond/revokeInvite` remain available to NotificationActions.
 - [x] Frozen NotificationActions implementation remains unchanged.
-- [x] `scripts/test-party-quest-service.js` added; STEP 11.1 repository test aligned to service loader order.
-- [x] Code checkpoint before docs sync `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
+- [x] Code checkpoint `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - [x] `Household Rebuild Contract Tests` run `33021739099`: SUCCESS.
 - [x] Vercel Preview `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: READY.
 - [x] Real-device smoke 2026-08-27: Party Quest invite + accept flow works exactly as intended.
-- [-] UI-only follow-up candidate: shared toast contrast fix implemented in `src/core/utils.js`; contract run `33023131272` SUCCESS; Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6` READY; one real iPhone visual check remains before closing the separate fix-list item.
+- [-] UI-only toast follow-up implemented/green; real-device visual confirmation explicitly deferred by product owner.
 - [x] Main, production Firebase Rules and production deployment untouched.
 
-### STEP 11.3 — Leave semantics + ActiveView lifecycle — NOT STARTED
-- [ ] Requires explicit product-owner approval.
-- [ ] Add distinct participant `left` semantics.
-- [ ] Route ActiveView Party Quest writes through PartyQuestService/Repository.
-- [ ] Remove direct Party Quest Firebase ownership from ActiveView.
-- [ ] Add exact subscription cleanup and stale-context guards.
+### STEP 11.3 — Leave semantics + ActiveView lifecycle — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE PENDING
+- [x] Product owner approved STEP 11.3 only after deferring the toast test.
+- [x] `PartyQuestService v1.1.0` adds `leaveQuest()` through the canonical repository.
+- [x] Active invited participant leave is recorded as `left` + `leftAt`, not `declined`.
+- [x] Inviter cannot use participant leave; owner manual end stays `cancelQuest()`.
+- [x] Leave status recompute is deterministic: active remains → active; only pending remains → pending; neither remains → cancelled.
+- [x] Last-participant leave can close the Party Quest as `cancelled` without fabricating completion.
+- [x] `PartyQuestActiveView v6.0.0` reads through `PartyQuestRepository.subscribe()` and mutates through `PartyQuestService` only.
+- [x] Direct Party Quest Firebase DB ownership, parallel auth, `fbFamilyId`, `fbUser` and name-keyed localStorage fallback removed from ActiveView.
+- [x] Exact repository unsubscribe, subscription-generation stale callback rejection and projection clear on account/household switches implemented.
+- [x] Owner end delegates to `cancelQuest()` and never writes `completed`.
+- [x] `scripts/test-party-quest-step11-3.js` covers leave rules, stale mutation, context clear, stale callbacks, delegation and exact unsubscribe.
+- [x] Runtime serves `partyQuestActiveView.js?v=6` and `partyQuestService.js?v=2`.
+- [x] Final implementation/contract checkpoint `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`.
+- [x] `Household Rebuild Contract Tests` run `33024009131`: SUCCESS.
+- [x] Vercel Preview `dpl_VunmExXR5aYyhvC2YWoAWjiFc3e7`: READY.
+- [ ] Real-device participant leave smoke still pending.
 
 ### Later STEP 11 checkpoints
-- [ ] STEP 11.4 — Party Quest targeted/household help.
+- [ ] STEP 11.4 — Party Quest targeted/household help — explicit approval required.
 - [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement.
 - [ ] STEP 11.6 — notification event extensions on frozen notification layer.
 - [ ] STEP 11.7 — compatibility/legacy guard.
@@ -120,7 +130,7 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 3. Task title more prominent in task-create popup.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
-6. Party Quest acceptance toast — fix candidate deployed and green; awaiting one real-device visual confirmation.
+6. Party Quest acceptance toast — fix candidate green; real-device visual verification deferred/pending.
 
 ## Later roadmap phases
 - [-] STEP 11 — Party quests.
@@ -139,7 +149,8 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 - 2026-08-27 — STEP 11.1 PartyQuestRepository foundation implemented and contract-verified.
 - 2026-08-27 — STEP 11.2 PartyQuestService + invite/join state machine implemented; full CI success and READY Preview verified.
 - 2026-08-27 — STEP 11.2 real-device Party Quest invite/acceptance flow functionally accepted; non-blocking toast styling issue added to fix backlog.
-- 2026-08-27 — Toast root cause fixed in shared presentation layer; CI `33023131272` SUCCESS and Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6` READY; real-device visual confirmation pending.
+- 2026-08-27 — Toast root cause fixed in shared presentation layer; CI `33023131272` SUCCESS; real-device visual confirmation deferred to later.
+- 2026-08-27 — STEP 11.3 leave semantics + ActiveView lifecycle implementation/contract complete; CI `33024009131` SUCCESS and Preview `dpl_VunmExXR5aYyhvC2YWoAWjiFc3e7` READY; real-device leave smoke pending.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
