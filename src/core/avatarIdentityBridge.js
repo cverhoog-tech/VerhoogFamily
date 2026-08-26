@@ -1,16 +1,19 @@
 'use strict';
 // ============================================================
-// FAMILYAPP UNIFIED AVATAR IDENTITY BRIDGE v1
-// Centralises avatar resolution around HouseholdIdentity while
-// preserving legacy profile/avatar storage for backwards compatibility.
+// FAMILYAPP UNIFIED AVATAR IDENTITY BRIDGE v2
+// Firebase UID/household identity is authoritative. Authenticated users never
+// read another user's unscoped legacy avatar as their own avatar.
 // ============================================================
 (function(){
-  if(window.__familyAvatarIdentityBridge) return;
-  window.__familyAvatarIdentityBridge = true;
+  if(window.__familyAvatarIdentityBridgeV2) return;
+  window.__familyAvatarIdentityBridgeV2 = true;
 
-  var ACTIVE_AVATAR_KEY = 'familyapp-current-user-avatar-v1';
-  var ACTIVE_AVATAR_ID_KEY = 'familyapp-current-user-avatar-id-v1';
-  var PROFILE_NAME_KEY = 'familyapp-profile-name-v1';
+  var LEGACY_AVATAR_KEY = 'familyapp-current-user-avatar-v1';
+  var LEGACY_AVATAR_ID_KEY = 'familyapp-current-user-avatar-id-v1';
+  var LEGACY_PROFILE_NAME_KEY = 'familyapp-profile-name-v1';
+  var SCOPED_AVATAR_BASE = 'familyapp-current-user-avatar-v2';
+  var SCOPED_AVATAR_ID_BASE = 'familyapp-current-user-avatar-id-v2';
+  var SCOPED_NAME_BASE = 'familyapp-profile-name-v2';
   var EXACT_BASE = './src/assets/avatars/exact';
   var EXACT = {
     aiden: EXACT_BASE + '/01-aiden.webp', kai: EXACT_BASE + '/02-kai.webp', liam: EXACT_BASE + '/03-liam.webp',
@@ -24,6 +27,7 @@
   function initials(name){
     return cleanName(name).split(/\s+/).filter(Boolean).map(function(p){return p[0];}).join('').slice(0,2).toUpperCase() || '?';
   }
+  function scoped(base, uid){ return base + ':' + uid; }
   function isAvatarValue(v){
     return !!(v && typeof v === 'string' && (v.indexOf('data:') === 0 || v.indexOf('blob:') === 0 || v.indexOf('http') === 0 || v.indexOf('./') === 0 || v.indexOf('/') === 0));
   }
@@ -35,15 +39,78 @@
     if(n.indexOf('luna') > -1) return EXACT.luna;
     return EXACT.aiden;
   }
-  function currentProfileName(){
-    try { return localStorage.getItem(PROFILE_NAME_KEY) || window.myName || 'Shane'; }
-    catch(e){ return window.myName || 'Shane'; }
+  function authUser(){
+    try { if(window.fbAuth && window.fbAuth.currentUser) return window.fbAuth.currentUser; } catch(e){}
+    try { if(window.fbUser && window.fbUser.uid) return window.fbUser; } catch(e){}
+    try { if(window.firebase && typeof window.firebase.auth === 'function') return window.firebase.auth().currentUser || null; } catch(e){}
+    return null;
   }
-  function activeLegacyAvatar(){
+  function activeUid(){
     try {
-      var direct = localStorage.getItem(ACTIVE_AVATAR_KEY);
+      var ctx = window.HouseholdContext && typeof HouseholdContext.snapshot === 'function' ? HouseholdContext.snapshot() : null;
+      if(ctx && ctx.uid) return String(ctx.uid);
+    } catch(e){}
+    var user = authUser();
+    return user && user.uid ? String(user.uid) : '';
+  }
+  function identity(){ return window.HouseholdIdentity || null; }
+  function memberFor(input){
+    var hi = identity();
+    if(!hi) return null;
+    if(input && typeof input === 'object' && (input.id || input.uid)) return input;
+    try { return hi.getMember ? hi.getMember(input) : null; } catch(e){ return null; }
+  }
+  function activeMember(){
+    var uid = activeUid();
+    var hi = identity();
+    if(uid && hi && typeof hi.getMember === 'function') {
+      try { var byUid = hi.getMember(uid); if(byUid) return byUid; } catch(e){}
+    }
+    try { return hi && hi.getActiveMember ? hi.getActiveMember() : null; } catch(e){ return null; }
+  }
+  function currentProfileName(){
+    var uid = activeUid();
+    if(uid){
+      try {
+        var scopedName = localStorage.getItem(scoped(SCOPED_NAME_BASE, uid));
+        if(scopedName && scopedName.trim()) return scopedName.trim();
+      } catch(e){}
+      var member = activeMember();
+      if(member){
+        var memberName = cleanName(member.displayName || member.name);
+        if(memberName) return memberName;
+      }
+      var user = authUser();
+      if(user && user.displayName && String(user.displayName).trim()) return String(user.displayName).trim();
+      if(user && user.email) return String(user.email).split('@')[0] || 'Gezinslid';
+      return 'Gezinslid';
+    }
+    try { return localStorage.getItem(LEGACY_PROFILE_NAME_KEY) || window.myName || 'Gezinslid'; }
+    catch(e){ return window.myName || 'Gezinslid'; }
+  }
+  function scopedOwnAvatar(uid){
+    if(!uid) return '';
+    try {
+      var direct = localStorage.getItem(scoped(SCOPED_AVATAR_BASE, uid));
+      return isAvatarValue(direct) ? direct : '';
+    } catch(e){ return ''; }
+  }
+  function ownAvatar(){
+    var uid = activeUid();
+    if(uid){
+      var local = scopedOwnAvatar(uid);
+      if(local) return local;
+      var member = activeMember();
+      var memberUrl = member && (member.avatar || member.avatarUrl || member.photoURL || '');
+      if(isAvatarValue(memberUrl)) return memberUrl;
+      var user = authUser();
+      if(user && String(user.uid || '') === uid && isAvatarValue(user.photoURL)) return user.photoURL;
+      return presetFor(currentProfileName());
+    }
+    try {
+      var direct = localStorage.getItem(LEGACY_AVATAR_KEY);
       if(isAvatarValue(direct)) return direct;
-      var id = localStorage.getItem(ACTIVE_AVATAR_ID_KEY) || 'aiden';
+      var id = localStorage.getItem(LEGACY_AVATAR_ID_KEY) || 'aiden';
       return EXACT[id] || EXACT.aiden;
     } catch(e){ return EXACT.aiden; }
   }
@@ -53,30 +120,19 @@
       return isAvatarValue(v) ? v : '';
     } catch(e){ return ''; }
   }
-  function identity(){ return window.HouseholdIdentity || null; }
-  function memberFor(input){
-    var hi = identity();
-    if(!hi) return null;
-    if(input && typeof input === 'object' && input.id) return input;
-    try { return hi.getMember ? hi.getMember(input) : null; } catch(e){ return null; }
-  }
   function isActiveMember(memberOrName){
-    var hi = identity();
+    var uid = activeUid();
     var m = memberFor(memberOrName);
-    try {
-      var active = hi && hi.getActiveMember ? hi.getActiveMember() : null;
-      if(m && active) return String(m.id) === String(active.id);
-    } catch(e){}
-    return lower(m ? m.name : memberOrName) === lower(currentProfileName());
+    if(uid && m) return String(m.uid || m.id || '') === uid;
+    var active = activeMember();
+    if(m && active) return String(m.id || m.uid || '') === String(active.id || active.uid || '');
+    return lower(m ? (m.name || m.displayName) : memberOrName) === lower(currentProfileName());
   }
   function resolveAvatar(memberOrName){
     var m = memberFor(memberOrName);
-    if(m && isAvatarValue(m.avatar)) return m.avatar;
     var name = m ? (m.displayName || m.name || m.id) : memberOrName;
-    if(isActiveMember(m || name)) {
-      var own = activeLegacyAvatar();
-      if(isAvatarValue(own)) return own;
-    }
+    if(isActiveMember(m || name)) return ownAvatar();
+    if(m && isAvatarValue(m.avatar)) return m.avatar;
     var legacy = legacyMemberAvatar(name);
     if(legacy) return legacy;
     return presetFor(name);
@@ -86,24 +142,14 @@
     if(m && m.initials) return m.initials;
     return initials(m ? (m.displayName || m.name || m.id) : memberOrName);
   }
-  function syncActiveLegacyToIdentity(){
+  function syncActiveScopedToIdentity(){
+    var uid = activeUid();
     var hi = identity();
-    if(!hi || !hi.getActiveMember || !hi.setMemberAvatar) return;
+    if(!uid || !hi || !hi.getMember || !hi.setMemberAvatar) return;
     try {
-      var m = hi.getActiveMember();
-      var avatar = activeLegacyAvatar();
-      if(m && avatar && m.avatar !== avatar) hi.setMemberAvatar(m.id, avatar);
-    } catch(e){}
-  }
-  function syncNamedLegacyMembers(){
-    var hi = identity();
-    if(!hi || !hi.getMembers || !hi.setMemberAvatar) return;
-    try {
-      hi.getMembers().forEach(function(m){
-        if(m.avatar) return;
-        var legacy = legacyMemberAvatar(m.name || m.id);
-        if(legacy) hi.setMemberAvatar(m.id, legacy);
-      });
+      var m = hi.getMember(uid);
+      var avatar = scopedOwnAvatar(uid);
+      if(m && avatar && m.avatar !== avatar) hi.setMemberAvatar(m.id || uid, avatar);
     } catch(e){}
   }
   function installIdentityResolvers(){
@@ -111,10 +157,7 @@
     if(!hi) return false;
     hi.resolveAvatar = resolveAvatar;
     hi.resolveInitials = resolveInitials;
-    hi.getActiveAvatar = function(){
-      try { return resolveAvatar(hi.getActiveMember ? hi.getActiveMember() : currentProfileName()); }
-      catch(e){ return activeLegacyAvatar(); }
-    };
+    hi.getActiveAvatar = function(){ return ownAvatar(); };
     return true;
   }
 
@@ -209,7 +252,7 @@
   }
   function patchProfile(){
     var img = document.querySelector('.profile-main-avatar');
-    if(img) setImg(img, currentProfileName(), activeLegacyAvatar());
+    if(img) setImg(img, currentProfileName(), ownAvatar());
   }
   function patchFeed(){
     if(typeof window.stableAvatarUrl === 'function' && !window.stableAvatarUrl.__familyUnified){
@@ -217,17 +260,12 @@
       resolver.__familyUnified = true;
       window.stableAvatarUrl = resolver;
     }
-    if(typeof window.currentProfileAvatarUrl === 'function') window.currentProfileAvatarUrl = function(){ return resolveAvatar(currentProfileName()); };
+    if(typeof window.currentProfileAvatarUrl === 'function') window.currentProfileAvatarUrl = function(){ return ownAvatar(); };
     var compose = document.getElementById('compose-avatar');
     if(compose) injectIntoCircle(compose, currentProfileName());
     document.querySelectorAll('.fs-compose-avatar,.premium-avatar').forEach(function(el){
       if(el.tagName === 'IMG') setImg(el, currentProfileName());
       else injectIntoCircle(el, currentProfileName());
-    });
-    document.querySelectorAll('img[alt]').forEach(function(img){
-      var alt = cleanName(img.getAttribute('alt'));
-      if(!alt) return;
-      if(/^(shane|esra|sophie|mark|emma)$/i.test(alt)) setImg(img, alt);
     });
   }
   function patchGenericMemberAvatars(){
@@ -255,23 +293,27 @@
   }
   function boot(){
     installIdentityResolvers();
-    syncActiveLegacyToIdentity();
-    syncNamedLegacyMembers();
+    syncActiveScopedToIdentity();
     refresh();
     var observer = new MutationObserver(queueRefresh);
     observer.observe(document.body, { childList:true, subtree:true });
     window.addEventListener('familyapp:avatar-updated', function(e){
+      var detail = e && e.detail || {};
+      var uid = activeUid();
+      if(detail.uid && uid && String(detail.uid) !== uid) return;
       var hi = identity();
       try {
-        var detail = e && e.detail || {};
-        var m = hi && hi.getActiveMember ? hi.getActiveMember() : null;
-        var url = detail.url || activeLegacyAvatar();
-        if(m && hi.setMemberAvatar && url) hi.setMemberAvatar(m.id, url);
+        var m = uid && hi && hi.getMember ? hi.getMember(uid) : activeMember();
+        var url = detail.url || scopedOwnAvatar(uid);
+        if(m && hi.setMemberAvatar && url) hi.setMemberAvatar(m.id || uid, url);
       } catch(err){}
       queueRefresh();
     });
     window.addEventListener('familyapp:household-members-updated', queueRefresh);
     window.addEventListener('familyapp:active-member-updated', queueRefresh);
+    window.addEventListener('familyapp:household-identity-synced', queueRefresh);
+    window.addEventListener('familyapp:household-context', function(){ syncActiveScopedToIdentity(); queueRefresh(); });
+    window.addEventListener('familyapp:legacy-profile-uid-synced', queueRefresh);
     window.addEventListener('storage', function(e){
       if(!e || !e.key || e.key.indexOf('avatar') > -1 || e.key.indexOf('familyapp_household_members') > -1) queueRefresh();
     });
@@ -279,10 +321,11 @@
   }
 
   window.FamilyAvatarIdentity = {
+    version:'2.0.0',
     resolveAvatar: resolveAvatar,
     resolveInitials: resolveInitials,
     refresh: refresh,
-    sync: function(){ syncActiveLegacyToIdentity(); syncNamedLegacyMembers(); refresh(); }
+    sync: function(){ syncActiveScopedToIdentity(); refresh(); }
   };
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
