@@ -10,30 +10,26 @@ New chats/agents should read these files before continuing development on the re
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, and real same-iPhone account switching to account B are now proven. The account-isolation smoke also exposed three blockers that must be resolved before STEP 10 can freeze: the installed iOS PWA header overlaps the system status area, the top-left header avatar can remain from account A after switching to account B, and Home dark mode leaves large white surfaces. Remaining STEP 10 gates are intended-identity in-app banner behavior, account-switch/logout isolation, these identity/UI blockers, and final background/foreground stability.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, and real same-iPhone account switching to account B are proven. The three blockers found during that account-isolation smoke now have code fixes on the rebuild branch: UID-scoped avatar state/migration, installed-iOS-PWA safe-area handling, and full Home dark-mode shell overrides. Full contract CI is green and the branch Preview is READY, but none of these three fixes is accepted until the product owner re-tests them on the real iPhone. Remaining STEP 10 gates are intended-identity in-app banner/account-switch isolation, these three device re-tests, final background/foreground stability, and explicit freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
 ## Latest verified product state
 
 - [x] Alternate Google account can authenticate and participate in the same household.
-- [x] Same-iPhone Google/Firebase account switch to account B has been verified using the new **Actief account** e-mail indicator.
+- [x] Same-iPhone Google/Firebase account switch to account B has been verified using the **Actief account** e-mail indicator.
 - [x] Canonical cross-account notification state reaches the intended iPhone/PWA account.
-- [x] **External iOS Web Push works outside FamilyApp**: real lock-screen/banner notification observed on 2026-08-26 while the Home Screen PWA was backgrounded/closed.
-- [x] **Push tap routing works on iPhone**: tapping a real external iOS push opens/focuses FamilyApp Meldingen and the canonical inbox item appears exactly once.
-- [x] **UID-specific read/dismiss persistence works**: a read notification stays read after full close/reopen, while a dismissed notification stays absent.
-- [x] JWT signature bug fixed and real-device confirmed.
-- [x] RTDB OAuth scope bug (`userinfo.email`) fixed and real-device confirmed by successful downstream push delivery.
+- [x] External iOS Web Push works outside FamilyApp on the Home Screen PWA.
+- [x] Push tap opens/focuses Meldingen and produces exactly one canonical inbox item.
+- [x] UID-specific read/dismiss persistence survives full close/reopen.
 - [x] Profile/Meer **Uitloggen** works; `Verse start` removed.
-- [x] UID-scoped Profile values prevent Shane/Esra browser leakage to another account.
-- [x] Profile now shows **Actief account** using the current Firebase Auth user's e-mail directly; it is read-only and not sourced from local profile data.
+- [x] UID-scoped Profile values prevent browser profile-name leakage.
+- [x] Profile shows **Actief account** from Firebase Auth directly.
 - [x] Normal-member **Gezin verlaten** accepted.
-- [x] Whole-family task help (`Heel het gezin`) exists and supports multiple willing helpers.
-- [x] Targeted task-help **Afwijzen** accepted on real device and remains resolved after reload/reopen.
-- [x] Household task-help **Niet voor mij** accepted on real device while another eligible family member can still choose **Hulp geven**.
-- [ ] **STEP 10 blocker — iOS PWA safe area:** Home header search/notification controls can sit behind iPhone status icons when installed to the Home Screen.
-- [ ] **STEP 10 blocker — account avatar isolation:** after switching from account A to B, the small top-left header avatar can still show account A.
-- [ ] **STEP 10 blocker — Home dark mode:** header/navigation become dark, but the Home page/background still contains large white areas.
+- [x] Targeted task-help **Afwijzen** and household **Niet voor mij** accepted on real device.
+- [-] **STEP 10 device re-test — account avatar isolation:** code now scopes avatar storage/migration by Firebase UID and blocks stale v1/v4 bridge code, but A → B must be re-tested on iPhone.
+- [-] **STEP 10 device re-test — iOS PWA safe area:** code now uses `env(safe-area-inset-top)` in standalone mode so header controls should sit below the status area; real iPhone re-test open.
+- [-] **STEP 10 device re-test — Home dark mode:** the legacy hard-coded white Home/body/header/nav overrides are now superseded by dark-theme tokens; real iPhone re-test open.
 - [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
 
 ## STEP 10 — Notifications
@@ -56,44 +52,52 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Private per-device delivery receipts and invalid-token cleanup.
 
 ### Push blockers — resolved and real-device proven
-- [x] `Invalid JWT Signature` root cause: RSA signature `Buffer` was JSON-stringified before base64url encoding. Fixed by encoding raw bytes.
-- [x] Cryptographic JWT regression test added; old implementation fails, fixed implementation passes.
-- [x] `PUSH_DATABASE_READ_FAILED 401` root cause: RTDB REST OAuth token missed `userinfo.email`; scope set now includes `userinfo.email`, `firebase.database`, `firebase.messaging`.
-- [x] Safe RTDB 401/403 diagnostics added without logging request URL/access token.
-- [x] Real iPhone Home Screen PWA received an external FamilyApp push on the lock screen after both fixes.
-- [x] Real push-tap smoke accepted: tapping the external notification opens/focuses Meldingen with exactly one canonical inbox item.
+- [x] JWT RSA signature bytes are base64url-encoded correctly.
+- [x] RTDB service-account OAuth includes `userinfo.email`, `firebase.database`, `firebase.messaging`.
+- [x] Safe RTDB 401/403 diagnostics do not log secrets.
+- [x] Real iPhone Home Screen PWA received an external FamilyApp push.
+- [x] Real push-tap smoke opens/focuses Meldingen with one canonical item.
 
 ### Task-help response lifecycle — real-device accepted
 - [x] `TaskSharedData v2.2.0` adds occurrence-scoped `declineHelp(id)` state.
-- [x] Targeted help: recipient gets **Hulp geven** + **Afwijzen**.
-- [x] Targeted **Afwijzen** closes only that invitation and stores the recipient/occurrence so it remains resolved after reload/reconnect.
-- [x] Household-wide help: recipient gets **Hulp geven** + **Niet voor mij**.
-- [x] **Niet voor mij** is UID-local; it does **not** close the household broadcast for other eligible family members.
-- [x] A UID that opted out cannot accept the same help occurrence afterward.
-- [x] A later help request on the same task starts a new occurrence and clears old decline/opt-out state.
-- [x] Stale notifications from an earlier help occurrence can never become actionable against a newer request.
-- [x] `NotificationActions v3.1.0` exposes resolved `Afgewezen` / `Niet voor mij` status and removes actions after response.
-- [x] `TaskHouseholdHelpUi v1.1.0` adds **Niet voor mij** in the household help UI.
-- [x] New regressions: `test-notification-help-actions.js` plus extended `test-task-household-help.js`.
-- [x] **Real-device targeted test accepted:** brand-new one-person help request showed **Hulp geven / Afwijzen**; after **Afwijzen**, reload/reopen kept it resolved and the invitation closed.
-- [x] **Real-device household test accepted:** `Heel het gezin` request showed **Hulp geven / Niet voor mij**; after **Niet voor mij**, that UID stayed resolved while another eligible family member could still choose **Hulp geven**.
+- [x] Targeted help exposes **Hulp geven / Afwijzen**.
+- [x] Household help exposes **Hulp geven / Niet voor mij** and opt-out is UID-local.
+- [x] Old decline/opt-out state resets on a later help occurrence.
+- [x] Stale occurrence notifications cannot act on a newer request.
+- [x] Real-device targeted and household response tests accepted.
 
 ### Active-account identity diagnostic — accepted
-- [x] Profile reads the current e-mail from `fbAuth.currentUser` / Firebase Auth, never from browser profile fields.
-- [x] Profile exposes a clear read-only **Actief account** row.
-- [x] Profile module cache cutover bumped to `ProfileScreen.target.js?v=account3`.
-- [x] Regression coverage added to `test-profile-session-actions.js`; related household-leave profile contract updated to the new cache key.
-- [x] Full `Household Rebuild Contracts` SUCCESS on checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`, run `32916523638`.
-- [x] Real iPhone check confirmed the e-mail changes to account B after re-login; same-device identity switching is therefore proven.
+- [x] Profile reads the current e-mail from Firebase Auth, never from local profile fields.
+- [x] Profile exposes a read-only **Actief account** row.
+- [x] Real iPhone test confirmed A → B changes the displayed active e-mail to account B.
 
-### Current STEP 10 blockers from real-device feedback
-- [ ] Fix installed iOS PWA top safe-area handling so search/notification controls never overlap the system status icons.
-- [ ] Fix header-avatar lifecycle so switching UID cannot retain the prior account's avatar from local/cache state.
-- [ ] Fix Home dark-mode surface/background styling so the full Home screen follows dark mode consistently.
+### Avatar account-isolation fix — code complete, device acceptance open
+- [x] `avatarStore.js` now stores authenticated avatar URL and avatar ID under UID-scoped keys.
+- [x] Authenticated avatar resolution never treats unscoped `familyapp-current-user-avatar-v1` as current-user authority.
+- [x] `avatarIdentityBridge v2.0.1` resolves the active avatar from canonical HouseholdContext/Firebase UID and blocks a stale cached v1 bridge from running afterward.
+- [x] `householdIdentityFirebaseBridge v5.0.1` migrates/project avatars only from UID-scoped state and rejects avatar events for a different UID.
+- [x] New `legacyProfileUidBridge v1.0.0` keeps remaining unscoped compatibility keys as a projection of the current UID rather than shared identity authority.
+- [x] Served runtime cache cutover: `avatarIdentityBridge.js?v=2`, `householdIdentityFirebaseBridge.js?v=5`, `legacyProfileUidBridge.js?v=1`.
+- [x] `scripts/test-avatar-account-isolation.js` added and full suite green.
+- [ ] Real iPhone acceptance: switch A → B and verify the top-left/header/Home avatar never remains A or flashes back to A after reopen.
+- [ ] If B still shows A, inspect whether B's Firebase member avatar had already been polluted before this fix; do not destructively auto-reset it without evidence.
+
+### Installed PWA safe-area + Home dark-mode fix — code complete, device acceptance open
+- [x] New `src/styles/homePwaShellFix.css?v=1` is served after `app.css`.
+- [x] Installed standalone header uses `env(safe-area-inset-top)` instead of device-specific pixel offsets.
+- [x] Sticky task/finance tabs include the same safe-area offset.
+- [x] Dark theme restores `var(--c-bg)`, `var(--c-text)`, header/nav theme tokens over the legacy `#fff !important` refresh layer.
+- [x] Home heading/day/XP/activity/fallback carousel surfaces are dark-theme aware.
+- [x] Named dark themes (`*-dark`) receive the same shell fix.
+- [x] `scripts/test-home-pwa-shell.js` added; full contract suite green.
+- [ ] Real iPhone acceptance: installed PWA search/notification controls sit fully below system status icons.
+- [ ] Real iPhone acceptance: Home dark mode has no unintended large white background/surface areas.
 
 ### Latest code / CI / Preview
-- [x] Contract-verified code checkpoint: `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`.
-- [x] `Household Rebuild Contracts` SUCCESS — run `32916523638`.
+- [x] Current code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
+- [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
+- [x] Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj` READY.
+- [x] Served Preview verified to include `homePwaShellFix.css?v=1` after `app.css?v=3` and the UID-safe avatar runtime scripts.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] No production Firebase Rules change and no `main` change.
 
@@ -101,25 +105,29 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Background/closed-PWA external OS push reaches iPhone.
 - [x] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [x] UID-specific read/dismiss survives reload/reconnect.
-- [x] Same-iPhone account switch changes the active Firebase Auth identity to account B.
+- [x] Same-iPhone account switch changes active Firebase Auth identity to B.
+- [x] Targeted **Hulp geven / Afwijzen** real-device accepted.
+- [x] Household **Hulp geven / Niet voor mij** real-device accepted.
+- [ ] Avatar A → B account-isolation re-test on current Preview.
+- [ ] Installed PWA header safe-area re-test on current Preview.
+- [ ] Home dark-mode re-test on current Preview.
 - [ ] Live in-app banner visible only for intended identity.
-- [x] Targeted help **Hulp geven / Afwijzen** real-device accepted.
-- [x] Household help **Hulp geven / Niet voor mij** real-device accepted, including another member still being able to join.
-- [ ] Account switch/logout never leaks inbox/banner/push registration or avatar state from prior UID.
-- [ ] Installed PWA header respects iOS safe area.
-- [ ] Home dark mode fully consistent.
+- [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID.
 - [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
 
 ## Running product/fix backlog
 
-The product owner supplied five open product/fix items. Their full acceptance details live in `docs/FAMILYAPP-FIX-LIST.md` and remain separate from STEP 10 acceptance blockers.
+Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 
-- [ ] Home hero card backgrounds.
-- [ ] Internationalisation: NL / EN / TR / DE / FR.
-- [ ] Task title more prominent in task-create popup.
-- [ ] Recipe → propose meal to household member with accept/reject workflow.
-- [ ] Shopping → complete shopping trip with optional receipt and safe purchased-item cleanup.
+**Open main items: 5**
+1. Home hero card backgrounds.
+2. Internationalisation: NL / EN / TR / DE / FR.
+3. Task title more prominent in task-create popup.
+4. Recipe → propose meal to household member with realtime accept/reject workflow.
+5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
+
+These five items remain separate from STEP 10 acceptance.
 
 ## Later roadmap phases
 
