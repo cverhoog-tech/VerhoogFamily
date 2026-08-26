@@ -15,6 +15,32 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 avatar isolation + installed-PWA safe area + Home dark shell fixes ready for device acceptance
+
+- Product owner finished the feedback round and explicitly asked to start fixing the three blockers found during the real A → B account-isolation smoke.
+- **Avatar account-isolation root cause:** several legacy/profile layers still treated unscoped `familyapp-current-user-avatar-v1` state as current-user authority. The old avatar identity bridge could copy that value into whichever UID became active, and the old Firebase identity migration could even write an unscoped avatar into a newly active member profile when that member had no server avatar.
+- Authenticated avatar storage is now UID-scoped using `familyapp-current-user-avatar-v2:<uid>` and `familyapp-current-user-avatar-id-v2:<uid>`.
+- `avatarStore.js` no longer reads the unscoped avatar as authenticated identity authority; avatar writes now carry the active UID in their event payload.
+- `avatarIdentityBridge v2.0.1` resolves the active user through HouseholdContext/Firebase UID, only syncs scoped state, refreshes on account/household changes, rejects explicitly wrong-UID avatar updates, and claims the old v1 guard so a stale cached v1 script cannot run afterward.
+- `householdIdentityFirebaseBridge v5.0.1` now projects/migrates only UID-scoped current-member profile state, rejects avatar events for a different UID, and claims the old v4 guard so stale cached v4 code cannot reintroduce cross-UID migration.
+- New `legacyProfileUidBridge v1.0.0` preserves old unscoped profile/avatar keys only as a compatibility projection for the currently authenticated UID; those keys are no longer shared identity authority.
+- Served runtime cache cutover is `avatarIdentityBridge.js?v=2`, `householdIdentityFirebaseBridge.js?v=5`, `legacyProfileUidBridge.js?v=1`.
+- Added `scripts/test-avatar-account-isolation.js`; the complete rebuild contract suite passed after this change.
+- **Installed iOS PWA safe area:** the app already uses `viewport-fit=cover`, but `.app-header` had no top safe-area compensation. New `homePwaShellFix.css?v=1` applies `env(safe-area-inset-top)` only in standalone display mode and moves sticky Task/Finance tabs by the matching amount. No iPhone-model-specific pixel offset was introduced.
+- **Home dark-mode root cause:** `app.css` still contains a legacy `WHITE REFRESH` layer with `body{background:#fff!important}` plus a later live-Home rule `#screen-home{background:#fff!important}` and hard-coded light Home text/surfaces. These overruled the otherwise-correct dark theme variables.
+- `homePwaShellFix.css?v=1` is served after `app.css` and restores `var(--c-bg)`, `var(--c-text)`, header/nav theme tokens and dark-aware Home heading/day/XP/activity/carousel fallback surfaces for both `dark` and all `*-dark` themes.
+- Added `scripts/test-home-pwa-shell.js` to lock the safe-area and dark-shell contracts and verify the CSS is actually served after `app.css`.
+- Current code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
+- Full `Household Rebuild Contracts`: **SUCCESS**, run `32954316879`.
+- Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj`: **READY**.
+- Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- Served Preview was additionally fetched and verified to contain `homePwaShellFix.css?v=1` after `app.css?v=3`, plus the UID-safe avatar runtime scripts.
+- These three blockers are **implemented but not yet accepted**. Required device gate: real iPhone must confirm A → B avatar isolation, header controls below the system status area, and fully dark Home background/surfaces.
+- If account B still displays account A's avatar, do not auto-delete server data: this may mean B's Firebase member avatar was already polluted by the old migration before the fix and must be inspected/repaired with evidence.
+- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+
+---
+
 ## 2026-08-26 — Running FamilyApp fix list centralized; account B verified and three STEP 10 blockers captured
 
 - Product owner provided the current five-item FamilyApp running fix list. It is now persisted verbatim in intent and acceptance detail in `docs/FAMILYAPP-FIX-LIST.md`.
@@ -30,8 +56,8 @@ Newest entries belong at the top.
   - installed iOS PWA header does not respect the top safe area, so search/notification controls can sit behind iPhone system status icons;
   - the small top-left header avatar can remain from account A after Firebase Auth has switched to B, making this an account-state/isolation bug rather than cosmetic-only polish;
   - Home dark mode is incomplete: header/navigation become dark while large Home surfaces/background remain white.
-- These three blockers are now explicit in `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/household-rebuild-v2-progress.md`.
-- No code fix for these three items has been started yet; product owner is still providing feedback and asked to finish feedback collection first.
+- These three blockers are explicit in `docs/FAMILYAPP-CURRENT-TODO.md` and `docs/household-rebuild-v2-progress.md`.
+- Follow-up implementation is recorded in the newer entry above.
 - STEP 10 remains **in progress**, not frozen. `main` and production Firebase Rules remain untouched.
 
 ---
@@ -46,7 +72,7 @@ Newest entries belong at the top.
 - The first CI pass failed only because the household-leave test still expected the old `account2` cache key. That stale test expectation was corrected; no product logic rollback was needed.
 - Final code checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`: full `Household Rebuild Contracts` **SUCCESS**, run `32916523638`.
 - Vercel Preview `dpl_J9aCVRQc1PaF6m4864fv8h6ayGeM` is READY; stable branch alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- Follow-up real-device test subsequently confirmed the displayed active e-mail changes to account B after re-login.
+- Follow-up real-device test confirmed the displayed active e-mail changes to account B after re-login.
 - `main` and production Firebase Rules remain untouched.
 
 ---
@@ -82,7 +108,7 @@ Newest entries belong at the top.
 - **Household help test: PASS.** A brand-new `Heel het gezin` request showed **Hulp geven / Niet voor mij**. After one UID chose **Niet voor mij**, that UID stayed resolved while another eligible household member could still choose **Hulp geven**.
 - This real-device result accepts the occurrence-scoped decline/opt-out semantics implemented by `TaskSharedData v2.2.0`, `NotificationActions v3.1.0` and `TaskHouseholdHelpUi v1.1.0`.
 - Contract-verified implementation checkpoint remains `884a8eb7878067143efbd4394a7f76c0de461581`; full `Household Rebuild Contracts` run `32910497000` passed.
-- STEP 10 remains **in progress**, not frozen yet. Remaining acceptance gates are push-tap routing/de-duplication, read/dismiss reconnect persistence, intended-identity in-app banner/account-switch isolation, and final background/foreground stability.
+- STEP 10 remains **in progress**, not frozen yet. Remaining acceptance gates are intended-identity in-app banner/account-switch isolation and final background/foreground stability.
 - `main` and production Firebase Rules remain untouched.
 
 ---
@@ -95,59 +121,31 @@ Newest entries belong at the top.
 - A real FamilyApp iOS lock-screen/banner notification appeared outside the app. Screenshot evidence was provided in chat.
 - This proves the current server → Google OAuth → RTDB recipient/device lookup → FCM → service worker/iOS display path works end-to-end.
 - The earlier `Invalid JWT Signature` and `PUSH_DATABASE_READ_FAILED 401` blockers are therefore considered resolved for the current Preview path.
-- Push tap routing, read/dismiss reconnect persistence, account-switch isolation and final background/foreground stability remain separate STEP 10 acceptance items.
 
-### New functional gap found by product owner
-- The product owner noticed that a task-help notification could be accepted but did not provide a way to decline it.
-- Agreed product semantics:
-  - targeted one-person help request → **Hulp geven** / **Afwijzen**;
-  - household-wide `Heel het gezin` request → **Hulp geven** / **Niet voor mij**;
-  - one household member choosing **Niet voor mij** must not close the broadcast for everyone else.
-
-### Implementation
-- `TaskSharedData v2.2.0` adds `declineHelp(id)` and occurrence-scoped decline/opt-out state keyed to `helpRequestedAt`.
-- Targeted decline closes only the current invitation and stores `helpDeclinedByUid`, `helpDeclinedAt` and `helpDeclinedOccurrence`.
-- Household opt-out stores `helpDeclinedByUids[uid] = helpRequestedAt`, keeps the broadcast open and prevents that UID from accepting the same occurrence afterward.
-- Starting a later help cycle resets prior decline/opt-out state.
-- `NotificationActions v3.1.0` adds targeted **Afwijzen** and household **Niet voor mij** actions, resolved statuses and stale-occurrence rejection.
-- `TaskHouseholdHelpUi v1.1.0` adds **Niet voor mij** to household help presentation and removes actionability for the opted-out UID while leaving other members eligible.
-- Served runtime cache cutover: `taskSharedData.js?v=5`, `taskHouseholdHelpUi.js?v=2`, `notificationActions.js?v=4`.
-
-### Notification customization compatibility
-- Another notification-customization line on the same rebuild branch introduced the new bootstrap architecture: `notificationEvents.js` now loads `notificationExperience.js`, `notificationFinanceCompat.js` and the household-domain projector.
-- The new help-response work preserves that architecture; no rollback/parallel notification authority was introduced.
-- Older contract tests were updated to follow the new bootstrap/experience split instead of incorrectly expecting producer implementation inside `notificationEvents.js` itself.
-
-### Regression / CI
-- Added `scripts/test-notification-help-actions.js` for targeted accept/decline, household opt-out, second-member acceptance and stale-occurrence behavior.
-- Extended `scripts/test-task-household-help.js` for UID-local opt-out, targeted decline persistence and new-occurrence reset.
-- Updated served-runtime/version contracts to the current cache keys and notification-experience producer location.
-- Contract-verified code checkpoint: `884a8eb7878067143efbd4394a7f76c0de461581`.
-- Full `Household Rebuild Contracts`: **SUCCESS**, run `32910497000`.
-- Vercel Preview for that code checkpoint: `dpl_RHJZQZdZPfxMvVMUMDXF2orP7UrY` — READY.
-- Stable Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- `main` and production Firebase Rules untouched; no Production deploy.
+### Task-help decline semantics
+- Targeted one-person help request → **Hulp geven** / **Afwijzen**.
+- Household-wide `Heel het gezin` request → **Hulp geven** / **Niet voor mij**.
+- One household member choosing **Niet voor mij** does not close the broadcast for everyone else.
+- `TaskSharedData v2.2.0`, `NotificationActions v3.1.0` and `TaskHouseholdHelpUi v1.1.0` implement occurrence-safe decline/opt-out.
+- Contract-verified code checkpoint `884a8eb7878067143efbd4394a7f76c0de461581`; full suite run `32910497000` SUCCESS.
+- Vercel Preview `dpl_RHJZQZdZPfxMvVMUMDXF2orP7UrY` READY.
 
 ---
 
 ## 2026-08-26 — STEP 10 RTDB 401 root cause fixed
 
 - Real-device retest after the JWT fix proved OAuth now succeeded, but `/api/push-send` advanced to `PUSH_DATABASE_READ_FAILED 401`.
-- Verified against Firebase RTDB REST auth documentation: service-account OAuth requires `userinfo.email` + `firebase.database`; sender was missing `userinfo.email`.
-- `firebasePushSender v1.0.3` now requests `userinfo.email`, `firebase.database` and `firebase.messaging`.
-- Added safe RTDB 401/403 diagnostics without logging the request URL/access token.
-- Extended scope regression coverage and added `test-push-rtdb-diagnostics.js`.
+- RTDB REST service-account OAuth now includes `userinfo.email`, `firebase.database` and `firebase.messaging`.
+- Safe RTDB 401/403 diagnostics added without logging request URL/access token.
 - Later real iPhone lock-screen push acceptance proves this fix works end-to-end.
 
 ---
 
 ## 2026-08-26 — STEP 10 JWT signature root cause fixed
 
-- Full Firebase Admin SDK key rotation did not change `invalid_grant / Invalid JWT Signature`, proving the key itself was not the root cause.
-- `b64url()` in `firebasePushSender.js` JSON-stringified the RSA signature `Buffer` instead of base64url-encoding raw bytes.
-- Fixed raw-Buffer encoding while keeping the existing trusted sender architecture.
-- Added `test-push-jwt-signature-contract.js` with a generated RSA keypair and real cryptographic signature verification; old code fails, fixed code passes.
-- Later real-device tests confirmed `Invalid JWT Signature` disappeared.
+- `b64url()` in `firebasePushSender.js` had JSON-stringified the RSA signature `Buffer` instead of base64url-encoding raw bytes.
+- Fixed raw-Buffer encoding while keeping the trusted sender architecture.
+- Added a generated-RSA-key cryptographic regression test; later real-device tests confirmed `Invalid JWT Signature` disappeared.
 
 ---
 
@@ -199,8 +197,8 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Finish collecting the product owner's remaining real-device feedback before changing the three newly observed blockers.
-2. Then fix and re-test: iOS PWA safe area, stale prior-UID header avatar, and full Home dark mode.
-3. Verify the live in-app banner/inbox/unread badge/push registration never leaks across A → B account switching.
-4. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+1. On the current stable Preview, real-iPhone test the three just-implemented blockers: A → B avatar isolation, installed-PWA header safe area, and complete Home dark mode.
+2. If those pass, verify live in-app banner/inbox/unread badge/push registration isolation across A → B switching.
+3. Run reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+4. Complete owner-transfer household-leave smoke if still required for the phase gate.
 5. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
