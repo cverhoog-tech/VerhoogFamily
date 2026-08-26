@@ -15,6 +15,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 task-help response actions real-device accepted
+
+- Product owner completed both requested real-device acceptance tests on the stable rebuild Preview.
+- **Targeted help test: PASS.** A brand-new one-person help request showed **Hulp geven / Afwijzen**. After choosing **Afwijzen**, reload/reopen kept the request resolved and the invitation closed.
+- **Household help test: PASS.** A brand-new `Heel het gezin` request showed **Hulp geven / Niet voor mij**. After one UID chose **Niet voor mij**, that UID stayed resolved while another eligible household member could still choose **Hulp geven**.
+- This real-device result accepts the occurrence-scoped decline/opt-out semantics implemented by `TaskSharedData v2.2.0`, `NotificationActions v3.1.0` and `TaskHouseholdHelpUi v1.1.0`.
+- Contract-verified implementation checkpoint remains `884a8eb7878067143efbd4394a7f76c0de461581`; full `Household Rebuild Contracts` run `32910497000` passed.
+- STEP 10 remains **in progress**, not frozen yet. Remaining acceptance gates are push-tap routing/de-duplication, read/dismiss reconnect persistence, intended-identity in-app banner/account-switch isolation, and final background/foreground stability.
+- `main` and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-26 — STEP 10 external iOS push accepted; task-help decline/opt-out lifecycle implemented
 
 ### Real iOS Web Push acceptance
@@ -55,7 +67,6 @@ Newest entries belong at the top.
 - Vercel Preview for that code checkpoint: `dpl_RHJZQZdZPfxMvVMUMDXF2orP7UrY` — READY.
 - Stable Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - `main` and production Firebase Rules untouched; no Production deploy.
-- STEP 10 remains **in progress**, because the new **Afwijzen / Niet voor mij** actions still require real-device acceptance.
 
 ---
 
@@ -128,8 +139,8 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Use the stable rebuild Preview on a real iPhone/Home Screen PWA.
-2. **Targeted help test:** send a brand-new one-person help request to the recipient; open Meldingen; verify **Hulp geven / Afwijzen**; choose **Afwijzen**; reload/reopen and confirm it stays resolved and the invitation is closed.
-3. **Household help test:** send a brand-new `Heel het gezin` request; verify **Hulp geven / Niet voor mij**; choose **Niet voor mij** for one UID; confirm that UID is resolved while another eligible household member can still choose **Hulp geven**.
-4. Continue push tap/read-dismiss/account-isolation/background-foreground acceptance.
+1. Test push-tap routing from a real external iOS notification: tapping the push must open/focus FamilyApp notifications and show exactly one canonical inbox item.
+2. Verify UID-specific read/dismiss survives reload/reconnect.
+3. Verify the live in-app banner is visible only for the intended identity, including account switch/logout isolation for inbox/banner/push registration.
+4. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
 5. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
