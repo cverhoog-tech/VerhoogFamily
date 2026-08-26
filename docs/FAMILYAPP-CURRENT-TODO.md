@@ -10,11 +10,13 @@ New chats/agents should read these files before continuing development on the re
 
 ## Current phase
 
-**STEP 10 — Notifications is ready for explicit product acceptance/freeze. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, same-iPhone account switching, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, Home dark mode, intended-recipient live notifications, full B → A inbox/unread/banner/push isolation, and the final reload/background→foreground stability smoke are now real-device proven. No functional STEP 10 device gate remains open; only explicit product acceptance/freeze is still required.**
+**STEP 10 — Notifications is accepted and frozen as of 2026-08-26.** Product owner explicitly approved the phase after all functional and real-device gates passed: external iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, same-iPhone account switching, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, Home dark mode, intended-recipient live notifications, full B → A inbox/unread/banner/push isolation, and repeated reload/background→foreground stability.
 
-The previously tracked owner-transfer **Gezin verlaten** smoke remains open as a separate account/household lifecycle test. A roadmap check confirms it is not part of the STEP 10 Notifications scope, so it no longer blocks the STEP 10 freeze.
+**Next roadmap phase: STEP 11 — Party quests. Not started yet.** Do not alter the frozen STEP 10 contracts except for a clearly identified regression fix.
 
-STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
+The previously tracked owner-transfer **Gezin verlaten** smoke remains open as a separate account/household lifecycle test. A roadmap check confirms it is not part of the STEP 10 Notifications scope and did not block the freeze.
+
+STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are now accepted/frozen. `main` and production Firebase Rules remain untouched.
 
 ## Latest verified product state
 
@@ -36,9 +38,10 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] **STEP 10 account UI isolation accepted:** after B → A switch/logout, B's inbox/unread/banner state is absent under A, and a new B-only event while A is active does not produce a live banner, unread increment or inbox item for A.
 - [x] **STEP 10 push-registration isolation accepted:** with the same installed PWA authenticated as A and backgrounded/closed, a new notification targeted only to B did not produce a B-only iOS OS push on that iPhone.
 - [x] **STEP 10 stability accepted:** repeated close/open and background→foreground use on the installed iPhone PWA produced no freeze, white screen or crash, and navigation/notifications remained usable.
+- [x] **STEP 10 explicit product acceptance/freeze recorded:** product owner said **“Step 10 akkoord”** on 2026-08-26.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test, but does not block STEP 10.
 
-## STEP 10 — Notifications
+## STEP 10 — Notifications — FROZEN
 
 ### Canonical notification + Web Push foundation — complete
 - [x] Household-scoped canonical notification repository with HouseholdContext UID/household/revision identity.
@@ -112,14 +115,14 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Navigation and Meldingen remain usable after resume.
 
 ### Latest code / CI / Preview
-- [x] Current code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
+- [x] Frozen STEP 10 code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
 - [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
 - [x] Vercel Preview `dpl_3FjdEX2qemXGjNFvT7Tb3TNtnVEj` READY.
 - [x] Served Preview verified to include `homePwaShellFix.css?v=1` after `app.css?v=3` and the UID-safe avatar runtime scripts.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] No production Firebase Rules change and no `main` change.
 
-### Remaining STEP 10 acceptance
+### STEP 10 acceptance gate
 - [x] Background/closed-PWA external OS push reaches iPhone.
 - [x] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [x] UID-specific read/dismiss survives reload/reconnect.
@@ -133,11 +136,26 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Account switch/logout isolates prior UID inbox, unread count and live banner; B-only events do not surface while A is active.
 - [x] Prior-UID push-registration isolation accepted after account switch/logout.
 - [x] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
-- [ ] **Only remaining STEP 10 gate: explicit product acceptance/freeze.**
+- [x] Explicit product acceptance/freeze — **2026-08-26**.
+
+## Next roadmap phase — STEP 11 Party quests
+
+Status: **not started**.
+
+Roadmap scope:
+- invites;
+- join/leave;
+- help requests;
+- completion;
+- rewards;
+- notifications;
+- idempotency.
+
+STEP 11 must build on the frozen Tasks + Progression + Notifications contracts without reopening them casually.
 
 ## Separate account/household lifecycle backlog
 
-- [ ] Owner-transfer **Gezin verlaten** real smoke test. This remains important but is not part of the STEP 10 Notifications scope in the roadmap and therefore does not block the STEP 10 freeze.
+- [ ] Owner-transfer **Gezin verlaten** real smoke test. This remains important but is not part of the STEP 10 Notifications scope in the roadmap.
 
 ## Running product/fix backlog
 
@@ -150,7 +168,7 @@ Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 4. Recipe → propose meal to household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 
-These five items remain separate from STEP 10 acceptance.
+These five items remain separate from the rebuild phase acceptance.
 
 ## Later roadmap phases
 
@@ -169,7 +187,7 @@ These five items remain separate from STEP 10 acceptance.
 - Main stays untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless explicitly changed.
-- STEP 8 and STEP 9 remain frozen.
+- STEP 8, STEP 9 and STEP 10 remain frozen.
 - UID/household identity comes from HouseholdContext / Firebase Auth.
 - Notification state and push delivery remain separate layers.
 - Realtime subscriptions require exact cleanup + stale-context protection.
