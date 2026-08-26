@@ -9,7 +9,7 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, and UID-specific read/dismiss persistence are now real-device proven. Remaining STEP 10 gates are intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, and UID-specific read/dismiss persistence are real-device proven. The current account-isolation test exposed an iOS/PWA Google-login ambiguity: after sign-out, Google may reconnect the prior Google session without making the selected identity obvious. Profile now shows the active Firebase Auth e-mail address directly so the real signed-in identity can be verified before continuing the isolation gate. Remaining STEP 10 gates are intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -24,10 +24,12 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] RTDB OAuth scope bug (`userinfo.email`) fixed and real-device confirmed by successful downstream push delivery.
 - [x] Profile/Meer **Uitloggen** works; `Verse start` removed.
 - [x] UID-scoped Profile values prevent Shane/Esra browser leakage to another account.
+- [x] Profile now shows **Actief account** using the current Firebase Auth user's e-mail directly; it is read-only and not sourced from local profile data.
 - [x] Normal-member **Gezin verlaten** accepted.
 - [x] Whole-family task help (`Heel het gezin`) exists and supports multiple willing helpers.
 - [x] Targeted task-help **Afwijzen** accepted on real device and remains resolved after reload/reopen.
 - [x] Household task-help **Niet voor mij** accepted on real device while another eligible family member can still choose **Hulp geven**.
+- [ ] Same-iPhone Google account switching still needs verification: after sign-out/login, confirm the **Actief account** e-mail actually changes before accepting account isolation.
 - [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
 
 ## STEP 10 — Notifications
@@ -69,14 +71,21 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] `NotificationActions v3.1.0` exposes resolved `Afgewezen` / `Niet voor mij` status and removes actions after response.
 - [x] `TaskHouseholdHelpUi v1.1.0` adds **Niet voor mij** in the household help UI.
 - [x] New regressions: `test-notification-help-actions.js` plus extended `test-task-household-help.js`.
-- [x] Full `Household Rebuild Contracts` SUCCESS on code checkpoint `884a8eb7878067143efbd4394a7f76c0de461581`, run `32910497000`.
 - [x] **Real-device targeted test accepted:** brand-new one-person help request showed **Hulp geven / Afwijzen**; after **Afwijzen**, reload/reopen kept it resolved and the invitation closed.
 - [x] **Real-device household test accepted:** `Heel het gezin` request showed **Hulp geven / Niet voor mij**; after **Niet voor mij**, that UID stayed resolved while another eligible family member could still choose **Hulp geven**.
 
+### Active-account identity diagnostic — code complete, device check open
+- [x] Profile reads the current e-mail from `fbAuth.currentUser` / Firebase Auth, never from browser profile fields.
+- [x] Profile exposes a clear read-only **Actief account** row.
+- [x] Profile module cache cutover bumped to `ProfileScreen.target.js?v=account3`.
+- [x] Regression coverage added to `test-profile-session-actions.js`; related household-leave profile contract updated to the new cache key.
+- [x] Full `Household Rebuild Contracts` SUCCESS on checkpoint `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`, run `32916523638`.
+- [ ] Real iPhone check: open Profile and verify the displayed e-mail matches the Firebase account actually holding the visible household data.
+
 ### Latest code / CI / Preview
-- [x] Contract-verified code checkpoint: `884a8eb7878067143efbd4394a7f76c0de461581`.
-- [x] `Household Rebuild Contracts` SUCCESS — run `32910497000`.
-- [x] Vercel Preview `dpl_RHJZQZdZPfxMvVMUMDXF2orP7UrY` READY for that code checkpoint.
+- [x] Contract-verified code checkpoint: `58d46b463648f06bbb7b2aebb0efa1ecfc2a3864`.
+- [x] `Household Rebuild Contracts` SUCCESS — run `32916523638`.
+- [x] Vercel Preview `dpl_J9aCVRQc1PaF6m4864fv8h6ayGeM` READY for that checkpoint.
 - [x] Stable branch alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 - [x] No production Firebase Rules change and no `main` change.
 
@@ -87,7 +96,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [ ] Live in-app banner visible only for intended identity.
 - [x] Targeted help **Hulp geven / Afwijzen** real-device accepted.
 - [x] Household help **Hulp geven / Niet voor mij** real-device accepted, including another member still being able to join.
-- [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID.
+- [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID; first verify the active e-mail truly changes on the same iPhone.
 - [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
 
