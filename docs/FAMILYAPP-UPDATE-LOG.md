@@ -15,6 +15,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 push-tap routing/de-duplication real-device accepted
+
+- Product owner completed the real iPhone push-tap smoke on the stable rebuild Preview.
+- Result: **PASS**.
+- Tapping a real external FamilyApp iOS notification opens/focuses the FamilyApp **Meldingen** screen correctly.
+- The corresponding canonical inbox event appears **exactly once**; no duplicate canonical notification was created by the push tap/open flow.
+- This accepts the push click-routing/de-duplication gate for the current STEP 10 Preview path.
+- Remaining STEP 10 acceptance gates: UID-specific read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation across inbox/banner/push transport, and final reload/background→foreground stability.
+- STEP 10 remains **in progress** and is not frozen yet. `main` and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-26 — STEP 10 task-help response actions real-device accepted
 
 - Product owner completed both requested real-device acceptance tests on the stable rebuild Preview.
@@ -139,8 +151,7 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Test push-tap routing from a real external iOS notification: tapping the push must open/focus FamilyApp notifications and show exactly one canonical inbox item.
-2. Verify UID-specific read/dismiss survives reload/reconnect.
-3. Verify the live in-app banner is visible only for the intended identity, including account switch/logout isolation for inbox/banner/push registration.
-4. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
-5. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
+1. Verify UID-specific read/dismiss survives reload/reconnect on the real iPhone Preview.
+2. Verify the live in-app banner is visible only for the intended identity, including account switch/logout isolation for inbox/banner/push registration.
+3. Run a reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+4. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
