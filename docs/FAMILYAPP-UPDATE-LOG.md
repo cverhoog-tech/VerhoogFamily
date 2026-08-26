@@ -15,6 +15,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 prior-UID push-registration isolation real-device accepted
+
+- Product owner completed the dedicated push-transport isolation smoke and again reported **“Isolatie goed”**.
+- The same iPhone Home Screen PWA was authenticated as account A after previously being used by account B.
+- FamilyApp was backgrounded/closed and another session generated a brand-new notification targeted only to account B.
+- Result: **PASS** — the iPhone did not receive a B-only iOS OS push while the installed PWA was authenticated as A.
+- Together with the previously accepted inbox/unread/banner negative-isolation test, this completes the STEP 10 account-switch/logout isolation gate across canonical inbox state, live UI state and push transport.
+- Remaining STEP 10 acceptance: final reload/background→foreground stability smoke, owner-transfer household-leave smoke if still required for the phase gate, and explicit product freeze.
+- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**.
+
+---
+
 ## 2026-08-26 — STEP 10 B → A UI/inbox notification isolation real-device accepted
 
 - Product owner completed the next real-iPhone account-isolation smoke and reported **“Isolatie goed”**.
@@ -241,9 +253,7 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. With the iPhone still authenticated as account A, fully background/close the Home Screen PWA.
-2. From another session, create a brand-new notification targeted only to account B.
-3. Verify the iPhone does **not** receive a B-only OS push while the installed PWA is authenticated as A; this is the remaining prior-UID push-registration isolation gate.
-4. Then run reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
-5. Complete owner-transfer household-leave smoke if still required for the phase gate.
-6. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
+1. Run the final real-iPhone reload/background→foreground stability smoke on the current stable Preview: reload/reopen, background the Home Screen PWA, foreground it again, and repeat several times.
+2. Verify there is no freeze, white screen or WebKit crash and that FamilyApp remains responsive after returning.
+3. Complete owner-transfer household-leave smoke if still required for the phase gate.
+4. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
