@@ -15,6 +15,20 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 Notifications explicitly accepted and frozen
+
+- Product owner explicitly said **“Step 10 akkoord”** after all functional and real-device acceptance gates had passed.
+- STEP 10 Notifications is therefore **accepted/frozen** as of 2026-08-26.
+- Frozen acceptance includes canonical household notification state, per-UID read/dismiss, external iOS Web Push, push-tap routing/de-duplication, task-help response actions, same-iPhone account switching, UID-scoped avatar isolation, installed-PWA safe-area behavior, Home dark mode, intended-recipient live notifications, B → A inbox/unread/banner isolation, prior-UID push-registration isolation, and repeated close/open + background→foreground stability.
+- Frozen code checkpoint remains `538a5b89ab270bfdfc2c9f3a3d97093260133641`; full `Household Rebuild Contracts` run `32954316879` was SUCCESS.
+- Stable rebuild Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- STEP 11 **Party quests** is now the next roadmap phase but has **not started yet**.
+- Do not reopen frozen STEP 10 contracts except for a clearly identified regression fix.
+- Owner-transfer **Gezin verlaten** remains a separate account/household lifecycle backlog smoke; roadmap review confirms it was not a STEP 10 Notifications gate.
+- `main` and production Firebase Rules remain untouched.
+
+---
+
 ## 2026-08-26 — STEP 10 final stability gate real-device accepted
 
 - Product owner completed the final installed-iPhone-PWA stability smoke and reported **“Stabiliteit goed”**.
@@ -23,7 +37,7 @@ Newest entries belong at the top.
 - FamilyApp remained responsive after resume; navigation and **Meldingen** continued to work normally.
 - This completes the last functional/real-device acceptance gate for STEP 10 Notifications.
 - Roadmap review confirms the separately open owner-transfer **Gezin verlaten** smoke is not part of the STEP 10 Notifications scope. It remains an account/household lifecycle backlog item but does not block STEP 10.
-- STEP 10 is now **ready for explicit product acceptance/freeze**. Do not start STEP 11 until that explicit freeze is given and recorded.
+- STEP 10 became **ready for explicit product acceptance/freeze**, which was granted in the later entry above.
 - `main` and production Firebase Rules remain untouched.
 
 ---
@@ -36,7 +50,7 @@ Newest entries belong at the top.
 - Result: **PASS** — the iPhone did not receive a B-only iOS OS push while the installed PWA was authenticated as A.
 - Together with the previously accepted inbox/unread/banner negative-isolation test, this completes the STEP 10 account-switch/logout isolation gate across canonical inbox state, live UI state and push transport.
 - Remaining STEP 10 acceptance at that point: final reload/background→foreground stability smoke and explicit product freeze.
-- `main` and production Firebase Rules remain untouched. STEP 10 remained **in progress** pending the later stability pass.
+- `main` and production Firebase Rules remain untouched.
 
 ---
 
@@ -252,6 +266,6 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. Obtain explicit product acceptance to freeze STEP 10 Notifications.
-2. After that freeze is recorded, STEP 11 Party quests may begin.
-3. Keep owner-transfer **Gezin verlaten** as a separate account/household lifecycle backlog test; it does not block STEP 10.
+1. STEP 10 is frozen; preserve its accepted contracts.
+2. STEP 11 Party quests is the next roadmap phase and may begin when explicitly started.
+3. Keep owner-transfer **Gezin verlaten** as a separate account/household lifecycle backlog test.
