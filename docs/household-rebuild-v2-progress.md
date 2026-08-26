@@ -27,9 +27,9 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] STEP 7 — Shopping.
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression / XP / Achievements — accepted/frozen 2026-08-24.
-- [-] STEP 10 — Notifications — canonical inbox, trusted sender and external iOS Web Push are real-device proven. Targeted **Afwijzen** and household **Niet voor mij** task-help responses are now also real-device accepted. Remaining final notification acceptance is push-tap routing/de-duplication, read/dismiss reconnect persistence, identity-isolated in-app banners/account switch, and background/foreground stability before freeze.
+- [-] STEP 10 — Notifications — canonical inbox, trusted sender, external iOS Web Push, task-help response handling and push-tap routing/de-duplication are now real-device proven. Remaining final acceptance is read/dismiss reconnect persistence, identity-isolated in-app banners/account switch, and background/foreground stability before freeze.
 
-**Current phase: STEP 10 Notifications.** The Home Screen PWA has received a real external iOS lock-screen notification, proving the complete server → FCM → service-worker/iOS delivery path after fixing the JWT Buffer encoding bug and missing RTDB `userinfo.email` scope. The targeted help response flow and household-wide opt-out flow have now both passed real-device acceptance as well. STEP 10 is not frozen yet because the remaining lifecycle/isolation/stability gates still need explicit device verification.
+**Current phase: STEP 10 Notifications.** The Home Screen PWA has received a real external iOS lock-screen notification, and tapping that notification now also passed the real-device routing gate: FamilyApp opens/focuses Meldingen and the canonical item appears exactly once. Targeted **Afwijzen** and household **Niet voor mij** are also accepted. STEP 10 is not frozen yet because read/dismiss persistence, identity isolation and final stability still need explicit verification.
 
 ## Frozen phases
 
@@ -50,6 +50,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Trusted sender verifies caller/member/event actor and resolves recipients/tokens server-side.
 - [x] Private delivery receipts and invalid-token cleanup.
 - [x] External iOS Web Push real-device accepted on Home Screen PWA.
+- [x] Real push-tap routing/de-duplication accepted: tapping an external push opens/focuses Meldingen with exactly one canonical inbox item.
 
 ### Delivery blockers resolved
 - [x] JWT signature root cause fixed: raw RSA `Buffer` bytes now base64url encode correctly instead of JSON-stringifying the Buffer.
@@ -91,7 +92,7 @@ This is the compact phase-level tracker. The roadmap remains the architecture/sc
 - [x] Standalone iPhone permission/registration.
 - [x] Cross-account canonical notification reaches intended UID.
 - [x] Background/closed-PWA OS push reaches iPhone.
-- [ ] Push tap opens/focuses notification screen without duplicate inbox event.
+- [x] Push tap opens/focuses notification screen without duplicate inbox event.
 - [ ] UID-specific read/dismiss survives reconnect.
 - [x] Targeted **Hulp geven / Afwijzen** real-device acceptance.
 - [x] Household **Hulp geven / Niet voor mij** real-device acceptance.
@@ -138,7 +139,8 @@ Detailed contract: `docs/multi-family-prototype-acceptance.md`.
 - 2026-08-26 — RTDB 401 traced to missing `userinfo.email` scope and fixed.
 - 2026-08-26 — **real external iOS lock-screen FamilyApp push received; Web Push end-to-end accepted.**
 - 2026-08-26 — targeted **Afwijzen** + household **Niet voor mij** help-response lifecycle implemented with occurrence safety; full rebuild contracts SUCCESS at `884a8eb7...`.
-- 2026-08-26 — **real-device targeted Afwijzen and household Niet voor mij tests both accepted.** STEP 10 remains open only for the remaining push-tap/read-dismiss/account-isolation/stability gates.
+- 2026-08-26 — **real-device targeted Afwijzen and household Niet voor mij tests both accepted.**
+- 2026-08-26 — **real-device push-tap routing/de-duplication accepted:** tapping an external iOS notification opens/focuses Meldingen and shows the canonical event exactly once.
 
 ## Standing guardrails
 - Main untouched until explicit approval.
