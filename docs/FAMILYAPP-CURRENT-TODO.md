@@ -10,7 +10,9 @@ New chats/agents should read these files before continuing development on the re
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, real same-iPhone account switching to account B, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, full Home dark-mode behavior, intended-recipient live in-app notifications, B → A inbox/unread/banner isolation, and prior-UID push-registration isolation are now real-device proven. Remaining STEP 10 gates are final reload/background→foreground stability, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.**
+**STEP 10 — Notifications is ready for explicit product acceptance/freeze. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, UID-specific read/dismiss persistence, same-iPhone account switching, UID-scoped avatar isolation, installed-iOS-PWA safe-area handling, Home dark mode, intended-recipient live notifications, full B → A inbox/unread/banner/push isolation, and the final reload/background→foreground stability smoke are now real-device proven. No functional STEP 10 device gate remains open; only explicit product acceptance/freeze is still required.**
+
+The previously tracked owner-transfer **Gezin verlaten** smoke remains open as a separate account/household lifecycle test. A roadmap check confirms it is not part of the STEP 10 Notifications scope, so it no longer blocks the STEP 10 freeze.
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -33,7 +35,8 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] **STEP 10 live in-app notification accepted for intended recipient:** with account B active in the foreground, a new targeted help request from account A produced the live notification, updated the red unread count, and appeared exactly once in Meldingen.
 - [x] **STEP 10 account UI isolation accepted:** after B → A switch/logout, B's inbox/unread/banner state is absent under A, and a new B-only event while A is active does not produce a live banner, unread increment or inbox item for A.
 - [x] **STEP 10 push-registration isolation accepted:** with the same installed PWA authenticated as A and backgrounded/closed, a new notification targeted only to B did not produce a B-only iOS OS push on that iPhone.
-- [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
+- [x] **STEP 10 stability accepted:** repeated close/open and background→foreground use on the installed iPhone PWA produced no freeze, white screen or crash, and navigation/notifications remained usable.
+- [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test, but does not block STEP 10.
 
 ## STEP 10 — Notifications
 
@@ -103,6 +106,11 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] While A is active in the same PWA, a new event targeted only to B does not surface to A as live banner, unread increment or inbox item.
 - [x] With A still active and the PWA backgrounded/closed, a new B-only event does not produce a B-only iOS OS push on the device; prior-B push registration isolation is real-device accepted.
 
+### Device stability — accepted
+- [x] Repeated full PWA close/open succeeds without freeze or white screen.
+- [x] Repeated background→foreground transitions succeed without WebKit/PWA crash.
+- [x] Navigation and Meldingen remain usable after resume.
+
 ### Latest code / CI / Preview
 - [x] Current code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
 - [x] `Household Rebuild Contracts` SUCCESS — run `32954316879`.
@@ -124,9 +132,12 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Live in-app notification reaches the intended active UID, updates unread count, and appears once in canonical inbox.
 - [x] Account switch/logout isolates prior UID inbox, unread count and live banner; B-only events do not surface while A is active.
 - [x] Prior-UID push-registration isolation accepted after account switch/logout.
-- [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
-- [ ] Owner-transfer household-leave smoke if still required for the STEP 10 phase gate.
-- [ ] Freeze STEP 10 only after explicit product acceptance.
+- [x] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
+- [ ] **Only remaining STEP 10 gate: explicit product acceptance/freeze.**
+
+## Separate account/household lifecycle backlog
+
+- [ ] Owner-transfer **Gezin verlaten** real smoke test. This remains important but is not part of the STEP 10 Notifications scope in the roadmap and therefore does not block the STEP 10 freeze.
 
 ## Running product/fix backlog
 
