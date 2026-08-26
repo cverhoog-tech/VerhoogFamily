@@ -1,0 +1,106 @@
+/* FamilyApp Home / installed-PWA shell fixes v1.0.0
+   Loaded after app.css so these rules intentionally override the old
+   WHITE REFRESH and LIVE HOME hard-coded light surfaces. */
+
+/* iOS standalone PWAs with viewport-fit=cover render into the status area.
+   Keep the app header below the device safe area rather than using a model-
+   specific pixel offset. Browser/Safari mode stays unchanged. */
+@supports (padding-top: env(safe-area-inset-top)) {
+  @media (display-mode: standalone) {
+    .app-header {
+      padding-top: calc(12px + env(safe-area-inset-top)) !important;
+      min-height: calc(54px + env(safe-area-inset-top)) !important;
+    }
+
+    /* These tab bars use a sticky offset based on the normal 54px header.
+       Include the same safe-area addition so they do not slide underneath
+       the taller standalone header. */
+    .task-tabs,
+    .fin-tabs {
+      top: calc(54px + env(safe-area-inset-top)) !important;
+    }
+  }
+}
+
+/* iOS exposes navigator.standalone as well as display-mode. mobileUxFixes
+   adds this class at runtime as a fallback for WebKit versions where the
+   standalone media query is slow to settle on first paint. */
+html.familyapp-standalone .app-header {
+  padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+  min-height: calc(54px + env(safe-area-inset-top, 0px)) !important;
+}
+html.familyapp-standalone .task-tabs,
+html.familyapp-standalone .fin-tabs {
+  top: calc(54px + env(safe-area-inset-top, 0px)) !important;
+}
+
+/* The legacy white-refresh layer hard-coded #fff with !important, which
+   overruled the theme variables. Restore the theme tokens for every dark
+   theme, not only the default nature theme. */
+[data-theme="dark"] body,
+[data-theme$="-dark"] body {
+  background: var(--c-bg) !important;
+  color: var(--c-text) !important;
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .app-header,
+[data-theme$="-dark"] .app-header {
+  background: color-mix(in srgb, var(--c-header-bg) 92%, transparent) !important;
+  border-bottom-color: var(--c-border) !important;
+}
+
+[data-theme="dark"] .bottom-nav,
+[data-theme$="-dark"] .bottom-nav {
+  background: color-mix(in srgb, var(--c-nav-bg) 94%, transparent) !important;
+  border-top-color: var(--c-border) !important;
+  box-shadow: 0 -10px 30px rgba(0,0,0,.18) !important;
+}
+
+[data-theme="dark"] #screen-home,
+[data-theme$="-dark"] #screen-home {
+  background: var(--c-bg) !important;
+  color: var(--c-text) !important;
+}
+
+[data-theme="dark"] #screen-home .home-hero h1,
+[data-theme$="-dark"] #screen-home .home-hero h1 {
+  color: var(--c-text) !important;
+}
+
+[data-theme="dark"] #screen-home .home-day,
+[data-theme$="-dark"] #screen-home .home-day,
+[data-theme="dark"] #screen-home .home-xp-label-min,
+[data-theme$="-dark"] #screen-home .home-xp-label-min,
+[data-theme="dark"] #screen-home .home-section-label,
+[data-theme$="-dark"] #screen-home .home-section-label {
+  color: var(--c-text2) !important;
+}
+
+[data-theme="dark"] #screen-home .home-xp-bar-min,
+[data-theme$="-dark"] #screen-home .home-xp-bar-min {
+  background: var(--c-surface2) !important;
+}
+
+/* Avoid a bright flash/fallback surface while carousel artwork decodes. */
+[data-theme="dark"] #screen-home .home-carousel,
+[data-theme$="-dark"] #screen-home .home-carousel,
+[data-theme="dark"] #screen-home .home-carousel-track .home-slide,
+[data-theme$="-dark"] #screen-home .home-carousel-track .home-slide {
+  background: var(--c-surface2) !important;
+}
+
+[data-theme="dark"] #screen-home .activity-icon,
+[data-theme$="-dark"] #screen-home .activity-icon {
+  background: color-mix(in srgb, var(--c-primary) 18%, var(--c-surface2)) !important;
+}
+
+/* Keep any optional legacy Home design card/caption theme-correct if it is
+   temporarily made visible by a future feature flag. */
+[data-theme="dark"] .home-design-card,
+[data-theme$="-dark"] .home-design-card,
+[data-theme="dark"] .home-design-caption,
+[data-theme$="-dark"] .home-design-caption {
+  background: var(--c-surface) !important;
+  border-color: var(--c-border) !important;
+}
