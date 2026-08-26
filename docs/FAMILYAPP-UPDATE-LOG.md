@@ -15,6 +15,20 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-26 — STEP 10 avatar isolation + PWA safe area + Home dark mode real-device accepted
+
+- Product owner re-tested all three previously blocking fixes on the real iPhone Home Screen PWA and reported that all three work.
+- **PASS — avatar isolation:** after account A → B switching, the top-left/Home avatar follows the active B identity instead of retaining A.
+- **PASS — installed-PWA safe area:** search/notification controls now sit correctly below the iPhone system status area and no longer overlap status icons.
+- **PASS — Home dark mode:** Home now follows dark mode consistently; the previous large white shell/background areas are gone.
+- These three blockers are therefore accepted for the current STEP 10 Preview path.
+- Implementation checkpoint remains `538a5b89ab270bfdfc2c9f3a3d97093260133641`; full `Household Rebuild Contracts` run `32954316879` was SUCCESS.
+- Stable Preview alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- Remaining STEP 10 gates: intended-identity live in-app banner behavior, A → B/logout isolation across inbox/banner/push registration, reload/background→foreground stability, owner-transfer household-leave smoke if still required for the phase gate, and explicit freeze.
+- `main` and production Firebase Rules remain untouched. STEP 10 remains **in progress**, not frozen yet.
+
+---
+
 ## 2026-08-26 — STEP 10 avatar isolation + installed-PWA safe area + Home dark shell fixes ready for device acceptance
 
 - Product owner finished the feedback round and explicitly asked to start fixing the three blockers found during the real A → B account-isolation smoke.
@@ -197,8 +211,7 @@ Earlier detailed STEP 0–7, person/identity modernization, Shopping, Recipes, M
 
 ## Current next action
 
-1. On the current stable Preview, real-iPhone test the three just-implemented blockers: A → B avatar isolation, installed-PWA header safe area, and complete Home dark mode.
-2. If those pass, verify live in-app banner/inbox/unread badge/push registration isolation across A → B switching.
-3. Run reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
-4. Complete owner-transfer household-leave smoke if still required for the phase gate.
-5. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
+1. Verify live in-app banner/inbox/unread badge/push registration isolation across A → B switching.
+2. Run reload/background→foreground stability smoke: no freeze, white screen or WebKit crash.
+3. Complete owner-transfer household-leave smoke if still required for the phase gate.
+4. Freeze STEP 10 only after explicit product acceptance; do not start STEP 11 before that gate.
