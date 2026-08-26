@@ -9,7 +9,7 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push is now real-device proven on the iPhone Home Screen PWA. The remaining new functional gate is task-help response handling: targeted help must support `Hulp geven` / `Afwijzen`, while household-wide help must support `Hulp geven` / `Niet voor mij` without closing the broadcast for other family members. This lifecycle is implemented and contract-green, but still needs real-device acceptance before STEP 10 may freeze.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push is real-device proven, and the new task-help response lifecycle is now also real-device accepted: targeted requests support `Hulp geven / Afwijzen`, and household-wide requests support `Hulp geven / Niet voor mij` while leaving the broadcast open for other eligible family members. Remaining STEP 10 gates are push-tap routing/de-duplication, read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -24,6 +24,8 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] UID-scoped Profile values prevent Shane/Esra browser leakage to another account.
 - [x] Normal-member **Gezin verlaten** accepted.
 - [x] Whole-family task help (`Heel het gezin`) exists and supports multiple willing helpers.
+- [x] Targeted task-help **Afwijzen** accepted on real device and remains resolved after reload/reopen.
+- [x] Household task-help **Niet voor mij** accepted on real device while another eligible family member can still choose **Hulp geven**.
 - [ ] Owner-transfer **Gezin verlaten** still needs a real smoke test.
 
 ## STEP 10 — Notifications
@@ -52,7 +54,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Safe RTDB 401/403 diagnostics added without logging request URL/access token.
 - [x] Real iPhone Home Screen PWA received an external FamilyApp push on the lock screen after both fixes.
 
-### Task-help response lifecycle — implemented, device acceptance open
+### Task-help response lifecycle — real-device accepted
 - [x] `TaskSharedData v2.2.0` adds occurrence-scoped `declineHelp(id)` state.
 - [x] Targeted help: recipient gets **Hulp geven** + **Afwijzen**.
 - [x] Targeted **Afwijzen** closes only that invitation and stores the recipient/occurrence so it remains resolved after reload/reconnect.
@@ -65,8 +67,8 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] `TaskHouseholdHelpUi v1.1.0` adds **Niet voor mij** in the household help UI.
 - [x] New regressions: `test-notification-help-actions.js` plus extended `test-task-household-help.js`.
 - [x] Full `Household Rebuild Contracts` SUCCESS on code checkpoint `884a8eb7878067143efbd4394a7f76c0de461581`, run `32910497000`.
-- [ ] **Real-device targeted test:** receive a brand-new one-person help request → notification center shows **Hulp geven / Afwijzen** → tap **Afwijzen** → reload/reopen → remains resolved and task invitation is closed.
-- [ ] **Real-device household test:** receive `Heel het gezin` help request → notification center shows **Hulp geven / Niet voor mij** → tap **Niet voor mij** → that UID is resolved while another eligible family member can still choose **Hulp geven**.
+- [x] **Real-device targeted test accepted:** brand-new one-person help request showed **Hulp geven / Afwijzen**; after **Afwijzen**, reload/reopen kept it resolved and the invitation closed.
+- [x] **Real-device household test accepted:** `Heel het gezin` request showed **Hulp geven / Niet voor mij**; after **Niet voor mij**, that UID stayed resolved while another eligible family member could still choose **Hulp geven**.
 
 ### Latest code / CI / Preview
 - [x] Contract-verified code checkpoint: `884a8eb7878067143efbd4394a7f76c0de461581`.
@@ -80,8 +82,8 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [ ] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
 - [ ] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner visible only for intended identity.
-- [ ] Targeted help **Hulp geven / Afwijzen** real-device accepted.
-- [ ] Household help **Hulp geven / Niet voor mij** real-device accepted, including another member still being able to join.
+- [x] Targeted help **Hulp geven / Afwijzen** real-device accepted.
+- [x] Household help **Hulp geven / Niet voor mij** real-device accepted, including another member still being able to join.
 - [ ] Account switch/logout never leaks inbox/banner/push registration from prior UID.
 - [ ] Reload/background→foreground stable: no freeze/white screen/WebKit crash.
 - [ ] Freeze STEP 10 only after explicit product acceptance.
