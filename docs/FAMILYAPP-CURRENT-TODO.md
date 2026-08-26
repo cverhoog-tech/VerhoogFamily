@@ -9,7 +9,7 @@ New chats/agents should read these four files before continuing development on t
 
 ## Current phase
 
-**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, and push-tap routing/de-duplication are now real-device proven. Remaining STEP 10 gates are UID-specific read/dismiss reconnect persistence, intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
+**STEP 10 — Notifications remains in progress. External iOS Web Push, task-help response handling, push-tap routing/de-duplication, and UID-specific read/dismiss persistence are now real-device proven. Remaining STEP 10 gates are intended-identity in-app banner behavior, account-switch/logout isolation, and final background/foreground stability before freeze.**
 
 STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and production Firebase Rules remain untouched.
 
@@ -19,6 +19,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 - [x] Canonical cross-account notification state reaches the intended iPhone/PWA account.
 - [x] **External iOS Web Push works outside FamilyApp**: real lock-screen/banner notification observed on 2026-08-26 while the Home Screen PWA was backgrounded/closed.
 - [x] **Push tap routing works on iPhone**: tapping a real external iOS push opens/focuses FamilyApp Meldingen and the canonical inbox item appears exactly once.
+- [x] **UID-specific read/dismiss persistence works**: a read notification stays read after full close/reopen, while a dismissed notification stays absent.
 - [x] JWT signature bug fixed and real-device confirmed.
 - [x] RTDB OAuth scope bug (`userinfo.email`) fixed and real-device confirmed by successful downstream push delivery.
 - [x] Profile/Meer **Uitloggen** works; `Verse start` removed.
@@ -82,7 +83,7 @@ STEP 8 Finance and STEP 9 Progression remain accepted/frozen. `main` and product
 ### Remaining STEP 10 acceptance
 - [x] Background/closed-PWA external OS push reaches iPhone.
 - [x] Push tap opens/focuses FamilyApp notifications with exactly one canonical inbox item.
-- [ ] UID-specific read/dismiss survives reload/reconnect.
+- [x] UID-specific read/dismiss survives reload/reconnect.
 - [ ] Live in-app banner visible only for intended identity.
 - [x] Targeted help **Hulp geven / Afwijzen** real-device accepted.
 - [x] Household help **Hulp geven / Niet voor mij** real-device accepted, including another member still being able to join.
