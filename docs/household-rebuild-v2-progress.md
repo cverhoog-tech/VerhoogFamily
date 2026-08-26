@@ -29,9 +29,9 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress; STEP 11.1 and 11.2 complete, STEP 11.2 real-device functional PASS, STEP 11.3 not started.
 
-**Current position: STEP 10 remains frozen. STEP 11.2 is implementation/contract complete and has passed the first real-device Party Quest invite/acceptance smoke. The next approval-gated checkpoint is STEP 11.3 — leave semantics + ActiveView lifecycle.**
+**Current position: STEP 10 remains frozen. STEP 11.2 is implementation/contract complete and has passed the first real-device Party Quest invite/acceptance smoke. The next roadmap checkpoint remains STEP 11.3, but a small non-blocking toast UI fix is currently at its real-device visual verification gate.**
 
-A non-blocking UI issue was observed during the 11.2 smoke: the acceptance confirmation toast is a mostly empty white bar with the handshake icon visible. It is tracked separately on the FamilyApp fix list and does not invalidate the functional 11.2 PASS.
+The acceptance-toast root cause was the shared `.toast` background using `var(--c-text)`: dark themes make that token near-white, so white toast text became unreadable. The shared `showToast()` presentation now uses a contrast-safe dark translucent surface, preserves white text, wraps on mobile and respects the iOS bottom safe area. No Party Quest state machine or frozen notification action logic was changed.
 
 The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog test and is not a STEP 11 blocker.
 
@@ -52,7 +52,7 @@ The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog
 - [x] Same-iPhone account, avatar, inbox/unread/banner and prior-UID push-registration isolation accepted.
 - [x] Installed PWA safe-area, Home dark mode and repeated resume/reload stability accepted.
 - [x] Frozen code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` during STEP 11.2.
+- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` during STEP 11.2/toast polish.
 
 ## STEP 11 — Party quests — IN PROGRESS
 
@@ -89,7 +89,7 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] `Household Rebuild Contract Tests` run `33021739099`: SUCCESS.
 - [x] Vercel Preview `dpl_B1rjmzGtC8Hw5rnUtHEkWSZbArbK`: READY.
 - [x] Real-device smoke 2026-08-27: Party Quest invite + accept flow works exactly as intended.
-- [!] UI-only follow-up: acceptance toast is visually broken/empty; handshake icon remains visible. Tracked on fix list and non-blocking for 11.2.
+- [-] UI-only follow-up candidate: shared toast contrast fix implemented in `src/core/utils.js`; contract run `33023131272` SUCCESS; Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6` READY; one real iPhone visual check remains before closing the separate fix-list item.
 - [x] Main, production Firebase Rules and production deployment untouched.
 
 ### STEP 11.3 — Leave semantics + ActiveView lifecycle — NOT STARTED
@@ -120,7 +120,7 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 3. Task title more prominent in task-create popup.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
-6. Party Quest acceptance toast: white/empty bar; handshake icon visible but confirmation text/styling missing.
+6. Party Quest acceptance toast — fix candidate deployed and green; awaiting one real-device visual confirmation.
 
 ## Later roadmap phases
 - [-] STEP 11 — Party quests.
@@ -139,6 +139,7 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 - 2026-08-27 — STEP 11.1 PartyQuestRepository foundation implemented and contract-verified.
 - 2026-08-27 — STEP 11.2 PartyQuestService + invite/join state machine implemented; full CI success and READY Preview verified.
 - 2026-08-27 — STEP 11.2 real-device Party Quest invite/acceptance flow functionally accepted; non-blocking toast styling issue added to fix backlog.
+- 2026-08-27 — Toast root cause fixed in shared presentation layer; CI `33023131272` SUCCESS and Preview `dpl_AMEwA4YtUuL8JGeuhzDv2nGLpzf6` READY; real-device visual confirmation pending.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
