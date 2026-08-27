@@ -29,11 +29,9 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.5 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted for all three targeted UX checks: multi-start + Arcana icons, canonical new-task handoff, and explicit **Later beslissen**. STEP 11.5 Test 1 is now real-device PASS: completing the linked Task closes the active Party Quest and awards the maker once. The later-login participant reward smoke remains pending, so STEP 11.5 is not fully device-accepted yet. STEP 11.6 has not started and requires explicit approval.
+**Current position:** STEP 11.1–11.5 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted for multi-start + Arcana icons, canonical new-task handoff and explicit **Later beslissen**. STEP 11.5 device Tests 1 and 2 are PASS: canonical linked-Task completion worked and a second accepted participant later authenticated and received the durable pending XP reward. One final duplicate-safety smoke remains before STEP 11.5 is fully device-accepted. STEP 11.6 has not started and still requires explicit approval; proposed scope now includes related-task completion notifications and notifications for XP caused by another household member.
 
-The separate Google post-login/startup regression has a contract-green fix candidate at checkpoint `f10e198fd144caa62427c78609f1295780707ef4`: the successful popup user is handed directly to the existing `AuthenticatedSessionController`, same-UID popup/observer races share one household bootstrap, and loading/recoverable-error UI is explicit. CI `33069878758` and Vercel commit status are SUCCESS. Real-device iPhone/PWA verification remains pending, so this does not reopen or re-accept STEP 1/2 architecture.
-
-The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke and remaining STEP 11.4 recipient/broadcast help smokes remain pending.
+The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke, remaining STEP 11.4 recipient/broadcast help smokes and Google post-login/startup product fix remain pending.
 
 ## Frozen phases
 
@@ -80,44 +78,41 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Meaningful Arcana/RPG icons reuse canonical `TaskCategoryIcons`.
 - [x] UX Test 1 real-device PASS: multi-start + Arcana icons.
 - [x] UX Test 2 real-device PASS: canonical new-task handoff.
-- [x] Explicit **Later beslissen** added to single and multiple incoming invite UI.
-- [x] Deferral is session-only presentation state; invitation remains `pending`; no PartyQuestService mutation or Firebase status write.
-- [x] Deferred occurrence does not auto-reopen in the same runtime session, but manual Party Quest tile access still works.
-- [x] New/reinvite occurrence may prompt again via occurrence/version keying.
-- [x] Runtime: `partyQuestInvites.js?v=8`, `partyQuestActiveView.js?v=7`; frozen notification layer unchanged.
-- [x] Latest checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`.
-- [x] Full CI `33052149328` SUCCESS; `party quest UX patch: PASS`.
-- [x] Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF` READY.
-- [x] UX Test 3 real-device PASS on 2026-08-27: explicit **Later beslissen** behaves as intended.
+- [x] UX Test 3 real-device PASS: explicit **Later beslissen** behaves as intended.
+- [x] Latest checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`; CI `33052149328` SUCCESS.
 
-### STEP 11.5 — Canonical completion + durable exactly-once rewards — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
+### STEP 11.5 — Canonical completion + durable exactly-once rewards — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE 2/3 PASS
 - [x] Product owner explicitly approved GO STEP 11.5 on 2026-08-27.
 - [x] Linked canonical Task completion is the only completion trigger; manual stop remains cancellation.
 - [x] Completion requires the trusted live Firebase Task projection; cache-only task state cannot complete a Party Quest.
 - [x] Completion occurrence is deterministic/versioned and captures inviter + active participant UIDs.
-- [x] Pending invitees are revoked and open Party Quest help is retracted when canonical completion settles.
 - [x] Per-UID `rewardSettlements` are durable pending work/diagnostics only, not progression authority.
 - [x] Frozen `ProgressionStore.awardOnce()` owns XP mutation with deterministic key `partyQuest:<partyQuestId>` per UID.
-- [x] Old preclaim-before-XP failure mode removed: XP failure leaves pending work; crash after successful XP but before Party Quest acknowledgement retries without duplicate XP.
+- [x] Old preclaim-before-XP failure mode removed; failed XP remains retryable and post-XP/pre-ack retry cannot duplicate XP.
 - [x] Offline participants keep pending settlement and receive the reward when that UID later has an authenticated session.
 - [x] HouseholdContext generation/token guards prevent old-account/old-household delayed work from acknowledging the wrong settlement.
-- [x] Worker no longer uses direct Party Quest Firebase writes, `rewardsClaimed`, legacy `awardXP`, `fbFamilyId`, `fbUser` or localStorage authority.
-- [x] Runtime serves `partyQuestService.js?v=4` and `partyQuestCompletionReward.js?v=4`; frozen ProgressionStore/Notification runtime keys unchanged.
-- [x] Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`.
-- [x] Full CI `33110105234`: SUCCESS; logs include `party quest STEP 11.5 completion + exactly-once rewards: PASS`, STEP 9 progression contracts PASS, STEP 10 notification contracts PASS and prior Party Quest contracts PASS.
-- [x] Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: READY, `target: null`, commit `6263dd5882253f78d7afa8eafa34f7757f836a3d`.
-- [x] Real-device Test 1 PASS on 2026-08-27: linked Task completion closes the active Party Quest and the maker receives the Party Quest completion XP once.
-- [ ] Real-device Test 2 pending: participant who was not the current UID at completion must receive the durable pending Party Quest reward after later authentication, exactly once.
+- [x] Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS.
+- [x] Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: READY.
+- [x] Real-device Test 1 PASS: linked Task completion closes the active Party Quest and current participant receives XP.
+- [x] Real-device Test 2 PASS: another accepted participant later authenticated and received the durable pending Party Quest XP reward.
+- [ ] Real-device Test 3 pending: reload/reopen the same participant and confirm no second XP/reward is granted.
+
+### STEP 11.6 — Notification event extensions — NOT STARTED; PROPOSED SCOPE
+- [ ] Explicit **GO STEP 11.6** required before implementation.
+- [ ] Notify relevant users when another household member completes a Task they were involved in.
+- [ ] Notify a user when XP is awarded because of another household member's action, including delayed/offline Party Quest settlement.
+- [ ] Prefer one rich combined notification when the same triggering action both completes the related Task and causes XP.
+- [ ] No self-noise for the triggering actor and no duplicate events on reconnect/replay.
+- [ ] Reuse frozen canonical notification/push infrastructure with deterministic occurrence IDs.
 
 ### Later STEP 11 checkpoints
-- [ ] STEP 11.6 — Party Quest notification event extensions on frozen notification layer — explicit approval required.
 - [ ] STEP 11.7 — compatibility/legacy guard.
 - [ ] STEP 11.8 — integrated CI + Preview candidate.
 - [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
-- [-] Google login post-auth handoff fix candidate is code/contract green: popup success directly enters the canonical session controller; same-UID observer/popup bootstrap is deduplicated; loading/error transition is visible and retryable. Checkpoint `f10e198fd144caa62427c78609f1295780707ef4`, CI `33069878758` SUCCESS. Real-device PWA verification pending before closing.
+- [-] Google login post-auth handoff/startup follow-up remains open pending real-device resolution.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
