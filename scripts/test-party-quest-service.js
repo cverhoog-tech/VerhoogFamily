@@ -27,7 +27,7 @@ const actionsIndex=loaderSource.indexOf('notificationActions.js?v=4');
 const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex&&serviceIndex>repoIndex,'runtime must load HouseholdContext -> PartyQuestRepository -> PartyQuestService');
 assert.ok(actionsIndex>serviceIndex&&projectorIndex>serviceIndex,'frozen notification layer must load after PartyQuestService');
-assert.ok(loaderSource.includes('partyQuestInvites.js?v=7'),'runtime must cache-bust the Party Quest UX invite facade');
+assert.ok(loaderSource.includes('partyQuestInvites.js?v=8'),'runtime must cache-bust the Party Quest defer UX invite facade');
 assert.ok(loaderSource.includes('partyQuestActiveView.js?v=7'),'runtime must cache-bust the Party Quest UX ActiveView');
 assert.ok(loaderSource.includes('partyQuestHelpUi.js?v=1'),'runtime must load the STEP 11.4 help UI');
 
