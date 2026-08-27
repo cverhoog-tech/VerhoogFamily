@@ -76,7 +76,7 @@ function makeDb(initial){
   const partyProjector=window.PartyQuestNotificationProjector;
   assert.strictEqual(taskProjector.version,'2.0.0');
   assert.strictEqual(swapProjector.version,'2.0.0');
-  assert.strictEqual(partyProjector.version,'2.0.0');
+  assert.strictEqual(partyProjector.version,'3.0.1');
 
   const swapA=db.ref('families/houseA/taskSwapRequests');
   const partyA=db.ref('families/houseA/partyQuests');
