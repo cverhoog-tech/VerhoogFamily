@@ -25,6 +25,8 @@
   function runCleanup(){var fns=cleanup.splice(0);fns.forEach(function(fn){try{fn();}catch(e){console.warn('[SessionController] cleanup',e);}});}
   function assignUser(user){currentUser=user||null;window.fbUser=user||null;try{fbUser=user||null;}catch(e){}}
   function clearBootstrap(work){if(bootstrapPromise===work){bootstrapPromise=null;bootstrapUid=null;}}
+  function T(label){try{if(window.__familyAuthTiming)window.__familyAuthTiming.mark(label);}catch(e){}}
+  function finishTiming(reason){try{if(window.__familyAuthTiming)window.__familyAuthTiming.finish(reason);}catch(e){}}
 
   function loginScreen(show){
     var el=document.getElementById('login-screen');
@@ -37,6 +39,7 @@
   }
   function revealApp(user){
     if(!user||!isCurrent(generation,user))return;
+    T('T12-revealApp-started');
     if(startedUid===user.uid&&window._appStarted){setState('ready');return;}
     window._appStarted=true;startedUid=user.uid;
     var preloginCss=document.getElementById('prelogin-css');if(preloginCss)preloginCss.remove();
@@ -44,6 +47,16 @@
     if(typeof window.renderNav==='function')window.renderNav();
     if(typeof window.showScreen==='function')window.showScreen('home');
     else if(typeof window.renderHome==='function')window.renderHome();
+    // T13 is captured after two animation-frame turns rather than immediately, so it reflects
+    // when Home has actually had a chance to paint (a stalled/blocked main thread delays the
+    // rAF callback by the same amount it delays real rendering, unlike a synchronous mark here).
+    (function(){
+      var mark13=function(){T('T13-home-visible');finishTiming('reveal');};
+      try{
+        if(typeof window.requestAnimationFrame==='function'){window.requestAnimationFrame(function(){window.requestAnimationFrame(mark13);});}
+        else mark13();
+      }catch(e){mark13();}
+    })();
     if(typeof window.startFirebaseSync==='function')window.startFirebaseSync();
     if(window.NotificationStore&&typeof window.NotificationStore.ensureSubscription==='function')window.NotificationStore.ensureSubscription();
     if(typeof window.setupPushNotifications==='function')window.setupPushNotifications();
@@ -55,6 +68,7 @@
     loginScreen(true);
     var err=document.getElementById('auth-error');
     if(err){err.textContent='Opstarten mislukt. Controleer je verbinding en probeer opnieuw.';err.style.display='block';}
+    finishTiming('recoverableError');
   }
   function needsSetup(error){
     var code=String(error&&(error.code||error.name)||'');
@@ -63,6 +77,7 @@
   }
   function bootstrap(user){
     var uid=user&&user.uid||null;
+    T('T7-bootstrap-started');
 
     // signInWithPopup and onAuthStateChanged can resolve in either order on iOS/PWA.
     // Reuse the same in-flight bootstrap for the same UID so a late observer callback
@@ -92,15 +107,19 @@
     if(typeof window.loadUserFamily!=='function'){
       work=Promise.reject(new Error('Household resolver niet beschikbaar')).catch(function(err){showRecoverable(err,user,token);});
     }else{
+      T('T8-loadUserFamily-started');
       work=Promise.resolve().then(function(){return window.loadUserFamily();}).then(function(){
         if(!isCurrent(token,user))return;
+        T('T11-loadUserFamily-resolved');
         setState('preparingApp');
         revealApp(user);
       }).catch(function(err){
         if(!isCurrent(token,user))return;
         if(needsSetup(err)&&typeof window.showNameSetupStep==='function'){
           setState('awaitingSetup');
-          window.showNameSetupStep(user);loginScreen(true);return;
+          window.showNameSetupStep(user);loginScreen(true);
+          finishTiming('awaitingSetup');
+          return;
         }
         showRecoverable(err,user,token);
       });
@@ -131,7 +150,7 @@
     if(!auth&&window.firebase&&firebase.auth){try{auth=firebase.auth();}catch(e){}}
     if(!auth||typeof auth.onAuthStateChanged!=='function'){setState('recoverableError',new Error('Firebase Auth niet beschikbaar'));loginScreen(true);return;}
     setState('initializing');
-    authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
+    authUnsubscribe=auth.onAuthStateChanged(function(user){T('T6-onAuthStateChanged-fired');bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
   function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;setState('stopped');}
 
