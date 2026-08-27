@@ -20,7 +20,7 @@ assert.ok(!repoSource.includes('firebase.auth'),'repository must not create a pa
 assert.ok(!repoSource.includes('localStorage'),'repository must not use legacy/local Party Quest persistence');
 const contextIndex=loaderSource.indexOf('householdContext.js?v=1');
 const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=2');
-const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=3');
+const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=4');
 const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex,'runtime must load PartyQuestRepository after HouseholdContext');
 assert.ok(serviceIndex>repoIndex,'runtime must load PartyQuestService after PartyQuestRepository');
