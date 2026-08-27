@@ -1,15 +1,18 @@
 'use strict';
-// Household domain notification projector v1.2.0 — STEP 11.6.
+// Household domain notification projector v1.2.1 — STEP 11.6.
 // Events are published by the UID that performed the canonical mutation so the
 // existing trusted sender can verify actor === caller and exclude only the actor.
 // v1.2 adds targeted task-completion notifications for actual collaborators and
 // excludes Party Quest participants who receive the richer completion+XP event.
+// v1.2.1 prevents the immediate HouseholdContext subscribe callback from wiping
+// repository baselines that were just established during startup.
 (function(){
   if(window.HouseholdDomainNotificationProjectorV2)return;
-  var VERSION='1.2.0',unsubs=[],memberBinding=null,started=false;
+  var VERSION='1.2.1',unsubs=[],memberBinding=null,started=false,contextIdentity=null;
   var states={shopping:null,meals:null,tasks:null,calendar:null};
   function ctx(){try{return HouseholdContext.snapshot();}catch(e){return null;}}
   function valid(c){return !!(c&&c.ready&&c.uid&&c.householdId);}
+  function identity(c){return valid(c)?String(c.uid)+'|'+String(c.householdId)+'|'+String(c.revision==null?'':c.revision):'signed-out';}
   function rid(r){return String(r&&(r.id||r._key||r.uid)||'');}
   function map(rows){var o={};(rows||[]).forEach(function(r){var k=rid(r);if(k)o[k]=r;});return o;}
   function mine(r,c,field){return !!(r&&r[field]&&String(r[field])===String(c.uid));}
@@ -57,10 +60,10 @@
     subscribe(window.CalendarEventHouseholdRepository,'calendar',function(next,prev,c){Object.keys(next).forEach(function(k){var r=next[k],p=prev[k];if(!p&&mine(r,c,'createdByUid')&&NotificationEvents.calendarCreated)safe(NotificationEvents.calendarCreated(r));else if(p&&Number(r.updatedAt||0)!==Number(p.updatedAt||0)&&mine(r,c,'updatedByUid')&&changed(p,r,['title','date','time','who'])&&NotificationEvents.calendarUpdated)safe(NotificationEvents.calendarUpdated(r));});});
   }
   function unbindMembers(){if(memberBinding)try{memberBinding.ref.off('value',memberBinding.handler);}catch(e){}memberBinding=null;}
-  function bindMembers(c){unbindMembers();var db=null;try{db=window.fbDb||(window.firebase&&firebase.database&&firebase.database());}catch(e){}if(!db)return;var ref=db.ref('families/'+c.householdId+'/members'),first=true,previous={};var binding={ref:ref,handler:null,uid:String(c.uid)};memberBinding=binding;binding.handler=function(s){if(memberBinding!==binding)return;var raw=s&&s.val?s.val():{},next={};Object.keys(raw||{}).forEach(function(u){if(raw[u])next[u]=Object.assign({uid:u},raw[u]);});if(first){first=false;previous=next;var self=next[binding.uid],joinedAt=Number(self&&self.joinedAt||0);if(self&&self.status!=='inactive'&&self.status!=='removed'&&joinedAt&&Date.now()-joinedAt<60000&&NotificationEvents.householdMemberJoined)safe(NotificationEvents.householdMemberJoined(self));return;}var selfBefore=previous[binding.uid],selfAfter=next[binding.uid];if(selfBefore&&selfBefore.status!=='inactive'&&selfBefore.status!=='removed'&&(!selfAfter||selfAfter.status==='inactive'||selfAfter.status==='removed')&&NotificationEvents.householdMemberLeft)safe(NotificationEvents.householdMemberLeft(selfBefore,Number(selfAfter&&selfAfter.updatedAt||selfBefore.updatedAt||selfBefore.joinedAt)));previous=next;};ref.on('value',binding.handler);}
+  function bindMembers(c){unbindMembers();var database=null;try{database=window.fbDb||(window.firebase&&firebase.database&&firebase.database());}catch(e){}if(!database)return;var ref=database.ref('families/'+c.householdId+'/members'),first=true,previous={};var binding={ref:ref,handler:null,uid:String(c.uid)};memberBinding=binding;binding.handler=function(s){if(memberBinding!==binding)return;var raw=s&&s.val?s.val():{},next={};Object.keys(raw||{}).forEach(function(u){if(raw[u])next[u]=Object.assign({uid:u},raw[u]);});if(first){first=false;previous=next;var self=next[binding.uid],joinedAt=Number(self&&self.joinedAt||0);if(self&&self.status!=='inactive'&&self.status!=='removed'&&joinedAt&&Date.now()-joinedAt<60000&&NotificationEvents.householdMemberJoined)safe(NotificationEvents.householdMemberJoined(self));return;}var selfBefore=previous[binding.uid],selfAfter=next[binding.uid];if(selfBefore&&selfBefore.status!=='inactive'&&selfBefore.status!=='removed'&&(!selfAfter||selfAfter.status==='inactive'||selfAfter.status==='removed')&&NotificationEvents.householdMemberLeft)safe(NotificationEvents.householdMemberLeft(selfBefore,Number(selfAfter&&selfAfter.updatedAt||selfBefore.updatedAt||selfBefore.joinedAt)));previous=next;};ref.on('value',binding.handler);}
   function reset(){states={shopping:null,meals:null,tasks:null,calendar:null};}
-  function onContext(c){reset();if(valid(c))bindMembers(c);else unbindMembers();}
-  function start(){if(started)return true;started=true;bindDomains();if(window.HouseholdContext&&HouseholdContext.subscribe)unsubs.push(HouseholdContext.subscribe(onContext));var c=ctx();if(valid(c))bindMembers(c);return true;}
-  function stop(){unsubs.splice(0).forEach(function(f){try{f();}catch(e){}});unbindMembers();reset();started=false;}
+  function onContext(c){var nextIdentity=identity(c);if(nextIdentity===contextIdentity)return;contextIdentity=nextIdentity;reset();if(valid(c))bindMembers(c);else unbindMembers();}
+  function start(){if(started)return true;started=true;var c=ctx();contextIdentity=identity(c);if(valid(c))bindMembers(c);bindDomains();if(window.HouseholdContext&&HouseholdContext.subscribe)unsubs.push(HouseholdContext.subscribe(onContext));return true;}
+  function stop(){unsubs.splice(0).forEach(function(f){try{f();}catch(e){}});unbindMembers();reset();contextIdentity=null;started=false;}
   window.HouseholdDomainNotificationProjectorV2={version:VERSION,start:start,stop:stop};start();
 })();
