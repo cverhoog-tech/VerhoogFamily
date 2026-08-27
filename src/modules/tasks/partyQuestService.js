@@ -30,6 +30,17 @@
     try{if(r&&typeof r.list==='function')return r.list()||[];}catch(e){}
     return Array.isArray(window.taskData)?window.taskData:[];
   }
+  function taskCompletionProjectionTrusted(){
+    var r=taskRepo(),s=null;
+    // Isolated contract-test/legacy facades without a canonical repository may
+    // still exercise the domain service via taskData. In the served app the
+    // repository exists, and completion is accepted only from its live Firebase
+    // projection — never from the household cache/binding placeholder.
+    if(!r||typeof r.status!=='function')return true;
+    try{s=r.status();}catch(e){return false;}
+    if(!s||s.ready!==true)return false;
+    return String(s.source||'').indexOf('firebase')===0;
+  }
   function members(){try{return taskApi()&&typeof TaskSharedData.members==='function'?TaskSharedData.members()||[]:[];}catch(e){return[];}}
   function memberId(m){return m&&(m.uid||m.id)||null;}
   function memberName(m){return String(m&&(m.displayName||m.name)||'Gezinslid');}
@@ -283,6 +294,7 @@
       if(q.status==='cancelled')throw error('PARTY_QUEST_ALREADY_CANCELLED','Deze Party Quest is al beeindigd');
       if(q.status==='completed'&&q.completion&&q.completion.occurrenceId)return q;
       if(q.status!=='active')throw error('PARTY_QUEST_COMPLETION_REQUIRES_ACTIVE','Alleen een actieve Party Quest kan worden voltooid');
+      if(!taskCompletionProjectionTrusted())throw error('PARTY_QUEST_TASK_NOT_CANONICAL','Wacht tot de voltooide taak door het gezin is bevestigd');
       var task=taskById(q.questId);
       if(!task||!isTaskComplete(task))throw error('PARTY_QUEST_TASK_NOT_COMPLETED','De gekoppelde taak is nog niet voltooid');
 
