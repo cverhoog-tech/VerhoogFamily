@@ -29,7 +29,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. Party Quest UX Test 1 (multi-start + Arcana icons) and Test 2 (new task creation handoff) passed on real device. The new explicit **Later beslissen** invite action is implementation/contract complete on a READY Preview and needs one real-device smoke. STEP 11.5 has not started and still requires explicit approval.
+**Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. Party Quest UX Test 1 (multi-start + Arcana icons) and Test 2 (new task creation handoff) passed on real device. The new explicit **Later beslissen** invite action is implementation/contract complete on a READY Preview. Its real-device smoke was explicitly deferred by the product owner on 2026-08-27 and remains pending rather than failed. STEP 11.5 has not started and still requires explicit approval.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke and remaining STEP 11.4 recipient/broadcast help smokes remain pending.
 
@@ -85,7 +85,7 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Latest checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - [x] Full CI `33052149328` SUCCESS; `party quest UX patch: PASS`.
 - [x] Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF` READY.
-- [ ] Real-device **Later beslissen** smoke pending.
+- [-] Real-device **Later beslissen** smoke explicitly deferred by product owner on 2026-08-27; resume later from this exact test.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement — explicit approval required.
