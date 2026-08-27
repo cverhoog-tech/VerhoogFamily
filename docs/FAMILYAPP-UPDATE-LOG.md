@@ -17,6 +17,37 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — STEP 11.5 canonical completion + durable exactly-once Party Quest rewards implemented
+
+- Product owner explicitly approved **GO STEP 11.5**. Scope remained STEP 11.5 only; STEP 11.6 notification-event extensions were not started.
+- Reworked Party Quest completion around the accepted architecture rather than the legacy `rewardsClaimed` bridge.
+- `PartyQuestService` is now v1.3.0 and adds `completeFromTask(questId)` plus `markRewardSettled(questId, occurrenceId)` through `PartyQuestRepository` only.
+- Party Quest completion is now driven only by the linked canonical Task being completed. Manual Party Quest stop still means cancellation and cannot fabricate a completed state.
+- Added a canonical-task trust guard: in the served app, completion requires `TaskHouseholdRepository.status().ready === true` with a source beginning with `firebase`. A household-cache/local placeholder projection may not finalize a Party Quest.
+- Completion occurrence is deterministic/versioned as `partyQuest:<partyQuestId>:completion:v1`.
+- Completion captures the inviter plus invitees who are actually `active` at completion time. Pending/declined/revoked/left participants do not receive the completion reward.
+- Any still-pending Party Quest invitations are revoked and open Party Quest help requests are retracted when canonical task-driven completion settles.
+- Each eligible participant gets a durable `rewardSettlements/{uid}` row in the Party Quest with `status: pending`, occurrence, deterministic reward key and XP amount. These rows are work/diagnostic state only and are explicitly **not** progression authority.
+- `partyQuestCompletionReward.js` is now v4.0.0. It observes `PartyQuestRepository`, delegates Party Quest mutations to `PartyQuestService`, and delegates XP exclusively to frozen `ProgressionStore.awardOnce()`.
+- The deterministic ProgressionStore key remains `partyQuest:<partyQuestId>`. Because progression is UID-scoped, each participant can use the same stable Party Quest key without sharing XP state; retaining the old successful key also prevents duplicate XP if an earlier bridge had already awarded it.
+- Removed the old preclaim-before-XP failure mode. There is no direct `rewardsClaimed` transaction before progression anymore.
+- If XP fails, the Party Quest settlement remains `pending`, so a later scan can retry rather than permanently losing the reward.
+- If XP succeeds but the app crashes before the Party Quest settlement can be acknowledged, retry is safe: `ProgressionStore.awardOnce()` rejects the duplicate increment, `hasReward()` confirms the canonical reward, and the pending settlement converges to `settled` without duplicate XP or duplicate completion celebration.
+- Offline participants no longer miss Party Quest XP. Their household-scoped pending settlement remains until that UID later has an authenticated session, at which point the same worker settles it through the frozen ProgressionStore.
+- Household/account lifecycle safety is retained: the worker captures HouseholdContext, owns exact repository unsubscribe/generation guards, and refuses delayed old-context settlement acknowledgement after an account or household switch.
+- Removed legacy authority from the worker: no direct Party Quest Firebase database writes, no `rewardsClaimed`, no direct `awardXP`, no `PartyQuestActiveView.endQuest`, no `fbFamilyId`, no `fbUser`, and no localStorage authority.
+- Runtime now serves `partyQuestService.js?v=4` and `partyQuestCompletionReward.js?v=4`. Frozen `progressionStore.js?v=1`, `progressionRuntime.js?v=2`, `notificationActions.js?v=4` and `partyQuestNotificationProjector.js?v=2` remain unchanged.
+- Added `scripts/test-party-quest-step11-5.js` covering canonical task-source enforcement, deterministic completion, participant selection, pending settlements, retry after reward failure, crash-after-XP convergence, offline-participant later settlement and stale account/household rejection.
+- Updated the frozen STEP 9 deterministic progression producer audit to exercise the new v4 bridge semantics while preserving its original requirement: Party Quest rewards must keep one deterministic progression key and failed canonical XP writes must remain recoverable.
+- Final code/contract checkpoint before documentation sync: `6263dd5882253f78d7afa8eafa34f7757f836a3d`.
+- Full `Household Rebuild Contract Tests` run `33110105234`: **SUCCESS**. Logs explicitly report `party quest STEP 11.5 completion + exactly-once rewards: PASS`, `STEP 9 deterministic progression producer contract: PASS`, `STEP 9 canonical progression store contract: PASS`, all STEP 10 notification contracts PASS, and prior STEP 11.2–11.4/UX contracts PASS.
+- Frozen `src/core/notificationActions.js` was rechecked after STEP 11.5 and remains exact blob `60a48daa628bc56531395d188a0811711d82a328`.
+- Vercel Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: **READY**, `target: null`, commit `6263dd5882253f78d7afa8eafa34f7757f836a3d`; branch alias remains `verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- STEP 11.5 is **implementation/contract complete, real-device acceptance pending**. Do not mark it fully accepted until the task-completion/reward smoke has passed on a real device.
+- `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+
+---
+
 ## 2026-08-27 — Google post-login handoff fix candidate implemented; full CI green
 
 - Product owner approved fixing backlog item #7 on `agent/household-rebuild-v2` only, after reading the central TODO/fixlist/update log.
@@ -125,5 +156,6 @@ Newest entries belong at the top.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX base checkpoint: `1c5b543926055ab647773b8182fa63322f83878e`.
 - Party Quest UX latest defer follow-up checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
+- STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device acceptance pending).
 - Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4` (CI `33069878758` SUCCESS; real-device verification pending).
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
