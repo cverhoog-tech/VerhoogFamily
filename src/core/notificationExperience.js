@@ -1,15 +1,17 @@
 'use strict';
 // ============================================================
-// FAMILYAPP NOTIFICATION EXPERIENCE v1.1.0 — STEP 11.6
+// FAMILYAPP NOTIFICATION EXPERIENCE v1.1.1 — STEP 11.6
 // Presentation-only layer for canonical notifications.
 // Does not own delivery, Firebase paths, tokens or push transport.
 // v1.1 adds cross-user task completion and Party Quest completion/reward
 // presentation while keeping NotificationStore as the only inbox authority.
+// v1.1.1 keeps the trusted publisher as event actor while naming the original
+// task completer in delayed/offline Party Quest reward presentation.
 // ============================================================
 (function(){
   if(window.NotificationExperience)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.1.1';
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
@@ -50,7 +52,6 @@
   }
   function calendarWhen(row){var date=String(row&&row.date||''),time=String(row&&row.time||'');if(!date)return time||'';try{var d=new Date(date+'T12:00:00');var label=new Intl.DateTimeFormat('nl-NL',{weekday:'short',day:'numeric',month:'short'}).format(d);return label+(time?' · '+time:'');}catch(e){return date+(time?' · '+time:'');}}
 
-  // Existing task / Party Quest notification presentation.
   function taskHelpRequested(task,targetUid){
     var recipients=targetUid?[String(targetUid)]:otherMemberUids();recipients=recipients.filter(function(id){return String(id)!==String(currentUid());});
     var occurrence=task&&task.helpRequestedAt||task&&task.updatedAt||task&&task.createdAt||'legacy';
@@ -94,13 +95,14 @@
     if(!recipients.length)return Promise.resolve(null);
     var xp=Math.max(0,Math.round(Number(options.xp!=null?options.xp:completion.xpPerParticipant)||0));
     var occurrence=options.occurrence||completion.occurrenceId||q&&q.endedAt||'completed';
-    var body='Party Quest “'+questLabel(q)+'” is voltooid.'+(xp?' Jij ontvangt +'+xp+' XP.':'');
+    var completedByUid=String(options.completedByUid||completion.taskCompletedByUid||currentUid()||'');
+    var completedByName=memberName(completedByUid,actorName());
+    var body='Party Quest “'+questLabel(q)+'” is voltooid.'+(xp?' Jij verdiende +'+xp+' XP.':'');
     return publishTo(key('partyQuest.completed',questId(q)),'partyQuest.completed',recipients,{
-      icon:'party',bg:'#fef3c7',tone:'celebration',title:actorName()+' voltooide de Party Quest',body:body,entity:entity('partyQuest',q&&(q.id||q._key)),data:{questId:String(q&&q.id||''),questTaskId:String(q&&q.questId||''),completedByUid:String(options.completedByUid||completion.taskCompletedByUid||currentUid()||''),xp:xp,occurrence:String(occurrence),action:'completed'}
+      icon:'party',bg:'#fef3c7',tone:'celebration',title:completedByName+' voltooide “'+questLabel(q)+'”',body:body,entity:entity('partyQuest',q&&(q.id||q._key)),data:{questId:String(q&&q.id||''),questTaskId:String(q&&q.questId||''),completedByUid:completedByUid,xp:xp,occurrence:String(occurrence),action:'completed'}
     });
   }
 
-  // Household-domain events.
   function shoppingItemsAdded(items,occurrence){items=(items||[]).filter(Boolean);if(!items.length)return Promise.resolve(null);var type='shopping.items.added',names=items.map(function(x){return String(x.name||x.title||x.label||'Boodschap');});return publishTo(key(type,occurrence||items.map(function(x){return x.id||x._key||x.createdAt;}).join(',')),type,otherMemberUids(),{
     icon:'tasks',bg:'#ecfdf5',tone:'success',title:items.length===1?actorName()+' heeft iets toegevoegd':actorName()+' heeft boodschappen toegevoegd',body:items.length===1?'“'+names[0]+'” staat nu op de boodschappenlijst.':items.length+' nieuwe items staan op de lijst.',entity:entity('shoppingList','household'),data:{count:items.length,itemIds:items.map(function(x){return String(x.id||x._key||'');})}
   });}
