@@ -22,13 +22,14 @@ assert.ok(!invitesSource.includes(".ref('families/"),'invite facade must not own
 assert.ok(invitesSource.includes("getById:getById,revokeInvite:revokeInvite,respond:respond"),'frozen NotificationActions facade methods must remain available');
 const contextIndex=loaderSource.indexOf('householdContext.js?v=1');
 const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=2');
-const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=2');
+const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=3');
 const actionsIndex=loaderSource.indexOf('notificationActions.js?v=4');
 const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex&&serviceIndex>repoIndex,'runtime must load HouseholdContext -> PartyQuestRepository -> PartyQuestService');
 assert.ok(actionsIndex>serviceIndex&&projectorIndex>serviceIndex,'frozen notification layer must load after PartyQuestService');
 assert.ok(loaderSource.includes('partyQuestInvites.js?v=6'),'runtime must cache-bust the STEP 11.2 invite facade');
 assert.ok(loaderSource.includes('partyQuestActiveView.js?v=6'),'runtime must cache-bust the STEP 11.3 ActiveView');
+assert.ok(loaderSource.includes('partyQuestHelpUi.js?v=1'),'runtime must load the STEP 11.4 help UI');
 
 function clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
 function makeRepo(){
