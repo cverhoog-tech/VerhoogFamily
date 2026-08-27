@@ -34,6 +34,17 @@ assert.ok(active.includes('TaskCategoryIcons.detect'),'active Party Quest cards 
 assert.ok(active.includes('TaskCategoryIcons.icon'),'active Party Quest cards must render canonical RPG/Arcana artwork');
 assert.ok(!invites.includes('class="pqi-qicon">✦'),'generic sparkle chooser icon must be removed');
 
+// Invite deferral is presentation-only: it must be explicit, occurrence-scoped
+// and suppress only automatic re-opening during the current runtime session.
+assert.ok(invites.includes('Later beslissen'),'single and multi invite UI must expose an explicit neutral defer action');
+assert.ok(invites.includes('deferredInviteIds'),'invite defer must be session-local presentation state');
+assert.ok(invites.includes('promptKey(q)'),'defer state must be scoped to the invite occurrence, not only the quest id');
+assert.ok(invites.includes('inviteOccurrenceId'),'a reinvite/new occurrence must be able to prompt again');
+assert.ok(invites.includes('autoPending()'),'automatic prompting must filter deferred occurrences');
+assert.ok(invites.includes('incomingQueue(pendingList)'),'manual Party Quest tile access must still reopen all pending invites');
+assert.ok(!invites.includes('localStorage'),'defer must not become persisted invite authority');
+assert.ok(!invites.includes("respond(q,'pending')"),'defer must not fake a PartyQuestService status transition');
+
 // Architecture boundaries stay intact.
 ['firebase.database','firebase.auth','fbFamilyId','fbUser','localStorage'].forEach(token=>{
   assert.ok(!invites.includes(token),'invite UI must not introduce legacy/direct authority: '+token);
@@ -43,10 +54,10 @@ assert.ok(invites.includes('PartyQuestService'),'mutations must still delegate t
 assert.ok(invites.includes('PartyQuestRepository'),'reads must still use PartyQuestRepository');
 assert.ok(invites.includes("getById:getById,revokeInvite:revokeInvite,respond:respond"),'frozen NotificationActions compatibility facade must remain intact');
 
-// Runtime cache busts only the UX modules; frozen notification and future
-// completion/reward layers remain untouched by this patch.
-assert.ok(loader.includes('partyQuestInvites.js?v=7'),'runtime must serve PartyQuestInvites v7');
-assert.ok(loader.includes('partyQuestActiveView.js?v=7'),'runtime must serve PartyQuestActiveView v7');
+// Runtime cache busts only the invite presentation follow-up; frozen notification
+// and future completion/reward layers remain untouched by this patch.
+assert.ok(loader.includes('partyQuestInvites.js?v=8'),'runtime must serve PartyQuestInvites defer UX');
+assert.ok(loader.includes('partyQuestActiveView.js?v=7'),'runtime must keep the accepted ActiveView UX key');
 assert.ok(loader.includes('partyQuestHelpUi.js?v=1'),'STEP 11.4 help UI must remain on its accepted runtime key');
 assert.ok(loader.includes('partyQuestCompletionReward.js?v=3'),'STEP 11.5 completion/reward work must not start in this patch');
 assert.ok(loader.includes('notificationActions.js?v=4'),'frozen notification actions runtime must remain unchanged');
