@@ -17,6 +17,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — STEP 11.5 device Test 1 PASS
+
+- Product owner confirmed STEP 11.5 real-device Test 1 **PASS** and described the result as working perfectly.
+- On the current STEP 11.5 Preview, completing the normal Task linked to a Party Quest correctly ended/removed that Party Quest from the active Party Quest state.
+- The maker/current participant received the Party Quest completion XP once as intended.
+- This validates the first real-device half of canonical task-driven Party Quest completion + reward settlement.
+- STEP 11.5 is **not yet fully device-accepted**: Test 2 still needs to confirm that another accepted participant who was not the current UID at completion receives their durable pending Party Quest reward when they later authenticate, exactly once.
+- STEP 11.6 remains not started and still requires explicit approval.
+- No code, production Firebase Rules, `main`, frozen STEP 8/9/10 authority or production deployment was changed for this Test 1 status update.
+
+---
+
 ## 2026-08-27 — STEP 11.5 canonical completion + durable exactly-once Party Quest rewards implemented
 
 - Product owner explicitly approved **GO STEP 11.5**. Scope remained STEP 11.5 only; STEP 11.6 notification-event extensions were not started.
@@ -156,6 +168,6 @@ Newest entries belong at the top.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX base checkpoint: `1c5b543926055ab647773b8182fa63322f83878e`.
 - Party Quest UX latest defer follow-up checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
-- STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device acceptance pending).
+- STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device Test 1 PASS, Test 2 pending).
 - Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4` (CI `33069878758` SUCCESS; real-device verification pending).
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
