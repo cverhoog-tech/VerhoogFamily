@@ -24,7 +24,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
     'src/core/householdContext.js?v=1',
     'src/core/notificationHouseholdRepository.js?v=1',
     'src/core/notificationStore.js?v=3',
-    'src/core/notificationEvents.js?v=2',
+    'src/core/notificationEvents.js?v=3',
     'src/core/notificationActions.js?v=4',
     'src/core/notificationCenter.js?v=2',
     'src/core/notificationDelivery.js?v=2',
@@ -34,7 +34,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
     'src/core/pushNotificationSettings.js?v=3',
     'src/modules/tasks/taskNotificationProjector.js?v=2',
     'src/modules/tasks/taskSwapNotificationProjector.js?v=2',
-    'src/modules/tasks/partyQuestNotificationProjector.js?v=2',
+    'src/modules/tasks/partyQuestNotificationProjector.js?v=3',
     'src/core/progressionStore.js?v=1'
   ];
   let previous=-1;
@@ -66,7 +66,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
 
   assert.ok(repository.includes("VERSION='1.0.0'"));
   assert.ok(store.includes("VERSION='2.1.0'"));
-  assert.ok(events.includes("VERSION='2.0.0'"));
+  assert.ok(events.includes("VERSION='2.1.0'"));
   assert.ok(actions.includes("VERSION='3.1.0'"));
   assert.ok(center.includes("VERSION='2.0.0'"));
   assert.ok(delivery.includes("VERSION='2.0.0'"));
@@ -76,7 +76,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushSettings.includes("VERSION='1.1.1'"));
   assert.ok(taskProjector.includes("VERSION='2.0.0'"));
   assert.ok(swapProjector.includes("VERSION='2.0.0'"));
-  assert.ok(partyProjector.includes("VERSION='2.0.0'"));
+  assert.ok(partyProjector.includes("VERSION='3.0.1'"));
 
   [repository,store,events,actions,center,delivery,pushRegistry,pushService,pushBridge,taskProjector,swapProjector,partyProjector].forEach((source,i)=>{
     assert.ok(!/window\.fbUser/.test(source),'served STEP 10 module '+i+' must not use legacy fbUser identity');
