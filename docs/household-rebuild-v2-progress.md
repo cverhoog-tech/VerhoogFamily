@@ -31,7 +31,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 
 **Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is now real-device accepted for all three targeted UX checks: multi-start + Arcana icons, canonical new-task handoff, and explicit **Later beslissen**. STEP 11.5 has not started and still requires explicit approval.
 
-A separate Google post-login/startup regression was observed on real device: Google account selection/authentication succeeds, but the login screen can remain apparently frozen for several seconds and only shows the authenticated app after closing/reopening. This is tracked as a product fix and does not reopen STEP 1/2 architecture unless investigation demonstrates a deeper regression.
+The separate Google post-login/startup regression now has a contract-green fix candidate at checkpoint `f10e198fd144caa62427c78609f1295780707ef4`: the successful popup user is handed directly to the existing `AuthenticatedSessionController`, same-UID popup/observer races share one household bootstrap, and loading/recoverable-error UI is explicit. CI `33069878758` and Vercel commit status are SUCCESS. Real-device iPhone/PWA verification remains pending, so this does not reopen or re-accept STEP 1/2 architecture.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke and remaining STEP 11.4 recipient/broadcast help smokes remain pending.
 
@@ -98,7 +98,7 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
-- [!] Google login post-auth handoff: after account selection the auth session succeeds, but the login screen can remain frozen/visible until app restart. Investigate `signInWithPopup → onAuthStateChanged → loadUserFamily → revealApp` handoff and provide a clear loading/error transition rather than a frozen login screen.
+- [-] Google login post-auth handoff fix candidate is code/contract green: popup success directly enters the canonical session controller; same-UID observer/popup bootstrap is deduplicated; loading/error transition is visible and retryable. Checkpoint `f10e198fd144caa62427c78609f1295780707ef4`, CI `33069878758` SUCCESS. Real-device PWA verification pending before closing.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
