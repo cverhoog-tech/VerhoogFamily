@@ -17,6 +17,35 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-28 — STEP 11.6 involved Task completion + Party Quest XP notifications implementation/contract green
+
+- Product owner explicitly approved **GO STEP 11.6** after requesting notifications when another household member completes a Task the user was involved in and/or causes the user to receive XP.
+- Scope remained notification-event extensions only. STEP 11.7 was not started.
+- Added `NotificationEvents.taskCompleted(...)` with deterministic type/key `task.completed.involved:<taskId>:<occurrence>:<completedByUid>` through canonical `NotificationStore.publishToUidsOnce()`.
+- Ordinary Task completion recipients are actual collaborators only: creator/owner, assignees and accepted ordinary helpers. The actual completer is excluded to avoid self-notification noise.
+- Party Quest participants for the same completed Task are excluded from that ordinary completion event so one action does not create both an ordinary Task-completion notification and a Party Quest notification for the same person.
+- Extended Party Quest completion projection to send one richer targeted notification containing both completion context and the participant XP reward.
+- Causal attribution is preserved: when the UID that technically finalizes the Party Quest differs from the UID that actually completed the linked Task, the notification names the original task completer from canonical completion metadata.
+- Both the technical event publisher and the original task completer are excluded from the Party Quest recipient audience where they differ, preventing self-noise.
+- Existing canonical event actor/push authorization semantics remain intact: the authenticated technical publisher creates the canonical event, while presentation metadata may refer to the original completer.
+- No push backend/server change was required. The existing trusted sender already reads canonical events, resolves targeted audiences dynamically, validates caller == event actor and excludes the actor server-side.
+- Frozen `NotificationActions` was not modified and remains exact blob `60a48daa628bc56531395d188a0811711d82a328`.
+- No new NotificationStore, XP authority, direct Firebase notification path, token store or localStorage authority was introduced.
+- During the new 11.6 regression test, a real startup lifecycle edge case was found in `HouseholdDomainNotificationProjectorV2`: repository subscriptions can synchronously establish a baseline before the immediate same-context `HouseholdContext.subscribe()` callback runs; the old callback then reset that baseline, allowing the first real Task transition after startup to be missed.
+- Fixed that issue in `HouseholdDomainNotificationProjectorV2` v1.2.1 with a context-identity guard. The immediate same-context callback no longer clears fresh baselines, while actual UID/household/revision changes still reset state.
+- `notificationExperience.js` is now v1.1.1; `partyQuestNotificationProjector.js` is v3.0.1.
+- Served cache keys now include `notificationEvents.js?v=3`, `notificationExperience.js?v=2`, `householdDomainNotificationProjectorV2.js?v=2` and `partyQuestNotificationProjector.js?v=3`. Frozen `notificationActions.js?v=4`, NotificationStore, push sender, ProgressionStore and STEP 11.5 completion/reward runtime remain unchanged.
+- Added `scripts/test-party-quest-step11-6.js` covering deterministic ordinary completion identity, exact collaborators, Party Quest duplicate suppression, combined completion+XP presentation, original-completer attribution, publisher/completer self-suppression, replay de-duplication, startup baseline lifecycle and stale HouseholdContext rejection.
+- Existing notification/Party Quest phase guards were updated only where they intentionally asserted the old projector/bootstrap version. Their original lifecycle, auth, push, progression and state-machine assertions remain in place.
+- Final code/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114`.
+- Full `Household Rebuild Contract Tests` run `33124463794`: **SUCCESS**. Logs explicitly report `party quest STEP 11.6 involved completion + XP notifications: PASS`, STEP 11.5 exactly-once rewards PASS, all frozen STEP 10 notification/push tests PASS, frozen STEP 9 progression tests PASS, and prior STEP 11/UX contracts PASS.
+- Vercel Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9`: **READY**, `target: null`, commit `b067fc74931e058b9aa2507d5564501e77575114`. Stable branch alias remains `verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- STEP 11.6 is **implementation/contract complete; real-device notification verification pending**.
+- Administrative guard: STEP 11.5 device Tests 1 and 2 are PASS, but the separately agreed Test 3 (reload/reopen the second participant and confirm no duplicate XP/reward) is still pending and must not be silently marked accepted.
+- `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+
+---
+
 ## 2026-08-27 — STEP 11.5 device Test 2 PASS; STEP 11.6 notification scope proposed
 
 - Product owner confirmed STEP 11.5 real-device Test 2 **PASS** and described the result as working perfectly.
@@ -26,10 +55,10 @@ Newest entries belong at the top.
 - Product owner requested richer notifications for collaborative consequences:
   - notify relevant users when another household member completes a Task they were involved in;
   - notify a user when XP is received because of another household member's action.
-- This is captured as proposed **STEP 11.6** scope only; STEP 11.6 code has not started and still requires explicit **GO STEP 11.6**.
-- Preferred UX direction for 11.6: when one remote action both completes a related Task and grants XP, prefer one richer combined notification over two noisy notifications; suppress self-notifications for the actor; preserve deterministic event identity so reconnect/replay/later login cannot duplicate it.
+- This was captured as proposed **STEP 11.6** scope and was subsequently approved/implemented in the checkpoint above.
+- Preferred UX direction: when one remote action both completes a related Task and grants XP, prefer one richer combined notification over two noisy notifications; suppress self-notifications for the actor; preserve deterministic event identity so reconnect/replay/later login cannot duplicate it.
 - STEP 11.6 must reuse the frozen canonical NotificationStore/projector/push architecture and must not create a second notification authority.
-- No production deployment, production Firebase Rules, `main`, frozen STEP 8/9/10 authority, or STEP 11.6 code was changed in this checkpoint.
+- No production deployment, production Firebase Rules, `main` or frozen STEP 8/9/10 authority was changed in this checkpoint.
 
 ---
 
@@ -39,40 +68,29 @@ Newest entries belong at the top.
 - On the current STEP 11.5 Preview, completing the normal Task linked to a Party Quest correctly ended/removed that Party Quest from the active Party Quest state.
 - The maker/current participant received the Party Quest completion XP once as intended.
 - This validates the first real-device half of canonical task-driven Party Quest completion + reward settlement.
-- STEP 11.5 is **not yet fully device-accepted**: Test 2 still needs to confirm that another accepted participant who was not the current UID at completion receives their durable pending Party Quest reward when they later authenticate, exactly once.
-- STEP 11.6 remains not started and still requires explicit approval.
+- STEP 11.5 was not yet fully device-accepted at this point; later-login and duplicate-safety checks remained.
 - No code, production Firebase Rules, `main`, frozen STEP 8/9/10 authority or production deployment was changed for this Test 1 status update.
 
 ---
 
 ## 2026-08-27 — STEP 11.5 canonical completion + durable exactly-once Party Quest rewards implemented
 
-- Product owner explicitly approved **GO STEP 11.5**. Scope remained STEP 11.5 only; STEP 11.6 notification-event extensions were not started.
+- Product owner explicitly approved **GO STEP 11.5**. Scope remained STEP 11.5 only; STEP 11.6 notification-event extensions were not started at that checkpoint.
 - Reworked Party Quest completion around the accepted architecture rather than the legacy `rewardsClaimed` bridge.
-- `PartyQuestService` is now v1.3.0 and adds `completeFromTask(questId)` plus `markRewardSettled(questId, occurrenceId)` through `PartyQuestRepository` only.
-- Party Quest completion is now driven only by the linked canonical Task being completed. Manual Party Quest stop still means cancellation and cannot fabricate a completed state.
-- Added a canonical-task trust guard: in the served app, completion requires `TaskHouseholdRepository.status().ready === true` with a source beginning with `firebase`. A household-cache/local placeholder projection may not finalize a Party Quest.
+- `PartyQuestService` v1.3.0 adds task-driven completion plus post-award settlement acknowledgement through `PartyQuestRepository` only.
+- Party Quest completion is driven only by the linked canonical Task being completed. Manual Party Quest stop still means cancellation and cannot fabricate a completed state.
+- Completion requires the trusted live Firebase Task projection; a household-cache/local placeholder projection may not finalize a Party Quest.
 - Completion occurrence is deterministic/versioned as `partyQuest:<partyQuestId>:completion:v1`.
 - Completion captures the inviter plus invitees who are actually `active` at completion time. Pending/declined/revoked/left participants do not receive the completion reward.
 - Any still-pending Party Quest invitations are revoked and open Party Quest help requests are retracted when canonical task-driven completion settles.
-- Each eligible participant gets a durable `rewardSettlements/{uid}` row in the Party Quest with `status: pending`, occurrence, deterministic reward key and XP amount. These rows are work/diagnostic state only and are explicitly **not** progression authority.
-- `partyQuestCompletionReward.js` is now v4.0.0. It observes `PartyQuestRepository`, delegates Party Quest mutations to `PartyQuestService`, and delegates XP exclusively to frozen `ProgressionStore.awardOnce()`.
-- The deterministic ProgressionStore key remains `partyQuest:<partyQuestId>`. Because progression is UID-scoped, each participant can use the same stable Party Quest key without sharing XP state; retaining the old successful key also prevents duplicate XP if an earlier bridge had already awarded it.
-- Removed the old preclaim-before-XP failure mode. There is no direct `rewardsClaimed` transaction before progression anymore.
-- If XP fails, the Party Quest settlement remains `pending`, so a later scan can retry rather than permanently losing the reward.
-- If XP succeeds but the app crashes before the Party Quest settlement can be acknowledged, retry is safe: `ProgressionStore.awardOnce()` rejects the duplicate increment, `hasReward()` confirms the canonical reward, and the pending settlement converges to `settled` without duplicate XP or duplicate completion celebration.
-- Offline participants no longer miss Party Quest XP. Their household-scoped pending settlement remains until that UID later has an authenticated session, at which point the same worker settles it through the frozen ProgressionStore.
-- Household/account lifecycle safety is retained: the worker captures HouseholdContext, owns exact repository unsubscribe/generation guards, and refuses delayed old-context settlement acknowledgement after an account or household switch.
-- Removed legacy authority from the worker: no direct Party Quest Firebase database writes, no `rewardsClaimed`, no direct `awardXP`, no `PartyQuestActiveView.endQuest`, no `fbFamilyId`, no `fbUser`, and no localStorage authority.
-- Runtime now serves `partyQuestService.js?v=4` and `partyQuestCompletionReward.js?v=4`. Frozen `progressionStore.js?v=1`, `progressionRuntime.js?v=2`, `notificationActions.js?v=4` and `partyQuestNotificationProjector.js?v=2` remain unchanged.
-- Added `scripts/test-party-quest-step11-5.js` covering canonical task-source enforcement, deterministic completion, participant selection, pending settlements, retry after reward failure, crash-after-XP convergence, offline-participant later settlement and stale account/household rejection.
-- Updated the frozen STEP 9 deterministic progression producer audit to exercise the new v4 bridge semantics while preserving its original requirement: Party Quest rewards must keep one deterministic progression key and failed canonical XP writes must remain recoverable.
-- Final code/contract checkpoint before documentation sync: `6263dd5882253f78d7afa8eafa34f7757f836a3d`.
-- Full `Household Rebuild Contract Tests` run `33110105234`: **SUCCESS**. Logs explicitly report `party quest STEP 11.5 completion + exactly-once rewards: PASS`, `STEP 9 deterministic progression producer contract: PASS`, `STEP 9 canonical progression store contract: PASS`, all STEP 10 notification contracts PASS, and prior STEP 11.2–11.4/UX contracts PASS.
-- Frozen `src/core/notificationActions.js` was rechecked after STEP 11.5 and remains exact blob `60a48daa628bc56531395d188a0811711d82a328`.
-- Vercel Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: **READY**, `target: null`, commit `6263dd5882253f78d7afa8eafa34f7757f836a3d`; branch alias remains `verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- STEP 11.5 is **implementation/contract complete, real-device acceptance pending**.
-- `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+- Each eligible participant gets a durable pending `rewardSettlements/{uid}` row. These rows are work/diagnostic state only and are not progression authority.
+- `partyQuestCompletionReward.js` v4.0.0 delegates XP exclusively to frozen `ProgressionStore.awardOnce()` using deterministic reward key `partyQuest:<partyQuestId>` within each UID-scoped progression store.
+- Removed the old preclaim-before-XP failure mode. Failed XP leaves the settlement pending; crash after XP but before acknowledgement retries without duplicate XP.
+- Offline participants keep their pending settlement until that UID later authenticates.
+- Household/account lifecycle guards reject delayed old-context settlement work.
+- Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; full CI `33110105234`: **SUCCESS**; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: **READY**.
+- Frozen `src/core/notificationActions.js` remained blob `60a48daa628bc56531395d188a0811711d82a328`.
+- `main`, production Firebase Rules and production deployment remained untouched.
 
 ---
 
@@ -114,5 +132,6 @@ Newest entries belong at the top.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX latest checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device Tests 1/2 PASS, duplicate-safety Test 3 pending).
+- STEP 11.6 implementation/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY; device smoke pending).
 - Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4`.
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
