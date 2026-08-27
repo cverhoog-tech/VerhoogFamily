@@ -29,9 +29,9 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is now real-device accepted for all three targeted UX checks: multi-start + Arcana icons, canonical new-task handoff, and explicit **Later beslissen**. STEP 11.5 has not started and still requires explicit approval.
+**Current position:** STEP 11.1–11.5 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted for all three targeted UX checks: multi-start + Arcana icons, canonical new-task handoff, and explicit **Later beslissen**. STEP 11.5 has canonical Task-driven completion plus durable exactly-once participant reward settlement through the frozen ProgressionStore and is contract-green on a READY Preview; real-device acceptance is pending. STEP 11.6 has not started and requires explicit approval.
 
-The separate Google post-login/startup regression now has a contract-green fix candidate at checkpoint `f10e198fd144caa62427c78609f1295780707ef4`: the successful popup user is handed directly to the existing `AuthenticatedSessionController`, same-UID popup/observer races share one household bootstrap, and loading/recoverable-error UI is explicit. CI `33069878758` and Vercel commit status are SUCCESS. Real-device iPhone/PWA verification remains pending, so this does not reopen or re-accept STEP 1/2 architecture.
+The separate Google post-login/startup regression has a contract-green fix candidate at checkpoint `f10e198fd144caa62427c78609f1295780707ef4`: the successful popup user is handed directly to the existing `AuthenticatedSessionController`, same-UID popup/observer races share one household bootstrap, and loading/recoverable-error UI is explicit. CI `33069878758` and Vercel commit status are SUCCESS. Real-device iPhone/PWA verification remains pending, so this does not reopen or re-accept STEP 1/2 architecture.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke and remaining STEP 11.4 recipient/broadcast help smokes remain pending.
 
@@ -42,12 +42,13 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 
 ### STEP 9 — Progression / XP / Achievements
 - [x] Accepted/frozen after canonical UID progression, deterministic/idempotent rewards, served-runtime audit and real iPhone acceptance.
+- [x] STEP 11.5 reuses frozen `ProgressionStore.awardOnce()`; no second XP authority or direct legacy `awardXP` path was introduced.
 
 ### STEP 10 — Notifications
 - [x] Explicitly accepted/frozen by product owner on 2026-08-26.
 - [x] Canonical household notification state, UID isolation, external iOS push and push-tap routing/de-duplication accepted.
 - [x] Frozen checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` through the current Party Quest UX follow-up.
+- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.5.
 
 ## STEP 11 — Party quests — IN PROGRESS
 
@@ -89,9 +90,26 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF` READY.
 - [x] UX Test 3 real-device PASS on 2026-08-27: explicit **Later beslissen** behaves as intended.
 
+### STEP 11.5 — Canonical completion + durable exactly-once rewards — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PENDING
+- [x] Product owner explicitly approved GO STEP 11.5 on 2026-08-27.
+- [x] Linked canonical Task completion is the only completion trigger; manual stop remains cancellation.
+- [x] Completion requires the trusted live Firebase Task projection; cache-only task state cannot complete a Party Quest.
+- [x] Completion occurrence is deterministic/versioned and captures inviter + active participant UIDs.
+- [x] Pending invitees are revoked and open Party Quest help is retracted when canonical completion settles.
+- [x] Per-UID `rewardSettlements` are durable pending work/diagnostics only, not progression authority.
+- [x] Frozen `ProgressionStore.awardOnce()` owns XP mutation with deterministic key `partyQuest:<partyQuestId>` per UID.
+- [x] Old preclaim-before-XP failure mode removed: XP failure leaves pending work; crash after successful XP but before Party Quest acknowledgement retries without duplicate XP.
+- [x] Offline participants keep pending settlement and receive the reward when that UID later has an authenticated session.
+- [x] HouseholdContext generation/token guards prevent old-account/old-household delayed work from acknowledging the wrong settlement.
+- [x] Worker no longer uses direct Party Quest Firebase writes, `rewardsClaimed`, legacy `awardXP`, `fbFamilyId`, `fbUser` or localStorage authority.
+- [x] Runtime serves `partyQuestService.js?v=4` and `partyQuestCompletionReward.js?v=4`; frozen ProgressionStore/Notification runtime keys unchanged.
+- [x] Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`.
+- [x] Full CI `33110105234`: SUCCESS; logs include `party quest STEP 11.5 completion + exactly-once rewards: PASS`, STEP 9 progression contracts PASS, STEP 10 notification contracts PASS and prior Party Quest contracts PASS.
+- [x] Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: READY, `target: null`, commit `6263dd5882253f78d7afa8eafa34f7757f836a3d`.
+- [ ] Real-device task-completion + reward smoke pending.
+
 ### Later STEP 11 checkpoints
-- [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement — explicit approval required.
-- [ ] STEP 11.6 — Party Quest notification event extensions on frozen notification layer.
+- [ ] STEP 11.6 — Party Quest notification event extensions on frozen notification layer — explicit approval required.
 - [ ] STEP 11.7 — compatibility/legacy guard.
 - [ ] STEP 11.8 — integrated CI + Preview candidate.
 - [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
