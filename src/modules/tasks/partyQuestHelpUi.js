@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// PARTY QUEST HELP UI v1.0.0 — STEP 11.4
+// PARTY QUEST HELP UI v1.0.1 — STEP 11.4
 // Presentation only. Reads PartyQuestRepository and delegates all mutations
 // to PartyQuestService. HouseholdContext is the only identity authority.
 // ============================================================
 (function(){
   if(window.PartyQuestHelpUi)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var quests=[],incoming=[],repoUnsubscribe=null,boundRepo=null,generation=0,lastIdentity=null;
   var observer=null,startTimer=null,decorateTimer=null;
 
@@ -36,7 +36,7 @@
 
   function computeIncoming(){
     var me=uid();if(!me)return[];var out=[];
-    quests.forEach(function(q){if(!q||q.status!=='active'||participant(q,me))return;Object.keys(requests(q)).forEach(function(key){var r=requests(q)[key];if(!r||r.status!=='open'||String(r.requesterUid||'')===me)return;var targeted=r.audience==='uid';if(targeted&&String(r.targetUid||'')!==me)return;if(!targeted&&responded(r,me))return;out.push({quest:q,request:r});});});
+    quests.forEach(function(q){if(!q||q.status!=='active'||participant(q,me)||!eligible(q,me))return;Object.keys(requests(q)).forEach(function(key){var r=requests(q)[key];if(!r||r.status!=='open'||String(r.requesterUid||'')===me)return;var targeted=r.audience==='uid';if(targeted&&String(r.targetUid||'')!==me)return;if(!targeted&&responded(r,me))return;out.push({quest:q,request:r});});});
     return out.sort(function(a,b){return Number(b.request.createdAt||0)-Number(a.request.createdAt||0);});
   }
 
