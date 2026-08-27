@@ -1,16 +1,17 @@
 'use strict';
 // ============================================================
-// PARTY QUEST NOTIFICATION PROJECTOR v3.0.0 — STEP 11.6
+// PARTY QUEST NOTIFICATION PROJECTOR v3.0.1 — STEP 11.6
 // Read-only observer over partyQuests with HouseholdContext lifecycle and
 // stale-callback protection. Typed events remain idempotent in NotificationStore.
 // v3 projects completion to the actual Party Quest participants with XP context.
 // The UID that finalized canonical completion publishes the event so the frozen
-// trusted push sender can keep actor === authenticated caller.
+// trusted push sender can keep actor === authenticated caller. The actual task
+// completer is also excluded from the audience when publisher/completer differ.
 // ============================================================
 (function(){
   if(window.PartyQuestNotificationProjector)return;
 
-  var VERSION='3.0.0';
+  var VERSION='3.0.1';
   var active=null,contextUnsubscribe=null,bindGeneration=0,snapshot={},initialized=false;
 
   function db(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}}
@@ -59,9 +60,9 @@
         var beforeMine=invitees(prev)[me],afterMine=invitees(q)[me];
         if(afterMine&&String(q.inviterUid||'')!==me&&(!beforeMine||beforeMine.status!==afterMine.status)&&afterMine.status==='active')safe(NotificationEvents.partyQuestJoined(q,q.inviterUid));
         if(prev.status!==q.status&&q.status==='completed'&&completionPublisher(q)===me&&NotificationEvents.partyQuestCompleted){
-          var completion=q.completion||{},recipients=completionParticipants(q).filter(function(uid){return String(uid)!==me;});
+          var completion=q.completion||{},cause=completionCause(q),recipients=completionParticipants(q).filter(function(uid){return String(uid)!==me&&String(uid)!==cause;});
           safe(NotificationEvents.partyQuestCompleted(q,recipients,{
-            completedByUid:completionCause(q),
+            completedByUid:cause,
             xp:Number(completion.xpPerParticipant)||0,
             occurrence:completion.occurrenceId||q.endedAt||'completed'
           }));
