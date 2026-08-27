@@ -92,7 +92,7 @@
     if(typeof window.loadUserFamily!=='function'){
       work=Promise.reject(new Error('Household resolver niet beschikbaar')).catch(function(err){showRecoverable(err,user,token);});
     }else{
-      work=Promise.resolve(window.loadUserFamily()).then(function(){
+      work=Promise.resolve().then(function(){return window.loadUserFamily();}).then(function(){
         if(!isCurrent(token,user))return;
         setState('preparingApp');
         revealApp(user);
