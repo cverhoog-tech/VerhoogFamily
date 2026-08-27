@@ -96,7 +96,7 @@ async function testOrdinaryTaskProjection(){
   const window={HouseholdContext,TaskHouseholdRepository,PartyQuestRepository,NotificationEvents};
   const sandbox={window,HouseholdContext,TaskHouseholdRepository,PartyQuestRepository,NotificationEvents,console,Promise,Date,Math,JSON,Object,String,Number,Array,Set};
   vm.createContext(sandbox);vm.runInContext(domainSource,sandbox,{filename:'householdDomainNotificationProjectorV2.js'});
-  assert.strictEqual(window.HouseholdDomainNotificationProjectorV2.version,'1.2.0');
+  assert.strictEqual(window.HouseholdDomainNotificationProjectorV2.version,'1.2.1');
 
   const completed=Object.assign({},taskBaseline,{done:true,completedAt:100,completedByUid:'A',updatedByUid:'A',updatedAt:100});
   taskSubscriber([completed],{ready:true,source:'firebase',uid:'A',householdId:'H1'});
@@ -148,7 +148,7 @@ async function testPartyQuestProjection(){
   assert.strictEqual(window.PartyQuestNotificationProjector.version,'3.0.1');
   const ref=db.ref('families/H1/partyQuests');
   const active={pq1:{id:'pq1',questId:'t1',questTitle:'Keuken',status:'active',inviterUid:'A',invitees:{B:{uid:'B',status:'active'},C:{uid:'C',status:'active'}}}};
-  ref.emit(active); // baseline
+  ref.emit(active);
   const completed={pq1:Object.assign({},active.pq1,{status:'completed',endedByUid:'A',completion:{occurrenceId:'partyQuest:pq1:completion:v1',taskCompletedAt:100,taskCompletedByUid:'A',finalizedByUid:'C',participantUids:['A','B','C'],xpPerParticipant:7}})};
   ref.emit(completed);await tick();
   assert.strictEqual(calls.length,1,'canonical finalizer must publish Party Quest completion once');
@@ -156,7 +156,6 @@ async function testPartyQuestProjection(){
   assert.strictEqual(calls[0].options.completedByUid,'A');
   assert.strictEqual(calls[0].options.xp,7);
 
-  // Same snapshot replay cannot produce another transition.
   ref.emit(completed);await tick();assert.strictEqual(calls.length,1,'replay must not duplicate Party Quest completion projection');
 
   const staleHandler=ref.handlers[0];
