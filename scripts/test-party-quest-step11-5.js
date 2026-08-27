@@ -283,6 +283,8 @@ async function testRewardWorker(){
     }
   });
   const pending=stale.sandbox.PartyQuestCompletionReward.scan();
+  for(let i=0;i<8&&typeof resolveAward!=='function';i++)await Promise.resolve();
+  assert.strictEqual(typeof resolveAward,'function','stale-context test must pause after awardOnce has started');
   stale.setState({uid:'X',householdId:'H2',ready:true,revision:2});
   resolveAward();
   await pending;
