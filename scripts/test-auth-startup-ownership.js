@@ -22,9 +22,13 @@ assert.strictEqual(count(taskReady,'.onAuthStateChanged('),0,'task readiness mus
 assert.strictEqual(count(google,'loadUserFamily'),0,'Google sign-in adapter must not resolve household');
 assert.strictEqual(count(google,'onLoggedIn'),0,'Google sign-in adapter must not reveal/start app');
 assert.strictEqual(count(google,'recoverExistingSession'),0,'Google sign-in adapter must not own existing-session bootstrap');
+assert.ok(google.includes('AuthenticatedSessionController'),'Google adapter must hand successful popup auth to the canonical session controller');
+assert.ok(google.includes('acceptAuthenticatedUser'),'Google adapter must use the explicit canonical post-auth handoff');
+assert.ok(controller.includes('acceptAuthenticatedUser'),'session controller must expose an explicit authenticated-user handoff');
+assert.ok(controller.includes('bootstrapPromise')&&controller.includes('bootstrapUid'),'session controller must dedupe same-UID in-flight bootstrap races');
 assert.ok(taskReady.includes('AuthenticatedSessionController.whenAuthenticated'),'task readiness must use canonical session readiness');
-assert.ok(loader.includes('authenticatedSessionController.js?v=2'),'runtime loader must include current canonical session controller');
-assert.ok(loader.includes('googleAuthMobileFix.js?v=1'),'runtime loader must include the Google auth adapter');
+assert.ok(loader.includes('authenticatedSessionController.js?v=3'),'runtime loader must include current canonical session controller');
+assert.ok(loader.includes('googleAuthMobileFix.js?v=2'),'runtime loader must include the current Google auth adapter');
 assert.ok(loader.includes('householdPlatform.js?v=2'),'runtime loader must include canonical household platform');
 assert.ok(loader.includes('householdOnboardingBridge.js?v=1'),'runtime loader must include deterministic household onboarding bridge');
 assert.ok(loader.includes('familyapp-profile-name-v1'),'runtime loader must explicitly retire the old localStorage reveal signature');
