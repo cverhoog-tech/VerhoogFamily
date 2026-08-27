@@ -12,7 +12,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - `[x]` accepted/completed
 - `[!]` blocked / needs attention
 
-## Current position — synced 2026-08-27
+## Current position — synced 2026-08-28
 
 - [x] STEP 0 — Stable baseline.
 - [x] STEP 1 — Authenticated session / startup ownership.
@@ -29,7 +29,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.5 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted for multi-start + Arcana icons, canonical new-task handoff and explicit **Later beslissen**. STEP 11.5 device Tests 1 and 2 are PASS: canonical linked-Task completion worked and a second accepted participant later authenticated and received the durable pending XP reward. One final duplicate-safety smoke remains before STEP 11.5 is fully device-accepted. STEP 11.6 has not started and still requires explicit approval; proposed scope now includes related-task completion notifications and notifications for XP caused by another household member.
+**Current position:** STEP 11.1–11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted. STEP 11.5 device Tests 1 and 2 are PASS, while the final reload/no-duplicate Test 3 remains pending. STEP 11.6 is now contract-green on a READY Preview: involved ordinary-Task completions and combined Party Quest completion+XP notifications are projected through the frozen canonical notification stack. STEP 11.6 device verification is pending. STEP 11.7 has not started and requires explicit approval.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke, remaining STEP 11.4 recipient/broadcast help smokes and Google post-login/startup product fix remain pending.
 
@@ -46,14 +46,14 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Explicitly accepted/frozen by product owner on 2026-08-26.
 - [x] Canonical household notification state, UID isolation, external iOS push and push-tap routing/de-duplication accepted.
 - [x] Frozen checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.5.
+- [x] STEP 11.6 extends notification event projection through the accepted layer rather than reopening NotificationStore/push architecture.
+- [x] Frozen `notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.6.
 
 ## STEP 11 — Party quests — IN PROGRESS
 
 ### STEP 11.1 — Repository foundation — COMPLETE
 - [x] Canonical household path and HouseholdContext lifecycle protection.
-- [x] Checkpoint `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
-- [x] CI `33019925699` SUCCESS.
+- [x] Checkpoint `e5ce389e30ed2848e0fca5715339639f17ebd8cf`; CI `33019925699` SUCCESS.
 
 ### STEP 11.2 — Invite/join state machine — COMPLETE + REAL-DEVICE PASS
 - [x] Canonical PartyQuestService + repository authority.
@@ -76,9 +76,9 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Additional Party Quest start available even with existing pending/active Party Quest.
 - [x] **Nieuwe quest maken** delegates to canonical `TaskDetailPopup.openCreate()` and returns with the new task preselected.
 - [x] Meaningful Arcana/RPG icons reuse canonical `TaskCategoryIcons`.
-- [x] UX Test 1 real-device PASS: multi-start + Arcana icons.
-- [x] UX Test 2 real-device PASS: canonical new-task handoff.
-- [x] UX Test 3 real-device PASS: explicit **Later beslissen** behaves as intended.
+- [x] UX Test 1 PASS: multi-start + Arcana icons.
+- [x] UX Test 2 PASS: canonical new-task handoff.
+- [x] UX Test 3 PASS: explicit **Later beslissen**.
 - [x] Latest checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`; CI `33052149328` SUCCESS.
 
 ### STEP 11.5 — Canonical completion + durable exactly-once rewards — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE 2/3 PASS
@@ -86,27 +86,35 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Linked canonical Task completion is the only completion trigger; manual stop remains cancellation.
 - [x] Completion requires the trusted live Firebase Task projection; cache-only task state cannot complete a Party Quest.
 - [x] Completion occurrence is deterministic/versioned and captures inviter + active participant UIDs.
-- [x] Per-UID `rewardSettlements` are durable pending work/diagnostics only, not progression authority.
 - [x] Frozen `ProgressionStore.awardOnce()` owns XP mutation with deterministic key `partyQuest:<partyQuestId>` per UID.
 - [x] Old preclaim-before-XP failure mode removed; failed XP remains retryable and post-XP/pre-ack retry cannot duplicate XP.
 - [x] Offline participants keep pending settlement and receive the reward when that UID later has an authenticated session.
 - [x] HouseholdContext generation/token guards prevent old-account/old-household delayed work from acknowledging the wrong settlement.
-- [x] Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS.
-- [x] Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf`: READY.
+- [x] Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY.
 - [x] Real-device Test 1 PASS: linked Task completion closes the active Party Quest and current participant receives XP.
 - [x] Real-device Test 2 PASS: another accepted participant later authenticated and received the durable pending Party Quest XP reward.
 - [ ] Real-device Test 3 pending: reload/reopen the same participant and confirm no second XP/reward is granted.
 
-### STEP 11.6 — Notification event extensions — NOT STARTED; PROPOSED SCOPE
-- [ ] Explicit **GO STEP 11.6** required before implementation.
-- [ ] Notify relevant users when another household member completes a Task they were involved in.
-- [ ] Notify a user when XP is awarded because of another household member's action, including delayed/offline Party Quest settlement.
-- [ ] Prefer one rich combined notification when the same triggering action both completes the related Task and causes XP.
-- [ ] No self-noise for the triggering actor and no duplicate events on reconnect/replay.
-- [ ] Reuse frozen canonical notification/push infrastructure with deterministic occurrence IDs.
+### STEP 11.6 — Notification event extensions — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PENDING
+- [x] Product owner explicitly approved GO STEP 11.6 on 2026-08-28.
+- [x] `NotificationExperience` adds deterministic `task.completed.involved` events for actual collaborators only.
+- [x] Ordinary completion audience includes creator/owner, assignees and accepted ordinary helpers, excluding the completer.
+- [x] Party Quest participants are excluded from the ordinary completion event so they receive one richer Party Quest notification instead of duplicate noise.
+- [x] Party Quest completion notification contains completion context + XP amount and names the original task completer even if a different UID technically finalized the Party Quest.
+- [x] Technical publisher and actual task completer are both excluded from the Party Quest recipient audience where they differ.
+- [x] `NotificationStore.publishToUidsOnce()` remains the idempotency authority; deterministic event keys prevent replay/reconnect duplicates.
+- [x] Frozen trusted push sender remains unchanged; no backend type allowlist or push transport change was required.
+- [x] `HouseholdDomainNotificationProjectorV2` v1.2.1 preserves startup baselines across the immediate same-context subscription callback, preventing the first real task transition from being missed.
+- [x] Frozen `notificationActions.js` exact blob remains `60a48daa628bc56531395d188a0811711d82a328`.
+- [x] Runtime cache keys: `notificationEvents.js?v=3`, `notificationExperience.js?v=2`, `householdDomainNotificationProjectorV2.js?v=2`, `partyQuestNotificationProjector.js?v=3`.
+- [x] Code/contract checkpoint `b067fc74931e058b9aa2507d5564501e77575114`.
+- [x] Full CI `33124463794`: SUCCESS, including STEP 11.6, STEP 11.5, frozen STEP 9 progression and frozen STEP 10 notification/push contracts.
+- [x] Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9`: READY, target Preview.
+- [ ] Real-device ordinary involved-task notification smoke pending.
+- [ ] Real-device combined Party Quest completion + XP notification smoke pending.
 
 ### Later STEP 11 checkpoints
-- [ ] STEP 11.7 — compatibility/legacy guard.
+- [ ] STEP 11.7 — compatibility/legacy guard — explicit approval required.
 - [ ] STEP 11.8 — integrated CI + Preview candidate.
 - [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
 
