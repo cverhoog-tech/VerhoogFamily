@@ -27,11 +27,11 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
-- [-] STEP 11 — Party quests — in progress; STEP 11.1–11.4 implementation/contract complete. STEP 11.2 has a real-device invite/accept PASS; STEP 11.3 leave and STEP 11.4 help smokes are pending. STEP 11.5 not started.
+- [-] STEP 11 — Party quests — in progress; STEP 11.1–11.4 implementation/contract complete. STEP 11.2 has a real-device invite/accept PASS. STEP 11.4 targeted-help Test 1 has a real-device PASS; remaining 11.4 recipient/broadcast actions and STEP 11.3 leave are pending. The Party Quest UX patch is implementation/contract complete. STEP 11.5 not started.
 
-**Current position: STEP 10 remains frozen. STEP 11.4 targeted/household Party Quest help is implementation/contract complete and on a READY Preview. The next roadmap checkpoint is STEP 11.5, but it requires explicit product-owner approval and has not started.**
+**Current position: STEP 10 remains frozen. STEP 11.4 help has a partial real-device PASS, and the approved Party Quest UX patch is contract-green on a READY Preview. The next roadmap checkpoint is STEP 11.5, but it requires explicit product-owner approval and has not started.**
 
-The separate Party Quest acceptance-toast fix remains open because the product owner chose to defer its real-device visual verification. The STEP 11.3 participant-leave smoke and STEP 11.4 help smoke are also not yet marked real-device accepted.
+The separate Party Quest acceptance-toast fix remains open because the product owner chose to defer its real-device visual verification. The STEP 11.3 participant-leave smoke, remaining STEP 11.4 help actions and Party Quest UX smoke are also not yet marked real-device accepted.
 
 The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog test and is not a STEP 11 blocker.
 
@@ -52,7 +52,7 @@ The owner-transfer **Gezin verlaten** smoke remains a separate lifecycle backlog
 - [x] Same-iPhone account, avatar, inbox/unread/banner and prior-UID push-registration isolation accepted.
 - [x] Installed PWA safe-area, Home dark mode and repeated resume/reload stability accepted.
 - [x] Frozen code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.4.
+- [x] Frozen `notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328` through the Party Quest UX patch.
 
 ## STEP 11 — Party quests — IN PROGRESS
 
@@ -90,7 +90,7 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] Participant leave is recorded as `left` + `leftAt`, not `declined`.
 - [x] Inviter cannot participant-leave; owner manual end stays `cancelQuest()`.
 - [x] Deterministic leave status recompute implemented.
-- [x] `PartyQuestActiveView v6.0.0` reads repository and mutates service only.
+- [x] `PartyQuestActiveView` reads repository and mutates service only.
 - [x] Legacy direct Firebase/auth/household/localStorage ownership removed from ActiveView.
 - [x] Exact unsubscribe, stale callback rejection and projection clear on identity changes implemented.
 - [x] Owner end never writes `completed`.
@@ -100,7 +100,7 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] Preview `dpl_VunmExXR5aYyhvC2YWoAWjiFc3e7`: READY.
 - [ ] Real-device participant leave smoke pending.
 
-### STEP 11.4 — Targeted + household Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE PENDING
+### STEP 11.4 — Targeted + household Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE PARTIAL PASS
 - [x] Product owner explicitly approved GO 11.4 only.
 - [x] `PartyQuestService v1.2.0` adds targeted help, household help, response and retraction methods through PartyQuestRepository.
 - [x] Party Quest help state is occurrence-scoped under `helpRequests` and does not reuse ordinary Task-help state.
@@ -121,8 +121,25 @@ STEP 11 builds on frozen Tasks + Progression + Notifications contracts and House
 - [x] Full contract run `33044211179`: SUCCESS; log explicitly reports `party quest STEP 11.4 targeted + household help: PASS`.
 - [x] Code/contract checkpoint `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - [x] Vercel Preview `dpl_CmKCpfPHENmUwjuGzwfRQMXTii7a`: READY.
-- [ ] Real-device Party Quest help smoke pending.
+- [x] Real-device Test 1 PASS: the inviter can send targeted help to an eligible household member and the action changes to **Hulpvraag beheren**.
+- [ ] Recipient accept/decline and household-broadcast real-device follow-up pending.
 - [x] STEP 11.5 completion/reward settlement and STEP 11.6 help-notification event extensions were not started.
+
+### Party Quest UX patch — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE PENDING
+- [x] Product owner approved GO Party Quest UX patch before STEP 11.5.
+- [x] Existing pending/active Party Quest state no longer removes access to **＋ Nieuwe Party Quest**.
+- [x] Active Party Quest overlay also exposes **＋ Nieuwe Party Quest**, bypassing the previous single-current-quest UI trap.
+- [x] The chooser exposes **Nieuwe quest maken** and delegates to canonical `TaskDetailPopup.openCreate()`.
+- [x] HouseholdContext-scoped task-create handoff waits for canonical `familyapp:tasks-updated`, detects a truly new self-created task and reopens the chooser with it selected.
+- [x] No second task form, persistence layer, auth authority or Party Quest mutation path was introduced.
+- [x] Generic sparkle placeholders were removed from the chooser in favor of meaningful Arcana/RPG icons through canonical `TaskCategoryIcons.detect()` / `TaskCategoryIcons.icon()`.
+- [x] Active Party Quest cards use the same icon family.
+- [x] Runtime serves `partyQuestInvites.js?v=7` and `partyQuestActiveView.js?v=7`; frozen STEP 10 notification actions/projector remain unchanged.
+- [x] Added `scripts/test-party-quest-ux-patch.js`.
+- [x] Full contract run `33049748789`: SUCCESS; log explicitly reports `party quest UX patch: PASS` and all earlier Party Quest/frozen notification tests remain green.
+- [x] Code/contract checkpoint `1c5b543926055ab647773b8182fa63322f83878e`.
+- [x] Vercel Preview `dpl_EjBMPpzoLdKThex7nGkNbLJhjv81`: READY.
+- [ ] Real-device UX smoke pending.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement — explicit approval required.
@@ -165,7 +182,9 @@ Full specification: `docs/FAMILYAPP-FIX-LIST.md`.
 - 2026-08-27 — STEP 11.2 real-device Party Quest invite/acceptance flow functionally accepted; non-blocking toast styling issue added to fix backlog.
 - 2026-08-27 — Toast root cause fixed in shared presentation layer; CI `33023131272` SUCCESS; real-device visual confirmation deferred to later.
 - 2026-08-27 — STEP 11.3 leave semantics + ActiveView lifecycle implementation/contract complete; CI `33024009131` SUCCESS and Preview READY; real-device leave smoke pending.
-- 2026-08-27 — STEP 11.4 targeted/household Party Quest help implementation/contract complete; CI `33044211179` SUCCESS and Preview `dpl_CmKCpfPHENmUwjuGzwfRQMXTii7a` READY; real-device help smoke pending.
+- 2026-08-27 — STEP 11.4 targeted/household Party Quest help implementation/contract complete; CI `33044211179` SUCCESS and Preview `dpl_CmKCpfPHENmUwjuGzwfRQMXTii7a` READY.
+- 2026-08-27 — STEP 11.4 targeted-help Test 1 real-device PASS: request sends successfully and owner action becomes **Hulpvraag beheren**; remaining recipient/broadcast actions pending.
+- 2026-08-27 — Party Quest UX patch implementation/contract complete: multiple Party Quest starts, canonical new-task handoff and meaningful Arcana icons; CI `33049748789` SUCCESS and Preview `dpl_EjBMPpzoLdKThex7nGkNbLJhjv81` READY.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
