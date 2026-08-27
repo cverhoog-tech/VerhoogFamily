@@ -21,10 +21,10 @@ assert.ok(!repoSource.includes('localStorage'),'repository must not use legacy/l
 const contextIndex=loaderSource.indexOf('householdContext.js?v=1');
 const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=2');
 const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=4');
-const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
+const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=3');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex,'runtime must load PartyQuestRepository after HouseholdContext');
 assert.ok(serviceIndex>repoIndex,'runtime must load PartyQuestService after PartyQuestRepository');
-assert.ok(projectorIndex>serviceIndex,'runtime must load the frozen Party Quest notification projector after PartyQuestService');
+assert.ok(projectorIndex>serviceIndex,'runtime must load the STEP 11.6 Party Quest notification projector after PartyQuestService');
 assert.ok(loaderSource.includes('partyQuestHelpUi.js?v=1'),'runtime must load STEP 11.4 help presentation');
 
 function makeDb(initial){
@@ -113,7 +113,6 @@ function makeDb(initial){
   assert.ok(aRows[0].rewardsClaimed&&aRows[0].rewardsClaimed.uidA,'unknown/legacy fields must be preserved in the read model');
   assert.strictEqual(database.writes.length,0,'read normalization must not eagerly migrate or rewrite Firebase data');
 
-  // Same-household account switch must still rebind because UID/revision changed.
   contextState={uid:'uidB',householdId:'H1',ready:true,revision:2};
   contextSubscriber(Object.freeze(Object.assign({},contextState)),'identity-change');
   assert.strictEqual(h1Ref.offCalls.length,1,'UID switch must detach the old exact listener');
@@ -127,7 +126,6 @@ function makeDb(initial){
   h1Ref.emit({pq2:{id:'pq2',questId:'task2',questTitle:'B sees H1',status:'active',inviterUid:'uidB',invitees:{},createdAt:2}});
   assert.deepStrictEqual(repo.list().map(q=>q.questTitle),['B sees H1']);
 
-  // Household switch must detach H1 and reject old callbacks.
   contextState={uid:'uidB',householdId:'H2',ready:true,revision:3};
   contextSubscriber(Object.freeze(Object.assign({},contextState)),'identity-change');
   assert.strictEqual(repo.status().canonicalPath,'families/H2/partyQuests');
@@ -141,8 +139,6 @@ function makeDb(initial){
   h2Ref.emit({pqB:{id:'quest-B',questId:'taskB',questTitle:'H2 quest',status:'active',inviterUid:'uidB',invitees:{},createdAt:3}});
   assert.deepStrictEqual(repo.list().map(q=>q.questTitle),['H2 quest']);
 
-  // Delay the transaction callback, then switch context. The stale transaction
-  // updater must abort rather than writing after another household became canonical.
   database.data['families/H2/partyQuests/pqB']={id:'quest-B',questId:'taskB',questTitle:'H2 quest',status:'active',inviterUid:'uidB',invitees:{},createdAt:3};
   database.deferNextTransaction();
   const staleMutation=repo.updateOne('quest-B',{status:'completed'}).then(
