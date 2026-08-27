@@ -17,6 +17,36 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — STEP 11.4 targeted + household Party Quest help implemented
+
+- Product owner explicitly approved **GO 11.4 only**. STEP 11.5 completion/reward work and STEP 11.6 notification-event extensions were not started.
+- Upgraded `src/modules/tasks/partyQuestService.js` to v1.2.0 with canonical Party Quest help methods `requestHelp`, `requestHouseholdHelp`, `respondHelp` and `retractHelp` through `PartyQuestRepository` only.
+- Party Quest help state remains scoped to the Party Quest itself at `helpRequests/{occurrenceId}` and does not reuse the ordinary Task-help state as a second Party Quest authority.
+- Help requests are occurrence-scoped and may target one eligible household UID or be broadcast to eligible household members.
+- Only the Party Quest inviter can create or retract a help request. The Party Quest must be active and the linked task must still be open.
+- At most one open help request may exist for a Party Quest at a time.
+- Helper eligibility excludes the requester/inviter, inactive household members, the task creator/current assignees and Party Quest members who are already pending or active. Eligibility is rechecked inside the canonical mutation so a stale UI cannot force an invalid join.
+- A targeted accept/decline closes that occurrence. Wrong recipients and repeated responses are rejected.
+- A household-wide decline is stored per UID for that occurrence and leaves the broadcast open for other eligible household members.
+- A household-wide accept adds that UID to the Party Quest as an active participant with `joinedVia: help` and `helpOccurrenceId`, while the broadcast remains open so additional eligible helpers can still join until the inviter retracts it.
+- Open help requests are automatically retracted when the inviter cancels the Party Quest or when a last-participant leave closes the Party Quest.
+- Added `src/modules/tasks/partyQuestHelpUi.js` and finalized it as v1.0.1. The inviter gets **Hulp vragen / Hulpvraag beheren** in the active Party Quest overlay; eligible recipients get **Hulp geven / Niet voor mij**.
+- PartyQuestHelpUi reads through `PartyQuestRepository`, delegates all mutations to `PartyQuestService`, uses HouseholdContext identity, owns exact repository unsubscribe/generation guards and rejects stale account/household projections.
+- Fixed a presentation edge case so an outstanding help request disappears immediately for a member who later becomes assigned, inactive or otherwise ineligible.
+- Existing pending Party Quest invitations retain priority over help requests on the shared Party Quest tile.
+- Runtime now serves `partyQuestService.js?v=3` and `partyQuestHelpUi.js?v=1`; frozen `notificationActions.js?v=4` and `partyQuestNotificationProjector.js?v=2` were not changed.
+- Frozen `src/core/notificationActions.js` remains blob `60a48daa628bc56531395d188a0811711d82a328`.
+- Added `scripts/test-party-quest-step11-4.js` covering targeted/broadcast help, wrong-recipient rejection, repeated-response/idempotency guards, multiple household helpers, retraction, cancellation cleanup, delayed stale mutation rejection and HelpUi lifecycle/eligibility behavior.
+- Existing Party Quest repository/service loader contracts were aligned to the STEP 11.4 service cache key.
+- Final implementation/contract checkpoint before documentation sync: `51256b2506625f7421273d87d0c0f654fdbc432b`.
+- `Household Rebuild Contract Tests` run `33044211179`: **SUCCESS**. Logs explicitly report `party quest STEP 11.4 targeted + household help: PASS`, while STEP 11.1–11.3 and the frozen notification contracts remain green.
+- Vercel Preview `dpl_CmKCpfPHENmUwjuGzwfRQMXTii7a`: **READY**, branch `agent/household-rebuild-v2`, `target: null`.
+- STEP 11.4 real-device targeted/household help smoke is still **pending** and has not been marked accepted.
+- STEP 11.3 participant-leave smoke is also still pending; the separate Party Quest toast visual test remains explicitly deferred by the product owner.
+- `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+
+---
+
 ## 2026-08-27 — STEP 11.3 leave semantics + ActiveView lifecycle implemented
 
 - Product owner explicitly chose to defer the Party Quest toast iPhone test to later and approved continuing with **STEP 11.3 only**.
@@ -38,7 +68,7 @@ Newest entries belong at the top.
 - Vercel Preview `dpl_VunmExXR5aYyhvC2YWoAWjiFc3e7`: **READY**, branch `agent/household-rebuild-v2`, `target: null`.
 - STEP 11.3 real-device participant-leave smoke is still **pending** and has not been marked accepted.
 - The separate acceptance-toast real-device visual check remains open/deferred by product owner.
-- STEP 11.4 and later Party Quest checkpoints were not started.
+- STEP 11.4 and later Party Quest checkpoints were not started at that checkpoint.
 - Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -75,7 +105,7 @@ Newest entries belong at the top.
 
 ## 2026-08-27 — STEP 11.2 PartyQuestService + invite/join state machine implemented
 
-- Product owner explicitly approved **GO 11.2** only.
+- Product owner explicitly approved **GO 11.2 only**.
 - Added `src/modules/tasks/partyQuestService.js` v1.0.0 as the Party Quest domain authorization/state-machine layer.
 - Service identity is exclusively `HouseholdContext`; it does not use `fbFamilyId`, `fbUser`, direct Firebase Auth or localStorage as identity/persistence authority.
 - Party Quest persistence remains exclusively owned by `PartyQuestRepository` at `families/{householdId}/partyQuests/{partyQuestId}`.
@@ -107,4 +137,5 @@ Newest entries belong at the top.
 - STEP 11.1 code checkpoint: `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
 - STEP 11.2 implementation checkpoint: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - STEP 11.3 implementation/contract checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`.
+- STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
