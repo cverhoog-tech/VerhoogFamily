@@ -110,26 +110,41 @@ Status: **fix candidate deployed/contract green — real-device visual verificat
 
 ## 7. Google login — post-auth handoff/startup blijft hangen
 
-Status: **open — real-device regressie waargenomen op 2026-08-27**.
+Status: **fix candidate implemented/contract green — real-device PWA verification pending**.
 
 Waargenomen gedrag:
 
 - Gebruiker tikt op **Inloggen met Google**.
 - Google-accountkeuze opent normaal.
-- Na het kiezen van het account keert de app terug naar het inlogscherm.
-- Het inlogscherm lijkt ongeveer vijf seconden gefreezed / reageert niet zichtbaar door.
-- Na de app sluiten en opnieuw openen blijkt de gebruiker wél correct ingelogd te zijn.
+- Na het kiezen van het account keerde de app terug naar het inlogscherm.
+- Het inlogscherm leek ongeveer vijf seconden gefreezed / reageerde niet zichtbaar door.
+- Na de app sluiten en opnieuw openen bleek de gebruiker wél correct ingelogd te zijn.
 
-Interpretatie / onderzoeksrichting:
+Bevestigde oorzaak / fix:
 
-- De Google/Firebase-authenticatie zelf lijkt te slagen en de sessie wordt persistent opgeslagen.
-- Het probleem zit waarschijnlijk in de zichtbare post-auth handoff/startup-keten, niet in het verkrijgen van de Firebase-sessie.
-- Huidige relevante keten: `signInWithPopup()` → `onAuthStateChanged` → `AuthenticatedSessionController.bootstrap()` → `loadUserFamily()` → `revealApp()`.
-- Onderzoek of `loadUserFamily()` of een lifecycle/race na terugkeer uit de Google-popup vertraagt of blijft hangen.
-- Tijdens deze overgang moet de gebruiker een duidelijke laadstatus krijgen; een interactief-ogend maar feitelijk stilstaand inlogscherm is niet acceptabel.
-- Bij succesvolle auth moet de app zonder handmatige app-herstart naar de juiste household/Home-state doorstromen.
-- Fouten/time-outs in household bootstrap moeten zichtbaar en herstelbaar zijn in plaats van stil te blijven hangen.
-- Geen nieuwe auth-, household- of sessie-authority introduceren; fix binnen de bestaande `googleAuthMobileFix` / `AuthenticatedSessionController` / household-bootstrap architectuur.
+- Firebase-authenticatie en sessiepersistence waren niet het primaire probleem.
+- `googleAuthMobileFix.js` gebruikte het succesvolle `signInWithPopup()`-resultaat niet om de bestaande session bootstrap direct te starten; de UI wachtte volledig op de afzonderlijke `onAuthStateChanged`-callback.
+- Op iOS/PWA kunnen popup-resultaat en auth-observer in verschillende volgorde/timing arriveren. De bestaande controller startte bij iedere bootstrap een nieuwe generatie, waardoor een directe handoff zonder dedupe eveneens een race zou kunnen veroorzaken.
+- Het succesvolle popup-resultaat wordt nu via `AuthenticatedSessionController.acceptAuthenticatedUser(result.user)` aan de **bestaande canonical session authority** doorgegeven.
+- `AuthenticatedSessionController` hergebruikt één in-flight `loadUserFamily()`-bootstrap per UID en negeert een late duplicate observer-bootstrap wanneer dezelfde gebruiker al `ready` is.
+- Er is geen tweede auth-, household- of app-reveal authority toegevoegd; `loadUserFamily()` en `revealApp()` blijven eigendom van de bestaande session/household-keten.
+- Tijdens de overgang toont de knop expliciet **Google openen...** en daarna **Gezin laden...**.
+- Een recoverable household/startup-fout blijft zichtbaar en maakt de Google-knop weer bruikbaar voor een retry in plaats van permanent disabled te blijven.
+- De household-resolver wordt via een Promise-microtask aangeroepen zodat ook een synchrone resolver-fout in dezelfde recoverable error-route terechtkomt.
+- Runtime cachekeys zijn verhoogd naar `googleAuthMobileFix.js?v=2` en `authenticatedSessionController.js?v=3`, zodat de PWA niet op de oude auth-runtime blijft hangen.
+
+Regressiebewaking:
+
+- Nieuwe test `scripts/test-auth-popup-handoff-race.js` simuleert beide relevante volgordes:
+  - auth-observer eerst, popup-resultaat daarna;
+  - popup-resultaat eerst, auth-observer daarna.
+- In beide gevallen mag exact één household-bootstrap starten, Home één keer worden onthuld en een late same-UID observer geen tweede household-load veroorzaken.
+- `scripts/test-auth-startup-ownership.js` bewaakt dat de Google-adapter geen `loadUserFamily()`/app-reveal authority overneemt en dat er exact één Firebase auth observer blijft.
+- Bestaande Tasks-loadercontract is alleen bijgewerkt voor de legitieme session-controller cachekey `v3`; Tasks-authority zelf is niet gewijzigd.
+- Code/contract checkpoint: `f10e198fd144caa62427c78609f1295780707ef4`.
+- Full `Household Rebuild Contract Tests` run `33069878758`: **SUCCESS**.
+- Vercel commit status voor dit checkpoint: **SUCCESS**.
+- Punt blijft open totdat op een echte iPhone/PWA is bevestigd dat Google-login na accountkeuze direct doorstroomt naar household/Home zonder app sluiten/heropenen.
 
 ## Status
 
@@ -143,4 +158,4 @@ De Party Quest UX patch is inmiddels real-device PASS voor multi-start, Arcana-i
 4. Recept als maaltijd voorstellen aan gezinslid
 5. Boodschappen afronden + optionele bon + gekocht-mandje leegmaken
 6. Party Quest acceptatie-toast — fix candidate klaar, real-device visuele bevestiging uitgesteld/pending
-7. Google login — auth slaagt, maar post-login handoff/startup kan op inlogscherm blijven hangen tot app-herstart
+7. Google login — code/contract fix candidate groen; real-device bevestigen dat post-auth handoff zonder app-herstart direct naar household/Home gaat
