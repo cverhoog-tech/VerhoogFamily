@@ -17,6 +17,34 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — Party Quest UX patch implemented; STEP 11.4 Test 1 device PASS
+
+- Product owner reported STEP 11.4 targeted-help Test 1 **PASS** on a real device: the maker of an active Party Quest could send a help request to one eligible household member and the action changed to **Hulpvraag beheren**.
+- This is recorded as a partial STEP 11.4 device PASS only. Recipient accept/decline and household-broadcast follow-up actions remain pending and STEP 11.4 is not marked fully device-accepted yet.
+- Product owner then identified three Party Quest UX gaps and explicitly approved **GO Party Quest UX patch** before STEP 11.5:
+  - a pending/active Party Quest should not block starting an additional Party Quest;
+  - the Party Quest chooser should allow creating a new ordinary quest/task directly;
+  - the generic sparkle task icons should be replaced with meaningful Arcana/RPG icons in the visual language of the Person/Tasks UI.
+- Upgraded `src/modules/tasks/partyQuestInvites.js` to v7.0.0 presentation/facade behavior while preserving the frozen-compatible `getById`, `respond` and `revokeInvite` methods used by `NotificationActions`.
+- Party Quest status UI now exposes **＋ Nieuwe Party Quest**, so an existing pending/active Party Quest no longer traps the user in only close/retract/end actions.
+- Upgraded `src/modules/tasks/partyQuestActiveView.js` to v7.0.0 and added the same **＋ Nieuwe Party Quest** action to the active-quest overlay, which previously intercepted the shared Party Quest tile before the invite facade could offer a new start.
+- Added **Nieuwe quest maken** to **Start een Party Quest**. It delegates to the existing premium `TaskDetailPopup.openCreate()` flow; no second task form, task repository or task authority was introduced.
+- New-task return uses an explicit HouseholdContext-scoped handoff: it snapshots existing task IDs, waits for canonical `familyapp:tasks-updated`, verifies the same UID/household/revision, finds the newly created self-owned open task and reopens the Party Quest chooser with that task preselected.
+- The handoff is cleared on cancel/background close, stale identity or timeout, preventing a later unrelated task update from reopening Party Quest under the wrong context.
+- Replaced the chooser's generic `✦` placeholder with the existing canonical `TaskCategoryIcons.detect()` + `TaskCategoryIcons.icon()` family. Existing semantic categories such as pickup/dropoff, groceries, laundry, cleaning, kitchen, pantry, travel, admin, family and garden now produce meaningful Arcana/RPG glyphs; unknown tasks use the quest fallback.
+- Active Party Quest cards use the same icon family for visual consistency.
+- Runtime now serves `partyQuestInvites.js?v=7` and `partyQuestActiveView.js?v=7`.
+- Added `scripts/test-party-quest-ux-patch.js` covering syntax, additional-Party-Quest access, canonical task-create handoff, HouseholdContext guards, Arcana icon usage, architecture boundaries and frozen-layer/cache-key invariants.
+- Full `Household Rebuild Contract Tests` run `33049748789`: **SUCCESS**. Logs explicitly report `party quest UX patch: PASS`, while STEP 11.3, STEP 11.4 and all frozen notification contracts remain green.
+- Code/contract checkpoint before documentation sync: `1c5b543926055ab647773b8182fa63322f83878e`.
+- Vercel Preview `dpl_EjBMPpzoLdKThex7nGkNbLJhjv81`: **READY**, branch `agent/household-rebuild-v2`, `target: null`. Stable branch alias remains `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+- Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
+- STEP 11.5 completion/reward settlement and STEP 11.6 notification-event extensions were **not** started.
+- STEP 11.3 participant-leave smoke and the separate Party Quest toast visual test remain pending/deferred as previously recorded.
+- `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+
+---
+
 ## 2026-08-27 — STEP 11.4 targeted + household Party Quest help implemented
 
 - Product owner explicitly approved **GO 11.4 only**. STEP 11.5 completion/reward work and STEP 11.6 notification-event extensions were not started.
@@ -138,4 +166,5 @@ Newest entries belong at the top.
 - STEP 11.2 implementation checkpoint: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - STEP 11.3 implementation/contract checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
+- Party Quest UX patch code/contract checkpoint: `1c5b543926055ab647773b8182fa63322f83878e`.
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
