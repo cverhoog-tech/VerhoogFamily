@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch has real-device PASS for multi-start/Arcana icons and canonical new-task handoff. A presentation-only `Later beslissen` invite follow-up is contract-green and awaiting one device smoke. STEP 11.5 has not started and requires explicit product-owner approval.**
+**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch has real-device PASS for multi-start/Arcana icons and canonical new-task handoff. A presentation-only `Later beslissen` invite follow-up is contract-green; its real-device smoke was explicitly deferred by the product owner on 2026-08-27 and remains pending. STEP 11.5 has not started and requires explicit product-owner approval.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -39,7 +39,7 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] Invite defer follow-up code/contract checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - [x] Full CI run `33052149328`: SUCCESS, including `party quest UX patch: PASS` and prior STEP 11/frozen notification contracts.
 - [x] Vercel Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF`: READY (`target: null`).
-- [ ] Invite defer real-device smoke pending.
+- [-] Invite defer real-device smoke explicitly deferred by product owner on 2026-08-27; keep pending, do not interpret as failure.
 - [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - [-] Non-blocking Party Quest acceptance-toast UI fix remains contract green; product owner deferred its real-device visual verification.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; not a STEP 11 blocker.
@@ -88,7 +88,7 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Automatic re-prompt is suppressed only for that invite occurrence during the current runtime session; manual tile access remains available.
 - [x] Runtime serves `partyQuestInvites.js?v=8` and keeps `partyQuestActiveView.js?v=7`; frozen notification actions/projector unchanged.
 - [x] Latest UX/defer checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`; full CI `33052149328` SUCCESS; Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF` READY.
-- [ ] Real-device **Later beslissen** smoke pending.
+- [-] Real-device **Later beslissen** smoke explicitly deferred by product owner; resume later from this exact test.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement — explicit approval required.
