@@ -1,7 +1,7 @@
 'use strict';
 // ============================================================
-// PARTY QUEST SERVICE v1.1.0
-// STEP 11.2/11.3 domain state machine for invites, join and leave.
+// PARTY QUEST SERVICE v1.2.0
+// STEP 11.2-11.4 domain state machine for invites, join/leave and help.
 //
 // Persistence authority: PartyQuestRepository only.
 // Identity authority: HouseholdContext only.
@@ -10,7 +10,7 @@
 (function(){
   if(window.PartyQuestService)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
 
   function now(){return Date.now();}
   function clone(value){try{return JSON.parse(JSON.stringify(value));}catch(e){return value;}}
@@ -40,6 +40,7 @@
   function memberByUid(uid){var wanted=String(uid||'');return members().find(function(m){return String(memberId(m)||'')===wanted;})||null;}
   function activeMember(uid){var m=memberByUid(uid);return !!(m&&(!m.status||m.status==='active'));}
   function invitees(q){return q&&q.invitees&&typeof q.invitees==='object'&&!Array.isArray(q.invitees)?q.invitees:{};}
+  function helpRequests(q){return q&&q.helpRequests&&typeof q.helpRequests==='object'&&!Array.isArray(q.helpRequests)?q.helpRequests:{};}
   function liveQuest(q){return !!(q&&q.status!=='cancelled'&&q.status!=='completed');}
   function recomputeQuestStatus(q){
     var values=Object.keys(invitees(q)).map(function(uid){return invitees(q)[uid];});
@@ -69,6 +70,23 @@
     return max+1;
   }
   function creatorName(uid){var m=memberByUid(uid);return m?memberName(m):'Gezinslid';}
+  function openHelpRequest(q){var map=helpRequests(q),keys=Object.keys(map);for(var i=0;i<keys.length;i++){var row=map[keys[i]];if(row&&row.status==='open')return row;}return null;}
+  function helpResponded(request,uid){
+    var id=String(uid||''),accepted=request&&request.acceptedByUids,declined=request&&request.declinedByUids;
+    return !!(id&&((accepted&&typeof accepted==='object'&&Object.prototype.hasOwnProperty.call(accepted,id))||(declined&&typeof declined==='object'&&Object.prototype.hasOwnProperty.call(declined,id))));
+  }
+  function helpEligible(q,task,uid,requesterUid){
+    var id=String(uid||''),me=String(requesterUid||''),inv=invitees(q)[id];
+    if(!id||id===me||id===String(q&&q.inviterUid||''))return false;
+    if(!activeMember(id)||isTaskCreator(task,id)||isAssigned(task,id))return false;
+    if(inv&&(inv.status==='pending'||inv.status==='active'))return false;
+    return true;
+  }
+  function closeOpenHelpRequests(q,actorUid,at,reason){
+    q.helpRequests=clone(helpRequests(q));
+    Object.keys(q.helpRequests).forEach(function(key){var request=q.helpRequests[key];if(!request||request.status!=='open')return;q.helpRequests[key]=Object.assign({},request,{status:'retracted',retractedAt:at,retractedByUid:actorUid,closedAt:at,closeReason:reason||'quest-ended'});});
+    return q;
+  }
 
   function createInvites(questIds,targetUids){
     var auth=requireContext(),r=requireRepo(),me=String(auth.ctx.uid),questList=uniqueIds(questIds),targets=uniqueIds(targetUids);
@@ -88,39 +106,12 @@
           if(target===me||blocked[target]||isAssigned(task,target)||!activeMember(target)){skipped++;return;}
           var version=nextInviteVersion(next,taskId,me,target);
           var id=reserved[taskId];
-          newInvitees[target]={
-            uid:target,
-            name:memberName(memberByUid(target)),
-            status:'pending',
-            inviteVersion:version,
-            inviteOccurrenceId:String(id)+':'+target+':v'+version,
-            invitedAt:now(),
-            respondedAt:null,
-            revokedAt:null,
-            leftAt:null
-          };
-          blocked[target]=true;
-          totalTargets++;
+          newInvitees[target]={uid:target,name:memberName(memberByUid(target)),status:'pending',inviteVersion:version,inviteOccurrenceId:String(id)+':'+target+':v'+version,invitedAt:now(),respondedAt:null,revokedAt:null,leftAt:null};
+          blocked[target]=true;totalTargets++;
         });
         var invited=Object.keys(newInvitees);if(!invited.length)return;
         var id=reserved[taskId];
-        next[id]={
-          id:id,
-          schemaVersion:2,
-          title:'Party Quest',
-          questId:String(task.id||task._key),
-          questTitle:String(task.title||task.name||'Naamloze quest'),
-          status:'pending',
-          inviterUid:me,
-          createdByUid:me,
-          inviterName:creatorName(me),
-          invitees:newInvitees,
-          helpRequests:{},
-          rewardSettlements:{},
-          completion:null,
-          createdAt:now(),
-          updatedAt:now()
-        };
+        next[id]={id:id,schemaVersion:2,title:'Party Quest',questId:String(task.id||task._key),questTitle:String(task.title||task.name||'Naamloze quest'),status:'pending',inviterUid:me,createdByUid:me,inviterName:creatorName(me),invitees:newInvitees,helpRequests:{},rewardSettlements:{},completion:null,createdAt:now(),updatedAt:now()};
         created++;createdIds.push(id);
       });
       if(!created)throw error(denied?'PARTY_QUEST_NOT_TASK_OWNER':'PARTY_QUEST_NO_ELIGIBLE_INVITEES',denied?'Alleen de maker van een open quest kan deelnemers uitnodigen':'De gekozen deelnemers doen al mee, zijn toegewezen of zijn niet beschikbaar');
@@ -138,10 +129,7 @@
       var inv=invitees(q)[me];
       if(!inv)throw error('PARTY_QUEST_INVITE_WRONG_RECIPIENT','Deze uitnodiging is voor een ander gezinslid');
       if(inv.status!=='pending')throw error('PARTY_QUEST_INVITE_NOT_PENDING','Deze uitnodiging is al afgehandeld');
-      q.invitees=clone(invitees(q));
-      q.invitees[me]=Object.assign({},inv,{status:status,respondedAt:now()});
-      q.status=recomputeQuestStatus(q);
-      return q;
+      q.invitees=clone(invitees(q));q.invitees[me]=Object.assign({},inv,{status:status,respondedAt:now()});q.status=recomputeQuestStatus(q);return q;
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
 
@@ -156,19 +144,79 @@
       if(!inv)throw error('PARTY_QUEST_NOT_PARTICIPANT','Je neemt niet deel aan deze Party Quest');
       if(inv.status!=='active')throw error('PARTY_QUEST_PARTICIPANT_NOT_ACTIVE','Je bent geen actieve deelnemer meer');
       var leftAt=now(),name=inv.name||creatorName(me),nextStatus;
-      q.invitees=clone(invitees(q));
-      q.invitees[me]=Object.assign({},inv,{status:'left',leftAt:leftAt});
-      nextStatus=recomputeQuestStatus(q);
-      q.status=nextStatus;
-      if(nextStatus==='cancelled'&&!q.endedAt){q.endedAt=leftAt;q.endedByUid=me;q.endReason='no-active-or-pending-invitees';}
-      q.lastEvent={
-        id:'leave:'+id+':'+me+':'+leftAt,
-        type:'partyQuest.participant.left',
-        actorUid:me,
-        message:name+' heeft “'+String(q.questTitle||'Party Quest')+'” verlaten',
-        time:leftAt
-      };
+      q.invitees=clone(invitees(q));q.invitees[me]=Object.assign({},inv,{status:'left',leftAt:leftAt});nextStatus=recomputeQuestStatus(q);q.status=nextStatus;
+      if(nextStatus==='cancelled'&&!q.endedAt){q.endedAt=leftAt;q.endedByUid=me;q.endReason='no-active-or-pending-invitees';closeOpenHelpRequests(q,me,leftAt,'party-quest-no-participants');}
+      q.lastEvent={id:'leave:'+id+':'+me+':'+leftAt,type:'partyQuest.participant.left',actorUid:me,message:name+' heeft “'+String(q.questTitle||'Party Quest')+'” verlaten',time:leftAt};
       return q;
+    }).then(function(saved){assertToken(auth.token);return saved;});
+  }
+
+  function createHelpRequest(questId,targetUid,audience){
+    var auth=requireContext(),r=requireRepo(),me=String(auth.ctx.uid),id=String(questId||''),target=targetUid===null?null:String(targetUid||''),kind=audience==='household'?'household':'uid';
+    if(!id)return Promise.reject(error('PARTY_QUEST_ID_REQUIRED','Party Quest ontbreekt'));
+    if(kind==='uid'&&!target)return Promise.reject(error('PARTY_QUEST_HELP_TARGET_REQUIRED','Kies iemand om hulp te vragen'));
+    var occurrenceId='help:'+r.allocateId();
+    return r.mutateOne(id,function(q){
+      assertToken(auth.token);
+      if(!q||q.status!=='active')throw error('PARTY_QUEST_HELP_REQUIRES_ACTIVE','Je kunt alleen vanuit een actieve Party Quest hulp vragen');
+      if(String(q.inviterUid||'')!==me)throw error('PARTY_QUEST_HELP_NOT_INVITER','Alleen de maker kan extra hulp vragen');
+      var task=taskById(q.questId);
+      if(!task||!isTaskOpen(task))throw error('PARTY_QUEST_TASK_NOT_OPEN','De gekoppelde taak is niet meer open');
+      if(openHelpRequest(q))throw error('PARTY_QUEST_HELP_ALREADY_OPEN','Er staat al een hulpvraag open voor deze Party Quest');
+      if(kind==='uid'){
+        if(!helpEligible(q,task,target,me))throw error('PARTY_QUEST_HELP_TARGET_NOT_ELIGIBLE','Dit gezinslid doet al mee, is toegewezen of is niet beschikbaar');
+      }else{
+        var available=members().some(function(m){return helpEligible(q,task,memberId(m),me);});
+        if(!available)throw error('PARTY_QUEST_HELP_NO_ELIGIBLE_MEMBERS','Er is nu niemand extra beschikbaar om hulp te vragen');
+      }
+      var createdAt=now(),targetMember=target?memberByUid(target):null,request={id:occurrenceId,occurrenceId:occurrenceId,questId:String(q.id||q._key||id),status:'open',audience:kind,requesterUid:me,requesterName:creatorName(me),targetUid:target,targetName:targetMember?memberName(targetMember):null,createdAt:createdAt,acceptedByUids:{},declinedByUids:{},closedAt:null,retractedAt:null};
+      q.helpRequests=clone(helpRequests(q));q.helpRequests[occurrenceId]=request;return q;
+    }).then(function(saved){assertToken(auth.token);return {quest:saved,occurrenceId:occurrenceId,request:clone(helpRequests(saved)[occurrenceId]||null)};});
+  }
+
+  function requestHelp(questId,targetUid){return createHelpRequest(questId,targetUid,'uid');}
+  function requestHouseholdHelp(questId){return createHelpRequest(questId,null,'household');}
+
+  function respondHelp(questId,occurrenceId,status){
+    var auth=requireContext(),r=requireRepo(),me=String(auth.ctx.uid),id=String(questId||''),occ=String(occurrenceId||'');
+    if(status!=='active'&&status!=='declined')return Promise.reject(error('PARTY_QUEST_HELP_RESPONSE_INVALID','Ongeldige hulp-reactie'));
+    if(!id||!occ)return Promise.reject(error('PARTY_QUEST_HELP_REQUEST_REQUIRED','Hulpvraag ontbreekt'));
+    return r.mutateOne(id,function(q){
+      assertToken(auth.token);
+      if(!q||q.status!=='active')throw error('PARTY_QUEST_HELP_NOT_ACTIVE','Deze Party Quest is niet meer actief');
+      var requests=helpRequests(q),request=requests[occ];
+      if(!request||request.status!=='open')throw error('PARTY_QUEST_HELP_NOT_OPEN','Deze hulpvraag is niet meer open');
+      if(String(request.requesterUid||'')===me)throw error('PARTY_QUEST_HELP_REQUESTER_CANNOT_RESPOND','Je kunt niet op je eigen hulpvraag reageren');
+      var task=taskById(q.questId);
+      if(!task||!isTaskOpen(task))throw error('PARTY_QUEST_TASK_NOT_OPEN','De gekoppelde taak is niet meer open');
+      var targeted=request.audience==='uid';
+      if(targeted&&String(request.targetUid||'')!==me)throw error('PARTY_QUEST_HELP_WRONG_RECIPIENT','Deze hulpvraag is voor een ander gezinslid');
+      if(!targeted&&helpResponded(request,me))throw error('PARTY_QUEST_HELP_ALREADY_RESPONDED','Je hebt deze hulpvraag al afgehandeld');
+      if(!helpEligible(q,task,me,request.requesterUid))throw error('PARTY_QUEST_HELP_NOT_ELIGIBLE','Je kunt niet meer aan deze hulpvraag deelnemen');
+      var at=now();q.helpRequests=clone(requests);request=clone(request)||{};
+      if(status==='declined'){
+        if(targeted){request.status='declined';request.declinedByUid=me;request.declinedAt=at;request.closedAt=at;}
+        else{request.declinedByUids=Object.assign({},request.declinedByUids||{});request.declinedByUids[me]=at;request.lastDeclinedByUid=me;request.lastDeclinedAt=at;}
+        q.helpRequests[occ]=request;return q;
+      }
+      q.invitees=clone(invitees(q));
+      var previous=q.invitees[me]||{};
+      q.invitees[me]=Object.assign({},previous,{uid:me,name:creatorName(me),status:'active',respondedAt:at,joinedAt:at,joinedVia:'help',helpOccurrenceId:occ,leftAt:null,revokedAt:null});
+      if(targeted){request.status='accepted';request.acceptedByUid=me;request.acceptedAt=at;request.closedAt=at;}
+      else{request.acceptedByUids=Object.assign({},request.acceptedByUids||{});request.acceptedByUids[me]=at;request.lastAcceptedByUid=me;request.lastAcceptedAt=at;}
+      q.helpRequests[occ]=request;q.status='active';return q;
+    }).then(function(saved){assertToken(auth.token);return saved;});
+  }
+
+  function retractHelp(questId,occurrenceId){
+    var auth=requireContext(),r=requireRepo(),me=String(auth.ctx.uid),id=String(questId||''),occ=String(occurrenceId||'');
+    if(!id||!occ)return Promise.reject(error('PARTY_QUEST_HELP_REQUEST_REQUIRED','Hulpvraag ontbreekt'));
+    return r.mutateOne(id,function(q){
+      assertToken(auth.token);
+      if(!q||String(q.inviterUid||'')!==me)throw error('PARTY_QUEST_HELP_NOT_INVITER','Alleen de maker kan deze hulpvraag intrekken');
+      var requests=helpRequests(q),request=requests[occ];
+      if(!request||request.status!=='open')throw error('PARTY_QUEST_HELP_NOT_OPEN','Deze hulpvraag is niet meer open');
+      var at=now();q.helpRequests=clone(requests);q.helpRequests[occ]=Object.assign({},request,{status:'retracted',retractedAt:at,retractedByUid:me,closedAt:at});return q;
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
 
@@ -179,12 +227,8 @@
       assertToken(auth.token);
       if(!q||String(q.inviterUid||'')!==me)throw error('PARTY_QUEST_NOT_INVITER','Alleen de maker kan deze uitnodiging intrekken');
       if(q.status==='cancelled'||q.status==='completed')throw error('PARTY_QUEST_INVITE_NOT_ACTIVE','Deze uitnodiging is niet meer actief');
-      var inv=invitees(q)[target];
-      if(!inv||inv.status!=='pending')throw error('PARTY_QUEST_INVITE_NOT_PENDING','Deze uitnodiging kan niet meer worden ingetrokken');
-      q.invitees=clone(invitees(q));
-      q.invitees[target]=Object.assign({},inv,{status:'revoked',revokedAt:now()});
-      q.status=recomputeQuestStatus(q);
-      return q;
+      var inv=invitees(q)[target];if(!inv||inv.status!=='pending')throw error('PARTY_QUEST_INVITE_NOT_PENDING','Deze uitnodiging kan niet meer worden ingetrokken');
+      q.invitees=clone(invitees(q));q.invitees[target]=Object.assign({},inv,{status:'revoked',revokedAt:now()});q.status=recomputeQuestStatus(q);return q;
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
 
@@ -196,26 +240,13 @@
       if(!q||String(q.inviterUid||'')!==me)throw error('PARTY_QUEST_NOT_INVITER','Alleen de maker kan deze Party Quest beeindigen');
       if(q.status==='completed')throw error('PARTY_QUEST_ALREADY_COMPLETED','Een voltooide Party Quest kan niet worden geannuleerd');
       if(q.status==='cancelled')throw error('PARTY_QUEST_ALREADY_CANCELLED','Deze Party Quest is al beeindigd');
-      q.invitees=clone(invitees(q));
-      Object.keys(q.invitees).forEach(function(uid){var inv=q.invitees[uid];if(inv&&inv.status==='pending')q.invitees[uid]=Object.assign({},inv,{status:'revoked',revokedAt:now()});});
-      q.status='cancelled';
-      q.endedAt=now();
-      q.endedByUid=me;
-      return q;
+      var at=now();q.invitees=clone(invitees(q));Object.keys(q.invitees).forEach(function(uid){var inv=q.invitees[uid];if(inv&&inv.status==='pending')q.invitees[uid]=Object.assign({},inv,{status:'revoked',revokedAt:at});});
+      closeOpenHelpRequests(q,me,at,'party-quest-cancelled');q.status='cancelled';q.endedAt=at;q.endedByUid=me;return q;
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
 
   function getById(id){var r=repo();return r&&typeof r.getById==='function'?r.getById(id):null;}
   function status(){var c=context(),r=repo();return{version:VERSION,ready:!!(validContext(c)&&r),uid:c&&c.uid||null,householdId:c&&c.householdId||null,repository:r&&r.version||null};}
 
-  window.PartyQuestService={
-    version:VERSION,
-    createInvites:createInvites,
-    respond:respond,
-    leaveQuest:leaveQuest,
-    revokeInvite:revokeInvite,
-    cancelQuest:cancelQuest,
-    getById:getById,
-    status:status
-  };
+  window.PartyQuestService={version:VERSION,createInvites:createInvites,respond:respond,leaveQuest:leaveQuest,requestHelp:requestHelp,requestHouseholdHelp:requestHouseholdHelp,respondHelp:respondHelp,retractHelp:retractHelp,revokeInvite:revokeInvite,cancelQuest:cancelQuest,getById:getById,status:status};
 })();
