@@ -104,15 +104,38 @@ Status: **fix candidate deployed/contract green — real-device visual verificat
 - Party Quest-state, frozen NotificationActions en notificatiepersistence zijn niet gewijzigd.
 - Contracttest `scripts/test-toast-theme-contrast.js` toegevoegd.
 - CI run `33023131272`: **SUCCESS**.
-- De toast-fix wordt inmiddels met `src/core/utils.js?v=2` in de huidige STEP 11 Preview geladen.
-- Product owner heeft op 2026-08-27 expliciet gekozen om de real-device visuele test voor later te bewaren en ondertussen door te gaan met STEP 11.
-- Punt blijft daarom open totdat op een echte iPhone is bevestigd dat de acceptatie-toast visueel correct en leesbaar is.
+- De toast-fix wordt met `src/core/utils.js?v=2` in de huidige STEP 11 Preview geladen.
+- Product owner heeft op 2026-08-27 expliciet gekozen om de real-device visuele test voor later te bewaren.
+- Punt blijft open totdat op een echte iPhone is bevestigd dat de acceptatie-toast visueel correct en leesbaar is.
+
+## 7. Google login — post-auth handoff/startup blijft hangen
+
+Status: **open — real-device regressie waargenomen op 2026-08-27**.
+
+Waargenomen gedrag:
+
+- Gebruiker tikt op **Inloggen met Google**.
+- Google-accountkeuze opent normaal.
+- Na het kiezen van het account keert de app terug naar het inlogscherm.
+- Het inlogscherm lijkt ongeveer vijf seconden gefreezed / reageert niet zichtbaar door.
+- Na de app sluiten en opnieuw openen blijkt de gebruiker wél correct ingelogd te zijn.
+
+Interpretatie / onderzoeksrichting:
+
+- De Google/Firebase-authenticatie zelf lijkt te slagen en de sessie wordt persistent opgeslagen.
+- Het probleem zit waarschijnlijk in de zichtbare post-auth handoff/startup-keten, niet in het verkrijgen van de Firebase-sessie.
+- Huidige relevante keten: `signInWithPopup()` → `onAuthStateChanged` → `AuthenticatedSessionController.bootstrap()` → `loadUserFamily()` → `revealApp()`.
+- Onderzoek of `loadUserFamily()` of een lifecycle/race na terugkeer uit de Google-popup vertraagt of blijft hangen.
+- Tijdens deze overgang moet de gebruiker een duidelijke laadstatus krijgen; een interactief-ogend maar feitelijk stilstaand inlogscherm is niet acceptabel.
+- Bij succesvolle auth moet de app zonder handmatige app-herstart naar de juiste household/Home-state doorstromen.
+- Fouten/time-outs in household bootstrap moeten zichtbaar en herstelbaar zijn in plaats van stil te blijven hangen.
+- Geen nieuwe auth-, household- of sessie-authority introduceren; fix binnen de bestaande `googleAuthMobileFix` / `AuthenticatedSessionController` / household-bootstrap architectuur.
 
 ## Status
 
-**Open hoofdpunten: 6**
+**Open hoofdpunten: 7**
 
-STEP 11.4 Party Quest-hulp en de aansluitende Party Quest UX patch zijn roadmapcheckpoints en voegen geen nieuw hoofd-fixpunt toe of sluiten er een. Binnen die UX patch zijn inmiddels real-device PASS behaald voor meerdere Party Quests starten, de Arcana-iconen en **Nieuwe quest maken → terugkeren met nieuwe taak geselecteerd**. De aanvullende uitnodigingsactie **Later beslissen** is als presentation-only follow-up geïmplementeerd en contract-green; de uitnodiging blijft `pending` en de device smoke wordt in de STEP 11 acceptancetracker bijgehouden. Dit wordt daarom niet als zevende hoofd-fixpunt gedupliceerd.
+De Party Quest UX patch is inmiddels real-device PASS voor multi-start, Arcana-iconen, **Nieuwe quest maken** en **Later beslissen**. Die roadmap-UX wordt daarom niet als extra open hoofd-fixpunt gedupliceerd.
 
 1. Home hero card backgrounds
 2. Meertaligheid: NL / EN / TR / DE / FR
@@ -120,3 +143,4 @@ STEP 11.4 Party Quest-hulp en de aansluitende Party Quest UX patch zijn roadmapc
 4. Recept als maaltijd voorstellen aan gezinslid
 5. Boodschappen afronden + optionele bon + gekocht-mandje leegmaken
 6. Party Quest acceptatie-toast — fix candidate klaar, real-device visuele bevestiging uitgesteld/pending
+7. Google login — auth slaagt, maar post-login handoff/startup kan op inlogscherm blijven hangen tot app-herstart
