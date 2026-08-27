@@ -57,6 +57,7 @@ async function observerFirst(){
   const user={uid:'user-1'};
   runtime.observer(user);
   const popupHandoff=runtime.controller.acceptAuthenticatedUser(user);
+  await flush();
   assert.strictEqual(runtime.householdLoads(),1,'observer + popup handoff must share one household bootstrap');
   runtime.resolve();
   await popupHandoff;
@@ -75,6 +76,7 @@ async function popupFirst(){
   runtime.window.fbAuth.currentUser=user;
   const popupHandoff=runtime.controller.acceptAuthenticatedUser(user);
   runtime.observer(user);
+  await flush();
   assert.strictEqual(runtime.householdLoads(),1,'popup + later observer must share one household bootstrap');
   runtime.resolve();
   await popupHandoff;
