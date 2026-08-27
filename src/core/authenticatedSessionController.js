@@ -10,6 +10,8 @@
   var currentUser=null;
   var lastError=null;
   var startedUid=null;
+  var bootstrapPromise=null;
+  var bootstrapUid=null;
 
   function emit(){
     var snap=status();
@@ -21,6 +23,8 @@
   function isCurrent(token,user){return token===generation&&currentUser&&user&&currentUser.uid===user.uid;}
   function addCleanup(fn){if(typeof fn==='function')cleanup.push(fn);return fn;}
   function runCleanup(){var fns=cleanup.splice(0);fns.forEach(function(fn){try{fn();}catch(e){console.warn('[SessionController] cleanup',e);}});}
+  function assignUser(user){currentUser=user||null;window.fbUser=user||null;try{fbUser=user||null;}catch(e){}}
+  function clearBootstrap(work){if(bootstrapPromise===work){bootstrapPromise=null;bootstrapUid=null;}}
 
   function loginScreen(show){
     var el=document.getElementById('login-screen');
@@ -58,31 +62,57 @@
     return /HOUSEHOLD_REQUIRED|HOUSEHOLD_ACCESS_REQUIRED|Geen gezin gevonden|Geen actief gezin/i.test(code+' '+msg);
   }
   function bootstrap(user){
+    var uid=user&&user.uid||null;
+
+    // signInWithPopup and onAuthStateChanged can resolve in either order on iOS/PWA.
+    // Reuse the same in-flight bootstrap for the same UID so a late observer callback
+    // cannot cancel/restart household resolution that was already started by the popup.
+    if(uid&&bootstrapPromise&&bootstrapUid===uid&&currentUser&&currentUser.uid===uid){
+      assignUser(user);
+      return bootstrapPromise;
+    }
+    if(uid&&startedUid===uid&&window._appStarted&&state==='ready'){
+      assignUser(user);
+      return Promise.resolve();
+    }
+
     var token=++generation;
     runCleanup();
-    currentUser=user||null;
-    window.fbUser=user||null;
-    try{fbUser=user||null;}catch(e){}
+    assignUser(user);
     if(!user){
+      bootstrapPromise=null;bootstrapUid=null;
       startedUid=null;window._appStarted=false;
       try{window.fbFamilyId=null;fbFamilyId=null;}catch(e){}
       resetLoginUi();loginScreen(true);setState('signedOut');return Promise.resolve();
     }
     setState('authResolved');
     setState('resolvingHousehold');
-    if(typeof window.loadUserFamily!=='function')return Promise.reject(new Error('Household resolver niet beschikbaar')).catch(function(err){showRecoverable(err,user,token);});
-    return Promise.resolve(window.loadUserFamily()).then(function(){
-      if(!isCurrent(token,user))return;
-      setState('preparingApp');
-      revealApp(user);
-    }).catch(function(err){
-      if(!isCurrent(token,user))return;
-      if(needsSetup(err)&&typeof window.showNameSetupStep==='function'){
-        setState('awaitingSetup');
-        window.showNameSetupStep(user);loginScreen(true);return;
-      }
-      showRecoverable(err,user,token);
-    });
+
+    var work;
+    if(typeof window.loadUserFamily!=='function'){
+      work=Promise.reject(new Error('Household resolver niet beschikbaar')).catch(function(err){showRecoverable(err,user,token);});
+    }else{
+      work=Promise.resolve(window.loadUserFamily()).then(function(){
+        if(!isCurrent(token,user))return;
+        setState('preparingApp');
+        revealApp(user);
+      }).catch(function(err){
+        if(!isCurrent(token,user))return;
+        if(needsSetup(err)&&typeof window.showNameSetupStep==='function'){
+          setState('awaitingSetup');
+          window.showNameSetupStep(user);loginScreen(true);return;
+        }
+        showRecoverable(err,user,token);
+      });
+    }
+    bootstrapUid=user.uid;
+    bootstrapPromise=work;
+    work.then(function(){clearBootstrap(work);},function(){clearBootstrap(work);});
+    return work;
+  }
+  function acceptAuthenticatedUser(user){
+    if(!user||!user.uid)return Promise.reject(new Error('Authenticated Firebase gebruiker ontbreekt'));
+    return bootstrap(user);
   }
   function resume(){
     var user=currentUser||(window.fbAuth&&window.fbAuth.currentUser)||null;
@@ -103,9 +133,9 @@
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
-  function stop(){generation++;runCleanup();if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;setState('stopped');}
+  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;setState('stopped');}
 
-  window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup};
+  window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};
   window.useOfflineMode=function(){if(typeof window.showAuthError==='function')window.showAuthError('Offline openen zonder ingelogd account is niet beschikbaar.');};
 
