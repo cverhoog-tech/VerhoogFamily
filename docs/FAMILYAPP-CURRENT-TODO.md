@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch now has real-device PASS for multi-start/Arcana icons, canonical new-task handoff and the explicit `Later beslissen` invite flow. STEP 11.5 has not started and requires explicit product-owner approval. A separate Google post-login/startup handoff bug was observed on real device and is tracked in the fix backlog.**
+**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch now has real-device PASS for multi-start/Arcana icons, canonical new-task handoff and the explicit `Later beslissen` invite flow. STEP 11.5 has not started and requires explicit product-owner approval. The separate Google post-login/startup regression now has a contract-green fix candidate on this branch; real-device PWA verification is still required before closing the product fix.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -42,7 +42,9 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] Party Quest UX Test 3 real-device PASS on 2026-08-27: product owner confirmed the explicit **Later beslissen** flow works.
 - [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - [-] Non-blocking Party Quest acceptance-toast UI fix remains contract green; product owner deferred its real-device visual verification.
-- [!] Separate auth/startup bug observed on real device: after choosing a Google account, the login screen appeared frozen for roughly five seconds; closing/reopening the app revealed that the Firebase session had actually succeeded. Track as post-auth handoff/startup UI regression, not failed authentication.
+- [x] Google post-login fix candidate implemented within the existing auth/session authority: successful `signInWithPopup()` now hands `result.user` directly to `AuthenticatedSessionController`, and same-UID popup/observer bootstraps share one in-flight household resolution.
+- [x] Google post-login code/contract checkpoint `f10e198fd144caa62427c78609f1295780707ef4`; full CI run `33069878758` SUCCESS; Vercel commit status SUCCESS.
+- [-] Google post-login real-device PWA verification pending: confirm that account selection now proceeds directly through **Gezin laden...** to household/Home without closing/reopening the app.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; not a STEP 11 blocker.
 
 ## STEP 11 — Party quests — IN PROGRESS
@@ -112,7 +114,7 @@ Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 6. Party Quest acceptance toast: fix candidate deployed/green; real-device visual confirmation deferred.
-7. Google login → successful auth session but post-account-selection UI can remain frozen on login screen until app restart; investigate/fix auth-to-household/app reveal handoff.
+7. Google login → code/contract fix candidate green; real-device PWA confirm that successful Google auth immediately completes household/app reveal without app restart.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
