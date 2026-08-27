@@ -18,7 +18,10 @@
     if(b){b.textContent='Gezin laden...';b.disabled=true;}
     var controller=window.AuthenticatedSessionController;
     if(!user||!controller||typeof controller.acceptAuthenticatedUser!=='function')return Promise.resolve();
-    return Promise.resolve(controller.acceptAuthenticatedUser(user));
+    return Promise.resolve(controller.acceptAuthenticatedUser(user)).then(function(){
+      var status=typeof controller.status==='function'?controller.status():null;
+      if(status&&status.state==='recoverableError')reset();
+    });
   }
   window.signInWithGoogle=function(){
     var a=auth();
