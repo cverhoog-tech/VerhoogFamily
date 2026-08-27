@@ -42,7 +42,7 @@ assert.ok(loaderSource.includes('partyQuestCompletionReward.js?v=4'),'runtime mu
 assert.ok(loaderSource.includes('progressionStore.js?v=1'),'frozen ProgressionStore runtime key must remain unchanged');
 assert.ok(loaderSource.includes('progressionRuntime.js?v=2'),'frozen ProgressionRuntime runtime key must remain unchanged');
 assert.ok(loaderSource.includes('notificationActions.js?v=4'),'frozen notification actions runtime key must remain unchanged');
-assert.ok(loaderSource.includes('partyQuestNotificationProjector.js?v=2'),'STEP 11.6 notification work must not start in STEP 11.5');
+assert.ok(loaderSource.includes('partyQuestNotificationProjector.js?v=3'),'STEP 11.6 notification projector may advance without changing STEP 11.5 reward authority');
 
 function clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
 
@@ -130,8 +130,6 @@ async function testCompletionService(){
   assert.strictEqual(repeated.completion.occurrenceId,'partyQuest:pq1:completion:v1','repeated completion must keep one occurrence');
   assert.strictEqual(Object.keys(repeated.rewardSettlements).sort().join(','),'A,B','repeated completion must not create extra settlements');
 
-  // A settlement may only move to settled after ProgressionStore confirms that
-  // the deterministic reward exists for the current UID.
   await assert.rejects(()=>service.markRewardSettled('pq1','partyQuest:pq1:completion:v1'),e=>e.code==='PARTY_QUEST_REWARD_NOT_CONFIRMED');
   assert.strictEqual(repository.dump().pq1.rewardSettlements.A.status,'pending');
   rewarded['A|partyQuest:pq1']=true;
@@ -233,8 +231,6 @@ function completedQuest(){
 }
 
 async function testRewardWorker(){
-  // Current participant receives XP first; only after ProgressionStore confirms
-  // the reward may the Party Quest settlement be acknowledged.
   const w=makeWorkerSandbox({rows:completedQuest()});
   await w.sandbox.PartyQuestCompletionReward.scan();
   assert.deepStrictEqual(w.order.slice(0,2),['award:A:partyQuest:pq1','mark:A:pq1']);
@@ -242,8 +238,6 @@ async function testRewardWorker(){
   assert.strictEqual(w.marks.length,1);
   assert.strictEqual(w.toasts.length,1,'first real award may show one completion toast');
 
-  // B can have been offline during completion. On B's later authenticated
-  // session the same durable Party Quest row still contains B's pending work.
   const bRows=completedQuest();
   bRows.pq1.rewardSettlements.A.status='settled';
   w.setRows(bRows);
@@ -253,9 +247,6 @@ async function testRewardWorker(){
   assert.ok(w.marks.some(row=>row.uid==='B'),'offline participant settlement must be acknowledged after its reward');
   assert.strictEqual(w.rewards['B|partyQuest:pq1'],true);
 
-  // Crash/retry scenario: XP already exists but settlement stayed pending.
-  // awardOnce returns awarded:false and must NOT add XP again; worker still
-  // acknowledges the pending settlement because hasReward is true.
   const retryRewards={'A|partyQuest:pq1':true};
   const retry=makeWorkerSandbox({rows:completedQuest(),rewards:retryRewards});
   await retry.sandbox.PartyQuestCompletionReward.scan();
@@ -263,7 +254,6 @@ async function testRewardWorker(){
   assert.strictEqual(retry.toasts.length,0,'idempotent retry must not repeat completion celebration');
   assert.strictEqual(retry.marks.length,1,'already-awarded pending settlement must converge to settled');
 
-  // Reward failure must leave settlement pending. There is no preclaim write.
   const failed=makeWorkerSandbox({
     rows:completedQuest(),
     awardImpl(){return Promise.reject(new Error('NETWORK_DOWN'));}
@@ -272,8 +262,6 @@ async function testRewardWorker(){
   assert.strictEqual(failed.marks.length,0,'failed XP mutation must not mark settlement settled');
   assert.strictEqual(failed.getRows().pq1.rewardSettlements.A.status,'pending');
 
-  // Delayed reward completion from an old account/household must not be followed
-  // by a Party Quest settlement mutation in the new context.
   let resolveAward;
   const stale=makeWorkerSandbox({
     rows:completedQuest(),
