@@ -1,13 +1,15 @@
 'use strict';
 // ============================================================
-// FAMILYAPP NOTIFICATION EXPERIENCE v1.0.0
+// FAMILYAPP NOTIFICATION EXPERIENCE v1.1.0 — STEP 11.6
 // Presentation-only layer for canonical notifications.
 // Does not own delivery, Firebase paths, tokens or push transport.
+// v1.1 adds cross-user task completion and Party Quest completion/reward
+// presentation while keeping NotificationStore as the only inbox authority.
 // ============================================================
 (function(){
   if(window.NotificationExperience)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
@@ -26,6 +28,8 @@
   function memberUid(m){return m&&(m.uid||m.id)||null;}
   function memberName(uid,fallback){var m=members().find(function(x){return String(memberUid(x))===String(uid);});return m&&(m.displayName||m.name)||fallback||'Gezinslid';}
   function actorName(){return String(window.myName||memberName(currentUid(),'Een gezinslid'));}
+  function unique(values){var seen={};return (values||[]).filter(Boolean).map(String).filter(function(id){if(seen[id])return false;seen[id]=true;return true;});}
+  function withoutSelf(values){var me=String(currentUid()||'');return unique(values).filter(function(id){return String(id)!==me;});}
   function otherMemberUids(){var me=currentUid();return members().filter(function(m){return memberUid(m)&&m.status!=='inactive'&&m.status!=='removed';}).map(memberUid).filter(function(id){return String(id)!==String(me);});}
   function assignees(task){var out=[];if(task&&task.assignedToUids&&typeof task.assignedToUids==='object')Object.keys(task.assignedToUids).forEach(function(id){if(task.assignedToUids[id])out.push(String(id));});if(task&&task.assignedToUid)out.push(String(task.assignedToUid));return Array.from(new Set(out));}
   function clean(v){return String(v==null?'':v).trim()||'unknown';}
@@ -34,7 +38,7 @@
   function questId(q){return clean(q&&(q.id||q._key));}
   function entity(type,id){return{type:type,id:String(id==null?'':id)};}
   function store(type){if(!window.NotificationStore)throw new Error('NotificationStore niet beschikbaar');if(NotificationStore.registerType)NotificationStore.registerType(type);return NotificationStore;}
-  function publishTo(eventKey,type,uids,payload){uids=Array.from(new Set((uids||[]).filter(Boolean).map(String)));if(!uids.length)return Promise.resolve(null);return store(type).publishToUidsOnce(eventKey,type,uids,payload);}
+  function publishTo(eventKey,type,uids,payload){uids=unique(uids);if(!uids.length)return Promise.resolve(null);return store(type).publishToUidsOnce(eventKey,type,uids,payload);}
   function publishHousehold(eventKey,type,payload){return store(type).publishHouseholdOnce(eventKey,type,payload);}
   function taskLabel(task){return String(task&&(task.title||task.name)||'taak');}
   function questLabel(q){return String(q&&(q.questTitle||q.title||q.name)||'Party Quest');}
@@ -67,6 +71,14 @@
   function taskSwapResolved(task,requesterUid,accepted,request){request=request||{};if(!requesterUid)return Promise.resolve(null);var requestId=request.id||request._key||key(taskId(task),request.createdAt||'legacy',requesterUid,request.targetUid||currentUid()||'target'),type=accepted?'task.swap.accepted':'task.swap.declined';return publishTo(key(type,requestId),type,[requesterUid],{
     icon:accepted?'tasks':'undo',bg:accepted?'#dcfce7':'#f1f5f9',tone:accepted?'success':'neutral',title:actorName()+(accepted?' accepteerde je ruilverzoek':' wees je ruilverzoek af'),body:accepted?'“'+taskLabel(task)+'” is geruild.':'Voor “'+taskLabel(task)+'”.',entity:entity('task',task&&(task.id||task._key)),data:{taskId:String(task&&task.id||''),taskKey:String(task&&task._key||''),swapRequestId:String(request.id||''),action:accepted?'swapAccepted':'swapDeclined'}
   });}
+  function taskCompleted(task,targetUids,options){
+    options=options||{};
+    var recipients=withoutSelf(targetUids||[]);if(!recipients.length)return Promise.resolve(null);
+    var occurrence=options.occurrence||task&&task.completedAt||task&&task.updatedAt||'legacy',type='task.completed.involved';
+    return publishTo(key(type,taskId(task),occurrence,options.completedByUid||currentUid()||'actor'),type,recipients,{
+      icon:'tasks',bg:'#dcfce7',tone:'success',title:actorName()+' voltooide “'+taskLabel(task)+'”',body:'Je was bij deze taak betrokken.',entity:entity('task',task&&(task.id||task._key)),data:{taskId:String(task&&task.id||''),taskKey:String(task&&task._key||''),completedByUid:String(options.completedByUid||currentUid()||''),occurrence:String(occurrence),action:'completed'}
+    });
+  }
   function partyQuestCreated(q,targetUids){var recipients=Array.isArray(targetUids)&&targetUids.length?targetUids:otherMemberUids();recipients=recipients.filter(function(id){return String(id)!==String(currentUid());});return publishTo(key('partyQuest.created',questId(q)),'partyQuest.created',recipients,{
     icon:'party',bg:'#ede9fe',tone:'action',title:actorName()+' nodigt je uit',body:'Party Quest · “'+questLabel(q)+'”',entity:entity('partyQuest',q&&(q.id||q._key)),data:{questId:String(q&&q.id||''),questTaskId:String(q&&q.questId||''),action:'created'}
   });}
@@ -76,11 +88,19 @@
   function partyQuestJoined(q,ownerUid){return publishTo(key('partyQuest.joined',questId(q),currentUid()||'member'),'partyQuest.joined',ownerUid?[ownerUid]:[],{
     icon:'party',bg:'#dbeafe',tone:'success',title:actorName()+' doet mee',body:'Aan Party Quest “'+questLabel(q)+'”.',entity:entity('partyQuest',q&&(q.id||q._key)),data:{questId:String(q&&q.id||''),questTaskId:String(q&&q.questId||''),action:'joined'}
   });}
-  function partyQuestCompleted(q){return publishHousehold(key('partyQuest.completed',questId(q)),'partyQuest.completed',{
-    icon:'party',bg:'#fef3c7',tone:'celebration',title:'Party Quest voltooid!',body:'Jullie hebben “'+questLabel(q)+'” samen voltooid.',entity:entity('partyQuest',q&&(q.id||q._key)),data:{questId:String(q&&q.id||''),questTaskId:String(q&&q.questId||''),action:'completed'}
-  });}
+  function partyQuestCompleted(q,targetUids,options){
+    options=options||{};
+    var completion=q&&q.completion||{},fallback=Array.isArray(completion.participantUids)?completion.participantUids:otherMemberUids(),recipients=withoutSelf(Array.isArray(targetUids)?targetUids:fallback);
+    if(!recipients.length)return Promise.resolve(null);
+    var xp=Math.max(0,Math.round(Number(options.xp!=null?options.xp:completion.xpPerParticipant)||0));
+    var occurrence=options.occurrence||completion.occurrenceId||q&&q.endedAt||'completed';
+    var body='Party Quest “'+questLabel(q)+'” is voltooid.'+(xp?' Jij ontvangt +'+xp+' XP.':'');
+    return publishTo(key('partyQuest.completed',questId(q)),'partyQuest.completed',recipients,{
+      icon:'party',bg:'#fef3c7',tone:'celebration',title:actorName()+' voltooide de Party Quest',body:body,entity:entity('partyQuest',q&&(q.id||q._key)),data:{questId:String(q&&q.id||''),questTaskId:String(q&&q.questId||''),completedByUid:String(options.completedByUid||completion.taskCompletedByUid||currentUid()||''),xp:xp,occurrence:String(occurrence),action:'completed'}
+    });
+  }
 
-  // New household-domain events.
+  // Household-domain events.
   function shoppingItemsAdded(items,occurrence){items=(items||[]).filter(Boolean);if(!items.length)return Promise.resolve(null);var type='shopping.items.added',names=items.map(function(x){return String(x.name||x.title||x.label||'Boodschap');});return publishTo(key(type,occurrence||items.map(function(x){return x.id||x._key||x.createdAt;}).join(',')),type,otherMemberUids(),{
     icon:'tasks',bg:'#ecfdf5',tone:'success',title:items.length===1?actorName()+' heeft iets toegevoegd':actorName()+' heeft boodschappen toegevoegd',body:items.length===1?'“'+names[0]+'” staat nu op de boodschappenlijst.':items.length+' nieuwe items staan op de lijst.',entity:entity('shoppingList','household'),data:{count:items.length,itemIds:items.map(function(x){return String(x.id||x._key||'');})}
   });}
@@ -111,6 +131,7 @@
   events.taskHelpJoined=taskHelpJoined;
   events.taskSwapRequested=taskSwapRequested;
   events.taskSwapResolved=taskSwapResolved;
+  events.taskCompleted=taskCompleted;
   events.partyQuestCreated=partyQuestCreated;
   events.partyQuestInvitationSent=partyQuestInvitationSent;
   events.partyQuestJoined=partyQuestJoined;
@@ -124,7 +145,7 @@
   events.householdMemberJoined=householdMemberJoined;
   events.householdMemberLeft=householdMemberLeft;
 
-  ['shopping.items.added','meal.planned','meal.updated','task.assigned','calendar.event.created','calendar.event.updated','household.member.joined','household.member.left'].forEach(function(type){try{store(type);}catch(e){}});
+  ['task.completed.involved','shopping.items.added','meal.planned','meal.updated','task.assigned','calendar.event.created','calendar.event.updated','household.member.joined','household.member.left'].forEach(function(type){try{store(type);}catch(e){}});
 
   window.NotificationExperience={version:VERSION,dayLabel:dayLabel,calendarWhen:calendarWhen};
 })();
