@@ -1,15 +1,15 @@
 'use strict';
 // ============================================================
-// PARTY QUEST ACTIVE VIEW v6.0.0 — STEP 11.3
+// PARTY QUEST ACTIVE VIEW v7.0.0 — STEP 11 UX patch
 // Presentation only. Party Quest realtime state is owned by
 // PartyQuestRepository; mutations are owned by PartyQuestService.
 // Identity is exclusively HouseholdContext UID + household revision.
 // ============================================================
 (function(){
-  if(window.__partyQuestActiveViewV6)return;
-  window.__partyQuestActiveViewV6=true;
+  if(window.__partyQuestActiveViewV7)return;
+  window.__partyQuestActiveViewV7=true;
 
-  var VERSION='6.0.0';
+  var VERSION='7.0.0';
   var active=[],seenEvents={},openTaskId=null,reopenQueue=false;
   var repoUnsubscribe=null,boundRepo=null,subscriptionGeneration=0,lastIdentity=null;
   var startTimer=null,queueTimer=null,detailTimer=null,detailObserver=null;
@@ -29,9 +29,11 @@
   function nameOf(id,fallback){var m=member(id);return (m&&(m.displayName||m.name))||fallback||'Gezinslid';}
   function avatarOf(id){var m=member(id);return m&&(m.avatarUrl||m.photoURL||m.profilePhoto||m.avatar)||'';}
   function initials(v){return String(v||'G').trim().split(/\s+/).map(function(x){return x.charAt(0);}).join('').slice(0,2).toUpperCase()||'G';}
+  function taskById(id){return (window.taskData||[]).find(function(t){return String(t&&(t.id||t._key)||'')===String(id||'');})||null;}
   function participantRows(q){var out=[];if(q.inviterUid)out.push({uid:q.inviterUid,name:q.inviterName||nameOf(q.inviterUid)});Object.keys(invitees(q)).forEach(function(k){var x=invitees(q)[k];if(x&&x.status==='active'&&!out.some(function(p){return String(p.uid)===String(k);})){out.push({uid:k,name:x.name||nameOf(k)});}});return out;}
   function participantNames(q){return participantRows(q).map(function(p){return p.name;});}
   function avatarStack(q,cls){return participantRows(q).map(function(p){var u=avatarOf(p.uid),n=p.name||nameOf(p.uid);return u?'<img class="'+cls+'" src="'+esc(u)+'" alt="'+esc(n)+'">':'<span class="'+cls+'" title="'+esc(n)+'">'+esc(initials(n))+'</span>';}).join('');}
+  function taskIcon(q){var task=taskById(q&&q.questId)||{title:q&&q.questTitle||'Party Quest'},cat='quest',html='';try{if(window.TaskCategoryIcons&&typeof TaskCategoryIcons.detect==='function')cat=TaskCategoryIcons.detect(task);if(window.TaskCategoryIcons&&typeof TaskCategoryIcons.icon==='function')html=TaskCategoryIcons.icon(cat,'sm','compact')||'';}catch(e){}return '<span class="pqav-arcana" data-party-quest-category="'+esc(cat)+'">'+(html||'<span aria-hidden="true">⚔</span>')+'</span>';}
 
   function removeActiveOverlay(){var el=document.getElementById('party-quest-active-view');if(el)el.remove();}
   function removeDetailStrip(){var old=document.querySelector&&document.querySelector('#tdp-overlay .tdp-body .tdp-party-strip');if(old)old.remove();}
@@ -62,12 +64,17 @@
     var s=service();if(!q||!s||typeof s.cancelQuest!=='function'){toast('Party Quest service is nog niet klaar');return Promise.resolve(false);}
     return s.cancelQuest(q.id||q._key).then(function(){dropLocal(q.id||q._key);toast('Party Quest beëindigd');return true;}).catch(function(error){toast(failMessage(error,'Party Quest beëindigen mislukt'));return false;});
   }
+  function startNew(){
+    removeActiveOverlay();
+    if(window.PartyQuestInvites&&typeof PartyQuestInvites.startNew==='function'){PartyQuestInvites.startNew();return true;}
+    toast('Nieuwe Party Quest starten is nog niet beschikbaar');return false;
+  }
 
   function open(){
     if(!active.length){removeActiveOverlay();return false;}
     removeActiveOverlay();var me=currentUid();if(!me)return false;var e=document.createElement('div');e.id='party-quest-active-view';e.style.cssText='position:fixed;inset:0;z-index:10120;background:rgba(8,7,15,.68);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;padding:16px';
-    e.innerHTML='<div style="width:min(440px,100%);max-height:82vh;overflow:auto;border-radius:24px;background:linear-gradient(180deg,#171126,#0f0d18);border:1px solid rgba(216,181,82,.48);padding:20px;color:#fff"><style>.pqav-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.pqav-avatars{display:flex;align-items:center;padding-left:8px}.pqav-avatar{width:31px;height:31px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;object-fit:cover;overflow:hidden;background:linear-gradient(135deg,#6d28d9,#a855f7);color:#fff;border:2px solid #1b1726;box-shadow:0 0 0 1px rgba(216,181,82,.65);font-size:9px;font-weight:900}.pqav-avatar:first-child{margin-left:0}</style><h3 style="margin:0;font:800 20px Georgia,serif">Actieve Party Quests</h3><p style="color:#aaa1b4;font-size:12px">'+active.length+' actieve groepsquest'+(active.length===1?'':'s')+'</p>'+active.map(function(q){var names=participantNames(q),owner=String(q.inviterUid||'')===String(me);return '<div style="border:1px solid rgba(255,255,255,.1);background:#1b1726;border-radius:15px;padding:12px;margin-top:10px"><div class="pqav-head"><div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(q.questTitle||'Party Quest')+'</b><small style="display:block;color:#a9a0b3;margin-top:4px">'+(names.length?'Party: '+esc(names.join(', ')):'Geen andere actieve deelnemers')+'</small></div><div class="pqav-avatars">'+avatarStack(q,'pqav-avatar')+'</div></div><button data-action="'+(owner?'end':'leave')+'" data-id="'+esc(q.id||q._key)+'" style="width:100%;margin-top:10px;border:0;border-radius:12px;padding:10px;background:#3a1720;color:#ffb3c0;font-weight:800">'+(owner?'Beëindigen':'Verlaten')+'</button></div>';}).join('')+'<button data-close style="width:100%;margin-top:16px;border:0;border-radius:14px;padding:12px;background:#262130;color:#c9c0d1;font-weight:800">Sluiten</button></div>';
-    document.body.appendChild(e);e.onclick=function(ev){if(ev.target===e)e.remove();};e.querySelector('[data-close]').onclick=function(){e.remove();};e.querySelectorAll('[data-action]').forEach(function(b){b.onclick=function(){var id=b.getAttribute('data-id'),q=active.find(function(x){return String(x.id||x._key)===String(id);});if(!q)return;b.disabled=true;Promise.resolve(b.getAttribute('data-action')==='end'?end(q):leave(q)).then(function(ok){if(!ok&&document.body.contains(b))b.disabled=false;});};});return true;
+    e.innerHTML='<div style="width:min(440px,100%);max-height:82vh;overflow:auto;border-radius:24px;background:linear-gradient(180deg,#171126,#0f0d18);border:1px solid rgba(216,181,82,.48);padding:20px;color:#fff"><style>.pqav-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.pqav-titlewrap{display:flex;align-items:center;gap:11px;min-width:0}.pqav-arcana{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:0 0 42px;overflow:hidden;background:radial-gradient(circle at 36% 26%,rgba(216,181,82,.20),transparent 34%),linear-gradient(145deg,#57268c,#28163d 70%,#171020);color:#f2d176;border:1px solid rgba(216,181,82,.38);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 7px 16px rgba(0,0,0,.18)}.pqav-arcana>*{max-width:30px;max-height:30px}.pqav-arcana svg{width:28px!important;height:28px!important}.pqav-avatars{display:flex;align-items:center;padding-left:8px}.pqav-avatar{width:31px;height:31px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;object-fit:cover;overflow:hidden;background:linear-gradient(135deg,#6d28d9,#a855f7);color:#fff;border:2px solid #1b1726;box-shadow:0 0 0 1px rgba(216,181,82,.65);font-size:9px;font-weight:900}.pqav-avatar:first-child{margin-left:0}.pqav-new{width:100%;margin-top:15px;border:0;border-radius:14px;padding:12px 14px;background:linear-gradient(135deg,#d1ac55,#9e7425);color:#21160a;font-weight:900}</style><h3 style="margin:0;font:800 20px Georgia,serif">Actieve Party Quests</h3><p style="color:#aaa1b4;font-size:12px">'+active.length+' actieve groepsquest'+(active.length===1?'':'s')+'</p>'+active.map(function(q){var names=participantNames(q),owner=String(q.inviterUid||'')===String(me);return '<div style="border:1px solid rgba(255,255,255,.1);background:#1b1726;border-radius:15px;padding:12px;margin-top:10px"><div class="pqav-head"><div class="pqav-titlewrap">'+taskIcon(q)+'<div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(q.questTitle||'Party Quest')+'</b><small style="display:block;color:#a9a0b3;margin-top:4px">'+(names.length?'Party: '+esc(names.join(', ')):'Geen andere actieve deelnemers')+'</small></div></div><div class="pqav-avatars">'+avatarStack(q,'pqav-avatar')+'</div></div><button data-action="'+(owner?'end':'leave')+'" data-id="'+esc(q.id||q._key)+'" style="width:100%;margin-top:10px;border:0;border-radius:12px;padding:10px;background:#3a1720;color:#ffb3c0;font-weight:800">'+(owner?'Beëindigen':'Verlaten')+'</button></div>';}).join('')+'<button class="pqav-new" data-new-party>＋ Nieuwe Party Quest</button><button data-close style="width:100%;margin-top:9px;border:0;border-radius:14px;padding:12px;background:#262130;color:#c9c0d1;font-weight:800">Sluiten</button></div>';
+    document.body.appendChild(e);e.onclick=function(ev){if(ev.target===e)e.remove();};e.querySelector('[data-close]').onclick=function(){e.remove();};e.querySelector('[data-new-party]').onclick=startNew;e.querySelectorAll('[data-action]').forEach(function(b){b.onclick=function(){var id=b.getAttribute('data-id'),q=active.find(function(x){return String(x.id||x._key)===String(id);});if(!q)return;b.disabled=true;Promise.resolve(b.getAttribute('data-action')==='end'?end(q):leave(q)).then(function(ok){if(!ok&&document.body.contains(b))b.disabled=false;});};});return true;
   }
 
   function ensureDetailCss(){if(document.getElementById('party-quest-detail-css'))return;var s=document.createElement('style');s.id='party-quest-detail-css';s.textContent='.tdp-party-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;padding:8px 10px;border-radius:13px;border:1px solid rgba(164,120,36,.32);background:linear-gradient(135deg,rgba(109,40,217,.10),rgba(202,161,83,.10))}.tdp-party-copy{min-width:0}.tdp-party-label{font-family:"Cinzel",Georgia,serif;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--tdp-gold)}.tdp-party-sub{font-size:10.5px;color:var(--tdp-text2);margin-top:2px}.tdp-party-avatars{display:flex;align-items:center;flex:0 0 auto;padding-left:8px}.tdp-party-avatar{width:29px;height:29px;border-radius:50%;margin-left:-8px;display:grid;place-items:center;overflow:hidden;object-fit:cover;background:linear-gradient(135deg,#6d28d9,#a855f7);color:#fff;border:2px solid var(--tdp-surface);box-shadow:0 0 0 1px rgba(202,161,83,.65);font-size:9px;font-weight:900}.tdp-party-avatar:first-child{margin-left:0}';document.head.appendChild(s);}
@@ -90,6 +97,6 @@
 
   document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('#tch-party-quest');if(!b||!active.length)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();open();},true);
   hookDetail();hookQueue();
-  window.PartyQuestActiveView={version:VERSION,open:open,list:function(){return active.slice();},start:start,stop:stop,status:status,endQuest:end,leaveQuest:leave};
+  window.PartyQuestActiveView={version:VERSION,open:open,list:function(){return active.slice();},start:start,stop:stop,status:status,endQuest:end,leaveQuest:leave,startNew:startNew};
   var tries=0;startTimer=setInterval(function(){tries++;if(start()||tries>120){clearInterval(startTimer);startTimer=null;}},100);
 })();
