@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch has real-device PASS for multi-start/Arcana icons and canonical new-task handoff. A presentation-only `Later beslissen` invite follow-up is contract-green; its real-device smoke was explicitly deferred by the product owner on 2026-08-27 and remains pending. STEP 11.5 has not started and requires explicit product-owner approval.**
+**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch now has real-device PASS for multi-start/Arcana icons, canonical new-task handoff and the explicit `Later beslissen` invite flow. STEP 11.5 has not started and requires explicit product-owner approval. A separate Google post-login/startup handoff bug was observed on real device and is tracked in the fix backlog.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -39,9 +39,10 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] Invite defer follow-up code/contract checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - [x] Full CI run `33052149328`: SUCCESS, including `party quest UX patch: PASS` and prior STEP 11/frozen notification contracts.
 - [x] Vercel Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF`: READY (`target: null`).
-- [-] Invite defer real-device smoke explicitly deferred by product owner on 2026-08-27; keep pending, do not interpret as failure.
+- [x] Party Quest UX Test 3 real-device PASS on 2026-08-27: product owner confirmed the explicit **Later beslissen** flow works.
 - [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - [-] Non-blocking Party Quest acceptance-toast UI fix remains contract green; product owner deferred its real-device visual verification.
+- [!] Separate auth/startup bug observed on real device: after choosing a Google account, the login screen appeared frozen for roughly five seconds; closing/reopening the app revealed that the Firebase session had actually succeeded. Track as post-auth handoff/startup UI regression, not failed authentication.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; not a STEP 11 blocker.
 
 ## STEP 11 — Party quests — IN PROGRESS
@@ -77,7 +78,7 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Real-device Test 1 PASS: targeted request sends and owner sees **Hulpvraag beheren**.
 - [ ] Recipient accept/decline and household broadcast follow-up pending.
 
-### Party Quest UX patch — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE PARTIAL PASS
+### Party Quest UX patch — IMPLEMENTATION/CONTRACT COMPLETE; REAL-DEVICE PASS
 - [x] Existing Party Quest does not block **＋ Nieuwe Party Quest**.
 - [x] **Nieuwe quest maken** delegates to canonical `TaskDetailPopup.openCreate()` and returns after `familyapp:tasks-updated` with new task preselected.
 - [x] Meaningful Arcana/RPG icons reuse `TaskCategoryIcons.detect()` / `.icon()`.
@@ -88,7 +89,7 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Automatic re-prompt is suppressed only for that invite occurrence during the current runtime session; manual tile access remains available.
 - [x] Runtime serves `partyQuestInvites.js?v=8` and keeps `partyQuestActiveView.js?v=7`; frozen notification actions/projector unchanged.
 - [x] Latest UX/defer checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`; full CI `33052149328` SUCCESS; Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF` READY.
-- [-] Real-device **Later beslissen** smoke explicitly deferred by product owner; resume later from this exact test.
+- [x] Real-device **Later beslissen** smoke PASS on 2026-08-27.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement — explicit approval required.
@@ -104,13 +105,14 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 
 Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 
-**Open main items: 6**
+**Open main items: 7**
 1. Home hero card backgrounds.
 2. Internationalisation: NL / EN / TR / DE / FR.
 3. Task title more prominent in task-create popup.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 6. Party Quest acceptance toast: fix candidate deployed/green; real-device visual confirmation deferred.
+7. Google login → successful auth session but post-account-selection UI can remain frozen on login screen until app restart; investigate/fix auth-to-household/app reveal handoff.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
