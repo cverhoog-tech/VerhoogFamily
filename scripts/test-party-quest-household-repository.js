@@ -20,11 +20,12 @@ assert.ok(!repoSource.includes('firebase.auth'),'repository must not create a pa
 assert.ok(!repoSource.includes('localStorage'),'repository must not use legacy/local Party Quest persistence');
 const contextIndex=loaderSource.indexOf('householdContext.js?v=1');
 const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=2');
-const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=2');
+const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=3');
 const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex,'runtime must load PartyQuestRepository after HouseholdContext');
 assert.ok(serviceIndex>repoIndex,'runtime must load PartyQuestService after PartyQuestRepository');
 assert.ok(projectorIndex>serviceIndex,'runtime must load the frozen Party Quest notification projector after PartyQuestService');
+assert.ok(loaderSource.includes('partyQuestHelpUi.js?v=1'),'runtime must load STEP 11.4 help presentation');
 
 function makeDb(initial){
   const data=Object.assign({},initial||{});
