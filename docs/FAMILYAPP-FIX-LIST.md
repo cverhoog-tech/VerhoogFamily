@@ -104,13 +104,15 @@ Status: **fix candidate deployed/contract green — real-device visual verificat
 - Party Quest-state, frozen NotificationActions en notificatiepersistence zijn niet gewijzigd.
 - Contracttest `scripts/test-toast-theme-contrast.js` toegevoegd.
 - CI run `33023131272`: **SUCCESS**.
-- De toast-fix wordt inmiddels met `src/core/utils.js?v=2` in de STEP 11.3 Preview geladen.
-- Product owner heeft op 2026-08-27 expliciet gekozen om de real-device visuele test voor later te bewaren en ondertussen door te gaan met STEP 11.3.
+- De toast-fix wordt inmiddels met `src/core/utils.js?v=2` in de huidige STEP 11 Preview geladen.
+- Product owner heeft op 2026-08-27 expliciet gekozen om de real-device visuele test voor later te bewaren en ondertussen door te gaan met STEP 11.
 - Punt blijft daarom open totdat op een echte iPhone is bevestigd dat de acceptatie-toast visueel correct en leesbaar is.
 
 ## Status
 
 **Open hoofdpunten: 6**
+
+STEP 11.4 Party Quest-hulp is inmiddels implementation/contract complete, maar is een roadmapcheckpoint en voegt geen nieuw product-fixpunt toe of sluit er een. De open fixlijst blijft daarom ongewijzigd op 6 punten.
 
 1. Home hero card backgrounds
 2. Meertaligheid: NL / EN / TR / DE / FR
