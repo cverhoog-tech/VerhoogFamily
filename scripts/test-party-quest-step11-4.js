@@ -29,10 +29,10 @@ assert.ok(!helpUiSource.includes('firebase.auth'),'help UI must not create paral
 assert.ok(!helpUiSource.includes('fbFamilyId'),'help UI must not use legacy household identity');
 assert.ok(!helpUiSource.includes('fbUser'),'help UI must not use legacy user identity');
 assert.ok(!helpUiSource.includes('localStorage'),'help UI must not use local identity/persistence');
-assert.ok(loaderSource.includes('partyQuestService.js?v=3'),'runtime must cache-bust the STEP 11.4 service');
+assert.ok(loaderSource.includes('partyQuestService.js?v=4'),'runtime must cache-bust the STEP 11.5 service while preserving STEP 11.4 help contracts');
 assert.ok(loaderSource.includes('partyQuestHelpUi.js?v=1'),'runtime must load the STEP 11.4 help presentation');
-assert.ok(loaderSource.includes('partyQuestNotificationProjector.js?v=2'),'STEP 11.4 must leave frozen Party Quest notification projector unchanged');
-assert.ok(loaderSource.includes('notificationActions.js?v=4'),'STEP 11.4 must leave frozen notification actions runtime unchanged');
+assert.ok(loaderSource.includes('partyQuestNotificationProjector.js?v=2'),'STEP 11.5 must leave frozen Party Quest notification projector unchanged');
+assert.ok(loaderSource.includes('notificationActions.js?v=4'),'STEP 11.5 must leave frozen notification actions runtime unchanged');
 
 function clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
 function makeRepo(){
