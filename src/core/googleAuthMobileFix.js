@@ -13,6 +13,13 @@
     if(typeof window.showAuthError==='function')window.showAuthError(msg+(code&&msg.indexOf('[')<0?' ['+code+']':''));
   }
   function auth(){try{return window.fbAuth||(window.firebase&&firebase.auth&&firebase.auth());}catch(e){return null;}}
+  function handoff(result,b){
+    var user=result&&result.user;
+    if(b){b.textContent='Gezin laden...';b.disabled=true;}
+    var controller=window.AuthenticatedSessionController;
+    if(!user||!controller||typeof controller.acceptAuthenticatedUser!=='function')return Promise.resolve();
+    return Promise.resolve(controller.acceptAuthenticatedUser(user));
+  }
   window.signInWithGoogle=function(){
     var a=auth();
     if(!a){if(typeof window.showAuthError==='function')window.showAuthError('Firebase is nog niet klaar. Probeer opnieuw.');return;}
@@ -20,6 +27,6 @@
     var b=button();if(b){b.textContent='Google openen...';b.disabled=true;}
     var provider=new firebase.auth.GoogleAuthProvider();provider.addScope('profile');provider.addScope('email');provider.setCustomParameters({prompt:'select_account'});
     var p;try{p=a.signInWithPopup(provider);}catch(e){showError(e);return;}
-    Promise.resolve(p).then(function(){if(b){b.textContent='Ingelogd';b.disabled=true;}}).catch(showError);
+    Promise.resolve(p).then(function(result){return handoff(result,b);}).catch(showError);
   };
 })();
