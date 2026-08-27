@@ -53,7 +53,7 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
     NotificationHouseholdRepository,
     PushDeliveryBridge:{dispatchCreated(event){pushDispatches.push(clone(event));return Promise.resolve({sent:true});}},
     TaskSharedData:{members(){return members;}},
-    NotificationEvents:{version:'2.0.0'},
+    NotificationEvents:{version:'2.1.0'},
     myName:'Alice',
     dispatchEvent(event){if(event.type==='familyapp:notification-received')received.push(event.detail.event);},
     addEventListener(){}
@@ -65,13 +65,14 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   sandbox.TaskSharedData=window.TaskSharedData;
   sandbox.NotificationEvents=window.NotificationEvents;
 
-  // notificationEvents.js is now only the stable bootstrap. The executable
+  // notificationEvents.js remains the stable bootstrap. The executable
   // producer implementation lives in notificationExperience.js, with finance
-  // compatibility layered afterward. Test those runtime modules directly while
-  // separately asserting the served bootstrap contract.
-  assert.ok(bootstrapSource.includes("var VERSION='2.0.0'"));
-  assert.ok(bootstrapSource.includes("load('src/core/notificationExperience.js?v=1'"));
+  // compatibility layered afterward. STEP 11.6 only advances the presentation
+  // and projector cache keys; canonical NotificationStore behavior is unchanged.
+  assert.ok(bootstrapSource.includes("var VERSION='2.1.0'"));
+  assert.ok(bootstrapSource.includes("load('src/core/notificationExperience.js?v=2'"));
   assert.ok(bootstrapSource.includes("load('src/core/notificationFinanceCompat.js?v=1'"));
+  assert.ok(bootstrapSource.includes("load('src/core/householdDomainNotificationProjectorV2.js?v=2'"));
   assert.ok(bootstrapSource.includes('window.NotificationEventsBootstrap={version:VERSION}'));
   vm.runInContext(experienceSource,sandbox,{filename:'notificationExperience.js'});
   sandbox.NotificationEvents=window.NotificationEvents;
@@ -80,9 +81,9 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   const store=window.NotificationStore,events=window.NotificationEvents;
   assert.ok(store&&events);
   assert.strictEqual(store.version,'2.1.0');
-  assert.strictEqual(events.version,'2.0.0');
+  assert.strictEqual(events.version,'2.1.0');
   assert.ok(window.NotificationExperience);
-  assert.strictEqual(window.NotificationExperience.version,'1.0.0');
+  assert.strictEqual(window.NotificationExperience.version,'1.1.1');
 
   // Unkeyed/random notification creation is deliberately no longer accepted.
   assert.throws(()=>store.publish({type:'system.message',title:'Legacy'}),/EVENT_KEY_REQUIRED/i);
@@ -99,8 +100,6 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   assert.strictEqual(pushDispatches.filter(x=>x.eventKey===helpKey).length,1,'push handoff must run only for the newly created canonical event');
   assert.strictEqual(store.list().length,0,'actor A must not see B-only help request');
 
-  // Switch to recipient B. Store visibility/read state is per current UID while
-  // canonical event data stays household-shared.
   current={ready:true,uid:'userB',householdId:'houseA',revision:2};
   window.myName='Bob';
   emit('identity-switch');
@@ -114,19 +113,16 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   assert.strictEqual(dismissCalls[0].uid,'userB','dismiss mutation must use active UID');
   assert.strictEqual(store.list().length,0,'dismissed event is hidden only for active UID');
 
-  // Help-joined event is keyed by accepted occurrence + helper/requester.
   const joinedTask={id:'task42',title:'Badkamer',helpAcceptedAt:222,updatedAt:222};
   const joined=await events.taskHelpJoined(joinedTask,'userA');
   assert.strictEqual(joined.eventKey,'task.help.joined:task42:222:userB:userA');
 
-  // Swap keys use the stable request id, not task title or render timing.
   const swapRequest={id:'swap_9',taskId:'task42',targetUid:'userC',createdAt:333,status:'pending'};
   const swap=await events.taskSwapRequested(helpTask,'userC',swapRequest);
   assert.strictEqual(swap.eventKey,'task.swap.requested:swap_9');
   const resolved=await events.taskSwapResolved(helpTask,'userA',true,Object.assign({},swapRequest,{status:'accepted'}));
   assert.strictEqual(resolved.eventKey,'task.swap.accepted:swap_9');
 
-  // Party Quest events have one canonical identity per quest/recipient action.
   const quest={id:'quest_7',questTitle:'Garage opruimen',inviterUid:'userB'};
   const party=await events.partyQuestCreated(quest,['userA','userC']);
   assert.strictEqual(party.eventKey,'partyQuest.created:quest_7');
@@ -137,7 +133,11 @@ function safeId(key){return 'evt_'+encodeURIComponent(String(key)).replace(/\./g
   const completed=await events.partyQuestCompleted(quest);
   assert.strictEqual(completed.eventKey,'partyQuest.completed:quest_7');
 
-  // Finance event identity is the canonical Finance transaction id.
+  // STEP 11.6 adds deterministic targeted ordinary completion identity.
+  const completedTask=await events.taskCompleted({id:'task99',title:'Keuken',completedAt:444},['userA','userC'],{completedByUid:'userB',occurrence:444});
+  assert.strictEqual(completedTask.eventKey,'task.completed.involved:task99:444:userB');
+  assert.deepStrictEqual(Array.from(completedTask.audience.uids),['userA','userC']);
+
   const finance=await events.financeSavingsUpdated({id:'goal1',name:'Vakantie',icon:'✈️'},{id:'tx55',type:'deposit',amount:25,who:'Bob',date:'2026-08-24'});
   assert.strictEqual(finance.eventKey,'finance.savings.updated:goal1:tx55');
 
