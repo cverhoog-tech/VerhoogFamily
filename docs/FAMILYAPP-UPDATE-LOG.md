@@ -17,6 +17,31 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-27 — Google post-login handoff fix candidate implemented; full CI green
+
+- Product owner approved fixing backlog item #7 on `agent/household-rebuild-v2` only, after reading the central TODO/fixlist/update log.
+- Root cause confirmed in the existing startup chain: `googleAuthMobileFix.js` completed `signInWithPopup()` but ignored the successful `result.user` for app bootstrap and waited entirely for a separate `onAuthStateChanged` callback before household resolution/app reveal could continue.
+- On iOS/PWA, popup completion and the Firebase auth observer may arrive in either order. Simply starting bootstrap from both places would have introduced a second race because `AuthenticatedSessionController.bootstrap()` previously advanced its generation on every call.
+- The fix keeps the existing architecture intact:
+  - successful popup auth now calls `AuthenticatedSessionController.acceptAuthenticatedUser(result.user)`;
+  - `AuthenticatedSessionController` remains the single session/startup authority and still owns the only `onAuthStateChanged` observer;
+  - same-UID popup/observer calls now share one in-flight household bootstrap;
+  - a late same-UID observer after `ready` no longer reloads the household or re-reveals the app;
+  - `loadUserFamily()` / household resolution and `revealApp()` were not moved into the Google adapter.
+- Login transition UI now explicitly shows **Google openen...** followed by **Gezin laden...** instead of leaving an apparently inert login screen.
+- Recoverable bootstrap failures remain visible and the Google button is reset/re-enabled for retry. The household resolver is entered through a Promise microtask so synchronous resolver errors are caught by the same recoverable path.
+- Runtime cachekeys were bumped to `googleAuthMobileFix.js?v=2` and `authenticatedSessionController.js?v=3` to prevent stale PWA auth JavaScript from remaining active.
+- Added `scripts/test-auth-popup-handoff-race.js` covering both observer-first and popup-first ordering. Both paths must start exactly one household load, reveal Home once, hide login, and ignore a late duplicate same-UID observer.
+- Extended `scripts/test-auth-startup-ownership.js` so the Google adapter cannot become a second household/app authority and the canonical handoff/dedupe contract remains guarded.
+- One pre-existing Tasks loader contract was updated only from session-controller cachekey `v2` to `v3`; task persistence/authority code itself was not changed.
+- Code/contract checkpoint: `f10e198fd144caa62427c78609f1295780707ef4`.
+- Full `Household Rebuild Contract Tests` run `33069878758`: **SUCCESS**. The new auth race test, auth startup ownership test, Tasks contracts, STEP 8/9/10 frozen contracts and current STEP 11 contracts all passed.
+- Vercel commit status for the checkpoint: **SUCCESS**.
+- Fix #7 is **not yet closed**: a real iPhone/PWA smoke must confirm that Google account selection now proceeds directly through the loading state into the correct household/Home without closing/reopening the PWA.
+- `main`, production Firebase Rules, frozen STEP 8/9/10 authorities and production deployment were not changed.
+
+---
+
 ## 2026-08-27 — “Later beslissen” device PASS; Google post-login freeze captured
 
 - Product owner returned to the deferred Party Quest UX Test 3 and confirmed **Later beslissen works on a real device**.
@@ -100,4 +125,5 @@ Newest entries belong at the top.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX base checkpoint: `1c5b543926055ab647773b8182fa63322f83878e`.
 - Party Quest UX latest defer follow-up checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
+- Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4` (CI `33069878758` SUCCESS; real-device verification pending).
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
