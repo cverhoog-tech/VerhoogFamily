@@ -54,14 +54,14 @@ assert.ok(invites.includes('PartyQuestService'),'mutations must still delegate t
 assert.ok(invites.includes('PartyQuestRepository'),'reads must still use PartyQuestRepository');
 assert.ok(invites.includes("getById:getById,revokeInvite:revokeInvite,respond:respond"),'frozen NotificationActions compatibility facade must remain intact');
 
-// Runtime keeps the accepted UX keys while STEP 11.5 advances only the
-// service/completion-reward layer. Frozen notification keys remain unchanged.
+// Runtime keeps all accepted Party Quest UX/service keys. STEP 11.6 advances
+// only the notification bootstrap/projector; NotificationActions stays frozen.
 assert.ok(loader.includes('partyQuestInvites.js?v=8'),'runtime must serve PartyQuestInvites defer UX');
 assert.ok(loader.includes('partyQuestActiveView.js?v=7'),'runtime must keep the accepted ActiveView UX key');
 assert.ok(loader.includes('partyQuestHelpUi.js?v=1'),'STEP 11.4 help UI must remain on its accepted runtime key');
 assert.ok(loader.includes('partyQuestCompletionReward.js?v=4'),'STEP 11.5 completion/reward worker must be served');
 assert.ok(loader.includes('partyQuestService.js?v=4'),'STEP 11.5 PartyQuestService must be served');
 assert.ok(loader.includes('notificationActions.js?v=4'),'frozen notification actions runtime must remain unchanged');
-assert.ok(loader.includes('partyQuestNotificationProjector.js?v=2'),'frozen Party Quest projector runtime must remain unchanged');
+assert.ok(loader.includes('partyQuestNotificationProjector.js?v=3'),'STEP 11.6 Party Quest notification projector must be served');
 
 console.log('party quest UX patch: PASS');
