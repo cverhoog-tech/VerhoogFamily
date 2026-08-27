@@ -112,7 +112,7 @@ Status: **fix candidate deployed/contract green — real-device visual verificat
 
 **Open hoofdpunten: 6**
 
-STEP 11.4 Party Quest-hulp is inmiddels implementation/contract complete, maar is een roadmapcheckpoint en voegt geen nieuw product-fixpunt toe of sluit er een. De open fixlijst blijft daarom ongewijzigd op 6 punten.
+STEP 11.4 Party Quest-hulp en de aansluitende Party Quest UX patch zijn roadmapcheckpoints en voegen geen nieuw hoofd-fixpunt toe of sluiten er een. De UX-observaties over meerdere Party Quests, direct een nieuwe quest maken en betekenisvolle Arcana-iconen zijn in de goedgekeurde UX patch op code/contractniveau opgelost; real-device verificatie wordt in de STEP 11 acceptancetracker bijgehouden. De open fixlijst blijft daarom ongewijzigd op 6 punten.
 
 1. Home hero card backgrounds
 2. Meertaligheid: NL / EN / TR / DE / FR
