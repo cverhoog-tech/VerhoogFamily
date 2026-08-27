@@ -22,7 +22,7 @@ assert.ok(!invitesSource.includes(".ref('families/"),'invite facade must not own
 assert.ok(invitesSource.includes("getById:getById,revokeInvite:revokeInvite,respond:respond"),'frozen NotificationActions facade methods must remain available');
 const contextIndex=loaderSource.indexOf('householdContext.js?v=1');
 const repoIndex=loaderSource.indexOf('partyQuestRepository.js?v=2');
-const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=3');
+const serviceIndex=loaderSource.indexOf('partyQuestService.js?v=4');
 const actionsIndex=loaderSource.indexOf('notificationActions.js?v=4');
 const projectorIndex=loaderSource.indexOf('partyQuestNotificationProjector.js?v=2');
 assert.ok(contextIndex>=0&&repoIndex>contextIndex&&serviceIndex>repoIndex,'runtime must load HouseholdContext -> PartyQuestRepository -> PartyQuestService');
@@ -30,6 +30,7 @@ assert.ok(actionsIndex>serviceIndex&&projectorIndex>serviceIndex,'frozen notific
 assert.ok(loaderSource.includes('partyQuestInvites.js?v=8'),'runtime must cache-bust the Party Quest defer UX invite facade');
 assert.ok(loaderSource.includes('partyQuestActiveView.js?v=7'),'runtime must cache-bust the Party Quest UX ActiveView');
 assert.ok(loaderSource.includes('partyQuestHelpUi.js?v=1'),'runtime must load the STEP 11.4 help UI');
+assert.ok(loaderSource.includes('partyQuestCompletionReward.js?v=4'),'runtime must load the STEP 11.5 completion/reward worker');
 
 function clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
 function makeRepo(){
