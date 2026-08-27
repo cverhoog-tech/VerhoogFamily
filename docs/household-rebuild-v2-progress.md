@@ -29,7 +29,9 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. Party Quest UX Test 1 (multi-start + Arcana icons) and Test 2 (new task creation handoff) passed on real device. The new explicit **Later beslissen** invite action is implementation/contract complete on a READY Preview. Its real-device smoke was explicitly deferred by the product owner on 2026-08-27 and remains pending rather than failed. STEP 11.5 has not started and still requires explicit approval.
+**Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is now real-device accepted for all three targeted UX checks: multi-start + Arcana icons, canonical new-task handoff, and explicit **Later beslissen**. STEP 11.5 has not started and still requires explicit approval.
+
+A separate Google post-login/startup regression was observed on real device: Google account selection/authentication succeeds, but the login screen can remain apparently frozen for several seconds and only shows the authenticated app after closing/reopening. This is tracked as a product fix and does not reopen STEP 1/2 architecture unless investigation demonstrates a deeper regression.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke and remaining STEP 11.4 recipient/broadcast help smokes remain pending.
 
@@ -71,7 +73,7 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [ ] Recipient accept/decline and household-broadcast device checks pending.
 - [x] Checkpoint `51256b2506625f7421273d87d0c0f654fdbc432b`; CI `33044211179` SUCCESS.
 
-### Party Quest UX patch — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
+### Party Quest UX patch — IMPLEMENTATION/CONTRACT COMPLETE; REAL-DEVICE PASS
 - [x] Additional Party Quest start available even with existing pending/active Party Quest.
 - [x] **Nieuwe quest maken** delegates to canonical `TaskDetailPopup.openCreate()` and returns with the new task preselected.
 - [x] Meaningful Arcana/RPG icons reuse canonical `TaskCategoryIcons`.
@@ -85,7 +87,7 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Latest checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - [x] Full CI `33052149328` SUCCESS; `party quest UX patch: PASS`.
 - [x] Preview `dpl_8Fnv9FbHyDdhLauFQ4ntTvA8BSwF` READY.
-- [-] Real-device **Later beslissen** smoke explicitly deferred by product owner on 2026-08-27; resume later from this exact test.
+- [x] UX Test 3 real-device PASS on 2026-08-27: explicit **Later beslissen** behaves as intended.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.5 — canonical Task completion + durable exactly-once reward settlement — explicit approval required.
@@ -94,11 +96,12 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [ ] STEP 11.8 — integrated CI + Preview candidate.
 - [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
 
-## Separate lifecycle backlog
+## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
+- [!] Google login post-auth handoff: after account selection the auth session succeeds, but the login screen can remain frozen/visible until app restart. Investigate `signInWithPopup → onAuthStateChanged → loadUserFamily → revealApp` handoff and provide a clear loading/error transition rather than a frozen login screen.
 
 ## Running product/fix backlog
-**Open main items: 6** — see `docs/FAMILYAPP-FIX-LIST.md`.
+**Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
 
 ## Later roadmap phases
 - [ ] STEP 12 — Profile / presence / avatars.
