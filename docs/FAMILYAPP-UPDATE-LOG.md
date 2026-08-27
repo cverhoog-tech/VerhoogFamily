@@ -17,24 +17,6 @@ Newest entries belong at the top.
 
 ---
 
-## 2026-08-27 — Fix #7 reopened; Phase 1 AuthTiming instrumentation + ?authdebug=1 viewer implemented
-
-- Product owner tested the earlier Google post-login fix candidate (checkpoint `f10e198fd144caa62427c78609f1295780707ef4`) on a real iPhone/PWA. The 5-10s freeze after Google account selection was **not** resolved.
-- Product owner explicitly instructed: do not guess again at the root cause. Reopen fix #7 and first gather real-device evidence of exactly which stage of the login critical path the time is lost in, before attempting another fix.
-- **Phase 1 — instrumentation, not a fix.** Added `src/core/authTimingDiagnostics.js`: a `[AuthTiming]` console logger with `begin()/mark()/finish()`, millisecond deltas, and lifecycle listeners (`visibilitychange`, `pageshow`, `pagehide`, `focus`, `blur`) that fire during an active login attempt. Never logs tokens, Firebase credentials, or personal data.
-- Instrumented the full login critical path with T0-T13 marks exactly as specified: `googleAuthMobileFix.js` (T0 login tap through T5 controller handoff), `authenticatedSessionController.js` (T6 auth observer through T8 household-read call, T11 loadUserFamily resolved, T12 revealApp started), `householdPlatform.js`'s `resolveHousehold()` (T9/T10 household read start/finish).
-- T13 (Home painted) is captured via a double `requestAnimationFrame` rather than a synchronous call, so it reflects when Home has actually had a chance to paint — a blocked main thread delays the rAF callback by the same amount it delays real rendering, giving real evidence for or against Scenario C (post-household render/main-thread blocking).
-- Added `src/core/authTimingDebugViewer.js`: a preview/debug-only on-screen panel, active only behind `?authdebug=1` in the URL, so timings can be read directly on a standalone iPhone PWA where there is no console. Includes a **Kopieer timings** button using the Clipboard API with an `execCommand('copy')` fallback for older iOS PWA WebKit. The panel is a pure reader of `window.getFamilyAppAuthTiming()`; it starts no second Firebase auth observer, resolves no household data itself, and never renders or copies UID, e-mail, display name, household id, or any token/credential.
-- Architecture unchanged: `AuthenticatedSessionController` remains the sole canonical auth/session bootstrap authority; `HouseholdContext`/Firebase Auth UID remains the identity/household authority. No timeout hacks, no forced Home reveal after a fixed delay, no optimistic Home before household access is confirmed.
-- `api/app.js` now injects `authTimingDiagnostics.js?v=1` and `authTimingDebugViewer.js?v=1` immediately before the Google adapter; bumped `googleAuthMobileFix.js?v=3`, `householdPlatform.js?v=3`, `authenticatedSessionController.js?v=4` since those three files' content changed.
-- New contract tests `scripts/test-auth-timing-diagnostics.js` (verifies every T0-T13 mark is actually present in the real files, T13 fires after Home is shown but before non-critical secondary syncs, no secrets ever logged, and the module behaves correctly standalone) and `scripts/test-auth-timing-debug-viewer.js` (verifies the `?authdebug=1` gate, loader ordering, no second auth/household authority, and no identifiers/tokens outside documentation comments). Updated `scripts/test-auth-startup-ownership.js` and `scripts/test-task-household-repository.js` for the new loader ordering/version strings.
-- Self-caught and corrected an error during this work: an intermediate push accidentally truncated `test-task-household-repository.js` to its first 40 lines. Caught via a fresh clone + diff against the known-good local file and corrected in a follow-up commit before proceeding.
-- Code checkpoint: `a4778172fad1590069e431236467ef2c2527009d`. Full local `scripts/test-*.js` suite re-run against a fresh clone of the pushed branch: **65/65 PASS**. Vercel Preview `dpl_HtSNyHnMXNJKKRp9YKDsipJatncm`: **READY**. Confirmed the served HTML actually includes `authTimingDiagnostics.js?v=1` and `authTimingDebugViewer.js?v=1` in the correct load order, before the Google adapter.
-- Fix #7 status: **instrumentation/code green — root cause investigation pending real-device timing**. Not resolved, not fixed. Phase 2 (root cause + real fix) is blocked on the product owner running a real iPhone/PWA login attempt with `?authdebug=1` and returning the copied timing output.
-- STEP 8, STEP 9 and STEP 10 remain frozen and untouched. `main`, production Firebase Rules and production deployment remain untouched.
-
----
-
 ## 2026-08-27 — Google post-login handoff fix candidate implemented; full CI green
 
 - Product owner approved fixing backlog item #7 on `agent/household-rebuild-v2` only, after reading the central TODO/fixlist/update log.
@@ -143,6 +125,5 @@ Newest entries belong at the top.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX base checkpoint: `1c5b543926055ab647773b8182fa63322f83878e`.
 - Party Quest UX latest defer follow-up checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
-- Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4` (did NOT resolve the real-device freeze on real-device test; superseded).
-- Fix #7 Phase 1 AuthTiming instrumentation checkpoint: `a4778172fad1590069e431236467ef2c2527009d` (instrumentation/code green — root cause investigation pending real-device timing).
+- Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4` (CI `33069878758` SUCCESS; real-device verification pending).
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.

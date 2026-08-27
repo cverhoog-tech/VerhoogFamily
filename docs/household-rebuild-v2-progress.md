@@ -31,7 +31,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 
 **Current position:** STEP 11.1–11.4 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is now real-device accepted for all three targeted UX checks: multi-start + Arcana icons, canonical new-task handoff, and explicit **Later beslissen**. STEP 11.5 has not started and still requires explicit approval.
 
-Fix #7 (Google login post-auth freeze) is reopened: the earlier fix candidate at checkpoint `f10e198fd144caa62427c78609f1295780707ef4` did not resolve the real-device 5-10s freeze. Phase 1 — AuthTiming instrumentation (T0-T13 marks across the full login critical path, lifecycle listeners, and a preview/debug-only `?authdebug=1` on-screen viewer with a "Kopieer timings" button) is now code/contract green at checkpoint `a4778172fad1590069e431236467ef2c2527009d`. Local `scripts/test-*.js` suite: 65/65 PASS. Vercel Preview `dpl_HtSNyHnMXNJKKRp9YKDsipJatncm` READY. Status: **instrumentation/code green — root cause investigation pending real-device timing**. This does not reopen or re-accept STEP 1/2 architecture; `AuthenticatedSessionController` remains the sole session authority and `HouseholdContext`/Firebase Auth UID remains the identity authority.
+The separate Google post-login/startup regression now has a contract-green fix candidate at checkpoint `f10e198fd144caa62427c78609f1295780707ef4`: the successful popup user is handed directly to the existing `AuthenticatedSessionController`, same-UID popup/observer races share one household bootstrap, and loading/recoverable-error UI is explicit. CI `33069878758` and Vercel commit status are SUCCESS. Real-device iPhone/PWA verification remains pending, so this does not reopen or re-accept STEP 1/2 architecture.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke and remaining STEP 11.4 recipient/broadcast help smokes remain pending.
 
@@ -98,7 +98,7 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
-- [-] Fix #7 — Google login post-auth handoff freeze: reopened after the earlier fix candidate (checkpoint `f10e198fd144caa62427c78609f1295780707ef4`) did not resolve the real-device 5-10s freeze. Phase 1 AuthTiming instrumentation (T0-T13, lifecycle listeners, `?authdebug=1` viewer with copy button) is code/contract green at checkpoint `a4778172fad1590069e431236467ef2c2527009d`; local suite 65/65 PASS; Preview `dpl_HtSNyHnMXNJKKRp9YKDsipJatncm` READY. Status: instrumentation/code green — root cause investigation pending real-device timing. Phase 2 (root cause + fix) blocked on a real iPhone/PWA `?authdebug=1` timing capture.
+- [-] Google login post-auth handoff fix candidate is code/contract green: popup success directly enters the canonical session controller; same-UID observer/popup bootstrap is deduplicated; loading/error transition is visible and retryable. Checkpoint `f10e198fd144caa62427c78609f1295780707ef4`, CI `33069878758` SUCCESS. Real-device PWA verification pending before closing.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.

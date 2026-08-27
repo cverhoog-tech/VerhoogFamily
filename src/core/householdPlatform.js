@@ -11,7 +11,6 @@
   function db(){ try{return fbDb||firebase.database();}catch(e){return null;} }
   function user(){ try{return fbUser||(fbAuth&&fbAuth.currentUser)||firebase.auth().currentUser;}catch(e){return null;} }
   function now(){return Date.now();}
-  function AT(label){try{if(window.__familyAuthTiming)window.__familyAuthTiming.mark(label);}catch(e){}}
   function safe(s){return String(s||'').trim();}
   function slugCode(){var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',out='';if(window.crypto&&crypto.getRandomValues){var a=new Uint32Array(8);crypto.getRandomValues(a);for(var i=0;i<8;i++)out+=chars[a[i]%chars.length];}else for(var j=0;j<8;j++)out+=chars[Math.floor(Math.random()*chars.length)];return out.slice(0,4)+'-'+out.slice(4);}
   function householdId(){var d=db();return d?d.ref('families').push().key:null;}
@@ -42,7 +41,7 @@
     });
   }
 
-  function resolveHousehold(){var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));AT('T9-household-read-started');return d.ref('users/'+u.uid).once('value').then(function(s){var data=s.val()||{},hid=data.activeHouseholdId||data.familyId;if(!hid)throw new Error('HOUSEHOLD_REQUIRED');return ensureLegacyMembership(hid,data).then(function(){setGlobals(hid,data.name||displayName(u));startPresence(hid);AT('T10-household-read-finished');return{id:hid,user:data};});});}
+  function resolveHousehold(){var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));return d.ref('users/'+u.uid).once('value').then(function(s){var data=s.val()||{},hid=data.activeHouseholdId||data.familyId;if(!hid)throw new Error('HOUSEHOLD_REQUIRED');return ensureLegacyMembership(hid,data).then(function(){setGlobals(hid,data.name||displayName(u));startPresence(hid);return{id:hid,user:data};});});}
 
   function createInvite(role){
     var d=db(),u=user(),hid=window.fbFamilyId||null;if(!d||!u||!hid)return Promise.reject(new Error('Geen actief gezin'));role=role==='child'?'child':'adult';

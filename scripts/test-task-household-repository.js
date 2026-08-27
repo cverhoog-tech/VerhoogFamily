@@ -29,7 +29,7 @@ assert.ok(!/tasks\s*:/.test(guardSource),'legacy family-root sync must not write
 const repoIndex=loaderSource.indexOf('taskHouseholdRepository.js?v=1');
 const facadeIndex=loaderSource.indexOf('taskSharedData.js?v=5');
 const guardIndex=loaderSource.indexOf('taskLegacySyncGuard.js?v=3');
-const sessionIndex=loaderSource.indexOf('authenticatedSessionController.js?v=4');
+const sessionIndex=loaderSource.indexOf('authenticatedSessionController.js?v=3');
 assert.ok(repoIndex>=0&&facadeIndex>repoIndex,'runtime must load task repository before TaskSharedData');
 assert.ok(guardIndex>=0&&sessionIndex>guardIndex,'legacy task sync guard must load before session bootstrap');
 assert.ok(rules.rules.families.$familyId.$sharedData,'family rules must protect canonical task child through active-member family wildcard');

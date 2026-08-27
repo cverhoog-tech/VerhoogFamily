@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch now has real-device PASS for multi-start/Arcana icons, canonical new-task handoff and the explicit `Later beslissen` invite flow. STEP 11.5 has not started and requires explicit product-owner approval. Fix #7 (Google login post-auth freeze) is back open: the earlier code/contract fix candidate did not resolve the real-device 5–10s freeze, so this is now a fresh investigation. Phase 1 (AuthTiming instrumentation, T0–T13, plus an ?authdebug=1 real-device viewer) is code/contract green on this branch; root cause is not yet known and awaits a real iPhone/PWA timing capture.**
+**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.4 are implementation/contract complete. STEP 11.2 passed its real-device invite/acceptance smoke. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch now has real-device PASS for multi-start/Arcana icons, canonical new-task handoff and the explicit `Later beslissen` invite flow. STEP 11.5 has not started and requires explicit product-owner approval. The separate Google post-login/startup regression now has a contract-green fix candidate on this branch; real-device PWA verification is still required before closing the product fix.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -42,11 +42,9 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] Party Quest UX Test 3 real-device PASS on 2026-08-27: product owner confirmed the explicit **Later beslissen** flow works.
 - [x] Frozen `src/core/notificationActions.js` remains unchanged at blob `60a48daa628bc56531395d188a0811711d82a328`.
 - [-] Non-blocking Party Quest acceptance-toast UI fix remains contract green; product owner deferred its real-device visual verification.
-- [x] Google post-login handoff fix candidate (checkpoint `f10e198fd144caa62427c78609f1295780707ef4`) did NOT resolve the real-device 5-10s freeze; product owner reopened fix #7 for a fresh, evidence-based investigation instead of a second guess-fix.
-- [x] Fix #7 Phase 1 — AuthTiming instrumentation: `[AuthTiming]` marks T0-T13 across the full login critical path (`googleAuthMobileFix.js`, `authenticatedSessionController.js`, `householdPlatform.js`), plus lifecycle listeners (visibilitychange/pageshow/pagehide/focus/blur) and `window.getFamilyAppAuthTiming()`. No tokens/PII logged.
-- [x] Fix #7 Phase 1 — preview/debug-only on-screen Auth Timing viewer gated behind `?authdebug=1`, with a **Kopieer timings** button, so timings can be read and copied directly from a standalone iPhone PWA. Pure reader of `getFamilyAppAuthTiming()`; no second auth observer, no household logic duplication, no identifiers/tokens ever shown.
-- [x] Fix #7 Phase 1 code/contract checkpoint `a4778172fad1590069e431236467ef2c2527009d`; full local `scripts/test-*.js` suite 65/65 PASS; Vercel Preview `dpl_HtSNyHnMXNJKKRp9YKDsipJatncm` READY.
-- [ ] Fix #7 Phase 2 (root cause + real fix) is blocked on a real iPhone/PWA `?authdebug=1` timing capture from the product owner. Status: **instrumentation/code green — root cause investigation pending real-device timing**.
+- [x] Google post-login fix candidate implemented within the existing auth/session authority: successful `signInWithPopup()` now hands `result.user` directly to `AuthenticatedSessionController`, and same-UID popup/observer bootstraps share one in-flight household resolution.
+- [x] Google post-login code/contract checkpoint `f10e198fd144caa62427c78609f1295780707ef4`; full CI run `33069878758` SUCCESS; Vercel commit status SUCCESS.
+- [-] Google post-login real-device PWA verification pending: confirm that account selection now proceeds directly through **Gezin laden...** to household/Home without closing/reopening the app.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; not a STEP 11 blocker.
 
 ## STEP 11 — Party quests — IN PROGRESS
@@ -116,7 +114,7 @@ Full details: `docs/FAMILYAPP-FIX-LIST.md`.
 4. Recipe → propose meal to a household member with realtime accept/reject workflow.
 5. Shopping → complete trip with optional receipt and failure-safe purchased-item cleanup.
 6. Party Quest acceptance toast: fix candidate deployed/green; real-device visual confirmation deferred.
-7. Google login → fix #7 reopened: earlier fix candidate did not resolve the real-device freeze. Status: instrumentation/code green — root cause investigation pending real-device timing.
+7. Google login → code/contract fix candidate green; real-device PWA confirm that successful Google auth immediately completes household/app reveal without app restart.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.

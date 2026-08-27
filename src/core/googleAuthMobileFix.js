@@ -13,29 +13,23 @@
     if(typeof window.showAuthError==='function')window.showAuthError(msg+(code&&msg.indexOf('[')<0?' ['+code+']':''));
   }
   function auth(){try{return window.fbAuth||(window.firebase&&firebase.auth&&firebase.auth());}catch(e){return null;}}
-  function T(label){try{if(window.__familyAuthTiming)window.__familyAuthTiming.mark(label);}catch(e){}}
   function handoff(result,b){
-    T('T4-popup-user-received');
     var user=result&&result.user;
     if(b){b.textContent='Gezin laden...';b.disabled=true;}
     var controller=window.AuthenticatedSessionController;
     if(!user||!controller||typeof controller.acceptAuthenticatedUser!=='function')return Promise.resolve();
-    T('T5-acceptAuthenticatedUser-called');
     return Promise.resolve(controller.acceptAuthenticatedUser(user)).then(function(){
       var status=typeof controller.status==='function'?controller.status():null;
       if(status&&status.state==='recoverableError')reset();
     });
   }
   window.signInWithGoogle=function(){
-    try{if(window.__familyAuthTiming)window.__familyAuthTiming.begin('T0-login-tap');}catch(e){}
     var a=auth();
     if(!a){if(typeof window.showAuthError==='function')window.showAuthError('Firebase is nog niet klaar. Probeer opnieuw.');return;}
     clearError();
     var b=button();if(b){b.textContent='Google openen...';b.disabled=true;}
     var provider=new firebase.auth.GoogleAuthProvider();provider.addScope('profile');provider.addScope('email');provider.setCustomParameters({prompt:'select_account'});
-    T('T1-before-signInWithPopup');
     var p;try{p=a.signInWithPopup(provider);}catch(e){showError(e);return;}
-    T('T2-popup-call-issued(proxy-for-chooser-open)');
-    Promise.resolve(p).then(function(result){T('T3-popup-promise-resolved');return handoff(result,b);}).catch(showError);
+    Promise.resolve(p).then(function(result){return handoff(result,b);}).catch(showError);
   };
 })();
