@@ -1,13 +1,16 @@
 'use strict';
 // ============================================================
-// PARTY QUEST NOTIFICATION PROJECTOR v2.0.0 — STEP 10
+// PARTY QUEST NOTIFICATION PROJECTOR v3.0.0 — STEP 11.6
 // Read-only observer over partyQuests with HouseholdContext lifecycle and
 // stale-callback protection. Typed events remain idempotent in NotificationStore.
+// v3 projects completion to the actual Party Quest participants with XP context.
+// The UID that finalized canonical completion publishes the event so the frozen
+// trusted push sender can keep actor === authenticated caller.
 // ============================================================
 (function(){
   if(window.PartyQuestNotificationProjector)return;
 
-  var VERSION='2.0.0';
+  var VERSION='3.0.0';
   var active=null,contextUnsubscribe=null,bindGeneration=0,snapshot={},initialized=false;
 
   function db(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}}
@@ -19,6 +22,19 @@
   function invitees(q){return q&&q.invitees&&typeof q.invitees==='object'?q.invitees:{};}
   function safe(p){if(p&&typeof p.catch==='function')p.catch(function(e){console.warn('[PartyQuestNotificationProjector]',e);});}
   function bindingCurrent(binding){return !!(binding&&active===binding&&binding.generation===bindGeneration&&isCurrent(binding.token));}
+  function unique(values){var seen={};return (values||[]).filter(Boolean).map(String).filter(function(id){if(seen[id])return false;seen[id]=true;return true;});}
+  function completionParticipants(q){
+    var completion=q&&q.completion||{};
+    if(Array.isArray(completion.participantUids)&&completion.participantUids.length)return unique(completion.participantUids);
+    var out=[];if(q&&q.inviterUid)out.push(String(q.inviterUid));
+    Object.keys(invitees(q)).forEach(function(uid){var inv=invitees(q)[uid];if(inv&&inv.status==='active')out.push(String(uid));});
+    return unique(out);
+  }
+  function completionPublisher(q){
+    var c=q&&q.completion||{};
+    return String(c.finalizedByUid||c.taskCompletedByUid||q&&q.endedByUid||q&&q.inviterUid||'');
+  }
+  function completionCause(q){var c=q&&q.completion||{};return String(c.taskCompletedByUid||q&&q.endedByUid||completionPublisher(q)||'');}
 
   function publishReadModel(next,binding){
     if(!bindingCurrent(binding))return;
@@ -27,13 +43,13 @@
 
   function project(next,binding){
     if(!bindingCurrent(binding))return;
-    var me=binding.context.uid;
+    var me=String(binding.context.uid);
     if(!initialized){snapshot=next;initialized=true;publishReadModel(next,binding);return;}
     Object.keys(next).forEach(function(k){
       var q=next[k],prev=snapshot[k]||null;
       if(!q||!window.NotificationEvents)return;
 
-      if(!prev&&String(q.inviterUid||'')===String(me)){
+      if(!prev&&String(q.inviterUid||'')===me){
         var targets=Object.keys(invitees(q)).filter(function(id){return invitees(q)[id]&&invitees(q)[id].status==='pending';});
         safe(NotificationEvents.partyQuestCreated(q,targets));
         targets.forEach(function(targetUid){if(NotificationEvents.partyQuestInvitationSent)safe(NotificationEvents.partyQuestInvitationSent(q,targetUid));});
@@ -41,8 +57,15 @@
 
       if(prev){
         var beforeMine=invitees(prev)[me],afterMine=invitees(q)[me];
-        if(afterMine&&String(q.inviterUid||'')!==String(me)&&(!beforeMine||beforeMine.status!==afterMine.status)&&afterMine.status==='active')safe(NotificationEvents.partyQuestJoined(q,q.inviterUid));
-        if(prev.status!==q.status&&q.status==='completed'&&String(q.inviterUid||'')===String(me))safe(NotificationEvents.partyQuestCompleted(q));
+        if(afterMine&&String(q.inviterUid||'')!==me&&(!beforeMine||beforeMine.status!==afterMine.status)&&afterMine.status==='active')safe(NotificationEvents.partyQuestJoined(q,q.inviterUid));
+        if(prev.status!==q.status&&q.status==='completed'&&completionPublisher(q)===me&&NotificationEvents.partyQuestCompleted){
+          var completion=q.completion||{},recipients=completionParticipants(q).filter(function(uid){return String(uid)!==me;});
+          safe(NotificationEvents.partyQuestCompleted(q,recipients,{
+            completedByUid:completionCause(q),
+            xp:Number(completion.xpPerParticipant)||0,
+            occurrence:completion.occurrenceId||q.endedAt||'completed'
+          }));
+        }
       }
     });
     snapshot=next;
