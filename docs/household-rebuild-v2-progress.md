@@ -29,7 +29,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted. STEP 11.5 device Tests 1 and 2 are PASS, while the final reload/no-duplicate Test 3 remains pending. STEP 11.6 is now contract-green on a READY Preview: involved ordinary-Task completions and combined Party Quest completion+XP notifications are projected through the frozen canonical notification stack. STEP 11.6 device verification is pending. STEP 11.7 has not started and requires explicit approval.
+**Current position:** STEP 11.1–11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted. STEP 11.5 device Tests 1 and 2 are PASS, while the final reload/no-duplicate Test 3 remains pending. STEP 11.6 is contract-green on a READY Preview and its ordinary involved-Task notification has now passed on a real device exactly as intended. The remaining 11.6 device check is the combined Party Quest completion + XP notification. STEP 11.7 has not started and requires explicit approval.
 
 The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke, remaining STEP 11.4 recipient/broadcast help smokes and Google post-login/startup product fix remain pending.
 
@@ -95,7 +95,7 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Real-device Test 2 PASS: another accepted participant later authenticated and received the durable pending Party Quest XP reward.
 - [ ] Real-device Test 3 pending: reload/reopen the same participant and confirm no second XP/reward is granted.
 
-### STEP 11.6 — Notification event extensions — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PENDING
+### STEP 11.6 — Notification event extensions — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE 1/2 PASS
 - [x] Product owner explicitly approved GO STEP 11.6 on 2026-08-28.
 - [x] `NotificationExperience` adds deterministic `task.completed.involved` events for actual collaborators only.
 - [x] Ordinary completion audience includes creator/owner, assignees and accepted ordinary helpers, excluding the completer.
@@ -110,8 +110,8 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Code/contract checkpoint `b067fc74931e058b9aa2507d5564501e77575114`.
 - [x] Full CI `33124463794`: SUCCESS, including STEP 11.6, STEP 11.5, frozen STEP 9 progression and frozen STEP 10 notification/push contracts.
 - [x] Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9`: READY, target Preview.
-- [ ] Real-device ordinary involved-task notification smoke pending.
-- [ ] Real-device combined Party Quest completion + XP notification smoke pending.
+- [x] Real-device Test 1 PASS: ordinary involved-task completion notification behaved exactly as intended.
+- [ ] Real-device Test 2 pending: combined Party Quest completion + XP notification.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.7 — compatibility/legacy guard — explicit approval required.
