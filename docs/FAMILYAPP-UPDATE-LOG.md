@@ -17,6 +17,18 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-28 — STEP 11.6 real-device Test 1 PASS
+
+- Product owner confirmed the first STEP 11.6 real-device smoke **PASS** and reported that it worked exactly as intended.
+- Scenario: account A completed an ordinary Task in which account B was actually involved.
+- Account B received the intended related-task completion notification through the existing notification experience.
+- This validates the new ordinary involved-task notification path on a real device, including collaborator targeting and practical presentation behavior.
+- STEP 11.6 remains partially device-verified rather than fully accepted: the remaining Test 2 must validate the richer combined **Party Quest completed + XP** notification to another accepted participant.
+- STEP 11.5 still separately has its final reload/no-duplicate reward Test 3 pending; this 11.6 pass does not silently close that gate.
+- No product code, `main`, production Firebase Rules or production deployment was changed for this status update.
+
+---
+
 ## 2026-08-28 — STEP 11.6 involved Task completion + Party Quest XP notifications implementation/contract green
 
 - Product owner explicitly approved **GO STEP 11.6** after requesting notifications when another household member completes a Task the user was involved in and/or causes the user to receive XP.
@@ -132,6 +144,6 @@ Newest entries belong at the top.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX latest checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device Tests 1/2 PASS, duplicate-safety Test 3 pending).
-- STEP 11.6 implementation/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY; device smoke pending).
+- STEP 11.6 implementation/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY; device Test 1 PASS, combined Party Quest completion+XP Test 2 pending).
 - Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4`.
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
