@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch is real-device accepted for multi-start/Arcana icons, canonical new-task handoff and explicit `Later beslissen`. STEP 11.5 real-device Tests 1 and 2 passed; its final reload/no-duplicate Test 3 is still pending. STEP 11.6 is code/contract green on a READY Preview. Its ordinary involved-Task notification has now passed on a real device exactly as intended; the combined Party Quest completion + XP notification remains the outstanding 11.6 device smoke. STEP 11.7 has not started and requires explicit product-owner approval.**
+**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed on a real device, while recipient/broadcast follow-up and STEP 11.3 leave remain pending. The Party Quest UX patch is real-device accepted for multi-start/Arcana icons, canonical new-task handoff and explicit `Later beslissen`. STEP 11.5 real-device Tests 1 and 2 passed; its final reload/no-duplicate Test 3 is still pending. STEP 11.6 is code/contract green on a READY Preview. Its ordinary involved-Task notification and the combined Party Quest completion + XP notification have both now passed on a real device exactly as intended; one reload/replay no-duplicate smoke remains before marking 11.6 fully device-accepted. STEP 11.7 has not started and requires explicit product-owner approval.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -48,7 +48,8 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] Full `Household Rebuild Contract Tests` run `33124463794`: SUCCESS. Logs explicitly include `party quest STEP 11.6 involved completion + XP notifications: PASS`, STEP 11.5 exactly-once PASS, all frozen STEP 10 notification/push contracts PASS and prior Party Quest contracts PASS.
 - [x] STEP 11.6 Vercel Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9`: READY, `target: null`, commit `b067fc74931e058b9aa2507d5564501e77575114`.
 - [x] STEP 11.6 real-device Test 1 PASS: when account A completed an ordinary Task involving account B, account B received the intended completion notification exactly as designed.
-- [ ] STEP 11.6 real-device Test 2 pending: combined Party Quest completion + XP notification to another accepted participant.
+- [x] STEP 11.6 real-device Test 2 PASS: account B received exactly the intended combined Party Quest completion + XP notification after account A completed the linked Task, without a second ordinary Task notification.
+- [ ] STEP 11.6 real-device Test 3 pending: reload/reopen account B and confirm the same combined notification is not duplicated by replay/reconnect.
 - [-] Non-blocking Party Quest acceptance-toast UI fix remains contract green; product owner deferred its real-device visual verification.
 - [-] Google post-login/startup regression remains a separate product-fix follow-up.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** still needs a real smoke test; not a STEP 11 blocker.
@@ -96,7 +97,7 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Real-device Test 2 PASS: later-authenticated accepted participant receives pending XP.
 - [ ] Real-device Test 3 pending: reload/reopen must not award the same Party Quest XP again.
 
-### STEP 11.6 — Notification event extensions — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE 1/2 PASS
+### STEP 11.6 — Notification event extensions — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE SMOKE 2/3 PASS
 - [x] Explicit **GO STEP 11.6** received 2026-08-28.
 - [x] Ordinary involved-task completion event targets relevant collaborators and suppresses self-notifications.
 - [x] Party Quest participants receive one combined completion + XP notification rather than duplicate ordinary + Party Quest notifications.
@@ -106,7 +107,8 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Same-context startup callback can no longer wipe repository baselines and miss the first real transition.
 - [x] Checkpoint `b067fc74931e058b9aa2507d5564501e77575114`; CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY.
 - [x] Real-device Test 1 PASS: ordinary involved-task completion notification behaved exactly as intended.
-- [ ] Real-device Test 2 pending: combined Party Quest completion + XP notification.
+- [x] Real-device Test 2 PASS: combined Party Quest completion + XP notification behaved exactly as intended, with no duplicate ordinary Task notification.
+- [ ] Real-device Test 3 pending: reload/reopen account B and confirm replay/reconnect does not create a second copy of the same combined notification.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.7 — compatibility/legacy guard — explicit approval required.
