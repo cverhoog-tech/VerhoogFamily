@@ -29,7 +29,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — final device acceptance in progress.
 
-**Current position:** STEP 11.1–11.8 are implementation/contract complete. STEP 11.9 is running as a bundled three-check real-iPhone acceptance sweep. Check 1/3 passed on 2026-08-30: an accepted participant left the Party Quest correctly and normal Home/Taken/Meldingen navigation remained stable without freeze/white screen. Check 2 will cover recipient/household help behavior; Check 3 remains the high-risk no-second-XP reward idempotency observation.
+**Current position:** STEP 11.1–11.8 are implementation/contract complete. STEP 11.9 is running as a bundled three-check real-iPhone acceptance sweep. Check 1/3 passed: participant leave and navigation stability. Check 2/3 passed: targeted Party Quest help acceptance and household-broadcast decline/ignore behavior updated correctly in realtime without invalid participant/helper transitions. Only Check 3 remains: the high-risk no-second-XP reward idempotency observation.
 
 **Validation cadence from 2026-08-29:** accelerate completion by bundling remaining low/medium-risk device smokes into meaningful acceptance sweeps instead of testing every subflow separately. Keep separate explicit testing for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency-reward/release-blocking behavior.
 
@@ -65,10 +65,10 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] Checkpoint `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`; CI `33024009131` SUCCESS.
 - [x] STEP 11.9 Check 1 PASS on real iPhone: account B accepted and then left a Party Quest correctly; participant state updated as intended and Home/Taken/Meldingen navigation stayed stable.
 
-### STEP 11.4 — Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
+### STEP 11.4 — Party Quest help — COMPLETE + REAL-DEVICE PASS
 - [x] Targeted + household help, eligibility/retraction/idempotency and help UI.
-- [x] Real-device targeted-send PASS.
-- [ ] Recipient accept/decline and household-broadcast behavior remain for STEP 11.9 Check 2.
+- [x] Earlier real-device targeted-send PASS.
+- [x] STEP 11.9 Check 2 PASS on real iPhone: targeted recipient acceptance worked; household-broadcast decline/ignore behavior remained consistent and did not prematurely close the request; participant/helper state stayed correct realtime.
 - [x] Checkpoint `51256b2506625f7421273d87d0c0f654fdbc432b`; CI `33044211179` SUCCESS.
 
 ### Party Quest UX patch — COMPLETE + REAL-DEVICE PASS
@@ -111,9 +111,9 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 ### STEP 11.9 — Bundled real-iPhone acceptance sweep — IN PROGRESS
 - [x] Explicit **GO STEP 11.9** received.
 - [x] Check 1/3 — participant leave + general navigation stability: PASS.
-- [ ] Check 2/3 — recipient accept/decline + household Party Quest help behavior.
+- [x] Check 2/3 — recipient accept + household Party Quest help behavior: PASS.
 - [ ] Check 3/3 — no-second-XP reward idempotency after reload/reopen.
-- [ ] Close STEP 11 only after Checks 2 and 3 pass.
+- [ ] Close STEP 11 only after Check 3 passes.
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
