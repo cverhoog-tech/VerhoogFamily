@@ -17,6 +17,28 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-29 — STEP 11.6 fully real-device accepted; accelerated validation mode adopted
+
+- Product owner completed the final STEP 11.6 reload/replay smoke as account B and confirmed **no duplicate** combined Party Quest completion + XP notification appeared.
+- STEP 11.6 real-device sequence is therefore complete:
+  - ordinary involved-Task completion notification PASS;
+  - combined Party Quest completion + XP notification PASS;
+  - no duplicate ordinary notification for the same Party Quest action PASS;
+  - reload/reconnect replay does not duplicate the combined notification PASS.
+- STEP 11.6 is now **COMPLETE + REAL-DEVICE ACCEPTED**.
+- The replay observation validates notification-event idempotency only. It does **not** silently close STEP 11.5's separate no-second-XP reward Test 3, because the user did not explicitly observe XP/reward state or reward toast during this 11.6 check.
+- Product owner requested a faster path through the remaining roadmap and specifically asked to stop doing so many separate micro-tests.
+- Adopted **accelerated validation mode** for remaining work:
+  - bundle low/medium-risk device checks into meaningful checkpoint or end-of-phase acceptance sweeps;
+  - avoid one-test-per-subflow when contract coverage and adjacent real-device evidence are already strong;
+  - keep explicit isolated tests for genuinely high-risk/destructive/auth-identity/security/cross-household/finance/idempotency-reward/release-blocking behavior;
+  - explicit GO approval for each new roadmap step and production/release gates remains unchanged.
+- Remaining STEP 11.3 leave, STEP 11.4 recipient/broadcast help and STEP 11.5 no-duplicate XP checks should be bundled into the later STEP 11 acceptance sweep unless a blocker appears earlier.
+- STEP 11.7 remains not started and still requires explicit product-owner approval.
+- No product code, `main`, production Firebase Rules or production deployment was changed for this status update.
+
+---
+
 ## 2026-08-29 — STEP 11.6 combined Party Quest completion + XP notification device PASS
 
 - Product owner confirmed the second STEP 11.6 real-device smoke **PASS** and reported that it behaved exactly as specified.
@@ -24,8 +46,8 @@ Newest entries belong at the top.
 - Account B then opened Notifications and received one combined Party Quest notification naming the completion context and the XP reward.
 - No second ordinary Task-completed notification appeared for the same action, validating the intended duplicate suppression between ordinary involved-Task events and Party Quest completion events.
 - This confirms the richer combined completion+XP presentation path on a real device.
-- STEP 11.6 is now **device 2/3 PASS**. One final reload/reopen replay smoke remains: account B must reopen/reload and confirm the same combined notification is not duplicated.
-- STEP 11.5 still separately retains its previously agreed no-second-XP Test 3; the upcoming reload observation may only close that older gate if the observed reward/toast behavior genuinely establishes no duplicate XP for the same occurrence.
+- STEP 11.6 reached **device 2/3 PASS** at this checkpoint; the final replay check was subsequently completed and accepted in the entry above.
+- STEP 11.5 still separately retains its previously agreed no-second-XP Test 3; this notification check does not silently close that gate.
 - No product code, `main`, production Firebase Rules or production deployment was changed for this status update.
 
 ---
@@ -36,7 +58,7 @@ Newest entries belong at the top.
 - Scenario: account A completed an ordinary Task in which account B was actually involved.
 - Account B received the intended related-task completion notification through the existing notification experience.
 - This validates the new ordinary involved-task notification path on a real device, including collaborator targeting and practical presentation behavior.
-- STEP 11.6 remains partially device-verified rather than fully accepted: the remaining Test 2 must validate the richer combined **Party Quest completed + XP** notification to another accepted participant.
+- STEP 11.6 remained partially device-verified at this checkpoint; later checks subsequently accepted the combined Party Quest + XP and replay paths.
 - STEP 11.5 still separately has its final reload/no-duplicate reward Test 3 pending; this 11.6 pass does not silently close that gate.
 - No product code, `main`, production Firebase Rules or production deployment was changed for this status update.
 
@@ -65,7 +87,7 @@ Newest entries belong at the top.
 - Final code/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114`.
 - Full `Household Rebuild Contract Tests` run `33124463794`: **SUCCESS**. Logs explicitly report `party quest STEP 11.6 involved completion + XP notifications: PASS`, STEP 11.5 exactly-once rewards PASS, all frozen STEP 10 notification/push tests PASS, frozen STEP 9 progression tests PASS, and prior STEP 11/UX contracts PASS.
 - Vercel Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9`: **READY**, `target: null`, commit `b067fc74931e058b9aa2507d5564501e77575114`. Stable branch alias remains `verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-- STEP 11.6 is **implementation/contract complete; real-device notification verification pending**.
+- STEP 11.6 was implementation/contract complete at this checkpoint and was later fully real-device accepted on 2026-08-29.
 - Administrative guard: STEP 11.5 device Tests 1 and 2 are PASS, but the separately agreed Test 3 (reload/reopen the second participant and confirm no duplicate XP/reward) is still pending and must not be silently marked accepted.
 - `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
@@ -156,7 +178,7 @@ Newest entries belong at the top.
 - STEP 11.3 implementation/contract checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`.
 - STEP 11.4 implementation/contract checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX latest checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
-- STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device Tests 1/2 PASS, duplicate-safety Test 3 pending).
-- STEP 11.6 implementation/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY; device Tests 1/2 PASS, reload/replay Test 3 pending).
+- STEP 11.5 implementation/contract checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY; device Tests 1/2 PASS, duplicate-XP safety Test 3 pending for bundled acceptance sweep).
+- STEP 11.6 implementation/contract checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY; real-device Tests 1/2/3 PASS; accepted 2026-08-29).
 - Google post-login handoff fix candidate checkpoint: `f10e198fd144caa62427c78609f1295780707ef4`.
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
