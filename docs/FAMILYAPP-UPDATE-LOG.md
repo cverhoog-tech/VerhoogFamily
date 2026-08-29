@@ -17,6 +17,20 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-30 — STEP 11.9 Check 1/3 real-iPhone PASS
+
+- Product owner explicitly approved **GO STEP 11.9** and the final Party Quest acceptance sweep is being run in accelerated bundled mode against the exact STEP 11.8 Preview candidate.
+- Check 1/3 combined the remaining STEP 11.3 participant-leave smoke with a basic navigation/stability observation.
+- Scenario: account A created a Party Quest, account B accepted it, then account B left the Party Quest.
+- Product owner reported **Check 1 PASS**.
+- This closes the pending STEP 11.3 real-device leave evidence: the accepted participant could leave correctly and disappeared from active participation as intended.
+- During the same round, normal Home / Taken / Meldingen navigation remained stable; no freeze or white screen was observed.
+- STEP 11.3 is therefore COMPLETE + REAL-DEVICE PASS.
+- STEP 11.9 remains in progress. Check 2 will bundle the remaining Party Quest help recipient/broadcast behavior; Check 3 remains the high-risk STEP 11.5 no-second-XP reward idempotency safety observation.
+- No product code, production deployment, production Firebase Rules or `main` was changed for this device-status checkpoint.
+
+---
+
 ## 2026-08-29 — STEP 11.8 integrated CI + Preview candidate COMPLETE
 
 - Product owner explicitly approved **GO STEP 11.8**.
@@ -135,10 +149,10 @@ Newest entries belong at the top.
 - Frozen `notificationActions.js` blob through STEP 11.8: `60a48daa628bc56531395d188a0811711d82a328`.
 - STEP 11.1 checkpoint: `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
 - STEP 11.2 checkpoint: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
-- STEP 11.3 checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`.
+- STEP 11.3 checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7` (device leave PASS in STEP 11.9 Check 1).
 - STEP 11.4 checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
 - Party Quest UX checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
-- STEP 11.5 checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; device Tests 1/2 PASS; no-duplicate-XP safety observation pending for bundled acceptance).
+- STEP 11.5 checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; device Tests 1/2 PASS; no-duplicate-XP safety observation pending for STEP 11.9 Check 3).
 - STEP 11.6 checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview READY; real-device accepted).
 - STEP 11.7 checkpoint: `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b` (CI `33273125677` SUCCESS; compatibility quarantine).
 - STEP 11.8 integrated candidate: `3f01b3f2265c88dcc6480e7458d16cb21da2a146` (CI `33273749600` SUCCESS; Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq` READY; HTTP 200; no error/fatal runtime logs in scan).
