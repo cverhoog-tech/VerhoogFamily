@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.7 are implementation/contract complete. STEP 11.6 is fully real-device accepted. STEP 11.7 is complete as a CI-only compatibility/legacy quarantine guard: dormant name/localStorage/legacy-XP Party Quest prototypes may remain in the repository for historical reference, but cannot become served runtime or canonical Party Quest authority. STEP 11.8 has not started and requires explicit product-owner approval.**
+**STEP 11 — Party quests is in progress. STEP 11.1 through STEP 11.8 are implementation/contract complete. STEP 11.6 is fully real-device accepted. STEP 11.7 is complete as the compatibility/legacy quarantine guard. STEP 11.8 is complete as the integrated CI + Preview release candidate for the full Party Quest stack. STEP 11.9 remains the bundled real-iPhone acceptance sweep and requires explicit product-owner approval.**
 
 **Accelerated validation mode:** from 2026-08-29 onward, remaining roadmap validation should be bundled per meaningful checkpoint where safe. Avoid micro-testing every subflow separately; keep separate real-device tests only for genuinely high-risk, destructive, identity/auth, money/finance, cross-household/security, idempotency/reward, or release-blocking behavior. Explicit GO approval for new roadmap steps remains required.
 
@@ -21,7 +21,7 @@ New chats/agents should read these files before changing the rebuild branch.
 ## Latest verified state
 
 - [x] STEP 10 frozen code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `src/core/notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.7.
+- [x] Frozen `src/core/notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.8.
 - [x] STEP 11.1 canonical `PartyQuestRepository` foundation complete.
 - [x] STEP 11.2 invite/accept state machine complete + real-device PASS.
 - [x] STEP 11.3 leave + ActiveView implementation/contract complete; participant-leave device smoke remains for bundled STEP 11 acceptance.
@@ -36,10 +36,18 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] STEP 11.7 prevents dormant legacy Party Quest modules from being reintroduced through served runtime entrypoints.
 - [x] STEP 11.7 prevents canonical Party Quest modules from using legacy localStorage keys, legacy name identities, hardcoded legacy member names, `GroupQuests`/editor/premium authorities or direct legacy `awardXP` paths.
 - [x] STEP 11.7 preserves the frozen `PartyQuestInvites` compatibility facade (`getById`, `revokeInvite`, `respond`) while requiring mutations to delegate to `PartyQuestService`.
-- [x] STEP 11.7 code/contract checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`.
-- [x] Full `Household Rebuild Contract Tests` run `33273125677`: SUCCESS. Logs explicitly include `party quest STEP 11.7 legacy compatibility guard: PASS`, STEP 11.3/11.4/11.5/11.6 PASS, frozen STEP 9 progression PASS, frozen STEP 10 notification/push PASS, auth/startup PASS and toast contrast PASS.
-- [x] STEP 11.7 required no runtime/product-code change, so no new Vercel Preview or isolated device smoke was necessary; the last accepted runtime Preview remains the STEP 11.6 Preview.
-- [ ] STEP 11.8 — integrated CI + Preview candidate — not started; explicit **GO STEP 11.8** required.
+- [x] STEP 11.7 code/contract checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`; full CI `33273125677` SUCCESS.
+- [x] Product owner explicitly approved **GO STEP 11.8** on 2026-08-29.
+- [x] Added `scripts/test-party-quest-step11-8-integration.js` as the final served-runtime integration contract for the current STEP 11 candidate.
+- [x] STEP 11.8 renders the real `api/app.js` shell and proves every canonical Party Quest layer is served exactly once: Repository, Service, ActiveView, HelpUi, CompletionReward, Invites and NotificationProjector.
+- [x] STEP 11.8 proves canonical HouseholdContext, Task repository, ProgressionStore/Runtime and NotificationStore/Events/Actions authorities are singular and retain safe bootstrap ordering.
+- [x] STEP 11.8 re-verifies dormant `groupQuests` prototype files are absent from the served application while current `duoQuests.js` remains present exactly once.
+- [x] STEP 11.8 integrated code/contract checkpoint `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
+- [x] Full `Household Rebuild Contract Tests` run `33273749600`: SUCCESS. Logs explicitly include `party quest STEP 11.8 integrated served-runtime candidate: PASS` plus STEP 11.3/11.4/11.5/11.6/11.7, frozen progression, notifications/push, auth/startup and the broader rebuild suite.
+- [x] Git/Vercel status checks on checkpoint `3f01b3f...` are both SUCCESS.
+- [x] STEP 11.8 Vercel Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq`: READY, target Preview, exact commit `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
+- [x] Exact Preview URL `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app` returned HTTP 200 with the expected served shell; Preview runtime error/fatal scan for the deployment returned no entries.
+- [ ] STEP 11.9 — bundled real-iPhone STEP 11 acceptance sweep — explicit **GO STEP 11.9** required.
 - [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred.
 - [-] Google post-login/startup regression remains a separate product-fix follow-up.
 - [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** real smoke remains pending; not a STEP 11 blocker.
@@ -60,12 +68,12 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 
 ### STEP 11.3 — Leave + ActiveView — IMPLEMENTATION/CONTRACT COMPLETE
 - [x] `left` semantics and repository/service-backed ActiveView.
-- [ ] Participant-leave real-device smoke bundled into later STEP 11 acceptance sweep.
+- [ ] Participant-leave real-device smoke bundled into STEP 11.9 acceptance sweep.
 
 ### STEP 11.4 — Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
 - [x] Targeted + household help, eligibility, retraction, idempotency and UI.
 - [x] Targeted-help send device PASS.
-- [ ] Recipient accept/decline + household broadcast bundled into later STEP 11 acceptance sweep.
+- [ ] Recipient accept/decline + household broadcast bundled into STEP 11.9 acceptance sweep.
 
 ### Party Quest UX patch — COMPLETE + REAL-DEVICE PASS
 - [x] Multiple Party Quests, meaningful Arcana icons, canonical new-task flow and **Later beslissen** all device PASS.
@@ -76,7 +84,7 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Durable pending settlements support later-authenticated participants.
 - [x] Checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS.
 - [x] Device Tests 1/2 PASS.
-- [ ] No-second-XP reload safety observation remains; keep as high-risk idempotency gate in bundled STEP 11 acceptance sweep.
+- [ ] No-second-XP reload safety observation remains; keep as high-risk idempotency gate in STEP 11.9 acceptance sweep.
 
 ### STEP 11.6 — Notification event extensions — COMPLETE + REAL-DEVICE ACCEPTED
 - [x] Ordinary involved-task completion notifications.
@@ -93,11 +101,19 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] Current `duoQuests.js` remains allowed/served; it is not the dormant `groupQuests` prototype.
 - [x] Test: `scripts/test-party-quest-step11-7.js`.
 - [x] Checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`; CI `33273125677` SUCCESS.
-- [x] CI-only change; no runtime Preview/device gate needed for this substep.
 
-### Later STEP 11 checkpoints
-- [ ] STEP 11.8 — integrated CI + Preview candidate — explicit approval required.
-- [ ] STEP 11.9 — bundled real iPhone acceptance sweep under accelerated validation mode.
+### STEP 11.8 — Integrated CI + Preview candidate — COMPLETE
+- [x] Explicit **GO STEP 11.8** received 2026-08-29.
+- [x] Added final served-runtime integration contract `scripts/test-party-quest-step11-8-integration.js`.
+- [x] Canonical STEP 11 modules and their frozen authorities are served exactly once and in safe dependency order.
+- [x] Legacy Party Quest prototypes remain absent from the rendered runtime.
+- [x] Frozen NotificationActions exact blob remains `60a48daa628bc56531395d188a0811711d82a328`.
+- [x] Candidate checkpoint `3f01b3f2265c88dcc6480e7458d16cb21da2a146`; full CI `33273749600` SUCCESS.
+- [x] Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq` READY at `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app`.
+- [x] Preview root HTTP 200; no preview error/fatal runtime logs found for the candidate scan.
+
+### Later STEP 11 checkpoint
+- [ ] STEP 11.9 — bundled real iPhone acceptance sweep under accelerated validation mode — explicit approval required.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
