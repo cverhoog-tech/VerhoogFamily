@@ -17,6 +17,29 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-29 — STEP 11.8 integrated CI + Preview candidate COMPLETE
+
+- Product owner explicitly approved **GO STEP 11.8**.
+- Scope was the integrated release-candidate check for the current Party Quest stack, not new product behavior.
+- Added `scripts/test-party-quest-step11-8-integration.js`.
+- The new contract executes the real `api/app.js` loader and verifies the final served HTML rather than only inspecting source injection strings.
+- It proves the current canonical Party Quest layers are each served exactly once: `PartyQuestRepository`, `PartyQuestService`, `PartyQuestActiveView`, `PartyQuestHelpUi`, `PartyQuestCompletionReward`, `PartyQuestInvites` and `PartyQuestNotificationProjector`.
+- It verifies singular canonical dependencies/authorities and safe bootstrap order for HouseholdContext, Task repository, ProgressionStore/Runtime and NotificationStore/Events/Actions.
+- It re-verifies dormant pre-rebuild Party Quest prototype files (`groupQuests.js`, `groupQuestEditor.js`, `groupQuestPremium.js`) are absent from the rendered application while current `duoQuests.js` remains served exactly once.
+- It re-verifies frozen `src/core/notificationActions.js` exact blob `60a48daa628bc56531395d188a0811711d82a328`.
+- Integrated STEP 11.8 checkpoint: `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
+- Full `Household Rebuild Contract Tests` run `33273749600`: **SUCCESS**. Logs explicitly report `party quest STEP 11.8 integrated served-runtime candidate: PASS`, together with STEP 11.3 leave, 11.4 help, 11.5 exactly-once rewards, 11.6 notifications, 11.7 legacy compatibility, UX patch, frozen STEP 9 progression, frozen STEP 10 notifications/push, auth/startup and the broader rebuild suite all PASS.
+- Expected simulated `NETWORK_DOWN` / `WRITE_FAILED` warnings remain failure-path fixtures whose tests PASS; they are not deployment failures.
+- GitHub combined status for the exact candidate reports both `Household Rebuild Contracts` and `Vercel` as **success**.
+- Vercel Preview candidate: `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq`, state **READY**, target Preview, Git commit `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
+- Exact candidate URL: `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app`.
+- Server-side fetch of the candidate root returned HTTP **200** and the expected rendered FamilyApp shell.
+- Preview runtime scan for `error`/`fatal` logs on that deployment found no entries in the checked window.
+- No product runtime logic, Firebase Rules, production deployment or `main` was changed as part of the STEP 11.8 integration guard itself.
+- STEP 11.8 is **COMPLETE**. STEP 11.9 remains the bundled real-iPhone acceptance sweep and requires explicit product-owner approval.
+
+---
+
 ## 2026-08-29 — STEP 11.7 compatibility/legacy guard COMPLETE; full CI green
 
 - Product owner explicitly approved **GO STEP 11.7** and asked to continue under accelerated validation mode.
@@ -32,9 +55,7 @@ Newest entries belong at the top.
 - STEP 11.7 code/contract checkpoint: `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`.
 - Full `Household Rebuild Contract Tests` run `33273125677`: **SUCCESS**. The log explicitly reports `party quest STEP 11.7 legacy compatibility guard: PASS` and also re-runs STEP 11.3 leave, STEP 11.4 help, STEP 11.5 exactly-once rewards, STEP 11.6 notifications, frozen STEP 9 progression, frozen STEP 10 notification/push, auth/startup and other rebuild contracts successfully.
 - Expected simulated `NETWORK_DOWN` / `WRITE_FAILED` warnings in reward/progression failure-path fixtures remained PASS and are not production failures.
-- STEP 11.7 changed only `scripts/test-party-quest-step11-7.js`; no served runtime/product code changed. Therefore no new Vercel Preview or isolated device smoke was needed for this substep. The last accepted runtime Preview remains the STEP 11.6 Preview.
-- STEP 11.7 is **COMPLETE**. STEP 11.8 has not started and still requires explicit product-owner approval.
-- `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+- STEP 11.7 changed only `scripts/test-party-quest-step11-7.js`; no served runtime/product code changed. Therefore no isolated device smoke was needed for this substep.
 
 ---
 
@@ -111,7 +132,7 @@ Newest entries belong at the top.
 - STEP 9 Progression: accepted/frozen 2026-08-24.
 - STEP 10 Notifications: explicitly accepted/frozen 2026-08-26.
 - STEP 10 frozen code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- Frozen `notificationActions.js` blob through STEP 11.7: `60a48daa628bc56531395d188a0811711d82a328`.
+- Frozen `notificationActions.js` blob through STEP 11.8: `60a48daa628bc56531395d188a0811711d82a328`.
 - STEP 11.1 checkpoint: `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
 - STEP 11.2 checkpoint: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - STEP 11.3 checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`.
@@ -119,6 +140,7 @@ Newest entries belong at the top.
 - Party Quest UX checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
 - STEP 11.5 checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; device Tests 1/2 PASS; no-duplicate-XP safety observation pending for bundled acceptance).
 - STEP 11.6 checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview READY; real-device accepted).
-- STEP 11.7 checkpoint: `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b` (CI `33273125677` SUCCESS; test-only compatibility quarantine; no runtime Preview required).
+- STEP 11.7 checkpoint: `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b` (CI `33273125677` SUCCESS; compatibility quarantine).
+- STEP 11.8 integrated candidate: `3f01b3f2265c88dcc6480e7458d16cb21da2a146` (CI `33273749600` SUCCESS; Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq` READY; HTTP 200; no error/fatal runtime logs in scan).
 - Google post-login handoff fix candidate: `f10e198fd144caa62427c78609f1295780707ef4`.
 - Full historical log through STEP 11.1: `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
