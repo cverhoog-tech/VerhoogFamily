@@ -17,6 +17,20 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-08-30 — STEP 11.9 Check 2/3 real-iPhone PASS
+
+- Product owner reported **Check 2 PASS** during the accelerated final Party Quest acceptance sweep against the STEP 11.8 integrated Preview candidate.
+- Check 2 bundled the remaining STEP 11.4 device coverage rather than splitting help paths into separate micro-tests.
+- A targeted Party Quest help request was accepted by the intended recipient and the helper/participant state updated correctly in realtime.
+- Household-wide Party Quest help behavior was also exercised; decline/ignore behavior did not incorrectly close the open household request or add/remove the wrong participant.
+- No incorrect Party Quest membership transition was observed during the bundled help round.
+- Together with the earlier targeted-send smoke, STEP 11.4 is now **COMPLETE + REAL-DEVICE PASS**.
+- STEP 11.9 is now 2/3 PASS. The only remaining STEP 11 acceptance gate is Check 3: verify that a participant who already received a Party Quest XP reward does not receive the same XP/reward again after reload/reopen.
+- This final check remains intentionally separate because reward idempotency is a high-risk safety property even under accelerated validation mode.
+- No product code, production deployment, production Firebase Rules or `main` was changed for this device-status checkpoint.
+
+---
+
 ## 2026-08-30 — STEP 11.9 Check 1/3 real-iPhone PASS
 
 - Product owner explicitly approved **GO STEP 11.9** and the final Party Quest acceptance sweep is being run in accelerated bundled mode against the exact STEP 11.8 Preview candidate.
@@ -26,7 +40,7 @@ Newest entries belong at the top.
 - This closes the pending STEP 11.3 real-device leave evidence: the accepted participant could leave correctly and disappeared from active participation as intended.
 - During the same round, normal Home / Taken / Meldingen navigation remained stable; no freeze or white screen was observed.
 - STEP 11.3 is therefore COMPLETE + REAL-DEVICE PASS.
-- STEP 11.9 remains in progress. Check 2 will bundle the remaining Party Quest help recipient/broadcast behavior; Check 3 remains the high-risk STEP 11.5 no-second-XP reward idempotency safety observation.
+- STEP 11.9 remains in progress. Check 2 subsequently passed; Check 3 remains the high-risk STEP 11.5 no-second-XP reward idempotency safety observation.
 - No product code, production deployment, production Firebase Rules or `main` was changed for this device-status checkpoint.
 
 ---
@@ -50,7 +64,7 @@ Newest entries belong at the top.
 - Server-side fetch of the candidate root returned HTTP **200** and the expected rendered FamilyApp shell.
 - Preview runtime scan for `error`/`fatal` logs on that deployment found no entries in the checked window.
 - No product runtime logic, Firebase Rules, production deployment or `main` was changed as part of the STEP 11.8 integration guard itself.
-- STEP 11.8 is **COMPLETE**. STEP 11.9 remains the bundled real-iPhone acceptance sweep and requires explicit product-owner approval.
+- STEP 11.8 is **COMPLETE**. STEP 11.9 is now in progress and currently 2/3 PASS.
 
 ---
 
@@ -78,11 +92,10 @@ Newest entries belong at the top.
 - Product owner completed the final STEP 11.6 reload/replay smoke as account B and confirmed **no duplicate** combined Party Quest completion + XP notification appeared.
 - STEP 11.6 real-device sequence is complete: ordinary involved-Task notification PASS; combined Party Quest completion+XP notification PASS; no duplicate ordinary notification PASS; reload/reconnect replay no duplicate combined notification PASS.
 - STEP 11.6 is **COMPLETE + REAL-DEVICE ACCEPTED**.
-- The replay observation validates notification-event idempotency only; STEP 11.5's separate no-second-XP reward observation remains pending for the later bundled acceptance sweep.
+- The replay observation validates notification-event idempotency only; STEP 11.5's separate no-second-XP reward observation remains pending for STEP 11.9 Check 3.
 - Product owner requested a faster path through the remaining roadmap and specifically asked to stop doing so many separate micro-tests.
 - Adopted **accelerated validation mode**: bundle low/medium-risk device checks into meaningful checkpoint/end-of-phase sweeps, while keeping destructive/auth/security/cross-household/finance/idempotency-reward/release-blocking checks explicit.
 - Explicit GO approval for each new roadmap step and production/release gate remains unchanged.
-- Remaining STEP 11.3 leave, STEP 11.4 recipient/broadcast help and STEP 11.5 no-duplicate XP checks are deferred to the bundled STEP 11 acceptance sweep unless they become blockers earlier.
 
 ---
 
@@ -106,7 +119,7 @@ Newest entries belong at the top.
 
 - Test 1 PASS: completing the linked canonical Task correctly closed the active Party Quest and awarded the current participant XP once.
 - Test 2 PASS: another accepted participant authenticated later and correctly received the durable pending Party Quest XP reward.
-- Final no-second-XP reload observation remains pending as a reward/idempotency safety gate and is now scheduled for the bundled STEP 11 acceptance sweep.
+- Final no-second-XP reload observation remains pending as a reward/idempotency safety gate and is now STEP 11.9 Check 3.
 
 ---
 
@@ -150,9 +163,9 @@ Newest entries belong at the top.
 - STEP 11.1 checkpoint: `e5ce389e30ed2848e0fca5715339639f17ebd8cf`.
 - STEP 11.2 checkpoint: `7dd088038283a6a7cd2b66f81e1380492cff6f96`.
 - STEP 11.3 checkpoint: `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7` (device leave PASS in STEP 11.9 Check 1).
-- STEP 11.4 checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b`.
+- STEP 11.4 checkpoint: `51256b2506625f7421273d87d0c0f654fdbc432b` (device help acceptance PASS in STEP 11.9 Check 2).
 - Party Quest UX checkpoint: `0ef7274feea7ddadc86919843bf0a24891214e33`.
-- STEP 11.5 checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; device Tests 1/2 PASS; no-duplicate-XP safety observation pending for STEP 11.9 Check 3).
+- STEP 11.5 checkpoint: `6263dd5882253f78d7afa8eafa34f7757f836a3d` (CI `33110105234` SUCCESS; device Tests 1/2 PASS; no-duplicate-XP safety observation pending as STEP 11.9 Check 3).
 - STEP 11.6 checkpoint: `b067fc74931e058b9aa2507d5564501e77575114` (CI `33124463794` SUCCESS; Preview READY; real-device accepted).
 - STEP 11.7 checkpoint: `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b` (CI `33273125677` SUCCESS; compatibility quarantine).
 - STEP 11.8 integrated candidate: `3f01b3f2265c88dcc6480e7458d16cb21da2a146` (CI `33273749600` SUCCESS; Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq` READY; HTTP 200; no error/fatal runtime logs in scan).
