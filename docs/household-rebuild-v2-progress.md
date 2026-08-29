@@ -29,9 +29,11 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
 - [-] STEP 11 — Party quests — in progress.
 
-**Current position:** STEP 11.1–11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted. STEP 11.5 device Tests 1 and 2 are PASS, while the final reload/no-duplicate Test 3 remains pending. STEP 11.6 ordinary involved-Task notification and combined Party Quest completion+XP notification are both now real-device PASS. One reload/replay no-duplicate smoke remains before fully accepting STEP 11.6 on-device. STEP 11.7 has not started and requires explicit approval.
+**Current position:** STEP 11.1–11.6 are implementation/contract complete. STEP 11.2 invite/accept passed on real device. STEP 11.4 targeted-help Test 1 passed. The Party Quest UX patch is real-device accepted. STEP 11.5 device Tests 1 and 2 are PASS; its separate no-duplicate XP safety check remains pending for the later bundled STEP 11 acceptance sweep. STEP 11.6 is fully real-device accepted: ordinary involved-task notification, combined Party Quest completion+XP notification and reload/replay no-duplicate notification behavior all passed. STEP 11.7 has not started and requires explicit approval.
 
-The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke, remaining STEP 11.4 recipient/broadcast help smokes and Google post-login/startup product fix remain pending.
+**Validation cadence from 2026-08-29:** accelerate completion by bundling remaining low/medium-risk device smokes into meaningful acceptance sweeps instead of testing every subflow separately. Keep separate explicit testing for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency-reward/release-blocking behavior. This changes test cadence only; it does not waive explicit GO approval for new roadmap steps or release gates.
+
+The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-leave smoke, remaining STEP 11.4 recipient/broadcast help smokes, STEP 11.5 no-duplicate XP safety check and Google post-login/startup product fix remain pending.
 
 ## Frozen phases
 
@@ -64,12 +66,12 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 ### STEP 11.3 — Leave + ActiveView — IMPLEMENTATION/CONTRACT COMPLETE
 - [x] `left` semantics, deterministic status recompute and repository/service-backed ActiveView.
 - [x] Checkpoint `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`; CI `33024009131` SUCCESS.
-- [ ] Real-device participant leave smoke pending.
+- [ ] Real-device participant leave smoke pending; bundle into later STEP 11 acceptance sweep unless it becomes blocking.
 
 ### STEP 11.4 — Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
 - [x] Targeted + household help, eligibility/retraction/idempotency and help UI.
 - [x] Real-device Test 1 PASS: targeted help sends and owner sees **Hulpvraag beheren**.
-- [ ] Recipient accept/decline and household-broadcast device checks pending.
+- [ ] Recipient accept/decline and household-broadcast device checks pending; bundle into later STEP 11 acceptance sweep unless a blocker appears.
 - [x] Checkpoint `51256b2506625f7421273d87d0c0f654fdbc432b`; CI `33044211179` SUCCESS.
 
 ### Party Quest UX patch — IMPLEMENTATION/CONTRACT COMPLETE; REAL-DEVICE PASS
@@ -93,9 +95,9 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Code/contract checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS; Preview `dpl_4hSTgd2hg8WiyBaUxGkr3hCiPxTf` READY.
 - [x] Real-device Test 1 PASS: linked Task completion closes the active Party Quest and current participant receives XP.
 - [x] Real-device Test 2 PASS: another accepted participant later authenticated and received the durable pending Party Quest XP reward.
-- [ ] Real-device Test 3 pending: reload/reopen the same participant and confirm no second XP/reward is granted.
+- [ ] Real-device Test 3 pending: reload/reopen the same participant and confirm no second XP/reward is granted. Keep as a reward/idempotency safety gate, but verify during the bundled STEP 11 acceptance sweep.
 
-### STEP 11.6 — Notification event extensions — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE 2/3 PASS
+### STEP 11.6 — Notification event extensions — COMPLETE + REAL-DEVICE ACCEPTED
 - [x] Product owner explicitly approved GO STEP 11.6 on 2026-08-28.
 - [x] `NotificationExperience` adds deterministic `task.completed.involved` events for actual collaborators only.
 - [x] Ordinary completion audience includes creator/owner, assignees and accepted ordinary helpers, excluding the completer.
@@ -112,12 +114,13 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - [x] Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9`: READY, target Preview.
 - [x] Real-device Test 1 PASS: ordinary involved-task completion notification behaved exactly as intended.
 - [x] Real-device Test 2 PASS: combined Party Quest completion + XP notification behaved exactly as intended, with no duplicate ordinary Task notification.
-- [ ] Real-device Test 3 pending: reload/reopen account B and confirm replay/reconnect does not create a second copy of the same combined notification.
+- [x] Real-device Test 3 PASS: reload/reopen as account B did not create a second copy of the same combined notification.
+- [x] STEP 11.6 accepted on real device 2026-08-29.
 
 ### Later STEP 11 checkpoints
 - [ ] STEP 11.7 — compatibility/legacy guard — explicit approval required.
 - [ ] STEP 11.8 — integrated CI + Preview candidate.
-- [ ] STEP 11.9 — real iPhone acceptance, one test action at a time.
+- [ ] STEP 11.9 — bundled real iPhone acceptance sweep under accelerated validation mode.
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
@@ -145,4 +148,5 @@ The separate Party Quest acceptance-toast visual recheck, STEP 11.3 participant-
 - UID/household identity is HouseholdContext/Firebase Auth based.
 - Tasks, Progression and Notifications remain canonical authorities.
 - Realtime subscriptions require exact cleanup/stale-context protection.
+- Accelerated validation mode: bundle non-critical device checks; keep high-risk/destructive/security/auth/idempotency/release-blocking checks explicit.
 - Every meaningful update synchronizes current TODO, this tracker and update log.
