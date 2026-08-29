@@ -27,13 +27,14 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
-- [-] STEP 11 — Party quests — final device acceptance in progress.
+- [x] STEP 11 — Party quests — COMPLETE + REAL-DEVICE ACCEPTED 2026-08-30.
+- [ ] STEP 12 — Profile / presence / avatars — next; explicit product-owner GO required.
 
-**Current position:** STEP 11.1–11.8 are implementation/contract complete. STEP 11.9 is running as a bundled three-check real-iPhone acceptance sweep. Check 1/3 passed: participant leave and navigation stability. Check 2/3 passed: targeted Party Quest help acceptance and household-broadcast decline/ignore behavior updated correctly in realtime without invalid participant/helper transitions. Only Check 3 remains: the high-risk no-second-XP reward idempotency observation.
+**Current position:** STEP 11 is closed. The integrated STEP 11.8 candidate had full rebuild CI SUCCESS and a READY Preview, and all three bundled STEP 11.9 real-iPhone checks passed: participant leave/navigation stability, targeted+household help behavior, and no-second-XP reward idempotency after full app close/reopen. STEP 12 has not started.
 
 **Validation cadence from 2026-08-29:** accelerate completion by bundling remaining low/medium-risk device smokes into meaningful acceptance sweeps instead of testing every subflow separately. Keep separate explicit testing for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency-reward/release-blocking behavior.
 
-## Frozen phases
+## Frozen / accepted phases
 
 ### STEP 8 — Finance
 - [x] Accepted/frozen after household isolation, analysis/export and real iPhone PDF/share acceptance.
@@ -46,9 +47,9 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] Explicitly accepted/frozen by product owner on 2026-08-26.
 - [x] Canonical household notification state, UID isolation, external iOS push and push-tap routing/de-duplication accepted.
 - [x] Frozen checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.8.
+- [x] Frozen `notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through accepted STEP 11.
 
-## STEP 11 — Party quests — FINAL ACCEPTANCE IN PROGRESS
+## STEP 11 — Party quests — COMPLETE + REAL-DEVICE ACCEPTED
 
 ### STEP 11.1 — Repository foundation — COMPLETE
 - [x] Canonical household path and HouseholdContext lifecycle protection.
@@ -62,28 +63,29 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 
 ### STEP 11.3 — Leave + ActiveView — COMPLETE + REAL-DEVICE PASS
 - [x] `left` semantics, deterministic status recompute and repository/service-backed ActiveView.
+- [x] STEP 11.9 Check 1 PASS: account B accepted and then left a Party Quest correctly; participant state updated as intended and Home/Taken/Meldingen navigation stayed stable.
 - [x] Checkpoint `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`; CI `33024009131` SUCCESS.
-- [x] STEP 11.9 Check 1 PASS on real iPhone: account B accepted and then left a Party Quest correctly; participant state updated as intended and Home/Taken/Meldingen navigation stayed stable.
 
 ### STEP 11.4 — Party Quest help — COMPLETE + REAL-DEVICE PASS
 - [x] Targeted + household help, eligibility/retraction/idempotency and help UI.
 - [x] Earlier real-device targeted-send PASS.
-- [x] STEP 11.9 Check 2 PASS on real iPhone: targeted recipient acceptance worked; household-broadcast decline/ignore behavior remained consistent and did not prematurely close the request; participant/helper state stayed correct realtime.
+- [x] STEP 11.9 Check 2 PASS: targeted recipient acceptance worked; household-broadcast decline/ignore behavior remained consistent and did not prematurely close the request; participant/helper state stayed correct realtime.
 - [x] Checkpoint `51256b2506625f7421273d87d0c0f654fdbc432b`; CI `33044211179` SUCCESS.
 
 ### Party Quest UX patch — COMPLETE + REAL-DEVICE PASS
 - [x] Multi-start, Arcana icons, canonical task-create handoff and **Later beslissen** all real-device PASS.
 - [x] Latest checkpoint `0ef7274feea7ddadc86919843bf0a24891214e33`; CI `33052149328` SUCCESS.
 
-### STEP 11.5 — Canonical completion + durable exactly-once rewards — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE 2/3 PASS
+### STEP 11.5 — Canonical completion + durable exactly-once rewards — COMPLETE + REAL-DEVICE PASS
 - [x] Linked canonical Task is the only completion trigger; manual stop remains cancellation.
 - [x] Trusted Firebase Task projection required for completion.
 - [x] Deterministic participant snapshot and reward occurrence.
 - [x] Frozen `ProgressionStore.awardOnce()` remains XP authority.
 - [x] Later-login settlement and stale-context rejection implemented.
+- [x] Device Test 1 PASS: completing linked task closed Party Quest and rewarded current participant once.
+- [x] Device Test 2 PASS: later-authenticated accepted participant received durable pending reward.
+- [x] STEP 11.9 Check 3 PASS: after full app close/reopen as already-rewarded participant, XP did not increase a second time and no duplicate Party Quest reward/XP toast appeared.
 - [x] Checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS.
-- [x] Device Tests 1/2 PASS.
-- [ ] No-second-XP reload observation remains the final high-risk safety gate in STEP 11.9 Check 3.
 
 ### STEP 11.6 — Notification event extensions — COMPLETE + REAL-DEVICE ACCEPTED
 - [x] Ordinary involved-task notification + combined Party Quest completion/XP notification.
@@ -93,7 +95,6 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] Real-device Tests 1/2/3 PASS; accepted 2026-08-29.
 
 ### STEP 11.7 — Compatibility / legacy guard — COMPLETE
-- [x] Product owner explicitly approved **GO STEP 11.7** on 2026-08-29.
 - [x] Legacy name/localStorage/old-XP Party Quest authority is quarantined from served runtime and canonical modules.
 - [x] No automatic migration from legacy display names to Firebase/Auth UIDs.
 - [x] Frozen `PartyQuestInvites` compatibility surface remains intact for NotificationActions.
@@ -108,17 +109,17 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] Vercel Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq`: READY at `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app`.
 - [x] Candidate root HTTP 200; checked deployment error/fatal scan clean.
 
-### STEP 11.9 — Bundled real-iPhone acceptance sweep — IN PROGRESS
+### STEP 11.9 — Bundled real-iPhone acceptance sweep — COMPLETE
 - [x] Explicit **GO STEP 11.9** received.
 - [x] Check 1/3 — participant leave + general navigation stability: PASS.
 - [x] Check 2/3 — recipient accept + household Party Quest help behavior: PASS.
-- [ ] Check 3/3 — no-second-XP reward idempotency after reload/reopen.
-- [ ] Close STEP 11 only after Check 3 passes.
+- [x] Check 3/3 — no-second-XP reward idempotency after full close/reopen: PASS.
+- [x] STEP 11 closed COMPLETE + REAL-DEVICE ACCEPTED on 2026-08-30.
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
 - [-] Google login post-auth handoff/startup follow-up remains open pending real-device resolution.
-- [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred.
+- [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred and does not reopen STEP 11.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
@@ -138,7 +139,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - Main untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless explicitly changed.
-- STEP 8, STEP 9 and STEP 10 remain frozen.
+- STEP 8, STEP 9 and STEP 10 remain frozen/accepted; STEP 11 is accepted/completed and must not be reopened without a demonstrated regression or explicit product decision.
 - UID/household identity is HouseholdContext/Firebase Auth based.
 - Tasks, Progression and Notifications remain canonical authorities.
 - Realtime subscriptions require exact cleanup/stale-context protection.
