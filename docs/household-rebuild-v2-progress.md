@@ -12,7 +12,7 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - `[x]` accepted/completed
 - `[!]` blocked / needs attention
 
-## Current position — synced 2026-08-29
+## Current position — synced 2026-08-30
 
 - [x] STEP 0 — Stable baseline.
 - [x] STEP 1 — Authenticated session / startup ownership.
@@ -27,13 +27,11 @@ Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
 - [x] STEP 8 — Finance — accepted/frozen 2026-08-24.
 - [x] STEP 9 — Progression — accepted/frozen 2026-08-24.
 - [x] STEP 10 — Notifications — accepted/frozen 2026-08-26.
-- [-] STEP 11 — Party quests — in progress.
+- [-] STEP 11 — Party quests — final device acceptance in progress.
 
-**Current position:** STEP 11.1–11.8 are implementation/contract complete. STEP 11.6 is fully real-device accepted. STEP 11.7 established the CI compatibility/legacy quarantine. STEP 11.8 produced the integrated served-runtime candidate with full rebuild CI SUCCESS and a READY Vercel Preview. STEP 11.9 remains the bundled real-iPhone acceptance sweep and requires explicit product-owner approval.
+**Current position:** STEP 11.1–11.8 are implementation/contract complete. STEP 11.9 is running as a bundled three-check real-iPhone acceptance sweep. Check 1/3 passed on 2026-08-30: an accepted participant left the Party Quest correctly and normal Home/Taken/Meldingen navigation remained stable without freeze/white screen. Check 2 will cover recipient/household help behavior; Check 3 remains the high-risk no-second-XP reward idempotency observation.
 
-**Validation cadence from 2026-08-29:** accelerate completion by bundling remaining low/medium-risk device smokes into meaningful acceptance sweeps instead of testing every subflow separately. Keep separate explicit testing for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency-reward/release-blocking behavior. This changes test cadence only; it does not waive explicit GO approval for new roadmap steps or release gates.
-
-Remaining STEP 11 acceptance items to batch in STEP 11.9: participant leave (11.3), recipient/broadcast help (11.4), and the no-second-XP reward safety observation (11.5). The acceptance-toast visual recheck and Google post-login/startup fix remain separate product follow-ups.
+**Validation cadence from 2026-08-29:** accelerate completion by bundling remaining low/medium-risk device smokes into meaningful acceptance sweeps instead of testing every subflow separately. Keep separate explicit testing for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency-reward/release-blocking behavior.
 
 ## Frozen phases
 
@@ -50,7 +48,7 @@ Remaining STEP 11 acceptance items to batch in STEP 11.9: participant leave (11.
 - [x] Frozen checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
 - [x] Frozen `notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through STEP 11.8.
 
-## STEP 11 — Party quests — IN PROGRESS
+## STEP 11 — Party quests — FINAL ACCEPTANCE IN PROGRESS
 
 ### STEP 11.1 — Repository foundation — COMPLETE
 - [x] Canonical household path and HouseholdContext lifecycle protection.
@@ -62,15 +60,15 @@ Remaining STEP 11 acceptance items to batch in STEP 11.9: participant leave (11.
 - [x] Real-device invite/accept PASS.
 - [x] Checkpoint `7dd088038283a6a7cd2b66f81e1380492cff6f96`; CI `33021739099` SUCCESS.
 
-### STEP 11.3 — Leave + ActiveView — IMPLEMENTATION/CONTRACT COMPLETE
+### STEP 11.3 — Leave + ActiveView — COMPLETE + REAL-DEVICE PASS
 - [x] `left` semantics, deterministic status recompute and repository/service-backed ActiveView.
 - [x] Checkpoint `b1c04cfc4433590d41fd2d902fa2ae2a7c07bae7`; CI `33024009131` SUCCESS.
-- [ ] Real-device participant leave smoke pending; bundle into STEP 11.9 acceptance sweep.
+- [x] STEP 11.9 Check 1 PASS on real iPhone: account B accepted and then left a Party Quest correctly; participant state updated as intended and Home/Taken/Meldingen navigation stayed stable.
 
 ### STEP 11.4 — Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
 - [x] Targeted + household help, eligibility/retraction/idempotency and help UI.
 - [x] Real-device targeted-send PASS.
-- [ ] Recipient accept/decline and household-broadcast device checks pending; bundle into STEP 11.9.
+- [ ] Recipient accept/decline and household-broadcast behavior remain for STEP 11.9 Check 2.
 - [x] Checkpoint `51256b2506625f7421273d87d0c0f654fdbc432b`; CI `33044211179` SUCCESS.
 
 ### Party Quest UX patch — COMPLETE + REAL-DEVICE PASS
@@ -85,7 +83,7 @@ Remaining STEP 11 acceptance items to batch in STEP 11.9: participant leave (11.
 - [x] Later-login settlement and stale-context rejection implemented.
 - [x] Checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS.
 - [x] Device Tests 1/2 PASS.
-- [ ] No-second-XP reload observation remains a high-risk idempotency gate; verify during STEP 11.9.
+- [ ] No-second-XP reload observation remains the final high-risk safety gate in STEP 11.9 Check 3.
 
 ### STEP 11.6 — Notification event extensions — COMPLETE + REAL-DEVICE ACCEPTED
 - [x] Ordinary involved-task notification + combined Party Quest completion/XP notification.
@@ -96,36 +94,31 @@ Remaining STEP 11 acceptance items to batch in STEP 11.9: participant leave (11.
 
 ### STEP 11.7 — Compatibility / legacy guard — COMPLETE
 - [x] Product owner explicitly approved **GO STEP 11.7** on 2026-08-29.
-- [x] Audited dormant legacy Party Quest prototype files and current served runtime.
-- [x] Added `scripts/test-party-quest-step11-7.js` to quarantine legacy name/localStorage/old-XP authority from served runtime and canonical Party Quest modules.
-- [x] Guard rejects old localStorage keys, `GroupQuests`/editor/premium dependencies, hardcoded legacy member identities and direct legacy `awardXP` calls in canonical Party Quest modules.
-- [x] No automatic migration from legacy display names to canonical Firebase/Auth UIDs.
-- [x] Frozen `PartyQuestInvites` facade remains compatible with NotificationActions via `getById`, `revokeInvite`, `respond`; mutations remain PartyQuestService-owned.
-- [x] `duoQuests.js` is explicitly preserved as current separate task UX and is not confused with the dormant `groupQuests.js` prototype.
-- [x] Code/contract checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`.
-- [x] Full CI run `33273125677`: SUCCESS.
+- [x] Legacy name/localStorage/old-XP Party Quest authority is quarantined from served runtime and canonical modules.
+- [x] No automatic migration from legacy display names to Firebase/Auth UIDs.
+- [x] Frozen `PartyQuestInvites` compatibility surface remains intact for NotificationActions.
+- [x] Checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`; full CI `33273125677` SUCCESS.
 
 ### STEP 11.8 — Integrated CI + Preview candidate — COMPLETE
-- [x] Product owner explicitly approved **GO STEP 11.8** on 2026-08-29.
-- [x] Added `scripts/test-party-quest-step11-8-integration.js` as a final integration contract against the real `api/app.js` rendered shell.
-- [x] Repository, Service, ActiveView, HelpUi, CompletionReward, Invites and NotificationProjector are all present exactly once in the served runtime.
-- [x] HouseholdContext, Task repository, Progression and Notification authorities are singular and retain the required bootstrap ordering.
-- [x] Dormant `groupQuests` prototype scripts are absent while current `duoQuests.js` is retained once.
-- [x] Frozen NotificationActions exact blob remains `60a48daa628bc56531395d188a0811711d82a328`.
+- [x] Final served-runtime integration contract `scripts/test-party-quest-step11-8-integration.js`.
+- [x] Canonical Party Quest modules and their frozen authorities are served exactly once and in safe dependency order.
+- [x] Legacy Party Quest prototypes remain absent from rendered runtime.
 - [x] Integrated checkpoint `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
-- [x] Full rebuild CI run `33273749600`: SUCCESS; STEP 11.8 integrated served-runtime candidate PASS plus prior STEP 11, frozen STEP 9/10, auth/startup and general rebuild contracts PASS.
-- [x] GitHub status checks for Vercel and Household Rebuild Contracts both SUCCESS on the same checkpoint.
-- [x] Vercel Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq`: READY, target Preview, commit `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
-- [x] Candidate URL `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app` returns HTTP 200 with expected served shell.
-- [x] Preview error/fatal runtime-log scan found no entries for the candidate deployment.
+- [x] Full rebuild CI `33273749600`: SUCCESS.
+- [x] Vercel Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq`: READY at `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app`.
+- [x] Candidate root HTTP 200; checked deployment error/fatal scan clean.
 
-### STEP 11.9 — Bundled real-iPhone acceptance sweep — NOT STARTED
-- [ ] Explicit product-owner approval required.
-- [ ] Validate the remaining high-value Party Quest device paths against the exact STEP 11.8 Preview candidate and close STEP 11 only after accepted evidence.
+### STEP 11.9 — Bundled real-iPhone acceptance sweep — IN PROGRESS
+- [x] Explicit **GO STEP 11.9** received.
+- [x] Check 1/3 — participant leave + general navigation stability: PASS.
+- [ ] Check 2/3 — recipient accept/decline + household Party Quest help behavior.
+- [ ] Check 3/3 — no-second-XP reward idempotency after reload/reopen.
+- [ ] Close STEP 11 only after Checks 2 and 3 pass.
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
 - [-] Google login post-auth handoff/startup follow-up remains open pending real-device resolution.
+- [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
