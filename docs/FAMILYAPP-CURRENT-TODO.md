@@ -12,7 +12,7 @@ New chats/agents should read these files before changing the rebuild branch.
 
 **STEP 8 Finance, STEP 9 Progression and STEP 10 Notifications are accepted/frozen.** STEP 10 was explicitly accepted on 2026-08-26 and must not be reopened except for a clearly demonstrated regression.
 
-**STEP 11 — Party quests is in final real-device acceptance. STEP 11.1 through STEP 11.8 are implementation/contract complete. STEP 11.9 is in progress as the bundled real-iPhone acceptance sweep. Check 1/3 passed on 2026-08-30: an accepted participant could leave a Party Quest correctly and normal Home/Taken/Meldingen navigation remained stable without freeze/white screen. STEP 11.4 recipient/broadcast help remains for Check 2; STEP 11.5 no-second-XP idempotency remains the final safety Check 3.**
+**STEP 11 — Party quests is in final real-device acceptance. STEP 11.1 through STEP 11.8 are implementation/contract complete. STEP 11.9 is in progress as the bundled real-iPhone acceptance sweep. Checks 1/3 and 2/3 passed on 2026-08-30: participant leave/navigation stability and the remaining targeted/household help behavior both passed on real device. Only STEP 11.5 no-second-XP reward idempotency remains as Check 3 before STEP 11 can close.**
 
 **Accelerated validation mode:** from 2026-08-29 onward, remaining roadmap validation should be bundled per meaningful checkpoint where safe. Avoid micro-testing every subflow separately; keep separate real-device tests only for genuinely high-risk, destructive, identity/auth, money/finance, cross-household/security, idempotency/reward, or release-blocking behavior. Explicit GO approval for new roadmap steps remains required.
 
@@ -25,7 +25,7 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] STEP 11.1 canonical `PartyQuestRepository` foundation complete.
 - [x] STEP 11.2 invite/accept state machine complete + real-device PASS.
 - [x] STEP 11.3 leave + ActiveView implementation/contract complete + real-device PASS in STEP 11.9 Check 1.
-- [x] STEP 11.4 targeted + household help implementation/contract complete; targeted-send device smoke PASS; recipient/broadcast follow-up remains for STEP 11.9 Check 2.
+- [x] STEP 11.4 targeted + household help implementation/contract complete + real-device PASS in STEP 11.9 Check 2: targeted recipient accept and household-broadcast decline/ignore behavior updated correctly without incorrect participation/state closure.
 - [x] Party Quest UX patch real-device accepted: multi-start/icons, canonical task-create handoff and **Later beslissen**.
 - [x] STEP 11.5 canonical completion + durable exactly-once rewards implementation/contract complete; device Tests 1/2 PASS. Final no-duplicate-XP safety observation remains STEP 11.9 Check 3.
 - [x] STEP 11.6 implementation/contract checkpoint `b067fc74931e058b9aa2507d5564501e77575114`; CI `33124463794` SUCCESS; Preview `dpl_BKGSBMLCSzsK55fzg7s68GbJXFA9` READY.
@@ -37,7 +37,7 @@ New chats/agents should read these files before changing the rebuild branch.
 - [x] Exact Preview URL `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app` returned HTTP 200; runtime error/fatal scan found no entries.
 - [x] Product owner explicitly approved **GO STEP 11.9** on 2026-08-29.
 - [x] STEP 11.9 Check 1/3 PASS on real iPhone 2026-08-30: account B accepted a Party Quest, left it successfully, disappeared from active participation as intended, and Home/Taken/Meldingen navigation stayed stable without freeze or white screen.
-- [ ] STEP 11.9 Check 2/3 pending: bundled recipient accept/decline + household help broadcast smoke.
+- [x] STEP 11.9 Check 2/3 PASS on real iPhone 2026-08-30: targeted Party Quest help recipient acceptance and household help broadcast decline/ignore behavior remained logically realtime; no incorrect helper/participant state or premature broadcast closure was observed.
 - [ ] STEP 11.9 Check 3/3 pending: high-risk no-second-XP reload/idempotency confirmation for the same Party Quest reward occurrence.
 - [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred.
 - [-] Google post-login/startup regression remains a separate product-fix follow-up.
@@ -61,10 +61,10 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 - [x] `left` semantics and repository/service-backed ActiveView.
 - [x] STEP 11.9 Check 1 real-device PASS: accepted participant could leave correctly and app navigation remained stable.
 
-### STEP 11.4 — Party Quest help — IMPLEMENTATION/CONTRACT COMPLETE; DEVICE PARTIAL PASS
+### STEP 11.4 — Party Quest help — COMPLETE + REAL-DEVICE PASS
 - [x] Targeted + household help, eligibility, retraction, idempotency and UI.
-- [x] Targeted-help send device PASS.
-- [ ] Recipient accept/decline + household broadcast bundled into STEP 11.9 Check 2.
+- [x] Earlier targeted-help send smoke PASS.
+- [x] STEP 11.9 Check 2 real-device PASS: targeted recipient acceptance worked, household-broadcast decline/ignore behavior stayed open/consistent as intended, and participation/helper state updated correctly realtime.
 
 ### Party Quest UX patch — COMPLETE + REAL-DEVICE PASS
 - [x] Multiple Party Quests, meaningful Arcana icons, canonical new-task flow and **Later beslissen** all device PASS.
@@ -103,9 +103,9 @@ Architecture rule: STEP 11 builds on frozen Tasks, Progression, Notifications an
 ### STEP 11.9 — Bundled real-iPhone acceptance sweep — IN PROGRESS
 - [x] Explicit **GO STEP 11.9** received.
 - [x] Check 1/3: participant leave + general Home/Taken/Meldingen stability — PASS.
-- [ ] Check 2/3: recipient/household Party Quest help behavior.
+- [x] Check 2/3: recipient/household Party Quest help behavior — PASS.
 - [ ] Check 3/3: no-second-XP reward idempotency after reload/reopen.
-- [ ] Close STEP 11 only after Checks 2 and 3 pass.
+- [ ] Close STEP 11 only after Check 3 passes.
 
 ## Running product/fix backlog
 **Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
