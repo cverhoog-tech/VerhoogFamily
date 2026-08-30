@@ -1,0 +1,345 @@
+## Volledigere TODO / Bug & UI status FamilyApp
+
+# Kritieke open issues
+
+## 1. Carousel / Hero systems verder stabiliseren
+
+Status: gedeeltelijk gefixt
+
+### Nog controleren
+
+* Home carousel backgrounds consistent laden op:
+
+  * iPhone Safari
+  * Chrome mobile
+  * desktop
+* Geen witte flashes tijdens slide transition
+* Geen ingezoomde/glitched crops meer
+* Overlay gradients consistent houden
+
+### Mogelijke technische schuld
+
+* Oude inline `background-image` JS overrides kunnen nog bestaan
+* Mogelijk dubbele CSS selectors in:
+
+  * `app.css`
+  * `components.css`
+  * `quest.css`
+  * `task-hero-cards.css`
+
+---
+
+# Avatar systeem
+
+## Gefixt
+
+* Nieuwe anime/fantasy avatars toegevoegd
+* Oude lelijke avatars vervangen
+* Premium realistic avatars toegevoegd
+* Avatar selectie blijft zichtbaar
+* Avatar verschijnt in feed composer
+* Avatar verschijnt bij posts/reacties
+
+## Nog open
+
+* Avatar sync testen tussen:
+
+  * profiel
+  * feed
+  * notificaties
+  * taken
+  * comments
+  * activity log
+* Upload avatar flow nog inconsistent
+* Sommige cached avatars blijven zichtbaar na wissel
+* Mogelijk localStorage cleanup nodig
+
+---
+
+# Feed module
+
+## Open UI fixes
+
+* Composer spacing mobiel
+* GIF knop alignment
+* Emoji row spacing
+* Feed cards hebben soms teveel witruimte
+* Comment input kan beter compact
+* Bookmark icon alignment
+* Floating AI button overlapt soms feed content
+
+## Functioneel
+
+* Live comments ontbreken
+* Like state niet persistent
+* Posts verdwijnen na refresh in sommige gevallen
+* Feed filtering nog basic
+
+---
+
+# Taken module
+
+## Gefixt
+
+* Hero backgrounds werken nu
+* Premium task dashboard stijl werkt
+* Stat cards navigeren correct
+
+## Nog open
+
+* Task cards hebben soms:
+
+  * verkeerde image crop
+  * rare overlay opacity
+  * inconsistent spacing
+* XP badges niet overal consistent
+* Delete task UX nog abrupt
+* Side quest labels soms verkeerd gecentreerd
+* Party avatars overlap spacing kan beter
+
+## Toekomst
+
+* Drag & drop sorting
+* Quest chains
+* Weekly quests
+* Difficulty scaling
+* Rewards inventory
+
+---
+
+# Home scherm
+
+## Nog open
+
+* Greeting alignment op kleine schermen
+* XP balk spacing
+* Carousel indicators beter positioneren
+* Activiteit feed compact maken
+* Muziek button responsive fix
+* Floating assistant overlap met bottom nav
+
+---
+
+# Profiel scherm
+
+## Nog open
+
+* Avatar selector categorie tabs verbeteren
+* Modal animation smoother maken
+* Upload foto cropper ontbreekt
+* Save feedback/toast ontbreekt
+* Partner naam edit UX verbeteren
+
+---
+
+# Navigatie
+
+## Nog open
+
+* Bottom nav spacing iPhone Safari
+* Safe-area ondersteuning verbeteren
+* Sommige tabs refreshen volledige state
+* Back navigation inconsistent
+
+---
+
+# Performance / structuur
+
+## Nog belangrijk
+
+* Oude assets opruimen
+* Dubbele image folders verwijderen
+* CSS bestanden consolideren
+* Grote inline styles refactoren
+* Oude test modules verwijderen
+* Cache busting verbeteren
+
+---
+
+# Vercel / deployment
+
+## Nog open
+
+* Build cache issues
+* Asset cache invalidatie
+* Sommige uploads triggeren geen rebuild
+* Mogelijk betere public asset structuur nodig:
+
+  * `/public/assets/...`
+    in plaats van:
+  * `/src/assets/...`
+
+---
+
+# Design polish
+
+## Nog wenselijk
+
+* Meer glassmorphism
+* Consistente shadows
+* Premium hover animations
+* Microinteractions
+* Page transitions
+* Skeleton loading
+* Dark mode later
+* Ambient gradients
+* Animated XP gain
+
+---
+
+# Nieuwe module - Schoonmaken
+
+Status: functionele architectuur uitgewerkt; visueel ontwerp en implementatie nog niet gestart.
+Volledige specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
+
+## Doel / modulegrenzen
+
+* Schoonmaken = kamers, schoonmaakroutines, intervallen, benodigdheden en weekplanning.
+* Taken = concrete uitvoering van geaccepteerde schoonmaakbeurten.
+* Agenda = geplande dag/tijd of flexibele schoonmaakblokken.
+* Boodschappen = ontbrekende schoonmaakbenodigdheden aanschaffen.
+* Notificaties = voorstellen, overdrachten, tegenvoorstellen en beperkte reminders.
+* Belangrijk: één concrete schoonmaakbeurt moet één source-of-truth-object blijven; geen losse kopieën in Schoonmaken/Taken/Agenda.
+
+## Besloten UX / functionele regels
+
+* Hoofdtabs: Overzicht / Kamers / Planning.
+* Per kamer meerdere routine-items met elk eigen interval, duur, prioriteit en benodigdheden.
+* Items die tegelijk aan de beurt zijn, bundelen tot één schoonmaakbeurt met checklist.
+* Templates bij nieuwe kamers; gebruiker kan alles aanpassen.
+* Weekplan is eerst een voorstel en maakt pas na acceptatie actieve Taken/Agenda-items.
+* Verdeling: eerlijk op geschatte tijd (standaard), om de beurt, vaste persoon of handmatig.
+* Gebruiker kiest persoonlijk weergave als Tijd / Aantal taken / Beide; dit verandert de verdelingslogica niet.
+* Dag/tijd van eigen geaccepteerde beurt mag zonder nieuwe goedkeuring worden aangepast.
+* Overdracht naar een ander vereist acceptatie; elk accepteerbaar verzoek moet ook kunnen worden afgewezen.
+* Tegenvoorstellen ondersteunen.
+* Schoonmaakbeurt kan door één of meerdere gezinsleden worden uitgevoerd.
+* Niet-volledige checklist bij afronden: doorschuiven / deze week opnieuw plannen / overslaan.
+* Vakantie, drukke week, tijdelijke afwezigheid en pauzeren mogen geen onbeheersbare backlog maken.
+* Progressie is primair gezamenlijk; geen schoonmaak-leaderboard tussen gezinsleden.
+
+## Boodschappen / voorraad
+
+* Benodigdheden koppelen op routine-itemniveau.
+* Lichte voorraadstatus: Op voorraad / Bijna op / Op.
+* Komende week ontbrekende benodigdheden bundelen en alleen na bevestiging aan boodschappenlijst toevoegen.
+* Na aankoop kan voorraadstatus naar Op voorraad worden bijgewerkt.
+
+## Rollen / rechten
+
+* Beheerder: structurele kamers/routines/verdelingsregels beheren.
+* Gezinslid: eigen voorstellen, planning, uitvoering en overdrachten beheren.
+* Beperkt profiel: toegewezen taken uitvoeren/accepteren/hulp vragen, geen structurele wijzigingen.
+
+## Bouwvolgorde
+
+### Fase 0 - Fundament
+
+* Firebase/datamodel definiëren.
+* `CleaningOccurrence` als source of truth ontwerpen.
+* Integratiecontracten met Tasks, Calendar, Grocery en Notifications bepalen.
+* Feature flag en rechtenmodel voorbereiden.
+
+### Fase 1 - Kamers + routines
+
+* Kamers CRUD + templates.
+* Routine-items met interval, duur en prioriteit.
+* Benodigdheden koppelen.
+* Kamerdetail/routinebeheer.
+* Persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
+
+### Fase 2 - Weekplanner
+
+* Vervallen routine-items bepalen en per kamer bundelen.
+* Geschatte belasting berekenen.
+* Verdeling genereren.
+* Conceptplan + persoonlijke goedkeuring.
+
+### Fase 3 - Taken-integratie
+
+* Geaccepteerde schoonmaakbeurt als één taak tonen.
+* Checklist realtime synchroniseren.
+* Afronden, overslaan, doorschuiven, overname en hulp aansluiten.
+
+### Fase 4 - Agenda-integratie
+
+* Geplande en flexibele beurten tonen.
+* Dag/tijd wijzigen zonder routine onbedoeld te veranderen.
+* Agenda-conflicten signaleren en optioneel alternatieve momenten voorstellen.
+
+### Fase 5 - Boodschappen / voorraad
+
+* Voorraadstatus.
+* Weekbenodigdheden bundelen.
+* Bevestigde toevoeging aan boodschappenlijst.
+* Voorraad bijwerken na aankoop.
+
+### Fase 6 - Goedkeuring / notificaties
+
+* Weekvoorstellen.
+* Overdracht + tegenvoorstel + afwijzen.
+* Gebundelde, beperkte reminders.
+
+### Fase 7 - Historie / uitzonderingen
+
+* Completion logs en kamerhistorie.
+* Vakantie / drukke week / ziekte / tijdelijk niet beschikbaar.
+* Pauzeren + herstartplan.
+* Gezamenlijke progressie en subtiele achievements.
+
+### Fase 8 - Visuele polish / slimme inzichten
+
+* Premium FamilyApp-UI en microinteracties.
+* Relevante feed-events.
+* Data-gedreven frequentie- en planningsvoorstellen.
+* Eventuele Family Assistant-inzichten zonder automatische structurele wijzigingen.
+
+---
+# Grote toekomstige features
+
+## Gepland
+
+* Gezins invites
+* Accounts/auth
+* Cloud sync
+* Push notificaties
+* Realtime updates
+* AI family assistant
+* Shared calendar sync
+* Smart meal planning
+* Grocery automation
+* Achievement system
+* Household economy system
+* Family levels/seasons/events
+
+# Schoonmaken - technische bouwregels en statusbeheer
+
+Deze regels gelden voor alle fases van de Schoonmaken-module:
+
+* Schaalbaar/canoniek bouwen; geen monkeypatches of tijdelijke parallelle architectuur.
+* `CleaningOccurrence` blijft de enige bron van waarheid voor een concrete schoonmaakbeurt.
+* Taken, Agenda en Boodschappen koppelen via expliciete service/repository-contracten en stabiele referenties; geen cross-module DOM-hacks.
+* Geen dubbele Firebase/localStorage state, hardcoded gebruikers/UIDs of silent legacy fallbacks.
+* Realtime listeners hebben expliciete bind/unbind lifecycle en household/account-isolatie.
+* Mutaties die opnieuw kunnen worden uitgevoerd moeten idempotent zijn.
+* Iedere fase krijgt contracttests en waar relevant iPhone/PWA-acceptatie voordat de status op AFGEROND gaat.
+* TODO en `FamilyApp-Schoonmaken-module-architectuur.md` worden bij iedere geaccepteerde stap samen bijgewerkt.
+
+Statusnotatie per fase:
+
+* OPEN = nog niet gestart.
+* BEZIG = implementatie/checkpoint bestaat maar is nog niet volledig geaccepteerd.
+* ACCEPTATIE = code staat klaar; CI/Vercel/real-device gates lopen nog.
+* AFGEROND = alle Definition-of-Done checks zijn gehaald en documentatie is bijgewerkt.
+
+Huidige status Schoonmaken:
+
+* Fase 0 - Fundament: OPEN
+* Fase 1 - Kamers + routines: OPEN
+* Fase 2 - Weekplanner: OPEN
+* Fase 3 - Taken-integratie: OPEN
+* Fase 4 - Agenda-integratie: OPEN
+* Fase 5 - Boodschappen / voorraad: OPEN
+* Fase 6 - Goedkeuring / notificaties: OPEN
+* Fase 7 - Historie / uitzonderingen: OPEN
+* Fase 8 - Visuele polish / slimme inzichten: OPEN
