@@ -1,0 +1,43 @@
+/* STEP 13.4 — keep the four compact composer actions on one horizontal row */
+#screen-feed .feed-compose-card .compose-actions,
+#screen-feed .feed-compose-card .feed-compose-actions,
+#screen-feed #feed-compose-card .compose-actions,
+#screen-feed #feed-compose-card .feed-compose-actions {
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:nowrap !important;
+  gap:8px !important;
+  width:100% !important;
+}
+
+#screen-feed .fs-tag-tools {
+  display:contents !important;
+}
+
+#screen-feed .feed-compose-card .compose-actions > button,
+#screen-feed .feed-compose-card .feed-compose-actions > button,
+#screen-feed #feed-compose-card .compose-actions > button,
+#screen-feed #feed-compose-card .feed-compose-actions > button,
+#screen-feed .fs-tag-tool {
+  flex:0 0 auto !important;
+}
+
+#screen-feed .feed-compose-card [onclick="publishPost()"],
+#screen-feed #feed-compose-card [onclick="publishPost()"] {
+  margin-left:auto !important;
+  flex:0 0 auto !important;
+}
+
+@media (max-width:390px){
+  #screen-feed .feed-compose-card .compose-actions,
+  #screen-feed .feed-compose-card .feed-compose-actions,
+  #screen-feed #feed-compose-card .compose-actions,
+  #screen-feed #feed-compose-card .feed-compose-actions {
+    gap:6px !important;
+  }
+  #screen-feed .fs-tag-tool {
+    width:28px !important;
+    min-width:28px !important;
+    height:28px !important;
+  }
+}
