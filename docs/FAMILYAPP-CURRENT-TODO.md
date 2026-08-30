@@ -1,7 +1,8 @@
 # FamilyApp — Current TODO / Execution State
 
 Branch: `agent/household-rebuild-v2`
-Roadmap source: `docs/household-rebuild-v2-roadmap.md`
+Roadmap: `docs/household-rebuild-v2-roadmap.md`
+STEP 13 spec: `docs/STEP13-ACTIVITY-FEED-SPEC.md`
 Phase tracker: `docs/household-rebuild-v2-progress.md`
 Update history: `docs/FAMILYAPP-UPDATE-LOG.md`
 Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
@@ -10,117 +11,105 @@ New chats/agents should read these files before changing the rebuild branch.
 
 ## Current phase
 
-**STEP 8 Finance, STEP 9 Progression, STEP 10 Notifications and STEP 11 Party Quests are accepted/completed.** STEP 10 remains frozen since 2026-08-26. STEP 11 completed real-device acceptance on 2026-08-30 after all three bundled STEP 11.9 checks passed.
+**STEP 12 — Profile / presence / avatars is COMPLETE + REAL-DEVICE ACCEPTED and merged into `agent/household-rebuild-v2`.**
 
-**STEP 12 — Profile / presence / avatars is next and has NOT started. Explicit product-owner GO STEP 12 is required before implementation.**
-
-**Accelerated validation mode:** from 2026-08-29 onward, remaining roadmap validation should be bundled per meaningful checkpoint where safe. Avoid micro-testing every subflow separately; keep separate real-device tests only for genuinely high-risk, destructive, identity/auth, money/finance, cross-household/security, idempotency/reward, or release-blocking behavior. Explicit GO approval for new roadmap steps remains required.
+**STEP 13 — Activity / Feed is now the active roadmap phase. Product scope for the Feed additions was approved on 2026-08-30.**
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
-## Latest verified state
+## STEP 13 approved product contract
 
-- [x] STEP 10 frozen code checkpoint: `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
-- [x] Frozen `src/core/notificationActions.js` remains exact blob `60a48daa628bc56531395d188a0811711d82a328` through the accepted STEP 11 candidate.
-- [x] STEP 11.1 canonical `PartyQuestRepository` foundation complete.
-- [x] STEP 11.2 invite/accept state machine complete + real-device PASS.
-- [x] STEP 11.3 leave + ActiveView complete + real-device PASS in STEP 11.9 Check 1.
-- [x] STEP 11.4 targeted + household help complete + real-device PASS in STEP 11.9 Check 2.
-- [x] Party Quest UX patch real-device accepted: multi-start/icons, canonical task-create handoff and **Later beslissen**.
-- [x] STEP 11.5 canonical completion + durable exactly-once rewards complete + all three device safety checks PASS; final reload/reopen observation confirmed no second XP and no duplicate Party Quest reward/XP toast.
-- [x] STEP 11.6 notification extensions complete + real-device accepted 2026-08-29.
-- [x] STEP 11.7 compatibility/legacy quarantine guard complete; checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`; full CI `33273125677` SUCCESS.
-- [x] STEP 11.8 integrated runtime candidate checkpoint `3f01b3f2265c88dcc6480e7458d16cb21da2a146`; full CI `33273749600` SUCCESS.
-- [x] STEP 11.8 Vercel Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq`: READY, exact runtime candidate commit `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
-- [x] Exact Preview URL `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app` returned HTTP 200; runtime error/fatal scan found no entries at candidate verification time.
-- [x] STEP 11.9 Check 1/3 PASS on real iPhone 2026-08-30: participant leave + Home/Taken/Meldingen stability.
-- [x] STEP 11.9 Check 2/3 PASS on real iPhone 2026-08-30: targeted-help acceptance + household help broadcast behavior.
-- [x] STEP 11.9 Check 3/3 PASS on real iPhone 2026-08-30: already-rewarded participant received no second Party Quest XP after full app close/reopen and no duplicate reward/XP toast appeared.
-- [x] STEP 11 — Party Quests — COMPLETE + REAL-DEVICE ACCEPTED 2026-08-30.
-- [ ] STEP 12 — Profile / presence / avatars — not started; explicit **GO STEP 12** required.
-- [-] Non-blocking Party Quest acceptance-toast visual recheck remains a separate deferred product-fix item and does not reopen STEP 11.
-- [-] Google post-login/startup regression remains a separate product-fix follow-up.
-- [ ] Separate lifecycle backlog: owner-transfer **Gezin verlaten** real smoke remains pending; not a STEP 11 acceptance blocker.
+- Preserve current manual social posts and their existing visual/like/comment behavior.
+- Introduce separate immutable household activity events with deterministic IDs and idempotent canonical domain producers.
+- Activity cards use fixed subtle pastel families for fast scanning:
+  - Tasks: mint/green.
+  - Meals/Recipes: peach/soft orange.
+  - Shopping: soft yellow.
+  - Agenda: soft blue.
+  - Party Quest/XP/Achievements: lilac.
+  - Generic household updates: neutral cream/grey.
+- Provide deliberate dark-mode equivalents.
+- Remove fake/demo Feed counters and hardcoded activity totals.
+- Add structured member tagging using UID.
+- Add structured recipe tagging using canonical recipe ID.
+- Add interactive meal proposals from the Feed with recipe/date/message/audience and realtime approval/decline state.
+- Pending proposals are interactive state, not immutable activity events.
+- Approval transition must be exactly-once and hand off to canonical Meal planning.
+- After approval, offer **Voeg ingrediënten toe aan boodschappenlijst**.
+- Allow shopping-list selection when multiple lists are available.
+- Show ingredient preview with add/skip/merge/exclude behavior where practical; avoid blind duplicates.
+- Feed must call canonical Meal/Shopping services and never bypass their mutation authority.
+- Only confirmed successful results emit immutable meal/shopping activity events.
 
-## STEP 11 — Party quests — COMPLETE + REAL-DEVICE ACCEPTED
+## STEP 13 execution TODO
 
-Architecture rule preserved: STEP 11 builds on frozen Tasks, Progression, Notifications and HouseholdContext/Firebase Auth UID identity. It did not introduce a second task, XP, notification or identity authority.
+### 13.1 — Activity repository / schema / lifecycle
+- [ ] Canonical household `activityEvents` repository/schema.
+- [ ] Deterministic event IDs/occurrence keys + immutable-write contract.
+- [ ] HouseholdContext stale-context guards.
+- [ ] Exact subscribe/unsubscribe/rebind behavior.
+- [ ] Isolation/lifecycle/idempotency contract tests.
 
-### STEP 11.1 — Repository foundation — COMPLETE
-- [x] Canonical path `families/{householdId}/partyQuests/{partyQuestId}`.
-- [x] HouseholdContext lifecycle/stale-context guards.
-- [x] Checkpoint `e5ce389e30ed2848e0fca5715339639f17ebd8cf`; CI `33019925699` SUCCESS.
+### 13.2 — Domain producers
+- [ ] Tasks.
+- [ ] Meals.
+- [ ] Shopping.
+- [ ] Agenda where useful.
+- [ ] Party Quest/progression where useful.
+- [ ] Producer retry/reconnect duplicate suppression.
 
-### STEP 11.2 — Invite/join state machine — COMPLETE + REAL-DEVICE PASS
-- [x] Canonical PartyQuestService + repository authority.
-- [x] Transactional eligibility and occurrence-versioned reinvites.
-- [x] Checkpoint `7dd088038283a6a7cd2b66f81e1380492cff6f96`; CI `33021739099` SUCCESS.
+### 13.3 — Unified Feed presentation
+- [ ] Project manual posts + activity events chronologically.
+- [ ] Preserve manual-post visuals.
+- [ ] Pastel event-family cards + dark mode.
+- [ ] Remove demo/hardcoded counters.
+- [ ] Mobile readability/premium polish.
 
-### STEP 11.3 — Leave + ActiveView — COMPLETE + REAL-DEVICE PASS
-- [x] `left` semantics and repository/service-backed ActiveView.
-- [x] STEP 11.9 Check 1: accepted participant could leave correctly and app navigation remained stable.
+### 13.4 — Rich tags
+- [ ] Member tag selection/storage/render/open by UID.
+- [ ] Recipe tag selection/storage/render/open by recipe ID.
+- [ ] Stable behavior after profile/recipe changes.
 
-### STEP 11.4 — Party Quest help — COMPLETE + REAL-DEVICE PASS
-- [x] Targeted + household help, eligibility, retraction, idempotency and UI.
-- [x] Earlier targeted-help send smoke PASS.
-- [x] STEP 11.9 Check 2: targeted recipient acceptance worked, household-broadcast decline/ignore behavior stayed consistent as intended, and helper/participant state updated correctly realtime.
+### 13.5 — Meal proposals / approval / Shopping handoff
+- [ ] Canonical proposal state/service.
+- [ ] Feed proposal composer.
+- [ ] Explicit approval policy + approve/decline/alternative response.
+- [ ] Exactly-once accepted-proposal transition.
+- [ ] Plan-meal confirmation.
+- [ ] Optional ingredient-to-shopping-list action.
+- [ ] Shopping-list chooser.
+- [ ] Ingredient add/skip/merge/exclude preview.
+- [ ] Canonical Meal/Shopping service mutations.
+- [ ] Deterministic successful-result activity events.
 
-### Party Quest UX patch — COMPLETE + REAL-DEVICE PASS
-- [x] Multiple Party Quests, meaningful Arcana icons, canonical new-task flow and **Later beslissen** all device PASS.
+### 13.6 — Interaction / compatibility
+- [ ] Preserve manual post likes/comments.
+- [ ] Define allowed interactions per activity/proposal type.
+- [ ] Canonical UID/avatar/member presentation.
+- [ ] Quarantine duplicate/legacy Feed authority.
+- [ ] Reload/reconnect duplicate-proposal/action/event tests.
 
-### STEP 11.5 — Completion + exactly-once rewards — COMPLETE + REAL-DEVICE PASS
-- [x] Linked canonical Task is the only completion trigger.
-- [x] Frozen `ProgressionStore.awardOnce()` remains XP authority.
-- [x] Durable pending settlements support later-authenticated participants.
-- [x] Checkpoint `6263dd5882253f78d7afa8eafa34f7757f836a3d`; CI `33110105234` SUCCESS.
-- [x] Device Test 1: current participant gets XP once on linked-task completion — PASS.
-- [x] Device Test 2: later-authenticated accepted participant receives pending Party Quest XP — PASS.
-- [x] STEP 11.9 Check 3: full close/reopen as already-rewarded participant caused no second XP and no duplicate Party Quest reward/XP toast — PASS.
+### 13.7 — Integrated acceptance
+- [ ] Syntax/static checks.
+- [ ] STEP 13 contract/regression tests.
+- [ ] Full relevant rebuild CI.
+- [ ] Vercel Preview.
+- [ ] Bundled real-iPhone acceptance.
+- [ ] Two-device realtime Feed/tag/meal-proposal test.
+- [ ] Explicit idempotency test for meal approval + shopping ingredient handoff.
+- [ ] Sync TODO/progress/update log and close STEP 13 only after acceptance.
 
-### STEP 11.6 — Notification event extensions — COMPLETE + REAL-DEVICE ACCEPTED
-- [x] Ordinary involved-task completion notifications.
-- [x] One combined Party Quest completion + XP notification for relevant participants.
-- [x] Causal attribution + self/duplicate suppression + deterministic NotificationStore identity.
-- [x] Checkpoint `b067fc74931e058b9aa2507d5564501e77575114`; CI `33124463794` SUCCESS; Preview READY.
-- [x] Real-device Tests 1/2/3 PASS; accepted 2026-08-29.
-
-### STEP 11.7 — Compatibility / legacy guard — COMPLETE
-- [x] Legacy name/localStorage/old-XP Party Quest prototype remains quarantined from served runtime and canonical modules.
-- [x] No automatic migration from ambiguous legacy names to Firebase/Auth UIDs.
-- [x] Frozen NotificationActions compatibility facade remains intact and delegates through PartyQuestService.
-- [x] Current `duoQuests.js` remains allowed/served; it is not the dormant `groupQuests` prototype.
-- [x] Test: `scripts/test-party-quest-step11-7.js`.
-- [x] Checkpoint `6cdcaa9dff2d35e6176d1b0959b45d86fb65515b`; CI `33273125677` SUCCESS.
-
-### STEP 11.8 — Integrated CI + Preview candidate — COMPLETE
-- [x] Added final served-runtime integration contract `scripts/test-party-quest-step11-8-integration.js`.
-- [x] Canonical STEP 11 modules and their frozen authorities are served exactly once and in safe dependency order.
-- [x] Legacy Party Quest prototypes remain absent from the rendered runtime.
-- [x] Frozen NotificationActions exact blob remains `60a48daa628bc56531395d188a0811711d82a328`.
-- [x] Candidate checkpoint `3f01b3f2265c88dcc6480e7458d16cb21da2a146`; full CI `33273749600` SUCCESS.
-- [x] Preview `dpl_dfUnzTzLZtxxT2AjRLyGx74KtEBq` READY at `https://verhoog-family-569s2vs54-cverhoog-techs-projects.vercel.app`.
-
-### STEP 11.9 — Bundled real-iPhone acceptance sweep — COMPLETE
-- [x] Explicit **GO STEP 11.9** received.
-- [x] Check 1/3: participant leave + general Home/Taken/Meldingen stability — PASS.
-- [x] Check 2/3: recipient/household Party Quest help behavior — PASS.
-- [x] Check 3/3: no-second-XP reward idempotency after full close/reopen — PASS.
-- [x] STEP 11 closed as COMPLETE + REAL-DEVICE ACCEPTED on 2026-08-30.
-
-## Next roadmap step
-- [ ] STEP 12 — Profile / presence / avatars — explicit product-owner approval required before implementation.
-
-## Running product/fix backlog
-**Open main items: 7** — see `docs/FAMILYAPP-FIX-LIST.md`.
+## Separate lifecycle / product regressions
+- [ ] Owner-transfer **Gezin verlaten** real smoke test.
+- [-] Google login post-auth handoff/startup follow-up remains open.
+- [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred and does not reopen STEP 11.
 
 ## Standing guardrails
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
 - Main stays untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
-- Firebase remains on Spark unless explicitly changed.
-- STEP 8, STEP 9 and STEP 10 remain frozen/accepted; STEP 11 is accepted/completed and must not be reopened without a demonstrated regression or explicit product decision.
-- UID/household identity comes from HouseholdContext / Firebase Auth.
-- Tasks, Progression and Notifications retain their canonical authorities.
+- Accepted domain authorities remain canonical; STEP 13 must not create second Task/Meal/Shopping/Progression/Notification authorities.
+- UID/household identity comes from HouseholdContext/Firebase Auth.
 - Realtime subscriptions require exact cleanup and stale-context protection.
-- Accelerated validation mode: bundle non-critical device checks; keep high-risk/destructive/security/auth/idempotency/release blockers explicit.
+- Accelerated validation may bundle low/medium-risk checks; keep security/auth/cross-household/idempotency/release-blocking checks explicit.
 - Every meaningful development checkpoint synchronizes this TODO, the progress tracker and update log.
