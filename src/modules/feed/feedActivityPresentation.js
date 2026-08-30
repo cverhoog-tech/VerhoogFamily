@@ -1,12 +1,13 @@
 'use strict';
 // ============================================================
-// FEED ACTIVITY PRESENTATION v1.2.0 — STEP 13.3
+// FEED ACTIVITY PRESENTATION v1.2.1 — STEP 13.3
 // Social posts keep their existing card style. Immutable household activity
 // events are merged only for presentation and receive a stable semantic pastel
-// family with explicit dark-mode counterparts.
+// family with explicit dark-mode counterparts. Copy is contextual/cozy rather
+// than repeating the same event label in eyebrow, title and body.
 // ============================================================
 (function(){
-  if(window.FeedActivityPresentation&&window.FeedActivityPresentation.version==='1.2.0')return;
+  if(window.FeedActivityPresentation&&window.FeedActivityPresentation.version==='1.2.1')return;
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function actorMember(event){try{return window.HouseholdActivity&&HouseholdActivity.resolveMember?HouseholdActivity.resolveMember(event.actorUid):null;}catch(e){return null;}}
@@ -15,18 +16,24 @@
   function postTime(p){return Number(p&&p.createdAt||0);}
   function eventTime(e){return Number(e&&e.occurredAt||e&&e.createdAt||0);}
   function events(){try{return window.HouseholdActivity&&HouseholdActivity.getEvents?HouseholdActivity.getEvents().filter(function(e){return HouseholdActivity.shouldPublishToFeed(e);}):[];}catch(e){return[];}}
+  function pick(event,values){var seed=String(event&&event.id||event&&event.occurrenceKey||event&&event.type||'family');var hash=0;for(var i=0;i<seed.length;i++)hash=((hash<<5)-hash+seed.charCodeAt(i))|0;return values[Math.abs(hash)%values.length];}
+  function taskDoneTitle(e){return pick(e,['Weer eentje van de lijst ✓','Dat is geregeld ✨','Lekker afgevinkt','Een taak minder aan je hoofd','Klaar is klaar 🙌']);}
+  function taskCreatedTitle(e){return pick(e,['Er staat iets nieuws klaar','Nieuwe missie voor thuis','Iets om straks af te vinken','Op de planning ✨']);}
+  function shoppingTitle(e){return pick(e,['De voorraad is weer aangevuld','De buit is binnen 🛒','Koelkastmodus: aangevuld','We kunnen weer vooruit','Boodschappen binnen ✓']);}
+  function mealTitle(e){return pick(e,['Iets lekkers om naar uit te kijken','Het menu krijgt vorm 🍽️','Eten staat op de planning','Dat wordt lekker']);}
+  function partyTitle(e){return pick(e,['Samen gefixt 🏆','Teamwork betaald zich uit','Quest geklaard ✨','Als team weer eentje binnen']);}
 
   var PRESENTATIONS={
-    'task.created':function(e){var p=e.payload||{};return{eyebrow:'NIEUWE TAAK',title:'Nieuwe taak',body:actorName(e)+' heeft een taak aangemaakt',detail:p.taskTitle||'Nieuwe taak',meta:p.xpEarned?('+'+p.xpEarned+' XP'):null,icon:'✓',tone:'tone-task'};},
-    'task.completed':function(e){var p=e.payload||{};return{eyebrow:'TAAK AFGEROND',title:'Taak voltooid',body:actorName(e)+' heeft een taak afgerond',detail:p.taskTitle||'Taak',meta:p.xpEarned?('+'+p.xpEarned+' XP'):null,icon:'✓',tone:'tone-task'};},
-    'meal.planned':function(e){var p=e.payload||{};return{eyebrow:'MAALTIJD GEPLAND',title:(p.mealName||'Maaltijd')+' staat op het menu',body:'Gepland door '+actorName(e),detail:p.plannedDate||null,meta:p.slot==='lunch'?'Lunch':(p.slot==='breakfast'?'Ontbijt':(p.slot==='dinner'?'Diner':null)),icon:'🍽️',tone:'tone-meal'};},
-    'shopping.completed':function(e){var p=e.payload||{};return{eyebrow:'BOODSCHAPPEN GEDAAN',title:'Boodschappen gedaan',body:actorName(e)+' heeft gewinkeld',detail:p.shoppingListName||null,meta:p.itemCount?String(p.itemCount)+' items':null,icon:'🛒',tone:'tone-shopping'};},
-    'grocery.receipt_uploaded':function(e){var p=e.payload||{};return{eyebrow:'BOODSCHAPPEN GEDAAN',title:'Boodschappen gedaan',body:actorName(e)+' heeft gewinkeld',detail:p.shoppingListName||null,meta:p.itemCount?String(p.itemCount)+' items':null,icon:'🛒',tone:'tone-shopping'};},
-    'partyQuest.completed':function(e){var p=e.payload||{};return{eyebrow:'PARTY QUEST',title:'Party Quest voltooid',body:actorName(e)+' en het gezin hebben een quest afgerond',detail:p.questTitle||'Party Quest',meta:p.xpPerParticipant?('+'+p.xpPerParticipant+' XP'):null,icon:'🏆',tone:'tone-progression'};},
-    'agenda.created':function(e){var p=e.payload||{};return{eyebrow:'AFSPRAAK',title:p.title||'Nieuwe afspraak',body:'Gepland door '+actorName(e),detail:p.date||null,meta:p.time||null,icon:'📅',tone:'tone-agenda'};}
+    'task.created':function(e){var p=e.payload||{},name=p.taskTitle||'Nieuwe taak';return{eyebrow:'NIEUWE TAAK',title:taskCreatedTitle(e),body:actorName(e)+' zette “'+name+'” op de planning',detail:p.xpEarned?'Klaar voor '+p.xpEarned+' XP':'Klaar om opgepakt te worden',meta:null,icon:'✓',tone:'tone-task'};},
+    'task.completed':function(e){var p=e.payload||{},name=p.taskTitle||'Taak';return{eyebrow:'TAAK AFGEROND',title:taskDoneTitle(e),body:actorName(e)+' rondde “'+name+'” af',detail:p.xpEarned?'Mooi meegenomen':'Het huis is weer een taak lichter',meta:p.xpEarned?('+'+p.xpEarned+' XP'):null,icon:'✓',tone:'tone-task'};},
+    'meal.planned':function(e){var p=e.payload||{},meal=p.mealName||'Maaltijd';return{eyebrow:'MAALTIJD GEPLAND',title:mealTitle(e),body:meal+' is ingepland door '+actorName(e),detail:p.plannedDate||null,meta:p.slot==='lunch'?'Lunch':(p.slot==='breakfast'?'Ontbijt':(p.slot==='dinner'?'Diner':null)),icon:'🍽️',tone:'tone-meal'};},
+    'shopping.completed':function(e){var p=e.payload||{};return{eyebrow:'BOODSCHAPPEN',title:shoppingTitle(e),body:actorName(e)+' heeft de boodschappen gedaan',detail:p.shoppingListName||'Gezinsboodschappen',meta:p.itemCount?String(p.itemCount)+' items':null,icon:'🛒',tone:'tone-shopping'};},
+    'grocery.receipt_uploaded':function(e){var p=e.payload||{};return{eyebrow:'BOODSCHAPPEN',title:shoppingTitle(e),body:actorName(e)+' heeft de boodschappen gedaan',detail:p.shoppingListName||'Gezinsboodschappen',meta:p.itemCount?String(p.itemCount)+' items':null,icon:'🛒',tone:'tone-shopping'};},
+    'partyQuest.completed':function(e){var p=e.payload||{};return{eyebrow:'PARTY QUEST',title:partyTitle(e),body:'“'+(p.questTitle||'Party Quest')+'” is samen afgerond',detail:'Goed teamwork',meta:p.xpPerParticipant?('+'+p.xpPerParticipant+' XP p.p.'):null,icon:'🏆',tone:'tone-progression'};},
+    'agenda.created':function(e){var p=e.payload||{};return{eyebrow:'AFSPRAAK',title:'Iets om naar uit te kijken',body:(p.title||'Nieuwe afspraak')+' staat in de agenda',detail:p.date||null,meta:p.time||null,icon:'📅',tone:'tone-agenda'};}
   };
 
-  function genericPresentation(e){var p=e.payload||{};return{eyebrow:'GEZINSUPDATE',title:p.title||'Nieuwe update',body:p.message||actorName(e)+' heeft iets bijgewerkt',detail:p.detail||null,meta:null,icon:'⌂',tone:'tone-generic'};}
+  function genericPresentation(e){var p=e.payload||{};return{eyebrow:'GEZINSUPDATE',title:p.title||'Er is iets nieuws thuis',body:p.message||actorName(e)+' heeft iets bijgewerkt',detail:p.detail||null,meta:null,icon:'⌂',tone:'tone-generic'};}
   function presentation(event){return (PRESENTATIONS[event.type]||genericPresentation)(event);}
   function card(event){var vm=presentation(event);return '<article class="fs-card fs-activity '+esc(vm.tone)+'" data-activity-id="'+esc(event.id)+'" onclick="openHouseholdActivitySource(\''+esc(event.id)+'\')">'
       +'<div class="fs-activity-head">'+actorAvatar(event)
@@ -55,5 +62,5 @@
   if(typeof previousRender==='function'&&!previousRender.__activityStatsWrapped){var wrapped=function(){var out=previousRender.apply(this,arguments);setTimeout(decorateStats,0);return out;};wrapped.__activityStatsWrapped=true;window.renderFeed=wrapped;}
   window.feedListBodyHTML=function(){css();return feedBody();};window.openHouseholdActivitySource=openSource;
   window.addEventListener('familyapp:activity-updated',function(){try{var screen=document.getElementById('screen-feed');if(screen&&screen.classList.contains('active')&&typeof window.renderFeed==='function')window.renderFeed();}catch(e){}});
-  window.FeedActivityPresentation={version:'1.2.0',presentations:PRESENTATIONS,presentation:presentation,merged:merged,stats:stats,renderCard:card,openSource:openSource};
+  window.FeedActivityPresentation={version:'1.2.1',presentations:PRESENTATIONS,presentation:presentation,merged:merged,stats:stats,renderCard:card,openSource:openSource};
 })();
