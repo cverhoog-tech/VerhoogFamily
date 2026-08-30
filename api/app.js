@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
     html = html.replace(/\s*window\.addEventListener\(['"]load['"],\s*function\s*\(\)\s*\{\s*setTimeout\s*\(\s*function\s*\(\)\s*\{[\s\S]*?familyapp-profile-name-v1[\s\S]*?\},\s*600\s*\);\s*\}\);?/g,'\n');
     html = html.replace(/\s*<button class="ttab ttab-trade"[^>]*onclick="openTradeSheet\(\)"[^>]*>🤝<\/button>\s*/g,'\n');
     html = html.replace('<script src="src/modules/feed/feed.js"></script>','<script src="src/modules/feed/feedSharedData.js?v=4"></script>\n  <script src="src/modules/feed/feed.js?v=7"></script>\n  <script src="src/modules/feed/feedInteractionController.js?v=5"></script>\n  <script src="src/platform/activity/activityHouseholdRepository.js?v=1"></script>\n  <script src="src/platform/activity/householdActivity.js?v=7"></script>\n  <script src="src/platform/activity/activityDomainProducers.js?v=1"></script>\n  <script src="src/modules/feed/feedActivityPresentation.js?v=7"></script>\n  <script src="src/modules/feed/feedTagging.js?v=7"></script>\n  <script src="src/modules/meals/mealProposalUi.js?v=1"></script>');
-    html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=7"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=2"></script></body>');
+    html = html.replace('</body>','<script src="src/modules/tasks/taskOverviewCanonical.js?v=7"></script>\n<script src="src/app/uiConsistencyPolish.js?v=1"></script>\n<script src="src/core/mobileUxFixes.js?v=3"></script></body>');
 
     res.setHeader('Content-Type','text/html; charset=utf-8');
     res.setHeader('Cache-Control','no-store, max-age=0');
