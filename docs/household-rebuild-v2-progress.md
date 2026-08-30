@@ -23,7 +23,7 @@ Cross-chat history: `docs/FAMILYAPP-UPDATE-LOG.md`
 - [x] STEP 10 — Notifications — accepted/frozen.
 - [x] STEP 11 — Party Quests — COMPLETE + REAL-DEVICE ACCEPTED 2026-08-30.
 - [x] STEP 12 — Profile / presence / avatars — COMPLETE + REAL-DEVICE ACCEPTED 2026-08-30.
-- [-] STEP 13 — Activity / Feed — product scope approved; implementation next.
+- [-] STEP 13 — Activity / Feed — 13.1 through 13.5 implemented; 13.5 REAL-DEVICE ACCEPTED 2026-08-30.
 - [ ] STEP 14 — Search / autocomplete.
 - [ ] STEP 14A — Privacy-safe platform operations/admin dashboard.
 - [ ] STEP 15 — Firebase Rules hardening.
@@ -42,26 +42,25 @@ Approved direction:
 - introduce separate immutable household activity events;
 - deterministic producer/event identity and dedupe/idempotency;
 - fixed pastel card family per activity type with dark-mode equivalents;
-- structured member and recipe tags;
+- structured member, recipe and task tags;
 - interactive meal proposals with realtime approval state;
-- accepted proposal hands off exactly once to canonical Meal planning;
-- optional ingredient handoff to Shopping with list selection and add/skip/merge/exclude preview;
+- accepted proposal hands off to canonical Meal planning;
+- optional ingredient handoff to canonical Shopping;
 - no direct Feed bypass of canonical Meal/Shopping mutation authority;
-- only successful canonical outcomes create immutable result events;
-- remove fake/demo Feed totals.
+- only successful canonical outcomes create immutable result events.
 
 Execution status:
-- [-] 13.1 Activity repository/schema/lifecycle — next implementation checkpoint.
-- [ ] 13.2 Domain producers + idempotency.
-- [ ] 13.3 Unified Feed projection + pastel activity taxonomy.
-- [ ] 13.4 Rich member/recipe tagging.
-- [ ] 13.5 Meal proposals + approval + Shopping ingredient handoff.
+- [x] 13.1 Activity repository/schema/lifecycle — merged via PR #31.
+- [x] 13.2 Domain producers + idempotency — merged via PR #34.
+- [x] 13.3 Unified Feed projection + pastel activity taxonomy — merged via PR #35 and real-device accepted.
+- [x] 13.4 Rich member/recipe/task tagging + premium composer — merged via PR #36 and real-device accepted.
+- [x] 13.5 Meal proposals + approval + Shopping ingredient handoff — merged via PR #37 at `558fb2d3cbd61eb7dbe6e66330ac653264169423`; real-device accepted 2026-08-30.
 - [ ] 13.6 Interaction/compatibility/idempotency contracts.
 - [ ] 13.7 Integrated CI/Preview/real-device acceptance.
 
 ## Validation cadence
 
-Bundle low/medium-risk device smokes into meaningful acceptance sweeps. Keep separate explicit checks for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency/reward/release-blocking behavior. STEP 13 meal approval + shopping handoff requires an explicit idempotency check.
+Bundle low/medium-risk device smokes into meaningful acceptance sweeps. Keep separate explicit checks for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency/reward/release-blocking behavior. STEP 13 final acceptance still requires 13.6 contract hardening and the 13.7 integrated/two-device sweep.
 
 ## Separate lifecycle / product regressions
 - [ ] Owner-transfer **Gezin verlaten** real smoke test.
@@ -69,7 +68,7 @@ Bundle low/medium-risk device smokes into meaningful acceptance sweeps. Keep sep
 - [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred.
 
 ## Standing guardrails
-- Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
+- Work only on `agent/household-rebuild-v2` or a branch based from it unless explicitly approved otherwise.
 - Main untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
 - Firebase remains on Spark unless explicitly changed.
