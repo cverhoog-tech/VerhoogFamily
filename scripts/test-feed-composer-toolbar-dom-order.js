@@ -3,7 +3,7 @@
 // against a minimal hand-rolled DOM (Node core only: vm/fs/assert, no
 // external dependencies) built from the actual composer markup extracted
 // from index.html, and asserts the final DOM is five direct siblings in
-// canonical order: photo, pin, @, recipe, Posten.
+// canonical order: photo, pin, member, recipe, Posten.
 const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
@@ -23,6 +23,7 @@ class MiniNode {
     this._classes = [];
     this.dataset = {};
     this.style = {};
+    this.innerHTML = '';
   }
   get id() { return this._id || ''; }
   set id(v) { this._id = v; this.attrs.id = v; }
@@ -155,7 +156,7 @@ sandbox.window.FeedTagging.decorateComposer();
 // ------------------------------------------------------------------
 const order = actions.children.map(function (c) { return c.id || c.textContent; });
 assert.deepStrictEqual(order, ['\u{1F4F7}', '\u{1F4CC}', 'feed-tag-member-btn', 'feed-tag-recipe-btn', 'feed-send-btn'],
-  'final DOM order inside .feed-compose-actions must be photo, pin, @, recipe, Posten as direct siblings — got: ' + order.join(', '));
+  'final DOM order inside .feed-compose-actions must be photo, pin, member, recipe, Posten as direct siblings — got: ' + order.join(', '));
 
 actions.children.forEach(function (c) {
   assert.strictEqual(c.parentNode, actions, 'every action control must be a direct child of .feed-compose-actions, not nested in a wrapper');
@@ -163,8 +164,10 @@ actions.children.forEach(function (c) {
 
 const memberBtn = document_.getElementById('feed-tag-member-btn');
 const recipeBtn = document_.getElementById('feed-tag-recipe-btn');
-assert.strictEqual(memberBtn.textContent, '@', 'member tag button must render @');
-assert.strictEqual(recipeBtn.textContent, '\u{1F37D}\uFE0F', 'recipe tag button must render \u{1F37D}\uFE0F');
+assert.ok(memberBtn.innerHTML.indexOf('<svg') > -1, 'member tag button must render the premium member icon');
+assert.ok(recipeBtn.innerHTML.indexOf('<svg') > -1, 'recipe tag button must render the premium recipe icon');
+assert.strictEqual(memberBtn.getAttribute('aria-label'), 'Persoon taggen', 'member button must remain accessible');
+assert.strictEqual(recipeBtn.getAttribute('aria-label'), 'Recept taggen', 'recipe button must remain accessible');
 assert.strictEqual(memberBtn.getAttribute('onclick'), "openFeedTagPicker('member')", 'member button must wire the existing tag picker');
 assert.strictEqual(recipeBtn.getAttribute('onclick'), "openFeedTagPicker('recipe')", 'recipe button must wire the existing tag picker');
 
