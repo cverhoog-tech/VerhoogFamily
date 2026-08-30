@@ -1,0 +1,18 @@
+'use strict';
+const fs=require('fs');
+const assert=require('assert');
+const app=fs.readFileSync('api/app.js','utf8');
+const repo='src/platform/activity/activityHouseholdRepository.js?v=1';
+const facade='src/platform/activity/householdActivity.js?v=6';
+assert(app.includes(repo),'canonical activity repository must be served');
+assert(app.includes(facade),'HouseholdActivity compatibility facade must be served');
+assert(app.indexOf(repo)<app.indexOf(facade),'activity repository must load before facade/producers');
+const household=fs.readFileSync('src/platform/activity/householdActivity.js','utf8');
+assert(household.includes('ActivityHouseholdRepository'),'HouseholdActivity must delegate to canonical repository');
+assert(!household.includes("mutateSharedRecord(COLLECTION"),'legacy FamilyDataStore activity mutation authority must be removed');
+const repository=fs.readFileSync('src/platform/activity/activityHouseholdRepository.js','utf8');
+assert(repository.includes("families/'+ctx.householdId+'/activityEvents"),'canonical activity path must be household root activityEvents');
+assert(repository.includes('ref.transaction'),'appendOnce must use a Firebase transaction');
+assert(repository.includes('HouseholdContext.subscribe'),'repository must follow HouseholdContext lifecycle');
+assert(repository.includes("ref.off('value',active.handler)"),'repository must explicitly detach realtime listener');
+console.log('activity STEP 13.1 served-runtime contract: PASS');
