@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// MEAL PROPOSAL REPOSITORY v1.0.0 — STEP 13.5
+// MEAL PROPOSAL REPOSITORY v1.1.0 — STEP 13.5
 // Canonical workflow persistence only. Meal planning itself remains owned by
 // MealPlanStore/MealPlanHouseholdRepository; shopping remains owned by
 // ShoppingListStore/ShoppingListHouseholdRepository.
@@ -9,7 +9,7 @@
 (function(){
   if(window.MealProposalRepository)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var SCHEMA_VERSION=1;
   var active=null,unsubscribeContext=null,attachTimer=null,generation=0;
   var projection={},subscribers=[],lastMeta={ready:false,source:'idle'};
@@ -43,6 +43,8 @@
       note:String(raw.note||''),
       targetUids:Array.isArray(raw.targetUids)?raw.targetUids.map(String):[],
       counterProposal:raw.counterProposal&&typeof raw.counterProposal==='object'?clone(raw.counterProposal):null,
+      acceptingByUid:raw.acceptingByUid||null,
+      acceptingAt:Number(raw.acceptingAt)||null,
       acceptedByUid:raw.acceptedByUid||null,
       acceptedAt:Number(raw.acceptedAt)||null,
       rejectedByUid:raw.rejectedByUid||null,
@@ -88,10 +90,26 @@
     var b;try{b=requireBinding();}catch(e){return Promise.reject(e);}id=String(id||'');var current=get(id);if(!current)return Promise.reject(new Error('Voorstel niet gevonden'));var token=capture(),next=normalize(Object.assign({},current,patch||{},{id:id,updatedAt:now(),updatedByUid:b.context.uid}),id,b.context);
     return b.ref.child(id).set(next).then(function(){if(!isCurrent(token))throw new Error('STALE_HOUSEHOLD_CONTEXT');return clone(next);});
   }
+  function transition(id,fromStatuses,patch){
+    var b;try{b=requireBinding();}catch(e){return Promise.reject(e);}id=String(id||'');fromStatuses=Array.isArray(fromStatuses)?fromStatuses.map(String):[String(fromStatuses||'pending')];var token=capture(),ref=b.ref.child(id),committedValue=null;
+    return new Promise(function(resolve,reject){
+      ref.transaction(function(current){
+        if(!current||fromStatuses.indexOf(String(current.status||'pending'))<0)return;
+        var next=Object.assign({},current,patch||{},{id:id,updatedAt:now(),updatedByUid:b.context.uid});
+        committedValue=next;return next;
+      },function(error,committed,snapshot){
+        if(error)return reject(error);
+        if(!committed)return reject(new Error('PROPOSAL_STATE_CONFLICT'));
+        if(!isCurrent(token))return reject(new Error('STALE_HOUSEHOLD_CONTEXT'));
+        var raw=snapshot&&snapshot.val?snapshot.val():committedValue;
+        resolve(normalize(raw,id,b.context));
+      },false);
+    });
+  }
   function remove(id){var b;try{b=requireBinding();}catch(e){return Promise.reject(e);}return b.ref.child(String(id||'')).remove().then(function(){return true;});}
   function status(){var c=context();return{version:VERSION,schemaVersion:SCHEMA_VERSION,ready:!!(active&&valid(c)),uid:c&&c.uid||null,householdId:c&&c.householdId||null,count:list().length,path:c&&c.householdId?'families/'+c.householdId+'/mealProposals':null};}
   function stop(){if(unsubscribeContext){try{unsubscribeContext();}catch(e){}unsubscribeContext=null;}if(attachTimer){clearInterval(attachTimer);attachTimer=null;}unbind('stopped');}
 
-  window.MealProposalRepository={version:VERSION,start:start,stop:stop,subscribe:subscribe,list:list,get:get,create:create,update:update,remove:remove,status:status};
+  window.MealProposalRepository={version:VERSION,start:start,stop:stop,subscribe:subscribe,list:list,get:get,create:create,update:update,transition:transition,remove:remove,status:status};
   start();
 })();
