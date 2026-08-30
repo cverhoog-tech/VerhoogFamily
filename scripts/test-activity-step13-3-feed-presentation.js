@@ -4,7 +4,7 @@ const assert=require('assert');
 const src=fs.readFileSync('src/modules/feed/feedActivityPresentation.js','utf8');
 const feed=fs.readFileSync('src/modules/feed/feed.js','utf8');
 
-assert.ok(src.includes("version:'1.2.0'"),'STEP 13.3 presentation version must be served');
+assert.ok(src.includes("version:'1.2.1'"),'STEP 13.3 presentation version must be served');
 assert.ok(src.includes("'shopping.completed'"),'canonical shopping.completed must render');
 assert.ok(src.includes("'partyQuest.completed'"),'partyQuest.completed must render');
 assert.ok(src.includes("tone-task")&&src.includes("tone-meal")&&src.includes("tone-shopping")&&src.includes("tone-agenda")&&src.includes("tone-progression"),'all approved pastel families must exist');
@@ -12,6 +12,9 @@ assert.ok(src.includes('[data-theme=\\"dark\\"]')||src.includes('[data-theme="da
 assert.ok(src.includes("social.concat(activity).sort"),'social posts and activity must merge chronologically at presentation time');
 assert.ok(src.includes("window.renderPostHTML(item.value)"),'manual posts must keep the existing social renderer');
 assert.ok(src.includes("function stats()"),'real activity stats must be projected');
+assert.ok(src.includes('function pick(event,values)'),'cozy copy variants must be deterministic per event');
+assert.ok(src.includes('Weer eentje van de lijst')&&src.includes('De voorraad is weer aangevuld'),'task and shopping cards must use non-repetitive contextual copy');
+assert.ok(src.includes('p.taskTitle')&&src.includes('p.shoppingListName'),'event-specific task/list context must remain visible');
 assert.ok(!src.includes('receiptAmount')&&!src.includes('amount:'),'activity presentation must not surface receipt amount');
 assert.ok(feed.includes("var feedData = []"),'social feed persistence contract remains unchanged');
 console.log('STEP 13.3 feed presentation contract: PASS');
