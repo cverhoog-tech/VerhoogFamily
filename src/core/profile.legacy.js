@@ -151,13 +151,15 @@ var _profileMounted = false;
     s.onerror=function(){ console.warn('[AvatarIdentity] Kon script niet laden:',src); if(done) done(); };
     document.head.appendChild(s);
   }
+  function loadStep12(){load('/src/core/profileIdentitySync.js?v=step12');}
   function loadFirebaseIdentity(){
-    load('/src/core/householdIdentityFirebaseBridge.js?v=2',function(){
+    load('/src/core/householdIdentityFirebaseBridge.js?v=5',function(){
       try { if(window.HouseholdIdentityFirebaseBridge) window.HouseholdIdentityFirebaseBridge.sync(); } catch(e){}
+      loadStep12();
     });
   }
-  function loadBridge(){ load('/src/core/avatarIdentityBridge.js',loadFirebaseIdentity); }
-  if(window.HouseholdIdentity) loadBridge(); else load('/src/core/householdIdentity.js',loadBridge);
+  function loadBridge(){ load('/src/core/avatarIdentityBridge.js?v=step12',loadFirebaseIdentity); }
+  if(window.HouseholdIdentity) loadBridge(); else load('/src/core/householdIdentity.js?v=step12',loadBridge);
 })();
 
 function mountHouseholdLeave(container){
@@ -170,20 +172,30 @@ function renderProfile(){
   var container=document.getElementById('screen-profile');
   if(!container) return;
   if(!document.querySelector('link[href*="profile.target.css"]')){
-    var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css'; document.head.appendChild(link);
+    var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css?v=step12'; document.head.appendChild(link);
   }
-  import('/src/modules/profile/ProfileScreen.target.js?v=account3').then(function(mod){
+  import('/src/modules/profile/ProfileScreen.target.js?v=step12').then(function(mod){
     mod.renderProfileScreen(container); _profileMounted=true; mountHouseholdLeave(container); if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
+    try{window.dispatchEvent(new CustomEvent('familyapp:profile-rendered'));}catch(e){}
   }).catch(function(err){ console.error('[ProfileBridge] Kon nieuwe profielmodule niet laden:',err); });
 }
 
 function updateHeaderAvatar(){
   var av=document.getElementById('hdr-avatar'); if(!av) return;
+  var firebaseBridge=window.HouseholdIdentityFirebaseBridge;
+  if(firebaseBridge&&typeof firebaseBridge.getMembers==='function'&&typeof firebaseBridge.getCurrentUid==='function'){
+    try{
+      var currentUid=firebaseBridge.getCurrentUid();
+      var current=(firebaseBridge.getMembers()||[]).find(function(m){return m&&String(m.uid||m.id)===String(currentUid||'');});
+      var firebaseAvatar=current&&(current.avatar||current.avatarUrl||current.photoURL);
+      if(firebaseAvatar){av.innerHTML='<img src="'+firebaseAvatar+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\'none\'">';return;}
+    }catch(e){}
+  }
   if(window.HouseholdIdentity && typeof window.HouseholdIdentity.getActiveAvatar === 'function'){
     var centralUrl=window.HouseholdIdentity.getActiveAvatar();
     if(centralUrl){ av.innerHTML='<img src="'+centralUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\'none\'">'; return; }
   }
-  import('/src/modules/profile/avatarStore.js?v=profile2').then(function(store){
+  import('/src/modules/profile/avatarStore.js?v=step12').then(function(store){
     var url=store.getCurrentAvatarUrl();
     if(url) av.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
     else av.textContent=(typeof myInitials!=='undefined')?myInitials:'?';
@@ -195,6 +207,7 @@ window.addEventListener('familyapp:avatar-updated',function(){
   if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
   if(_profileMounted){
     var container=document.getElementById('screen-profile');
-    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=account3').then(function(mod){ mod.renderProfileScreen(container); mountHouseholdLeave(container); });
+    if(container && container.classList.contains('active')) import('/src/modules/profile/ProfileScreen.target.js?v=step12').then(function(mod){ mod.renderProfileScreen(container); mountHouseholdLeave(container); });
   }
 });
+window.addEventListener('familyapp:household-identity-synced',updateHeaderAvatar);
