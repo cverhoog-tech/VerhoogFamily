@@ -38,7 +38,7 @@ assert.ok(profileScreen.includes('function getActiveAuthEmail()'),'Profile must 
 assert.ok(profileScreen.includes('window.fbAuth && window.fbAuth.currentUser'),'active account email must prefer the current Firebase Auth user');
 assert.ok(profileScreen.includes('data-active-auth-email'),'Profile must visibly expose the active account identity');
 assert.ok(profileScreen.includes('Actief account'),'active auth email must have a clear user-facing label');
-assert.ok(profileBridge.includes('ProfileScreen.target.js?v=account3'),'profile bridge must cache-bust the active-account profile UI');
+assert.ok(profileBridge.includes('ProfileScreen.target.js?v=step12'),'profile bridge must cache-bust the accepted STEP 12 profile UI');
 
 assert.ok(loader.includes('sessionActions.js?v=1'),'served runtime must load session actions before interactive navigation');
 assert.ok(!loader.includes('src/app/freshStartReset.js'),'Verse start must no longer be part of the served runtime');
