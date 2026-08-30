@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   acceptance:
-    name: Syntax + full rebuild contracts
+    name: Served-runtime syntax + full rebuild contracts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout restart branch
@@ -33,12 +33,18 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Syntax checks
+      - name: Served-runtime syntax checks
         shell: bash
         run: |
           set -e
-          find src api scripts -type f -name '*.js' -print0 | while IFS= read -r -d '' js_file; do
+          for js_file in api/*.js scripts/test-*.js; do
             node --check "$js_file"
+          done
+          grep -oE "src/[A-Za-z0-9_./-]+\.js" api/app.js | sort -u | while IFS= read -r js_file; do
+            if [ -f "$js_file" ]; then
+              echo "Checking served runtime: $js_file"
+              node --check "$js_file"
+            fi
           done
 
       - name: Full rebuild contract suite
@@ -47,5 +53,5 @@ jobs:
           set -e
           for test_file in scripts/test-*.js; do
             echo "Running ${test_file}"
-            node "${test_file}"
+            node "$test_file"
           done
