@@ -4,7 +4,7 @@ const assert=require('assert');
 
 const source=fs.readFileSync('src/modules/shop/shoppingReceiptFinance.js','utf8');
 
-assert.ok(source.includes("version:'1.5.2'"),'receipt bridge version must be current');
+assert.ok(source.includes("version:'1.6.0'"),'receipt bridge version must be current');
 assert.ok(source.includes('id="receipt-name"'),'receipt modal must expose editable transaction name');
 assert.ok(source.includes('<select id="receipt-category">'),'receipt category must be a fixed select');
 assert.ok(!source.includes('receipt-category-options'),'receipt category must no longer use free-text datalist suggestions');
@@ -25,9 +25,11 @@ assert.ok(source.includes("keys=processedItemKeys(items).sort()"),'receipt batch
 assert.ok(source.includes("+'__receipt_'+hashText(keys.join('|'))"),'different purchased batches on one list must receive distinct source ids');
 assert.ok(source.includes('FinanceStore.upsertSourceTransaction'),'receipt bridge must remain idempotent through FinanceStore');
 assert.ok(source.includes('repo.clearDone(row.scope,row.list.id,keys)'),'cleanup must delete only the exact processed purchased keys');
+assert.ok(source.includes('function onProcessed(fn)'),'receipt bridge must expose the STEP 13.2 post-success domain signal');
+assert.ok(source.includes('emitProcessed({sourceId:sourceId'),'receipt bridge must emit the stable receipt source id after Finance success');
 
 const writeIndex=source.indexOf('FinanceStore.upsertSourceTransaction');
 const clearIndex=source.indexOf('return clearProcessedItems(row,bought)',writeIndex);
 assert.ok(writeIndex>=0&&clearIndex>writeIndex,'purchased items may only be cleared after the Finance write succeeds');
 
-console.log('STEP 8 shopping receipt finance metadata + cleanup contract: PASS');
+console.log('STEP 8/13 shopping receipt finance metadata + cleanup contract: PASS');
