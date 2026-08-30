@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// FEED TAGGING v1.3.0 — STEP 13.4
+// FEED TAGGING v1.3.1 — STEP 13.4
 // Structured member + recipe references and one canonical linked task.
-// The former pin/task-link action is upgraded instead of duplicating task
-// linking with a second authority.
+// Composer decoration is idempotent so its MutationObserver cannot create
+// a self-sustaining mutation loop on hidden screens (including Login).
 // ============================================================
 (function(){
-  if(window.FeedTagging&&window.FeedTagging.version==='1.3.0')return;
+  if(window.FeedTagging&&window.FeedTagging.version==='1.3.1')return;
 
   var pending=[];
   var picker=null;
@@ -26,12 +26,10 @@
   function tasks(){return Array.isArray(window.taskData)?window.taskData.filter(function(t){return t&&t.id!==undefined&&t.id!==null;}):[];}
   function memberByUid(uid){return members().find(function(m){return String(m.uid||m.id)===String(uid);})||null;}
   function memberAvatar(m){if(!m)return'';return m.avatar||m.avatarUrl||m.photoURL||m.photoUrl||m.profilePhoto||'';}
-  function memberName(uid){var m=memberByUid(uid);return m&&(m.displayName||m.name)||'Gezinslid';}
   function memberRef(m){return{type:'member',uid:String(m.uid||m.id),displayName:String(m.displayName||m.name||'Gezinslid')};}
   function recipeRef(r){return{type:'recipe',recipeId:String(r.id),title:String(r.name||r.title||'Recept')};}
   function taskRef(t){return{type:'task',taskId:String(t.id||t._key),title:String(t.title||t.name||'Taak'),category:String(t.category||t.type||''),date:String(t.date||''),done:!!t.done};}
   function taskById(id){return tasks().find(function(t){return String(t.id||t._key)===String(id);})||null;}
-  function linkedTask(){var t=window.composeLinkedTask;return t&&t.type==='task'&&t.taskId?clone(t):null;}
   function has(r){var k=key(r);return pending.some(function(x){return key(x)===k;});}
   function add(r){if(!r||has(r))return;pending.push(clone(r));renderPending();closeAllPickers();}
   function remove(k){pending=pending.filter(function(r){return key(r)!==String(k);});renderPending();}
@@ -148,13 +146,27 @@
       var post=actions.querySelector('#feed-send-btn')||null;
       var photo=actions.querySelector('[onclick*="feed-photo-inp"]');
       var task=actions.querySelector('[onclick*="openTaskStatusPicker"]')||document.getElementById('feed-tag-task-btn');
-      if(photo){photo.className='fs-compose-tool fs-compose-tool-photo';photo.innerHTML=iconSvg('photo',20);photo.setAttribute('aria-label','Foto toevoegen');photo.title='Foto toevoegen';}
-      if(task){task.id='feed-tag-task-btn';task.className='fs-compose-tool fs-compose-tool-task';task.innerHTML=iconSvg('task',20);task.setAttribute('onclick',"openFeedTagPicker('task')");task.setAttribute('aria-label','Taak taggen');task.title='Taak taggen';}
+      if(photo&&photo.dataset.feedPremiumIcon!=='1'){
+        photo.dataset.feedPremiumIcon='1';
+        photo.className='fs-compose-tool fs-compose-tool-photo';
+        photo.innerHTML=iconSvg('photo',20);
+        photo.setAttribute('aria-label','Foto toevoegen');
+        photo.title='Foto toevoegen';
+      }
+      if(task&&task.dataset.feedPremiumIcon!=='1'){
+        task.dataset.feedPremiumIcon='1';
+        task.id='feed-tag-task-btn';
+        task.className='fs-compose-tool fs-compose-tool-task';
+        task.innerHTML=iconSvg('task',20);
+        task.setAttribute('onclick',"openFeedTagPicker('task')");
+        task.setAttribute('aria-label','Taak taggen');
+        task.title='Taak taggen';
+      }
       if(!document.getElementById('feed-tag-member-btn')){
-        var memberBtn=document.createElement('button');memberBtn.type='button';memberBtn.id='feed-tag-member-btn';memberBtn.className='fs-compose-tool fs-compose-tool-member';memberBtn.setAttribute('aria-label','Persoon taggen');memberBtn.title='Persoon taggen';memberBtn.setAttribute('onclick',"openFeedTagPicker('member')");memberBtn.innerHTML=iconSvg('member',20);actions.insertBefore(memberBtn,post);
+        var memberBtn=document.createElement('button');memberBtn.type='button';memberBtn.id='feed-tag-member-btn';memberBtn.dataset.feedPremiumIcon='1';memberBtn.className='fs-compose-tool fs-compose-tool-member';memberBtn.setAttribute('aria-label','Persoon taggen');memberBtn.title='Persoon taggen';memberBtn.setAttribute('onclick',"openFeedTagPicker('member')");memberBtn.innerHTML=iconSvg('member',20);actions.insertBefore(memberBtn,post);
       }
       if(!document.getElementById('feed-tag-recipe-btn')){
-        var recipeBtn=document.createElement('button');recipeBtn.type='button';recipeBtn.id='feed-tag-recipe-btn';recipeBtn.className='fs-compose-tool fs-compose-tool-recipe';recipeBtn.setAttribute('aria-label','Recept taggen');recipeBtn.title='Recept taggen';recipeBtn.setAttribute('onclick',"openFeedTagPicker('recipe')");recipeBtn.innerHTML=iconSvg('recipe',20);actions.insertBefore(recipeBtn,post);
+        var recipeBtn=document.createElement('button');recipeBtn.type='button';recipeBtn.id='feed-tag-recipe-btn';recipeBtn.dataset.feedPremiumIcon='1';recipeBtn.className='fs-compose-tool fs-compose-tool-recipe';recipeBtn.setAttribute('aria-label','Recept taggen');recipeBtn.title='Recept taggen';recipeBtn.setAttribute('onclick',"openFeedTagPicker('recipe')");recipeBtn.innerHTML=iconSvg('recipe',20);actions.insertBefore(recipeBtn,post);
       }
     }
     if(!document.getElementById('feed-tag-pending')){
@@ -202,7 +214,7 @@
     if(window.visualViewport)visualViewport.addEventListener('resize',function(){if(inlinePicker){var ca=document.getElementById('compose-area');if(ca)positionInline(inlinePicker,ca);}});
   }
 
-  window.FeedTagging={version:'1.3.0',pending:pendingRefs,clear:clear,add:add,remove:remove,openPicker:openPicker,closePicker:closeAllPickers,select:select,openReference:openRef,decorateComposer:decorateComposer,iconSvg:iconSvg};
+  window.FeedTagging={version:'1.3.1',pending:pendingRefs,clear:clear,add:add,remove:remove,openPicker:openPicker,closePicker:closeAllPickers,select:select,openReference:openRef,decorateComposer:decorateComposer,iconSvg:iconSvg};
   window.openFeedTagPicker=openPicker;window.closeFeedTagPicker=closeAllPickers;window.selectFeedTag=select;window.removeFeedTag=remove;window.openFeedReference=openRef;window.openTaskStatusPicker=function(){openPicker('task');};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
