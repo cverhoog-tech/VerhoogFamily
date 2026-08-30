@@ -51,22 +51,19 @@ function renderHome() {
   applyHomeIconSet();
   updateStats();
   renderActivityList();
-  _carouselBound = false;
   setTimeout(initCarousel, 60);
 }
 
 // ── CARROUSEL ──
 var _carouselIndex = 0;
 var _carouselTotal = 3;
-var _carouselBound = false;
 
 function initCarousel() {
   var track = document.getElementById('home-carousel-track');
   var prev  = document.getElementById('home-prev');
   var next  = document.getElementById('home-next');
   var dotsEl = document.getElementById('home-dots');
-  if (!track || !prev || !next || _carouselBound) return;
-  _carouselBound = true;
+  if (!track || !prev || !next) return;
 
   function goTo(index) {
     _carouselIndex = ((index % _carouselTotal) + _carouselTotal) % _carouselTotal;
@@ -78,28 +75,34 @@ function initCarousel() {
     }
   }
 
-  prev.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex - 1); });
-  next.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex + 1); });
+  // Home can rerender many times while keeping the same carousel DOM nodes.
+  // Bind once per actual track element so taps never accumulate duplicate listeners.
+  if (track.dataset.carouselBound !== '1') {
+    track.dataset.carouselBound = '1';
+    prev.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex - 1); });
+    next.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex + 1); });
 
-  if (dotsEl) {
-    dotsEl.querySelectorAll('button').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        goTo(parseInt(btn.dataset.index) || 0);
+    if (dotsEl) {
+      dotsEl.querySelectorAll('button').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          goTo(parseInt(btn.dataset.index,10) || 0);
+        });
       });
-    });
+    }
+
+    var touchStartX = 0;
+    track.addEventListener('touchstart', function(e) {
+      if(e.touches&&e.touches[0]) touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    track.addEventListener('touchend', function(e) {
+      if(!e.changedTouches||!e.changedTouches[0]) return;
+      var delta = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(delta) > 40) goTo(_carouselIndex + (delta > 0 ? 1 : -1));
+    }, { passive: true });
   }
 
-  var _touchStartX = 0;
-  track.addEventListener('touchstart', function(e) {
-    _touchStartX = e.touches[0].clientX;
-  }, { passive: true });
-  track.addEventListener('touchend', function(e) {
-    var delta = _touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(delta) > 40) goTo(_carouselIndex + (delta > 0 ? 1 : -1));
-  }, { passive: true });
-
-  goTo(0);
+  goTo(_carouselIndex);
 }
 
 function renderActivityList() {
