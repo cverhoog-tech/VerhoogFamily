@@ -21,6 +21,7 @@ var ALL_SCREENS = [
   {id:'skills',        icon:'⚡', label:'Skills'},
   {id:'meals',         icon:'🗓️', label:'Maaltijden'},
   {id:'templates',     icon:'📋', label:'Templates'},
+  {id:'cleaning',      icon:'🧹', label:'Schoonmaken'},
 ];
 
 // Fixed primary mobile ribbon: Home · Boodschappen · Feed (+) · Taken · Meer
@@ -158,7 +159,7 @@ function selectNavSlot(idx){navConfigEditSlot=idx;renderNavConfig();setTimeout(a
 function setNavSlot(screenId){if(navConfigEditSlot===null)return;navSlots[navConfigEditSlot]=screenId;navConfigEditSlot=null;renderNavConfig();renderNav();setTimeout(attachNavDelegation,10);setTimeout(attachNavConfigDelegation,10);showToast('Navigatie opgeslagen ✓');}
 function clearNavSlot(idx){navSlots[idx]='more';renderNavConfig();renderNav();}
 
-var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates'};
+var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates',cleaning:'🧹 Schoonmaken'};
 
 var _currentScreen = 'home';
 var _navBusy = false;
@@ -247,6 +248,7 @@ function _renderScreen(id) {
   else if(id==='skills')  renderSkills();
   else if(id==='meals')   renderMeals();
   else if(id==='templates') renderTemplates();
+  else if(id==='cleaning') { if(typeof renderCleaning==='function') renderCleaning(); }
 }
 
 function showScreenMore(id){closeMore();showScreen(id);}
