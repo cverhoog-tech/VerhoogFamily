@@ -1,3 +1,7 @@
+import './cleaningDomain.js?v=1';
+import './cleaningRepositoryContract.js?v=1';
+import './cleaningHouseholdRepository.js?v=1';
+
 const state = {
   primaryTab: 'overview',
   roomView: 'rooms'
