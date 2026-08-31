@@ -180,6 +180,7 @@
 #screen-cleaning .cleaning-secondary-button,
 #screen-cleaning .cleaning-icon-button,
 #screen-cleaning .cleaning-room-edit-button,
+#screen-cleaning .cleaning-routine-edit-button,
 #screen-cleaning .cleaning-danger-link,
 #screen-cleaning .cleaning-danger-button {
   border: 0;
@@ -481,7 +482,8 @@
   font-size: 11px;
 }
 
-#screen-cleaning .cleaning-room-card-actions {
+#screen-cleaning .cleaning-room-card-actions,
+#screen-cleaning .cleaning-routine-item-actions {
   display: grid;
   justify-items: end;
   gap: 7px;
@@ -497,6 +499,7 @@
 }
 
 #screen-cleaning .cleaning-room-edit-button,
+#screen-cleaning .cleaning-routine-edit-button,
 #screen-cleaning .cleaning-add-routine-button {
   min-height: 32px;
   padding: 0 9px;
@@ -509,6 +512,7 @@
 }
 
 #screen-cleaning .cleaning-room-edit-button:active,
+#screen-cleaning .cleaning-routine-edit-button:active,
 #screen-cleaning .cleaning-add-routine-button:active {
   transform: translateY(1px);
 }
@@ -675,6 +679,7 @@
   }
 
   #screen-cleaning .cleaning-room-edit-button,
+  #screen-cleaning .cleaning-routine-edit-button,
   #screen-cleaning .cleaning-add-routine-button {
     min-height: 30px;
     padding-left: 8px;
@@ -687,11 +692,10 @@
   }
 
   #screen-cleaning .cleaning-routine-item {
-    grid-template-columns: 8px minmax(0,1fr);
+    gap: 7px;
   }
 
-  #screen-cleaning .cleaning-priority-badge {
-    grid-column: 2;
-    justify-self: start;
+  #screen-cleaning .cleaning-routine-item-actions {
+    gap: 5px;
   }
 }
