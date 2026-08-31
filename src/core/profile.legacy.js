@@ -9,9 +9,9 @@ var _profileMounted = false;
 
 // ============================================================
 // GLOBAL UI SCALE
-// Eén centrale schaalinstelling voor de volledige app. De instelling wordt
-// lokaal bewaard en bij iedere appstart opnieuw toegepast. CSS `zoom` schaalt
-// zowel typografie als kaarten, iconen, controls en spacing als één geheel.
+// UI-schaal geldt alleen voor de geauthenticeerde app. Het login-scherm
+// blijft altijd native/100%, omdat CSS `zoom` op <body> op iOS Safari het
+// containing block en de hit-testing van fixed login-controls kan verstoren.
 // ============================================================
 (function bootstrapFamilyUiScale(){
   var STORAGE_KEY = 'familyapp-ui-scale-v1';
@@ -26,12 +26,26 @@ var _profileMounted = false;
     return normalize(localStorage.getItem(STORAGE_KEY));
   }
 
+  function loginScreenIsVisible(){
+    var el = document.getElementById('login-screen');
+    return !!(el && el.style.display !== 'none');
+  }
+
+  function clearBodyZoom(){
+    if(!document.body) return;
+    document.body.style.removeProperty('zoom');
+    document.body.dataset.uiScale = '100';
+  }
+
   function apply(value){
     var percent = normalize(value);
     var factor = percent / 100;
     if(document.body){
-      document.body.style.zoom = String(factor);
-      document.body.dataset.uiScale = String(percent);
+      if(loginScreenIsVisible()) clearBodyZoom();
+      else {
+        document.body.style.zoom = String(factor);
+        document.body.dataset.uiScale = String(percent);
+      }
     }
     document.documentElement.style.setProperty('--family-ui-scale', String(factor));
     document.documentElement.dataset.uiScale = String(percent);
@@ -53,8 +67,16 @@ var _profileMounted = false;
     get: get,
     set: set,
     apply: apply,
+    suspend: clearBodyZoom,
     reset: function(){ localStorage.removeItem(STORAGE_KEY); return apply(100); }
   };
+
+  function syncSessionScale(event){
+    var state = event && event.detail && event.detail.state;
+    if(state === 'ready') apply(get());
+    else clearBodyZoom();
+  }
+  window.addEventListener('familyapp:session-state', syncSessionScale);
 
   function initialApply(){ apply(get()); }
   if(document.body) initialApply();
