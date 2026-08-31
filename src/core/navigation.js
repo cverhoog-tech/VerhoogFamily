@@ -159,11 +159,26 @@ function selectNavSlot(idx){navConfigEditSlot=idx;renderNavConfig();setTimeout(a
 function setNavSlot(screenId){if(navConfigEditSlot===null)return;navSlots[navConfigEditSlot]=screenId;navConfigEditSlot=null;renderNavConfig();renderNav();setTimeout(attachNavDelegation,10);setTimeout(attachNavConfigDelegation,10);showToast('Navigatie opgeslagen ✓');}
 function clearNavSlot(idx){navSlots[idx]='more';renderNavConfig();renderNav();}
 
-var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates'};
+var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates',cleaning:'Schoonmaken'};
 
 var _currentScreen = 'home';
 var _navBusy = false;
 var _pendingScreen = null;
+
+function ensureCleaningScreen(){
+  var existing=document.getElementById('screen-cleaning');
+  if(existing)return existing;
+  var screen=document.createElement('div');
+  screen.className='screen';
+  screen.id='screen-cleaning';
+  var content=document.createElement('div');
+  content.id='cleaning-content';
+  screen.appendChild(content);
+  var profile=document.getElementById('screen-profile');
+  if(profile&&profile.parentNode)profile.parentNode.insertBefore(screen,profile);
+  else document.body.appendChild(screen);
+  return screen;
+}
 
 function showScreen(id) {
   if(id === _currentScreen && !_navBusy) {
@@ -176,6 +191,7 @@ function showScreen(id) {
   _pendingScreen = null;
 
   var prev = document.getElementById('screen-'+_currentScreen);
+  if(id==='cleaning')ensureCleaningScreen();
   var next = document.getElementById('screen-'+id);
   if(!next) { _navBusy = false; return; }
 
