@@ -1,6 +1,6 @@
 # FamilyApp - Module-architectuur Schoonmaken
 
-Status: functioneel concept afgerond; visueel ontwerp en implementatie nog niet gestart.
+Status: implementatie gestart; Fase A shell real-device geaccepteerd op iPhone; Fase 0 architectuurfundament BEZIG.
 
 ## 1. Doel van de module
 
@@ -21,8 +21,10 @@ Een concrete schoonmaakbeurt is één gedeeld object dat vanuit meerdere modules
 De module krijgt drie primaire tabs:
 
 1. Overzicht
-2. Kamers
-3. Planning
+2. Planning
+3. Kamers
+
+Binnen Kamers staat de subtoggle Kamers / Gepland per kamer.
 
 Voorraad, historie en instellingen zijn contextueel bereikbaar en krijgen in eerste instantie geen eigen hoofdtab.
 
@@ -378,21 +380,40 @@ AI of assistent mag voorstellen doen, maar nooit zelfstandig structurele routine
 
 ## 19. Technische kernobjecten
 
-Aanbevolen conceptuele objecten:
+Canonieke conceptuele objecten:
 
 - CleaningRoom
 - CleaningRoutineItem
 - CleaningSupply
 - CleaningInventoryState
 - CleaningPlan
-- CleaningOccurrence / CleaningSession
+- CleaningOccurrence
 - CleaningAssignment
 - CleaningApprovalRequest
 - CleaningCompletionLog
 - CleaningAvailabilityOverride
 - CleaningUserPreferences
 
-Belangrijk: CleaningOccurrence/Session krijgt vaste referenties naar eventuele Task- en Calendar-weergaven, zodat synchronisatie op één bronobject kan blijven draaien.
+Belangrijk: `CleaningOccurrence` is de enige bron van waarheid voor één concrete schoonmaakbeurt en krijgt vaste referenties naar eventuele Task- en Calendar-projecties.
+
+Canonieke Firebase-root:
+
+`families/{householdId}/cleaning`
+
+Subcollecties/paden:
+
+- `rooms`
+- `routines`
+- `supplies`
+- `inventory`
+- `plans`
+- `occurrences`
+- `approvals`
+- `completionLogs`
+- `availability`
+- `preferences`
+
+Deze contracten zijn vastgelegd in `src/modules/cleaning/cleaningDomain.js` en `src/modules/cleaning/cleaningRepositoryContract.js`.
 
 ## 20. Statusmodellen
 
@@ -411,6 +432,16 @@ Alternatieve paden:
 - ACTIVE -> SKIPPED
 - ACTIVE -> CARRIED_FORWARD
 - ACTIVE -> RESCHEDULED
+
+### Concrete schoonmaakbeurt
+
+DRAFT -> PROPOSED -> SCHEDULED / FLEXIBLE -> IN_PROGRESS -> COMPLETED
+
+Alternatieve paden:
+
+- IN_PROGRESS / SCHEDULED / FLEXIBLE -> SKIPPED
+- IN_PROGRESS / SCHEDULED / FLEXIBLE -> CARRIED_FORWARD
+- DRAFT / PROPOSED -> CANCELLED
 
 ## 21. Gefaseerd bouwplan
 
@@ -507,7 +538,7 @@ Deze module wordt alleen gebouwd op duurzame integratiepunten. Tijdelijke monkey
 ### Verplicht
 
 - Gebruik bestaande FamilyApp household-, member-, task-, calendar-, grocery-, notification- en activity-contracten waar die canoniek zijn.
-- Voeg per domein een duidelijke repository/service-laag toe in plaats van Firebase-reads/writes verspreid door UI-code.
+- Gebruik één duidelijke `CleaningHouseholdRepository`-grens in plaats van Firebase-reads/writes verspreid door UI-code of meerdere overlappende repositories.
 - Houd `CleaningOccurrence` canoniek; Taken en Agenda zijn projecties/weergaven, geen tweede opslagautoriteit.
 - Schrijf mutaties idempotent waar retries of meerdere clients mogelijk zijn.
 - Gebruik stabiele IDs en expliciete foreign-key/referencevelden tussen Cleaning, Tasks, Calendar, Grocery en Activity.
@@ -516,7 +547,7 @@ Deze module wordt alleen gebouwd op duurzame integratiepunten. Tijdelijke monkey
 - Rechten en household-scoping moeten server/Firebase-regels en repositorycontracten volgen; geen client-only beveiliging.
 - Nieuwe velden en statusmodellen moeten backward-compatible/migreerbaar worden ontworpen.
 - Integraties krijgen contracttests voor idempotentie, cross-module synchronisatie en account/household-isolatie.
-- Iedere bouwfase krijgt eerst een kleine, reviewbare featurebranch/PR op de actuele `agent/household-rebuild-v2`-basis en pas na acceptatie wordt die basis bijgewerkt.
+- Tijdens de huidige rebuild wordt in kleine, afzonderlijk te accepteren commits op `agent/household-rebuild-v2` gebouwd. `main` blijft onaangeraakt totdat de gebruiker expliciet accepteert.
 - Vercel/CI en relevante real-device tests vormen gates voordat een fase als afgerond wordt gemarkeerd.
 
 ### Niet toegestaan
@@ -556,3 +587,38 @@ Bij iedere geaccepteerde implementatiestap worden beide documenten bijgewerkt me
 - relevante branch/PR of checkpoint wanneer nuttig.
 
 Een ontwerpwijziging wordt eerst in deze architectuur verwerkt voordat een volgende fase daarop voortbouwt.
+
+## 25. Implementatiestatus 31-08-2026
+
+### Geaccepteerde Fase A / veilige module-shell
+
+Real-device geaccepteerd op iPhone:
+
+- Schoonmaken-entry in Meer;
+- leeg navigabel `#screen-cleaning`;
+- module-shell met primaire tabs Overzicht / Planning / Kamers;
+- subtoggle Kamers / Gepland per kamer;
+- dark/light shell via uitsluitend onder `#screen-cleaning` gescopete CSS;
+- lazy loading: Schoonmaken-code/styles worden pas geladen bij openen van de module;
+- geen wijziging aan login/auth, app-shell, UI-scale of globale CSS.
+
+Geaccepteerde checkpoints lopen vanaf de stabiele STEP 13.6-baseline via de commits `774d464`, `567df025` en `a11a785`.
+
+### Fase 0 - BEZIG
+
+Afgerond in het architectuurfundament:
+
+- canonieke cleaning-root `families/{householdId}/cleaning` vastgelegd;
+- vaste subpaden voor rooms, routines, supplies, inventory, plans, occurrences, approvals, completion logs, availability en preferences;
+- `CleaningOccurrence` expliciet als source of truth vastgelegd;
+- domeinstatussen en normalizers vastgelegd in `cleaningDomain.js`;
+- één toekomstig `CleaningHouseholdRepository`-contract vastgelegd in `cleaningRepositoryContract.js`;
+- localStorage alleen toegestaan als disposable UID+household read-cache, nooit als tweede bron van waarheid.
+
+Nog open binnen Fase 0:
+
+- echte `CleaningHouseholdRepository` implementeren met HouseholdContext bind/unbind/revision lifecycle;
+- Firebase rules/rechtenmodel aansluiten op bestaande household/memberrollen;
+- feature-flagged data-activatie bepalen;
+- expliciete integratiecontracten voor Tasks, Calendar, Grocery en Notifications toevoegen;
+- contracttests voor household-isolatie, lifecycle en idempotentie toevoegen.
