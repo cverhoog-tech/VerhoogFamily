@@ -1,11 +1,37 @@
-import './cleaningDomain.js?v=1';
-import './cleaningRepositoryContract.js?v=1';
-import './cleaningHouseholdRepository.js?v=1';
+import './cleaningDomain.js?v=2';
+import './cleaningRepositoryContract.js?v=2';
+import './cleaningHouseholdRepository.js?v=2';
+
+const ROOM_TYPES = Object.freeze([
+  {id:'living-room', label:'Woonkamer', icon:'🛋️'},
+  {id:'kitchen', label:'Keuken', icon:'🍳'},
+  {id:'bathroom', label:'Badkamer', icon:'🛁'},
+  {id:'toilet', label:'Toilet', icon:'🚽'},
+  {id:'bedroom', label:'Slaapkamer', icon:'🛏️'},
+  {id:'kids-room', label:'Kinderkamer', icon:'🧸'},
+  {id:'hall', label:'Hal', icon:'🚪'},
+  {id:'laundry', label:'Wasruimte', icon:'🧺'},
+  {id:'outdoor', label:'Balkon / tuin', icon:'🌿'},
+  {id:'custom', label:'Eigen ruimte', icon:'✨'}
+]);
 
 const state = {
   primaryTab: 'overview',
-  roomView: 'rooms'
+  roomView: 'rooms',
+  repository: null,
+  roomForm: {
+    open: false,
+    name: '',
+    type: 'living-room',
+    submitting: false,
+    error: ''
+  },
+  roomNotice: ''
 };
+
+let repositoryUnsubscribe = null;
+let repositorySubscribing = false;
+let mountedRoot = null;
 
 function escapeText(value){
   return String(value == null ? '' : value)
@@ -29,6 +55,89 @@ function emptyCard(icon, title, copy){
     +'</section>';
 }
 
+function roomType(type){
+  return ROOM_TYPES.find((entry) => entry.id === type) || ROOM_TYPES[ROOM_TYPES.length - 1];
+}
+
+function repositoryRooms(){
+  const repository = state.repository;
+  const raw = repository && repository.data && repository.data.rooms;
+  if(!raw || typeof raw !== 'object') return [];
+  return Object.keys(raw).map((key) => {
+    const value = raw[key] && typeof raw[key] === 'object' ? raw[key] : {};
+    return Object.assign({id:key}, value);
+  }).filter((room) => room && room.active !== false)
+    .sort((a,b) => {
+      const aCreated = Number(a.createdAt || 0);
+      const bCreated = Number(b.createdAt || 0);
+      if(aCreated !== bCreated) return aCreated - bCreated;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'nl');
+    });
+}
+
+function roomFormMarkup(){
+  if(!state.roomForm.open) return '';
+  const options = ROOM_TYPES.map((type) => '<option value="'+escapeText(type.id)+'"'+(state.roomForm.type===type.id?' selected':'')+'>'+escapeText(type.icon+' '+type.label)+'</option>').join('');
+  return '<form class="cleaning-room-form" data-cleaning-room-form>'
+    +'<div class="cleaning-form-heading">'
+      +'<div><p class="cleaning-form-kicker">Nieuwe ruimte</p><h3>Nieuwe kamer</h3></div>'
+      +'<button type="button" class="cleaning-icon-button" data-cleaning-room-cancel aria-label="Sluiten">✕</button>'
+    +'</div>'
+    +'<label class="cleaning-field">'
+      +'<span>Naam</span>'
+      +'<input type="text" name="roomName" maxlength="60" autocomplete="off" placeholder="Bijv. Badkamer boven" value="'+escapeText(state.roomForm.name)+'" data-cleaning-room-name>'
+    +'</label>'
+    +'<label class="cleaning-field">'
+      +'<span>Type kamer</span>'
+      +'<select name="roomType" data-cleaning-room-type>'+options+'</select>'
+    +'</label>'
+    +(state.roomForm.error?'<p class="cleaning-form-error" role="alert">'+escapeText(state.roomForm.error)+'</p>':'')
+    +'<div class="cleaning-form-actions">'
+      +'<button type="button" class="cleaning-secondary-button" data-cleaning-room-cancel'+(state.roomForm.submitting?' disabled':'')+'>Annuleren</button>'
+      +'<button type="submit" class="cleaning-primary-button"'+(state.roomForm.submitting?' disabled':'')+'>'+(state.roomForm.submitting?'Opslaan…':'Kamer toevoegen')+'</button>'
+    +'</div>'
+  +'</form>';
+}
+
+function roomCardsMarkup(rooms){
+  return '<div class="cleaning-room-grid">'+rooms.map((room) => {
+    const type = roomType(room.type);
+    return '<article class="cleaning-room-card" data-cleaning-room-id="'+escapeText(room.id)+'">'
+      +'<div class="cleaning-room-card-icon" aria-hidden="true">'+escapeText(type.icon)+'</div>'
+      +'<div class="cleaning-room-card-copy">'
+        +'<h3>'+escapeText(room.name || type.label)+'</h3>'
+        +'<p>'+escapeText(type.label)+' · Nog geen routine</p>'
+      +'</div>'
+      +'<span class="cleaning-room-card-status">Nieuw</span>'
+    +'</article>';
+  }).join('')+'</div>';
+}
+
+function roomsContent(){
+  const repository = state.repository;
+  if(repository && repository.error){
+    return '<section class="cleaning-status-card cleaning-status-error" role="alert">'
+      +'<strong>Kamers konden niet worden geladen</strong>'
+      +'<span>'+escapeText(repository.error)+'</span>'
+    +'</section>';
+  }
+
+  if(!repository || repository.ready !== true){
+    return '<section class="cleaning-status-card" aria-live="polite">'
+      +'<strong>Kamers laden…</strong>'
+      +'<span>We verbinden met het actieve huishouden.</span>'
+    +'</section>';
+  }
+
+  const rooms = repositoryRooms();
+  const notice = state.roomNotice ? '<p class="cleaning-room-notice" role="status">'+escapeText(state.roomNotice)+'</p>' : '';
+  const body = rooms.length
+    ? roomCardsMarkup(rooms)
+    : emptyCard('🛋️','Nog geen kamers','Voeg je eerste kamer toe. Routines en planning komen pas in de volgende stappen.');
+
+  return notice + roomFormMarkup() + body;
+}
+
 function roomsPanel(){
   const roomsActive = state.roomView === 'rooms';
   const plannedActive = state.roomView === 'planned';
@@ -37,7 +146,7 @@ function roomsPanel(){
     +'<button type="button" class="cleaning-room-toggle-btn'+(plannedActive?' is-active':'')+'" data-cleaning-room-view="planned" aria-pressed="'+(plannedActive?'true':'false')+'">Gepland per kamer</button>'
     +'</div>'
     +(roomsActive
-      ? emptyCard('🛋️','Kamers','Hier komen straks de kamers van het huishouden en hun vaste schoonmaakroutines.')
+      ? '<div class="cleaning-room-toolbar"><div><h2>Kamers</h2><p>Beheer de ruimtes van jullie huishouden.</p></div><button type="button" class="cleaning-add-room-button" data-cleaning-room-add>＋ Nieuwe kamer</button></div>'+roomsContent()
       : emptyCard('📍','Gepland per kamer','Hier komt straks in één overzicht wat er per kamer gepland, flexibel of afgerond is.'));
 }
 
@@ -47,6 +156,82 @@ function panelContent(){
   }
   if(state.primaryTab === 'rooms') return roomsPanel();
   return emptyCard('✨','Huisoverzicht','Hier komt straks de huisstatus, aandachtspunten, snelle acties en recente activiteit.');
+}
+
+function readableCreateError(error){
+  const code = String(error && error.message || error || 'Kamer kon niet worden opgeslagen.');
+  if(code.indexOf('CLEANING_ROOM_NAME_REQUIRED')>-1) return 'Geef de kamer eerst een naam.';
+  if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
+  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens het opslaan. Probeer opnieuw.';
+  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat het opslaan van kamers nog niet toe voor dit huishouden.';
+  return code;
+}
+
+function resetRoomForm(){
+  state.roomForm = {
+    open: false,
+    name: '',
+    type: 'living-room',
+    submitting: false,
+    error: ''
+  };
+}
+
+function renderIfActive(){
+  const screen = document.getElementById('screen-cleaning');
+  if(!mountedRoot || !mountedRoot.isConnected || !screen || !screen.classList.contains('active')) return;
+  renderCleaningScreen(mountedRoot);
+}
+
+function ensureRepositorySubscription(){
+  if(repositoryUnsubscribe || repositorySubscribing) return;
+  const repository = window.CleaningHouseholdRepository;
+  if(!repository || typeof repository.subscribe !== 'function') return;
+  repositorySubscribing = true;
+  const unsubscribe = repository.subscribe((snapshot) => {
+    state.repository = snapshot;
+    renderIfActive();
+  });
+  repositoryUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : function(){};
+  repositorySubscribing = false;
+}
+
+function submitRoom(root){
+  if(state.roomForm.submitting) return;
+  const name = String(state.roomForm.name || '').trim();
+  if(!name){
+    state.roomForm.error = 'Geef de kamer eerst een naam.';
+    renderCleaningScreen(root);
+    return;
+  }
+
+  const repository = window.CleaningHouseholdRepository;
+  if(!repository || typeof repository.createRoom !== 'function'){
+    state.roomForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
+    renderCleaningScreen(root);
+    return;
+  }
+
+  state.roomForm.name = name;
+  state.roomForm.submitting = true;
+  state.roomForm.error = '';
+  renderCleaningScreen(root);
+
+  repository.createRoom({name:name,type:state.roomForm.type}).then(() => {
+    resetRoomForm();
+    state.roomNotice = 'Kamer toegevoegd ✓';
+    renderCleaningScreen(root);
+    window.setTimeout(() => {
+      if(state.roomNotice){
+        state.roomNotice = '';
+        renderIfActive();
+      }
+    }, 2500);
+  }).catch((error) => {
+    state.roomForm.submitting = false;
+    state.roomForm.error = readableCreateError(error);
+    renderCleaningScreen(root);
+  });
 }
 
 function bind(root){
@@ -63,11 +248,50 @@ function bind(root){
       renderCleaningScreen(root);
     });
   });
+
+  const addButton = root.querySelector('[data-cleaning-room-add]');
+  if(addButton) addButton.addEventListener('click', () => {
+    state.roomForm.open = true;
+    state.roomForm.error = '';
+    state.roomNotice = '';
+    renderCleaningScreen(root);
+    window.setTimeout(() => {
+      const input = root.querySelector('[data-cleaning-room-name]');
+      if(input) input.focus();
+    }, 0);
+  });
+
+  root.querySelectorAll('[data-cleaning-room-cancel]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if(state.roomForm.submitting) return;
+      resetRoomForm();
+      renderCleaningScreen(root);
+    });
+  });
+
+  const nameInput = root.querySelector('[data-cleaning-room-name]');
+  if(nameInput) nameInput.addEventListener('input', () => {
+    state.roomForm.name = nameInput.value;
+    if(state.roomForm.error) state.roomForm.error = '';
+  });
+
+  const typeSelect = root.querySelector('[data-cleaning-room-type]');
+  if(typeSelect) typeSelect.addEventListener('change', () => {
+    state.roomForm.type = typeSelect.value || 'custom';
+  });
+
+  const form = root.querySelector('[data-cleaning-room-form]');
+  if(form) form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitRoom(root);
+  });
 }
 
 export function renderCleaningScreen(target){
   const root = target || document.getElementById('cleaning-content');
   if(!root) return;
+  mountedRoot = root;
+  ensureRepositorySubscription();
 
   root.innerHTML = '<div class="cleaning-shell">'
     +'<header class="cleaning-intro">'
