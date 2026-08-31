@@ -178,7 +178,9 @@
 #screen-cleaning .cleaning-primary-button,
 #screen-cleaning .cleaning-secondary-button,
 #screen-cleaning .cleaning-icon-button,
-#screen-cleaning .cleaning-room-edit-button {
+#screen-cleaning .cleaning-room-edit-button,
+#screen-cleaning .cleaning-danger-link,
+#screen-cleaning .cleaning-danger-button {
   border: 0;
   font: inherit;
   cursor: pointer;
@@ -320,9 +322,77 @@
 }
 
 #screen-cleaning .cleaning-primary-button:disabled,
-#screen-cleaning .cleaning-secondary-button:disabled {
+#screen-cleaning .cleaning-secondary-button:disabled,
+#screen-cleaning .cleaning-icon-button:disabled,
+#screen-cleaning .cleaning-danger-link:disabled,
+#screen-cleaning .cleaning-danger-button:disabled {
   opacity: .55;
   cursor: default;
+}
+
+#screen-cleaning .cleaning-room-danger {
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: 1px solid var(--cleaning-border);
+}
+
+#screen-cleaning .cleaning-danger-link {
+  min-height: 38px;
+  padding: 0 4px;
+  background: transparent;
+  color: #b32636;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+[data-theme*="dark"] #screen-cleaning .cleaning-danger-link {
+  color: #ff9ba6;
+}
+
+#screen-cleaning .cleaning-delete-confirm {
+  display: grid;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid rgba(188,54,66,.20);
+  border-radius: 15px;
+  background: rgba(188,54,66,.08);
+}
+
+#screen-cleaning .cleaning-delete-confirm > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+#screen-cleaning .cleaning-delete-confirm strong {
+  color: #a81f30;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+#screen-cleaning .cleaning-delete-confirm span {
+  color: var(--cleaning-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+[data-theme*="dark"] #screen-cleaning .cleaning-delete-confirm strong {
+  color: #ff9ba6;
+}
+
+#screen-cleaning .cleaning-delete-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 8px;
+}
+
+#screen-cleaning .cleaning-danger-button {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 13px;
+  background: #b32636;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 #screen-cleaning .cleaning-room-grid {
@@ -483,5 +553,9 @@
     min-height: 30px;
     padding-left: 8px;
     padding-right: 8px;
+  }
+
+  #screen-cleaning .cleaning-delete-actions {
+    grid-template-columns: 1fr;
   }
 }
