@@ -1,13 +1,14 @@
 'use strict';
 // ============================================================
-// CLEANING HOUSEHOLD REPOSITORY v0.3.0
+// CLEANING HOUSEHOLD REPOSITORY v0.4.0
 // HouseholdContext-scoped Firebase read lifecycle.
-// Canonical room writes enabled: createRoom + updateRoom.
+// Canonical room writes enabled: createRoom + updateRoom + removeRoom.
+// removeRoom is a soft-delete to preserve future references/history.
 // ============================================================
 (function(){
   if(window.CleaningHouseholdRepository)return;
 
-  var VERSION='0.3.0';
+  var VERSION='0.4.0';
   var subscribers=[];
   var contextUnsubscribe=null;
   var active=null;
@@ -355,6 +356,7 @@
 
     var existing=current.data&&current.data.rooms&&current.data.rooms[id];
     if(!existing||typeof existing!=='object')return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+    if(existing.active===false)return Promise.reject(new Error('CLEANING_ROOM_INACTIVE'));
 
     var normalized=domain.normalizeRoom(Object.assign({},clone(existing),input||{}),id);
     if(!normalized.name)return Promise.reject(new Error('CLEANING_ROOM_NAME_REQUIRED'));
@@ -378,6 +380,41 @@
     });
   }
 
+  function removeRoom(roomId){
+    var write,domain;
+    try{
+      write=requireWriteContext();
+      domain=requireDomain();
+    }catch(error){return Promise.reject(error);}
+
+    var id=domain.safeId?domain.safeId(roomId):String(roomId||'');
+    if(!id)return Promise.reject(new Error('CLEANING_ROOM_ID_REQUIRED'));
+
+    var existing=current.data&&current.data.rooms&&current.data.rooms[id];
+    if(!existing||typeof existing!=='object')return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+
+    var basePath=domain.basePath(write.ctx.householdId);
+    if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
+    if(!isCurrent(write.token))return Promise.reject(new Error('HOUSEHOLD_CONTEXT_CHANGED'));
+
+    var roomRef=write.db.ref(basePath+'/rooms/'+id);
+    var timestamp=Date.now();
+    return roomRef.transaction(function(serverRoom){
+      if(!serverRoom||typeof serverRoom!=='object')return;
+      if(serverRoom.active===false)return serverRoom;
+      serverRoom.active=false;
+      serverRoom.deletedAt=serverRoom.deletedAt||timestamp;
+      serverRoom.deletedByUid=serverRoom.deletedByUid||write.ctx.uid;
+      serverRoom.updatedAt=timestamp;
+      serverRoom.updatedByUid=write.ctx.uid;
+      return serverRoom;
+    }).then(function(result){
+      if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+      if(!result||!result.snapshot||!result.snapshot.exists())throw new Error('CLEANING_ROOM_NOT_FOUND');
+      return deepFreeze(clone(result.snapshot.val()));
+    });
+  }
+
   function getOccurrence(id){
     var occurrenceId=String(id||'');
     var occurrences=current.data&&current.data.occurrences||{};
@@ -392,7 +429,7 @@
     snapshot:snapshot,
     createRoom:createRoom,
     updateRoom:updateRoom,
-    removeRoom:readOnlyWrite,
+    removeRoom:removeRoom,
     createRoutineItem:readOnlyWrite,
     updateRoutineItem:readOnlyWrite,
     removeRoutineItem:readOnlyWrite,
