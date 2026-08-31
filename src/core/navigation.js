@@ -21,6 +21,7 @@ var ALL_SCREENS = [
   {id:'skills',        icon:'⚡', label:'Skills'},
   {id:'meals',         icon:'🗓️', label:'Maaltijden'},
   {id:'templates',     icon:'📋', label:'Templates'},
+  {id:'cleaning',      icon:'🧹', label:'Schoonmaken'},
 ];
 
 // Fixed primary mobile ribbon: Home · Boodschappen · Feed (+) · Taken · Meer
@@ -258,19 +259,3 @@ function closeMore(){
   var menu=document.getElementById('more-menu');
   if(menu)menu.classList.remove('open');
 }
-
-(function installMoreOutsideDismiss(){
-  if(window.__familyMoreOutsideDismiss)return;
-  window.__familyMoreOutsideDismiss=true;
-  function dismiss(e){
-    var menu=document.getElementById('more-menu');
-    if(!menu||!menu.classList.contains('open'))return;
-    var moreBtn=document.getElementById('nav-more-btn');
-    var target=e.target;
-    if(menu.contains(target)||(moreBtn&&moreBtn.contains(target)))return;
-    closeMore();
-    e.preventDefault();
-    e.stopPropagation();
-  }
-  document.addEventListener('pointerdown',dismiss,true);
-})();
