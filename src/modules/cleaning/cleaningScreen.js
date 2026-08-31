@@ -1,6 +1,6 @@
-import './cleaningDomain.js?v=6';
-import './cleaningRepositoryContract.js?v=6';
-import './cleaningHouseholdRepository.js?v=6';
+import './cleaningDomain.js?v=7';
+import './cleaningRepositoryContract.js?v=7';
+import './cleaningHouseholdRepository.js?v=7';
 import { routineTemplatesForRoomType } from './cleaningRoutineTemplates.js?v=1';
 
 const ROOM_TYPES = Object.freeze([
@@ -27,10 +27,12 @@ const state = {
   roomView: 'rooms',
   repository: null,
   templatePending: null,
+  templateMutationIds: {},
   roomForm: {
     open: false,
     mode: 'create',
     roomId: null,
+    mutationId: null,
     name: '',
     type: 'living-room',
     submitting: false,
@@ -43,6 +45,7 @@ const state = {
     mode: 'create',
     routineId: null,
     roomId: null,
+    mutationId: null,
     title: '',
     intervalDays: 7,
     estimatedMinutes: 15,
@@ -58,6 +61,19 @@ const state = {
 let repositoryUnsubscribe = null;
 let repositorySubscribing = false;
 let mountedRoot = null;
+
+function createMutationId(){
+  try{
+    if(window.crypto && typeof window.crypto.randomUUID === 'function'){
+      return window.crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g,'');
+    }
+  }catch(e){}
+  return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,12);
+}
+
+function templateMutationCacheKey(roomId,templateKey){
+  return String(roomId||'')+'::'+String(templateKey||'');
+}
 
 function escapeText(value){
   return String(value == null ? '' : value)
@@ -332,6 +348,7 @@ function readableRoomError(error){
   if(code.indexOf('CLEANING_ROOM_INACTIVE')>-1) return 'Deze kamer is al verwijderd.';
   if(code.indexOf('CLEANING_ROOM_NOT_FOUND')>-1) return 'Deze kamer bestaat niet meer. Ververs de lijst en probeer opnieuw.';
   if(code.indexOf('CLEANING_ROOM_ID_REQUIRED')>-1) return 'De kamer kon niet worden herkend.';
+  if(code.indexOf('CLEANING_MUTATION_ID_INVALID')>-1) return 'Deze actie kon niet veilig worden gestart. Probeer opnieuw.';
   if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
   if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
   if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze kamerwijziging nog niet toe voor dit huishouden.';
@@ -346,6 +363,7 @@ function readableRoutineError(error){
   if(code.indexOf('CLEANING_ROUTINE_NOT_FOUND')>-1) return 'Deze routine bestaat niet meer.';
   if(code.indexOf('CLEANING_ROUTINE_ROOM_REQUIRED')>-1) return 'Kies eerst een geldige kamer.';
   if(code.indexOf('CLEANING_ROOM_INACTIVE')>-1 || code.indexOf('CLEANING_ROOM_NOT_FOUND')>-1) return 'Deze kamer is niet meer actief.';
+  if(code.indexOf('CLEANING_MUTATION_ID_INVALID')>-1) return 'Deze actie kon niet veilig worden gestart. Probeer opnieuw.';
   if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
   if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
   if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze routinewijziging nog niet toe voor dit huishouden.';
@@ -357,6 +375,7 @@ function resetRoomForm(){
     open: false,
     mode: 'create',
     roomId: null,
+    mutationId: null,
     name: '',
     type: 'living-room',
     submitting: false,
@@ -372,6 +391,7 @@ function resetRoutineForm(){
     mode: 'create',
     routineId: null,
     roomId: null,
+    mutationId: null,
     title: '',
     intervalDays: 7,
     estimatedMinutes: 15,
@@ -387,6 +407,7 @@ function openCreateRoom(root){
   resetRoutineForm();
   resetRoomForm();
   state.roomForm.open = true;
+  state.roomForm.mutationId = createMutationId();
   state.roomNotice = '';
   renderCleaningScreen(root);
   window.setTimeout(() => {
@@ -407,6 +428,7 @@ function openEditRoom(root,roomId){
     open: true,
     mode: 'edit',
     roomId: room.id,
+    mutationId: null,
     name: String(room.name || ''),
     type: room.type || 'custom',
     submitting: false,
@@ -433,6 +455,7 @@ function openRoutineForm(root,roomId){
   resetRoutineForm();
   state.routineForm.open = true;
   state.routineForm.roomId = room.id;
+  state.routineForm.mutationId = createMutationId();
   state.roomNotice = '';
   renderCleaningScreen(root);
   window.setTimeout(() => {
@@ -460,6 +483,7 @@ function openEditRoutine(root,routineId){
     mode: 'edit',
     routineId: routine.id,
     roomId: routine.roomId,
+    mutationId: null,
     title: String(routine.title || ''),
     intervalDays: Number(routine.intervalDays) || 7,
     estimatedMinutes: Number(routine.estimatedMinutes) || 15,
@@ -493,7 +517,10 @@ function ensureRepositorySubscription(){
     if(state.templatePending){
       const exists = repositoryRoutinesForRoom(state.templatePending.roomId)
         .some((routine) => String(routine.templateKey || '') === state.templatePending.key);
-      if(exists) state.templatePending = null;
+      if(exists){
+        delete state.templateMutationIds[templateMutationCacheKey(state.templatePending.roomId,state.templatePending.key)];
+        state.templatePending = null;
+      }
     }
     renderIfActive();
   });
@@ -521,6 +548,7 @@ function submitRoom(root){
 
   const roomId = state.roomForm.roomId;
   const payload = {name:name,type:state.roomForm.type};
+  if(!editing) payload.mutationId = state.roomForm.mutationId || (state.roomForm.mutationId=createMutationId());
   state.roomForm.name = name;
   state.roomForm.submitting = true;
   state.roomForm.deleteConfirm = false;
@@ -572,6 +600,7 @@ function submitRoutine(root){
     estimatedMinutes: estimatedMinutes,
     priority: state.routineForm.priority
   };
+  if(!editing) payload.mutationId = state.routineForm.mutationId || (state.routineForm.mutationId=createMutationId());
   state.routineForm.title = title;
   state.routineForm.intervalDays = intervalDays;
   state.routineForm.estimatedMinutes = estimatedMinutes;
@@ -614,7 +643,9 @@ function addRoutineTemplate(root,roomId,templateKey){
     return;
   }
 
-  state.templatePending = {roomId:room.id,key:template.key};
+  const cacheKey = templateMutationCacheKey(room.id,template.key);
+  const mutationId = state.templateMutationIds[cacheKey] || (state.templateMutationIds[cacheKey]=createMutationId());
+  state.templatePending = {roomId:room.id,key:template.key,mutationId:mutationId};
   state.roomNotice = '';
   renderCleaningScreen(root);
 
@@ -624,7 +655,8 @@ function addRoutineTemplate(root,roomId,templateKey){
     intervalDays: template.intervalDays,
     estimatedMinutes: template.estimatedMinutes,
     priority: template.priority,
-    templateKey: template.key
+    templateKey: template.key,
+    mutationId: mutationId
   }).then(() => {
     state.roomNotice = 'Suggestie toegevoegd ✓';
     renderCleaningScreen(root);
