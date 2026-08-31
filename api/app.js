@@ -6,6 +6,10 @@ module.exports = async function handler(req, res) {
     const htmlPath = path.join(process.cwd(), 'index.html');
     let html = fs.readFileSync(htmlPath, 'utf-8');
 
+    // Prevent a restored legacy Firebase Messaging bootstrap from blocking Safari auth.
+    // Push setup already degrades safely when window.fbMsg is unavailable.
+    html = html.replace('  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>\n', '');
+
     const brandIcon192 = '/api/brand-icon?variant=192&v=5';
     const brandIcon180 = '/api/brand-icon?variant=180&v=5';
     const brandIcon32 = '/api/brand-icon?variant=32&v=5';
