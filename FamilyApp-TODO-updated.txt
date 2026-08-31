@@ -1,5 +1,17 @@
 ## Volledigere TODO / Bug & UI status FamilyApp
 
+# Stabiele ontwikkelbaseline
+
+* Baseline: STEP 13.6 Feed interaction/idempotency contracts.
+* Status: REAL-DEVICE GEACCEPTEERD op iPhone op 31-08-2026.
+* Canonieke baseline-commit: `aeb065b46b8c4eed45c2141af7daf6a4412fb160`.
+* `agent/household-rebuild-v2` is teruggezet op exact dezelfde bestandsboom en gebruikt deze baseline als enige actieve ontwikkelbasis.
+* `main` blijft onaangeraakt totdat een volgende fase expliciet is geaccepteerd.
+* Nieuwe wijzigingen worden voortaan in kleine, afzonderlijk te testen stappen toegevoegd met iPhone-device gate tussen de stappen.
+* Debugstaat van vóór de rollback is bewaard op `backup/rebuild-debug-2026-08-31`.
+
+---
+
 # Kritieke open issues
 
 ## 1. Carousel / Hero systems verder stabiliseren
