@@ -1,0 +1,164 @@
+#screen-cleaning {
+  --cleaning-bg: linear-gradient(180deg, rgba(247,244,255,.96) 0%, rgba(248,250,252,.98) 100%);
+  --cleaning-surface: rgba(255,255,255,.78);
+  --cleaning-surface-strong: rgba(255,255,255,.94);
+  --cleaning-border: rgba(90,70,125,.13);
+  --cleaning-text: var(--c-text);
+  --cleaning-muted: var(--c-text2);
+  --cleaning-accent: var(--c-primary);
+  --cleaning-shadow: 0 14px 34px rgba(45,28,77,.10);
+  min-height: 100%;
+  background: var(--cleaning-bg);
+}
+
+[data-theme*="dark"] #screen-cleaning {
+  --cleaning-bg: linear-gradient(180deg, rgba(18,16,28,.98) 0%, rgba(11,14,22,.99) 100%);
+  --cleaning-surface: rgba(31,31,45,.72);
+  --cleaning-surface-strong: rgba(34,34,49,.92);
+  --cleaning-border: rgba(255,255,255,.10);
+  --cleaning-shadow: 0 16px 40px rgba(0,0,0,.30);
+}
+
+#screen-cleaning .cleaning-shell {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 14px 14px calc(112px + env(safe-area-inset-bottom));
+  color: var(--cleaning-text);
+}
+
+#screen-cleaning .cleaning-intro {
+  padding: 8px 2px 16px;
+}
+
+#screen-cleaning .cleaning-kicker {
+  margin: 0 0 5px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--cleaning-muted);
+}
+
+#screen-cleaning .cleaning-title {
+  margin: 0;
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -.035em;
+}
+
+#screen-cleaning .cleaning-subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cleaning-muted);
+}
+
+#screen-cleaning .cleaning-tabs,
+#screen-cleaning .cleaning-room-toggle {
+  display: grid;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--cleaning-border);
+  background: var(--cleaning-surface);
+  box-shadow: var(--cleaning-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+#screen-cleaning .cleaning-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-radius: 16px;
+}
+
+#screen-cleaning .cleaning-room-toggle {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+  border-radius: 14px;
+}
+
+#screen-cleaning .cleaning-tab,
+#screen-cleaning .cleaning-room-toggle-btn {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--cleaning-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#screen-cleaning .cleaning-tab.is-active,
+#screen-cleaning .cleaning-room-toggle-btn.is-active {
+  background: var(--cleaning-surface-strong);
+  color: var(--cleaning-text);
+  box-shadow: 0 5px 18px rgba(38,22,66,.11);
+}
+
+#screen-cleaning .cleaning-panel {
+  margin-top: 14px;
+}
+
+#screen-cleaning .cleaning-empty-card {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid var(--cleaning-border);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--cleaning-accent) 20%, transparent), transparent 38%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cleaning-surface-strong) 94%, transparent), var(--cleaning-surface));
+  box-shadow: var(--cleaning-shadow);
+}
+
+#screen-cleaning .cleaning-empty-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 32px;
+  border-radius: 17px;
+  font-size: 25px;
+  background: color-mix(in srgb, var(--cleaning-accent) 13%, var(--cleaning-surface-strong));
+  border: 1px solid color-mix(in srgb, var(--cleaning-accent) 22%, transparent);
+}
+
+#screen-cleaning .cleaning-empty-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: -.02em;
+}
+
+#screen-cleaning .cleaning-empty-copy {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--cleaning-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#screen-cleaning [hidden] {
+  display: none !important;
+}
+
+@media (max-width: 390px) {
+  #screen-cleaning .cleaning-shell {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  #screen-cleaning .cleaning-tab,
+  #screen-cleaning .cleaning-room-toggle-btn {
+    font-size: 12px;
+  }
+}
