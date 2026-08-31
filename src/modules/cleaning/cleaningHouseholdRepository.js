@@ -1,14 +1,15 @@
 'use strict';
 // ============================================================
-// CLEANING HOUSEHOLD REPOSITORY v0.6.0
+// CLEANING HOUSEHOLD REPOSITORY v0.7.0
 // HouseholdContext-scoped Firebase read lifecycle.
 // Canonical room CRUD + routine create/update/soft-delete.
 // Routine -> room membership is stored only on routine.roomId.
+// Create writes accept stable mutationIds for retry idempotency.
 // ============================================================
 (function(){
   if(window.CleaningHouseholdRepository)return;
 
-  var VERSION='0.6.0';
+  var VERSION='0.7.0';
   var subscribers=[];
   var contextUnsubscribe=null;
   var active=null;
@@ -321,18 +322,48 @@
     return routine&&typeof routine==='object'?routine:null;
   }
 
+  function mutationId(input){
+    var raw=String(input&&input.mutationId||'').trim();
+    if(!raw)return null;
+    if(raw.length<8||raw.length>120||!/^[A-Za-z0-9_-]+$/.test(raw))throw new Error('CLEANING_MUTATION_ID_INVALID');
+    return raw;
+  }
+
+  function idempotentCreate(ref,entity,mutation,token,collisionCode){
+    if(!mutation){
+      return ref.set(entity).then(function(){
+        if(!isCurrent(token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+        return deepFreeze(clone(entity));
+      });
+    }
+
+    return ref.transaction(function(serverValue){
+      if(serverValue&&typeof serverValue==='object'){
+        if(serverValue.createMutationId===mutation)return serverValue;
+        return;
+      }
+      return entity;
+    }).then(function(result){
+      if(!isCurrent(token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+      var saved=result&&result.snapshot&&typeof result.snapshot.val==='function'?result.snapshot.val():null;
+      if(!saved||saved.createMutationId!==mutation)throw new Error(collisionCode||'CLEANING_MUTATION_COLLISION');
+      return deepFreeze(clone(saved));
+    });
+  }
+
   function createRoom(input){
-    var write,domain;
+    var write,domain,mutation;
     try{
       write=requireWriteContext();
       domain=requireDomain();
+      mutation=mutationId(input);
     }catch(error){return Promise.reject(error);}
 
     var basePath=domain.basePath(write.ctx.householdId);
     if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
 
     var roomsRef=write.db.ref(basePath+'/rooms');
-    var roomRef=roomsRef.push();
+    var roomRef=mutation?roomsRef.child('room_'+mutation):roomsRef.push();
     var roomId=roomRef&&roomRef.key;
     if(!roomId)return Promise.reject(new Error('CLEANING_ROOM_ID_FAILED'));
 
@@ -347,13 +378,11 @@
     room.updatedByUid=write.ctx.uid;
     room.updatedAt=timestamp;
     room.schemaVersion=1;
+    if(mutation)room.createMutationId=mutation;
+    delete room.mutationId;
 
     if(!isCurrent(write.token))return Promise.reject(new Error('HOUSEHOLD_CONTEXT_CHANGED'));
-
-    return roomRef.set(room).then(function(){
-      if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
-      return deepFreeze(clone(room));
-    });
+    return idempotentCreate(roomRef,room,mutation,write.token,'CLEANING_ROOM_MUTATION_COLLISION');
   }
 
   function updateRoom(roomId,input){
@@ -428,10 +457,11 @@
   }
 
   function createRoutineItem(input){
-    var write,domain;
+    var write,domain,mutation;
     try{
       write=requireWriteContext();
       domain=requireDomain();
+      mutation=mutationId(input);
     }catch(error){return Promise.reject(error);}
 
     var roomId=domain.safeId?domain.safeId(input&&input.roomId):String(input&&input.roomId||'');
@@ -444,7 +474,7 @@
     if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
 
     var routinesRef=write.db.ref(basePath+'/routines');
-    var routineRef=routinesRef.push();
+    var routineRef=mutation?routinesRef.child('routine_'+mutation):routinesRef.push();
     var routineId=routineRef&&routineRef.key;
     if(!routineId)return Promise.reject(new Error('CLEANING_ROUTINE_ID_FAILED'));
 
@@ -460,13 +490,11 @@
     routine.updatedByUid=write.ctx.uid;
     routine.updatedAt=timestamp;
     routine.schemaVersion=1;
+    if(mutation)routine.createMutationId=mutation;
+    delete routine.mutationId;
 
     if(!isCurrent(write.token))return Promise.reject(new Error('HOUSEHOLD_CONTEXT_CHANGED'));
-
-    return routineRef.set(routine).then(function(){
-      if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
-      return deepFreeze(clone(routine));
-    });
+    return idempotentCreate(routineRef,routine,mutation,write.token,'CLEANING_ROUTINE_MUTATION_COLLISION');
   }
 
   function updateRoutineItem(routineId,input){
