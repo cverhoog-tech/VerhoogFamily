@@ -1,0 +1,17 @@
+/* ============================================================
+   AUTHENTICATED APP ROOT
+   Alle authenticated app-content (header, screens, nav, sheets/overlays)
+   leeft binnen #family-app-root. #login-screen blijft hier bewust buiten:
+   UI-schaal (FamilyUiScale, src/core/profile.legacy.js) schaalt uitsluitend
+   deze root, nooit document.body, zodat het fixed login-scherm altijd tegen
+   de echte (ongezoomde) viewport aanligt.
+
+   Voeg hier geen position/transform/filter/perspective/contain/
+   backdrop-filter/will-change aan toe: dat verandert het containing block
+   van fixed/absolute nakomelingen (bottom nav, sheets, overlays) en kan
+   dezelfde klasse bug opnieuw introduceren die deze root juist oplost.
+   ============================================================ */
+
+#family-app-root {
+  min-height: 100vh;
+}
