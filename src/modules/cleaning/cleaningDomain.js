@@ -1,13 +1,14 @@
 'use strict';
 // ============================================================
-// CLEANING DOMAIN CONTRACT v0.1.0
+// CLEANING DOMAIN CONTRACT v0.2.0
 // Pure domain contract only: no Firebase, no localStorage, no DOM writes.
 // Source of truth for one concrete clean remains CleaningOccurrence.
+// Routine -> room relationship is canonical through routine.roomId only.
 // ============================================================
 (function(){
   if(window.CleaningDomain)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
 
   var PRIORITY=Object.freeze({
     BASIC:'BASIC',
@@ -106,7 +107,9 @@
     row.name=String(row.name||'').trim();
     row.type=String(row.type||'custom').trim()||'custom';
     row.active=row.active!==false;
-    row.routineIds=Array.isArray(row.routineIds)?row.routineIds.map(function(v){return safeId(v);}).filter(Boolean):[];
+    // Do not persist a second authoritative room -> routine relation.
+    // Routine membership is derived exclusively from CleaningRoutineItem.roomId.
+    delete row.routineIds;
     row.distributionMode=DISTRIBUTION_MODE[row.distributionMode]?row.distributionMode:DISTRIBUTION_MODE.FAIR_TIME;
     row.preferredWindow=row.preferredWindow||null;
     row.schemaVersion=1;
