@@ -1,0 +1,156 @@
+/* ============================================================
+   SCHOONMAKEN — module-scoped styles (FASE A: shell only)
+
+   Alles hieronder is gescoped onder #screen-cleaning. Niets in dit
+   bestand mag buiten die root effect hebben (geen body/html-regels,
+   geen ongescopede element-selectors, geen !important-stapels).
+
+   Thema: geen aparte 6x2 Schoonmaken-ontwerpen. Eén premium dark
+   art-direction en één premium light art-direction, die de zes
+   bestaande FamilyApp-kleurthema's volgen via de bestaande --c-*
+   tokens (app.css). Dark/light zelf volgt het bestaande
+   [data-theme*="dark"]-patroon (zie app.css ~L212, elders al gebruikt
+   voor add-sheet.sheet-task) zodat alle 6 thema's automatisch
+   blijven werken.
+
+   --cleaning-* zijn module-local afgeleide tokens: surfaces/glass/
+   overlay/status-kleuren die vast liggen (dark of light), terwijl
+   interactie/accent gewoon var(--c-primary)/var(--c-accent) blijft
+   volgen — dat is hoe het gekozen FamilyApp-thema hier doorwerkt.
+   ============================================================ */
+
+#screen-cleaning {
+  --cleaning-surface: rgba(255,255,255,.72);
+  --cleaning-surface-strong: rgba(255,255,255,.92);
+  --cleaning-border: rgba(17,24,39,.08);
+  --cleaning-shadow: 0 14px 32px rgba(17,24,39,.10);
+  --cleaning-overlay: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.55) 65%, rgba(255,255,255,.85) 100%);
+  --cleaning-hero-fallback: linear-gradient(135deg, var(--c-primary-light) 0%, var(--c-surface2) 100%);
+  --cleaning-radius-lg: 26px;
+  --cleaning-radius-md: 18px;
+
+  /* Statuskleuren: vast qua semantiek (light/dark passen alleen luminantie aan) */
+  --cleaning-status-gepland: #0f9d70;
+  --cleaning-status-gepland-bg: rgba(15,157,112,.12);
+  --cleaning-status-flexibel: #8b5cf6;
+  --cleaning-status-flexibel-bg: rgba(139,92,246,.12);
+  --cleaning-status-akkoord: #b8863a;
+  --cleaning-status-akkoord-bg: rgba(184,134,58,.14);
+  --cleaning-status-afgerond: #2f9e63;
+  --cleaning-status-afgerond-bg: rgba(47,158,99,.12);
+  --cleaning-status-aandacht: #d9662f;
+  --cleaning-status-aandacht-bg: rgba(217,102,47,.14);
+}
+
+html[data-theme*="dark"] #screen-cleaning {
+  --cleaning-surface: rgba(30,24,48,.62);
+  --cleaning-surface-strong: rgba(22,17,38,.88);
+  --cleaning-border: rgba(255,255,255,.08);
+  --cleaning-shadow: 0 20px 44px rgba(0,0,0,.48);
+  --cleaning-overlay: linear-gradient(180deg, rgba(10,6,20,0) 0%, rgba(10,6,20,.45) 60%, rgba(10,6,20,.78) 100%);
+  --cleaning-hero-fallback: linear-gradient(135deg, #241a3d 0%, #140c22 100%);
+
+  --cleaning-status-gepland: #34d399;
+  --cleaning-status-gepland-bg: rgba(52,211,153,.16);
+  --cleaning-status-flexibel: #a78bfa;
+  --cleaning-status-flexibel-bg: rgba(167,139,250,.18);
+  --cleaning-status-akkoord: #eab659;
+  --cleaning-status-akkoord-bg: rgba(234,182,89,.18);
+  --cleaning-status-afgerond: #4ade80;
+  --cleaning-status-afgerond-bg: rgba(74,222,128,.16);
+  --cleaning-status-aandacht: #f0876a;
+  --cleaning-status-aandacht-bg: rgba(240,135,106,.18);
+}
+
+/* ── TABS ── */
+#screen-cleaning .cleaning-tabs{
+  display:flex;gap:6px;padding:12px 16px 10px;overflow-x:auto;
+}
+#screen-cleaning .cleaning-tab{
+  flex:0 0 auto;border:1.5px solid var(--cleaning-border);background:var(--cleaning-surface);
+  color:var(--c-text2);font-size:13px;font-weight:700;padding:8px 16px;
+  border-radius:var(--cleaning-radius-md);cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+#screen-cleaning .cleaning-tab.active{
+  background:var(--c-primary);border-color:var(--c-primary);color:#fff;
+}
+
+/* ── TAB CONTENT ── */
+#screen-cleaning .cleaning-tab-content{padding:0 16px 16px}
+#screen-cleaning .cleaning-section-title{
+  font-size:13px;font-weight:800;color:var(--c-text);text-transform:uppercase;
+  letter-spacing:.4px;margin:18px 2px 10px;
+}
+#screen-cleaning .cleaning-section-title:first-child{margin-top:4px}
+
+/* ── HERO ── */
+#screen-cleaning .cleaning-hero{
+  position:relative;border-radius:var(--cleaning-radius-lg);overflow:hidden;
+  min-height:190px;display:flex;align-items:flex-end;
+  box-shadow:var(--cleaning-shadow);border:1px solid var(--cleaning-border);
+}
+#screen-cleaning .cleaning-hero--compact{min-height:150px;margin-bottom:14px}
+#screen-cleaning .cleaning-hero-bg{
+  position:absolute;inset:0;background:var(--cleaning-hero-fallback);
+  background-size:cover;background-position:center;
+}
+#screen-cleaning .cleaning-hero-bg::after{
+  content:'';position:absolute;inset:0;background:var(--cleaning-overlay);
+}
+html[data-theme*="dark"] #screen-cleaning .cleaning-hero-bg{
+  background-image:url('/public/assets/cleaning/hero/house-status-dark.webp');
+}
+#screen-cleaning .cleaning-hero-content{position:relative;z-index:1;padding:18px 18px 20px;width:100%}
+#screen-cleaning .cleaning-hero-label{
+  font-size:12px;font-weight:700;color:var(--c-text2);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:4px;
+}
+#screen-cleaning .cleaning-hero-title{font-size:19px;font-weight:800;color:var(--c-text);margin-bottom:4px}
+#screen-cleaning .cleaning-hero-sub{font-size:13px;color:var(--c-text2);line-height:1.4;margin-bottom:14px}
+#screen-cleaning .cleaning-hero-stats{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── STATUS CHIPS ── */
+#screen-cleaning .cleaning-stat{
+  flex:1 1 auto;min-width:74px;background:var(--cleaning-surface-strong);
+  border:1px solid var(--cleaning-border);border-radius:14px;padding:8px 10px;text-align:center;
+}
+#screen-cleaning .cleaning-stat-value{font-size:17px;font-weight:800;color:var(--c-text)}
+#screen-cleaning .cleaning-stat-label{font-size:10px;font-weight:700;color:var(--c-text2);margin-top:2px}
+#screen-cleaning .cleaning-stat--gepland .cleaning-stat-value{color:var(--cleaning-status-gepland)}
+#screen-cleaning .cleaning-stat--flexibel .cleaning-stat-value{color:var(--cleaning-status-flexibel)}
+#screen-cleaning .cleaning-stat--akkoord .cleaning-stat-value{color:var(--cleaning-status-akkoord)}
+#screen-cleaning .cleaning-stat--afgerond .cleaning-stat-value{color:var(--cleaning-status-afgerond)}
+
+/* ── QUICK ACTIONS ── */
+#screen-cleaning .cleaning-quick-actions{display:flex;gap:10px}
+#screen-cleaning .cleaning-quick-action{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--c-surface);border:1px solid var(--cleaning-border);
+  border-radius:var(--cleaning-radius-md);padding:14px 10px;cursor:pointer;
+}
+#screen-cleaning .cleaning-quick-icon{font-size:22px}
+#screen-cleaning .cleaning-quick-label{font-size:12px;font-weight:700;color:var(--c-text);text-align:center}
+
+/* ── TOGGLE (Kamers / Gepland per kamer) ── */
+#screen-cleaning .cleaning-toggle{
+  display:flex;gap:4px;background:var(--c-surface2);
+  border-radius:var(--cleaning-radius-md);padding:4px;margin-bottom:14px;
+}
+#screen-cleaning .cleaning-toggle-btn{
+  flex:1;border:none;background:transparent;color:var(--c-text2);
+  font-size:13px;font-weight:700;padding:9px 8px;border-radius:14px;cursor:pointer;
+  transition:background .15s,color .15s;
+}
+#screen-cleaning .cleaning-toggle-btn.active{
+  background:var(--c-surface);color:var(--c-text);box-shadow:0 1px 4px var(--c-card-shadow);
+}
+
+/* ── EMPTY STATE ── */
+#screen-cleaning .cleaning-empty{
+  background:var(--c-surface);border:1px dashed var(--cleaning-border);
+  border-radius:var(--cleaning-radius-md);padding:26px 18px;text-align:center;
+}
+#screen-cleaning .cleaning-empty-icon{font-size:30px;margin-bottom:8px}
+#screen-cleaning .cleaning-empty-title{font-size:14px;font-weight:800;color:var(--c-text);margin-bottom:4px}
+#screen-cleaning .cleaning-empty-sub{font-size:12.5px;color:var(--c-text2);line-height:1.45}
