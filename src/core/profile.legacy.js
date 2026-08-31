@@ -26,12 +26,23 @@ var _profileMounted = false;
     return normalize(localStorage.getItem(STORAGE_KEY));
   }
 
+  // UI scale is owned by the authenticated app root, never by document.body.
+  // #login-screen lives outside #family-app-root specifically so it is never
+  // a descendant of a zoomed element — on iOS Safari, zoom on an ancestor of
+  // a position:fixed element can change that element's effective containing
+  // block, which is what caused the fixed login overlay to stop covering the
+  // full viewport at non-100% scale. Do not reintroduce a zoom write on body.
+  function appRoot(){
+    return document.getElementById('family-app-root');
+  }
+
   function apply(value){
     var percent = normalize(value);
     var factor = percent / 100;
-    if(document.body){
-      document.body.style.zoom = String(factor);
-      document.body.dataset.uiScale = String(percent);
+    var root = appRoot();
+    if(root){
+      root.style.zoom = String(factor);
+      root.dataset.uiScale = String(percent);
     }
     document.documentElement.style.setProperty('--family-ui-scale', String(factor));
     document.documentElement.dataset.uiScale = String(percent);
@@ -57,7 +68,7 @@ var _profileMounted = false;
   };
 
   function initialApply(){ apply(get()); }
-  if(document.body) initialApply();
+  if(appRoot()) initialApply();
   else document.addEventListener('DOMContentLoaded', initialApply, { once: true });
 })();
 
