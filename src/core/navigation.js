@@ -17,11 +17,11 @@ var ALL_SCREENS = [
   {id:'achievements', icon:'🏆', label:'Achievements'},
   {id:'notif',        icon:'🔔', label:'Meldingen'},
   {id:'profile',      icon:'👤', label:'Profiel'},
-  {id:'recipes',       icon:'🍳', label:'Recepten'},
-  {id:'skills',        icon:'⚡', label:'Skills'},
-  {id:'meals',         icon:'🗓️', label:'Maaltijden'},
-  {id:'templates',     icon:'📋', label:'Templates'},
-  {id:'cleaning',      icon:'🧹', label:'Schoonmaken'},
+  {id:'recipes',      icon:'🍳', label:'Recepten'},
+  {id:'skills',       icon:'⚡', label:'Skills'},
+  {id:'meals',        icon:'🗓️', label:'Maaltijden'},
+  {id:'templates',    icon:'📋', label:'Templates'},
+  {id:'cleaning',     icon:'🧹', label:'Schoonmaken'},
 ];
 
 // Fixed primary mobile ribbon: Home · Boodschappen · Feed (+) · Taken · Meer
@@ -164,6 +164,8 @@ var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Noti
 var _currentScreen = 'home';
 var _navBusy = false;
 var _pendingScreen = null;
+var _cleaningModulePromise = null;
+var _cleaningStylePromise = null;
 
 function ensureCleaningScreen(){
   var existing=document.getElementById('screen-cleaning');
@@ -178,6 +180,42 @@ function ensureCleaningScreen(){
   if(profile&&profile.parentNode)profile.parentNode.insertBefore(screen,profile);
   else document.body.appendChild(screen);
   return screen;
+}
+
+function ensureCleaningStyles(){
+  if(_cleaningStylePromise)return _cleaningStylePromise;
+  _cleaningStylePromise=new Promise(function(resolve,reject){
+    var existing=document.querySelector('link[data-familyapp-cleaning-style]');
+    if(existing){
+      if(existing.sheet){resolve();return;}
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return;
+    }
+    var link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='/src/styles/cleaning.css?v=1';
+    link.setAttribute('data-familyapp-cleaning-style','1');
+    link.addEventListener('load',resolve,{once:true});
+    link.addEventListener('error',reject,{once:true});
+    document.head.appendChild(link);
+  });
+  return _cleaningStylePromise;
+}
+
+function renderCleaningModule(){
+  var root=document.getElementById('cleaning-content');
+  if(!root)return;
+  if(!_cleaningModulePromise){
+    _cleaningModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1');
+  }
+  Promise.all([ensureCleaningStyles(),_cleaningModulePromise]).then(function(result){
+    if(_currentScreen!=='cleaning')return;
+    var mod=result[1];
+    if(mod&&typeof mod.renderCleaningScreen==='function')mod.renderCleaningScreen(root);
+  }).catch(function(err){
+    console.error('[Cleaning] shell kon niet worden geladen:',err);
+  });
 }
 
 function showScreen(id) {
@@ -264,6 +302,7 @@ function _renderScreen(id) {
   else if(id==='skills')  renderSkills();
   else if(id==='meals')   renderMeals();
   else if(id==='templates') renderTemplates();
+  else if(id==='cleaning') renderCleaningModule();
 }
 
 function showScreenMore(id){closeMore();showScreen(id);}
