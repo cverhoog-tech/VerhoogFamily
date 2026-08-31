@@ -1,6 +1,6 @@
-import './cleaningDomain.js?v=3';
-import './cleaningRepositoryContract.js?v=3';
-import './cleaningHouseholdRepository.js?v=3';
+import './cleaningDomain.js?v=4';
+import './cleaningRepositoryContract.js?v=4';
+import './cleaningHouseholdRepository.js?v=4';
 
 const ROOM_TYPES = Object.freeze([
   {id:'living-room', label:'Woonkamer', icon:'🛋️'},
@@ -26,6 +26,8 @@ const state = {
     name: '',
     type: 'living-room',
     submitting: false,
+    deleting: false,
+    deleteConfirm: false,
     error: ''
   },
   roomNotice: ''
@@ -84,25 +86,41 @@ function findRoom(roomId){
 function roomFormMarkup(){
   if(!state.roomForm.open) return '';
   const editing = state.roomForm.mode === 'edit';
+  const busy = state.roomForm.submitting || state.roomForm.deleting;
   const options = ROOM_TYPES.map((type) => '<option value="'+escapeText(type.id)+'"'+(state.roomForm.type===type.id?' selected':'')+'>'+escapeText(type.icon+' '+type.label)+'</option>').join('');
+  const danger = !editing ? '' : (
+    '<div class="cleaning-room-danger">'
+      +(!state.roomForm.deleteConfirm
+        ? '<button type="button" class="cleaning-danger-link" data-cleaning-room-delete-open'+(busy?' disabled':'')+'>Kamer verwijderen</button>'
+        : '<div class="cleaning-delete-confirm" role="alert">'
+          +'<div><strong>Kamer verwijderen?</strong><span>De kamer verdwijnt uit jullie actieve kamers. Historie en toekomstige verwijzingen blijven veilig bewaard.</span></div>'
+          +'<div class="cleaning-delete-actions">'
+            +'<button type="button" class="cleaning-secondary-button" data-cleaning-room-delete-cancel'+(busy?' disabled':'')+'>Niet verwijderen</button>'
+            +'<button type="button" class="cleaning-danger-button" data-cleaning-room-delete-confirm'+(busy?' disabled':'')+'>'+(state.roomForm.deleting?'Verwijderen…':'Ja, verwijder kamer')+'</button>'
+          +'</div>'
+        +'</div>')
+    +'</div>'
+  );
+
   return '<form class="cleaning-room-form" data-cleaning-room-form>'
     +'<div class="cleaning-form-heading">'
       +'<div><p class="cleaning-form-kicker">'+(editing?'Kamer aanpassen':'Nieuwe ruimte')+'</p><h3>'+(editing?'Kamer bewerken':'Nieuwe kamer')+'</h3></div>'
-      +'<button type="button" class="cleaning-icon-button" data-cleaning-room-cancel aria-label="Sluiten">✕</button>'
+      +'<button type="button" class="cleaning-icon-button" data-cleaning-room-cancel aria-label="Sluiten"'+(busy?' disabled':'')+'>✕</button>'
     +'</div>'
     +'<label class="cleaning-field">'
       +'<span>Naam</span>'
-      +'<input type="text" name="roomName" maxlength="60" autocomplete="off" placeholder="Bijv. Badkamer boven" value="'+escapeText(state.roomForm.name)+'" data-cleaning-room-name>'
+      +'<input type="text" name="roomName" maxlength="60" autocomplete="off" placeholder="Bijv. Badkamer boven" value="'+escapeText(state.roomForm.name)+'" data-cleaning-room-name'+(busy?' disabled':'')+'>'
     +'</label>'
     +'<label class="cleaning-field">'
       +'<span>Type kamer</span>'
-      +'<select name="roomType" data-cleaning-room-type>'+options+'</select>'
+      +'<select name="roomType" data-cleaning-room-type'+(busy?' disabled':'')+'>'+options+'</select>'
     +'</label>'
     +(state.roomForm.error?'<p class="cleaning-form-error" role="alert">'+escapeText(state.roomForm.error)+'</p>':'')
     +'<div class="cleaning-form-actions">'
-      +'<button type="button" class="cleaning-secondary-button" data-cleaning-room-cancel'+(state.roomForm.submitting?' disabled':'')+'>Annuleren</button>'
-      +'<button type="submit" class="cleaning-primary-button"'+(state.roomForm.submitting?' disabled':'')+'>'+(state.roomForm.submitting?'Opslaan…':(editing?'Wijzigingen opslaan':'Kamer toevoegen'))+'</button>'
+      +'<button type="button" class="cleaning-secondary-button" data-cleaning-room-cancel'+(busy?' disabled':'')+'>Annuleren</button>'
+      +'<button type="submit" class="cleaning-primary-button"'+(busy?' disabled':'')+'>'+(state.roomForm.submitting?'Opslaan…':(editing?'Wijzigingen opslaan':'Kamer toevoegen'))+'</button>'
     +'</div>'
+    +danger
   +'</form>';
 }
 
@@ -171,11 +189,12 @@ function panelContent(){
 function readableRoomError(error){
   const code = String(error && error.message || error || 'Kamer kon niet worden opgeslagen.');
   if(code.indexOf('CLEANING_ROOM_NAME_REQUIRED')>-1) return 'Geef de kamer eerst een naam.';
+  if(code.indexOf('CLEANING_ROOM_INACTIVE')>-1) return 'Deze kamer is al verwijderd.';
   if(code.indexOf('CLEANING_ROOM_NOT_FOUND')>-1) return 'Deze kamer bestaat niet meer. Ververs de lijst en probeer opnieuw.';
   if(code.indexOf('CLEANING_ROOM_ID_REQUIRED')>-1) return 'De kamer kon niet worden herkend.';
   if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
-  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens het opslaan. Probeer opnieuw.';
-  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat het wijzigen van kamers nog niet toe voor dit huishouden.';
+  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
+  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze kamerwijziging nog niet toe voor dit huishouden.';
   return code;
 }
 
@@ -187,20 +206,15 @@ function resetRoomForm(){
     name: '',
     type: 'living-room',
     submitting: false,
+    deleting: false,
+    deleteConfirm: false,
     error: ''
   };
 }
 
 function openCreateRoom(root){
-  state.roomForm = {
-    open: true,
-    mode: 'create',
-    roomId: null,
-    name: '',
-    type: 'living-room',
-    submitting: false,
-    error: ''
-  };
+  resetRoomForm();
+  state.roomForm.open = true;
   state.roomNotice = '';
   renderCleaningScreen(root);
   window.setTimeout(() => {
@@ -223,6 +237,8 @@ function openEditRoom(root,roomId){
     name: String(room.name || ''),
     type: room.type || 'custom',
     submitting: false,
+    deleting: false,
+    deleteConfirm: false,
     error: ''
   };
   state.roomNotice = '';
@@ -253,7 +269,7 @@ function ensureRepositorySubscription(){
 }
 
 function submitRoom(root){
-  if(state.roomForm.submitting) return;
+  if(state.roomForm.submitting || state.roomForm.deleting) return;
   const name = String(state.roomForm.name || '').trim();
   if(!name){
     state.roomForm.error = 'Geef de kamer eerst een naam.';
@@ -274,6 +290,7 @@ function submitRoom(root){
   const payload = {name:name,type:state.roomForm.type};
   state.roomForm.name = name;
   state.roomForm.submitting = true;
+  state.roomForm.deleteConfirm = false;
   state.roomForm.error = '';
   renderCleaningScreen(root);
 
@@ -290,6 +307,36 @@ function submitRoom(root){
     }, 2500);
   }).catch((error) => {
     state.roomForm.submitting = false;
+    state.roomForm.error = readableRoomError(error);
+    renderCleaningScreen(root);
+  });
+}
+
+function removeRoom(root){
+  if(state.roomForm.mode !== 'edit' || state.roomForm.deleting || state.roomForm.submitting) return;
+  const repository = window.CleaningHouseholdRepository;
+  if(!repository || typeof repository.removeRoom !== 'function'){
+    state.roomForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
+    renderCleaningScreen(root);
+    return;
+  }
+  const roomId = state.roomForm.roomId;
+  state.roomForm.deleting = true;
+  state.roomForm.error = '';
+  renderCleaningScreen(root);
+
+  repository.removeRoom(roomId).then(() => {
+    resetRoomForm();
+    state.roomNotice = 'Kamer verwijderd ✓';
+    renderCleaningScreen(root);
+    window.setTimeout(() => {
+      if(state.roomNotice){
+        state.roomNotice = '';
+        renderIfActive();
+      }
+    }, 2500);
+  }).catch((error) => {
+    state.roomForm.deleting = false;
     state.roomForm.error = readableRoomError(error);
     renderCleaningScreen(root);
   });
@@ -319,11 +366,28 @@ function bind(root){
 
   root.querySelectorAll('[data-cleaning-room-cancel]').forEach((button) => {
     button.addEventListener('click', () => {
-      if(state.roomForm.submitting) return;
+      if(state.roomForm.submitting || state.roomForm.deleting) return;
       resetRoomForm();
       renderCleaningScreen(root);
     });
   });
+
+  const deleteOpen = root.querySelector('[data-cleaning-room-delete-open]');
+  if(deleteOpen) deleteOpen.addEventListener('click', () => {
+    state.roomForm.deleteConfirm = true;
+    state.roomForm.error = '';
+    renderCleaningScreen(root);
+  });
+
+  const deleteCancel = root.querySelector('[data-cleaning-room-delete-cancel]');
+  if(deleteCancel) deleteCancel.addEventListener('click', () => {
+    if(state.roomForm.deleting) return;
+    state.roomForm.deleteConfirm = false;
+    renderCleaningScreen(root);
+  });
+
+  const deleteConfirm = root.querySelector('[data-cleaning-room-delete-confirm]');
+  if(deleteConfirm) deleteConfirm.addEventListener('click', () => removeRoom(root));
 
   const nameInput = root.querySelector('[data-cleaning-room-name]');
   if(nameInput) nameInput.addEventListener('input', () => {
