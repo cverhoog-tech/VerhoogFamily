@@ -6,7 +6,7 @@
 //   - #login-screen staat structureel BUITEN #family-app-root (index.html).
 //   - #family-app-root krijgt geen position/transform/filter/perspective/
 //     contain/backdrop-filter/will-change die het containing block van
-//     fixed/absolute nakomelingen zou kunnen veranderen (app.css).
+//     fixed/absolute nakomelingen zou kunnen veranderen (familyAppRootScale.css).
 //   - FamilyUiScale.apply() schrijft NOOIT zoom op document.body — voor elke
 //     opgeslagen waarde (90/100/110/120), voor een ongeldige waarde, én in
 //     het defensieve pad waarin #family-app-root (nog) niet bestaat.
@@ -24,7 +24,7 @@ const assert = require('assert');
 const vm = require('vm');
 
 const html = fs.readFileSync('index.html', 'utf8');
-const css = fs.readFileSync('src/styles/app.css', 'utf8');
+const css = fs.readFileSync('src/styles/familyAppRootScale.css', 'utf8');
 const fullSource = fs.readFileSync('src/core/profile.legacy.js', 'utf8');
 
 // profile.legacy.js contains several independent top-level IIFEs (UI scale,
@@ -38,7 +38,7 @@ assert.ok(iifeStart > -1 && iifeEnd > iifeStart,
   'bootstrapFamilyUiScale IIFE must be present and intact in profile.legacy.js');
 const scaleSource = fullSource.slice(iifeStart, iifeEnd + '\n})();'.length);
 
-// ── 1. Structurele scheiding in index.html ──────────────────────────────────────
+// ── 1. Structurele scheiding in index.html ──────────────────────────────
 function testHtmlStructure(){
   const loginOpenIdx = html.indexOf('id="login-screen"');
   const loginEndIdx = html.indexOf('<!-- end login-screen -->');
@@ -68,6 +68,8 @@ testHtmlStructure();
 
 // ── 2. #family-app-root mag geen containing-block-brekende properties krijgen ──
 function testAppRootCssIsInert(){
+  assert.ok(html.includes('src/styles/familyAppRootScale.css'),
+    'index.html must load the dedicated family-app-root stylesheet');
   const match = css.match(/#family-app-root\s*\{([^}]*)\}/);
   assert.ok(match, '#family-app-root must have a dedicated CSS rule');
   const body = match[1];
