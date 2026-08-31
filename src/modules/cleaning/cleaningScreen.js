@@ -201,7 +201,7 @@ function routineFormMarkup(){
     +'</label>'
     +'<div class="cleaning-routine-fields">'
       +'<label class="cleaning-field"><span>Elke hoeveel dagen?</span><input type="number" inputmode="numeric" min="1" max="365" value="'+escapeText(state.routineForm.intervalDays)+'" data-cleaning-routine-interval'+(busy?' disabled':'')+'></label>'
-      +'<label class="cleaning-field"><span>Geschatte tijd</span><div class="cleaning-number-with-unit"><input type="number" inputmode="numeric" min="1" max="480" step="5" value="'+escapeText(state.routineForm.estimatedMinutes)+'" data-cleaning-routine-minutes'+(busy?' disabled':'')+'><span>min</span></div></label>'
+      +'<label class="cleaning-field"><span>Geschatte tijd</span><div class="cleaning-number-with-unit"><input type="number" inputmode="numeric" min="1" max="480" step="1" value="'+escapeText(state.routineForm.estimatedMinutes)+'" data-cleaning-routine-minutes'+(busy?' disabled':'')+'><span>min</span></div></label>'
     +'</div>'
     +'<label class="cleaning-field">'
       +'<span>Prioriteit</span>'
