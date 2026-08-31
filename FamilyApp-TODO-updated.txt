@@ -201,8 +201,37 @@ Status: gedeeltelijk gefixt
 
 # Nieuwe module - Schoonmaken
 
-Status: functionele architectuur uitgewerkt; visueel ontwerp en implementatie nog niet gestart.
-Volledige specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
+Status: **Fase A shell AFGEROND / real-device geaccepteerd op iPhone; Fase 0 Fundament BEZIG.**
+Volledige functionele specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
+Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
+
+## Geaccepteerde veilige shell
+
+* Schoonmaken-entry in Meer werkt.
+* Navigabel `#screen-cleaning` werkt.
+* Tabs Overzicht / Planning / Kamers werken.
+* Binnen Kamers werkt Kamers / Gepland per kamer.
+* CSS is uitsluitend onder `#screen-cleaning` gescoped.
+* Schoonmaken-shell wordt lazy geladen bij openen van de module.
+* Login, Google-login, Home en terugnavigatie zijn na iedere kleine stap op iPhone gecontroleerd.
+* Geaccepteerde checkpoints: `774d464`, `567df025`, `a11a785`.
+
+## Fase 0 - reeds vastgelegd
+
+* Canonieke root: `families/{householdId}/cleaning`.
+* `CleaningOccurrence` is de enige source of truth voor één concrete schoonmaakbeurt.
+* Canonieke subpaden: rooms, routines, supplies, inventory, plans, occurrences, approvals, completionLogs, availability, preferences.
+* Domeincontract/statussen/normalizers: `src/modules/cleaning/cleaningDomain.js`.
+* Toekomstig enkel repositorycontract: `src/modules/cleaning/cleaningRepositoryContract.js`.
+* localStorage alleen als disposable UID+household read-cache; nooit tweede data-authoriteit.
+
+## Fase 0 - nog open
+
+* `CleaningHouseholdRepository` echt implementeren met HouseholdContext bind/unbind/revision lifecycle.
+* Firebase rules/rechtenmodel aansluiten op bestaande household/memberrollen.
+* Feature flag/data-activatie bepalen.
+* Integratiecontracten met Tasks, Calendar, Grocery en Notifications vastleggen.
+* Contracttests voor household-isolatie, lifecycle en idempotentie toevoegen.
 
 ## Doel / modulegrenzen
 
@@ -215,7 +244,8 @@ Volledige specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
 
 ## Besloten UX / functionele regels
 
-* Hoofdtabs: Overzicht / Kamers / Planning.
+* Hoofdtabs: Overzicht / Planning / Kamers.
+* Binnen Kamers: Kamers / Gepland per kamer.
 * Per kamer meerdere routine-items met elk eigen interval, duur, prioriteit en benodigdheden.
 * Items die tegelijk aan de beurt zijn, bundelen tot één schoonmaakbeurt met checklist.
 * Templates bij nieuwe kamers; gebruiker kan alles aanpassen.
@@ -331,6 +361,7 @@ Deze regels gelden voor alle fases van de Schoonmaken-module:
 * Schaalbaar/canoniek bouwen; geen monkeypatches of tijdelijke parallelle architectuur.
 * `CleaningOccurrence` blijft de enige bron van waarheid voor een concrete schoonmaakbeurt.
 * Taken, Agenda en Boodschappen koppelen via expliciete service/repository-contracten en stabiele referenties; geen cross-module DOM-hacks.
+* Eén `CleaningHouseholdRepository` als persistence boundary; geen repository-explosie.
 * Geen dubbele Firebase/localStorage state, hardcoded gebruikers/UIDs of silent legacy fallbacks.
 * Realtime listeners hebben expliciete bind/unbind lifecycle en household/account-isolatie.
 * Mutaties die opnieuw kunnen worden uitgevoerd moeten idempotent zijn.
@@ -346,12 +377,13 @@ Statusnotatie per fase:
 
 Huidige status Schoonmaken:
 
-* Fase 0 - Fundament: OPEN
-* Fase 1 - Kamers + routines: OPEN
-* Fase 2 - Weekplanner: OPEN
-* Fase 3 - Taken-integratie: OPEN
-* Fase 4 - Agenda-integratie: OPEN
-* Fase 5 - Boodschappen / voorraad: OPEN
-* Fase 6 - Goedkeuring / notificaties: OPEN
-* Fase 7 - Historie / uitzonderingen: OPEN
-* Fase 8 - Visuele polish / slimme inzichten: OPEN
+* Fase A - Veilige module-shell: AFGEROND / real-device geaccepteerd.
+* Fase 0 - Fundament: BEZIG.
+* Fase 1 - Kamers + routines: OPEN.
+* Fase 2 - Weekplanner: OPEN.
+* Fase 3 - Taken-integratie: OPEN.
+* Fase 4 - Agenda-integratie: OPEN.
+* Fase 5 - Boodschappen / voorraad: OPEN.
+* Fase 6 - Goedkeuring / notificaties: OPEN.
+* Fase 7 - Historie / uitzonderingen: OPEN.
+* Fase 8 - Visuele polish / slimme inzichten: OPEN.
