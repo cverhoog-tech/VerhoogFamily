@@ -1,6 +1,6 @@
-import './cleaningDomain.js?v=5';
-import './cleaningRepositoryContract.js?v=5';
-import './cleaningHouseholdRepository.js?v=5';
+import './cleaningDomain.js?v=6';
+import './cleaningRepositoryContract.js?v=6';
+import './cleaningHouseholdRepository.js?v=6';
 
 const ROOM_TYPES = Object.freeze([
   {id:'living-room', label:'Woonkamer', icon:'🛋️'},
@@ -38,12 +38,16 @@ const state = {
   },
   routineForm: {
     open: false,
+    mode: 'create',
+    routineId: null,
     roomId: null,
     title: '',
     intervalDays: 7,
     estimatedMinutes: 15,
     priority: 'NORMAL',
     submitting: false,
+    deleting: false,
+    deleteConfirm: false,
     error: ''
   },
   roomNotice: ''
@@ -115,6 +119,16 @@ function findRoom(roomId){
   return repositoryRooms().find((room) => String(room.id) === String(roomId)) || null;
 }
 
+function findRoutine(routineId){
+  const repository = state.repository;
+  const raw = repository && repository.data && repository.data.routines;
+  if(!raw || typeof raw !== 'object') return null;
+  const routine = raw[routineId];
+  return routine && typeof routine === 'object' && routine.active !== false
+    ? Object.assign({id:routineId}, routine)
+    : null;
+}
+
 function roomFormMarkup(){
   if(!state.roomForm.open) return '';
   const editing = state.roomForm.mode === 'edit';
@@ -160,10 +174,25 @@ function routineFormMarkup(){
   if(!state.routineForm.open) return '';
   const room = findRoom(state.routineForm.roomId);
   if(!room) return '';
-  const busy = state.routineForm.submitting;
+  const editing = state.routineForm.mode === 'edit';
+  const busy = state.routineForm.submitting || state.routineForm.deleting;
+  const danger = !editing ? '' : (
+    '<div class="cleaning-room-danger">'
+      +(!state.routineForm.deleteConfirm
+        ? '<button type="button" class="cleaning-danger-link" data-cleaning-routine-delete-open'+(busy?' disabled':'')+'>Routine verwijderen</button>'
+        : '<div class="cleaning-delete-confirm" role="alert">'
+          +'<div><strong>Routine verwijderen?</strong><span>De routine verdwijnt uit de actieve planning. Historie en verwijzingen blijven bewaard.</span></div>'
+          +'<div class="cleaning-delete-actions">'
+            +'<button type="button" class="cleaning-secondary-button" data-cleaning-routine-delete-cancel'+(busy?' disabled':'')+'>Niet verwijderen</button>'
+            +'<button type="button" class="cleaning-danger-button" data-cleaning-routine-delete-confirm'+(busy?' disabled':'')+'>'+(state.routineForm.deleting?'Verwijderen…':'Ja, verwijder routine')+'</button>'
+          +'</div>'
+        +'</div>')
+    +'</div>'
+  );
+
   return '<form class="cleaning-room-form cleaning-routine-form" data-cleaning-routine-form>'
     +'<div class="cleaning-form-heading">'
-      +'<div><p class="cleaning-form-kicker">Routine voor '+escapeText(room.name)+'</p><h3>Routine toevoegen</h3></div>'
+      +'<div><p class="cleaning-form-kicker">Routine voor '+escapeText(room.name)+'</p><h3>'+(editing?'Routine bewerken':'Routine toevoegen')+'</h3></div>'
       +'<button type="button" class="cleaning-icon-button" data-cleaning-routine-cancel aria-label="Sluiten"'+(busy?' disabled':'')+'>✕</button>'
     +'</div>'
     +'<label class="cleaning-field">'
@@ -185,8 +214,9 @@ function routineFormMarkup(){
     +(state.routineForm.error?'<p class="cleaning-form-error" role="alert">'+escapeText(state.routineForm.error)+'</p>':'')
     +'<div class="cleaning-form-actions">'
       +'<button type="button" class="cleaning-secondary-button" data-cleaning-routine-cancel'+(busy?' disabled':'')+'>Annuleren</button>'
-      +'<button type="submit" class="cleaning-primary-button"'+(busy?' disabled':'')+'>'+(busy?'Opslaan…':'Routine toevoegen')+'</button>'
+      +'<button type="submit" class="cleaning-primary-button"'+(busy?' disabled':'')+'>'+(state.routineForm.submitting?'Opslaan…':(editing?'Wijzigingen opslaan':'Routine toevoegen'))+'</button>'
     +'</div>'
+    +danger
   +'</form>';
 }
 
@@ -202,7 +232,10 @@ function routineListMarkup(room){
       return '<div class="cleaning-routine-item">'
         +'<div class="cleaning-routine-dot" aria-hidden="true"></div>'
         +'<div class="cleaning-routine-copy"><strong>'+escapeText(routine.title)+'</strong><span>Elke '+escapeText(routine.intervalDays)+' dagen · '+escapeText(routine.estimatedMinutes)+' min</span></div>'
-        +'<span class="cleaning-priority-badge" data-priority="'+escapeText(routine.priority||'NORMAL')+'">'+escapeText(priority)+'</span>'
+        +'<div class="cleaning-routine-item-actions">'
+          +'<span class="cleaning-priority-badge" data-priority="'+escapeText(routine.priority||'NORMAL')+'">'+escapeText(priority)+'</span>'
+          +'<button type="button" class="cleaning-routine-edit-button" data-cleaning-routine-edit="'+escapeText(routine.id)+'" aria-label="'+escapeText((routine.title||'Routine')+' bewerken')+'">Bewerken</button>'
+        +'</div>'
       +'</div>';
     }).join('')+'</div>'
   +'</div>';
@@ -289,11 +322,14 @@ function readableRoomError(error){
 function readableRoutineError(error){
   const code = String(error && error.message || error || 'Routine kon niet worden opgeslagen.');
   if(code.indexOf('CLEANING_ROUTINE_TITLE_REQUIRED')>-1) return 'Geef de routine eerst een naam.';
+  if(code.indexOf('CLEANING_ROUTINE_ID_REQUIRED')>-1) return 'De routine kon niet worden herkend.';
+  if(code.indexOf('CLEANING_ROUTINE_INACTIVE')>-1) return 'Deze routine is al verwijderd.';
+  if(code.indexOf('CLEANING_ROUTINE_NOT_FOUND')>-1) return 'Deze routine bestaat niet meer.';
   if(code.indexOf('CLEANING_ROUTINE_ROOM_REQUIRED')>-1) return 'Kies eerst een geldige kamer.';
   if(code.indexOf('CLEANING_ROOM_INACTIVE')>-1 || code.indexOf('CLEANING_ROOM_NOT_FOUND')>-1) return 'Deze kamer is niet meer actief.';
   if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
-  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens het opslaan. Probeer opnieuw.';
-  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat het opslaan van routines nog niet toe voor dit huishouden.';
+  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
+  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze routinewijziging nog niet toe voor dit huishouden.';
   return code;
 }
 
@@ -314,12 +350,16 @@ function resetRoomForm(){
 function resetRoutineForm(){
   state.routineForm = {
     open: false,
+    mode: 'create',
+    routineId: null,
     roomId: null,
     title: '',
     intervalDays: 7,
     estimatedMinutes: 15,
     priority: 'NORMAL',
     submitting: false,
+    deleting: false,
+    deleteConfirm: false,
     error: ''
   };
 }
@@ -379,6 +419,42 @@ function openRoutineForm(root,roomId){
   window.setTimeout(() => {
     const input = root.querySelector('[data-cleaning-routine-title]');
     if(input) input.focus();
+  }, 0);
+}
+
+function openEditRoutine(root,routineId){
+  const routine = findRoutine(routineId);
+  if(!routine){
+    state.roomNotice = 'Routine niet gevonden.';
+    renderCleaningScreen(root);
+    return;
+  }
+  const room = findRoom(routine.roomId);
+  if(!room){
+    state.roomNotice = 'De kamer van deze routine is niet meer actief.';
+    renderCleaningScreen(root);
+    return;
+  }
+  resetRoomForm();
+  state.routineForm = {
+    open: true,
+    mode: 'edit',
+    routineId: routine.id,
+    roomId: routine.roomId,
+    title: String(routine.title || ''),
+    intervalDays: Number(routine.intervalDays) || 7,
+    estimatedMinutes: Number(routine.estimatedMinutes) || 15,
+    priority: routine.priority || 'NORMAL',
+    submitting: false,
+    deleting: false,
+    deleteConfirm: false,
+    error: ''
+  };
+  state.roomNotice = '';
+  renderCleaningScreen(root);
+  window.setTimeout(() => {
+    const input = root.querySelector('[data-cleaning-routine-title]');
+    if(input){input.focus();input.select();}
   }, 0);
 }
 
@@ -446,7 +522,7 @@ function submitRoom(root){
 }
 
 function submitRoutine(root){
-  if(state.routineForm.submitting) return;
+  if(state.routineForm.submitting || state.routineForm.deleting) return;
   const title = String(state.routineForm.title || '').trim();
   if(!title){
     state.routineForm.error = 'Geef de routine eerst een naam.';
@@ -456,28 +532,34 @@ function submitRoutine(root){
   const intervalDays = Math.min(365, Math.max(1, parseInt(state.routineForm.intervalDays,10) || 7));
   const estimatedMinutes = Math.min(480, Math.max(1, parseInt(state.routineForm.estimatedMinutes,10) || 15));
   const repository = window.CleaningHouseholdRepository;
-  if(!repository || typeof repository.createRoutineItem !== 'function'){
+  const editing = state.routineForm.mode === 'edit';
+  const method = editing ? 'updateRoutineItem' : 'createRoutineItem';
+  if(!repository || typeof repository[method] !== 'function'){
     state.routineForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
     renderCleaningScreen(root);
     return;
   }
 
-  state.routineForm.title = title;
-  state.routineForm.intervalDays = intervalDays;
-  state.routineForm.estimatedMinutes = estimatedMinutes;
-  state.routineForm.submitting = true;
-  state.routineForm.error = '';
-  renderCleaningScreen(root);
-
-  repository.createRoutineItem({
+  const routineId = state.routineForm.routineId;
+  const payload = {
     roomId: state.routineForm.roomId,
     title: title,
     intervalDays: intervalDays,
     estimatedMinutes: estimatedMinutes,
     priority: state.routineForm.priority
-  }).then(() => {
+  };
+  state.routineForm.title = title;
+  state.routineForm.intervalDays = intervalDays;
+  state.routineForm.estimatedMinutes = estimatedMinutes;
+  state.routineForm.submitting = true;
+  state.routineForm.deleteConfirm = false;
+  state.routineForm.error = '';
+  renderCleaningScreen(root);
+
+  const request = editing ? repository.updateRoutineItem(routineId,payload) : repository.createRoutineItem(payload);
+  request.then(() => {
     resetRoutineForm();
-    state.roomNotice = 'Routine toegevoegd ✓';
+    state.roomNotice = editing ? 'Routine bijgewerkt ✓' : 'Routine toegevoegd ✓';
     renderCleaningScreen(root);
     window.setTimeout(() => {
       if(state.roomNotice){
@@ -522,6 +604,36 @@ function removeRoom(root){
   });
 }
 
+function removeRoutine(root){
+  if(state.routineForm.mode !== 'edit' || state.routineForm.deleting || state.routineForm.submitting) return;
+  const repository = window.CleaningHouseholdRepository;
+  if(!repository || typeof repository.removeRoutineItem !== 'function'){
+    state.routineForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
+    renderCleaningScreen(root);
+    return;
+  }
+  const routineId = state.routineForm.routineId;
+  state.routineForm.deleting = true;
+  state.routineForm.error = '';
+  renderCleaningScreen(root);
+
+  repository.removeRoutineItem(routineId).then(() => {
+    resetRoutineForm();
+    state.roomNotice = 'Routine verwijderd ✓';
+    renderCleaningScreen(root);
+    window.setTimeout(() => {
+      if(state.roomNotice){
+        state.roomNotice = '';
+        renderIfActive();
+      }
+    }, 2500);
+  }).catch((error) => {
+    state.routineForm.deleting = false;
+    state.routineForm.error = readableRoutineError(error);
+    renderCleaningScreen(root);
+  });
+}
+
 function bind(root){
   root.querySelectorAll('[data-cleaning-tab]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -548,6 +660,10 @@ function bind(root){
     button.addEventListener('click', () => openRoutineForm(root,button.getAttribute('data-cleaning-routine-add')));
   });
 
+  root.querySelectorAll('[data-cleaning-routine-edit]').forEach((button) => {
+    button.addEventListener('click', () => openEditRoutine(root,button.getAttribute('data-cleaning-routine-edit')));
+  });
+
   root.querySelectorAll('[data-cleaning-room-cancel]').forEach((button) => {
     button.addEventListener('click', () => {
       if(state.roomForm.submitting || state.roomForm.deleting) return;
@@ -558,7 +674,7 @@ function bind(root){
 
   root.querySelectorAll('[data-cleaning-routine-cancel]').forEach((button) => {
     button.addEventListener('click', () => {
-      if(state.routineForm.submitting) return;
+      if(state.routineForm.submitting || state.routineForm.deleting) return;
       resetRoutineForm();
       renderCleaningScreen(root);
     });
@@ -580,6 +696,23 @@ function bind(root){
 
   const deleteConfirm = root.querySelector('[data-cleaning-room-delete-confirm]');
   if(deleteConfirm) deleteConfirm.addEventListener('click', () => removeRoom(root));
+
+  const routineDeleteOpen = root.querySelector('[data-cleaning-routine-delete-open]');
+  if(routineDeleteOpen) routineDeleteOpen.addEventListener('click', () => {
+    state.routineForm.deleteConfirm = true;
+    state.routineForm.error = '';
+    renderCleaningScreen(root);
+  });
+
+  const routineDeleteCancel = root.querySelector('[data-cleaning-routine-delete-cancel]');
+  if(routineDeleteCancel) routineDeleteCancel.addEventListener('click', () => {
+    if(state.routineForm.deleting) return;
+    state.routineForm.deleteConfirm = false;
+    renderCleaningScreen(root);
+  });
+
+  const routineDeleteConfirm = root.querySelector('[data-cleaning-routine-delete-confirm]');
+  if(routineDeleteConfirm) routineDeleteConfirm.addEventListener('click', () => removeRoutine(root));
 
   const nameInput = root.querySelector('[data-cleaning-room-name]');
   if(nameInput) nameInput.addEventListener('input', () => {
