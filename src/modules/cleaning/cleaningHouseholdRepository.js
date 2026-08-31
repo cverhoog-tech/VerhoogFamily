@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// CLEANING HOUSEHOLD REPOSITORY v0.4.0
+// CLEANING HOUSEHOLD REPOSITORY v0.5.0
 // HouseholdContext-scoped Firebase read lifecycle.
-// Canonical room writes enabled: createRoom + updateRoom + removeRoom.
-// removeRoom is a soft-delete to preserve future references/history.
+// Canonical room writes + first routine write: createRoutineItem.
+// Routine -> room membership is stored only on routine.roomId.
 // ============================================================
 (function(){
   if(window.CleaningHouseholdRepository)return;
 
-  var VERSION='0.4.0';
+  var VERSION='0.5.0';
   var subscribers=[];
   var contextUnsubscribe=null;
   var active=null;
@@ -303,10 +303,16 @@
 
   function requireDomain(){
     var domain=window.CleaningDomain;
-    if(!domain||typeof domain.normalizeRoom!=='function'||typeof domain.basePath!=='function'){
+    if(!domain||typeof domain.normalizeRoom!=='function'||typeof domain.normalizeRoutineItem!=='function'||typeof domain.basePath!=='function'){
       throw new Error('CLEANING_DOMAIN_UNAVAILABLE');
     }
     return domain;
+  }
+
+  function currentRoom(roomId){
+    var rooms=current.data&&current.data.rooms||{};
+    var room=rooms[roomId];
+    return room&&typeof room==='object'?room:null;
   }
 
   function createRoom(input){
@@ -354,8 +360,8 @@
     var id=domain.safeId?domain.safeId(roomId):String(roomId||'');
     if(!id)return Promise.reject(new Error('CLEANING_ROOM_ID_REQUIRED'));
 
-    var existing=current.data&&current.data.rooms&&current.data.rooms[id];
-    if(!existing||typeof existing!=='object')return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+    var existing=currentRoom(id);
+    if(!existing)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
     if(existing.active===false)return Promise.reject(new Error('CLEANING_ROOM_INACTIVE'));
 
     var normalized=domain.normalizeRoom(Object.assign({},clone(existing),input||{}),id);
@@ -390,8 +396,8 @@
     var id=domain.safeId?domain.safeId(roomId):String(roomId||'');
     if(!id)return Promise.reject(new Error('CLEANING_ROOM_ID_REQUIRED'));
 
-    var existing=current.data&&current.data.rooms&&current.data.rooms[id];
-    if(!existing||typeof existing!=='object')return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+    var existing=currentRoom(id);
+    if(!existing)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
 
     var basePath=domain.basePath(write.ctx.householdId);
     if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
@@ -415,6 +421,48 @@
     });
   }
 
+  function createRoutineItem(input){
+    var write,domain;
+    try{
+      write=requireWriteContext();
+      domain=requireDomain();
+    }catch(error){return Promise.reject(error);}
+
+    var roomId=domain.safeId?domain.safeId(input&&input.roomId):String(input&&input.roomId||'');
+    if(!roomId)return Promise.reject(new Error('CLEANING_ROUTINE_ROOM_REQUIRED'));
+    var room=currentRoom(roomId);
+    if(!room)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+    if(room.active===false)return Promise.reject(new Error('CLEANING_ROOM_INACTIVE'));
+
+    var basePath=domain.basePath(write.ctx.householdId);
+    if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
+
+    var routinesRef=write.db.ref(basePath+'/routines');
+    var routineRef=routinesRef.push();
+    var routineId=routineRef&&routineRef.key;
+    if(!routineId)return Promise.reject(new Error('CLEANING_ROUTINE_ID_FAILED'));
+
+    var routine=domain.normalizeRoutineItem(Object.assign({},input||{},{roomId:roomId}),routineId);
+    if(!routine.title)return Promise.reject(new Error('CLEANING_ROUTINE_TITLE_REQUIRED'));
+
+    var timestamp=Date.now();
+    routine.id=routineId;
+    routine.roomId=roomId;
+    routine.householdId=write.ctx.householdId;
+    routine.createdByUid=write.ctx.uid;
+    routine.createdAt=timestamp;
+    routine.updatedByUid=write.ctx.uid;
+    routine.updatedAt=timestamp;
+    routine.schemaVersion=1;
+
+    if(!isCurrent(write.token))return Promise.reject(new Error('HOUSEHOLD_CONTEXT_CHANGED'));
+
+    return routineRef.set(routine).then(function(){
+      if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+      return deepFreeze(clone(routine));
+    });
+  }
+
   function getOccurrence(id){
     var occurrenceId=String(id||'');
     var occurrences=current.data&&current.data.occurrences||{};
@@ -430,7 +478,7 @@
     createRoom:createRoom,
     updateRoom:updateRoom,
     removeRoom:removeRoom,
-    createRoutineItem:readOnlyWrite,
+    createRoutineItem:createRoutineItem,
     updateRoutineItem:readOnlyWrite,
     removeRoutineItem:readOnlyWrite,
     createOccurrence:readOnlyWrite,
