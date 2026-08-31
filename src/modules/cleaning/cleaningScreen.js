@@ -1,6 +1,7 @@
 import './cleaningDomain.js?v=6';
 import './cleaningRepositoryContract.js?v=6';
 import './cleaningHouseholdRepository.js?v=6';
+import { routineTemplatesForRoomType } from './cleaningRoutineTemplates.js?v=1';
 
 const ROOM_TYPES = Object.freeze([
   {id:'living-room', label:'Woonkamer', icon:'🛋️'},
@@ -25,6 +26,7 @@ const state = {
   primaryTab: 'overview',
   roomView: 'rooms',
   repository: null,
+  templatePending: null,
   roomForm: {
     open: false,
     mode: 'create',
@@ -220,25 +222,42 @@ function routineFormMarkup(){
   +'</form>';
 }
 
-function routineListMarkup(room){
-  const routines = repositoryRoutinesForRoom(room.id);
-  if(!routines.length){
-    return '<div class="cleaning-routine-empty"><span>Nog geen vaste routines</span><button type="button" class="cleaning-add-routine-button" data-cleaning-routine-add="'+escapeText(room.id)+'">＋ Routine toevoegen</button></div>';
+function routineTemplateMarkup(room){
+  const activeKeys = new Set(repositoryRoutinesForRoom(room.id).map((routine) => String(routine.templateKey || '')).filter(Boolean));
+  const templates = routineTemplatesForRoomType(room.type).filter((template) => !activeKeys.has(template.key));
+  if(!templates.length){
+    return '<div class="cleaning-routine-section"><div class="cleaning-routine-section-head"><span>Snelle suggesties</span><span>Alles toegevoegd ✓</span></div></div>';
   }
   return '<div class="cleaning-routine-section">'
-    +'<div class="cleaning-routine-section-head"><span>'+routines.length+' '+(routines.length===1?'routine':'routines')+'</span><button type="button" class="cleaning-add-routine-button" data-cleaning-routine-add="'+escapeText(room.id)+'">＋ Routine</button></div>'
-    +'<div class="cleaning-routine-list">'+routines.map((routine) => {
-      const priority = PRIORITY_LABELS[routine.priority] || PRIORITY_LABELS.NORMAL;
-      return '<div class="cleaning-routine-item">'
-        +'<div class="cleaning-routine-dot" aria-hidden="true"></div>'
-        +'<div class="cleaning-routine-copy"><strong>'+escapeText(routine.title)+'</strong><span>Elke '+escapeText(routine.intervalDays)+' dagen · '+escapeText(routine.estimatedMinutes)+' min</span></div>'
-        +'<div class="cleaning-routine-item-actions">'
-          +'<span class="cleaning-priority-badge" data-priority="'+escapeText(routine.priority||'NORMAL')+'">'+escapeText(priority)+'</span>'
-          +'<button type="button" class="cleaning-routine-edit-button" data-cleaning-routine-edit="'+escapeText(routine.id)+'" aria-label="'+escapeText((routine.title||'Routine')+' bewerken')+'">Bewerken</button>'
-        +'</div>'
-      +'</div>';
+    +'<div class="cleaning-routine-section-head"><span>Snelle suggesties</span><span>1 tik om toe te voegen</span></div>'
+    +'<div class="cleaning-routine-list">'+templates.map((template) => {
+      const pending = !!(state.templatePending && String(state.templatePending.roomId)===String(room.id) && state.templatePending.key===template.key);
+      return '<button type="button" class="cleaning-add-routine-button" data-cleaning-template-add="'+escapeText(room.id)+'" data-cleaning-template-key="'+escapeText(template.key)+'"'+(pending?' disabled':'')+'>'
+        +(pending?'Toevoegen…':'＋ '+escapeText(template.title)+' · elke '+escapeText(template.intervalDays)+' d · '+escapeText(template.estimatedMinutes)+' min')
+      +'</button>';
     }).join('')+'</div>'
   +'</div>';
+}
+
+function routineListMarkup(room){
+  const routines = repositoryRoutinesForRoom(room.id);
+  const activeMarkup = !routines.length
+    ? '<div class="cleaning-routine-empty"><span>Nog geen vaste routines</span><button type="button" class="cleaning-add-routine-button" data-cleaning-routine-add="'+escapeText(room.id)+'">＋ Eigen routine</button></div>'
+    : '<div class="cleaning-routine-section">'
+      +'<div class="cleaning-routine-section-head"><span>'+routines.length+' '+(routines.length===1?'routine':'routines')+'</span><button type="button" class="cleaning-add-routine-button" data-cleaning-routine-add="'+escapeText(room.id)+'">＋ Eigen routine</button></div>'
+      +'<div class="cleaning-routine-list">'+routines.map((routine) => {
+        const priority = PRIORITY_LABELS[routine.priority] || PRIORITY_LABELS.NORMAL;
+        return '<div class="cleaning-routine-item">'
+          +'<div class="cleaning-routine-dot" aria-hidden="true"></div>'
+          +'<div class="cleaning-routine-copy"><strong>'+escapeText(routine.title)+'</strong><span>Elke '+escapeText(routine.intervalDays)+' dagen · '+escapeText(routine.estimatedMinutes)+' min</span></div>'
+          +'<div class="cleaning-routine-item-actions">'
+            +'<span class="cleaning-priority-badge" data-priority="'+escapeText(routine.priority||'NORMAL')+'">'+escapeText(priority)+'</span>'
+            +'<button type="button" class="cleaning-routine-edit-button" data-cleaning-routine-edit="'+escapeText(routine.id)+'" aria-label="'+escapeText((routine.title||'Routine')+' bewerken')+'">Bewerken</button>'
+          +'</div>'
+        +'</div>';
+      }).join('')+'</div>'
+    +'</div>';
+  return activeMarkup + routineTemplateMarkup(room);
 }
 
 function roomCardsMarkup(rooms){
@@ -471,6 +490,11 @@ function ensureRepositorySubscription(){
   repositorySubscribing = true;
   const unsubscribe = repository.subscribe((snapshot) => {
     state.repository = snapshot;
+    if(state.templatePending){
+      const exists = repositoryRoutinesForRoom(state.templatePending.roomId)
+        .some((routine) => String(routine.templateKey || '') === state.templatePending.key);
+      if(exists) state.templatePending = null;
+    }
     renderIfActive();
   });
   repositoryUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : function(){};
@@ -574,6 +598,49 @@ function submitRoutine(root){
   });
 }
 
+function addRoutineTemplate(root,roomId,templateKey){
+  const room = findRoom(roomId);
+  if(!room) return;
+  const template = routineTemplatesForRoomType(room.type).find((entry) => entry.key === templateKey);
+  if(!template) return;
+  const duplicate = repositoryRoutinesForRoom(room.id).some((routine) => String(routine.templateKey || '') === template.key);
+  if(duplicate) return;
+  if(state.templatePending && String(state.templatePending.roomId)===String(room.id) && state.templatePending.key===template.key) return;
+
+  const repository = window.CleaningHouseholdRepository;
+  if(!repository || typeof repository.createRoutineItem !== 'function'){
+    state.roomNotice = 'De schoonmaakrepository is nog niet beschikbaar.';
+    renderCleaningScreen(root);
+    return;
+  }
+
+  state.templatePending = {roomId:room.id,key:template.key};
+  state.roomNotice = '';
+  renderCleaningScreen(root);
+
+  repository.createRoutineItem({
+    roomId: room.id,
+    title: template.title,
+    intervalDays: template.intervalDays,
+    estimatedMinutes: template.estimatedMinutes,
+    priority: template.priority,
+    templateKey: template.key
+  }).then(() => {
+    state.roomNotice = 'Suggestie toegevoegd ✓';
+    renderCleaningScreen(root);
+    window.setTimeout(() => {
+      if(state.roomNotice){
+        state.roomNotice = '';
+        renderIfActive();
+      }
+    },2500);
+  }).catch((error) => {
+    state.templatePending = null;
+    state.roomNotice = readableRoutineError(error);
+    renderCleaningScreen(root);
+  });
+}
+
 function removeRoom(root){
   if(state.roomForm.mode !== 'edit' || state.roomForm.deleting || state.roomForm.submitting) return;
   const repository = window.CleaningHouseholdRepository;
@@ -662,6 +729,10 @@ function bind(root){
 
   root.querySelectorAll('[data-cleaning-routine-edit]').forEach((button) => {
     button.addEventListener('click', () => openEditRoutine(root,button.getAttribute('data-cleaning-routine-edit')));
+  });
+
+  root.querySelectorAll('[data-cleaning-template-add]').forEach((button) => {
+    button.addEventListener('click', () => addRoutineTemplate(root,button.getAttribute('data-cleaning-template-add'),button.getAttribute('data-cleaning-template-key')));
   });
 
   root.querySelectorAll('[data-cleaning-room-cancel]').forEach((button) => {
