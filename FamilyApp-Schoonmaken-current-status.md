@@ -95,7 +95,7 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 
 De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de canonieke planninglaag vast:
 
-1. due-semantiek voor routines definiëren;
+1. due-semantiek voor routines definiëren - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
 2. bepalen welke routine-items deze week aandacht vragen;
 3. routine-items per kamer bundelen tot één conceptuele `CleaningOccurrence`/checklist;
 4. geschatte kamerbelasting berekenen;
@@ -103,6 +103,15 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 6. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven;
 7. conceptplan realtime tonen in Planning;
 8. pas na real-device acceptatie doorgaan naar persoonlijke goedkeuring en projecties.
+
+### Actuele checkpoint binnen Weekplanner Foundation
+
+- Pure `CleaningPlannerContract` toegevoegd; geen Firebase-, Taken-, Agenda- of UI-writes.
+- Halfopen weekvenster voorkomt overlap tussen aangrenzende weken.
+- Inactief, gepauzeerd en ontbrekende `roomId` worden expliciet uitgesloten.
+- Due-bronvolgorde: `nextDueAt`, fallback `lastCompletedAt + intervalDays`, eerste keer via `createdAt` of vensterstart.
+- Overdue en binnen het weekvenster zijn de enige due-kandidaten.
+- Contracttest dekt grenzen, fallbacks en uitsluitingen.
 
 ## Guardrail voor vervolgchats
 

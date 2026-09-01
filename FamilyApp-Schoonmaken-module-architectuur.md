@@ -157,6 +157,21 @@ Instellen van:
 
 De weekplanner maakt eerst een concept en nooit direct definitieve taken.
 
+### Canonieke due-semantiek (Weekplanner Foundation checkpoint 1)
+
+Due-bepaling is pure domeinlogica en schrijft niets naar Firebase, Taken of Agenda.
+
+- Een planningsvenster is halfopen: `[startAt, endAt)`. Een routine exact op `endAt` hoort dus bij het volgende venster en kan niet dubbel in twee weken vallen.
+- Een inactieve of gepauzeerde routine wordt uitgesloten.
+- Een routine zonder canonieke `roomId` wordt uitgesloten; routine-naar-kamer blijft uitsluitend via `CleaningRoutineItem.roomId` lopen.
+- De due-datum komt eerst uit expliciete `nextDueAt`.
+- Ontbreekt `nextDueAt`, dan geldt `lastCompletedAt + intervalDays` als backward-compatible afleiding.
+- Een nooit uitgevoerde routine gebruikt `createdAt` als eerste due-moment. Ontbreekt ook `createdAt`, dan wordt deze bij de start van het gevraagde planvenster voor het eerst due; er wordt daarbij geen synthetische datum opgeslagen.
+- `dueAt < startAt` is `OVERDUE`; `startAt <= dueAt < endAt` is `DUE_IN_WINDOW`; `dueAt >= endAt` is `FUTURE`.
+- Alleen `OVERDUE` en `DUE_IN_WINDOW` zijn kandidaten voor die week. Bundeling, bestaande-occurrence-deduplicatie en verdeling volgen in afzonderlijke checkpoints.
+
+Dit contract staat geïsoleerd in `src/modules/cleaning/cleaningPlannerContract.js`. De toekomstige completion-write moet `nextDueAt` volgens de lokale kalenderdag van het huishouden berekenen; de huidige milliseconde-afleiding vanuit `lastCompletedAt` is uitsluitend de fallback voor bestaande records zonder expliciete `nextDueAt`.
+
 ### Generatie
 
 FamilyApp kijkt naar:
