@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// CLEANING PLANNER CONTRACT v0.2.0
-// Pure due + week-candidate semantics: no Firebase, localStorage or DOM work.
+// CLEANING PLANNER CONTRACT v0.3.0
+// Pure due, candidate and room-bundle semantics: no Firebase, localStorage or DOM work.
 // A planning window is half-open: [startAt, endAt).
 // ============================================================
 (function(){
   if(window.CleaningPlannerContract)return;
 
-  var VERSION='0.2.0';
+  var VERSION='0.3.0';
   var DAY_MS=24*60*60*1000;
 
   var DUE_STATE=Object.freeze({
@@ -166,6 +166,85 @@
     return Object.freeze({window:window,candidates:Object.freeze(candidates),excluded:Object.freeze(excluded)});
   }
 
+  function bundleCandidatesByRoom(input){
+    var source=input||{};
+    var rooms={};
+    collectionRows(source.rooms).forEach(function(entry){
+      var row=entry.value;
+      var id=String(entry.key||row.id||'').trim();
+      if(id&&!Object.prototype.hasOwnProperty.call(rooms,id))rooms[id]=row;
+    });
+
+    var grouped={};
+    var seenRoutineIds={};
+    var candidates=Array.isArray(source.candidates)?source.candidates.slice():[];
+    candidates.forEach(function(candidate){
+      var row=candidate||{};
+      var routineId=String(row.routineId||'').trim();
+      var roomId=String(row.roomId||'').trim();
+      var dueAt=finiteTimestamp(row.dueAt);
+      if(!routineId||!roomId||!dueAt)throw new Error('CLEANING_PLANNER_CANDIDATE_INVALID');
+      if(row.dueState!==DUE_STATE.OVERDUE&&row.dueState!==DUE_STATE.DUE_IN_WINDOW)throw new Error('CLEANING_PLANNER_CANDIDATE_NOT_DUE');
+      if(seenRoutineIds[routineId])throw new Error('CLEANING_PLANNER_DUPLICATE_ROUTINE_CANDIDATE');
+      seenRoutineIds[routineId]=true;
+      if(!Object.prototype.hasOwnProperty.call(rooms,roomId))throw new Error('CLEANING_PLANNER_BUNDLE_ROOM_NOT_FOUND');
+      if(rooms[roomId].active===false)throw new Error('CLEANING_PLANNER_BUNDLE_ROOM_INACTIVE');
+
+      var priority=Object.prototype.hasOwnProperty.call(PRIORITY_RANK,row.priority)?row.priority:'NORMAL';
+      var minutes=Math.max(1,parseInt(row.estimatedMinutes,10)||10);
+      if(!grouped[roomId])grouped[roomId]=[];
+      grouped[roomId].push({
+        routineId:routineId,
+        roomId:roomId,
+        title:String(row.title||'').trim()||'Schoonmaakonderdeel',
+        dueAt:dueAt,
+        dueState:row.dueState,
+        estimatedMinutes:minutes,
+        priority:priority
+      });
+    });
+
+    var bundles=Object.keys(grouped).map(function(roomId){
+      var room=rooms[roomId]||{};
+      var rows=grouped[roomId].sort(candidateSort);
+      var checklist=rows.map(function(row){
+        return Object.freeze({
+          id:row.routineId,
+          routineItemId:row.routineId,
+          title:row.title,
+          estimatedMinutes:row.estimatedMinutes,
+          priority:row.priority,
+          dueAt:row.dueAt,
+          dueState:row.dueState,
+          completed:false
+        });
+      });
+      var total=checklist.reduce(function(sum,item){return sum+item.estimatedMinutes;},0);
+      var earliest=checklist[0]&&checklist[0].dueAt||null;
+      var latest=checklist.reduce(function(value,item){return value===null||item.dueAt>value?item.dueAt:value;},null);
+      var dueState=checklist.some(function(item){return item.dueState===DUE_STATE.OVERDUE;})?DUE_STATE.OVERDUE:DUE_STATE.DUE_IN_WINDOW;
+      return Object.freeze({
+        bundleKey:'room:'+roomId,
+        roomId:roomId,
+        roomName:String(room.name||'').trim()||'Ruimte',
+        roomType:String(room.type||'custom').trim()||'custom',
+        dueState:dueState,
+        earliestDueAt:earliest,
+        latestDueAt:latest,
+        estimatedMinutes:total,
+        routineCount:checklist.length,
+        routineItemIds:Object.freeze(checklist.map(function(item){return item.routineItemId;})),
+        checklist:Object.freeze(checklist)
+      });
+    });
+
+    bundles.sort(function(a,b){
+      if(a.earliestDueAt!==b.earliestDueAt)return a.earliestDueAt-b.earliestDueAt;
+      return compareText(a.roomId,b.roomId);
+    });
+    return Object.freeze({bundles:Object.freeze(bundles)});
+  }
+
   window.CleaningPlannerContract=Object.freeze({
     version:VERSION,
     DAY_MS:DAY_MS,
@@ -174,6 +253,7 @@
     EXCLUSION_REASON:EXCLUSION_REASON,
     planningWindow:planningWindow,
     evaluateRoutineDue:evaluateRoutineDue,
-    selectDueRoutineItems:selectDueRoutineItems
+    selectDueRoutineItems:selectDueRoutineItems,
+    bundleCandidatesByRoom:bundleCandidatesByRoom
   });
 })();

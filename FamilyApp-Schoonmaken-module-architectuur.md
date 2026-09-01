@@ -185,6 +185,19 @@ De planner selecteert weekkandidaten rechtstreeks uit de canonieke `rooms`- en `
 - Uitgesloten routines blijven met een expliciete reden in de pure selectoruitkomst beschikbaar voor tests en diagnose.
 - Bundeling per kamer, occurrence-deduplicatie en verdeling zijn bewust nog niet onderdeel van deze checkpoint.
 
+### Kamerbundels en belasting (Weekplanner Foundation checkpoint 3)
+
+De pure planner bundelt alle geselecteerde routine-items met dezelfde `roomId` tot precies één conceptuele schoonmaakbeurt.
+
+- Iedere bundel bevat één checklistregel per unieke `CleaningRoutineItem`.
+- Dubbele routinekandidaten zijn een contractfout en worden niet stil gededupliceerd.
+- Alleen reeds geselecteerde due-kandidaten uit een nog actieve kamer worden geaccepteerd; snapshotdrift faalt expliciet.
+- `estimatedMinutes` van de bundel is exact de som van de checklistonderdelen.
+- `earliestDueAt` en `latestDueAt` blijven beide beschikbaar; er wordt nog geen kunstmatige geplande datum gekozen.
+- Zodra één onderdeel overdue is, krijgt de conceptuele bundel eveneens de toestand `OVERDUE`.
+- Checklist en bundels zijn deterministisch en immutable zodat dezelfde snapshot op iedere client hetzelfde concept oplevert.
+- De bundel heeft nog geen occurrence-ID, assignment, goedkeuringsstatus of projectiereferentie. Dat ontstaat pas bij de latere conceptplan-/writegrens.
+
 ### Generatie
 
 FamilyApp kijkt naar:
