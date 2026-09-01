@@ -612,6 +612,397 @@
   font-weight: 800;
 }
 
+#screen-cleaning .cleaning-plan-stack {
+  display: grid;
+  gap: 12px;
+}
+
+#screen-cleaning .cleaning-plan-feedback {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--cleaning-accent) 22%, var(--cleaning-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cleaning-accent) 9%, var(--cleaning-surface));
+  color: var(--cleaning-text);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+#screen-cleaning .cleaning-plan-feedback.is-error {
+  border-color: rgba(188,54,66,.22);
+  background: rgba(188,54,66,.09);
+  color: #b32636;
+}
+
+[data-theme*="dark"] #screen-cleaning .cleaning-plan-feedback.is-error {
+  color: #ff9ba6;
+}
+
+#screen-cleaning .cleaning-plan-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--cleaning-accent) 18%, var(--cleaning-border));
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--cleaning-accent) 22%, transparent), transparent 35%),
+    linear-gradient(145deg, color-mix(in srgb, var(--cleaning-surface-strong) 96%, transparent), var(--cleaning-surface));
+  box-shadow: var(--cleaning-shadow);
+}
+
+#screen-cleaning .cleaning-plan-hero-head,
+#screen-cleaning .cleaning-plan-section-head,
+#screen-cleaning .cleaning-plan-card-head,
+#screen-cleaning .cleaning-plan-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#screen-cleaning .cleaning-plan-hero-head {
+  align-items: flex-start;
+}
+
+#screen-cleaning .cleaning-plan-eyebrow {
+  margin: 0 0 5px;
+  color: var(--cleaning-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#screen-cleaning .cleaning-plan-hero h2 {
+  margin: 0;
+  font-size: clamp(21px, 5vw, 27px);
+  font-weight: 950;
+  letter-spacing: -.035em;
+  line-height: 1.08;
+}
+
+#screen-cleaning .cleaning-plan-status,
+#screen-cleaning .cleaning-plan-due {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cleaning-accent) 12%, var(--cleaning-surface-strong));
+  color: var(--cleaning-accent);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+#screen-cleaning .cleaning-plan-intro {
+  max-width: 58ch;
+  margin: 12px 0 0;
+  color: var(--cleaning-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#screen-cleaning .cleaning-plan-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 8px;
+  margin-top: 17px;
+}
+
+#screen-cleaning .cleaning-plan-stats > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 11px;
+  border: 1px solid var(--cleaning-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cleaning-surface-strong) 82%, transparent);
+}
+
+#screen-cleaning .cleaning-plan-stats strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-stats span {
+  color: var(--cleaning-muted);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+#screen-cleaning .cleaning-plan-actions {
+  display: grid;
+  grid-template-columns: minmax(145px,auto) minmax(0,1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+#screen-cleaning .cleaning-plan-generate {
+  min-height: 48px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--cleaning-accent);
+  box-shadow: 0 9px 24px color-mix(in srgb, var(--cleaning-accent) 25%, transparent);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#screen-cleaning .cleaning-plan-generate:disabled {
+  opacity: .5;
+  box-shadow: none;
+  cursor: default;
+}
+
+#screen-cleaning .cleaning-plan-actions > span,
+#screen-cleaning .cleaning-plan-availability {
+  color: var(--cleaning-muted);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+#screen-cleaning .cleaning-plan-availability {
+  margin: 11px 0 0;
+}
+
+#screen-cleaning .cleaning-plan-loads,
+#screen-cleaning .cleaning-plan-list {
+  padding: 16px;
+  border: 1px solid var(--cleaning-border);
+  border-radius: 20px;
+  background: var(--cleaning-surface-strong);
+  box-shadow: 0 9px 26px rgba(40,26,70,.07);
+}
+
+#screen-cleaning .cleaning-plan-section-head {
+  margin-bottom: 12px;
+}
+
+#screen-cleaning .cleaning-plan-section-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+#screen-cleaning .cleaning-plan-section-head span {
+  color: var(--cleaning-muted);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+#screen-cleaning .cleaning-plan-section-head strong {
+  font-size: 14px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-load-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(125px,1fr));
+  gap: 8px;
+}
+
+#screen-cleaning .cleaning-plan-load {
+  display: grid;
+  gap: 2px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cleaning-accent) 6%, var(--cleaning-surface));
+}
+
+#screen-cleaning .cleaning-plan-load span,
+#screen-cleaning .cleaning-plan-load small {
+  overflow: hidden;
+  color: var(--cleaning-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+#screen-cleaning .cleaning-plan-load strong {
+  font-size: 15px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-card {
+  padding: 13px;
+  border: 1px solid var(--cleaning-border);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--cleaning-accent) 3%, var(--cleaning-surface));
+}
+
+#screen-cleaning .cleaning-plan-card + .cleaning-plan-card {
+  margin-top: 9px;
+}
+
+#screen-cleaning .cleaning-plan-card-head {
+  display: grid;
+  grid-template-columns: 46px minmax(0,1fr) auto;
+}
+
+#screen-cleaning .cleaning-plan-room-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--cleaning-accent) 11%, var(--cleaning-surface));
+  font-size: 21px;
+}
+
+#screen-cleaning .cleaning-plan-room {
+  min-width: 0;
+}
+
+#screen-cleaning .cleaning-plan-room h3 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-room span {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--cleaning-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+#screen-cleaning .cleaning-plan-due {
+  color: var(--cleaning-muted);
+  background: var(--cleaning-surface-strong);
+}
+
+#screen-cleaning .cleaning-plan-due.is-overdue {
+  color: #b32636;
+  background: rgba(188,54,66,.10);
+}
+
+[data-theme*="dark"] #screen-cleaning .cleaning-plan-due.is-overdue {
+  color: #ff9ba6;
+}
+
+#screen-cleaning .cleaning-plan-assignment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cleaning-accent) 7%, var(--cleaning-surface-strong));
+}
+
+#screen-cleaning .cleaning-plan-assignment span {
+  color: var(--cleaning-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+#screen-cleaning .cleaning-plan-assignment strong {
+  font-size: 11px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-checklist {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+#screen-cleaning .cleaning-plan-checklist li {
+  display: grid;
+  grid-template-columns: 14px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+#screen-cleaning .cleaning-plan-checklist li > span {
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid color-mix(in srgb, var(--cleaning-accent) 35%, var(--cleaning-border));
+  border-radius: 5px;
+  background: var(--cleaning-surface-strong);
+}
+
+#screen-cleaning .cleaning-plan-checklist strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+#screen-cleaning .cleaning-plan-checklist small {
+  color: var(--cleaning-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+#screen-cleaning .cleaning-plan-card-footer {
+  padding-top: 10px;
+  border-top: 1px solid var(--cleaning-border);
+  color: var(--cleaning-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+#screen-cleaning .cleaning-plan-card-footer strong {
+  color: var(--cleaning-text);
+}
+
+#screen-cleaning .cleaning-plan-empty {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px;
+  border: 1px solid var(--cleaning-border);
+  border-radius: 18px;
+  background: var(--cleaning-surface-strong);
+  box-shadow: var(--cleaning-shadow);
+}
+
+#screen-cleaning .cleaning-plan-empty > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cleaning-accent) 12%, var(--cleaning-surface));
+  color: var(--cleaning-accent);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-empty strong {
+  font-size: 14px;
+  font-weight: 950;
+}
+
+#screen-cleaning .cleaning-plan-empty p {
+  margin: 3px 0 0;
+  color: var(--cleaning-muted);
+  font-size: 11px;
+}
+
 #screen-cleaning .cleaning-status-card {
   display: grid;
   gap: 4px;
@@ -697,5 +1088,39 @@
 
   #screen-cleaning .cleaning-routine-item-actions {
     gap: 5px;
+  }
+
+  #screen-cleaning .cleaning-plan-hero {
+    padding: 17px;
+  }
+
+  #screen-cleaning .cleaning-plan-hero-head {
+    display: grid;
+  }
+
+  #screen-cleaning .cleaning-plan-status {
+    justify-self: start;
+  }
+
+  #screen-cleaning .cleaning-plan-stats > div {
+    padding: 9px;
+  }
+
+  #screen-cleaning .cleaning-plan-stats strong {
+    font-size: 16px;
+  }
+
+  #screen-cleaning .cleaning-plan-actions {
+    grid-template-columns: 1fr;
+  }
+
+  #screen-cleaning .cleaning-plan-card-head {
+    grid-template-columns: 42px minmax(0,1fr) auto;
+    gap: 9px;
+  }
+
+  #screen-cleaning .cleaning-plan-room-icon {
+    width: 42px;
+    height: 42px;
   }
 }

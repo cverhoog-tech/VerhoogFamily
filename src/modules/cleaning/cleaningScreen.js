@@ -1,6 +1,8 @@
 import './cleaningDomain.js?v=6';
-import './cleaningRepositoryContract.js?v=6';
-import './cleaningHouseholdRepository.js?v=6';
+import './cleaningPlannerContract.js?v=1';
+import './cleaningPlanPersistenceContract.js?v=1';
+import './cleaningRepositoryContract.js?v=7';
+import './cleaningHouseholdRepository.js?v=7';
 import { routineTemplatesForRoomType } from './cleaningRoutineTemplates.js?v=1';
 
 const ROOM_TYPES = Object.freeze([
@@ -52,11 +54,19 @@ const state = {
     deleteConfirm: false,
     error: ''
   },
+  planning: {
+    submitting: false,
+    error: '',
+    notice: ''
+  },
+  members: [],
   roomNotice: ''
 };
 
 let repositoryUnsubscribe = null;
 let repositorySubscribing = false;
+let memberUnsubscribe = null;
+let memberSubscribing = false;
 let mountedRoot = null;
 
 function escapeText(value){
@@ -129,6 +139,77 @@ function findRoutine(routineId){
   return routine && typeof routine === 'object' && routine.active !== false
     ? Object.assign({id:routineId}, routine)
     : null;
+}
+
+function rawRoom(roomId){
+  const raw = state.repository && state.repository.data && state.repository.data.rooms;
+  const room = raw && raw[roomId];
+  return room && typeof room === 'object' ? Object.assign({id:roomId},room) : null;
+}
+
+function activeRoutines(){
+  const raw = state.repository && state.repository.data && state.repository.data.routines;
+  if(!raw || typeof raw !== 'object') return [];
+  return Object.keys(raw).map((key) => Object.assign({id:key},raw[key] || {}))
+    .filter((routine) => routine.active !== false && rawRoom(routine.roomId) && rawRoom(routine.roomId).active !== false);
+}
+
+function householdMembers(){
+  const bridge = window.HouseholdIdentityFirebaseBridge;
+  if(!bridge || typeof bridge.getMembers !== 'function') return state.members.slice();
+  try{
+    const members = bridge.getMembers();
+    return Array.isArray(members) ? members.slice() : state.members.slice();
+  }catch(error){
+    return state.members.slice();
+  }
+}
+
+function memberName(uid){
+  const member = householdMembers().find((entry) => String(entry.uid || '') === String(uid || ''));
+  return member ? String(member.displayName || member.name || 'Gezinslid') : 'Gezinslid';
+}
+
+function currentWeekWindow(){
+  const start = new Date();
+  start.setHours(0,0,0,0);
+  const daysSinceMonday = (start.getDay()+6)%7;
+  start.setDate(start.getDate()-daysSinceMonday);
+  const end = new Date(start.getTime());
+  end.setDate(end.getDate()+7);
+  return {startAt:start.getTime(),endAt:end.getTime()};
+}
+
+function formatWeekWindow(windowValue){
+  try{
+    const formatter = new Intl.DateTimeFormat('nl-NL',{day:'numeric',month:'short'});
+    return formatter.format(new Date(windowValue.startAt))+' – '+formatter.format(new Date(windowValue.endAt-1));
+  }catch(error){
+    return 'Deze week';
+  }
+}
+
+function currentWeekPlan(){
+  const repository = state.repository;
+  const plans = repository && repository.data && repository.data.plans;
+  const persistence = window.CleaningPlanPersistenceContract;
+  if(!plans || typeof plans !== 'object' || !persistence || typeof persistence.planIdForWindow !== 'function') return null;
+  try{
+    const planId = persistence.planIdForWindow(currentWeekWindow());
+    const plan = plans[planId];
+    return plan && typeof plan === 'object' ? Object.assign({},plan,{id:planId}) : null;
+  }catch(error){
+    return null;
+  }
+}
+
+function occurrencesForPlan(plan){
+  const raw = state.repository && state.repository.data && state.repository.data.occurrences;
+  if(!plan || !Array.isArray(plan.occurrenceIds) || !raw || typeof raw !== 'object') return [];
+  return plan.occurrenceIds.map((id) => {
+    const occurrence = raw[id];
+    return occurrence && typeof occurrence === 'object' ? Object.assign({},occurrence,{id:id}) : null;
+  }).filter((occurrence) => occurrence && occurrence.status !== 'CANCELLED' && String(occurrence.planId) === String(plan.id));
 }
 
 function roomFormMarkup(){
@@ -318,9 +399,96 @@ function roomsPanel(){
       : emptyCard('📍','Gepland per kamer','Hier komt straks in één overzicht wat er per kamer gepland, flexibel of afgerond is.'));
 }
 
+function planFeedbackMarkup(){
+  if(state.planning.error){
+    return '<p class="cleaning-plan-feedback is-error" role="alert">'+escapeText(state.planning.error)+'</p>';
+  }
+  if(state.planning.notice){
+    return '<p class="cleaning-plan-feedback is-success" role="status">'+escapeText(state.planning.notice)+'</p>';
+  }
+  return '';
+}
+
+function memberLoadsMarkup(plan){
+  const loads = plan && plan.summary && Array.isArray(plan.summary.memberLoads) ? plan.summary.memberLoads : [];
+  if(!loads.length) return '';
+  return '<section class="cleaning-plan-loads" aria-label="Verdeling op geschatte tijd">'
+    +'<div class="cleaning-plan-section-head"><div><span>Verdeling</span><strong>Eerlijk op geschatte tijd</strong></div><span>'+escapeText(plan.summary.imbalanceMinutes || 0)+' min verschil</span></div>'
+    +'<div class="cleaning-plan-load-grid">'+loads.map((load) => '<div class="cleaning-plan-load">'
+      +'<span>'+escapeText(memberName(load.uid))+'</span>'
+      +'<strong>'+escapeText(load.estimatedMinutes || 0)+' min</strong>'
+      +'<small>'+escapeText(load.bundleCount || 0)+' '+(Number(load.bundleCount)===1?'kamer':'kamers')+'</small>'
+    +'</div>').join('')+'</div>'
+  +'</section>';
+}
+
+function occurrenceCardMarkup(occurrence){
+  const room = rawRoom(occurrence.roomId);
+  const type = roomType(room && room.type);
+  const checklist = Array.isArray(occurrence.checklist) ? occurrence.checklist : [];
+  const assignedUid = Array.isArray(occurrence.assignmentUids) ? occurrence.assignmentUids[0] : null;
+  const overdue = occurrence.dueState === 'OVERDUE';
+  const roomName = room && room.name ? room.name : 'Ruimte';
+  return '<article class="cleaning-plan-card">'
+    +'<div class="cleaning-plan-card-head">'
+      +'<div class="cleaning-plan-room-icon" aria-hidden="true">'+escapeText(type.icon)+'</div>'
+      +'<div class="cleaning-plan-room"><h3>'+escapeText(roomName)+'</h3><span>'+escapeText(checklist.length)+' '+(checklist.length===1?'routine':'routines')+' · '+escapeText(occurrence.estimatedMinutes || 0)+' min</span></div>'
+      +'<span class="cleaning-plan-due'+(overdue?' is-overdue':'')+'">'+(overdue?'Achterstallig':'Deze week')+'</span>'
+    +'</div>'
+    +'<div class="cleaning-plan-assignment"><span>Voorgesteld voor</span><strong>'+escapeText(memberName(assignedUid))+'</strong></div>'
+    +'<ul class="cleaning-plan-checklist">'+checklist.map((item) => '<li><span aria-hidden="true"></span><strong>'+escapeText(item.title || 'Schoonmaakonderdeel')+'</strong><small>'+escapeText(item.estimatedMinutes || 0)+' min</small></li>').join('')+'</ul>'
+    +'<div class="cleaning-plan-card-footer"><span>Nog geen moment gekozen</span><strong>'+escapeText(occurrence.estimatedMinutes || 0)+' min totaal</strong></div>'
+  +'</article>';
+}
+
+function planningPanel(){
+  const repository = state.repository;
+  if(repository && repository.error){
+    return '<section class="cleaning-status-card cleaning-status-error" role="alert"><strong>Planning kon niet worden geladen</strong><span>'+escapeText(repository.error)+'</span></section>';
+  }
+  if(!repository || repository.ready !== true){
+    return '<section class="cleaning-status-card" aria-live="polite"><strong>Planning laden…</strong><span>We verbinden met het actieve huishouden.</span></section>';
+  }
+
+  const windowValue = currentWeekWindow();
+  const plan = currentWeekPlan();
+  const occurrences = occurrencesForPlan(plan);
+  const members = householdMembers();
+  const routines = activeRoutines();
+  const draft = !plan || plan.status === 'DRAFT';
+  const initialBlocked = !plan && (!routines.length || !members.length);
+  const disabled = state.planning.submitting || !draft || initialBlocked;
+  const summary = plan && plan.summary || {};
+  const actionLabel = state.planning.submitting ? 'Weekplan maken…' : (plan ? 'Opnieuw berekenen' : 'Maak weekplan');
+  const statusLabel = plan ? (draft ? 'Concept · realtime' : String(plan.status || 'Plan')) : 'Nog niet gemaakt';
+  let availability = '';
+  if(!routines.length) availability = 'Voeg eerst minimaal één actieve routine toe bij Kamers.';
+  else if(!members.length) availability = 'We wachten nog op de actieve huishoudleden.';
+
+  const hero = '<section class="cleaning-plan-hero">'
+    +'<div class="cleaning-plan-hero-head"><div><p class="cleaning-plan-eyebrow">Week van '+escapeText(formatWeekWindow(windowValue))+'</p><h2>'+(plan?'Conceptplan voor deze week':'Zet jullie weekplan klaar')+'</h2></div><span class="cleaning-plan-status">'+escapeText(statusLabel)+'</span></div>'
+    +'<p class="cleaning-plan-intro">'+(plan?'Routines zijn per kamer gebundeld en eerlijk verdeeld op geschatte tijd.':'Routines die deze week aan de beurt zijn worden per kamer één schoonmaakbeurt, met een eerlijke tijdsverdeling.')+'</p>'
+    +'<div class="cleaning-plan-stats">'
+      +'<div><strong>'+escapeText(plan ? (summary.occurrenceCount || 0) : routines.length)+'</strong><span>'+(plan?'schoonmaakbeurten':'actieve routines')+'</span></div>'
+      +'<div><strong>'+escapeText(plan ? (summary.routineCount || 0) : members.length)+'</strong><span>'+(plan?'routines deze week':'gezinsleden')+'</span></div>'
+      +'<div><strong>'+escapeText(plan ? (summary.totalEstimatedMinutes || 0) : '—')+'</strong><span>'+(plan?'minuten totaal':'na berekening')+'</span></div>'
+    +'</div>'
+    +'<div class="cleaning-plan-actions"><button type="button" class="cleaning-plan-generate" data-cleaning-plan-generate'+(disabled?' disabled':'')+'>'+escapeText(actionLabel)+'</button><span>Dit is alleen een concept; er worden nog geen Taken- of Agenda-items aangemaakt.</span></div>'
+    +(availability?'<p class="cleaning-plan-availability">'+escapeText(availability)+'</p>':'')
+  +'</section>';
+
+  if(!plan) return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+'</div>';
+
+  const list = occurrences.length
+    ? '<section class="cleaning-plan-list"><div class="cleaning-plan-section-head"><div><span>Deze week</span><strong>'+escapeText(occurrences.length)+' '+(occurrences.length===1?'schoonmaakbeurt':'schoonmaakbeurten')+'</strong></div><span>'+escapeText(summary.totalEstimatedMinutes || 0)+' min totaal</span></div>'+occurrences.map(occurrenceCardMarkup).join('')+'</section>'
+    : '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Alles is op schema</strong><p>Er zijn deze week geen routines aan de beurt.</p></div></section>';
+
+  return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+memberLoadsMarkup(plan)+list+'</div>';
+}
+
 function panelContent(){
   if(state.primaryTab === 'planning'){
-    return emptyCard('🗓️','Planning','Hier komt straks het weekvoorstel met verdeling, momenten en goedkeuringen.');
+    return planningPanel();
   }
   if(state.primaryTab === 'rooms') return roomsPanel();
   return emptyCard('✨','Huisoverzicht','Hier komt straks de huisstatus, aandachtspunten, snelle acties en recente activiteit.');
@@ -349,6 +517,19 @@ function readableRoutineError(error){
   if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
   if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
   if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze routinewijziging nog niet toe voor dit huishouden.';
+  return code;
+}
+
+function readablePlanError(error){
+  const code = String(error && error.message || error || 'Het weekplan kon niet worden gemaakt.');
+  if(code.indexOf('CLEANING_PLANNER_ACTIVE_MEMBER_REQUIRED')>-1) return 'Er is minimaal één actief huishoudlid nodig om de schoonmaakbeurten te verdelen.';
+  if(code.indexOf('CLEANING_PLAN_NOT_DRAFT')>-1 || code.indexOf('CLEANING_OCCURRENCE_NOT_DRAFT')>-1) return 'Dit weekplan is niet meer alleen een concept en kan daarom niet opnieuw worden berekend.';
+  if(code.indexOf('CLEANING_PLAN_PERSISTENCE_UNAVAILABLE')>-1 || code.indexOf('CLEANING_PLANNER')>-1) return 'De weekplanner is nog niet volledig geladen. Probeer het nog een keer.';
+  if(code.indexOf('CLEANING_REPOSITORY_CONTEXT_NOT_READY')>-1) return 'De schoonmaakgegevens wisselen nog naar het actieve huishouden. Probeer het zo opnieuw.';
+  if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
+  if(code.indexOf('ACTIVE_MEMBER_REQUIRED')>-1) return 'Je bent geen actief lid van dit huishouden.';
+  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de berekening. Probeer opnieuw.';
+  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat het opslaan van dit weekplan nog niet toe voor dit huishouden.';
   return code;
 }
 
@@ -499,6 +680,93 @@ function ensureRepositorySubscription(){
   });
   repositoryUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : function(){};
   repositorySubscribing = false;
+}
+
+function ensureMemberSubscription(){
+  if(memberUnsubscribe || memberSubscribing) return;
+  const bridge = window.HouseholdIdentityFirebaseBridge;
+  if(!bridge || typeof bridge.subscribe !== 'function') return;
+  memberSubscribing = true;
+  try{
+    const unsubscribe = bridge.subscribe((members) => {
+      state.members = Array.isArray(members) ? members.slice() : [];
+      renderIfActive();
+    });
+    memberUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : function(){};
+  }catch(error){
+    memberUnsubscribe = null;
+  }finally{
+    memberSubscribing = false;
+  }
+}
+
+function generateWeekPlan(root){
+  if(state.planning.submitting) return;
+  const repository = window.CleaningHouseholdRepository;
+  const planner = window.CleaningPlannerContract;
+  const snapshot = state.repository;
+  const existingPlan = currentWeekPlan();
+  const members = householdMembers();
+  const routines = activeRoutines();
+
+  if(!snapshot || snapshot.ready !== true){
+    state.planning.error = 'De schoonmaakgegevens zijn nog niet geladen.';
+    renderCleaningScreen(root);
+    return;
+  }
+  if(!existingPlan && !routines.length){
+    state.planning.error = 'Voeg eerst minimaal één actieve routine toe bij Kamers.';
+    renderCleaningScreen(root);
+    return;
+  }
+  if(routines.length && !members.length){
+    state.planning.error = 'Er is minimaal één actief huishoudlid nodig om de schoonmaakbeurten te verdelen.';
+    renderCleaningScreen(root);
+    return;
+  }
+  if(!planner || typeof planner.generateConceptPlan !== 'function' || !repository || typeof repository.saveDraftPlan !== 'function'){
+    state.planning.error = 'De weekplanner is nog niet volledig geladen. Probeer het nog een keer.';
+    renderCleaningScreen(root);
+    return;
+  }
+
+  let concept;
+  try{
+    concept = planner.generateConceptPlan({
+      window: currentWeekWindow(),
+      rooms: snapshot.data && snapshot.data.rooms || {},
+      routines: snapshot.data && snapshot.data.routines || {},
+      members: members
+    });
+  }catch(error){
+    state.planning.error = readablePlanError(error);
+    renderCleaningScreen(root);
+    return;
+  }
+
+  state.planning.submitting = true;
+  state.planning.error = '';
+  state.planning.notice = '';
+  renderCleaningScreen(root);
+
+  repository.saveDraftPlan(concept).then((result) => {
+    const count = result && result.plan && result.plan.summary ? Number(result.plan.summary.occurrenceCount || 0) : 0;
+    state.planning.submitting = false;
+    state.planning.notice = count
+      ? 'Weekplan staat realtime klaar: '+count+' '+(count===1?'schoonmaakbeurt':'schoonmaakbeurten')+'.'
+      : 'Weekplan staat realtime klaar: alles is op schema.';
+    renderCleaningScreen(root);
+    window.setTimeout(() => {
+      if(state.planning.notice){
+        state.planning.notice = '';
+        renderIfActive();
+      }
+    },3000);
+  }).catch((error) => {
+    state.planning.submitting = false;
+    state.planning.error = readablePlanError(error);
+    renderCleaningScreen(root);
+  });
 }
 
 function submitRoom(root){
@@ -719,6 +987,9 @@ function bind(root){
   const addButton = root.querySelector('[data-cleaning-room-add]');
   if(addButton) addButton.addEventListener('click', () => openCreateRoom(root));
 
+  const generateButton = root.querySelector('[data-cleaning-plan-generate]');
+  if(generateButton) generateButton.addEventListener('click', () => generateWeekPlan(root));
+
   root.querySelectorAll('[data-cleaning-room-edit]').forEach((button) => {
     button.addEventListener('click', () => openEditRoom(root,button.getAttribute('data-cleaning-room-edit')));
   });
@@ -835,6 +1106,7 @@ export function renderCleaningScreen(target){
   if(!root) return;
   mountedRoot = root;
   ensureRepositorySubscription();
+  ensureMemberSubscription();
 
   root.innerHTML = '<div class="cleaning-shell">'
     +'<header class="cleaning-intro">'

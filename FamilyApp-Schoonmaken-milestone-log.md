@@ -14,12 +14,16 @@ Productie/main: **niet gewijzigd**.
 - `ac39b48a9f49a5e7ff8cd4b26ac81e8cbae73820` - pure weekkandidatenselectie met actieve-kamercontrole; preview `https://verhoog-family-6hznik9kv-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 - `452143aaeb443751bceb2121c086a391f7f44b0f` - pure kamerbundeling en totale minutenbelasting; preview `https://verhoog-family-59g7tbaec-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 - `6e0de551bf25d009802421f5b0b193cdb57ace2d` - canonieke actieve householdleden en pure `FAIR_TIME`-verdeling; preview `https://verhoog-family-6jixo08af-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
+- `bd282e8b8a48929e296b982d10fb99955b0eec62` - pure generatie van één immutable `DRAFT`-conceptweekplan; preview `https://verhoog-family-k6sz7rwri-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 
 ### Huidige checkpoint ter acceptatie
 
-- Pure generatie van één immutable `DRAFT`-conceptweekplan uit de geaccepteerde plannerstappen.
-- Eén tijdelijke `occurrenceDraft` per kamerbundel, zonder plan- of occurrence-ID en zonder scheduling/projecties.
-- Nog geen Firebase-/repository-writes, Taken-/Agenda-projecties of zichtbare Planning-UI.
+- Atomaire persistence van het conceptplan en de bijbehorende canonieke `CleaningOccurrence`-records onder één household-scoped cleaning-root-transactie.
+- Stabiele plan-ID per week en occurrence-ID per week + kamer; opnieuw berekenen/retries maken geen duplicaten.
+- `CleaningPlan` bevat alleen occurrence-referenties en afgeleide totalen; checklist, due-data en voorgestelde assignment zijn eigendom van `CleaningOccurrence`.
+- Realtime Planning-UI met weektotalen, verdeling op geschatte tijd, kamerchecklists en expliciete actie Maak weekplan / Opnieuw berekenen.
+- Regeneratie blijft beperkt tot `DRAFT`; niet langer geselecteerde draft-occurrences worden atomair geannuleerd.
+- Nog geen approval-, Taken- of Agenda-projecties.
 
 ## Milestone 1 - Kamers + Routines Foundation
 
@@ -70,7 +74,7 @@ Regel voor vervolg: deze hardening niet opnieuw combineren met functionele uitbr
 
 - `CleaningDomain.basePath()` gebruikt nog `safeId()` en kan ongeldige Firebase-keytekens stil vervangen. Dit moet later veilig worden omgezet naar expliciete validatie zonder bestaande household-identiteit te wijzigen.
 - `createRoom` en `createRoutineItem` gebruiken nog Firebase `push()` en zijn daardoor niet volledig retry-idempotent op transportniveau.
-- Contracttests voor household-isolatie, lifecycle en idempotentie ontbreken nog.
+- Gerichte planner-persistence/idempotentietests zijn aanwezig; brede contracttests voor household-isolatie, lifecycle en create-idempotentie van kamer/routine ontbreken nog.
 - Kleine tap-targets in de huidige functionele UI moeten vóór de definitieve polish minimaal 44x44 worden.
 - De huidige Kamers/Routines-UI is functionele fundering en niet het definitieve visuele ontwerp.
 
@@ -87,4 +91,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ### Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `6e0de551bf25d009802421f5b0b193cdb57ace2d` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen kleine, afzonderlijk testbare wijzigingen maken.
+Een nieuwe chat moet `bd282e8b8a48929e296b982d10fb99955b0eec62` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen afzonderlijk testbare wijzigingen maken; samenhangende verticale checkpoints mogen groter zijn wanneer de gebruiker dat expliciet vraagt.

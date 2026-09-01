@@ -13,8 +13,8 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Commit: `6e0de551bf25d009802421f5b0b193cdb57ace2d`.
-- Preview: `https://verhoog-family-6jixo08af-cverhoog-techs-projects.vercel.app`.
+- Commit: `bd282e8b8a48929e296b982d10fb99955b0eec62`.
+- Preview: `https://verhoog-family-k6sz7rwri-cverhoog-techs-projects.vercel.app`.
 - `main`: niet gewijzigd.
 
 ## Fase-status
@@ -22,7 +22,7 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Fase A - veilige module-shell: **AFGEROND / real-device geaccepteerd**.
 - Fase 0 - architectuur/repository-fundament: **BEZIG**.
 - Fase 1 - Kamers + routines: **BEZIG; milestone Kamers + Routines Foundation afgerond**.
-- Fase 2 - Weekplanner: **BEZIG; due, selectie, kamerbundeling, minutenbelasting en `FAIR_TIME` real-device geaccepteerd**.
+- Fase 2 - Weekplanner: **BEZIG; pure conceptgeneratie real-device geaccepteerd, persistente conceptplanning + realtime Planning-UI ter acceptatie**.
 - Fase 3 - Taken-integratie: **OPEN**.
 - Fase 4 - Agenda-integratie: **OPEN**.
 - Fase 5 - Boodschappen / voorraad: **OPEN**.
@@ -70,13 +70,22 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Na routine-delete wordt de preset opnieuw beschikbaar.
 - Eigen routine blijft altijd mogelijk.
 
+### Weekplanner - pure contractlaag
+
+- Halfopen weekvenster, due-semantiek, weekselectie en uitsluitingsredenen.
+- Routines van dezelfde actieve kamer worden één immutable conceptuele checklist.
+- Geschatte minuten worden exact per kamerbundel en voor het hele plan opgeteld.
+- Actieve householdleden komen uitsluitend uit de canonieke identity bridge en worden via UID gebruikt.
+- `FAIR_TIME` verdeelt standaard deterministisch op geschatte tijd.
+- Eén immutable `DRAFT`-conceptweekplan zonder Firebase-write of Taken-/Agenda-projectie.
+
 ## Bewust nog niet afgerond
 
 ### Fase 0 technische schuld
 
 - `CleaningDomain.basePath()` gebruikt nog `safeId()`; household-key-validatie moet later afzonderlijk en veilig worden gehard.
 - `createRoom` en `createRoutineItem` gebruiken nog Firebase `push()`; volledige retry-idempotency is nog niet opgelost.
-- Contracttests voor household-isolatie, lifecycle en idempotentie ontbreken nog.
+- Gerichte planner-persistence/idempotentietests zijn aanwezig; brede contracttests voor household-isolatie, lifecycle en create-idempotentie van kamer/routine ontbreken nog.
 - Een eerdere gecombineerde hardening-poging veroorzaakte door een afgekapt `cleaningDomain.js` een leeg scherm en is expliciet afgekeurd. Zie milestone-log.
 
 ### Fase 1 resterend
@@ -101,9 +110,9 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 4. geschatte kamerbelasting berekenen - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
 5. actieve household members en verdelingscontract vastleggen - **GEACCEPTEERD OP IPHONE (`6e0de551`)**;
 6. standaard eerlijk verdelen op geschatte tijd - **GEACCEPTEERD OP IPHONE (`6e0de551`)**;
-7. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
-8. conceptplan realtime tonen in Planning;
-9. nog geen Taken- of Agenda-items aanmaken;
+7. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven - **GEACCEPTEERD OP IPHONE (`bd282e8`)**;
+8. conceptplan atomair opslaan en realtime tonen in Planning - **GEÏMPLEMENTEERD; acceptatie open**;
+9. nog geen Taken- of Agenda-items aanmaken - **GEBORGD IN CONTRACT EN UI; acceptatie open**;
 10. pas na real-device acceptatie doorgaan naar persoonlijke goedkeuring en projecties.
 
 ### Actuele checkpoint binnen Weekplanner Foundation
@@ -126,13 +135,17 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 - Iedere kamerbundel wordt één tijdelijke `occurrenceDraft` met checklist, belasting en voorgestelde UID.
 - Conceptdrafts hebben nog geen plan-/occurrence-ID, planningstijd, approval-record of projectie.
 - Plansamenvatting en uitsluitingsdiagnostiek worden deterministisch uit dezelfde snapshots afgeleid.
-- Er wordt nog geen assignment-, occurrence-, plan- of ander Firebase-record gemaakt.
-- Geen Firebase-writes of UI-wijziging in deze checkpoint.
+- De nieuwe persistence-grens kent stabiele week- en kamer-ID's toe en schrijft `CleaningPlan` plus `CleaningOccurrence` atomair onder dezelfde cleaning-root.
+- `CleaningPlan` bewaart alleen occurrence-referenties en afgeleide samenvatting; checklist, due-data en voorgestelde assignment staan canoniek op `CleaningOccurrence`.
+- Opnieuw berekenen is alleen toegestaan zolang plan en occurrences `DRAFT` zijn; retries maken geen duplicaten en vervallen draft-occurrences worden atomair `CANCELLED`.
+- Planning toont het concept realtime met weektotalen, householdverdeling en kamerchecklists en schrijft uitsluitend via `CleaningHouseholdRepository`.
+- De huidige weekgrens gebruikt de lokale kalender van het device; een expliciet household-timezonecontract volgt vóór automatische scheduling/completion.
+- Er worden nog geen approval-, Taken- of Agenda-records gemaakt.
 
 ## Guardrail voor vervolgchats
 
-- Begin vanaf de actuele branch, maar behandel `6e0de551bf25d009802421f5b0b193cdb57ace2d` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
+- Begin vanaf de actuele branch, maar behandel `bd282e8b8a48929e296b982d10fb99955b0eec62` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
 - `main` niet aanraken zonder expliciete acceptatie.
 - Geen grote full-file rewrites voor kleine hardeningwijzigingen.
-- Nieuwe functionele writes in microstappen implementeren en iedere stap via unieke Vercel-preview op iPhone laten accepteren.
+- Nieuwe functionele writes in afzonderlijk testbare checkpoints implementeren en iedere stap via unieke Vercel-preview op iPhone laten accepteren; samenhangende verticale checkpoints mogen groter wanneer dat expliciet is afgesproken.
 - `CleaningOccurrence` blijft de enige source of truth voor één concrete schoonmaakbeurt; Taken en Agenda worden later alleen projecties/referenties.

@@ -1,14 +1,14 @@
 'use strict';
 // ============================================================
-// CLEANING HOUSEHOLD REPOSITORY v0.6.0
+// CLEANING HOUSEHOLD REPOSITORY v0.7.0
 // HouseholdContext-scoped Firebase read lifecycle.
-// Canonical room CRUD + routine create/update/soft-delete.
+// Canonical room/routine CRUD + atomic draft-plan materialization.
 // Routine -> room membership is stored only on routine.roomId.
 // ============================================================
 (function(){
   if(window.CleaningHouseholdRepository)return;
 
-  var VERSION='0.6.0';
+  var VERSION='0.7.0';
   var subscribers=[];
   var contextUnsubscribe=null;
   var active=null;
@@ -142,8 +142,15 @@
     return domain;
   }
 
+  function requirePlanPersistence(){
+    var contract=window.CleaningPlanPersistenceContract;
+    if(!contract||typeof contract.materializeDraft!=='function')throw new Error('CLEANING_PLAN_PERSISTENCE_UNAVAILABLE');
+    return contract;
+  }
+
   function currentRoom(roomId){var rooms=current.data&&current.data.rooms||{};var room=rooms[roomId];return room&&typeof room==='object'?room:null;}
   function currentRoutine(routineId){var routines=current.data&&current.data.routines||{};var routine=routines[routineId];return routine&&typeof routine==='object'?routine:null;}
+  function getPlan(id){var planId=String(id||'');var plans=current.data&&current.data.plans||{};return clone(plans[planId]||null);}
 
   function createRoom(input){
     var write,domain;
@@ -263,9 +270,54 @@
     }).then(function(result){if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');if(!result||!result.snapshot||!result.snapshot.exists())throw new Error('CLEANING_ROUTINE_NOT_FOUND');return deepFreeze(clone(result.snapshot.val()));});
   }
 
+  function saveDraftPlan(conceptPlan){
+    var write,domain,persistence;
+    try{write=requireWriteContext();domain=requireDomain();persistence=requirePlanPersistence();}catch(error){return Promise.reject(error);}
+    if(current.ready!==true||current.uid!==write.ctx.uid||current.householdId!==write.ctx.householdId||Number(current.revision||0)!==Number(write.ctx.revision||0)){
+      return Promise.reject(new Error('CLEANING_REPOSITORY_CONTEXT_NOT_READY'));
+    }
+    var basePath=domain.basePath(write.ctx.householdId);
+    if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
+    if(!isCurrent(write.token))return Promise.reject(new Error('HOUSEHOLD_CONTEXT_CHANGED'));
+    var rootRef=write.db.ref(basePath);
+    var timestamp=Date.now();
+    var materialized=null;
+    var materializationError=null;
+    return rootRef.transaction(function(serverRoot){
+      if(!isCurrent(write.token)){
+        materializationError=new Error('HOUSEHOLD_CONTEXT_CHANGED');
+        return;
+      }
+      try{
+        materializationError=null;
+        materialized=persistence.materializeDraft({
+          conceptPlan:conceptPlan,
+          householdId:write.ctx.householdId,
+          actorUid:write.ctx.uid,
+          timestamp:timestamp,
+          existingData:serverRoot&&typeof serverRoot==='object'?serverRoot:{}
+        });
+      }catch(error){
+        materializationError=error;
+        return;
+      }
+      var next=serverRoot&&typeof serverRoot==='object'?clone(serverRoot):{};
+      if(!next.plans||typeof next.plans!=='object')next.plans={};
+      if(!next.occurrences||typeof next.occurrences!=='object')next.occurrences={};
+      next.plans[materialized.planId]=clone(materialized.plan);
+      Object.keys(materialized.occurrences).forEach(function(id){next.occurrences[id]=clone(materialized.occurrences[id]);});
+      return next;
+    }).then(function(result){
+      if(materializationError)throw materializationError;
+      if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+      if(!result||result.committed!==true||!materialized)throw new Error('CLEANING_PLAN_WRITE_NOT_COMMITTED');
+      return deepFreeze(clone(materialized));
+    });
+  }
+
   function getOccurrence(id){var occurrenceId=String(id||'');var occurrences=current.data&&current.data.occurrences||{};return clone(occurrences[occurrenceId]||null);}
 
-  window.CleaningHouseholdRepository={version:VERSION,bind:bind,unbind:unbind,subscribe:subscribe,snapshot:snapshot,createRoom:createRoom,updateRoom:updateRoom,removeRoom:removeRoom,createRoutineItem:createRoutineItem,updateRoutineItem:updateRoutineItem,removeRoutineItem:removeRoutineItem,createOccurrence:readOnlyWrite,updateOccurrence:readOnlyWrite,getOccurrence:getOccurrence,setUserPreferences:readOnlyWrite,attach:attach,stop:stop};
+  window.CleaningHouseholdRepository={version:VERSION,bind:bind,unbind:unbind,subscribe:subscribe,snapshot:snapshot,createRoom:createRoom,updateRoom:updateRoom,removeRoom:removeRoom,createRoutineItem:createRoutineItem,updateRoutineItem:updateRoutineItem,removeRoutineItem:removeRoutineItem,saveDraftPlan:saveDraftPlan,getPlan:getPlan,createOccurrence:readOnlyWrite,updateOccurrence:readOnlyWrite,getOccurrence:getOccurrence,setUserPreferences:readOnlyWrite,attach:attach,stop:stop};
 
   if(window.CleaningRepositoryContract&&typeof window.CleaningRepositoryContract.validateImplementation==='function'){
     var validation=window.CleaningRepositoryContract.validateImplementation(window.CleaningHouseholdRepository);

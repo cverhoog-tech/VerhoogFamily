@@ -1,12 +1,12 @@
 'use strict';
 // ============================================================
-// CLEANING HOUSEHOLD REPOSITORY CONTRACT v0.1.0
+// CLEANING HOUSEHOLD REPOSITORY CONTRACT v0.2.0
 // Contract only. No Firebase reads/writes/listeners are started here.
 // ============================================================
 (function(){
   if(window.CleaningRepositoryContract)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
 
   var COLLECTIONS=Object.freeze([
     'rooms',
@@ -32,6 +32,8 @@
     'createRoutineItem',
     'updateRoutineItem',
     'removeRoutineItem',
+    'saveDraftPlan',
+    'getPlan',
     'createOccurrence',
     'updateOccurrence',
     'getOccurrence',
@@ -42,6 +44,8 @@
     'HouseholdContext is the only identity/household authority.',
     'All canonical cleaning data lives below families/{householdId}/cleaning.',
     'CleaningOccurrence is the source of truth for one concrete clean.',
+    'CleaningPlan stores stable occurrence references and derived summary, never a second mutable checklist.',
+    'Draft plan plus canonical occurrences are materialized atomically with stable retry-safe IDs.',
     'Task and Calendar records are projections referenced by occurrence.projections.',
     'Repository listeners must bind/unbind on HouseholdContext revision changes.',
     'LocalStorage may only be used as disposable household+uid scoped read cache.',

@@ -1,6 +1,6 @@
 # FamilyApp - Module-architectuur Schoonmaken
 
-Status: implementatie gestart; Fase A shell real-device geaccepteerd op iPhone; Fase 0 architectuurfundament BEZIG.
+Status: implementatie gestart; Kamers + Routines Foundation real-device geaccepteerd; Weekplanner Foundation BEZIG.
 
 ## 1. Doel van de module
 
@@ -225,6 +225,23 @@ De standaardverdeling gebruikt uitsluitend actieve leden uit `HouseholdIdentityF
 - Een venster zonder due werk levert een geldig leeg `DRAFT`-concept op; due werk zonder actief canoniek householdlid faalt expliciet.
 - Bij de latere persistente writegrens worden pas stabiele plan- en occurrence-ID's toegekend. De checklist wordt dan canoniek eigendom van `CleaningOccurrence`; een opgeslagen `CleaningPlan` mag daarvan geen tweede mutable kopie worden.
 - Deze checkpoint doet geen Firebase-, repository-, UI-, Taken-, Agenda- of approval-writes.
+
+### Persistente conceptplanning + realtime Planning (Weekplanner Foundation checkpoint 6)
+
+`CleaningPlanPersistenceContract` materialiseert uitsluitend een geldig immutable concept tot persistente `DRAFT`-records. `CleaningHouseholdRepository.saveDraftPlan()` is de enige writegrens voor deze flow.
+
+- Een plan krijgt een stabiele ID uit het exacte halfopen weekvenster; iedere kamerbundel krijgt een stabiele occurrence-ID uit plan-ID + canonieke `roomId`.
+- Plan en alle actieve/geannuleerde occurrences worden in één Firebase-transactie op `families/{householdId}/cleaning` geschreven. Bestaande rooms, routines en andere cleaning-subcollecties blijven daarbij behouden.
+- De write start alleen wanneer de actuele HouseholdContext en de realtime repository-snapshot exact dezelfde UID, household-ID en revision hebben; contextdrift wordt vóór de Firebase-transactie geweigerd.
+- `CleaningPlan` bevat `occurrenceIds`, afgeleide totalen, verdelingssamenvatting en generatiemetadata. Het bevat geen checklist of tweede mutable kopie van occurrence-inhoud.
+- `CleaningOccurrence` bezit de concrete checklist, routine-itemreferenties, due-samenvatting, totale minuten en voorgestelde canonieke assignment-UID.
+- De persistence-grens herberekent en valideert checklistminuten, due-grenzen en member loads voordat er geschreven wordt; een intern tegenstrijdig concept faalt expliciet.
+- Herhalen of opnieuw berekenen gebruikt dezelfde IDs, bewaart creation-metadata en verhoogt alleen de generatie-revisie. Niet langer geselecteerde occurrences worden binnen dezelfde transactie `CANCELLED`.
+- Regeneratie mag uitsluitend zolang bestaand plan en betrokken occurrences `DRAFT`/`CANCELLED` zijn; een later geaccepteerd plan wordt niet stil overschreven.
+- Het bestaande household-scoped aggregate listenerpad projecteert plans en occurrences realtime naar de Planning-tab. De UI schrijft niet direct naar Firebase en gebruikt geen localStorage-autoriteit.
+- De Planning-tab toont conceptstatus, weektotalen, verdeling op geschatte tijd en de occurrence-checklists. Deze functionele layout is nog niet de definitieve premium visual-spec-uitwerking.
+- De huidige weekgrens gebruikt de lokale kalender van het device. Een expliciet household-timezonecontract is vereist vóór automatische scheduling en completion-writes.
+- Er ontstaan in deze checkpoint geen approval-, Task- of Calendar-records; de projectiereferenties op occurrences blijven `null`.
 
 ### Generatie
 
@@ -657,7 +674,7 @@ Bij iedere geaccepteerde implementatiestap worden beide documenten bijgewerkt me
 
 Een ontwerpwijziging wordt eerst in deze architectuur verwerkt voordat een volgende fase daarop voortbouwt.
 
-## 25. Implementatiestatus 31-08-2026
+## 25. Implementatiestatus 01-09-2026
 
 ### Geaccepteerde Fase A / veilige module-shell
 
@@ -681,13 +698,26 @@ Afgerond in het architectuurfundament:
 - vaste subpaden voor rooms, routines, supplies, inventory, plans, occurrences, approvals, completion logs, availability en preferences;
 - `CleaningOccurrence` expliciet als source of truth vastgelegd;
 - domeinstatussen en normalizers vastgelegd in `cleaningDomain.js`;
-- één toekomstig `CleaningHouseholdRepository`-contract vastgelegd in `cleaningRepositoryContract.js`;
+- één `CleaningHouseholdRepository` met HouseholdContext bind/unbind/revision-lifecycle en realtime aggregate read;
+- actieve household-member read/write-afscherming gecontroleerd tegen de bestaande Firebase rules;
 - localStorage alleen toegestaan als disposable UID+household read-cache, nooit als tweede bron van waarheid.
 
 Nog open binnen Fase 0:
 
-- echte `CleaningHouseholdRepository` implementeren met HouseholdContext bind/unbind/revision lifecycle;
-- Firebase rules/rechtenmodel aansluiten op bestaande household/memberrollen;
-- feature-flagged data-activatie bepalen;
+- household-key-validatie in `CleaningDomain.basePath()` afzonderlijk en regressieveilig verharden;
+- create-idempotentie voor kamer/routine zonder Firebase `push()` afzonderlijk ontwerpen;
 - expliciete integratiecontracten voor Tasks, Calendar, Grocery en Notifications toevoegen;
-- contracttests voor household-isolatie, lifecycle en idempotentie toevoegen.
+- brede contracttests voor household-isolatie, lifecycle en create-idempotentie van kamer/routine toevoegen; de persistente planner-write heeft al gerichte contracttests.
+
+### Fase 1 - KAMERS + ROUTINES FOUNDATION GEACCEPTEERD
+
+- Kamer- en routine-CRUD, soft-delete, meerdere routines per kamer en editable kamertypepresets zijn real-device geaccepteerd op iPhone.
+- Laatste herstelcheckpoint van deze milestone: `ea843a64f46899d63a7bb64d4adf2b5b7160e2da`.
+- Benodigdheden en persoonlijke Tijd / Aantal / Beide-weergave blijven open.
+
+### Fase 2 - WEEKPLANNER FOUNDATION BEZIG
+
+- Due-semantiek, weekselectie, kamerbundeling, minutenbelasting, householdleden en `FAIR_TIME` zijn real-device geaccepteerd.
+- Pure conceptplangeneratie is real-device geaccepteerd op checkpoint `bd282e8b8a48929e296b982d10fb99955b0eec62`.
+- Atomaire persistente `DRAFT`-planning met canonieke occurrences en realtime Planning-UI is geïmplementeerd en wacht op real-device acceptatie.
+- Goedkeuring, scheduling en Taken-/Agenda-projecties blijven expliciet buiten deze checkpoint.
