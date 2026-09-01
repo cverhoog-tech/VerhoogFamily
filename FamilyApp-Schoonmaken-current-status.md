@@ -13,8 +13,8 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Commit: `452143aaeb443751bceb2121c086a391f7f44b0f`.
-- Preview: `https://verhoog-family-59g7tbaec-cverhoog-techs-projects.vercel.app`.
+- Commit: `6e0de551bf25d009802421f5b0b193cdb57ace2d`.
+- Preview: `https://verhoog-family-6jixo08af-cverhoog-techs-projects.vercel.app`.
 - `main`: niet gewijzigd.
 
 ## Fase-status
@@ -22,7 +22,7 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Fase A - veilige module-shell: **AFGEROND / real-device geaccepteerd**.
 - Fase 0 - architectuur/repository-fundament: **BEZIG**.
 - Fase 1 - Kamers + routines: **BEZIG; milestone Kamers + Routines Foundation afgerond**.
-- Fase 2 - Weekplanner: **BEZIG; due, selectie, kamerbundeling en minutenbelasting real-device geaccepteerd**.
+- Fase 2 - Weekplanner: **BEZIG; due, selectie, kamerbundeling, minutenbelasting en `FAIR_TIME` real-device geaccepteerd**.
 - Fase 3 - Taken-integratie: **OPEN**.
 - Fase 4 - Agenda-integratie: **OPEN**.
 - Fase 5 - Boodschappen / voorraad: **OPEN**.
@@ -99,9 +99,9 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 2. bepalen welke routine-items deze week aandacht vragen - **GEACCEPTEERD OP IPHONE (`ac39b48a`)**;
 3. routine-items per kamer bundelen tot één conceptuele `CleaningOccurrence`/checklist - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
 4. geschatte kamerbelasting berekenen - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
-5. actieve household members en verdelingscontract vastleggen - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
-6. standaard eerlijk verdelen op geschatte tijd - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
-7. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven;
+5. actieve household members en verdelingscontract vastleggen - **GEACCEPTEERD OP IPHONE (`6e0de551`)**;
+6. standaard eerlijk verdelen op geschatte tijd - **GEACCEPTEERD OP IPHONE (`6e0de551`)**;
+7. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
 8. conceptplan realtime tonen in Planning;
 9. nog geen Taken- of Agenda-items aanmaken;
 10. pas na real-device acceptatie doorgaan naar persoonlijke goedkeuring en projecties.
@@ -122,12 +122,16 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 - Actieve householdleden worden uitsluitend via hun canonieke UID geselecteerd.
 - `FAIR_TIME` verdeelt grootste kamerbundels eerst naar de laagste minutenbelasting.
 - Eén kamerbundel blijft één ondeelbare voorgestelde toewijzing.
-- Er wordt nog geen occurrence-ID, conceptplan, assignment-record of Firebase-record gemaakt.
+- De geaccepteerde plannerstappen worden nu puur samengevoegd tot één immutable `DRAFT`-conceptweekplan.
+- Iedere kamerbundel wordt één tijdelijke `occurrenceDraft` met checklist, belasting en voorgestelde UID.
+- Conceptdrafts hebben nog geen plan-/occurrence-ID, planningstijd, approval-record of projectie.
+- Plansamenvatting en uitsluitingsdiagnostiek worden deterministisch uit dezelfde snapshots afgeleid.
+- Er wordt nog geen assignment-, occurrence-, plan- of ander Firebase-record gemaakt.
 - Geen Firebase-writes of UI-wijziging in deze checkpoint.
 
 ## Guardrail voor vervolgchats
 
-- Begin vanaf de actuele branch, maar behandel `452143aaeb443751bceb2121c086a391f7f44b0f` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
+- Begin vanaf de actuele branch, maar behandel `6e0de551bf25d009802421f5b0b193cdb57ace2d` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
 - `main` niet aanraken zonder expliciete acceptatie.
 - Geen grote full-file rewrites voor kleine hardeningwijzigingen.
 - Nieuwe functionele writes in microstappen implementeren en iedere stap via unieke Vercel-preview op iPhone laten accepteren.

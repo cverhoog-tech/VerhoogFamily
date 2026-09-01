@@ -13,12 +13,13 @@ Productie/main: **niet gewijzigd**.
 - `aae3e1570343926865e93be4f5c6d440f2d7e6c4` - pure canonieke due-semantiek; preview `https://verhoog-family-3k1azd44h-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 - `ac39b48a9f49a5e7ff8cd4b26ac81e8cbae73820` - pure weekkandidatenselectie met actieve-kamercontrole; preview `https://verhoog-family-6hznik9kv-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 - `452143aaeb443751bceb2121c086a391f7f44b0f` - pure kamerbundeling en totale minutenbelasting; preview `https://verhoog-family-59g7tbaec-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
+- `6e0de551bf25d009802421f5b0b193cdb57ace2d` - canonieke actieve householdleden en pure `FAIR_TIME`-verdeling; preview `https://verhoog-family-6jixo08af-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 
 ### Huidige checkpoint ter acceptatie
 
-- Pure selectie van actieve householdleden op canonieke UID.
-- Standaard `FAIR_TIME`-verdeling op totale geschatte minuten.
-- Nog geen conceptplan-/occurrence-writes, Taken-/Agenda-projecties of zichtbare Planning-UI.
+- Pure generatie van één immutable `DRAFT`-conceptweekplan uit de geaccepteerde plannerstappen.
+- Eén tijdelijke `occurrenceDraft` per kamerbundel, zonder plan- of occurrence-ID en zonder scheduling/projecties.
+- Nog geen Firebase-/repository-writes, Taken-/Agenda-projecties of zichtbare Planning-UI.
 
 ## Milestone 1 - Kamers + Routines Foundation
 
@@ -86,4 +87,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ### Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `452143aaeb443751bceb2121c086a391f7f44b0f` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen kleine, afzonderlijk testbare wijzigingen maken.
+Een nieuwe chat moet `6e0de551bf25d009802421f5b0b193cdb57ace2d` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen kleine, afzonderlijk testbare wijzigingen maken.

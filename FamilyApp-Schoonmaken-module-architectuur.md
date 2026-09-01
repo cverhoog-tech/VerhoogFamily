@@ -212,6 +212,20 @@ De standaardverdeling gebruikt uitsluitend actieve leden uit `HouseholdIdentityF
 - Niet-`FAIR_TIME` methodes worden niet stil als eerlijk behandeld; die volgen in een eigen contractstap.
 - De uitkomst is uitsluitend een immutable voorstel in geheugen. Er wordt nog geen `CleaningPlan`, assignment of occurrence opgeslagen.
 
+### Conceptweekplan (Weekplanner Foundation checkpoint 5)
+
+`generateConceptPlan()` vormt de reeds vastgelegde due-, selectie-, bundel- en `FAIR_TIME`-contracten tot één canoniek conceptweekplan.
+
+- De functie consumeert uitsluitend het expliciete halfopen weekvenster en de canonieke rooms-, routines- en householdmembers-snapshots.
+- De uitkomst is deterministisch, volledig immutable en heeft `kind: CLEANING_PLAN_CONCEPT`, `status: DRAFT`, `persisted: false` en nog geen plan-ID of write-metadata.
+- Iedere kamerbundel wordt één tijdelijke `occurrenceDraft` met `occurrenceId: null`, de canonieke `roomId`, checklist, routine-item-ID's, due-informatie, totale minuten en precies één voorgestelde UID.
+- Een conceptdraft heeft nog geen gepland tijdstip, flexibel tijdvak, goedkeuringsrecord of Task-/Agenda-projectie.
+- De plansamenvatting bevat aantallen, totale geschatte minuten, overdue/binnen-vensterverdeling en de voorgestelde minutenbelasting per householdlid.
+- Uitgesloten routines en householdleden blijven als diagnose beschikbaar, zonder een tweede data-autoriteit te vormen.
+- Een venster zonder due werk levert een geldig leeg `DRAFT`-concept op; due werk zonder actief canoniek householdlid faalt expliciet.
+- Bij de latere persistente writegrens worden pas stabiele plan- en occurrence-ID's toegekend. De checklist wordt dan canoniek eigendom van `CleaningOccurrence`; een opgeslagen `CleaningPlan` mag daarvan geen tweede mutable kopie worden.
+- Deze checkpoint doet geen Firebase-, repository-, UI-, Taken-, Agenda- of approval-writes.
+
 ### Generatie
 
 FamilyApp kijkt naar:

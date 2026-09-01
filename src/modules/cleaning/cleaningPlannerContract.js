@@ -1,13 +1,14 @@
 'use strict';
 // ============================================================
-// CLEANING PLANNER CONTRACT v0.4.0
-// Pure due, bundle, member and fair-time semantics: no Firebase, localStorage or DOM work.
+// CLEANING PLANNER CONTRACT v0.5.0
+// Pure due, bundle, member, fair-time and concept-plan semantics.
+// No Firebase, localStorage or DOM work.
 // A planning window is half-open: [startAt, endAt).
 // ============================================================
 (function(){
   if(window.CleaningPlannerContract)return;
 
-  var VERSION='0.4.0';
+  var VERSION='0.5.0';
   var DAY_MS=24*60*60*1000;
 
   var DUE_STATE=Object.freeze({
@@ -40,6 +41,9 @@
     UID_REQUIRED:'UID_REQUIRED',
     NOT_ACTIVE:'NOT_ACTIVE'
   });
+
+  var PLAN_KIND=Object.freeze({CONCEPT:'CLEANING_PLAN_CONCEPT'});
+  var PLAN_STATUS=Object.freeze({DRAFT:'DRAFT'});
 
   function finiteTimestamp(value){
     var number=Number(value);
@@ -353,6 +357,84 @@
     });
   }
 
+  function generateConceptPlan(input){
+    var source=input||{};
+    var selection=selectDueRoutineItems({
+      window:source.window,
+      rooms:source.rooms,
+      routines:source.routines
+    });
+    var bundling=bundleCandidatesByRoom({rooms:source.rooms,candidates:selection.candidates});
+    var distribution=assignFairTime({members:source.members,bundles:bundling.bundles});
+    var assignmentsByBundle=Object.create(null);
+    distribution.assignments.forEach(function(assignment){
+      assignmentsByBundle[assignment.bundleKey]=assignment;
+    });
+
+    var occurrenceDrafts=bundling.bundles.map(function(bundle){
+      var assignment=assignmentsByBundle[bundle.bundleKey];
+      if(!assignment||assignment.roomId!==bundle.roomId||assignment.estimatedMinutes!==bundle.estimatedMinutes){
+        throw new Error('CLEANING_PLANNER_ASSIGNMENT_MISMATCH');
+      }
+      var checklist=bundle.checklist.map(function(item){
+        return Object.freeze({
+          id:item.id,
+          routineItemId:item.routineItemId,
+          title:item.title,
+          estimatedMinutes:item.estimatedMinutes,
+          priority:item.priority,
+          dueAt:item.dueAt,
+          dueState:item.dueState,
+          completed:false
+        });
+      });
+      return Object.freeze({
+        draftKey:bundle.bundleKey,
+        occurrenceId:null,
+        planId:null,
+        status:PLAN_STATUS.DRAFT,
+        roomId:bundle.roomId,
+        dueState:bundle.dueState,
+        earliestDueAt:bundle.earliestDueAt,
+        latestDueAt:bundle.latestDueAt,
+        estimatedMinutes:bundle.estimatedMinutes,
+        routineCount:bundle.routineCount,
+        routineItemIds:Object.freeze(bundle.routineItemIds.slice()),
+        checklist:Object.freeze(checklist),
+        proposedAssignmentUids:Object.freeze(assignment.assignmentUids.slice()),
+        scheduledStartAt:null,
+        scheduledEndAt:null,
+        flexibleWindow:null
+      });
+    });
+
+    var routineCount=occurrenceDrafts.reduce(function(total,draft){return total+draft.routineCount;},0);
+    var overdueCount=occurrenceDrafts.filter(function(draft){return draft.dueState===DUE_STATE.OVERDUE;}).length;
+    return Object.freeze({
+      kind:PLAN_KIND.CONCEPT,
+      schemaVersion:1,
+      id:null,
+      persisted:false,
+      status:PLAN_STATUS.DRAFT,
+      window:selection.window,
+      distributionMode:distribution.distributionMode,
+      occurrenceDrafts:Object.freeze(occurrenceDrafts),
+      summary:Object.freeze({
+        occurrenceCount:occurrenceDrafts.length,
+        routineCount:routineCount,
+        overdueOccurrenceCount:overdueCount,
+        dueInWindowOccurrenceCount:occurrenceDrafts.length-overdueCount,
+        totalEstimatedMinutes:distribution.totalEstimatedMinutes,
+        imbalanceMinutes:distribution.imbalanceMinutes,
+        memberLoads:distribution.memberLoads
+      }),
+      diagnostics:Object.freeze({
+        excludedRoutines:selection.excluded,
+        excludedMembers:distribution.excludedMembers
+      })
+    });
+  }
+
   window.CleaningPlannerContract=Object.freeze({
     version:VERSION,
     DAY_MS:DAY_MS,
@@ -360,11 +442,14 @@
     DUE_SOURCE:DUE_SOURCE,
     EXCLUSION_REASON:EXCLUSION_REASON,
     MEMBER_EXCLUSION_REASON:MEMBER_EXCLUSION_REASON,
+    PLAN_KIND:PLAN_KIND,
+    PLAN_STATUS:PLAN_STATUS,
     planningWindow:planningWindow,
     evaluateRoutineDue:evaluateRoutineDue,
     selectDueRoutineItems:selectDueRoutineItems,
     bundleCandidatesByRoom:bundleCandidatesByRoom,
     selectEligibleHouseholdMembers:selectEligibleHouseholdMembers,
-    assignFairTime:assignFairTime
+    assignFairTime:assignFairTime,
+    generateConceptPlan:generateConceptPlan
   });
 })();
