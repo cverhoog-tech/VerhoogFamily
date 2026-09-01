@@ -13,8 +13,8 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Commit: `ac39b48a9f49a5e7ff8cd4b26ac81e8cbae73820`.
-- Preview: `https://verhoog-family-6hznik9kv-cverhoog-techs-projects.vercel.app`.
+- Commit: `452143aaeb443751bceb2121c086a391f7f44b0f`.
+- Preview: `https://verhoog-family-59g7tbaec-cverhoog-techs-projects.vercel.app`.
 - `main`: niet gewijzigd.
 
 ## Fase-status
@@ -22,7 +22,7 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Fase A - veilige module-shell: **AFGEROND / real-device geaccepteerd**.
 - Fase 0 - architectuur/repository-fundament: **BEZIG**.
 - Fase 1 - Kamers + routines: **BEZIG; milestone Kamers + Routines Foundation afgerond**.
-- Fase 2 - Weekplanner: **BEZIG; due-semantiek en weekkandidatenselectie real-device geaccepteerd**.
+- Fase 2 - Weekplanner: **BEZIG; due, selectie, kamerbundeling en minutenbelasting real-device geaccepteerd**.
 - Fase 3 - Taken-integratie: **OPEN**.
 - Fase 4 - Agenda-integratie: **OPEN**.
 - Fase 5 - Boodschappen / voorraad: **OPEN**.
@@ -97,12 +97,14 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 
 1. due-semantiek voor routines definiëren - **GEACCEPTEERD OP IPHONE (`aae3e157`)**;
 2. bepalen welke routine-items deze week aandacht vragen - **GEACCEPTEERD OP IPHONE (`ac39b48a`)**;
-3. routine-items per kamer bundelen tot één conceptuele `CleaningOccurrence`/checklist - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
-4. geschatte kamerbelasting berekenen - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
-5. household members en verdelingscontract vastleggen;
-6. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven;
-7. conceptplan realtime tonen in Planning;
-8. pas na real-device acceptatie doorgaan naar persoonlijke goedkeuring en projecties.
+3. routine-items per kamer bundelen tot één conceptuele `CleaningOccurrence`/checklist - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
+4. geschatte kamerbelasting berekenen - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
+5. actieve household members en verdelingscontract vastleggen - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
+6. standaard eerlijk verdelen op geschatte tijd - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
+7. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven;
+8. conceptplan realtime tonen in Planning;
+9. nog geen Taken- of Agenda-items aanmaken;
+10. pas na real-device acceptatie doorgaan naar persoonlijke goedkeuring en projecties.
 
 ### Actuele checkpoint binnen Weekplanner Foundation
 
@@ -117,12 +119,15 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 - Kandidaten worden stabiel gesorteerd op due-moment, prioriteit en routine-ID.
 - Kandidaten worden per kamer tot één immutable conceptuele checklist gebundeld.
 - Totale geschatte minuten zijn exact de som van de gebundelde routine-items.
-- Er wordt nog geen occurrence-ID, assignment, planning of Firebase-record gemaakt.
-- Geen Firebase-writes, verdeling of UI-wijziging in deze checkpoint.
+- Actieve householdleden worden uitsluitend via hun canonieke UID geselecteerd.
+- `FAIR_TIME` verdeelt grootste kamerbundels eerst naar de laagste minutenbelasting.
+- Eén kamerbundel blijft één ondeelbare voorgestelde toewijzing.
+- Er wordt nog geen occurrence-ID, conceptplan, assignment-record of Firebase-record gemaakt.
+- Geen Firebase-writes of UI-wijziging in deze checkpoint.
 
 ## Guardrail voor vervolgchats
 
-- Begin vanaf de actuele branch, maar behandel `ac39b48a9f49a5e7ff8cd4b26ac81e8cbae73820` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
+- Begin vanaf de actuele branch, maar behandel `452143aaeb443751bceb2121c086a391f7f44b0f` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
 - `main` niet aanraken zonder expliciete acceptatie.
 - Geen grote full-file rewrites voor kleine hardeningwijzigingen.
 - Nieuwe functionele writes in microstappen implementeren en iedere stap via unieke Vercel-preview op iPhone laten accepteren.

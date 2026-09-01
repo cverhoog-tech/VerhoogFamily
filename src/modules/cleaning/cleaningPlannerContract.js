@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// CLEANING PLANNER CONTRACT v0.3.0
-// Pure due, candidate and room-bundle semantics: no Firebase, localStorage or DOM work.
+// CLEANING PLANNER CONTRACT v0.4.0
+// Pure due, bundle, member and fair-time semantics: no Firebase, localStorage or DOM work.
 // A planning window is half-open: [startAt, endAt).
 // ============================================================
 (function(){
   if(window.CleaningPlannerContract)return;
 
-  var VERSION='0.3.0';
+  var VERSION='0.4.0';
   var DAY_MS=24*60*60*1000;
 
   var DUE_STATE=Object.freeze({
@@ -35,6 +35,11 @@
   });
 
   var PRIORITY_RANK=Object.freeze({BASIC:0,NORMAL:1,EXTRA:2});
+
+  var MEMBER_EXCLUSION_REASON=Object.freeze({
+    UID_REQUIRED:'UID_REQUIRED',
+    NOT_ACTIVE:'NOT_ACTIVE'
+  });
 
   function finiteTimestamp(value){
     var number=Number(value);
@@ -228,6 +233,7 @@
         roomId:roomId,
         roomName:String(room.name||'').trim()||'Ruimte',
         roomType:String(room.type||'custom').trim()||'custom',
+        distributionMode:String(room.distributionMode||'FAIR_TIME').trim()||'FAIR_TIME',
         dueState:dueState,
         earliestDueAt:earliest,
         latestDueAt:latest,
@@ -245,15 +251,120 @@
     return Object.freeze({bundles:Object.freeze(bundles)});
   }
 
+  function selectEligibleHouseholdMembers(input){
+    var eligible=[];
+    var excluded=[];
+    var seen={};
+    collectionRows(input).forEach(function(entry){
+      var row=entry.value;
+      // Firebase member-map keys or bridge-provided uid are canonical; legacy display ids are not.
+      var uid=String(entry.key||row.uid||'').trim();
+      if(!uid){excluded.push(Object.freeze({uid:null,reason:MEMBER_EXCLUSION_REASON.UID_REQUIRED}));return;}
+      if(seen[uid])throw new Error('CLEANING_PLANNER_DUPLICATE_MEMBER_UID');
+      seen[uid]=true;
+      var status=String(row.status||'active').trim().toLowerCase();
+      if(status!=='active'){
+        excluded.push(Object.freeze({uid:uid,reason:MEMBER_EXCLUSION_REASON.NOT_ACTIVE}));
+        return;
+      }
+      eligible.push(Object.freeze({
+        uid:uid,
+        displayName:String(row.displayName||row.name||'Gezinslid').trim()||'Gezinslid',
+        role:String(row.role||'member').trim()||'member',
+        joinedAt:finiteTimestamp(row.joinedAt)||null
+      }));
+    });
+    eligible.sort(function(a,b){
+      if(a.joinedAt&&b.joinedAt&&a.joinedAt!==b.joinedAt)return a.joinedAt-b.joinedAt;
+      return compareText(a.uid,b.uid);
+    });
+    excluded.sort(function(a,b){return compareText(String(a.uid||''),String(b.uid||''));});
+    return Object.freeze({members:Object.freeze(eligible),excluded:Object.freeze(excluded)});
+  }
+
+  function assignFairTime(input){
+    var source=input||{};
+    var memberSelection=selectEligibleHouseholdMembers(source.members);
+    var bundles=Array.isArray(source.bundles)?source.bundles.slice():[];
+    if(bundles.length&&!memberSelection.members.length)throw new Error('CLEANING_PLANNER_ACTIVE_MEMBER_REQUIRED');
+
+    var bundleOrder={};
+    var seenBundles={};
+    bundles.forEach(function(bundle,index){
+      var key=String(bundle&&bundle.bundleKey||'').trim();
+      var roomId=String(bundle&&bundle.roomId||'').trim();
+      var minutes=parseInt(bundle&&bundle.estimatedMinutes,10);
+      if(!key||!roomId||!Number.isFinite(minutes)||minutes<1)throw new Error('CLEANING_PLANNER_BUNDLE_INVALID');
+      if(seenBundles[key])throw new Error('CLEANING_PLANNER_DUPLICATE_BUNDLE_KEY');
+      seenBundles[key]=true;
+      bundleOrder[key]=index;
+      if(String(bundle.distributionMode||'FAIR_TIME')!=='FAIR_TIME')throw new Error('CLEANING_PLANNER_DISTRIBUTION_MODE_UNSUPPORTED');
+    });
+
+    var loads={};
+    memberSelection.members.forEach(function(member,index){
+      loads[member.uid]={uid:member.uid,order:index,estimatedMinutes:0,bundleCount:0};
+    });
+
+    var work=bundles.slice().sort(function(a,b){
+      var byMinutes=Number(b.estimatedMinutes)-Number(a.estimatedMinutes);
+      if(byMinutes)return byMinutes;
+      var dueA=finiteTimestamp(a.earliestDueAt)||Number.MAX_SAFE_INTEGER;
+      var dueB=finiteTimestamp(b.earliestDueAt)||Number.MAX_SAFE_INTEGER;
+      if(dueA!==dueB)return dueA-dueB;
+      return compareText(String(a.bundleKey),String(b.bundleKey));
+    });
+
+    var assignments=work.map(function(bundle){
+      var target=memberSelection.members.map(function(member){return loads[member.uid];}).sort(function(a,b){
+        if(a.estimatedMinutes!==b.estimatedMinutes)return a.estimatedMinutes-b.estimatedMinutes;
+        if(a.bundleCount!==b.bundleCount)return a.bundleCount-b.bundleCount;
+        return a.order-b.order;
+      })[0];
+      var minutes=parseInt(bundle.estimatedMinutes,10);
+      target.estimatedMinutes+=minutes;
+      target.bundleCount+=1;
+      return Object.freeze({
+        bundleKey:String(bundle.bundleKey),
+        roomId:String(bundle.roomId),
+        assignedUid:target.uid,
+        assignmentUids:Object.freeze([target.uid]),
+        distributionMode:'FAIR_TIME',
+        estimatedMinutes:minutes
+      });
+    });
+    assignments.sort(function(a,b){return bundleOrder[a.bundleKey]-bundleOrder[b.bundleKey];});
+
+    var memberLoads=memberSelection.members.map(function(member){
+      var load=loads[member.uid];
+      return Object.freeze({uid:member.uid,estimatedMinutes:load.estimatedMinutes,bundleCount:load.bundleCount});
+    });
+    var total=memberLoads.reduce(function(sum,load){return sum+load.estimatedMinutes;},0);
+    var values=memberLoads.map(function(load){return load.estimatedMinutes;});
+    var imbalance=values.length?Math.max.apply(Math,values)-Math.min.apply(Math,values):0;
+    return Object.freeze({
+      distributionMode:'FAIR_TIME',
+      members:memberSelection.members,
+      excludedMembers:memberSelection.excluded,
+      assignments:Object.freeze(assignments),
+      memberLoads:Object.freeze(memberLoads),
+      totalEstimatedMinutes:total,
+      imbalanceMinutes:imbalance
+    });
+  }
+
   window.CleaningPlannerContract=Object.freeze({
     version:VERSION,
     DAY_MS:DAY_MS,
     DUE_STATE:DUE_STATE,
     DUE_SOURCE:DUE_SOURCE,
     EXCLUSION_REASON:EXCLUSION_REASON,
+    MEMBER_EXCLUSION_REASON:MEMBER_EXCLUSION_REASON,
     planningWindow:planningWindow,
     evaluateRoutineDue:evaluateRoutineDue,
     selectDueRoutineItems:selectDueRoutineItems,
-    bundleCandidatesByRoom:bundleCandidatesByRoom
+    bundleCandidatesByRoom:bundleCandidatesByRoom,
+    selectEligibleHouseholdMembers:selectEligibleHouseholdMembers,
+    assignFairTime:assignFairTime
   });
 })();

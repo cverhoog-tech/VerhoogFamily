@@ -198,6 +198,20 @@ De pure planner bundelt alle geselecteerde routine-items met dezelfde `roomId` t
 - Checklist en bundels zijn deterministisch en immutable zodat dezelfde snapshot op iedere client hetzelfde concept oplevert.
 - De bundel heeft nog geen occurrence-ID, assignment, goedkeuringsstatus of projectiereferentie. Dat ontstaat pas bij de latere conceptplan-/writegrens.
 
+### Householdleden en FAIR_TIME (Weekplanner Foundation checkpoint 4)
+
+De standaardverdeling gebruikt uitsluitend actieve leden uit `HouseholdIdentityFirebaseBridge.getMembers()` en hun canonieke Firebase `uid`.
+
+- Legacy profiel-ID's, namen en lokale members zijn geen identity fallback voor plannertoewijzingen.
+- Inactieve/verwijderde leden worden uitgesloten; dubbele canonieke UIDs zijn een contractfout.
+- Alle actieve rollen kunnen in deze foundation deelnemen; beschikbaarheidsuitzonderingen volgen later afzonderlijk.
+- De standaardmethode is `FAIR_TIME`: geschatte minuten, niet het aantal kamerbundels, bepalen de belasting.
+- Kamerbundels blijven ondeelbaar en krijgen in deze standaardflow precies één voorgestelde UID.
+- De verdeler verwerkt grootste bundels eerst en kiest telkens deterministisch het actieve lid met de laagste minutenbelasting, daarna het laagste bundelaantal en daarna de stabiele membervolgorde.
+- Deze verdeling is een schaalbare, deterministische balancer en nog geen historie-/Agenda-optimalisatie.
+- Niet-`FAIR_TIME` methodes worden niet stil als eerlijk behandeld; die volgen in een eigen contractstap.
+- De uitkomst is uitsluitend een immutable voorstel in geheugen. Er wordt nog geen `CleaningPlan`, assignment of occurrence opgeslagen.
+
 ### Generatie
 
 FamilyApp kijkt naar:
