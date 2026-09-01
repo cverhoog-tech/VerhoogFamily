@@ -13,8 +13,8 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Commit: `ea843a64f46899d63a7bb64d4adf2b5b7160e2da`.
-- Preview: `https://verhoog-family-gkjbqbmqu-cverhoog-techs-projects.vercel.app`.
+- Commit: `aae3e1570343926865e93be4f5c6d440f2d7e6c4`.
+- Preview: `https://verhoog-family-3k1azd44h-cverhoog-techs-projects.vercel.app`.
 - `main`: niet gewijzigd.
 
 ## Fase-status
@@ -22,7 +22,7 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Fase A - veilige module-shell: **AFGEROND / real-device geaccepteerd**.
 - Fase 0 - architectuur/repository-fundament: **BEZIG**.
 - Fase 1 - Kamers + routines: **BEZIG; milestone Kamers + Routines Foundation afgerond**.
-- Fase 2 - Weekplanner: **OPEN; eerstvolgende grote functionele milestone**.
+- Fase 2 - Weekplanner: **BEZIG; due-semantiek real-device geaccepteerd**.
 - Fase 3 - Taken-integratie: **OPEN**.
 - Fase 4 - Agenda-integratie: **OPEN**.
 - Fase 5 - Boodschappen / voorraad: **OPEN**.
@@ -95,8 +95,8 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 
 De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de canonieke planninglaag vast:
 
-1. due-semantiek voor routines definiëren - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
-2. bepalen welke routine-items deze week aandacht vragen;
+1. due-semantiek voor routines definiëren - **GEACCEPTEERD OP IPHONE (`aae3e157`)**;
+2. bepalen welke routine-items deze week aandacht vragen - **CONTRACT GEÏMPLEMENTEERD; acceptatie open**;
 3. routine-items per kamer bundelen tot één conceptuele `CleaningOccurrence`/checklist;
 4. geschatte kamerbelasting berekenen;
 5. household members en verdelingscontract vastleggen;
@@ -112,10 +112,14 @@ De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de
 - Due-bronvolgorde: `nextDueAt`, fallback `lastCompletedAt + intervalDays`, eerste keer via `createdAt` of vensterstart.
 - Overdue en binnen het weekvenster zijn de enige due-kandidaten.
 - Contracttest dekt grenzen, fallbacks en uitsluitingen.
+- Weekkandidatenselector toegevoegd bovenop dezelfde pure contractlaag.
+- Alleen routines met een bestaande actieve kamer worden geselecteerd; routines van soft-deleted kamers worden uitgesloten.
+- Kandidaten worden stabiel gesorteerd op due-moment, prioriteit en routine-ID.
+- Geen Firebase-writes, occurrence-generatie, bundeling, verdeling of UI-wijziging in deze checkpoint.
 
 ## Guardrail voor vervolgchats
 
-- Begin vanaf de actuele branch, maar behandel `ea843a64f46899d63a7bb64d4adf2b5b7160e2da` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint vóór documentatie-only commits.
+- Begin vanaf de actuele branch, maar behandel `aae3e1570343926865e93be4f5c6d440f2d7e6c4` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
 - `main` niet aanraken zonder expliciete acceptatie.
 - Geen grote full-file rewrites voor kleine hardeningwijzigingen.
 - Nieuwe functionele writes in microstappen implementeren en iedere stap via unieke Vercel-preview op iPhone laten accepteren.

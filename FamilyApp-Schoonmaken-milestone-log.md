@@ -2,6 +2,22 @@
 
 Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
 
+## Milestone 2 - Weekplanner Foundation
+
+Status: **BEZIG**
+Branch: `agent/household-rebuild-v2`
+Productie/main: **niet gewijzigd**.
+
+### Geaccepteerde checkpoints
+
+- `aae3e1570343926865e93be4f5c6d440f2d7e6c4` - pure canonieke due-semantiek; preview `https://verhoog-family-3k1azd44h-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
+
+### Huidige checkpoint ter acceptatie
+
+- Pure selectie van routine-items die in het weekvenster aan de beurt zijn.
+- Actieve kamer is verplicht; routines van soft-deleted kamers worden niet geselecteerd.
+- Nog geen bundeling, occurrence-writes, verdeling, Taken-/Agenda-projecties of zichtbare Planning-UI.
+
 ## Milestone 1 - Kamers + Routines Foundation
 
 Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
@@ -68,4 +84,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ### Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `ea843a64f46899d63a7bb64d4adf2b5b7160e2da` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits erboven in de geschiedenis zijn geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen kleine, afzonderlijk testbare wijzigingen maken.
+Een nieuwe chat moet `aae3e1570343926865e93be4f5c6d440f2d7e6c4` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen kleine, afzonderlijk testbare wijzigingen maken.

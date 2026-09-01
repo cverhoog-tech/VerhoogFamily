@@ -172,6 +172,19 @@ Due-bepaling is pure domeinlogica en schrijft niets naar Firebase, Taken of Agen
 
 Dit contract staat geïsoleerd in `src/modules/cleaning/cleaningPlannerContract.js`. De toekomstige completion-write moet `nextDueAt` volgens de lokale kalenderdag van het huishouden berekenen; de huidige milliseconde-afleiding vanuit `lastCompletedAt` is uitsluitend de fallback voor bestaande records zonder expliciete `nextDueAt`.
 
+### Weekkandidaten (Weekplanner Foundation checkpoint 2)
+
+De planner selecteert weekkandidaten rechtstreeks uit de canonieke `rooms`- en `routines`-snapshot van `CleaningHouseholdRepository`.
+
+- Alleen `OVERDUE` en `DUE_IN_WINDOW` worden kandidaat.
+- De gekoppelde kamer moet bestaan en actief zijn. Routines van een soft-deleted kamer worden expliciet uitgesloten.
+- De selector maakt geen tweede routine- of kamerautoriteit en muteert de repository-snapshot niet.
+- Bij Firebase-map snapshots is de database-key canoniek; een eventueel afwijkend embedded `id`-veld mag de relatie niet omleiden.
+- Iedere kandidaat bevat alleen de plannerdata die de volgende stap nodig heeft: `routineId`, `roomId`, titel, due-informatie, geschatte minuten en prioriteit.
+- De uitkomst is deterministisch gesorteerd op due-moment, daarna Basis / Normaal / Extra en daarna routine-ID.
+- Uitgesloten routines blijven met een expliciete reden in de pure selectoruitkomst beschikbaar voor tests en diagnose.
+- Bundeling per kamer, occurrence-deduplicatie en verdeling zijn bewust nog niet onderdeel van deze checkpoint.
+
 ### Generatie
 
 FamilyApp kijkt naar:

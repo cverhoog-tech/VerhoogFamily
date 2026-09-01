@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// CLEANING PLANNER CONTRACT v0.1.0
-// Pure due semantics only: no Firebase, localStorage or DOM work.
+// CLEANING PLANNER CONTRACT v0.2.0
+// Pure due + week-candidate semantics: no Firebase, localStorage or DOM work.
 // A planning window is half-open: [startAt, endAt).
 // ============================================================
 (function(){
   if(window.CleaningPlannerContract)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
   var DAY_MS=24*60*60*1000;
 
   var DUE_STATE=Object.freeze({
@@ -27,8 +27,14 @@
   var EXCLUSION_REASON=Object.freeze({
     INACTIVE:'INACTIVE',
     PAUSED:'PAUSED',
-    ROOM_REQUIRED:'ROOM_REQUIRED'
+    ROOM_REQUIRED:'ROOM_REQUIRED',
+    ROUTINE_ID_REQUIRED:'ROUTINE_ID_REQUIRED',
+    ROOM_NOT_FOUND:'ROOM_NOT_FOUND',
+    ROOM_INACTIVE:'ROOM_INACTIVE',
+    NOT_DUE:'NOT_DUE'
   });
+
+  var PRIORITY_RANK=Object.freeze({BASIC:0,NORMAL:1,EXTRA:2});
 
   function finiteTimestamp(value){
     var number=Number(value);
@@ -92,6 +98,74 @@
     });
   }
 
+  function collectionRows(collection){
+    if(Array.isArray(collection))return collection.map(function(value){return{key:null,value:value||{}};});
+    if(!collection||typeof collection!=='object')return[];
+    return Object.keys(collection).map(function(key){return{key:key,value:collection[key]||{}};});
+  }
+
+  function compareText(a,b){return a<b?-1:(a>b?1:0);}
+
+  function candidateSort(a,b){
+    if(a.dueAt!==b.dueAt)return a.dueAt-b.dueAt;
+    var priorityA=Object.prototype.hasOwnProperty.call(PRIORITY_RANK,a.priority)?PRIORITY_RANK[a.priority]:PRIORITY_RANK.NORMAL;
+    var priorityB=Object.prototype.hasOwnProperty.call(PRIORITY_RANK,b.priority)?PRIORITY_RANK[b.priority]:PRIORITY_RANK.NORMAL;
+    if(priorityA!==priorityB)return priorityA-priorityB;
+    return compareText(a.routineId,b.routineId);
+  }
+
+  function excludedCandidate(routineId,roomId,evaluation,reason){
+    return Object.freeze({
+      routineId:routineId||null,
+      roomId:roomId||null,
+      dueAt:evaluation&&evaluation.dueAt||null,
+      dueState:evaluation&&evaluation.state||DUE_STATE.EXCLUDED,
+      reason:reason
+    });
+  }
+
+  function selectDueRoutineItems(input){
+    var source=input||{};
+    var window=planningWindow(source.window);
+    var rooms={};
+    collectionRows(source.rooms).forEach(function(entry){
+      var row=entry.value;
+      // Firebase collection keys are canonical; embedded ids are fallback for array/test input only.
+      var id=String(entry.key||row.id||'').trim();
+      if(id&&!Object.prototype.hasOwnProperty.call(rooms,id))rooms[id]=row;
+    });
+
+    var candidates=[];
+    var excluded=[];
+    collectionRows(source.routines).forEach(function(entry){
+      var row=entry.value;
+      var routineId=String(entry.key||row.id||'').trim();
+      var roomId=String(row.roomId||'').trim();
+      if(!routineId){excluded.push(excludedCandidate(null,roomId,null,EXCLUSION_REASON.ROUTINE_ID_REQUIRED));return;}
+
+      var evaluation=evaluateRoutineDue(row,window);
+      if(!evaluation.eligible){excluded.push(excludedCandidate(routineId,roomId,evaluation,evaluation.reason));return;}
+      if(!Object.prototype.hasOwnProperty.call(rooms,roomId)){excluded.push(excludedCandidate(routineId,roomId,evaluation,EXCLUSION_REASON.ROOM_NOT_FOUND));return;}
+      if(rooms[roomId].active===false){excluded.push(excludedCandidate(routineId,roomId,evaluation,EXCLUSION_REASON.ROOM_INACTIVE));return;}
+      if(!evaluation.dueThisWindow){excluded.push(excludedCandidate(routineId,roomId,evaluation,EXCLUSION_REASON.NOT_DUE));return;}
+
+      candidates.push(Object.freeze({
+        routineId:routineId,
+        roomId:roomId,
+        title:String(row.title||'').trim(),
+        dueAt:evaluation.dueAt,
+        dueSource:evaluation.dueSource,
+        dueState:evaluation.state,
+        estimatedMinutes:Math.max(1,parseInt(row.estimatedMinutes,10)||10),
+        priority:Object.prototype.hasOwnProperty.call(PRIORITY_RANK,row.priority)?row.priority:'NORMAL'
+      }));
+    });
+
+    candidates.sort(candidateSort);
+    excluded.sort(function(a,b){return compareText(String(a.routineId||''),String(b.routineId||''));});
+    return Object.freeze({window:window,candidates:Object.freeze(candidates),excluded:Object.freeze(excluded)});
+  }
+
   window.CleaningPlannerContract=Object.freeze({
     version:VERSION,
     DAY_MS:DAY_MS,
@@ -99,6 +173,7 @@
     DUE_SOURCE:DUE_SOURCE,
     EXCLUSION_REASON:EXCLUSION_REASON,
     planningWindow:planningWindow,
-    evaluateRoutineDue:evaluateRoutineDue
+    evaluateRoutineDue:evaluateRoutineDue,
+    selectDueRoutineItems:selectDueRoutineItems
   });
 })();
