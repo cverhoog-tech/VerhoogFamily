@@ -112,12 +112,14 @@ assert.strictEqual(again.reason,'ALREADY_CURRENT');
 root=context.CleaningPlanApprovalUi.acceptRoot(root,planId,'u2',householdId,start+3*DAY+(14*60*60*1000));
 assert.strictEqual(root.plans[planId].status,'ACTIVE');
 
+const existingTasks={legacyTask:{id:'cleaning_legacy-kitchen',cleaningOccurrenceId:'legacy-kitchen',sourceId:'legacy-kitchen',title:'Schoonmaken · Keuken'}};
+const existingCalendar={legacyEvent:{id:'cleaning_legacy-kitchen',cleaningOccurrenceId:'legacy-kitchen',sourceId:'legacy-kitchen',title:'Schoonmaken · Keuken',date:'2024-01-01'}};
 const projection=context.CleaningProjectionService._buildProjectionUpdates({
-  family:{cleaning:root,tasks:{},calendarEvents:{}},
+  family:{cleaning:root,tasks:existingTasks,calendarEvents:existingCalendar},
   planId,householdId,actorUid:'u1',timestamp:start+3*DAY+(15*60*60*1000),members
 });
-assert.strictEqual(projection.createdTasks,5,'legacy task already exists conceptually; five new concrete tasks are required');
-assert.strictEqual(projection.createdCalendarEvents,5,'five new calendar entries are required');
+assert.strictEqual(projection.createdTasks,5,'the five added occurrences require five new tasks');
+assert.strictEqual(projection.createdCalendarEvents,5,'the five added occurrences require five new calendar entries');
 const eventDates=Object.keys(projection.updates).filter((key)=>key.startsWith('calendarEvents/')).map((key)=>projection.updates[key].date).sort();
 assert.strictEqual(eventDates.length,5);
 assert.ok(eventDates.some((date)=>date==='2024-01-03'));
