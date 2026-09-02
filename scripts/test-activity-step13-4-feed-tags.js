@@ -10,7 +10,7 @@ ok(tags.includes("type:'member',uid:String"),'member refs must use UID');
 ok(tags.includes("type:'recipe',recipeId:String"),'recipe refs must use recipeId');
 ok(tags.includes("openRecipeDetail"),'recipe tags must navigate to recipe detail');
 ok(tags.includes("data-pt2-member"),'member tags must target canonical PersonTab member rail');
-ok(tags.includes("last==='@'||last==='#'"),'@/# composer shortcuts missing');
+ok(tags.includes('([@#])')&&tags.includes("match[1]==='@'?'member':'recipe'"),'@/# composer shortcuts missing');
 ok(shared.includes("references:referencesArray(data&&data.references)"),'FeedSharedData must persist sanitized references');
 ok(shared.includes("version:'1.1.0'"),'FeedSharedData version not bumped');
 ok(app.includes('feedTagging.js?v=7'),'loader must serve current feedTagging runtime');
