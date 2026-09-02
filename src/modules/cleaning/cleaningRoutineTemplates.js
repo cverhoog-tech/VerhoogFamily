@@ -1,5 +1,5 @@
 import './cleaningPlanApprovalUi.js?v=1';
-import './cleaningProjectionService.js?v=1';
+import './cleaningProjectionService.js?v=2';
 
 // ============================================================
 // CLEANING ROUTINE TEMPLATES v0.1.2
