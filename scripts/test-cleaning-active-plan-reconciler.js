@@ -29,6 +29,16 @@ function load(name){
   const source=fs.readFileSync(path.join(__dirname,'..','src','modules','cleaning',name),'utf8');
   vm.runInNewContext(source,context,{filename:name});
 }
+function setPath(root,pathName,value){
+  const parts=pathName.split('/');
+  let cursor=root;
+  for(let i=0;i<parts.length-1;i++){
+    if(!cursor[parts[i]]||typeof cursor[parts[i]]!=='object')cursor[parts[i]]={};
+    cursor=cursor[parts[i]];
+  }
+  cursor[parts[parts.length-1]]=JSON.parse(JSON.stringify(value));
+}
+function applyUpdates(root,updates){Object.keys(updates).forEach((key)=>setPath(root,key,updates[key]));}
 
 load('cleaningPlannerContract.js');
 load('cleaningPlanPersistenceContract.js');
@@ -85,6 +95,19 @@ assert.deepStrictEqual(Array.from(root.plans[planId].occurrenceIds).map((id)=>ro
 root=context.CleaningPlanApprovalUi.acceptRoot(root,planId,'u1',householdId,start+2*DAY+(13*60*60*1000));
 assert.strictEqual(root.plans[planId].status,'ACTIVE');
 
+let family={
+  cleaning:root,
+  tasks:{legacyTask:{id:'cleaning_legacy-kitchen',cleaningOccurrenceId:'legacy-kitchen',sourceId:'legacy-kitchen',title:'Schoonmaken · Keuken'}},
+  calendarEvents:{legacyEvent:{id:'cleaning_legacy-kitchen',cleaningOccurrenceId:'legacy-kitchen',sourceId:'legacy-kitchen',title:'Schoonmaken · Keuken',date:'2024-01-01'}}
+};
+let projection=context.CleaningProjectionService._buildProjectionUpdates({
+  family,planId,householdId,actorUid:'u1',timestamp:start+2*DAY+(14*60*60*1000),members
+});
+assert.strictEqual(projection.createdTasks,3);
+assert.strictEqual(projection.createdCalendarEvents,3);
+applyUpdates(family,projection.updates);
+root=family.cleaning;
+
 // A room and routine created after activation must be folded into this week.
 root.rooms.office={id:'office',name:'Kantoor',type:'custom',active:true,distributionMode:'FAIR_TIME',createdAt:start+3*DAY};
 root.routines.desk={id:'desk',roomId:'office',title:'Bureau afnemen',intervalDays:2,estimatedMinutes:5,priority:'NORMAL',active:true,createdAt:start+3*DAY+(12*60*60*1000),createdByUid:'u2'};
@@ -95,6 +118,7 @@ result=reconciler._reconcileRoot({
 assert.strictEqual(result.changed,true);
 assert.strictEqual(result.addedOccurrenceIds.length,2,'new midweek routine should occur on its creation day and two days later');
 root=result.root;
+family.cleaning=root;
 assert.strictEqual(root.plans[planId].occurrenceIds.length,6);
 assert.strictEqual(root.plans[planId].status,'PARTIALLY_ACCEPTED');
 assert.strictEqual(root.approvals.u1[planId].status,'ACCEPTED');
@@ -111,21 +135,23 @@ assert.strictEqual(again.reason,'ALREADY_CURRENT');
 
 root=context.CleaningPlanApprovalUi.acceptRoot(root,planId,'u2',householdId,start+3*DAY+(14*60*60*1000));
 assert.strictEqual(root.plans[planId].status,'ACTIVE');
+family.cleaning=root;
 
-const existingTasks={legacyTask:{id:'cleaning_legacy-kitchen',cleaningOccurrenceId:'legacy-kitchen',sourceId:'legacy-kitchen',title:'Schoonmaken · Keuken'}};
-const existingCalendar={legacyEvent:{id:'cleaning_legacy-kitchen',cleaningOccurrenceId:'legacy-kitchen',sourceId:'legacy-kitchen',title:'Schoonmaken · Keuken',date:'2024-01-01'}};
-const projection=context.CleaningProjectionService._buildProjectionUpdates({
-  family:{cleaning:root,tasks:existingTasks,calendarEvents:existingCalendar},
-  planId,householdId,actorUid:'u1',timestamp:start+3*DAY+(15*60*60*1000),members
+projection=context.CleaningProjectionService._buildProjectionUpdates({
+  family,planId,householdId,actorUid:'u1',timestamp:start+3*DAY+(15*60*60*1000),members
 });
-assert.strictEqual(projection.createdTasks,5,'the five added occurrences require five new tasks');
-assert.strictEqual(projection.createdCalendarEvents,5,'the five added occurrences require five new calendar entries');
-const eventDates=Object.keys(projection.updates).filter((key)=>key.startsWith('calendarEvents/')).map((key)=>projection.updates[key].date).sort();
-assert.strictEqual(eventDates.length,5);
-assert.ok(eventDates.some((date)=>date==='2024-01-03'));
-assert.ok(eventDates.some((date)=>date==='2024-01-04'));
-assert.ok(eventDates.some((date)=>date==='2024-01-05'));
-assert.ok(eventDates.some((date)=>date==='2024-01-06'));
-assert.ok(eventDates.some((date)=>date==='2024-01-07'));
+assert.strictEqual(projection.createdTasks,2,'the newly added room needs two concrete tasks');
+assert.strictEqual(projection.createdCalendarEvents,2,'the newly added room needs two concrete calendar entries');
+applyUpdates(family,projection.updates);
+
+const eventDates=Object.keys(family.calendarEvents).map((key)=>family.calendarEvents[key].date).sort();
+assert.deepStrictEqual(eventDates,['2024-01-01','2024-01-03','2024-01-04','2024-01-05','2024-01-06','2024-01-07']);
+
+const finalProjection=context.CleaningProjectionService._buildProjectionUpdates({
+  family,planId,householdId,actorUid:'u2',timestamp:start+3*DAY+(16*60*60*1000),members
+});
+assert.strictEqual(finalProjection.createdTasks,0);
+assert.strictEqual(finalProjection.createdCalendarEvents,0);
+assert.strictEqual(Object.keys(finalProjection.updates).length,0,'repeat projection must remain idempotent');
 
 console.log('cleaning active plan reconciler: ok');
