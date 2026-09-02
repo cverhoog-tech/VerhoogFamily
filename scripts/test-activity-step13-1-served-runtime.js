@@ -3,7 +3,7 @@ const fs=require('fs');
 const assert=require('assert');
 const app=fs.readFileSync('api/app.js','utf8');
 const repo='src/platform/activity/activityHouseholdRepository.js?v=1';
-const facade='src/platform/activity/householdActivity.js?v=6';
+const facade='src/platform/activity/householdActivity.js?v=7';
 assert(app.includes(repo),'canonical activity repository must be served');
 assert(app.includes(facade),'HouseholdActivity compatibility facade must be served');
 assert(app.indexOf(repo)<app.indexOf(facade),'activity repository must load before facade/producers');
