@@ -42,11 +42,14 @@ jobs:
       - name: Run rebuild contract tests
         shell: bash
         run: |
-          set -e
+          failed=0
           for test_file in scripts/test-*.js; do
             echo "Running ${test_file}"
-            node "${test_file}"
+            if ! node "${test_file}"; then
+              failed=1
+            fi
           done
+          exit "${failed}"
 
       - name: Mark contract tests successful
         if: success()
