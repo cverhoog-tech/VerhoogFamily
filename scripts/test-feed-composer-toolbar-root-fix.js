@@ -92,8 +92,8 @@ assert.ok(!app.includes('feedComposerToolbar.js'),
   'app.js must no longer inject the deleted feedComposerToolbar.js script');
 assert.ok(!app.includes('feedComposerToolbarFix.css'),
   'app.js must no longer inject the deleted feedComposerToolbarFix.css stylesheet');
-assert.ok(app.includes('feedTagging.js?v=4'),
-  'feedTagging.js cache-bust must be bumped past the previous broken revision (iOS Safari caches aggressively)');
+assert.ok(app.includes('feedTagging.js?v=7'),
+  'feedTagging.js cache-bust must match the current served runtime');
 assert.ok(app.includes('feed.js?v=7'),
   'feed.js cache-bust must be bumped since its stylesheet block changed');
 
