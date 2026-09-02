@@ -1,7 +1,10 @@
+import './cleaningPlanApprovalUi.js?v=1';
+
 // ============================================================
-// CLEANING ROUTINE TEMPLATES v0.1.0
+// CLEANING ROUTINE TEMPLATES v0.1.1
 // Static suggestions only. Once selected, a template becomes a
 // normal CleaningRoutineItem and is fully editable by the household.
+// The side-effect import above loads the Weekplanner approval extension.
 // ============================================================
 
 const PRESETS = Object.freeze({
@@ -79,4 +82,4 @@ export function routineTemplatesForRoomType(roomType){
   return PRESETS[key] || PRESETS.custom;
 }
 
-export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.1.0';
+export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.1.1';
