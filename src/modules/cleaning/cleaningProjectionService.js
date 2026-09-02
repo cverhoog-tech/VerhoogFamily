@@ -1,15 +1,15 @@
 'use strict';
 // ============================================================
-// CLEANING PROJECTION SERVICE v0.1.0
+// CLEANING PROJECTION SERVICE v0.1.1
 // One-way materialization of ACTIVE CleaningOccurrence records into the
 // canonical Task and Calendar stores. CleaningOccurrence remains authority.
-// Projection IDs are deterministic and stored back on each occurrence.
+// This service owns data projection only; Planning UI is rendered elsewhere.
 // ============================================================
 (function(){
   if(window.CleaningProjectionService)return;
 
-  var VERSION='0.1.0';
-  var state={unsubscribe:null,attachTimer:null,inFlight:{},lastError:null,lastResult:null,uiObserver:null,uiQueued:false};
+  var VERSION='0.1.1';
+  var state={unsubscribe:null,attachTimer:null,inFlight:{},lastError:null,lastResult:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
   function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(e){return value;}}
@@ -21,8 +21,8 @@
   function isCurrent(token){try{return !!(window.HouseholdContext&&typeof window.HouseholdContext.isCurrent==='function'&&window.HouseholdContext.isCurrent(token));}catch(e){return false;}}
   function db(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}}
   function repository(){return window.CleaningHouseholdRepository||null;}
-
   function validContext(value){return !!(value&&value.ready===true&&value.uid&&value.householdId);}
+
   function pad(value){return value<10?'0'+value:String(value);}
   function localDate(timestamp){var d=new Date(Number(timestamp)||now());return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
   function localTime(timestamp){var d=new Date(Number(timestamp)||now());return pad(d.getHours())+':'+pad(d.getMinutes());}
@@ -50,13 +50,14 @@
     if(ids.length!==1)throw new Error('CLEANING_PROJECTION_ASSIGNMENT_INVALID');
     return ids[0];
   }
+
   function projectionTaskId(occurrenceId){return 'cleaning_'+safeKey(occurrenceId);}
   function projectionTaskKey(occurrenceId){return 'cleaning_'+safeKey(occurrenceId);}
   function projectionCalendarId(occurrenceId){return 'cleaning_'+safeKey(occurrenceId);}
   function projectionCalendarKey(occurrenceId){return 'id_'+projectionCalendarId(occurrenceId);}
-
   function taskIdentity(row,key){return String(row&&(row.id||row._key)||key||'');}
   function eventIdentity(row,key){return String(row&&(row.id||row._key)||key||'');}
+
   function findProjectionRecord(map,occurrenceId,preferredId,isCalendar){
     var source=map&&typeof map==='object'?map:{};
     var keys=Object.keys(source);
@@ -198,61 +199,10 @@
     };
   }
 
-  function setText(node,value){if(node&&node.textContent!==value)node.textContent=value;}
-  function latestActivePlan(snapshot){
-    var plans=snapshot&&snapshot.data&&snapshot.data.plans;
-    if(!plans||typeof plans!=='object')return null;
-    return Object.keys(plans).map(function(id){return Object.assign({id:id},plans[id]||{});}).filter(function(plan){return plan.status==='ACTIVE';}).sort(function(a,b){return Number(b.windowStartAt||0)-Number(a.windowStartAt||0);})[0]||null;
-  }
-  function projectionProgress(snapshot,plan){
-    var occurrences=snapshot&&snapshot.data&&snapshot.data.occurrences||{},expected=0,linked=0;
-    (Array.isArray(plan&&plan.occurrenceIds)?plan.occurrenceIds:[]).forEach(function(id){
-      var row=occurrences[id];
-      if(!row||row.status==='CANCELLED'||row.status==='COMPLETED'||row.status==='SKIPPED')return;
-      expected++;
-      var projections=row.projections&&typeof row.projections==='object'?row.projections:{};
-      if(projections.taskId&&projections.calendarEventId)linked++;
-    });
-    return{expected:expected,linked:linked,complete:expected>0&&linked===expected};
-  }
-  function decorateProjectionUi(){
-    state.uiQueued=false;
-    if(typeof document==='undefined')return;
-    var screen=document.getElementById('screen-cleaning');
-    if(!screen||!screen.classList.contains('active'))return;
-    var repo=repository(),snapshot=repo&&typeof repo.snapshot==='function'?repo.snapshot():null,plan=latestActivePlan(snapshot);
-    if(!plan)return;
-    var progress=projectionProgress(snapshot,plan),root=document.getElementById('cleaning-content');
-    if(!root)return;
-    var copy=root.querySelector('.cleaning-approval-copy');
-    var heroCopy=root.querySelector('.cleaning-plan-actions > span');
-    var count=root.querySelector('.cleaning-approval-count');
-    var message=progress.complete
-      ? 'Weekplan actief. Alle '+progress.linked+' schoonmaakbeurten staan nu gekoppeld in Taken en Agenda.'
-      : 'Weekplan actief. Taken en Agenda worden gekoppeld… '+progress.linked+' van '+progress.expected+' klaar.';
-    setText(copy,message);
-    setText(heroCopy,progress.complete?'Actief · gekoppeld aan Taken en Agenda.':'Actief · Taken en Agenda worden gekoppeld…');
-    if(progress.complete)setText(count,'Taken + Agenda ✓');
-  }
-  function queueUiDecorate(){
-    if(state.uiQueued)return;
-    state.uiQueued=true;
-    var schedule=window.requestAnimationFrame||function(fn){return setTimeout(fn,0);};
-    schedule(function(){schedule(decorateProjectionUi);});
-  }
-  function installUiObserver(){
-    if(state.uiObserver||typeof MutationObserver==='undefined'||typeof document==='undefined')return;
-    var target=document.getElementById('screen-cleaning')||document.documentElement;
-    if(!target)return;
-    state.uiObserver=new MutationObserver(queueUiDecorate);
-    state.uiObserver.observe(target,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-  }
-
   function emit(detail){
     state.lastResult=clone(detail||{});
     state.lastError=detail&&detail.error||null;
     try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-projections',{detail:clone(detail||{})}));}catch(e){}
-    queueUiDecorate();
   }
 
   function reconcilePlan(planId){
@@ -295,10 +245,7 @@
     var cutoff=now()-86400000;
     return Object.keys(plans).filter(function(id){var plan=plans[id];return plan&&plan.status==='ACTIVE'&&Number(plan.windowEndAt||0)>=cutoff;});
   }
-
-  function reconcileSnapshot(snapshot){
-    eligibleActivePlans(snapshot).forEach(function(planId){reconcilePlan(planId).catch(function(){});});
-  }
+  function reconcileSnapshot(snapshot){eligibleActivePlans(snapshot).forEach(function(planId){reconcilePlan(planId).catch(function(){});});}
 
   function attach(){
     var repo=repository();
@@ -310,8 +257,6 @@
   }
 
   function start(){
-    installUiObserver();
-    queueUiDecorate();
     if(attach())return true;
     if(state.attachTimer)return false;
     var tries=0;
@@ -322,12 +267,15 @@
   function stop(){
     if(state.unsubscribe){try{state.unsubscribe();}catch(e){}state.unsubscribe=null;}
     if(state.attachTimer){clearInterval(state.attachTimer);state.attachTimer=null;}
-    if(state.uiObserver){try{state.uiObserver.disconnect();}catch(e){}state.uiObserver=null;}
     state.inFlight={};
   }
 
   window.CleaningProjectionService={
-    version:VERSION,start:start,stop:stop,reconcilePlan:reconcilePlan,status:function(){return clone({version:VERSION,lastError:state.lastError,lastResult:state.lastResult,inFlight:Object.keys(state.inFlight)});},
+    version:VERSION,
+    start:start,
+    stop:stop,
+    reconcilePlan:reconcilePlan,
+    status:function(){return clone({version:VERSION,lastError:state.lastError,lastResult:state.lastResult,inFlight:Object.keys(state.inFlight)});},
     _buildProjectionUpdates:buildProjectionUpdates,
     _taskIdForOccurrence:projectionTaskId,
     _calendarIdForOccurrence:projectionCalendarId
@@ -335,6 +283,5 @@
 
   window.addEventListener('familyapp:cleaning-repository',function(){start();try{var repo=repository();if(repo&&repo.snapshot)reconcileSnapshot(repo.snapshot());}catch(e){}});
   window.addEventListener('familyapp:household-context',start);
-  window.addEventListener('familyapp:cleaning-projections',queueUiDecorate);
   start();
 })();
