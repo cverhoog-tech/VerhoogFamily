@@ -4,7 +4,7 @@ const assert=require('assert');
 
 const source=fs.readFileSync('src/modules/shop/shoppingReceiptFinance.js','utf8');
 
-assert.ok(source.includes("version:'1.5.2'"),'receipt bridge version must be current');
+assert.ok(source.includes("version:'1.6.0'"),'receipt bridge version must be current');
 assert.ok(source.includes('id="receipt-name"'),'receipt modal must expose editable transaction name');
 assert.ok(source.includes('<select id="receipt-category">'),'receipt category must be a fixed select');
 assert.ok(!source.includes('receipt-category-options'),'receipt category must no longer use free-text datalist suggestions');
