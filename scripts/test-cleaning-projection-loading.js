@@ -26,8 +26,10 @@ assert.ok(templates.indexOf('cleaningRollingPlannerService.js?v=2') < templates.
 assert.ok(recurring.includes("version:'0.7.0'"),'recurring contract must replace weekly planner generation');
 assert.ok(experience.includes("var VERSION='0.3.0'"));
 assert.ok(rolling.includes("var VERSION='0.1.1'"));
-assert.ok(reconciler.includes("var VERSION='0.1.0'"));
+assert.ok(reconciler.includes("var VERSION='0.1.1'"));
 assert.ok(reconciler.includes("reconciliationReason='ROUTINE_SCHEDULE_CHANGED'"));
+assert.ok(reconciler.includes("plan.rollingPlanVersion===1"),'rolling future plans must have a single writer');
+assert.ok(reconciler.includes("plan.rollingPlanVersion!==1"),'rolling plans must be excluded before reconciliation starts');
 
 // The approval runtime remains the single owner of Planning approval copy.
 // Data reconciliation, rolling planning and projection must not observe or
@@ -46,4 +48,4 @@ assert.ok(projection.includes("CustomEvent('familyapp:cleaning-projections'"));
 assert.ok(reconciler.includes("CustomEvent('familyapp:cleaning-plan-reconciled'"));
 assert.ok(rolling.includes("CustomEvent('familyapp:cleaning-rolling-plans'"));
 
-console.log('cleaning rolling runtime order + Planning render-loop guard: ok');
+console.log('cleaning rolling runtime order + single-owner + Planning render-loop guard: ok');
