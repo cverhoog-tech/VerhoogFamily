@@ -1,15 +1,15 @@
 'use strict';
 // ============================================================
-// CLEANING ACTIVE PLAN RECONCILER v0.1.0
-// Keeps the current weekly plan aligned with recurring routine slots and
-// routines added after activation. Existing accepted work stays intact.
-// Newly added work becomes a personal proposal before projection.
-// Pure reconciliation is exported for contract tests.
+// CLEANING ACTIVE PLAN RECONCILER v0.1.1
+// Keeps a manually approved current weekly plan aligned with recurring slots
+// and routines added after activation. Rolling future plans are deliberately
+// owned only by CleaningRollingPlannerService to prevent competing rewrites.
+// Newly added current-week work becomes a personal proposal before projection.
 // ============================================================
 (function(){
   if(window.CleaningActivePlanReconciler)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.1.1';
   var state={unsubscribe:null,attachTimer:null,inFlight:{},lastResult:null,lastError:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -127,6 +127,14 @@
     var inherited=previousAssignee(root,occurrenceIds,ids,lookup);
     if(inherited)return inherited;
 
+    var fixed=[];
+    bundleItems.forEach(function(item){
+      var routine=root.routines&&root.routines[text(item.routineItemId||item.id)]||{};
+      var uid=text(routine.preferredAssigneeUid);
+      if(uid&&lookup[uid]&&routine.assignmentMode==='FIXED_PERSON'&&routine.assignmentRequestStatus==='ACCEPTED'&&fixed.indexOf(uid)<0)fixed.push(uid);
+    });
+    if(fixed.length===1)return fixed[0];
+
     var creators=[];
     bundleItems.forEach(function(item){var uid=text(item.createdByUid);if(uid&&creators.indexOf(uid)<0)creators.push(uid);});
     if(creators.length===1&&lookup[creators[0]])return creators[0];
@@ -186,6 +194,7 @@
     if(!plan||typeof plan!=='object'||!contract||typeof contract.expandRoutineSlots!=='function'||typeof contract.bundleSlots!=='function')return{changed:false,root:root,reason:'NOT_READY'};
     plan.id=plan.id||planId;
     if(plan.householdId&&text(plan.householdId)!==householdId)throw new Error('CLEANING_RECONCILE_HOUSEHOLD_CONFLICT');
+    if(plan.rollingPlanVersion===1)return{changed:false,root:root,reason:'PLAN_OWNED_BY_ROLLING'};
     if(['ACTIVE','PROPOSED','PARTIALLY_ACCEPTED'].indexOf(text(plan.status))<0||plan.approvalState==='CHANGES_REQUESTED')return{changed:false,root:root,reason:'PLAN_NOT_RECONCILABLE'};
     var windowValue={startAt:Number(plan.windowStartAt),endAt:Number(plan.windowEndAt)};
     if(!(windowValue.startAt>0&&windowValue.endAt>windowValue.startAt)||windowValue.endAt<=startOfLocalDay(timestamp))return{changed:false,root:root,reason:'WINDOW_EXPIRED'};
@@ -243,11 +252,10 @@
         routineItemIds:itemIds,checklist:checklist,assignmentUids:[uid],assignmentStatus:'PROPOSED',status:'PROPOSED',
         dueState:overdue?'OVERDUE':'DUE_IN_WINDOW',earliestDueAt:earliest,latestDueAt:latest,estimatedMinutes:minutes,
         scheduledStartAt:null,scheduledEndAt:null,flexibleWindow:{startAt:slot,endAt:Math.min(windowValue.endAt,slot+Number(contract.DAY_MS||86400000))},
-        projections:{taskId:null,calendarEventId:null},recurrenceVersion:1,supplemental:true,
-        proposedAt:timestamp,proposedByUid:actorUid,createdAt:timestamp,createdByUid:actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:2
+        projections:{taskId:null,calendarEventId:null},recurrenceVersion:2,supplemental:true,
+        proposedAt:timestamp,proposedByUid:actorUid,createdAt:timestamp,createdByUid:actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:3
       };
       occurrenceIds.push(occurrenceId);
-      coverage[roomSlot+'|'+itemIds[0]]=true;
       itemIds.forEach(function(routineId){coverage[roomSlot+'|'+routineId]=true;});
       if(loads[uid]){loads[uid].estimatedMinutes+=minutes;loads[uid].bundleCount++;}
       affected[uid]=true;
@@ -339,7 +347,7 @@
     var today=startOfLocalDay(now());
     return Object.keys(plans).filter(function(id){
       var plan=plans[id];
-      return plan&&['ACTIVE','PROPOSED','PARTIALLY_ACCEPTED'].indexOf(text(plan.status))>=0&&plan.approvalState!=='CHANGES_REQUESTED'&&Number(plan.windowEndAt||0)>today;
+      return plan&&plan.rollingPlanVersion!==1&&['ACTIVE','PROPOSED','PARTIALLY_ACCEPTED'].indexOf(text(plan.status))>=0&&plan.approvalState!=='CHANGES_REQUESTED'&&Number(plan.windowEndAt||0)>today;
     });
   }
 
@@ -371,7 +379,7 @@
   window.CleaningActivePlanReconciler={
     version:VERSION,start:start,stop:stop,reconcilePlan:reconcilePlan,
     status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,inFlight:Object.keys(state.inFlight)});},
-    _reconcileRoot:reconcileRoot,_occurrenceSlot:occurrenceSlot
+    _reconcileRoot:reconcileRoot,_occurrenceSlot:occurrenceSlot,_eligiblePlans:eligiblePlans
   };
 
   window.addEventListener('familyapp:cleaning-repository',start);
