@@ -11,14 +11,16 @@ import './cleaningPlanSanitizer.js?v=1';
 import './cleaningApprovalClarity.js?v=1';
 import './cleaningRollingPlannerService.js?v=3';
 import './cleaningProjectionService.js?v=4';
+import './cleaningDerivedCleanup.js?v=1';
+import './cleaningShoppingCleanup.js?v=1';
 
 // ============================================================
-// CLEANING ROUTINE TEMPLATES v0.3.2
+// CLEANING ROUTINE TEMPLATES v0.3.3
 // Static routine suggestions only. Once selected, a template becomes a
 // normal CleaningRoutineItem and is fully editable by the household.
 // Side-effect imports load approvals, recurring planning, compact room/routine
-// management, direct smart supplies, stale-plan sanitizing, rolling plans and
-// Task/Calendar projections.
+// management, direct smart supplies, stale-plan sanitizing, rolling plans,
+// Task/Calendar projections and safe derived-data cleanup.
 // ============================================================
 
 const PRESETS = Object.freeze({
@@ -83,4 +85,4 @@ const PRESETS = Object.freeze({
 
 function preset(key,title,intervalDays,estimatedMinutes,priority){return Object.freeze({key:key,title:title,intervalDays:intervalDays,estimatedMinutes:estimatedMinutes,priority:priority});}
 export function routineTemplatesForRoomType(roomType){const key=String(roomType||'custom');return PRESETS[key]||PRESETS.custom;}
-export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.3.2';
+export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.3.3';
