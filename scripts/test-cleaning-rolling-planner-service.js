@@ -41,7 +41,7 @@ const root={
 };
 
 const first=rolling._reconcileRoot({root,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
-assert.strictEqual(rolling.version,'0.1.1');
+assert.strictEqual(rolling.version,'0.1.2');
 assert.strictEqual(first.changed,true);
 assert.strictEqual(first.planIds.length,2);
 
@@ -67,4 +67,20 @@ const second=rolling._reconcileRoot({root:first.root,householdId:hid,actorUid:'u
 assert.strictEqual(second.changed,false,'rolling horizon reconciliation must be idempotent');
 assert.strictEqual(second.reason,'ALREADY_CURRENT');
 
-console.log('cleaning rolling four-week planner with accepted consent: ok');
+// A rolling plan produced by an older runtime may not promote itself into
+// standing consent. With no fixed or non-rolling accepted assignment it is
+// cleaned up instead of being extended indefinitely.
+const unsafeOccurrence='legacy-rolling-occ';
+const legacyOnly={
+  rooms:{kitchen:{id:'kitchen',name:'Keuken',active:true}},
+  routines:{unsafe:{id:'unsafe',roomId:'kitchen',title:'Onbevestigde routine',intervalDays:2,estimatedMinutes:8,active:true,createdAt:start,repeatScope:'ONGOING',assignmentMode:'AUTO',assignmentRequestStatus:'AUTO'}},
+  plans:{[nextPlanId]:{id:nextPlanId,householdId:hid,status:'ACTIVE',approvalState:'ROLLING_APPROVED',rollingPlanVersion:1,windowStartAt:end,windowEndAt:end+7*DAY,occurrenceIds:[unsafeOccurrence]}},
+  occurrences:{[unsafeOccurrence]:{id:unsafeOccurrence,householdId:hid,planId:nextPlanId,roomId:'kitchen',slotAt:end+DAY,status:'FLEXIBLE',assignmentStatus:'ACTIVE',assignmentUids:['u2'],routineItemIds:['unsafe'],checklist:[{id:'unsafe',routineItemId:'unsafe',title:'Onbevestigde routine',estimatedMinutes:8,dueAt:end+DAY,dueState:'DUE_IN_WINDOW',completed:false}],rollingGenerated:true}},
+  approvals:{u2:{[nextPlanId]:{id:nextPlanId+'__u2',householdId:hid,planId:nextPlanId,uid:'u2',status:'ACCEPTED',standingRoutineConsent:true,occurrenceIds:[unsafeOccurrence]}}}
+};
+const migration=rolling._reconcileRoot({root:legacyOnly,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
+assert.strictEqual(migration.changed,true);
+assert.strictEqual(migration.root.occurrences[unsafeOccurrence].status,'CANCELLED');
+assert.ok(!Object.values(migration.root.occurrences).some((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('unsafe')));
+
+console.log('cleaning rolling four-week planner with explicit accepted consent: ok');
