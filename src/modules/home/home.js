@@ -32,9 +32,18 @@ function ensureHomeCleaningCard(){
   var count=card.querySelector('.card-number');
   if(count)count.id='stat-cleaning';
   var label=card.querySelector('.card-label');
-  if(label)label.textContent='schoonmaaktaken';
+  if(label)label.textContent='schoonmaken';
   var icon=card.querySelector('.card-icon .icon');
   if(icon&&!window.FamilyIcons)icon.textContent='🧹';
+
+  // The old Posts class remains for shell compatibility. Inline important
+  // styling guarantees that its old pink/social background cannot win over
+  // the semantic Cleaning treatment, regardless of stylesheet load order.
+  var background="linear-gradient(180deg,rgba(34,86,61,.12),rgba(20,33,28,.78)),url('src/styles/familieapp_white_assets/tasks_background.png')";
+  card.style.setProperty('--card-color','#47745a','important');
+  card.style.setProperty('background-image',background,'important');
+  var inner=card.querySelector('.card-inner');
+  if(inner)inner.style.setProperty('background-image',background,'important');
 }
 
 function applyHomeIconSet(){
