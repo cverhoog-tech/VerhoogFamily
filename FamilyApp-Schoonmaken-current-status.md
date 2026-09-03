@@ -13,8 +13,8 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Functioneel checkpoint: `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2`.
-- Geaccepteerde preview: `https://verhoog-family-e12lu3rgl-cverhoog-techs-projects.vercel.app`.
+- Functioneel checkpoint: `f58c772c92df42a5762e97b425800d42dfd79d7b`.
+- Geaccepteerde preview: `https://verhoog-family-6t8322644-cverhoog-techs-projects.vercel.app`.
 - Acceptatiedatum: **03-09-2026**.
 - `main`: **niet gewijzigd**.
 
@@ -24,12 +24,12 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Fase 0 - architectuur/repository-fundament: **BEZIG; kerncontracten actief**.
 - Fase 1 - Kamers + routines: **FUNCTIONEEL VER GEVORDERD / huidige UX real-device geaccepteerd**.
 - Fase 2 - Weekplanner: **FUNCTIONEEL WERKEND / persoonlijke goedkeuring en herhaling real-device geaccepteerd**.
-- Fase 3 - Taken-integratie: **HEENPROJECTIE WERKEND / real-device geaccepteerd; reverse sync nog open**.
-- Fase 4 - Agenda-integratie: **HEENPROJECTIE WERKEND / real-device geaccepteerd; reverse sync nog open**.
+- Fase 3 - Taken-integratie: **HEEN- EN TERUGSYNC FUNCTIONEEL WERKEND / real-device geaccepteerd**.
+- Fase 4 - Agenda-integratie: **HEEN- EN TERUGSYNC VOOR PLANNING WERKEND / real-device geaccepteerd**.
 - Fase 5 - Boodschappen / voorraad: **OPEN binnen Schoonmaken**.
 - Fase 6 - Goedkeuring / overdracht: **PERSOONLIJKE PLANAPPROVAL + ROUTINEVERZOEKEN WERKEND**.
-- Fase 7 - Historie / uitzonderingen: **OPEN**.
-- Fase 8 - Visuele polish / slimme inzichten: **OPEN**.
+- Fase 7 - Historie / uitzonderingen: **DEELS; completion logs aanwezig, bredere historie/uitzonderingen nog open**.
+- Fase 8 - Visuele polish / slimme inzichten: **DEELS; Home-integratie geaccepteerd, definitieve Schoonmaken-polish nog open**.
 
 ## Wat nu real-device is geaccepteerd
 
@@ -84,35 +84,46 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - Flexibele occurrences krijgen geen verzonnen tijdstip.
 - Verwijderde/missende afgeleide projecties kunnen vanuit de canonieke occurrence worden hersteld.
 
-### Belangrijke regressiefixes die in dit checkpoint zitten
+### Reverse sync / uitvoering
+
+- Checklistregels afvinken in een geprojecteerde schoonmaaktaak schrijft terug naar het juiste checklist-item van de canonieke `CleaningOccurrence`.
+- Bij een gegroepeerde kamerkaart blijven de gekoppelde occurrences afzonderlijk correct; één vinkje voltooit niet automatisch alle routines.
+- Wanneer alle checklistregels van een occurrence klaar zijn, wordt die occurrence canoniek `COMPLETED` en wordt een completion log opgeslagen.
+- Een checklistregel opnieuw openen zet de bijbehorende occurrence weer actief zonder een nieuwe duplicate occurrence te maken.
+- Een volledige schoonmaaktaak afronden/hernemen volgt de canonieke checkliststatus.
+- Datum/tijd aanpassen vanuit Taken schrijft terug naar de occurrence en laat het afgeleide Agenda-item meeverhuizen.
+- Datum/tijd aanpassen vanuit Agenda schrijft terug naar de occurrence en laat de afgeleide Taak meeverhuizen.
+- Een leeg tijdveld blijft een flexibele schoonmaakbeurt; er wordt geen tijdstip verzonnen.
+- Afgeleide schoonmaaktaken en schoonmaakafspraken kunnen niet als canonieke bron vanuit Taken/Agenda worden verwijderd; beheer blijft in Schoonmaken.
+- Projectiewrites lopen buiten de expliciete gebruikersmutatie-wrappers om, zodat de reverse sync geen listener-loop met zichzelf maakt.
+- De rules-safe writer gebruikt de geautoriseerde Cleaning-root als canonieke transactieboundary en herstelt daarna de afgeleide projecties.
+
+### Home-integratie
+
+- De voormalige Posts-hero op Home is nu de tegel **Schoonmaken** en opent direct de Schoonmaken-module.
+- De Schoonmaken-tegel telt uitsluitend open canonieke schoonmaakprojecties met een datum van vandaag of eerder.
+- Toekomstige, afgeronde, geannuleerde, overgeslagen en ongedateerde schoonmaaktaken tellen niet mee op deze tegel.
+- De algemene Taken-tegel telt uitsluitend open taken met een datum van vandaag of eerder.
+- Toekomstige, afgeronde, geannuleerde, overgeslagen en ongedateerde taken tellen niet mee op de Taken-tegel.
+- Een schoonmaaktaak kan terecht zowel in het algemene Taken-aantal als in de specifieke Schoonmaken-uitsplitsing zitten.
+- Home gebruikt een lokale kalenderdatum voor de grens Vandaag, zodat laat op de avond geen UTC-dagverschuiving ontstaat.
+
+### Belangrijke regressiefixes die in de huidige basis zitten
 
 - Lege Taken-snapshot blijft niet meer hangen op `Taken synchroniseren`.
 - Planning-tab heeft geen verticale renderloop meer door concurrerende UI-eigenaars.
 - Snelkeuze-toast veroorzaakt geen bewuste scroll naar het formulier of naar de bovenkant.
 - Room-order controls en directe routine-delete zijn render-loop veilig ingericht.
+- Reverse sync veroorzaakt geen duplicaten bij refresh of herprojectie.
+- Een oudere Task-snapshot mag een nieuwer canoniek checklistresultaat niet als projectie-authoriteit overschrijven.
 
 ## Bewust nog niet afgerond
 
-### Reverse sync / uitvoering
-
-De huidige integratie is nog primair:
-
-`CleaningOccurrence -> Task + Calendar`
-
-Nog open voor een volgende milestone:
-
-- checklist-item afvinken in Taken -> terugschrijven naar `CleaningOccurrence`;
-- volledige schoonmaaktaak afronden -> occurrence completion + completion log;
-- datum/tijd wijzigen vanuit Taken -> canonieke occurrence aanpassen;
-- Agenda-item verplaatsen -> canonieke occurrence aanpassen;
-- voorkomen van circulaire listenerloops bij tweerichtingssynchronisatie;
-- duidelijke delete-/reschedule-semantiek waarbij Task/Agenda nooit een tweede source of truth wordt.
-
-### Overige open Schoonmaken-onderdelen
+### Overige Schoonmaken-onderdelen
 
 - Benodigdheden koppelen aan routines en per kamer/taak tonen.
 - Voorraad/Boodschappen-koppeling.
-- Historie, uitzonderingen, overslaan/uitstellen en completere completion-flow.
+- Uitgebreidere historie, overslaan, uitstellen, carry-forward en uitzonderingsflows.
 - Persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
 - Definitieve premium visual polish conform `FamilyApp-Schoonmaken-visual-spec.md`.
 - Kleine resterende tap-targets naar minimaal 44x44 waar nodig.
@@ -120,9 +131,10 @@ Nog open voor een volgende milestone:
 
 ## Guardrail voor vervolgchats
 
-- Behandel `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
-- Documentatiecommits na dat checkpoint veranderen de functionele acceptatiebasis niet.
+- Behandel `f58c772c92df42a5762e97b425800d42dfd79d7b` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
+- Reverse execution sync is real-device geaccepteerd; behandel `CleaningOccurrence` desondanks nog steeds als de enige canonieke source of truth.
+- Documentatiecommits na dit checkpoint veranderen de functionele acceptatiebasis niet.
 - Werk uitsluitend verder op `agent/household-rebuild-v2` zolang de gebruiker niet expliciet anders zegt.
 - `main` niet aanraken of mergen zonder expliciet verzoek van de gebruiker.
-- `CleaningOccurrence` blijft canonieke source of truth; Taken en Agenda blijven afgeleide projecties.
+- Taken en Agenda blijven afgeleide projecties, ook nu gebruikerswijzigingen gecontroleerd terug naar Cleaning kunnen worden vertaald.
 - Nieuwe functionele wijzigingen in samenhangende, testbare checkpoints uitvoeren en opnieuw via unieke preview op iPhone laten accepteren.
