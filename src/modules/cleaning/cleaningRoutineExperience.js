@@ -1,16 +1,17 @@
 'use strict';
 // ============================================================
-// CLEANING ROUTINE EXPERIENCE v0.2.0
+// CLEANING ROUTINE EXPERIENCE v0.3.0
 // Progressive UX around the canonical Cleaning screen:
 // - compact, collapsible rooms
 // - visible routine assignment/request entry point
 // - ongoing versus this-week-only recurrence choice
 // - edit forms scroll into view immediately
+// - request acceptance updates current plan summary + approval metadata safely
 // ============================================================
 (function(){
   if(window.CleaningRoutineExperience)return;
 
-  var VERSION='0.2.0';
+  var VERSION='0.3.0';
   var DAY_MS=86400000;
   var state={observer:null,expanded:{},editRoutineId:null,repoPatched:false,queued:false};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
@@ -21,12 +22,14 @@
   function now(){return Date.now();}
   function escapeHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function contextSnapshot(){try{return window.HouseholdContext&&window.HouseholdContext.snapshot?window.HouseholdContext.snapshot():null;}catch(e){return null;}}
+  function captureContext(){try{return window.HouseholdContext&&window.HouseholdContext.capture?window.HouseholdContext.capture():null;}catch(e){return null;}}
+  function contextIsCurrent(token){try{return !!(window.HouseholdContext&&window.HouseholdContext.isCurrent&&window.HouseholdContext.isCurrent(token));}catch(e){return false;}}
   function firebaseDb(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}}
   function repository(){return window.CleaningHouseholdRepository||null;}
   function repositorySnapshot(){try{var repo=repository();return repo&&repo.snapshot?repo.snapshot():null;}catch(e){return null;}}
   function cleaningData(){var snapshot=repositorySnapshot();return snapshot&&snapshot.data||{};}
   function currentUid(){var ctx=contextSnapshot();return text(ctx&&ctx.uid);}
-  function cleaningPath(){var ctx=contextSnapshot(),domain=window.CleaningDomain;return ctx&&ctx.householdId&&domain&&domain.basePath?domain.basePath(ctx.householdId):null;}
+  function cleaningPathFor(householdId){var domain=window.CleaningDomain;return householdId&&domain&&domain.basePath?domain.basePath(householdId):null;}
 
   function activeMembers(){
     try{
@@ -110,29 +113,49 @@
     return patch;
   }
 
+  function requireWriteContext(){
+    var ctx=contextSnapshot(),database=firebaseDb(),token=captureContext();
+    if(!ctx||ctx.ready!==true||!ctx.uid||!ctx.householdId)throw new Error('ACTIVE_HOUSEHOLD_REQUIRED');
+    if(!database)throw new Error('FIREBASE_DATABASE_UNAVAILABLE');
+    if(!token||!contextIsCurrent(token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED');
+    var path=cleaningPathFor(ctx.householdId);if(!path)throw new Error('ACTIVE_HOUSEHOLD_REQUIRED');
+    return{ctx:ctx,database:database,token:token,path:path};
+  }
+
   function directRoutineUpdate(id,input,extra){
-    var database=firebaseDb(),path=cleaningPath(),uid=currentUid(),domain=window.CleaningDomain;
-    if(!database||!path||!uid||!domain||typeof domain.normalizeRoutineItem!=='function')return Promise.reject(new Error('CLEANING_ROUTINE_UPDATE_UNAVAILABLE'));
+    var write,domain=window.CleaningDomain;
+    try{write=requireWriteContext();}catch(error){return Promise.reject(error);}
+    if(!domain||typeof domain.normalizeRoutineItem!=='function')return Promise.reject(new Error('CLEANING_ROUTINE_UPDATE_UNAVAILABLE'));
     var transitionError=null,timestamp=now();
-    return database.ref(path+'/routines/'+safe(id)).transaction(function(serverRoutine){
+    return write.database.ref(write.path+'/routines/'+safe(id)).transaction(function(serverRoutine){
+      if(!contextIsCurrent(write.token)){transitionError=new Error('HOUSEHOLD_CONTEXT_CHANGED');return;}
       if(!serverRoutine||typeof serverRoutine!=='object'){transitionError=new Error('CLEANING_ROUTINE_NOT_FOUND');return;}
       if(serverRoutine.active===false){transitionError=new Error('CLEANING_ROUTINE_INACTIVE');return;}
       var normalized=domain.normalizeRoutineItem(Object.assign({},clone(serverRoutine),input||{},extra||{}),id);
       if(!normalized.title){transitionError=new Error('CLEANING_ROUTINE_TITLE_REQUIRED');return;}
       normalized.id=serverRoutine.id||id;normalized.householdId=serverRoutine.householdId;normalized.createdAt=serverRoutine.createdAt;normalized.createdByUid=serverRoutine.createdByUid;
-      normalized.updatedAt=timestamp;normalized.updatedByUid=uid;transitionError=null;return normalized;
-    }).then(function(result){if(transitionError)throw transitionError;if(!result||result.committed!==true)throw new Error('CLEANING_ROUTINE_UPDATE_NOT_COMMITTED');return result.snapshot&&result.snapshot.val?clone(result.snapshot.val()):null;});
+      normalized.updatedAt=timestamp;normalized.updatedByUid=write.ctx.uid;transitionError=null;return normalized;
+    }).then(function(result){
+      if(transitionError)throw transitionError;
+      if(!contextIsCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+      if(!result||result.committed!==true)throw new Error('CLEANING_ROUTINE_UPDATE_NOT_COMMITTED');
+      return result.snapshot&&result.snapshot.val?clone(result.snapshot.val()):null;
+    });
   }
 
   function patchRepository(){
     var repo=repository();
     if(!repo)return false;
-    if(repo.__routineExperienceV2){state.repoPatched=true;return true;}
+    if(repo.__routineExperienceV3){state.repoPatched=true;return true;}
     if(typeof repo.createRoutineItem!=='function'||typeof repo.updateRoutineItem!=='function')return false;
     var rawCreate=repo.createRoutineItem.bind(repo);
-    repo.createRoutineItem=function(input){var extra=assignmentPatch(formValues(),null);return rawCreate(Object.assign({},input||{},extra));};
+    repo.createRoutineItem=function(input){
+      var values=input&&input.templateKey?{assignee:'AUTO',repeatScope:'ONGOING'}:formValues();
+      var extra=assignmentPatch(values,null);
+      return rawCreate(Object.assign({},input||{},extra));
+    };
     repo.updateRoutineItem=function(id,input){var existing=routineById(id),extra=assignmentPatch(formValues(),existing);return directRoutineUpdate(id,input,extra);};
-    repo.__routineExperienceV2=true;state.repoPatched=true;return true;
+    repo.__routineExperienceV3=true;state.repoPatched=true;return true;
   }
 
   function updateFormCopy(form){
@@ -143,7 +166,7 @@
     var selected=text(assignee&&assignee.value)||'AUTO',repeatValue=text(repeat&&repeat.value)||'ONGOING';
     var message=selected==='AUTO'?'De weekplanner verdeelt deze routine automatisch.':selected===currentUid()?'Deze routine wordt vast aan jou gekoppeld.':'Na opslaan krijgt '+memberName(selected)+' bovenaan Schoonmaken een duidelijk verzoek met Accepteren en Afwijzen.';
     message+=' '+(repeatValue==='ONGOING'?'Na acceptatie wordt hij ook vier weken vooruit gepland en blijft de horizon doorrollen.':'Hij blijft uitsluitend onderdeel van het huidige weekplan.');
-    copy.textContent=message;
+    if(copy.textContent!==message)copy.textContent=message;
   }
 
   function decorateRoutineForm(){
@@ -160,20 +183,23 @@
       +'<label class="cleaning-field"><span>Herhalen na deze week?</span><select data-cleaning-routine-repeat-scope><option value="ONGOING"'+(repeat==='ONGOING'?' selected':'')+'>Ja · doorlopend, vier weken vooruit</option><option value="THIS_WEEK"'+(repeat==='THIS_WEEK'?' selected':'')+'>Nee · alleen dit weekplan</option></select></label>'
       +'<p class="cleaning-routine-extra-copy" data-cleaning-routine-extra-copy></p>';
     var actions=form.querySelector('.cleaning-form-actions');if(actions)form.insertBefore(box,actions);else form.appendChild(box);
-    box.querySelectorAll('select').forEach(function(select){select.addEventListener('change',function(){updateFormCopy(form);});});updateFormCopy(form);
+    Array.prototype.forEach.call(box.querySelectorAll('select'),function(select){select.addEventListener('change',function(){updateFormCopy(form);});});updateFormCopy(form);
   }
 
   function decorateRooms(){
     var grid=document.querySelector('#screen-cleaning .cleaning-room-grid');
-    if(grid&&!grid.previousElementSibling?.matches?.('[data-cleaning-room-help]')){
-      var help=document.createElement('p');help.className='cleaning-room-help';help.setAttribute('data-cleaning-room-help','1');help.textContent='Kamers staan standaard ingeklapt. Open een kamer voor de routines. Gebruik Toewijzen om een routine aan jezelf of een ander gezinslid te vragen.';grid.parentNode.insertBefore(help,grid);
+    if(grid){
+      var previous=grid.previousElementSibling;
+      if(!previous||!previous.matches||!previous.matches('[data-cleaning-room-help]')){
+        var help=document.createElement('p');help.className='cleaning-room-help';help.setAttribute('data-cleaning-room-help','1');help.textContent='Kamers staan standaard ingeklapt. Open een kamer voor de routines. Gebruik Toewijzen om een routine aan jezelf of een ander gezinslid te vragen.';grid.parentNode.insertBefore(help,grid);
+      }
     }
-    document.querySelectorAll('#screen-cleaning .cleaning-room-card').forEach(function(card){
+    Array.prototype.forEach.call(document.querySelectorAll('#screen-cleaning .cleaning-room-card'),function(card){
       var roomId=text(card.getAttribute('data-cleaning-room-id'));if(!roomId)return;
       var expanded=!!state.expanded[roomId];card.classList.toggle('is-expanded',expanded);
       var actions=card.querySelector('.cleaning-room-card-actions');
       if(actions&&!actions.querySelector('[data-cleaning-room-expand]')){
-        var button=document.createElement('button');button.type='button';button.className='cleaning-room-expand-button';button.setAttribute('data-cleaning-room-expand',roomId);button.innerHTML='<span aria-hidden="true">⌄</span>';actions.appendChild(button);
+        var expandButton=document.createElement('button');expandButton.type='button';expandButton.className='cleaning-room-expand-button';expandButton.setAttribute('data-cleaning-room-expand',roomId);expandButton.innerHTML='<span aria-hidden="true">⌄</span>';actions.appendChild(expandButton);
       }
       var button=actions&&actions.querySelector('[data-cleaning-room-expand]');if(button){button.setAttribute('aria-expanded',expanded?'true':'false');button.setAttribute('aria-label',expanded?'Kamer inklappen':'Kamer uitklappen');}
     });
@@ -181,7 +207,7 @@
 
   function decorateRoutineRows(){
     var rows=cleaningData().routines||{};
-    document.querySelectorAll('#screen-cleaning [data-cleaning-routine-edit]').forEach(function(edit){
+    Array.prototype.forEach.call(document.querySelectorAll('#screen-cleaning [data-cleaning-routine-edit]'),function(edit){
       var id=text(edit.getAttribute('data-cleaning-routine-edit')),routine=rows[id],item=edit.closest('.cleaning-routine-item'),actions=item&&item.querySelector('.cleaning-routine-item-actions');
       if(!routine||!item||!actions)return;
       if(!actions.querySelector('[data-cleaning-routine-assign]')){var assign=document.createElement('button');assign.type='button';assign.className='cleaning-routine-assign-button';assign.setAttribute('data-cleaning-routine-assign',id);assign.textContent='Toewijzen';actions.insertBefore(assign,edit);}
@@ -190,7 +216,8 @@
       else if(routine.assignmentRequestStatus==='ACCEPTED'&&routine.preferredAssigneeUid)label='Vast: '+memberName(routine.preferredAssigneeUid);
       else if(routine.assignmentRequestStatus==='DECLINED')label='Afgewezen · automatisch';
       if(!label){if(badge)badge.remove();return;}
-      if(!badge){badge=document.createElement('span');badge.className='cleaning-routine-assignment-badge';badge.setAttribute('data-cleaning-routine-assignment-badge','1');title.appendChild(badge);}badge.textContent=label;
+      if(!badge){badge=document.createElement('span');badge.className='cleaning-routine-assignment-badge';badge.setAttribute('data-cleaning-routine-assignment-badge','1');title.appendChild(badge);}
+      if(badge.textContent!==label)badge.textContent=label;
     });
   }
 
@@ -206,12 +233,47 @@
     if(!inbox){inbox=document.createElement('div');inbox.setAttribute('data-cleaning-routine-request-inbox','1');panel.insertBefore(inbox,panel.firstChild);}if(inbox.innerHTML!==html)inbox.innerHTML=html;
   }
 
+  function assignedUid(row){var ids=row&&Array.isArray(row.assignmentUids)?row.assignmentUids.filter(Boolean).map(String):[];return ids.length===1?ids[0]:null;}
+
   function planContaining(root,timestamp){
     var plans=root.plans||{};return Object.keys(plans).map(function(id){return Object.assign({id:id},plans[id]||{});}).filter(function(plan){return plan.status==='ACTIVE'&&Number(plan.windowStartAt)<=timestamp&&Number(plan.windowEndAt)>timestamp;}).sort(function(a,b){return Number(b.windowStartAt)-Number(a.windowStartAt);})[0]||null;
   }
 
+  function activePlanOccurrenceIds(root,plan){
+    return (Array.isArray(plan&&plan.occurrenceIds)?plan.occurrenceIds:[]).filter(function(id){var row=root.occurrences&&root.occurrences[id];return row&&row.status!=='CANCELLED'&&row.status!=='SKIPPED';});
+  }
+
+  function refreshPlanMetadata(root,plan,timestamp,actorUid){
+    var ids=activePlanOccurrenceIds(root,plan),loads={},required=[],routineCount=0,total=0,overdue=0;
+    activeMembers().forEach(function(member){loads[text(member.uid)]={uid:text(member.uid),estimatedMinutes:0,bundleCount:0};});
+    ids.forEach(function(id){
+      var row=root.occurrences[id],uid=assignedUid(row),minutes=Number(row&&row.estimatedMinutes)||0;
+      routineCount+=(Array.isArray(row&&row.checklist)?row.checklist.length:0);total+=minutes;if(row&&row.dueState==='OVERDUE')overdue++;
+      if(uid){if(required.indexOf(uid)<0)required.push(uid);if(!loads[uid])loads[uid]={uid:uid,estimatedMinutes:0,bundleCount:0};loads[uid].estimatedMinutes+=minutes;loads[uid].bundleCount++;}
+    });
+    required.sort();
+    var memberLoads=Object.keys(loads).sort().map(function(uid){return loads[uid];}),values=memberLoads.map(function(load){return load.estimatedMinutes;});
+    plan.summary={occurrenceCount:ids.length,routineCount:routineCount,overdueOccurrenceCount:overdue,dueInWindowOccurrenceCount:Math.max(0,ids.length-overdue),totalEstimatedMinutes:total,imbalanceMinutes:values.length?Math.max.apply(Math,values)-Math.min.apply(Math,values):0,memberLoads:memberLoads};
+    plan.requiredApprovalUids=required.slice();plan.acceptedApprovalUids=required.slice();plan.declinedApprovalUids=[];
+    plan.approvalSummary={requiredCount:required.length,acceptedCount:required.length,pendingCount:0};
+    if(plan.approvalState!=='ROLLING_APPROVED')plan.approvalState='APPROVED';
+    plan.updatedAt=timestamp;plan.updatedByUid=actorUid;
+  }
+
+  function ensureAcceptedPlanApproval(root,plan,uid,timestamp,actorUid){
+    if(!root.approvals||typeof root.approvals!=='object')root.approvals={};
+    if(!root.approvals[uid]||typeof root.approvals[uid]!=='object')root.approvals[uid]={};
+    var existing=root.approvals[uid][plan.id]||{};
+    var ownIds=activePlanOccurrenceIds(root,plan).filter(function(id){return assignedUid(root.occurrences[id])===uid;});
+    root.approvals[uid][plan.id]={
+      id:plan.id+'__'+uid,householdId:plan.householdId,planId:plan.id,uid:uid,status:'ACCEPTED',occurrenceIds:ownIds,
+      round:Number(plan.approvalRound)||1,standingRoutineConsent:true,acceptedAt:Number(existing.acceptedAt)||timestamp,acceptedByUid:uid,
+      createdAt:Number(existing.createdAt)||timestamp,createdByUid:text(existing.createdByUid)||actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:2
+    };
+  }
+
   function injectAcceptedRoutine(root,routineId,targetUid,timestamp){
-    var contract=window.CleaningRecurringPlanContract,routine=root.routines&&root.routines[routineId],plan=planContaining(root,timestamp);if(!contract||!routine||!plan)return;
+    var contract=window.CleaningRecurringPlanContract,routine=root.routines&&root.routines[routineId],plan=planContaining(root,timestamp);if(!contract||!routine||!plan)return null;
     var today=new Date(timestamp);today.setHours(0,0,0,0);var cutoff=today.getTime(),rooms={};rooms[routine.roomId]=root.rooms&&root.rooms[routine.roomId];var routines={};routines[routineId]=routine;
     var expanded=contract.expandRoutineSlots({window:{startAt:Number(plan.windowStartAt),endAt:Number(plan.windowEndAt)},rooms:rooms,routines:routines});
     if(!root.occurrences)root.occurrences={};if(!Array.isArray(plan.occurrenceIds))plan.occurrenceIds=[];
@@ -219,40 +281,56 @@
       var slot=Number(item.slotAt);if(slot<cutoff)return;
       var existingId=plan.occurrenceIds.find(function(id){var row=root.occurrences[id],anchor=Number(row&&row.slotAt)||Number(row&&row.flexibleWindow&&row.flexibleWindow.startAt)||Number(row&&row.earliestDueAt);return row&&row.status!=='CANCELLED'&&text(row.roomId)===text(routine.roomId)&&contract.daySlotAt(anchor,{startAt:Number(plan.windowStartAt),endAt:Number(plan.windowEndAt)})===slot&&assignedUid(row)===targetUid;});
       var checklistItem={id:routineId,routineItemId:routineId,title:text(item.title)||'Schoonmaakonderdeel',estimatedMinutes:Number(item.estimatedMinutes)||10,priority:text(item.priority)||'NORMAL',dueAt:Number(item.dueAt)||slot,dueState:item.dueState==='OVERDUE'?'OVERDUE':'DUE_IN_WINDOW',completed:false};
-      if(existingId){var existing=root.occurrences[existingId];if((existing.checklist||[]).some(function(row){return text(row.routineItemId||row.id)===routineId;}))return;existing.checklist=(existing.checklist||[]).concat([checklistItem]);existing.routineItemIds=(existing.routineItemIds||[]).concat([routineId]);existing.estimatedMinutes=(Number(existing.estimatedMinutes)||0)+checklistItem.estimatedMinutes;existing.updatedAt=timestamp;existing.updatedByUid=targetUid;return;}
+      if(existingId){
+        var existing=root.occurrences[existingId];if((existing.checklist||[]).some(function(row){return text(row.routineItemId||row.id)===routineId;}))return;
+        existing.checklist=(existing.checklist||[]).concat([checklistItem]);existing.routineItemIds=(existing.routineItemIds||[]).concat([routineId]);existing.estimatedMinutes=(Number(existing.estimatedMinutes)||0)+checklistItem.estimatedMinutes;
+        existing.earliestDueAt=Math.min(Number(existing.earliestDueAt)||checklistItem.dueAt,checklistItem.dueAt);existing.latestDueAt=Math.max(Number(existing.latestDueAt)||checklistItem.dueAt,checklistItem.dueAt);
+        existing.updatedAt=timestamp;existing.updatedByUid=targetUid;return;
+      }
       var base=contract.occurrenceIdFor(plan.id,routine.roomId,slot),id=root.occurrences[base]?base+'__uid_'+safe(targetUid):base;
       root.occurrences[id]={id:id,householdId:plan.householdId,planId:plan.id,roomId:routine.roomId,slotAt:slot,routineItemIds:[routineId],checklist:[checklistItem],assignmentUids:[targetUid],assignmentStatus:'ACTIVE',status:'FLEXIBLE',dueState:checklistItem.dueState,earliestDueAt:checklistItem.dueAt,latestDueAt:checklistItem.dueAt,estimatedMinutes:checklistItem.estimatedMinutes,scheduledStartAt:null,scheduledEndAt:null,flexibleWindow:{startAt:slot,endAt:Math.min(Number(plan.windowEndAt),slot+Number(contract.DAY_MS||DAY_MS))},projections:{taskId:null,calendarEventId:null},requestedRoutineAcceptance:true,activatedAt:timestamp,activatedByUid:targetUid,createdAt:timestamp,createdByUid:targetUid,updatedAt:timestamp,updatedByUid:targetUid,schemaVersion:3};plan.occurrenceIds.push(id);
     });
-    plan.updatedAt=timestamp;plan.updatedByUid=targetUid;
+    refreshPlanMetadata(root,plan,timestamp,targetUid);ensureAcceptedPlanApproval(root,plan,targetUid,timestamp,targetUid);return plan;
   }
 
-  function assignedUid(row){var ids=row&&Array.isArray(row.assignmentUids)?row.assignmentUids.filter(Boolean).map(String):[];return ids.length===1?ids[0]:null;}
-
   function resolveRequest(routineId,accept){
-    var database=firebaseDb(),path=cleaningPath(),uid=currentUid();if(!database||!path||!uid)return Promise.reject(new Error('CLEANING_REQUEST_CONTEXT_UNAVAILABLE'));
+    var write;try{write=requireWriteContext();}catch(error){return Promise.reject(error);}
     var transitionError=null;
-    return database.ref(path).transaction(function(serverRoot){
+    return write.database.ref(write.path).transaction(function(serverRoot){
+      if(!contextIsCurrent(write.token)){transitionError=new Error('HOUSEHOLD_CONTEXT_CHANGED');return;}
       var root=serverRoot&&typeof serverRoot==='object'?clone(serverRoot):{},routine=root.routines&&root.routines[routineId];
       if(!routine||routine.active===false){transitionError=new Error('CLEANING_ROUTINE_NOT_FOUND');return;}
-      if(routine.assignmentRequestStatus!=='PENDING'||text(routine.preferredAssigneeUid)!==uid){transitionError=new Error('CLEANING_ROUTINE_REQUEST_NOT_PENDING');return;}
+      if(routine.assignmentRequestStatus!=='PENDING'||text(routine.preferredAssigneeUid)!==text(write.ctx.uid)){transitionError=new Error('CLEANING_ROUTINE_REQUEST_NOT_PENDING');return;}
       var timestamp=now();
-      if(accept){routine.assignmentMode='FIXED_PERSON';routine.assignmentRequestStatus='ACCEPTED';routine.assignmentAcceptedAt=timestamp;routine.assignmentAcceptedByUid=uid;routine.paused=false;routine.updatedAt=timestamp;routine.updatedByUid=uid;injectAcceptedRoutine(root,routineId,uid,timestamp);}
-      else{routine.assignmentMode='AUTO';routine.assignmentRequestStatus='DECLINED';routine.assignmentDeclinedAt=timestamp;routine.assignmentDeclinedByUid=uid;routine.preferredAssigneeUid=null;routine.paused=false;routine.updatedAt=timestamp;routine.updatedByUid=uid;}
+      if(accept){routine.assignmentMode='FIXED_PERSON';routine.assignmentRequestStatus='ACCEPTED';routine.assignmentAcceptedAt=timestamp;routine.assignmentAcceptedByUid=write.ctx.uid;routine.paused=false;routine.updatedAt=timestamp;routine.updatedByUid=write.ctx.uid;injectAcceptedRoutine(root,routineId,write.ctx.uid,timestamp);}
+      else{routine.assignmentMode='AUTO';routine.assignmentRequestStatus='DECLINED';routine.assignmentDeclinedAt=timestamp;routine.assignmentDeclinedByUid=write.ctx.uid;routine.preferredAssigneeUid=null;routine.paused=false;routine.updatedAt=timestamp;routine.updatedByUid=write.ctx.uid;}
       transitionError=null;return root;
-    }).then(function(result){if(transitionError)throw transitionError;if(!result||result.committed!==true)throw new Error('CLEANING_ROUTINE_REQUEST_WRITE_NOT_COMMITTED');return true;});
+    }).then(function(result){
+      if(transitionError)throw transitionError;if(!contextIsCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
+      if(!result||result.committed!==true)throw new Error('CLEANING_ROUTINE_REQUEST_WRITE_NOT_COMMITTED');return true;
+    });
   }
 
   function scrollToForm(selector,inputSelector){window.setTimeout(function(){var form=document.querySelector('#screen-cleaning '+selector);if(!form)return;try{form.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){form.scrollIntoView();}window.setTimeout(function(){var input=form.querySelector(inputSelector);if(input){try{input.focus({preventScroll:true});}catch(e){input.focus();}}},220);},25);}
 
+  function findRoutineEditButton(id){
+    var buttons=document.querySelectorAll('#screen-cleaning [data-cleaning-routine-edit]');
+    for(var index=0;index<buttons.length;index++){if(text(buttons[index].getAttribute('data-cleaning-routine-edit'))===text(id))return buttons[index];}
+    return null;
+  }
+
   function decorate(){state.queued=false;patchRepository();ensureStyle();decorateRooms();decorateRoutineForm();decorateRoutineRows();decorateRequests();}
   function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(fn){setTimeout(fn,0);})(decorate);}
-
   function toggleRoom(roomId){state.expanded[roomId]=!state.expanded[roomId];queue();}
+
   function onClick(event){
     var target=event.target,closest=target&&target.closest?target.closest.bind(target):null;if(!closest)return;
     var roomEdit=closest('[data-cleaning-room-edit]');if(roomEdit){scrollToForm('[data-cleaning-room-form]','[data-cleaning-room-name]');return;}
-    var routineEdit=closest('[data-cleaning-routine-edit]'),routineAssign=closest('[data-cleaning-routine-assign]');
-    if(routineEdit||routineAssign){var id=text((routineEdit||routineAssign).getAttribute(routineEdit?'data-cleaning-routine-edit':'data-cleaning-routine-assign'));state.editRoutineId=id;var room=routineById(id);if(room&&room.roomId)state.expanded[room.roomId]=true;if(routineAssign){event.preventDefault();event.stopPropagation();var edit=document.querySelector('#screen-cleaning [data-cleaning-routine-edit="'+CSS.escape(id)+'"]');if(edit)edit.click();}scrollToForm('[data-cleaning-routine-form]','[data-cleaning-routine-title]');return;}
+    var routineEdit=closest('[data-cleaning-routine-edit]');if(routineEdit){var editId=text(routineEdit.getAttribute('data-cleaning-routine-edit'));state.editRoutineId=editId;var editRoutine=routineById(editId);if(editRoutine&&editRoutine.roomId)state.expanded[editRoutine.roomId]=true;scrollToForm('[data-cleaning-routine-form]','[data-cleaning-routine-title]');return;}
+    var routineAssign=closest('[data-cleaning-routine-assign]');if(routineAssign){
+      event.preventDefault();event.stopPropagation();var assignId=text(routineAssign.getAttribute('data-cleaning-routine-assign'));state.editRoutineId=assignId;var assignedRoutine=routineById(assignId);if(assignedRoutine&&assignedRoutine.roomId)state.expanded[assignedRoutine.roomId]=true;
+      window.setTimeout(function(){var editButton=findRoutineEditButton(assignId);if(editButton)editButton.click();scrollToForm('[data-cleaning-routine-form]','[data-cleaning-routine-title]');},0);return;
+    }
     var routineAdd=closest('[data-cleaning-routine-add]');if(routineAdd){state.editRoutineId=null;scrollToForm('[data-cleaning-routine-form]','[data-cleaning-routine-title]');return;}
     var roomAdd=closest('[data-cleaning-room-add]');if(roomAdd){state.editRoutineId=null;scrollToForm('[data-cleaning-room-form]','[data-cleaning-room-name]');return;}
     var expand=closest('[data-cleaning-room-expand]');if(expand){event.preventDefault();event.stopPropagation();toggleRoom(text(expand.getAttribute('data-cleaning-room-expand')));return;}
@@ -267,6 +345,6 @@
     window.addEventListener('familyapp:cleaning-repository',queue);window.addEventListener('familyapp:household-identity-synced',queue);queue();
   }
 
-  window.CleaningRoutineExperience={version:VERSION,start:start,resolveRequest:resolveRequest,_assignmentPatch:assignmentPatch,_injectAcceptedRoutine:injectAcceptedRoutine,_currentWeekWindow:currentWeekWindow};
+  window.CleaningRoutineExperience={version:VERSION,start:start,resolveRequest:resolveRequest,_assignmentPatch:assignmentPatch,_injectAcceptedRoutine:injectAcceptedRoutine,_refreshPlanMetadata:refreshPlanMetadata,_currentWeekWindow:currentWeekWindow};
   start();
 })();
