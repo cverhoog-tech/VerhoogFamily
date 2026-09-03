@@ -19,9 +19,27 @@ function ensureHomeControls() {
   if(typeof window.updateDarkToggleUI==='function')window.updateDarkToggleUI();
 }
 
+// The original third Home hero card is still present in the static shell for
+// backwards compatibility. Turn it into the Cleaning entry point at runtime so
+// the card follows the live cleaning workload without adding a second Home DOM
+// owner or risking a large shell rewrite.
+function ensureHomeCleaningCard(){
+  var card=document.querySelector('#screen-home .cleaning-card, #screen-home .feed-card');
+  if(!card)return;
+  card.classList.add('cleaning-card');
+  card.setAttribute('aria-label','Schoonmaken');
+  card.onclick=function(){if(typeof window.showScreen==='function')window.showScreen('cleaning');};
+  var count=card.querySelector('.card-number');
+  if(count)count.id='stat-cleaning';
+  var label=card.querySelector('.card-label');
+  if(label)label.textContent='schoonmaaktaken';
+  var icon=card.querySelector('.card-icon .icon');
+  if(icon&&!window.FamilyIcons)icon.textContent='🧹';
+}
+
 function applyHomeIconSet(){
   if(!window.FamilyIcons||typeof FamilyIcons.svg!=='function')return;
-  var map=[['.tasks-card .card-icon .icon','tasks'],['.shop-card .card-icon .icon','cart'],['.feed-card .card-icon .icon','chat'],['.recipes-slide .slide-icon','recipes'],['.agenda-slide .slide-icon','calendar'],['.meals-slide .slide-icon','meals']];
+  var map=[['.tasks-card .card-icon .icon','tasks'],['.shop-card .card-icon .icon','cart'],['.cleaning-card .card-icon .icon','cleaning'],['.recipes-slide .slide-icon','recipes'],['.agenda-slide .slide-icon','calendar'],['.meals-slide .slide-icon','meals']];
   map.forEach(function(x){var el=document.querySelector('#screen-home '+x[0]);if(el){el.innerHTML=FamilyIcons.svg(x[1],22);el.setAttribute('aria-hidden','true');}});
   var bell=document.querySelector('.app-header .header-notif');
   if(bell){
@@ -48,6 +66,7 @@ function renderHome() {
   if(sub) sub.textContent=days[now.getDay()]+' · '+now.getDate()+' '+months[now.getMonth()];
   renderHomeBg(currentTheme);
   ensureHomeControls();
+  ensureHomeCleaningCard();
   applyHomeIconSet();
   updateStats();
   renderActivityList();
