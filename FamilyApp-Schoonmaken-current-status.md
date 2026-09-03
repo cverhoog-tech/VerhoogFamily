@@ -1,6 +1,6 @@
 # FamilyApp - Schoonmaken actuele implementatiestatus
 
-Laatst bijgewerkt: **01-09-2026**
+Laatst bijgewerkt: **03-09-2026**
 Branch: `agent/household-rebuild-v2`
 
 Deze statuspagina is de compacte actuele uitvoeringsbron naast:
@@ -8,144 +8,121 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 - `FamilyApp-Schoonmaken-module-architectuur.md` - canonieke functionele/technische architectuur;
 - `FamilyApp-Schoonmaken-visual-spec.md` - canonieke visuele eindrichting;
 - `FamilyApp-Schoonmaken-milestone-log.md` - geaccepteerde grote milestones en regressielog;
-- `FamilyApp-TODO-updated.txt` - brede FamilyApp-TODO, waarvan het Schoonmaken-gedeelte historisch achterloopt op deze status.
+- `FamilyApp-TODO-updated.txt` - brede FamilyApp-TODO.
 
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Commit: `bd282e8b8a48929e296b982d10fb99955b0eec62`.
-- Preview: `https://verhoog-family-k6sz7rwri-cverhoog-techs-projects.vercel.app`.
-- `main`: niet gewijzigd.
+- Functioneel checkpoint: `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2`.
+- Geaccepteerde preview: `https://verhoog-family-e12lu3rgl-cverhoog-techs-projects.vercel.app`.
+- Acceptatiedatum: **03-09-2026**.
+- `main`: **niet gewijzigd**.
 
-## Fase-status
+## Actuele fase-status
 
 - Fase A - veilige module-shell: **AFGEROND / real-device geaccepteerd**.
-- Fase 0 - architectuur/repository-fundament: **BEZIG**.
-- Fase 1 - Kamers + routines: **BEZIG; milestone Kamers + Routines Foundation afgerond**.
-- Fase 2 - Weekplanner: **BEZIG; pure conceptgeneratie real-device geaccepteerd, persistente conceptplanning + realtime Planning-UI ter acceptatie**.
-- Fase 3 - Taken-integratie: **OPEN**.
-- Fase 4 - Agenda-integratie: **OPEN**.
-- Fase 5 - Boodschappen / voorraad: **OPEN**.
-- Fase 6 - Goedkeuring / notificaties: **OPEN**.
+- Fase 0 - architectuur/repository-fundament: **BEZIG; kerncontracten actief**.
+- Fase 1 - Kamers + routines: **FUNCTIONEEL VER GEVORDERD / huidige UX real-device geaccepteerd**.
+- Fase 2 - Weekplanner: **FUNCTIONEEL WERKEND / persoonlijke goedkeuring en herhaling real-device geaccepteerd**.
+- Fase 3 - Taken-integratie: **HEENPROJECTIE WERKEND / real-device geaccepteerd; reverse sync nog open**.
+- Fase 4 - Agenda-integratie: **HEENPROJECTIE WERKEND / real-device geaccepteerd; reverse sync nog open**.
+- Fase 5 - Boodschappen / voorraad: **OPEN binnen Schoonmaken**.
+- Fase 6 - Goedkeuring / overdracht: **PERSOONLIJKE PLANAPPROVAL + ROUTINEVERZOEKEN WERKEND**.
 - Fase 7 - Historie / uitzonderingen: **OPEN**.
 - Fase 8 - Visuele polish / slimme inzichten: **OPEN**.
 
-## Afgerond en real-device geverifieerd
-
-### Shell
-
-- Meer -> Schoonmaken navigatie.
-- Overzicht / Planning / Kamers.
-- Kamers / Gepland per kamer.
-- Lazy-loaded module met module-scoped CSS.
-
-### Repository / household
-
-- `CleaningHouseholdRepository` leest realtime het cleaning-aggregate onder het actieve HouseholdContext.
-- Bind/unbind/revision lifecycle aanwezig.
-- Firebase-root: `families/{householdId}/cleaning`.
-- Cleaning valt onder de bestaande household-shared-data Firebase rules voor actieve household members.
+## Wat nu real-device is geaccepteerd
 
 ### Kamers
 
-- Aanmaken.
-- Bewerken.
-- Soft-delete met behoud van historie/referenties.
-- Realtime Firebase echo en persistentie op iPhone geverifieerd.
+- Kamers aanmaken, bewerken en veilig soft-deleten.
+- Kamers staan in het Kamers-overzicht standaard ingeklapt om eindeloos scrollen te voorkomen.
+- Kamer open/dicht werkt zonder de Planning-renderloop.
+- Bewerken van een kamer scrollt direct naar het bewerkformulier bovenaan en focust het relevante veld.
+- Huishouden kan de kamervolgorde zelf instellen met Omhoog/Omlaag.
+- Kamervolgorde wordt als `sortOrder` persistent in Firebase opgeslagen en blijft na refresh/apparaatwissel behouden.
+- Nieuwe kamers zonder expliciete positie vallen deterministisch achter bestaande gerangschikte kamers.
 
 ### Routines
 
 - Meerdere routines per kamer.
-- Canonieke relatie uitsluitend via `CleaningRoutineItem.roomId`.
 - Titel, interval, geschatte minuten en prioriteit Basis / Normaal / Extra.
-- Aanmaken, bewerken en soft-delete.
-- iOS numeric-validatie gefixt: 1 t/m 480 hele minuten, inclusief 10 minuten.
-- Realtime Firebase echo en persistentie op iPhone geverifieerd.
+- Eigen routine aanmaken en bestaande routine bewerken.
+- Routine direct verwijderen vanuit het uitgeklapte kameroverzicht met twee-tik bevestiging; niet eerst Bewerken nodig.
+- Verwijderen blijft canoniek een veilige soft-delete.
+- Bewerken/toewijzen scrollt direct naar het routineformulier en focust het relevante veld.
+- Kamertype-afhankelijke snelle suggesties/templates blijven gewone canonical `CleaningRoutineItem`-records na toevoegen.
+- Snelkeuze toont na Firebase-bevestiging de toast `Routine toegevoegd ✓`.
+- Snelkeuze gebruikt viewport/scroll-container anchoring zodat de gebruiker op dezelfde plek in de lijst blijft.
 
-### Kamertype-suggesties
+### Routine-toewijzing aan gezinsleden
 
-- Statische editable presets per kamertype.
-- Eén tik maakt een gewone canonical routine aan.
-- Na toevoegen verdwijnt de suggestie op basis van realtime data.
-- Na routine-delete wordt de preset opnieuw beschikbaar.
-- Eigen routine blijft altijd mogelijk.
+- Routineformulier bevat expliciet `Wie doet deze routine?`.
+- Keuzes: automatisch eerlijk verdelen, jezelf of een ander actief householdlid.
+- Toewijzen aan jezelf geldt direct.
+- Toewijzen aan een ander gezinslid maakt een expliciet verzoek.
+- Ontvanger ziet bovenaan Schoonmaken een duidelijke kaart met `Accepteren` en `Afwijzen`.
+- Een nog niet geaccepteerde overdracht deelt niet stilzwijgend extra werk uit.
+- Na acceptatie wordt toekomstige overlap bij de oude verantwoordelijke opgeschoond.
 
-### Weekplanner - pure contractlaag
+### Herhaling / weekplanning
 
-- Halfopen weekvenster, due-semantiek, weekselectie en uitsluitingsredenen.
-- Routines van dezelfde actieve kamer worden één immutable conceptuele checklist.
-- Geschatte minuten worden exact per kamerbundel en voor het hele plan opgeteld.
-- Actieve householdleden komen uitsluitend uit de canonieke identity bridge en worden via UID gebruikt.
-- `FAIR_TIME` verdeelt standaard deterministisch op geschatte tijd.
-- Eén immutable `DRAFT`-conceptweekplan zonder Firebase-write of Taken-/Agenda-projectie.
+- Routine kan `Doorlopend` of `Alleen dit weekplan` zijn.
+- Doorlopende routines worden rollend meerdere weken vooruit gepland; huidige horizon is vier weken.
+- Interval blijft doorlopen over weekgrenzen heen in plaats van elke maandag opnieuw te beginnen.
+- Een routine kan meerdere concrete `CleaningOccurrence`-records binnen één week opleveren wanneer het interval dat vereist.
+- Nieuwe routines tijdens een actieve week worden veilig in de lopende planning verwerkt.
+- Persoonlijke goedkeuring blijft per toegewezen UID; accepteren en afwijzen werken.
+- Plan wordt pas volledig ACTIVE wanneer alle vereiste goedkeuringen aanwezig zijn.
+
+### Taken + Agenda projecties
+
+- `CleaningOccurrence` blijft source of truth voor één concrete schoonmaakbeurt.
+- ACTIVE occurrences worden idempotent geprojecteerd naar Taken en Agenda.
+- Meerdere routines voor dezelfde kamer + dag + verantwoordelijke worden één schoonmaaktaak/Agenda-item met checklist, niet losse kaarten per routine.
+- Projecties hebben deterministic/source-linked identifiers en worden niet gedupliceerd bij refresh.
+- Flexibele occurrences krijgen geen verzonnen tijdstip.
+- Verwijderde/missende afgeleide projecties kunnen vanuit de canonieke occurrence worden hersteld.
+
+### Belangrijke regressiefixes die in dit checkpoint zitten
+
+- Lege Taken-snapshot blijft niet meer hangen op `Taken synchroniseren`.
+- Planning-tab heeft geen verticale renderloop meer door concurrerende UI-eigenaars.
+- Snelkeuze-toast veroorzaakt geen bewuste scroll naar het formulier of naar de bovenkant.
+- Room-order controls en directe routine-delete zijn render-loop veilig ingericht.
 
 ## Bewust nog niet afgerond
 
-### Fase 0 technische schuld
+### Reverse sync / uitvoering
 
-- `CleaningDomain.basePath()` gebruikt nog `safeId()`; household-key-validatie moet later afzonderlijk en veilig worden gehard.
-- `createRoom` en `createRoutineItem` gebruiken nog Firebase `push()`; volledige retry-idempotency is nog niet opgelost.
-- Gerichte planner-persistence/idempotentietests zijn aanwezig; brede contracttests voor household-isolatie, lifecycle en create-idempotentie van kamer/routine ontbreken nog.
-- Een eerdere gecombineerde hardening-poging veroorzaakte door een afgekapt `cleaningDomain.js` een leeg scherm en is expliciet afgekeurd. Zie milestone-log.
+De huidige integratie is nog primair:
 
-### Fase 1 resterend
+`CleaningOccurrence -> Task + Calendar`
 
-- Benodigdheden koppelen aan routine-items.
+Nog open voor een volgende milestone:
+
+- checklist-item afvinken in Taken -> terugschrijven naar `CleaningOccurrence`;
+- volledige schoonmaaktaak afronden -> occurrence completion + completion log;
+- datum/tijd wijzigen vanuit Taken -> canonieke occurrence aanpassen;
+- Agenda-item verplaatsen -> canonieke occurrence aanpassen;
+- voorkomen van circulaire listenerloops bij tweerichtingssynchronisatie;
+- duidelijke delete-/reschedule-semantiek waarbij Task/Agenda nooit een tweede source of truth wordt.
+
+### Overige open Schoonmaken-onderdelen
+
+- Benodigdheden koppelen aan routines en per kamer/taak tonen.
+- Voorraad/Boodschappen-koppeling.
+- Historie, uitzonderingen, overslaan/uitstellen en completere completion-flow.
 - Persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
-- Eventuele pause/nextDue semantics pas definiëren wanneer planner-contract dat nodig heeft.
-
-### UI/polish schuld
-
-- Huidige UI is functionele fundering, niet het definitieve design.
-- Kleine acties/tap-targets moeten minimaal 44x44 worden.
-- Emoji's zijn placeholders; uiteindelijke kamerkaarten volgen de canonieke premium visual spec.
-
-## Eerstvolgende grote milestone - Weekplanner Foundation
-
-De eerstvolgende milestone bouwt geen Task/Agenda-projecties, maar legt eerst de canonieke planninglaag vast:
-
-1. due-semantiek voor routines definiëren - **GEACCEPTEERD OP IPHONE (`aae3e157`)**;
-2. bepalen welke routine-items deze week aandacht vragen - **GEACCEPTEERD OP IPHONE (`ac39b48a`)**;
-3. routine-items per kamer bundelen tot één conceptuele `CleaningOccurrence`/checklist - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
-4. geschatte kamerbelasting berekenen - **GEACCEPTEERD OP IPHONE (`452143aa`)**;
-5. actieve household members en verdelingscontract vastleggen - **GEACCEPTEERD OP IPHONE (`6e0de551`)**;
-6. standaard eerlijk verdelen op geschatte tijd - **GEACCEPTEERD OP IPHONE (`6e0de551`)**;
-7. een conceptweekplan genereren zonder direct Taken of Agenda te schrijven - **GEACCEPTEERD OP IPHONE (`bd282e8`)**;
-8. conceptplan atomair opslaan en realtime tonen in Planning - **GEÏMPLEMENTEERD; acceptatie open**;
-9. nog geen Taken- of Agenda-items aanmaken - **GEBORGD IN CONTRACT EN UI; acceptatie open**;
-10. pas na real-device acceptatie doorgaan naar persoonlijke goedkeuring en projecties.
-
-### Actuele checkpoint binnen Weekplanner Foundation
-
-- Pure `CleaningPlannerContract` toegevoegd; geen Firebase-, Taken-, Agenda- of UI-writes.
-- Halfopen weekvenster voorkomt overlap tussen aangrenzende weken.
-- Inactief, gepauzeerd en ontbrekende `roomId` worden expliciet uitgesloten.
-- Due-bronvolgorde: `nextDueAt`, fallback `lastCompletedAt + intervalDays`, eerste keer via `createdAt` of vensterstart.
-- Overdue en binnen het weekvenster zijn de enige due-kandidaten.
-- Contracttest dekt grenzen, fallbacks en uitsluitingen.
-- Weekkandidatenselector toegevoegd bovenop dezelfde pure contractlaag.
-- Alleen routines met een bestaande actieve kamer worden geselecteerd; routines van soft-deleted kamers worden uitgesloten.
-- Kandidaten worden stabiel gesorteerd op due-moment, prioriteit en routine-ID.
-- Kandidaten worden per kamer tot één immutable conceptuele checklist gebundeld.
-- Totale geschatte minuten zijn exact de som van de gebundelde routine-items.
-- Actieve householdleden worden uitsluitend via hun canonieke UID geselecteerd.
-- `FAIR_TIME` verdeelt grootste kamerbundels eerst naar de laagste minutenbelasting.
-- Eén kamerbundel blijft één ondeelbare voorgestelde toewijzing.
-- De geaccepteerde plannerstappen worden nu puur samengevoegd tot één immutable `DRAFT`-conceptweekplan.
-- Iedere kamerbundel wordt één tijdelijke `occurrenceDraft` met checklist, belasting en voorgestelde UID.
-- Conceptdrafts hebben nog geen plan-/occurrence-ID, planningstijd, approval-record of projectie.
-- Plansamenvatting en uitsluitingsdiagnostiek worden deterministisch uit dezelfde snapshots afgeleid.
-- De nieuwe persistence-grens kent stabiele week- en kamer-ID's toe en schrijft `CleaningPlan` plus `CleaningOccurrence` atomair onder dezelfde cleaning-root.
-- `CleaningPlan` bewaart alleen occurrence-referenties en afgeleide samenvatting; checklist, due-data en voorgestelde assignment staan canoniek op `CleaningOccurrence`.
-- Opnieuw berekenen is alleen toegestaan zolang plan en occurrences `DRAFT` zijn; retries maken geen duplicaten en vervallen draft-occurrences worden atomair `CANCELLED`.
-- Planning toont het concept realtime met weektotalen, householdverdeling en kamerchecklists en schrijft uitsluitend via `CleaningHouseholdRepository`.
-- De huidige weekgrens gebruikt de lokale kalender van het device; een expliciet household-timezonecontract volgt vóór automatische scheduling/completion.
-- Er worden nog geen approval-, Taken- of Agenda-records gemaakt.
+- Definitieve premium visual polish conform `FamilyApp-Schoonmaken-visual-spec.md`.
+- Kleine resterende tap-targets naar minimaal 44x44 waar nodig.
+- Household-key-validatie en create-idempotency later afzonderlijk hardenen; niet combineren met functionele uitbreidingen.
 
 ## Guardrail voor vervolgchats
 
-- Begin vanaf de actuele branch, maar behandel `bd282e8b8a48929e296b982d10fb99955b0eec62` als de laatst door de gebruiker real-device geaccepteerde functionele checkpoint.
-- `main` niet aanraken zonder expliciete acceptatie.
-- Geen grote full-file rewrites voor kleine hardeningwijzigingen.
-- Nieuwe functionele writes in afzonderlijk testbare checkpoints implementeren en iedere stap via unieke Vercel-preview op iPhone laten accepteren; samenhangende verticale checkpoints mogen groter wanneer dat expliciet is afgesproken.
-- `CleaningOccurrence` blijft de enige source of truth voor één concrete schoonmaakbeurt; Taken en Agenda worden later alleen projecties/referenties.
+- Behandel `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
+- Documentatiecommits na dat checkpoint veranderen de functionele acceptatiebasis niet.
+- Werk uitsluitend verder op `agent/household-rebuild-v2` zolang de gebruiker niet expliciet anders zegt.
+- `main` niet aanraken of mergen zonder expliciet verzoek van de gebruiker.
+- `CleaningOccurrence` blijft canonieke source of truth; Taken en Agenda blijven afgeleide projecties.
+- Nieuwe functionele wijzigingen in samenhangende, testbare checkpoints uitvoeren en opnieuw via unieke preview op iPhone laten accepteren.
