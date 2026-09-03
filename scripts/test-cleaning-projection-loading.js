@@ -15,16 +15,16 @@ const projection=read('src/modules/cleaning/cleaningProjectionService.js');
 
 assert.ok(templates.includes("import './cleaningPlanApprovalUi.js?v=1';"));
 assert.ok(templates.includes("import './cleaningRecurringPlanContract.js?v=3';"));
-assert.ok(templates.includes("import './cleaningRoutineExperience.js?v=2';"));
+assert.ok(templates.includes("import './cleaningRoutineExperience.js?v=3';"));
 assert.ok(templates.includes("import './cleaningActivePlanReconciler.js?v=2';"));
 assert.ok(templates.includes("import './cleaningRollingPlannerService.js?v=3';"));
 assert.ok(templates.includes("import './cleaningProjectionService.js?v=3';"));
-assert.ok(templates.indexOf('cleaningRecurringPlanContract.js?v=3') < templates.indexOf('cleaningRoutineExperience.js?v=2'));
-assert.ok(templates.indexOf('cleaningRoutineExperience.js?v=2') < templates.indexOf('cleaningActivePlanReconciler.js?v=2'));
+assert.ok(templates.indexOf('cleaningRecurringPlanContract.js?v=3') < templates.indexOf('cleaningRoutineExperience.js?v=3'));
+assert.ok(templates.indexOf('cleaningRoutineExperience.js?v=3') < templates.indexOf('cleaningActivePlanReconciler.js?v=2'));
 assert.ok(templates.indexOf('cleaningActivePlanReconciler.js?v=2') < templates.indexOf('cleaningRollingPlannerService.js?v=3'));
 assert.ok(templates.indexOf('cleaningRollingPlannerService.js?v=3') < templates.indexOf('cleaningProjectionService.js?v=3'));
 assert.ok(recurring.includes("version:'0.7.0'"),'recurring contract must replace weekly planner generation');
-assert.ok(experience.includes("var VERSION='0.3.0'"));
+assert.ok(experience.includes("var VERSION='0.3.1'"));
 assert.ok(rolling.includes("var VERSION='0.1.2'"));
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'rolling plans may not become their own consent source');
 assert.ok(reconciler.includes("var VERSION='0.1.1'"));
@@ -49,4 +49,4 @@ assert.ok(projection.includes("CustomEvent('familyapp:cleaning-projections'"));
 assert.ok(reconciler.includes("CustomEvent('familyapp:cleaning-plan-reconciled'"));
 assert.ok(rolling.includes("CustomEvent('familyapp:cleaning-rolling-plans'"));
 
-console.log('cleaning rolling runtime order + explicit-consent + single-owner guard: ok');
+console.log('cleaning rolling runtime order + transfer-safe request + single-owner guard: ok');
