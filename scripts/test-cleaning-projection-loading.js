@@ -19,6 +19,8 @@ const sanitizer=read('src/modules/cleaning/cleaningPlanSanitizer.js');
 const approvalClarity=read('src/modules/cleaning/cleaningApprovalClarity.js');
 const rolling=read('src/modules/cleaning/cleaningRollingPlannerService.js');
 const projection=read('src/modules/cleaning/cleaningProjectionService.js');
+const derivedCleanup=read('src/modules/cleaning/cleaningDerivedCleanup.js');
+const shoppingCleanup=read('src/modules/cleaning/cleaningShoppingCleanup.js');
 const executionContract=read('src/modules/cleaning/cleaningExecutionSync.js');
 const executionWriter=read('src/modules/cleaning/cleaningExecutionWriteRuntime.js');
 const executionGuard=read('src/modules/cleaning/cleaningExecutionUiGuard.js');
@@ -38,12 +40,15 @@ assert.ok(templates.includes("import './cleaningPlanSanitizer.js?v=1';"));
 assert.ok(templates.includes("import './cleaningApprovalClarity.js?v=1';"));
 assert.ok(templates.includes("import './cleaningRollingPlannerService.js?v=3';"));
 assert.ok(templates.includes("import './cleaningProjectionService.js?v=4';"));
+assert.ok(templates.includes("import './cleaningDerivedCleanup.js?v=1';"));
+assert.ok(templates.includes("import './cleaningShoppingCleanup.js?v=1';"));
 
 const order=[
   'cleaningRecurringPlanContract.js?v=3','cleaningRoutineExperience.js?v=3','cleaningQuickChoiceFeedback.js?v=2',
   'cleaningRoomListControlsV2.js?v=1','cleaningRoomWorkflowUx.js?v=1','cleaningSupplyExperience.js?v=2',
   'cleaningSupplyDirectManager.js?v=1','cleaningActivePlanReconciler.js?v=2','cleaningPlanSanitizer.js?v=1',
-  'cleaningApprovalClarity.js?v=1','cleaningRollingPlannerService.js?v=3','cleaningProjectionService.js?v=4'
+  'cleaningApprovalClarity.js?v=1','cleaningRollingPlannerService.js?v=3','cleaningProjectionService.js?v=4',
+  'cleaningDerivedCleanup.js?v=1','cleaningShoppingCleanup.js?v=1'
 ];
 for(let i=1;i<order.length;i++)assert.ok(templates.indexOf(order[i-1])<templates.indexOf(order[i]),order[i-1]+' must load before '+order[i]);
 
@@ -107,6 +112,20 @@ assert.ok(approvalClarity.includes('CleaningPlanSanitizer'));
 assert.ok(rolling.includes("var VERSION='0.1.2'"));
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'rolling plans may not become their own consent source');
 
+assert.ok(derivedCleanup.includes("var VERSION='0.1.0'"));
+assert.ok(derivedCleanup.includes('projectionManaged===true'));
+assert.ok(derivedCleanup.includes("updates['tasks/'+key]=null"));
+assert.ok(derivedCleanup.includes("updates['calendarEvents/'+key]=null"));
+assert.ok(!derivedCleanup.includes('MutationObserver'));
+assert.ok(!derivedCleanup.includes('document.'));
+
+assert.ok(shoppingCleanup.includes("var VERSION='0.1.0'"));
+assert.ok(shoppingCleanup.includes("text(item.source).toLowerCase()!=='cleaning'"));
+assert.ok(shoppingCleanup.includes('ShoppingListHouseholdRepository'));
+assert.ok(shoppingCleanup.includes('repo.deleteItem(row.scope,row.listId,row.itemKey)'));
+assert.ok(!shoppingCleanup.includes('MutationObserver'));
+assert.ok(!shoppingCleanup.includes('document.'));
+
 assert.ok(calendarBootstrap.includes("load('src/modules/cleaning/cleaningProjectionService.js?v=4'"));
 assert.ok(calendarBootstrap.includes("load('src/modules/cleaning/cleaningExecutionSync.js?v=2'"));
 assert.ok(calendarBootstrap.includes("load('src/modules/cleaning/cleaningExecutionWriteRuntime.js?v=1'"));
@@ -144,7 +163,7 @@ assert.ok(!taskSupplyUi.includes('.update('),'Task supply presentation may not w
 // decorators may add their own idempotent controls but never rewrite its copy.
 assert.ok(approvalUi.includes('new MutationObserver(queueDecorate)'));
 assert.ok(approvalUi.includes('cleaning-approval-copy'));
-for(const source of [quickChoice,roomControls,roomWorkflow,supplies,supplyManager,sanitizer,approvalClarity,taskSupplyUi]){
+for(const source of [quickChoice,roomControls,roomWorkflow,supplies,supplyManager,sanitizer,approvalClarity,derivedCleanup,shoppingCleanup,taskSupplyUi]){
   assert.ok(!source.includes('cleaning-plan-actions > span'),'secondary Cleaning decorators may not rewrite Planning hero copy');
 }
 assert.ok(!quickChoice.includes('cleaning-approval-copy'));
@@ -154,6 +173,8 @@ assert.ok(!supplies.includes('cleaning-approval-copy'));
 assert.ok(!supplyManager.includes('cleaning-approval-copy'));
 assert.ok(!sanitizer.includes('cleaning-approval-copy'));
 assert.ok(!approvalClarity.includes('cleaning-approval-copy'));
+assert.ok(!derivedCleanup.includes('cleaning-approval-copy'));
+assert.ok(!shoppingCleanup.includes('cleaning-approval-copy'));
 assert.ok(!taskSupplyUi.includes('cleaning-approval-copy'));
 
 assert.ok(projection.includes("var VERSION='0.3.1'"));
@@ -172,6 +193,8 @@ assert.ok(!rolling.includes('document.'));
 assert.ok(projection.includes("CustomEvent('familyapp:cleaning-projections'"));
 assert.ok(reconciler.includes("CustomEvent('familyapp:cleaning-plan-reconciled'"));
 assert.ok(sanitizer.includes("CustomEvent('familyapp:cleaning-plan-sanitized'"));
+assert.ok(derivedCleanup.includes("CustomEvent('familyapp:cleaning-derived-cleanup'"));
+assert.ok(shoppingCleanup.includes("CustomEvent('familyapp:cleaning-shopping-cleanup'"));
 assert.ok(rolling.includes("CustomEvent('familyapp:cleaning-rolling-plans'"));
 
-console.log('cleaning streamlined rooms + direct supplies + stale-plan sanitizer + execution ownership: ok');
+console.log('cleaning streamlined rooms + direct supplies + stale-plan/derived cleanup + execution ownership: ok');
