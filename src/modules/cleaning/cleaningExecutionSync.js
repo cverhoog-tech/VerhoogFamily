@@ -1,27 +1,20 @@
 'use strict';
 // ============================================================
-// CLEANING EXECUTION SYNC v0.1.0
-// Explicit user mutations in Tasks and Calendar are translated back to the
-// canonical CleaningOccurrence aggregate in one household-root transaction.
-// Projection writes bypass these repository wrappers, which prevents loops.
+// CLEANING EXECUTION SYNC CONTRACT v0.2.0
+// Pure translation contract. It contains no Firebase references, listeners,
+// repository wrappers or DOM writes. CleaningExecutionWriteRuntime owns the
+// rule-authorized runtime boundary around these deterministic transitions.
 // ============================================================
 (function(){
-  if(window.CleaningExecutionSync)return;
+  if(window.CleaningExecutionSync&&window.CleaningExecutionSync.version==='0.2.0')return;
 
-  var VERSION='0.1.0';
-  var state={installTimer:null,taskInstalled:false,calendarInstalled:false,inFlight:{},lastResult:null,lastError:null,currentTaskId:null};
+  var VERSION='0.2.0';
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
   var DAY_MS=86400000;
 
   function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(error){return value;}}
   function text(value){return String(value==null?'':value).trim();}
   function safeKey(value){return text(value).replace(INVALID_KEY,'_');}
-  function now(){return Date.now();}
-  function contextSnapshot(){try{return window.HouseholdContext&&window.HouseholdContext.snapshot?window.HouseholdContext.snapshot():null;}catch(error){return null;}}
-  function captureContext(){try{return window.HouseholdContext&&window.HouseholdContext.capture?window.HouseholdContext.capture():null;}catch(error){return null;}}
-  function contextIsCurrent(token){try{return !!(window.HouseholdContext&&window.HouseholdContext.isCurrent&&window.HouseholdContext.isCurrent(token));}catch(error){return false;}}
-  function firebaseDb(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(error){return null;}}
-  function validContext(value){return !!(value&&value.ready===true&&value.uid&&value.householdId);}
   function isIsoDate(value){return /^\d{4}-\d{2}-\d{2}$/.test(text(value));}
   function isTime(value){return value===''||/^([01]\d|2[0-3]):[0-5]\d$/.test(text(value));}
 
@@ -105,15 +98,14 @@
     var date=text(dateValue),time=text(timeValue);
     if(!isIsoDate(date))throw new Error('CLEANING_EXECUTION_DATE_INVALID');
     if(!isTime(time))throw new Error('CLEANING_EXECUTION_TIME_INVALID');
-    var d=date.split('-').map(Number),t=time?time.split(':').map(Number):[0,0];
-    var value=new Date(d[0],d[1]-1,d[2],t[0],t[1],0,0);
-    if(value.getFullYear()!==d[0]||value.getMonth()!==d[1]-1||value.getDate()!==d[2]||value.getHours()!==t[0]||value.getMinutes()!==t[1])throw new Error('CLEANING_EXECUTION_DATE_INVALID');
-    var day=new Date(d[0],d[1]-1,d[2],0,0,0,0);
+    var dateParts=date.split('-').map(Number),timeParts=time?time.split(':').map(Number):[0,0];
+    var value=new Date(dateParts[0],dateParts[1]-1,dateParts[2],timeParts[0],timeParts[1],0,0);
+    if(value.getFullYear()!==dateParts[0]||value.getMonth()!==dateParts[1]-1||value.getDate()!==dateParts[2]||value.getHours()!==timeParts[0]||value.getMinutes()!==timeParts[1])throw new Error('CLEANING_EXECUTION_DATE_INVALID');
+    var day=new Date(dateParts[0],dateParts[1]-1,dateParts[2],0,0,0,0);
     return{date:date,time:time,startAt:value.getTime(),dayStartAt:day.getTime(),dayEndAt:day.getTime()+DAY_MS};
   }
 
   function reopenStatus(row){return Number(row&&row.scheduledStartAt)>0?'SCHEDULED':'FLEXIBLE';}
-
   function completionLogId(occurrenceId,timestamp){return 'completion_'+safeKey(occurrenceId)+'_'+Math.floor(timestamp);}
 
   function updateOccurrenceCompletion(family,entry,actorUid,timestamp,source){
@@ -163,14 +155,12 @@
     if(!arraysEqual(expected.order,supplied.order))throw new Error('CLEANING_EXECUTION_CHECKLIST_STRUCTURE_LOCKED');
     expected.order.forEach(function(key){
       var canonical=expected.map[key],submitted=supplied.map[key];
-      setItemCompleted(canonical.item,!!(submitted&&((submitted.done===true)||(submitted.completed===true))),actorUid,timestamp);
+      setItemCompleted(canonical.item,!!(submitted&&(submitted.done===true||submitted.completed===true)),actorUid,timestamp);
     });
   }
 
   function applyAllCompletion(entries,completed,actorUid,timestamp){
-    entries.forEach(function(entry){
-      (Array.isArray(entry.row.checklist)?entry.row.checklist:[]).forEach(function(item){setItemCompleted(item,completed,actorUid,timestamp);});
-    });
+    entries.forEach(function(entry){(Array.isArray(entry.row.checklist)?entry.row.checklist:[]).forEach(function(item){setItemCompleted(item,completed,actorUid,timestamp);});});
   }
 
   function applySchedule(entries,dateValue,timeValue,actorUid,timestamp,source){
@@ -189,9 +179,7 @@
 
   function canonicalSubtaskState(entries){
     var map={};
-    entries.forEach(function(entry){
-      (Array.isArray(entry.row.checklist)?entry.row.checklist:[]).forEach(function(item,index){map[checklistIdentity(entry.id,item,index)]=item.completed===true;});
-    });
+    entries.forEach(function(entry){(Array.isArray(entry.row.checklist)?entry.row.checklist:[]).forEach(function(item,index){map[checklistIdentity(entry.id,item,index)]=item.completed===true;});});
     return map;
   }
 
@@ -246,7 +234,7 @@
   }
 
   function applyTaskPatchToFamily(input){
-    var source=input||{},family=ensureFamily(source.family),taskId=text(source.taskId),patch=source.patch&&typeof source.patch==='object'?clone(source.patch):{},householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=Number(source.timestamp)||now();
+    var source=input||{},family=ensureFamily(source.family),taskId=text(source.taskId),patch=source.patch&&typeof source.patch==='object'?clone(source.patch):{},householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=Number(source.timestamp)||Date.now();
     var record=findRecord(family.tasks,taskId);
     if(!record||!isCleaningProjection(record.row))return{handled:false,family:family,task:null,occurrenceIds:[]};
     if(record.row.householdId&&text(record.row.householdId)!==householdId)throw new Error('CLEANING_EXECUTION_HOUSEHOLD_CONFLICT');
@@ -274,7 +262,7 @@
   }
 
   function applyCalendarPatchToFamily(input){
-    var source=input||{},family=ensureFamily(source.family),eventId=text(source.eventId),patch=source.patch&&typeof source.patch==='object'?clone(source.patch):{},householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=Number(source.timestamp)||now();
+    var source=input||{},family=ensureFamily(source.family),eventId=text(source.eventId),patch=source.patch&&typeof source.patch==='object'?clone(source.patch):{},householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=Number(source.timestamp)||Date.now();
     var record=findRecord(family.calendarEvents,eventId);
     if(!record||!isCleaningProjection(record.row))return{handled:false,family:family,event:null,occurrenceIds:[]};
     if(record.row.householdId&&text(record.row.householdId)!==householdId)throw new Error('CLEANING_EXECUTION_HOUSEHOLD_CONFLICT');
@@ -289,128 +277,23 @@
     return{handled:true,family:family,event:clone(family.calendarEvents[record.key]),eventKey:record.key,occurrenceIds:ids.slice(),schedule:schedule};
   }
 
-  function requireWriteContext(){
-    var ctx=contextSnapshot(),database=firebaseDb(),token=captureContext();
-    if(!validContext(ctx))throw new Error('ACTIVE_HOUSEHOLD_REQUIRED');
-    if(!database)throw new Error('FIREBASE_DATABASE_UNAVAILABLE');
-    if(!token||!contextIsCurrent(token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED');
-    return{ctx:ctx,database:database,token:token};
-  }
-
-  function transactionKey(kind,id){return kind+'|'+text(id);}
-
-  function transact(kind,id,patch){
-    var write;try{write=requireWriteContext();}catch(error){return Promise.reject(error);}
-    var key=transactionKey(kind,id);
-    if(state.inFlight[key])return state.inFlight[key];
-    var transition=null,transitionError=null,timestamp=now(),ref=write.database.ref('families/'+write.ctx.householdId);
-    var work=ref.transaction(function(serverFamily){
-      if(!contextIsCurrent(write.token)){transitionError=new Error('HOUSEHOLD_CONTEXT_CHANGED');return;}
-      try{
-        transitionError=null;
-        transition=kind==='task'
-          ?applyTaskPatchToFamily({family:serverFamily||{},taskId:id,patch:patch,householdId:write.ctx.householdId,actorUid:write.ctx.uid,timestamp:timestamp})
-          :applyCalendarPatchToFamily({family:serverFamily||{},eventId:id,patch:patch,householdId:write.ctx.householdId,actorUid:write.ctx.uid,timestamp:timestamp});
-        if(!transition.handled){transitionError=new Error('CLEANING_EXECUTION_PROJECTION_NOT_FOUND');return;}
-        return transition.family;
-      }catch(error){transitionError=error;return;}
-    }).then(function(result){
-      if(transitionError)throw transitionError;
-      if(!contextIsCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
-      if(!result||result.committed!==true||!transition)throw new Error('CLEANING_EXECUTION_WRITE_NOT_COMMITTED');
-      state.lastResult={kind:kind,id:text(id),occurrenceIds:transition.occurrenceIds||[],timestamp:timestamp};state.lastError=null;
-      try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-execution-synced',{detail:clone(state.lastResult)}));}catch(error){}
-      return kind==='task'?transition.task:transition.event;
-    }).catch(function(error){state.lastError=error&&error.message||String(error);throw error;}).finally(function(){delete state.inFlight[key];});
-    state.inFlight[key]=work;
-    return work;
-  }
-
-  function localTask(id){
-    var repo=window.TaskHouseholdRepository||window.TaskRepository;
-    try{var rows=repo&&repo.list?repo.list():window.taskData||[];for(var i=0;i<rows.length;i++)if(text(rows[i]&&(rows[i].id||rows[i]._key))===text(id)||text(rows[i]&&rows[i]._key)===text(id))return rows[i];}catch(error){}
-    return null;
-  }
-
-  function localEvent(id){
-    var repo=window.CalendarEventHouseholdRepository||window.CalendarEventRepository;
-    try{return repo&&repo.get?repo.get(id):null;}catch(error){return null;}
-  }
-
   function userMessage(error){
     var code=text(error&&error.message||error);
     if(code.indexOf('CHECKLIST_STRUCTURE_LOCKED')>=0)return'Schoonmaakstappen voeg je toe of verwijder je via Schoonmaken → Kamers.';
     if(code.indexOf('DATE_INVALID')>=0)return'Kies een geldige datum.';
     if(code.indexOf('TIME_INVALID')>=0)return'Kies een geldige tijd.';
+    if(code.indexOf('PERMISSION_DENIED')>=0||code.toLowerCase().indexOf('permission')>=0)return'Deze schoonmaakwijziging is niet toegestaan voor het actieve huishouden.';
     return code||'Schoonmaakwijziging kon niet worden opgeslagen.';
   }
 
-  function installTaskRepository(){
-    var repo=window.TaskHouseholdRepository||window.TaskRepository;
-    if(!repo||typeof repo.updateOne!=='function'||typeof repo.remove!=='function')return false;
-    if(repo.updateOne.__cleaningExecutionSync){state.taskInstalled=true;return true;}
-    var rawUpdate=repo.updateOne.bind(repo),rawRemove=repo.remove.bind(repo);
-    var wrappedUpdate=function(id,patch){var row=localTask(id);if(!isCleaningProjection(row))return rawUpdate(id,patch||{});return transact('task',id,patch||{}).catch(function(error){throw new Error(userMessage(error));});};
-    wrappedUpdate.__cleaningExecutionSync=true;wrappedUpdate.__raw=rawUpdate;repo.updateOne=wrappedUpdate;
-    var wrappedRemove=function(id){var row=localTask(id);if(!isCleaningProjection(row))return rawRemove(id);var error=new Error('Schoonmaaktaak verwijderen kan niet via Taken. Verwijder of pauzeer de routine bij Schoonmaken.');if(typeof window.showToast==='function')window.showToast(error.message);return Promise.resolve(false);};
-    wrappedRemove.__cleaningExecutionSync=true;wrappedRemove.__raw=rawRemove;repo.remove=wrappedRemove;
-    state.taskInstalled=true;return true;
-  }
-
-  function installCalendarRepository(){
-    var repo=window.CalendarEventHouseholdRepository||window.CalendarEventRepository;
-    if(!repo||typeof repo.updateOne!=='function'||typeof repo.remove!=='function')return false;
-    if(repo.updateOne.__cleaningExecutionSync){state.calendarInstalled=true;return true;}
-    var rawUpdate=repo.updateOne.bind(repo),rawRemove=repo.remove.bind(repo);
-    var wrappedUpdate=function(id,patch){var row=localEvent(id);if(!isCleaningProjection(row))return rawUpdate(id,patch||{});return transact('calendar',id,patch||{}).catch(function(error){throw new Error(userMessage(error));});};
-    wrappedUpdate.__cleaningExecutionSync=true;wrappedUpdate.__raw=rawUpdate;repo.updateOne=wrappedUpdate;
-    var wrappedRemove=function(id){var row=localEvent(id);if(!isCleaningProjection(row))return rawRemove(id);return Promise.reject(new Error('Schoonmaakafspraak verwijderen kan niet via Agenda. Pas de routine of planning aan bij Schoonmaken.'));};
-    wrappedRemove.__cleaningExecutionSync=true;wrappedRemove.__raw=rawRemove;repo.remove=wrappedRemove;
-    state.calendarInstalled=true;return true;
-  }
-
-  function installTaskPopupGuard(){
-    var popup=window.TaskDetailPopup;
-    if(!popup||typeof popup.open!=='function'||popup.open.__cleaningExecutionSync)return false;
-    var rawOpen=popup.open;
-    popup.open=function(id){state.currentTaskId=text(id);return rawOpen.apply(this,arguments);};
-    popup.open.__cleaningExecutionSync=true;popup.open.__raw=rawOpen;
-    return true;
-  }
-
-  function onDocumentClick(event){
-    var target=event.target&&event.target.closest?event.target.closest('#tdp-delete-btn'):null;
-    if(!target)return;
-    var task=localTask(state.currentTaskId);
-    if(!isCleaningProjection(task))return;
-    event.preventDefault();event.stopPropagation();if(event.stopImmediatePropagation)event.stopImmediatePropagation();
-    if(typeof window.showToast==='function')window.showToast('Schoonmaaktaak verwijderen kan niet via Taken. Pas de routine aan bij Schoonmaken.');
-  }
-
-  function install(){
-    installTaskRepository();installCalendarRepository();installTaskPopupGuard();
-    return state.taskInstalled&&state.calendarInstalled;
-  }
-
-  function start(){
-    install();
-    if(state.installTimer)return;
-    var tries=0;state.installTimer=window.setInterval(function(){tries++;if(install()||tries>600){window.clearInterval(state.installTimer);state.installTimer=null;}},100);
-  }
-
-  function stop(){if(state.installTimer){window.clearInterval(state.installTimer);state.installTimer=null;}state.inFlight={};}
-
-  if(document&&document.addEventListener)document.addEventListener('click',onDocumentClick,true);
-  window.CleaningExecutionSync={
-    version:VERSION,start:start,stop:stop,status:function(){return clone({version:VERSION,taskInstalled:state.taskInstalled,calendarInstalled:state.calendarInstalled,inFlight:Object.keys(state.inFlight),lastResult:state.lastResult,lastError:state.lastError});},
+  window.CleaningExecutionSync=Object.freeze({
+    version:VERSION,
     userMessage:userMessage,
     _isCleaningProjection:isCleaningProjection,
     _applyTaskPatchToFamily:applyTaskPatchToFamily,
     _applyCalendarPatchToFamily:applyCalendarPatchToFamily,
-    _recordOccurrenceIds:recordOccurrenceIds
-  };
-  window.addEventListener('familyapp:task-repository',install);
-  window.addEventListener('familyapp:calendar-repository',install);
-  window.addEventListener('familyapp:household-context',install);
-  start();
+    _recordOccurrenceIds:recordOccurrenceIds,
+    _localDateParts:localDateParts,
+    _completionLogId:completionLogId
+  });
 })();
