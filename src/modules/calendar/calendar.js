@@ -6,12 +6,16 @@
 //
 // STEP 6 calendar order is deliberate:
 // legacy UI -> canonical repository -> premium decoration -> compatibility
-// facade -> virtual MealPlan projection -> per-user Google sync.
+// facade -> Cleaning execution sync -> virtual MealPlan projection ->
+// per-user Google sync.
 //
 // CalendarSharedLive MUST load after CalendarPremiumUi because both touch the
-// legacy add-sheet globals. FinanceSavingsInteraction then wraps the final
-// add-sheet owner so special Finance sheets bypass the generic f1 guard while
-// calendar submissions still flow through CalendarSharedLive.
+// legacy add-sheet globals. CleaningExecutionSync loads after both canonical
+// Task and Calendar repositories and wraps only explicit user mutations; raw
+// projection writes bypass it to prevent synchronization loops.
+// FinanceSavingsInteraction then wraps the final add-sheet owner so special
+// Finance sheets bypass the generic f1 guard while calendar submissions still
+// flow through CalendarSharedLive.
 //
 // STEP 8 Analysis order is deliberate:
 // FinanceAnalysisEngine -> FinanceAnalysisUI v2 -> FinanceNativeTabs ->
@@ -43,19 +47,21 @@
                 load('src/modules/calendar/calendarEventHouseholdRepository.js?v=2', function(){
                   load('src/modules/calendar/calendarPremiumUi.js?v=3', function(){
                     load('src/modules/calendar/calendarSharedLive.js?v=6', function(){
-                      load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
-                        load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
-                          load('src/modules/finance/financeAnalysisUiV2.js?v=2', function(){
-                            load('src/modules/finance/financeNativeTabs.js?v=348', function(){
-                              if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
-                              load('src/modules/finance/financeAnalysisRuntimeGuard.js?v=1', function(){
-                                load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
-                                  load('src/modules/finance/financeAnalysisExport.js?v=1', function(){
-                                    load('src/modules/finance/financeAnalysisPolish.js?v=1', function(){
-                                      load('src/modules/finance/financeAnalysisAdvisor.js?v=1', function(){
-                                        if(window.FinanceAnalysisAdvisor&&FinanceAnalysisAdvisor.install)FinanceAnalysisAdvisor.install();
-                                        load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                                          load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                      load('src/modules/cleaning/cleaningExecutionSync.js?v=1', function(){
+                        load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
+                          load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
+                            load('src/modules/finance/financeAnalysisUiV2.js?v=2', function(){
+                              load('src/modules/finance/financeNativeTabs.js?v=348', function(){
+                                if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
+                                load('src/modules/finance/financeAnalysisRuntimeGuard.js?v=1', function(){
+                                  load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
+                                    load('src/modules/finance/financeAnalysisExport.js?v=1', function(){
+                                      load('src/modules/finance/financeAnalysisPolish.js?v=1', function(){
+                                        load('src/modules/finance/financeAnalysisAdvisor.js?v=1', function(){
+                                          if(window.FinanceAnalysisAdvisor&&FinanceAnalysisAdvisor.install)FinanceAnalysisAdvisor.install();
+                                          load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                                            load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                                          });
                                         });
                                       });
                                     });
