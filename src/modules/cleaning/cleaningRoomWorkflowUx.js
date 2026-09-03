@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CLEANING ROOM WORKFLOW UX v0.1.0
+// CLEANING ROOM WORKFLOW UX v0.1.1
 // Presentation-only simplification around the canonical Cleaning screen.
 // - room type comes first; standard room names are optional
 // - an omitted standard name resolves to the room type label
@@ -12,7 +12,7 @@
 (function(){
   if(window.CleaningRoomWorkflowUx)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.1.1';
   var LABELS={
     'living-room':'Woonkamer',kitchen:'Keuken',bathroom:'Badkamer',toilet:'Toilet',bedroom:'Slaapkamer',
     'kids-room':'Kinderkamer',hall:'Hal',laundry:'Wasruimte',outdoor:'Balkon / tuin',custom:'Eigen ruimte'
@@ -49,7 +49,8 @@
     if(label)label.textContent=type==='custom'?'Naam':'Naam (optioneel)';name.placeholder=type==='custom'?'Bijv. Kantoor of Hobbykamer':'Optioneel · bijv. '+roomLabel(type)+' boven';
     if(nameField&&!help){help=document.createElement('small');help.className='cleaning-room-name-help';help.setAttribute('data-cleaning-room-name-help','1');nameField.appendChild(help);}
     if(help)help.textContent=type==='custom'?'Bij een Eigen ruimte is een naam nodig.':'Laat leeg en we gebruiken automatisch “'+roomLabel(type)+'”.';
-    if(!form.getAttribute('data-cleaning-room-id')&&state.lastCreateForm!==form){state.lastCreateForm=form;window.setTimeout(function(){try{if(document.activeElement===name||!document.activeElement||document.activeElement===document.body)select.focus();}catch(error){}},0);}
+    var editing=!!form.querySelector('[data-cleaning-room-delete-open],[data-cleaning-room-delete-confirm]');
+    if(!editing&&state.lastCreateForm!==form){state.lastCreateForm=form;window.setTimeout(function(){try{if(document.activeElement===name||!document.activeElement||document.activeElement===document.body)select.focus();}catch(error){}},0);}
   }
 
   function originalAction(item,action){
