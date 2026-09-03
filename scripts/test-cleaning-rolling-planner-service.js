@@ -29,18 +29,19 @@ const currentPlanId='week_'+start+'_'+end;
 const root={
   rooms:{kitchen:{id:'kitchen',name:'Keuken',active:true,distributionMode:'FAIR_TIME'}},
   routines:{
-    ongoing:{id:'ongoing',roomId:'kitchen',title:'Werkblad',intervalDays:2,estimatedMinutes:10,priority:'NORMAL',active:true,createdAt:start,repeatScope:'ONGOING',assignmentMode:'FIXED_PERSON',assignmentRequestStatus:'ACCEPTED',preferredAssigneeUid:'u1'},
-    thisWeek:{id:'thisWeek',roomId:'kitchen',title:'Eenmalige poetsbeurt',intervalDays:1,estimatedMinutes:5,priority:'NORMAL',active:true,createdAt:start,repeatScope:'THIS_WEEK',repeatScopeWeekStartAt:start,repeatScopeWeekEndAt:end,assignmentMode:'FIXED_PERSON',assignmentRequestStatus:'ACCEPTED',preferredAssigneeUid:'u2'}
+    ongoing:{id:'ongoing',roomId:'kitchen',title:'Werkblad',intervalDays:2,estimatedMinutes:10,priority:'NORMAL',active:true,createdAt:start,repeatScope:'ONGOING',assignmentMode:'AUTO',assignmentRequestStatus:'AUTO'},
+    thisWeek:{id:'thisWeek',roomId:'kitchen',title:'Eenmalige poetsbeurt',intervalDays:1,estimatedMinutes:5,priority:'NORMAL',active:true,createdAt:start,repeatScope:'THIS_WEEK',repeatScopeWeekStartAt:start,repeatScopeWeekEndAt:end,assignmentMode:'FIXED_PERSON',assignmentRequestStatus:'ACCEPTED',preferredAssigneeUid:'u2'},
+    unapproved:{id:'unapproved',roomId:'kitchen',title:'Nog niet geaccepteerd',intervalDays:2,estimatedMinutes:7,priority:'NORMAL',active:true,createdAt:start,repeatScope:'ONGOING',assignmentMode:'AUTO',assignmentRequestStatus:'AUTO'}
   },
   plans:{[currentPlanId]:{id:currentPlanId,householdId:hid,status:'ACTIVE',windowStartAt:start,windowEndAt:end,occurrenceIds:['current-occ']}},
   occurrences:{
-    'current-occ':{id:'current-occ',householdId:hid,planId:currentPlanId,roomId:'kitchen',slotAt:start,status:'FLEXIBLE',assignmentStatus:'ACTIVE',assignmentUids:['u1'],routineItemIds:['ongoing'],checklist:[{id:'ongoing',routineItemId:'ongoing',title:'Werkblad',estimatedMinutes:10,dueAt:start,dueState:'DUE_IN_WINDOW',completed:false}]}
+    'current-occ':{id:'current-occ',householdId:hid,planId:currentPlanId,roomId:'kitchen',slotAt:start,status:'COMPLETED',assignmentStatus:'COMPLETED',assignmentUids:['u1'],routineItemIds:['ongoing'],checklist:[{id:'ongoing',routineItemId:'ongoing',title:'Werkblad',estimatedMinutes:10,dueAt:start,dueState:'DUE_IN_WINDOW',completed:true}]}
   },
   approvals:{}
 };
 
 const first=rolling._reconcileRoot({root,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
-assert.strictEqual(rolling.version,'0.1.0');
+assert.strictEqual(rolling.version,'0.1.1');
 assert.strictEqual(first.changed,true);
 assert.strictEqual(first.planIds.length,2);
 
@@ -58,6 +59,7 @@ assert.strictEqual(followingPlan.occurrenceIds.length,4,'the following week cont
 assert.deepStrictEqual(Array.from(followingPlan.occurrenceIds).map((id)=>first.root.occurrences[id].slotAt),[end+7*DAY,end+9*DAY,end+11*DAY,end+13*DAY]);
 assert.ok(nextPlan.occurrenceIds.every((id)=>first.root.occurrences[id].assignmentUids[0]==='u1'));
 assert.ok(!Object.values(first.root.occurrences).some((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('thisWeek')&&Number(row.slotAt)>=end),'THIS_WEEK routine must not leak into rolling plans');
+assert.ok(!Object.values(first.root.occurrences).some((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('unapproved')&&Number(row.slotAt)>=end),'an ongoing routine without accepted standing assignment must not silently create future work');
 assert.strictEqual(first.root.approvals.u1[nextPlanId].status,'ACCEPTED');
 assert.strictEqual(first.root.approvals.u1[nextPlanId].standingRoutineConsent,true);
 
@@ -65,4 +67,4 @@ const second=rolling._reconcileRoot({root:first.root,householdId:hid,actorUid:'u
 assert.strictEqual(second.changed,false,'rolling horizon reconciliation must be idempotent');
 assert.strictEqual(second.reason,'ALREADY_CURRENT');
 
-console.log('cleaning rolling four-week planner: ok');
+console.log('cleaning rolling four-week planner with accepted consent: ok');
