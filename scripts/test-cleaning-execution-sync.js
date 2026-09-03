@@ -5,17 +5,14 @@ const path=require('path');
 const vm=require('vm');
 
 const source=fs.readFileSync(path.join(__dirname,'..','src','modules','cleaning','cleaningExecutionSync.js'),'utf8');
-const context={
-  console,Date,
-  setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{},
-  addEventListener:()=>{},dispatchEvent:()=>{},CustomEvent:function(name,opts){this.type=name;this.detail=opts&&opts.detail;},
-  document:{addEventListener:()=>{},getElementById:()=>null,documentElement:{},body:{}},
-  requestAnimationFrame:(fn)=>{fn();return 1;}
-};
+const context={console,Date};
 context.window=context;
 vm.runInNewContext(source,context,{filename:'cleaningExecutionSync.js'});
 const sync=context.CleaningExecutionSync;
-assert.strictEqual(sync.version,'0.1.0');
+assert.strictEqual(sync.version,'0.2.0');
+assert.ok(!source.includes('firebase.database'));
+assert.ok(!source.includes('.transaction('));
+assert.ok(!source.includes('addEventListener'));
 
 const hid='family-1';
 const planId='week-1';
@@ -57,10 +54,7 @@ assert.strictEqual(family.tasks.group.progress,50);
 assert.strictEqual(family.tasks.group.subtasks[0].icon,'🧽');
 assert.strictEqual(Object.keys(family.cleaning.completionLogs).length,1);
 
-result=sync._applyTaskPatchToFamily({
-  family,taskId:'task-group',householdId:hid,actorUid:'u1',timestamp:baseTime+2000,
-  patch:{subtasks:family.tasks.group.subtasks}
-});
+result=sync._applyTaskPatchToFamily({family,taskId:'task-group',householdId:hid,actorUid:'u1',timestamp:baseTime+2000,patch:{subtasks:family.tasks.group.subtasks}});
 family=result.family;
 assert.strictEqual(Object.keys(family.cleaning.completionLogs).length,1,'same state must not create another completion log');
 
@@ -117,4 +111,4 @@ assert.strictEqual(plainTask.handled,false);
 assert.strictEqual(sync._isCleaningProjection({id:'x'}),false);
 assert.strictEqual(sync._isCleaningProjection(family.tasks.group),true);
 
-console.log('cleaning Task/Calendar reverse execution sync: ok');
+console.log('cleaning pure Task/Calendar execution contract: ok');
