@@ -1,14 +1,16 @@
 import './cleaningPlanApprovalUi.js?v=1';
-import './cleaningRecurringPlanContract.js?v=1';
+import './cleaningRecurringPlanContract.js?v=2';
+import './cleaningRoutineExperience.js?v=1';
 import './cleaningActivePlanReconciler.js?v=1';
-import './cleaningProjectionService.js?v=2';
+import './cleaningRollingPlannerService.js?v=1';
+import './cleaningProjectionService.js?v=3';
 
 // ============================================================
-// CLEANING ROUTINE TEMPLATES v0.1.3
+// CLEANING ROUTINE TEMPLATES v0.1.4
 // Static suggestions only. Once selected, a template becomes a
 // normal CleaningRoutineItem and is fully editable by the household.
-// Side-effect imports load recurring planning, approvals, active-plan
-// reconciliation and Task/Calendar projections in a stable order.
+// Side-effect imports load approvals, recurring planning, assignment requests,
+// rolling future plans and grouped Task/Calendar projections in stable order.
 // ============================================================
 
 const PRESETS = Object.freeze({
@@ -86,4 +88,4 @@ export function routineTemplatesForRoomType(roomType){
   return PRESETS[key] || PRESETS.custom;
 }
 
-export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.1.3';
+export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.1.4';
