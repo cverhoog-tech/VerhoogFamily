@@ -2,8 +2,8 @@
 // ============================================================
 // CLEANING APPROVAL CLARITY v0.1.0
 // Adds one explicit status banner and a safe "Planning vernieuwen" action to
-// the canonical approval panel. It does NOT rewrite .cleaning-approval-copy or
-// any occurrence-card content owned by CleaningPlanApprovalUi.
+// the canonical approval panel. It never rewrites the canonical approval text
+// or any occurrence-card content owned by CleaningPlanApprovalUi.
 // ============================================================
 (function(){
   if(window.CleaningApprovalClarity)return;
