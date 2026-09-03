@@ -12,6 +12,7 @@
     tasks:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="m4 6 1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
     cart:'<path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.5L21 7H6"/><circle cx="10" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/>',
     chat:'<path d="M5 18.5 3.5 21l4.2-1.2A9 9 0 1 0 5 18.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>',
+    cleaning:'<path d="m6.2 18.5 6.7-6.7M11.7 13l4.8 4.8M13.4 8.6l2-2 2.8 2.8-2 2"/><path d="m4 20 3.2-1.2 1.7-1.7-2-2L5.2 17 4 20Z"/><path d="M15.5 6.5 18 4"/>',
     recipes:'<path d="M7 4h10v16H7z"/><path d="M10 4v16M13.5 8.5c1.9-2.6 4.3-1.6 3.3.4-.7 1.4-2.1 2-3.3 2.4"/>',
     calendar:'<rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M7 2.8v4.5M17 2.8v4.5M3.5 9.5h17"/><path d="m8.5 15 2.2 2.2 4.8-5"/>',
     meals:'<path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 2 3 7 0 9"/>',
@@ -125,9 +126,47 @@ function spawnParticles(el) {
   setTimeout(function(){r.remove();},500);
 }
 
+// Home only surfaces work that actually needs attention now. Dates are compared
+// as local YYYY-MM-DD values so late-evening users do not roll into tomorrow
+// because of UTC conversion. Undated work intentionally stays out of the Home
+// counter: the tile represents overdue + today, not the full backlog.
+function homeLocalTodayIso(dateValue){
+  var d=dateValue instanceof Date?dateValue:new Date();
+  var m=d.getMonth()+1,day=d.getDate();
+  return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(day<10?'0':'')+day;
+}
+function homeTaskDueIso(task){
+  var raw=task&&(task.dueDate||task.date)||'';
+  var value=String(raw||'').trim();
+  var match=value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match?match[1]:'';
+}
+function homeTaskIsOpen(task){
+  if(!task||typeof task!=='object')return false;
+  if(task.done===true)return false;
+  var status=String(task.status||'').toUpperCase();
+  return status!=='DONE'&&status!=='COMPLETED'&&status!=='CANCELLED'&&status!=='SKIPPED';
+}
+function homeTaskNeedsAttention(task,today){
+  if(!homeTaskIsOpen(task))return false;
+  var due=homeTaskDueIso(task);
+  return !!(due&&due<=String(today||homeLocalTodayIso()));
+}
+function homeTaskIsCleaningProjection(task){
+  if(!task||typeof task!=='object')return false;
+  var source=String(task.sourceType||'');
+  if(source.indexOf('cleaning-occurrence')===0)return true;
+  if(task.projectionManaged===true&&(task.cleaningOccurrenceId||(Array.isArray(task.cleaningOccurrenceIds)&&task.cleaningOccurrenceIds.length)))return true;
+  return false;
+}
+
 function updateStats() {
   var el;
-  el=document.getElementById('stat-tasks');if(el)el.textContent=taskData.filter(function(t){return !t.done;}).length;
+  var today=homeLocalTodayIso();
+  var tasks=Array.isArray(taskData)?taskData:[];
+  var actionable=tasks.filter(function(t){return homeTaskNeedsAttention(t,today);});
+  el=document.getElementById('stat-tasks');if(el)el.textContent=actionable.length;
+  el=document.getElementById('stat-cleaning');if(el)el.textContent=actionable.filter(homeTaskIsCleaningProjection).length;
   el=document.getElementById('stat-shop');if(el)el.textContent=(window.ShoppingListStore&&typeof window.ShoppingListStore.projection==='function')?window.ShoppingListStore.projection().openCount:0;
   el=document.getElementById('stat-feed');if(el)el.textContent=feedData.length;
 }
