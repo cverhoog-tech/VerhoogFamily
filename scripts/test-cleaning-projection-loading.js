@@ -52,7 +52,7 @@ assert.ok(roomControls.includes('sortOrder'));
 assert.ok(roomControls.includes('data-order-signature'),'room decorator must be mutation-loop safe');
 assert.ok(supplies.includes("var VERSION='0.1.1'"));
 assert.ok(supplies.includes('data-cleaning-room-supplies'));
-assert.ok(supplies.includes('data-cleaning-supply-form-signature'),'supply form must refresh selection state without duplicating its DOM');
+assert.ok(supplies.includes('data-supply-form-signature'),'supply form must refresh selection state without duplicating its DOM');
 assert.ok(supplies.includes('ShoppingListStore'));
 assert.ok(supplies.includes('{dedupe:true}'));
 assert.ok(supplies.includes('__routineExperienceV3'),'supplies must wrap the final routine persistence owner');
