@@ -1,14 +1,15 @@
 'use strict';
 // ============================================================
-// CLEANING PROJECTION SERVICE v0.2.0
-// Projects ACTIVE CleaningOccurrences to canonical Tasks and Calendar events.
+// CLEANING PROJECTION SERVICE v0.3.0
+// Projects canonical CleaningOccurrences to canonical Tasks and Calendar.
 // Occurrences for the same room, day and assignee share one projection card.
-// CleaningOccurrence remains the source of truth.
+// Completed occurrences remain visible as completed projections; Task state is
+// never read back as projection authority. CleaningOccurrence is the source.
 // ============================================================
 (function(){
   if(window.CleaningProjectionService)return;
 
-  var VERSION='0.2.0';
+  var VERSION='0.3.0';
   var state={unsubscribe:null,attachTimer:null,inFlight:{},lastError:null,lastResult:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -71,20 +72,15 @@
     return Object.keys(source).map(function(key){var row=source[key];if(!row||typeof row!=='object')return null;var ids=recordOccurrenceIds(row);return intersects(ids,occurrenceLookup)?{key:key,row:row,id:isCalendar?eventIdentity(row,key):taskIdentity(row,key),occurrenceIds:ids}:null;}).filter(Boolean);
   }
 
-  function completionLookup(records){
-    var out={};
-    records.forEach(function(record){(Array.isArray(record.row&&record.row.subtasks)?record.row.subtasks:[]).forEach(function(item){var id=text(item&&item.sourceRoutineItemId||item&&item.routineItemId||item&&item.id);if(id)out[id]=out[id]||!!(item.done||item.completed);});});
-    return out;
-  }
-
-  function mergedSubtasks(entries,records){
-    var completed=completionLookup(records),seen={},out=[];
+  function mergedSubtasks(entries){
+    var seen={},out=[];
     entries.forEach(function(entry){
       (Array.isArray(entry.occurrence.checklist)?entry.occurrence.checklist:[]).forEach(function(item,index){
         var routineId=text(item&&(item.routineItemId||item.id))||('item_'+index),key=routineId;
         if(seen[key])key=entry.id+'__'+routineId;
         seen[key]=true;
-        out.push({id:safeKey(key),title:text(item&&item.title)||'Schoonmaakonderdeel',done:!!(item&&item.completed)||!!completed[routineId],completed:!!(item&&item.completed)||!!completed[routineId],sourceRoutineItemId:routineId,cleaningOccurrenceId:entry.id,estimatedMinutes:Number(item&&item.estimatedMinutes)||0,priority:text(item&&item.priority)||'NORMAL'});
+        var completed=!!(item&&item.completed);
+        out.push({id:safeKey(key),title:text(item&&item.title)||'Schoonmaakonderdeel',done:completed,completed:completed,sourceRoutineItemId:routineId,cleaningOccurrenceId:entry.id,estimatedMinutes:Number(item&&item.estimatedMinutes)||0,priority:text(item&&item.priority)||'NORMAL'});
       });
     });
     return out;
@@ -102,10 +98,10 @@
   function stableTask(row){
     return{title:row.title,description:row.description,date:row.date,dueDate:row.dueDate,time:row.time,assignedToUid:row.assignedToUid,assignedToUids:row.assignedToUids,who:row.who,priority:row.priority,prio:row.prio,subtasks:row.subtasks,done:row.done,status:row.status,progress:row.progress,cleaningOccurrenceIds:row.cleaningOccurrenceIds,projectionGroupKey:row.projectionGroupKey,projectionVersion:row.projectionVersion};
   }
-  function stableEvent(row){return{title:row.title,date:row.date,time:row.time,description:row.description,who:row.who,assignedToUid:row.assignedToUid,flexible:row.flexible,cleaningOccurrenceIds:row.cleaningOccurrenceIds,projectionGroupKey:row.projectionGroupKey,projectionVersion:row.projectionVersion};}
+  function stableEvent(row){return{title:row.title,date:row.date,time:row.time,description:row.description,who:row.who,assignedToUid:row.assignedToUid,flexible:row.flexible,completed:row.completed,cleaningOccurrenceIds:row.cleaningOccurrenceIds,projectionGroupKey:row.projectionGroupKey,projectionVersion:row.projectionVersion};}
 
   function desiredTask(group,target,records,householdId,actorUid,timestamp,memberRows,cleaning){
-    var subtasks=mergedSubtasks(group.entries,records),allDone=subtasks.length>0&&subtasks.every(function(item){return item.done;}),doneCount=subtasks.filter(function(item){return item.done;}).length;
+    var subtasks=mergedSubtasks(group.entries),allDone=subtasks.length>0&&subtasks.every(function(item){return item.done;}),doneCount=subtasks.filter(function(item){return item.done;}).length;
     var minutes=group.entries.reduce(function(sum,entry){return sum+(Number(entry.occurrence.estimatedMinutes)||0);},0),existing=target&&target.row||{};
     var id=target&&target.id||group.desiredId,key=target&&target.key||id,display=memberName(group.uid,memberRows),room=roomName(cleaning,group.roomId);
     return Object.assign({},clone(existing),{
@@ -113,21 +109,21 @@
       description:subtasks.length+' '+(subtasks.length===1?'routine':'routines')+' · '+minutes+' min',date:group.date,dueDate:group.date,time:group.time,
       assignedToUid:group.uid,assignedToUids:(function(){var out={};out[group.uid]=true;return out;})(),who:[display],xpReward:'+10 XP',xp:'+10 XP',
       priority:priorityForOccurrences(group.entries),prio:priorityForOccurrences(group.entries),recurrence:'once',repeat:'once',subtasks:subtasks,helpers:Array.isArray(existing.helpers)?existing.helpers:[],
-      progress:subtasks.length?Math.round(doneCount/subtasks.length*100):Number(existing.progress)||0,done:allDone||!!existing.done,status:allDone||existing.done?'done':'open',
+      progress:subtasks.length?Math.round(doneCount/subtasks.length*100):0,done:allDone,status:allDone?'done':'open',
       sourceType:group.entries.length>1?'cleaning-occurrence-group':'cleaning-occurrence',sourceId:group.entries[0].id,sourceIds:group.ids.slice(),cleaningOccurrenceId:group.entries[0].id,cleaningOccurrenceIds:group.ids.slice(),
-      cleaningPlanId:group.planId,projectionManaged:true,projectionGroupKey:group.key,projectionVersion:2,
+      cleaningPlanId:group.planId,projectionManaged:true,projectionGroupKey:group.key,projectionVersion:3,
       createdAt:Number(existing.createdAt)||minCreatedAt(records,timestamp),createdByUid:text(existing.createdByUid)||firstCreatedBy(records,actorUid),updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:3
     });
   }
 
   function desiredEvent(group,target,records,householdId,actorUid,timestamp,memberRows,cleaning){
-    var existing=target&&target.row||{},minutes=group.entries.reduce(function(sum,entry){return sum+(Number(entry.occurrence.estimatedMinutes)||0);},0),titles=mergedSubtasks(group.entries,records).map(function(item){return item.title;}),display=memberName(group.uid,memberRows),room=roomName(cleaning,group.roomId);
+    var existing=target&&target.row||{},minutes=group.entries.reduce(function(sum,entry){return sum+(Number(entry.occurrence.estimatedMinutes)||0);},0),subtasks=mergedSubtasks(group.entries),titles=subtasks.map(function(item){return item.title;}),allDone=subtasks.length>0&&subtasks.every(function(item){return item.done;}),display=memberName(group.uid,memberRows),room=roomName(cleaning,group.roomId);
     var id=target&&target.id||group.desiredId,key=target&&target.key||calendarKey(id);
     return Object.assign({},clone(existing),{
       id:id,_key:key,householdId:householdId,title:'Schoonmaken · '+room,date:group.date,time:group.time,
-      description:(group.flexible?'Flexibel. ':'')+minutes+' min'+(titles.length?' · '+titles.join(', '):''),color:existing.color||'#7c3aed',who:display,assignedToUid:group.uid,flexible:group.flexible,_imported:false,
+      description:(allDone?'Afgerond. ':(group.flexible?'Flexibel. ':''))+minutes+' min'+(titles.length?' · '+titles.join(', '):''),color:existing.color||'#7c3aed',who:display,assignedToUid:group.uid,flexible:group.flexible,completed:allDone,_imported:false,
       sourceType:group.entries.length>1?'cleaning-occurrence-group':'cleaning-occurrence',sourceId:group.entries[0].id,sourceIds:group.ids.slice(),cleaningOccurrenceId:group.entries[0].id,cleaningOccurrenceIds:group.ids.slice(),
-      cleaningPlanId:group.planId,projectionManaged:true,projectionGroupKey:group.key,projectionVersion:2,
+      cleaningPlanId:group.planId,projectionManaged:true,projectionGroupKey:group.key,projectionVersion:3,
       createdAt:Number(existing.createdAt)||minCreatedAt(records,timestamp),createdByUid:text(existing.createdByUid)||firstCreatedBy(records,actorUid),updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:3
     });
   }
@@ -137,8 +133,8 @@
     occurrenceIds.forEach(function(id){
       var occurrence=cleaning.occurrences&&cleaning.occurrences[id];
       if(!occurrence||typeof occurrence!=='object'||text(occurrence.planId)!==text(plan.id))throw new Error('CLEANING_PROJECTION_OCCURRENCE_NOT_FOUND');
-      if(occurrence.status==='CANCELLED'||occurrence.status==='COMPLETED'||occurrence.status==='SKIPPED')return;
-      if(occurrence.assignmentStatus!=='ACTIVE'&&occurrence.assignmentStatus!=='ACCEPTED')return;
+      if(occurrence.status==='CANCELLED'||occurrence.status==='SKIPPED')return;
+      if(occurrence.assignmentStatus!=='ACTIVE'&&occurrence.assignmentStatus!=='ACCEPTED'&&occurrence.assignmentStatus!=='COMPLETED')return;
       var uid=assignedUid(occurrence),when=occurrenceDateTime(plan,occurrence,timestamp),key=[plan.id,text(occurrence.roomId),when.date,uid].join('|');
       if(!groups[key])groups[key]={key:key,planId:text(plan.id),roomId:text(occurrence.roomId),uid:uid,date:when.date,time:when.time,flexible:when.flexible,entries:[],ids:[]};
       groups[key].entries.push({id:id,occurrence:occurrence,when:when});groups[key].ids.push(id);
@@ -168,7 +164,7 @@
         var projections=entry.occurrence.projections&&typeof entry.occurrence.projections==='object'?entry.occurrence.projections:{};
         if(text(projections.taskId)!==text(task.id))updates['cleaning/occurrences/'+entry.id+'/projections/taskId']=text(task.id);
         if(text(projections.calendarEventId)!==text(event.id))updates['cleaning/occurrences/'+entry.id+'/projections/calendarEventId']=text(event.id);
-        if(Number(projections.version)!==2)updates['cleaning/occurrences/'+entry.id+'/projections/version']=2;
+        if(Number(projections.version)!==3)updates['cleaning/occurrences/'+entry.id+'/projections/version']=3;
         if(text(projections.groupKey)!==group.key)updates['cleaning/occurrences/'+entry.id+'/projections/groupKey']=group.key;
         if(!Number(projections.projectedAt))updates['cleaning/occurrences/'+entry.id+'/projections/projectedAt']=timestamp;
         if(!text(projections.projectedByUid))updates['cleaning/occurrences/'+entry.id+'/projections/projectedByUid']=actorUid;
