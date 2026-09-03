@@ -10,7 +10,7 @@ function context(){
     getElementById:()=>null,
     querySelector:()=>null,
     querySelectorAll:()=>[],
-    createElement:()=>({style:{},setAttribute:()=>{},getAttribute:()=>null,appendChild:()=>{},remove:()=>{}}),
+    createElement:()=>({style:{},setAttribute:()=>{},getAttribute:()=>null,appendChild:()=>{},remove:()=>{},addEventListener:()=>{}}),
     addEventListener:()=>{},
     head:{appendChild:()=>{}},
     body:{style:{},appendChild:()=>{}},
@@ -38,12 +38,12 @@ const supplyContext=context();
 vm.runInNewContext(supplySource,supplyContext,{filename:'cleaningSupplyExperience.js'});
 const supplies=supplyContext.CleaningSupplyExperience;
 assert.ok(supplies);
-assert.strictEqual(supplies.version,'0.1.1');
+assert.strictEqual(supplies.version,'0.2.0');
 assert.strictEqual(supplies._supplyIdForName('  Allesreiniger  '),supplies._supplyIdForName('allesreiniger'),'supply identity is normalized');
 assert.notStrictEqual(supplies._supplyIdForName('Allesreiniger'),supplies._supplyIdForName('Glasreiniger'));
 
 const root={
-  rooms:{kitchen:{id:'kitchen',name:'Keuken',active:true},bathroom:{id:'bathroom',name:'Badkamer',active:true}},
+  rooms:{kitchen:{id:'kitchen',name:'Keuken',type:'kitchen',active:true},bathroom:{id:'bathroom',name:'Badkamer',type:'bathroom',active:true}},
   supplies:{
     soap:{id:'soap',name:'Allesreiniger',active:true},
     cloth:{id:'cloth',name:'Microvezeldoek',active:true},
@@ -82,6 +82,17 @@ assert.strictEqual(summary.tone,'out');
 assert.strictEqual(summary.label,'1 ontbreekt');
 assert.deepStrictEqual(Array.from(supplies._supplyRowsForIds(root,['gloves','cloth'])).map((row)=>row.name),['Handschoenen','Microvezeldoek']);
 
+// Smart suggestions use the routine title first and then fill with room defaults.
+assert.deepStrictEqual(
+  Array.from(supplies._smartSuggestions('bathroom','Douche ontkalken',[])).slice(0,3),
+  ['Ontkalker','Handschoenen','Microvezeldoek']
+);
+assert.deepStrictEqual(
+  Array.from(supplies._smartSuggestions('kitchen','Oven grondig reinigen',['Handschoenen'])).slice(0,3),
+  ['Ovenreiniger','Spons','Allesreiniger']
+);
+assert.ok(Array.from(supplies._smartSuggestions('living-room','Afstoffen',[])).includes('Stofdoek'));
+
 const taskSource=read('src/modules/cleaning/cleaningTaskSupplyUi.js');
 const taskContext=context();
 vm.runInNewContext(taskSource,taskContext,{filename:'cleaningTaskSupplyUi.js'});
@@ -114,9 +125,14 @@ assert.strictEqual(taskUi._isManaged({id:'normal'}),false);
 assert.ok(supplySource.includes('ShoppingListStore'));
 assert.ok(supplySource.includes('{dedupe:true}'),'shopping addition must deduplicate explicitly');
 assert.ok(supplySource.includes('Toevoegen aan Boodschappen gebeurt nooit automatisch'));
+assert.ok(supplySource.includes('data-cleaning-smart-supply'),'routine form exposes smart supply suggestions');
+assert.ok(supplySource.includes("overlay.addEventListener('pointerup'"),'modal close must have a direct high-priority pointer handler');
+assert.ok(supplySource.includes('setRepositorySnapshot(event.detail)'),'repository event snapshot must be cached directly');
+assert.ok(!supplySource.includes('function snapshot()'),'decorators must not repeatedly clone the full cleaning repository snapshot');
+assert.ok(!supplySource.includes("write.db.ref(write.path).transaction"),'supply creation must not transact the full Cleaning root');
 assert.ok(!supplySource.includes('cleaning-approval-copy'),'supplies may not own Planning approval UI');
 assert.ok(taskSource.includes("once('value')"),'task context may read canonical Cleaning before lazy module mount');
 assert.ok(!taskSource.includes('.transaction('));
 assert.ok(!taskSource.includes('.update('));
 
-console.log('cleaning supplies, inventory summary and exact Task context: ok');
+console.log('cleaning fast supplies, smart suggestions, inventory summary and exact Task context: ok');
