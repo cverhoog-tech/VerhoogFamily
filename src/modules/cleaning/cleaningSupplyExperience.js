@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CLEANING SUPPLY EXPERIENCE v0.1.0
+// CLEANING SUPPLY EXPERIENCE v0.1.1
 // Canonical household supplies + lightweight inventory around CleaningRoutineItem.
 // - routines own supplyIds
 // - supplies are shared household catalog records
@@ -12,7 +12,7 @@
 (function(){
   if(window.CleaningSupplyExperience)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.1.1';
   var STATUS={IN_STOCK:'IN_STOCK',LOW:'LOW',OUT:'OUT'};
   var STATUS_LABEL={IN_STOCK:'Op voorraad',LOW:'Bijna op',OUT:'Op'};
   var state={
@@ -204,12 +204,18 @@
     document.head.appendChild(style);
   }
 
-  function decorateRoutineForm(){
-    var form=document.querySelector('#screen-cleaning [data-cleaning-routine-form]');if(!form||form.querySelector('[data-cleaning-supply-form]'))return;
-    var catalog=supplyRows(),selected=state.form.selected||{},box=document.createElement('section');box.className='cleaning-supply-form';box.setAttribute('data-cleaning-supply-form','1');
+  function routineFormMarkup(){
+    var catalog=supplyRows(),selected=state.form.selected||{};
     var chips=catalog.length?catalog.map(function(supply){var on=!!selected[supply.id],status=inventoryStatusFrom(data(),supply.id);return '<button type="button" class="cleaning-supply-chip'+(on?' is-selected':'')+'" data-cleaning-supply-toggle="'+escapeHtml(supply.id)+'" aria-pressed="'+(on?'true':'false')+'">'+(on?'✓ ':'')+escapeHtml(supply.name)+' · '+escapeHtml(STATUS_LABEL[status])+'</button>';}).join(''):'<span style="font-size:10px;color:var(--cleaning-muted);font-weight:750">Nog geen benodigdheden in jullie huishouden.</span>';
-    box.innerHTML='<div class="cleaning-supply-form-head"><div><strong>Benodigdheden</strong><div style="font-size:9px;color:var(--cleaning-muted);margin-top:2px">Koppel wat je voor deze routine nodig hebt.</div></div><span>'+selectedIds().length+' gekoppeld</span></div><div class="cleaning-supply-chip-grid">'+chips+'</div><div class="cleaning-supply-create-row"><input type="text" maxlength="60" autocomplete="off" placeholder="Bijv. Allesreiniger" data-cleaning-supply-new-name><button type="button" data-cleaning-supply-create'+(state.creating?' disabled':'')+'>'+(state.creating?'Toevoegen…':'＋ Nieuw')+'</button></div>';
-    var actions=form.querySelector('.cleaning-form-actions');if(actions)form.insertBefore(box,actions);else form.appendChild(box);
+    return '<div class="cleaning-supply-form-head"><div><strong>Benodigdheden</strong><div style="font-size:9px;color:var(--cleaning-muted);margin-top:2px">Koppel wat je voor deze routine nodig hebt.</div></div><span>'+selectedIds().length+' gekoppeld</span></div><div class="cleaning-supply-chip-grid">'+chips+'</div><div class="cleaning-supply-create-row"><input type="text" maxlength="60" autocomplete="off" placeholder="Bijv. Allesreiniger" data-cleaning-supply-new-name><button type="button" data-cleaning-supply-create'+(state.creating?' disabled':'')+'>'+(state.creating?'Toevoegen…':'＋ Nieuw')+'</button></div>';
+  }
+
+  function decorateRoutineForm(){
+    var form=document.querySelector('#screen-cleaning [data-cleaning-routine-form]');if(!form)return;
+    var box=form.querySelector('[data-cleaning-supply-form]');
+    if(!box){box=document.createElement('section');box.className='cleaning-supply-form';box.setAttribute('data-cleaning-supply-form','1');var actions=form.querySelector('.cleaning-form-actions');if(actions)form.insertBefore(box,actions);else form.appendChild(box);}
+    var signature=JSON.stringify({catalog:supplyRows().map(function(row){return[row.id,inventoryStatusFrom(data(),row.id)];}),selected:selectedIds(),creating:state.creating});
+    if(box.getAttribute('data-supply-form-signature')!==signature){box.setAttribute('data-supply-form-signature',signature);box.innerHTML=routineFormMarkup();}
   }
 
   function decorateRoutineRows(){
