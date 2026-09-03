@@ -1,9 +1,9 @@
 'use strict';
 // ============================================================
-// CLEANING RECURRING PLAN CONTRACT v0.1.0
-// Adds concrete in-week recurrence slots on top of the accepted planner.
-// A routine with intervalDays < 7 can therefore produce multiple concrete
-// CleaningOccurrences in one weekly plan. Pure contract: no Firebase/DOM.
+// CLEANING RECURRING PLAN CONTRACT v0.2.0
+// Expands routine intervals into concrete day slots, respects one-week-only
+// scope, and keeps accepted fixed-person assignments during generation.
+// Pure contract: no Firebase or DOM work.
 // ============================================================
 (function(){
   if(window.CleaningRecurringPlanContract)return;
@@ -12,7 +12,7 @@
   var basePersistence=window.CleaningPlanPersistenceContract;
   if(!basePlanner||!basePersistence)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
   var DAY_MS=Number(basePlanner.DAY_MS)||86400000;
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -44,12 +44,33 @@
     return out;
   }
 
-  function alignedNextAfter(seed,start,intervalMs){
+  function activeMemberSelection(input){
+    return basePlanner.selectEligibleHouseholdMembers(input).members.slice();
+  }
+
+  function scopeWindowForRoutine(routine){
+    var start=positive(routine&&routine.repeatScopeWeekStartAt);
+    var end=positive(routine&&routine.repeatScopeWeekEndAt);
+    if(start&&end&&end>start)return{startAt:start,endAt:end};
+    var created=positive(routine&&routine.createdAt);
+    if(!created)return null;
+    var d=new Date(created);
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate()-((d.getDay()+6)%7));
+    return{startAt:d.getTime(),endAt:d.getTime()+(7*DAY_MS)};
+  }
+
+  function routineAppliesToWindow(routine,windowValue){
+    if(text(routine&&routine.repeatScope)!=='THIS_WEEK')return true;
+    var scope=scopeWindowForRoutine(routine);
+    if(!scope)return false;
+    return Number(scope.startAt)===Number(windowValue.startAt)&&Number(scope.endAt)===Number(windowValue.endAt);
+  }
+
+  function alignedAtOrAfter(seed,start,intervalMs){
     if(seed>=start)return seed;
     var jumps=Math.ceil((start-seed)/intervalMs);
-    var next=seed+(Math.max(1,jumps)*intervalMs);
-    if(next<=start)next+=intervalMs;
-    return next;
+    return seed+(Math.max(1,jumps)*intervalMs);
   }
 
   function expandRoutineSlots(input){
@@ -58,12 +79,14 @@
     var rooms=roomMap(source.rooms);
     var candidates=[];
     var excluded=[];
+    var carryOverOverdue=source.carryOverOverdue!==false;
 
     rows(source.routines).forEach(function(entry){
       var routine=entry.value||{};
       var routineId=text(entry.key||routine.id);
       var roomId=text(routine.roomId);
       if(!routineId||!roomId){excluded.push({routineId:routineId||null,roomId:roomId||null,reason:'INVALID_ROUTINE'});return;}
+      if(!routineAppliesToWindow(routine,windowValue)){excluded.push({routineId:routineId,roomId:roomId,reason:'SCOPE_THIS_WEEK_ONLY'});return;}
       if(!rooms[roomId]||rooms[roomId].active===false){excluded.push({routineId:routineId,roomId:roomId,reason:'ROOM_UNAVAILABLE'});return;}
 
       var evaluation=basePlanner.evaluateRoutineDue(routine,windowValue);
@@ -96,14 +119,19 @@
           slotAt:daySlotAt(slotAt,windowValue),
           createdByUid:text(routine.createdByUid)||null,
           createdAt:positive(routine.createdAt),
-          schemaVersion:1
+          assignmentMode:text(routine.assignmentMode)||'AUTO',
+          assignmentRequestStatus:text(routine.assignmentRequestStatus)||'AUTO',
+          preferredAssigneeUid:text(routine.preferredAssigneeUid)||null,
+          repeatScope:text(routine.repeatScope)||'ONGOING',
+          schemaVersion:2
         });
       }
 
       var next;
       if(seed<windowValue.startAt){
-        add(windowValue.startAt,'OVERDUE',seed);
-        next=alignedNextAfter(seed,windowValue.startAt,intervalMs);
+        if(carryOverOverdue)add(windowValue.startAt,'OVERDUE',seed);
+        next=alignedAtOrAfter(seed,windowValue.startAt,intervalMs);
+        if(carryOverOverdue&&next===windowValue.startAt)next+=intervalMs;
       }else{
         add(seed,'DUE_IN_WINDOW',seed);
         next=seed+intervalMs;
@@ -152,7 +180,12 @@
           priority:item.priority,
           dueAt:item.dueAt,
           dueState:item.dueState,
-          completed:false
+          completed:false,
+          assignmentMode:item.assignmentMode||'AUTO',
+          assignmentRequestStatus:item.assignmentRequestStatus||'AUTO',
+          preferredAssigneeUid:item.preferredAssigneeUid||null,
+          createdByUid:item.createdByUid||null,
+          repeatScope:item.repeatScope||'ONGOING'
         };
       });
       var total=checklist.reduce(function(sum,item){return sum+item.estimatedMinutes;},0);
@@ -178,17 +211,90 @@
     });
   }
 
+  function preferredUid(item,memberLookup){
+    var uid=text(item&&item.preferredAssigneeUid);
+    if(!uid||!memberLookup[uid])return null;
+    if(text(item.assignmentMode)==='FIXED_PERSON'&&text(item.assignmentRequestStatus)==='ACCEPTED')return uid;
+    return null;
+  }
+
+  function splitBundlesForAssignees(bundles,members){
+    var lookup={};members.forEach(function(member){lookup[member.uid]=true;});
+    var out=[];
+    bundles.forEach(function(bundle){
+      var groups={};
+      (bundle.checklist||[]).forEach(function(item){
+        var uid=preferredUid(item,lookup);
+        var key=uid?'fixed:'+uid:'auto';
+        if(!groups[key])groups[key]={uid:uid,items:[]};
+        groups[key].items.push(item);
+      });
+      Object.keys(groups).sort().forEach(function(key){
+        var group=groups[key],items=group.items;
+        var total=items.reduce(function(sum,item){return sum+Number(item.estimatedMinutes||0);},0);
+        out.push(Object.assign({},bundle,{
+          bundleKey:bundle.bundleKey+':'+key,
+          fixedAssigneeUid:group.uid,
+          checklist:items,
+          routineItemIds:items.map(function(item){return item.routineItemId;}),
+          routineCount:items.length,
+          estimatedMinutes:total,
+          earliestDueAt:Math.min.apply(Math,items.map(function(item){return Number(item.dueAt);})),
+          latestDueAt:Math.max.apply(Math,items.map(function(item){return Number(item.dueAt);})),
+          dueState:items.some(function(item){return item.dueState==='OVERDUE';})?'OVERDUE':'DUE_IN_WINDOW'
+        }));
+      });
+    });
+    return out;
+  }
+
+  function assignBundles(input){
+    var source=input||{};
+    var members=activeMemberSelection(source.members);
+    var bundles=splitBundlesForAssignees(Array.isArray(source.bundles)?source.bundles:[],members);
+    if(bundles.length&&!members.length)throw new Error('CLEANING_PLANNER_ACTIVE_MEMBER_REQUIRED');
+    var loads={};members.forEach(function(member,index){loads[member.uid]={uid:member.uid,order:index,estimatedMinutes:0,bundleCount:0};});
+    var assignments={};
+
+    bundles.filter(function(bundle){return !!bundle.fixedAssigneeUid;}).forEach(function(bundle){
+      var uid=bundle.fixedAssigneeUid;
+      assignments[bundle.bundleKey]=uid;
+      loads[uid].estimatedMinutes+=Number(bundle.estimatedMinutes)||0;
+      loads[uid].bundleCount++;
+    });
+
+    bundles.filter(function(bundle){return !bundle.fixedAssigneeUid;}).slice().sort(function(a,b){
+      if(Number(a.estimatedMinutes)!==Number(b.estimatedMinutes))return Number(b.estimatedMinutes)-Number(a.estimatedMinutes);
+      if(Number(a.earliestDueAt)!==Number(b.earliestDueAt))return Number(a.earliestDueAt)-Number(b.earliestDueAt);
+      return a.bundleKey<b.bundleKey?-1:1;
+    }).forEach(function(bundle){
+      var target=members.map(function(member){return loads[member.uid];}).sort(function(a,b){
+        if(a.estimatedMinutes!==b.estimatedMinutes)return a.estimatedMinutes-b.estimatedMinutes;
+        if(a.bundleCount!==b.bundleCount)return a.bundleCount-b.bundleCount;
+        return a.order-b.order;
+      })[0];
+      assignments[bundle.bundleKey]=target.uid;
+      target.estimatedMinutes+=Number(bundle.estimatedMinutes)||0;
+      target.bundleCount++;
+    });
+
+    return{
+      bundles:bundles,
+      assignments:assignments,
+      members:members,
+      memberLoads:members.map(function(member){var load=loads[member.uid];return Object.freeze({uid:member.uid,estimatedMinutes:load.estimatedMinutes,bundleCount:load.bundleCount});})
+    };
+  }
+
   function generateConceptPlan(input){
     var source=input||{};
-    var expansion=expandRoutineSlots({window:source.window,rooms:source.rooms,routines:source.routines});
-    var bundles=bundleSlots({window:expansion.window,rooms:source.rooms,candidates:expansion.candidates});
-    var distribution=basePlanner.assignFairTime({members:source.members,bundles:bundles});
-    var byBundle={};
-    distribution.assignments.forEach(function(assignment){byBundle[assignment.bundleKey]=assignment;});
+    var expansion=expandRoutineSlots({window:source.window,rooms:source.rooms,routines:source.routines,carryOverOverdue:source.carryOverOverdue});
+    var baseBundles=bundleSlots({window:expansion.window,rooms:source.rooms,candidates:expansion.candidates});
+    var distribution=assignBundles({members:source.members,bundles:baseBundles});
 
-    var occurrenceDrafts=bundles.map(function(bundle){
-      var assignment=byBundle[bundle.bundleKey];
-      if(!assignment)throw new Error('CLEANING_PLANNER_ASSIGNMENT_MISMATCH');
+    var occurrenceDrafts=distribution.bundles.map(function(bundle){
+      var assignedUid=distribution.assignments[bundle.bundleKey];
+      if(!assignedUid)throw new Error('CLEANING_PLANNER_ASSIGNMENT_MISMATCH');
       return Object.freeze({
         draftKey:bundle.bundleKey,
         occurrenceId:null,
@@ -203,8 +309,10 @@
         estimatedMinutes:bundle.estimatedMinutes,
         routineCount:bundle.routineCount,
         routineItemIds:Object.freeze(bundle.routineItemIds.slice()),
-        checklist:Object.freeze(bundle.checklist.map(function(item){return Object.freeze(clone(item));})),
-        proposedAssignmentUids:Object.freeze(assignment.assignmentUids.slice()),
+        checklist:Object.freeze(bundle.checklist.map(function(item){
+          return Object.freeze({id:item.id,routineItemId:item.routineItemId,title:item.title,estimatedMinutes:item.estimatedMinutes,priority:item.priority,dueAt:item.dueAt,dueState:item.dueState,completed:false});
+        })),
+        proposedAssignmentUids:Object.freeze([assignedUid]),
         scheduledStartAt:null,
         scheduledEndAt:null,
         flexibleWindow:Object.freeze({startAt:bundle.slotAt,endAt:Math.min(expansion.window.endAt,bundle.slotAt+DAY_MS)})
@@ -213,20 +321,22 @@
 
     var routineCount=occurrenceDrafts.reduce(function(sum,draft){return sum+draft.routineCount;},0);
     var overdueCount=occurrenceDrafts.filter(function(draft){return draft.dueState==='OVERDUE';}).length;
+    var total=distribution.memberLoads.reduce(function(sum,load){return sum+load.estimatedMinutes;},0);
+    var values=distribution.memberLoads.map(function(load){return load.estimatedMinutes;});
     return Object.freeze({
-      kind:'CLEANING_PLAN_CONCEPT',schemaVersion:2,id:null,persisted:false,status:'DRAFT',
-      window:expansion.window,distributionMode:distribution.distributionMode,
+      kind:'CLEANING_PLAN_CONCEPT',schemaVersion:3,id:null,persisted:false,status:'DRAFT',
+      window:expansion.window,distributionMode:'FAIR_TIME',
       occurrenceDrafts:Object.freeze(occurrenceDrafts),
       summary:Object.freeze({
         occurrenceCount:occurrenceDrafts.length,
         routineCount:routineCount,
         overdueOccurrenceCount:overdueCount,
         dueInWindowOccurrenceCount:occurrenceDrafts.length-overdueCount,
-        totalEstimatedMinutes:distribution.totalEstimatedMinutes,
-        imbalanceMinutes:distribution.imbalanceMinutes,
-        memberLoads:distribution.memberLoads
+        totalEstimatedMinutes:total,
+        imbalanceMinutes:values.length?Math.max.apply(Math,values)-Math.min.apply(Math,values):0,
+        memberLoads:Object.freeze(distribution.memberLoads)
       }),
-      diagnostics:Object.freeze({excludedRoutines:expansion.excluded,excludedMembers:distribution.excludedMembers||[]})
+      diagnostics:Object.freeze({excludedRoutines:expansion.excluded,excludedMembers:[]})
     });
   }
 
@@ -268,7 +378,10 @@
         return {id:routineId,routineItemId:routineId,title:text(item.title)||'Schoonmaakonderdeel',estimatedMinutes:itemMinutes,priority:text(item.priority)||'NORMAL',dueAt:dueAt,dueState:item.dueState==='OVERDUE'?'OVERDUE':'DUE_IN_WINDOW',completed:false};
       });
       if(checklistMinutes!==minutes)throw new Error('CLEANING_PLAN_MINUTES_MISMATCH');
-      var occurrenceId=occurrenceIdFor(planId,roomId,slotAt);
+      var baseId=occurrenceIdFor(planId,roomId,slotAt);
+      var occurrenceId=baseId;
+      if(occurrenceRecords[occurrenceId])occurrenceId=baseId+'__uid_'+safe(assignmentUid);
+      if(occurrenceRecords[occurrenceId])occurrenceId=occurrenceId+'__'+safe(draft.draftKey);
       var existing=existingOccurrences[occurrenceId]&&typeof existingOccurrences[occurrenceId]==='object'?existingOccurrences[occurrenceId]:null;
       if(existing&&existing.status!=='DRAFT'&&existing.status!=='CANCELLED')throw new Error('CLEANING_OCCURRENCE_NOT_DRAFT');
       occurrenceIds.push(occurrenceId);
@@ -279,9 +392,9 @@
         dueState:draft.dueState==='OVERDUE'?'OVERDUE':'DUE_IN_WINDOW',
         earliestDueAt:Number(draft.earliestDueAt),latestDueAt:Number(draft.latestDueAt),estimatedMinutes:minutes,
         scheduledStartAt:null,scheduledEndAt:null,flexibleWindow:clone(draft.flexibleWindow)||{startAt:slotAt,endAt:Math.min(windowValue.endAt,slotAt+DAY_MS)},
-        projections:{taskId:null,calendarEventId:null},recurrenceVersion:1,
+        projections:{taskId:null,calendarEventId:null},recurrenceVersion:2,
         createdAt:positive(existing&&existing.createdAt)||timestamp,createdByUid:text(existing&&existing.createdByUid)||actorUid,
-        updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:2
+        updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:3
       };
       routineCount+=checklist.length;totalMinutes+=minutes;if(draft.dueState==='OVERDUE')overdueCount++;
       if(!loads[assignmentUid])loads[assignmentUid]={uid:assignmentUid,estimatedMinutes:0,bundleCount:0};
@@ -309,9 +422,9 @@
       id:planId,householdId:householdId,status:'DRAFT',windowStartAt:windowValue.startAt,windowEndAt:windowValue.endAt,
       distributionMode:'FAIR_TIME',occurrenceIds:occurrenceIds,summary:summary,
       generationRevision:Math.max(0,whole(existingPlan&&existingPlan.generationRevision,0)||0)+1,
-      recurringPlanVersion:1,generatedAt:timestamp,generatedByUid:actorUid,
+      recurringPlanVersion:2,generatedAt:timestamp,generatedByUid:actorUid,
       createdAt:positive(existingPlan&&existingPlan.createdAt)||timestamp,createdByUid:text(existingPlan&&existingPlan.createdByUid)||actorUid,
-      updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:2
+      updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:3
     };
     return Object.freeze({version:VERSION,planId:planId,plan:Object.freeze(plan),occurrences:Object.freeze(occurrenceRecords),activeOccurrenceIds:Object.freeze(occurrenceIds.slice())});
   }
@@ -319,11 +432,9 @@
   var recurring={
     version:VERSION,DAY_MS:DAY_MS,expandRoutineSlots:expandRoutineSlots,bundleSlots:bundleSlots,
     generateConceptPlan:generateConceptPlan,materializeDraft:materializeDraft,occurrenceIdFor:occurrenceIdFor,
-    dayIndex:dayIndex,daySlotAt:daySlotAt
+    dayIndex:dayIndex,daySlotAt:daySlotAt,routineAppliesToWindow:routineAppliesToWindow,assignBundles:assignBundles
   };
   window.CleaningRecurringPlanContract=Object.freeze(recurring);
-
-  // Keep all accepted helper functions while replacing only generation/persistence.
-  window.CleaningPlannerContract=Object.freeze(Object.assign({},basePlanner,{version:'0.6.0',generateConceptPlan:generateConceptPlan,expandRoutineSlots:expandRoutineSlots,bundleRecurringSlots:bundleSlots}));
-  window.CleaningPlanPersistenceContract=Object.freeze(Object.assign({},basePersistence,{version:'0.2.0',occurrenceIdFor:occurrenceIdFor,materializeDraft:materializeDraft}));
+  window.CleaningPlannerContract=Object.freeze(Object.assign({},basePlanner,{version:'0.7.0',generateConceptPlan:generateConceptPlan,expandRoutineSlots:expandRoutineSlots,bundleRecurringSlots:bundleSlots}));
+  window.CleaningPlanPersistenceContract=Object.freeze(Object.assign({},basePersistence,{version:'0.2.1',occurrenceIdFor:occurrenceIdFor,materializeDraft:materializeDraft}));
 })();
