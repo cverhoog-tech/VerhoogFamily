@@ -2,9 +2,88 @@
 
 Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
 
+## Milestone 3 - Weekplanner, goedkeuring, projecties en kamer-UX
+
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum acceptatie: **03-09-2026**
+Branch: `agent/household-rebuild-v2`
+Laatste geaccepteerde functionele checkpoint: `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2`
+Geaccepteerde preview: `https://verhoog-family-e12lu3rgl-cverhoog-techs-projects.vercel.app`
+Productie/main: **niet gewijzigd**.
+
+### Wat in deze milestone is gebouwd en geaccepteerd
+
+#### Weekplanner en persoonlijke goedkeuring
+
+- Een conceptweekplan kan aan het gezin worden voorgesteld.
+- Ieder toegewezen gezinslid beoordeelt uitsluitend het eigen deel.
+- Accepteren en afwijzen werken per canonieke household-UID.
+- Het plan wordt pas `ACTIVE` wanneer alle vereiste personen akkoord zijn.
+- Bij afwijzen kan de maker of beheerder het voorstel terugzetten naar concept.
+- Routines met een interval korter dan zeven dagen krijgen meerdere concrete occurrences binnen dezelfde week.
+- Doorlopende routines behouden hun ritme over weekgrenzen heen.
+- Per routine is er een expliciete keuze tussen doorlopend plannen en alleen het huidige weekplan.
+- De rollende planningshorizon houdt vier toekomstige weken beschikbaar.
+- Nieuwe kamers en routines worden veilig meegenomen in een reeds actieve lopende week.
+
+#### Taken- en Agenda-projecties
+
+- `CleaningOccurrence` blijft de enige canonieke source of truth voor één concrete schoonmaakbeurt.
+- Actieve occurrences worden idempotent naar Taken en Agenda geprojecteerd.
+- Meerdere routines voor dezelfde kamer, dag en verantwoordelijke worden één taak- en agendakaart met checklist.
+- Refresh, een tweede toestel of opnieuw synchroniseren maakt geen duplicaten.
+- Flexibele occurrences krijgen geen verzonnen tijdstip.
+- Bestaande brongekoppelde projecties worden hergebruikt en ontbrekende afgeleide projecties kunnen worden hersteld.
+
+#### Routineverzoeken en verdeling
+
+- Het routineformulier bevat de zichtbare keuze `Wie doet deze routine?`.
+- Een routine kan automatisch worden verdeeld, aan jezelf worden gekoppeld of aan een ander gezinslid worden gevraagd.
+- Een verzoek aan een ander gezinslid verschijnt als duidelijke kaart met `Accepteren` en `Afwijzen`.
+- Tot acceptatie wordt geen stilzwijgend extra werk aan de ontvanger toegewezen.
+- Na acceptatie wordt toekomstige overlap bij een eerdere verantwoordelijke verwijderd om dubbele taken te voorkomen.
+
+#### Kamer- en routinebeheer
+
+- Kamers zijn standaard ingeklapt, zodat het overzicht compact blijft.
+- Een kamer kan afzonderlijk worden uit- en ingeklapt.
+- Bewerken van een kamer of routine scrollt direct naar het juiste formulier en focust het relevante veld.
+- Routines kunnen direct vanuit het uitgeklapte kameroverzicht worden verwijderd met twee-tik bevestiging.
+- De huishoudelijke kamervolgorde kan met Omhoog/Omlaag worden ingesteld.
+- De gekozen kamervolgorde wordt persistent in Firebase opgeslagen en geldt op andere apparaten en voor andere huishoudleden.
+- Snelle routinekeuzes tonen na Firebase-bevestiging een toast.
+- De snelkeuze bewaart de werkelijke zichtbare positie in de actieve scrollcontainer, zodat de gebruiker niet naar boven wordt verplaatst.
+
+#### Belangrijke regressiefixes
+
+- Een geldige lege Taken-snapshot blijft niet meer hangen op `Taken synchroniseren`.
+- De Planning-tab heeft geen verticale renderlus meer door concurrerende DOM-eigenaars.
+- Toekomstige rolling plans worden niet onterecht als eigen goedkeuringsbron behandeld.
+- Routine-overdracht en herprojectie blijven duplicaatvrij.
+
+### Belangrijke checkpoints binnen deze milestone
+
+- `6736d8d558179a977dd01b4b863f5c17865a40ce` - persoonlijke weekplangoedkeuring.
+- `f1297713ad57ff3037447013f63e4831fbcd8f3a` - Planning-renderlus opgelost.
+- `c70a5864f1819024edcb18521cf23252af0ee5a0` - herhalende occurrences en nieuwe routines in actieve week.
+- `65e7201f5d959a81df0af3575b0225960c030656` - doorlopende planning, gegroepeerde projecties, routineverzoeken en compacte kamers.
+- `5402f214548044b5b8d152c16e087a584ec311ef` - snelkeuze-toast en scrollbehoud.
+- `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2` - directe routine-delete, persistente kamervolgorde en definitief scrollanker; real-device geaccepteerd.
+
+### Bewust nog open na deze milestone
+
+- Checklist-item afvinken in Taken terugschrijven naar `CleaningOccurrence`.
+- Een volledige schoonmaaktaak afronden naar occurrence completion en completion log.
+- Datum/tijd wijzigen vanuit Taken of Agenda terugschrijven naar de canonieke occurrence.
+- Circulaire listenerloops voorkomen bij tweerichtingssynchronisatie.
+- Benodigdheden, voorraad en Boodschappen-koppeling.
+- Historie, overslaan, uitstellen, carry-forward en uitzonderingen.
+- Definitieve premium visual polish conform de goedgekeurde visual spec.
+
 ## Milestone 2 - Weekplanner Foundation
 
-Status: **BEZIG**
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum afronding: **03-09-2026**
 Branch: `agent/household-rebuild-v2`
 Productie/main: **niet gewijzigd**.
 
@@ -15,15 +94,15 @@ Productie/main: **niet gewijzigd**.
 - `452143aaeb443751bceb2121c086a391f7f44b0f` - pure kamerbundeling en totale minutenbelasting; preview `https://verhoog-family-59g7tbaec-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 - `6e0de551bf25d009802421f5b0b193cdb57ace2d` - canonieke actieve householdleden en pure `FAIR_TIME`-verdeling; preview `https://verhoog-family-6jixo08af-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
 - `bd282e8b8a48929e296b982d10fb99955b0eec62` - pure generatie van één immutable `DRAFT`-conceptweekplan; preview `https://verhoog-family-k6sz7rwri-cverhoog-techs-projects.vercel.app`; real-device geaccepteerd op 01-09-2026.
+- De daaropvolgende persistence-, goedkeurings- en projectiestappen zijn als samenhangende Milestone 3 real-device geaccepteerd op 03-09-2026.
 
-### Huidige checkpoint ter acceptatie
+### Foundation die hiermee is vastgelegd
 
-- Atomaire persistence van het conceptplan en de bijbehorende canonieke `CleaningOccurrence`-records onder één household-scoped cleaning-root-transactie.
-- Stabiele plan-ID per week en occurrence-ID per week + kamer; opnieuw berekenen/retries maken geen duplicaten.
-- `CleaningPlan` bevat alleen occurrence-referenties en afgeleide totalen; checklist, due-data en voorgestelde assignment zijn eigendom van `CleaningOccurrence`.
-- Realtime Planning-UI met weektotalen, verdeling op geschatte tijd, kamerchecklists en expliciete actie Maak weekplan / Opnieuw berekenen.
-- Regeneratie blijft beperkt tot `DRAFT`; niet langer geselecteerde draft-occurrences worden atomair geannuleerd.
-- Nog geen approval-, Taken- of Agenda-projecties.
+- Atomaire persistence van `CleaningPlan` plus de bijbehorende canonieke `CleaningOccurrence`-records onder één household-scoped cleaning-root-transactie.
+- Stabiele plan-ID per week en stabiele occurrence-identiteit; opnieuw berekenen en retries maken geen duplicaten.
+- `CleaningPlan` bevat occurrence-referenties en afgeleide totalen; checklist, due-data en assignment zijn eigendom van `CleaningOccurrence`.
+- Realtime Planning-UI met weektotalen, verdeling op geschatte tijd en kamerchecklists.
+- Regeneratie is beperkt tot `DRAFT`; vervallen draft-occurrences worden atomair geannuleerd.
 
 ## Milestone 1 - Kamers + Routines Foundation
 
@@ -82,13 +161,6 @@ Regel voor vervolg: deze hardening niet opnieuw combineren met functionele uitbr
 
 De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premium, gelaagd en mobile-first met dezelfde markup in light/dark mode, rijke hero/statuskaarten, kamerbeelden/gradients, glass/shadows/statusaccenten en de eerder vastgelegde informatiehiërarchie. De huidige functionele kaarten en emoji's zijn geen vervanging van die eindrichting.
 
-### Wat hierna nog moet gebeuren
+## Continuation checkpoint voor nieuwe chats
 
-- Fase 0 verder afronden: harde repository/domain safety zonder regressie, expliciete integratiecontracten en contracttests.
-- Fase 1 resterend: benodigdheden op routine-itemniveau en persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
-- Fase 2: weekplanner foundation - bepalen wat aan de beurt is, routines per kamer bundelen, belasting berekenen, eerlijk verdelen en een conceptplan voorstellen.
-- Daarna: Taken-projectie, Agenda-projectie, goedkeuring/overdracht/notificaties, voorraad/Boodschappen, historie/uitzonderingen en uiteindelijke visuele polish.
-
-### Continuation checkpoint voor nieuwe chats
-
-Een nieuwe chat moet `bd282e8b8a48929e296b982d10fb99955b0eec62` als laatst real-device geaccepteerde branchcheckpoint behandelen. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Voor nieuwe wijzigingen eerst de actuele branch-tip en blobs ophalen en alleen afzonderlijk testbare wijzigingen maken; samenhangende verticale checkpoints mogen groter zijn wanneer de gebruiker dat expliciet vraagt.
+Een nieuwe chat moet `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2` als laatst real-device geaccepteerde **functionele** branchcheckpoint behandelen. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
