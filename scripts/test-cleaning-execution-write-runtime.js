@@ -29,9 +29,7 @@ function setPath(root,pathName,value){
   };
 
   const familyRoot={
-    child(name){
-      return{once(){return Promise.resolve({val:()=>clone(name==='tasks'?tasks:calendarEvents)});}};
-    },
+    child(name){return{once(){return Promise.resolve({val:()=>clone(name==='tasks'?tasks:calendarEvents)});}};},
     update(updates){
       updateBatches.push(clone(updates));
       Object.keys(updates).forEach((key)=>{
@@ -80,7 +78,7 @@ function setPath(root,pathName,value){
     family.cleaning.occurrences.occ1.status=completed?'COMPLETED':'FLEXIBLE';
     family.cleaning.occurrences.occ1.assignmentStatus=completed?'COMPLETED':'ACTIVE';
     task.done=completed;task.status=completed?'done':'open';
-    family.calendarEvents.eventKey.completed=completed;
+    if(family.calendarEvents.eventKey)family.calendarEvents.eventKey.completed=completed;
     return{handled:true,family,task:clone(task),occurrenceIds:['occ1']};
   }
   function applyCalendar(input){
@@ -90,7 +88,7 @@ function setPath(root,pathName,value){
     family.cleaning.occurrences.occ1.scheduledDate=date;
     family.cleaning.occurrences.occ1.scheduledTime=time;
     event.date=date;event.time=time;
-    family.tasks.taskKey.date=date;family.tasks.taskKey.time=time;
+    if(family.tasks.taskKey){family.tasks.taskKey.date=date;family.tasks.taskKey.time=time;}
     return{handled:true,family,event:clone(event),occurrenceIds:['occ1']};
   }
 
