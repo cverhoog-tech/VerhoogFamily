@@ -1,17 +1,17 @@
 'use strict';
 // ============================================================
-// CLEANING ROLLING PLANNER SERVICE v0.1.1
+// CLEANING ROLLING PLANNER SERVICE v0.1.2
 // Keeps a four-week future horizon for routines marked ONGOING.
 // Future occurrences are only created after a fixed-person request or a
-// concrete weekly assignment has been accepted. THIS_WEEK never crosses its
-// week boundary. Calendar windows are advanced with local dates for DST safety.
+// concrete non-rolling weekly assignment has been accepted. Existing rolling
+// plans never become their own consent source. THIS_WEEK stays week-scoped.
 // ============================================================
 (function(){
   if(window.CleaningRollingPlannerService)return;
 
-  var VERSION='0.1.1';
+  var VERSION='0.1.2';
   var DEFAULT_HORIZON_WEEKS=4;
-  var ASSIGNMENT_PRIORITY={ROLLING:1,ACCEPTED_PLAN:2,FIXED_ROUTINE:3};
+  var ASSIGNMENT_PRIORITY={ACCEPTED_PLAN:2,FIXED_ROUTINE:3};
   var state={unsubscribe:null,attachTimer:null,debounce:null,inFlight:null,lastResult:null,lastError:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -92,35 +92,28 @@
       routineId=text(routineId);uid=text(uid);anchor=Number(anchor)||0;
       if(!routineId||!uid||!memberLookup[uid])return;
       var current=choices[routineId];
-      if(!current||priority>current.priority||(priority===current.priority&&anchor>=current.anchor)){
-        choices[routineId]={uid:uid,priority:priority,anchor:anchor};
-      }
+      if(!current||priority>current.priority||(priority===current.priority&&anchor>=current.anchor))choices[routineId]={uid:uid,priority:priority,anchor:anchor};
     }
 
     var routines=root.routines&&typeof root.routines==='object'?root.routines:{};
     Object.keys(routines).forEach(function(id){
       var routine=routines[id]||{},uid=text(routine.preferredAssigneeUid);
-      if(uid&&text(routine.assignmentMode)==='FIXED_PERSON'&&text(routine.assignmentRequestStatus)==='ACCEPTED'){
-        offer(id,uid,ASSIGNMENT_PRIORITY.FIXED_ROUTINE,Number.MAX_SAFE_INTEGER);
-      }
+      if(uid&&text(routine.assignmentMode)==='FIXED_PERSON'&&text(routine.assignmentRequestStatus)==='ACCEPTED')offer(id,uid,ASSIGNMENT_PRIORITY.FIXED_ROUTINE,Number.MAX_SAFE_INTEGER);
     });
 
     var plans=root.plans&&typeof root.plans==='object'?root.plans:{};
     var occurrences=root.occurrences&&typeof root.occurrences==='object'?root.occurrences:{};
     Object.keys(plans).forEach(function(planId){
       var plan=plans[planId];
-      if(!plan||plan.status!=='ACTIVE')return;
-      var priority=plan.rollingPlanVersion===1?ASSIGNMENT_PRIORITY.ROLLING:ASSIGNMENT_PRIORITY.ACCEPTED_PLAN;
+      if(!plan||plan.status!=='ACTIVE'||plan.rollingPlanVersion===1)return;
       (Array.isArray(plan.occurrenceIds)?plan.occurrenceIds:[]).forEach(function(id){
         var row=occurrences[id],uid=assignedUid(row),anchor=occurrenceAnchor(row),assignmentStatus=text(row&&row.assignmentStatus);
         if(!row||!uid||row.status==='CANCELLED'||row.status==='SKIPPED'||['ACTIVE','ACCEPTED','COMPLETED'].indexOf(assignmentStatus)<0)return;
-        routineIds(row).forEach(function(routineId){offer(routineId,uid,priority,anchor);});
+        routineIds(row).forEach(function(routineId){offer(routineId,uid,ASSIGNMENT_PRIORITY.ACCEPTED_PLAN,anchor);});
       });
     });
 
-    var assignments={};
-    Object.keys(choices).forEach(function(routineId){assignments[routineId]=choices[routineId].uid;});
-    return assignments;
+    var assignments={};Object.keys(choices).forEach(function(routineId){assignments[routineId]=choices[routineId].uid;});return assignments;
   }
 
   function planIdForWindow(contract,windowValue){
@@ -130,35 +123,24 @@
   }
 
   function semanticChecklist(value){
-    return (Array.isArray(value)?value:[]).map(function(item){
-      return{id:text(item&&item.routineItemId||item&&item.id),title:text(item&&item.title),estimatedMinutes:Number(item&&item.estimatedMinutes)||0,priority:text(item&&item.priority)||'NORMAL',dueAt:Number(item&&item.dueAt)||0,dueState:text(item&&item.dueState)||'DUE_IN_WINDOW',completed:!!(item&&item.completed)};
-    }).sort(function(a,b){return a.id<b.id?-1:(a.id>b.id?1:0);});
+    return (Array.isArray(value)?value:[]).map(function(item){return{id:text(item&&item.routineItemId||item&&item.id),title:text(item&&item.title),estimatedMinutes:Number(item&&item.estimatedMinutes)||0,priority:text(item&&item.priority)||'NORMAL',dueAt:Number(item&&item.dueAt)||0,dueState:text(item&&item.dueState)||'DUE_IN_WINDOW',completed:!!(item&&item.completed)};}).sort(function(a,b){return a.id<b.id?-1:(a.id>b.id?1:0);});
   }
 
   function occurrenceSemantic(value){
     var row=value||{};
-    return{
-      roomId:text(row.roomId),slotAt:Number(row.slotAt)||0,routineItemIds:(Array.isArray(row.routineItemIds)?row.routineItemIds:[]).map(String).sort(),
-      checklist:semanticChecklist(row.checklist),assignmentUids:(Array.isArray(row.assignmentUids)?row.assignmentUids:[]).map(String),
-      assignmentStatus:text(row.assignmentStatus),status:text(row.status),dueState:text(row.dueState),earliestDueAt:Number(row.earliestDueAt)||0,
-      latestDueAt:Number(row.latestDueAt)||0,estimatedMinutes:Number(row.estimatedMinutes)||0,
-      flexibleWindow:row.flexibleWindow?{startAt:Number(row.flexibleWindow.startAt)||0,endAt:Number(row.flexibleWindow.endAt)||0}:null,
-      rollingGenerated:row.rollingGenerated===true
-    };
+    return{roomId:text(row.roomId),slotAt:Number(row.slotAt)||0,routineItemIds:(Array.isArray(row.routineItemIds)?row.routineItemIds:[]).map(String).sort(),checklist:semanticChecklist(row.checklist),assignmentUids:(Array.isArray(row.assignmentUids)?row.assignmentUids:[]).map(String),assignmentStatus:text(row.assignmentStatus),status:text(row.status),dueState:text(row.dueState),earliestDueAt:Number(row.earliestDueAt)||0,latestDueAt:Number(row.latestDueAt)||0,estimatedMinutes:Number(row.estimatedMinutes)||0,flexibleWindow:row.flexibleWindow?{startAt:Number(row.flexibleWindow.startAt)||0,endAt:Number(row.flexibleWindow.endAt)||0}:null,rollingGenerated:row.rollingGenerated===true};
   }
 
   function planSummary(root,ids,memberRows){
     var loads={};memberRows.forEach(function(member){loads[member.uid]={uid:member.uid,estimatedMinutes:0,bundleCount:0};});
     var count=0,routineCount=0,total=0,overdue=0;
     ids.forEach(function(id){
-      var row=root.occurrences&&root.occurrences[id];
-      if(!row||row.status==='CANCELLED'||row.status==='SKIPPED')return;
-      count++;var minutes=Number(row.estimatedMinutes)||0,uid=assignedUid(row);total+=minutes;
-      routineCount+=(Array.isArray(row.checklist)?row.checklist.length:0);if(row.dueState==='OVERDUE')overdue++;
+      var row=root.occurrences&&root.occurrences[id];if(!row||row.status==='CANCELLED'||row.status==='SKIPPED')return;
+      count++;var minutes=Number(row.estimatedMinutes)||0,uid=assignedUid(row);total+=minutes;routineCount+=(Array.isArray(row.checklist)?row.checklist.length:0);if(row.dueState==='OVERDUE')overdue++;
       if(uid){if(!loads[uid])loads[uid]={uid:uid,estimatedMinutes:0,bundleCount:0};loads[uid].estimatedMinutes+=minutes;loads[uid].bundleCount++;}
     });
     var order=memberRows.map(function(member){return member.uid;});Object.keys(loads).forEach(function(uid){if(order.indexOf(uid)<0)order.push(uid);});
-    var memberLoads=order.map(function(uid){return loads[uid];});var values=memberLoads.map(function(load){return load.estimatedMinutes;});
+    var memberLoads=order.map(function(uid){return loads[uid];}),values=memberLoads.map(function(load){return load.estimatedMinutes;});
     return{occurrenceCount:count,routineCount:routineCount,overdueOccurrenceCount:overdue,dueInWindowOccurrenceCount:Math.max(0,count-overdue),totalEstimatedMinutes:total,imbalanceMinutes:values.length?Math.max.apply(Math,values)-Math.min.apply(Math,values):0,memberLoads:memberLoads};
   }
 
@@ -171,95 +153,53 @@
     var lookup={};memberRows.forEach(function(member){lookup[member.uid]=true;});
     var preferred=text(routine&&routine.preferredAssigneeUid);
     if(preferred&&lookup[preferred]&&text(routine.assignmentMode)==='FIXED_PERSON'&&text(routine.assignmentRequestStatus)==='ACCEPTED')return preferred;
-    var inherited=text(standing[candidate.routineId]);
-    return inherited&&lookup[inherited]?inherited:null;
+    var inherited=text(standing[candidate.routineId]);return inherited&&lookup[inherited]?inherited:null;
   }
 
   function desiredGroups(root,contract,windowValue,memberRows,standing){
     var expansion=contract.expandRoutineSlots({window:windowValue,rooms:root.rooms||{},routines:root.routines||{},carryOverOverdue:false});
     var routines=root.routines||{},groups={};
     (expansion.candidates||[]).forEach(function(candidate){
-      var routine=routines[candidate.routineId]||{};
-      if(text(routine.assignmentRequestStatus)==='PENDING'||routine.paused===true)return;
+      var routine=routines[candidate.routineId]||{};if(text(routine.assignmentRequestStatus)==='PENDING'||routine.paused===true)return;
       var uid=pickAssignee(candidate,routine,standing,memberRows);if(!uid)return;
-      var key=text(candidate.roomId)+'|'+Number(candidate.slotAt)+'|'+uid;
-      if(!groups[key])groups[key]={roomId:text(candidate.roomId),slotAt:Number(candidate.slotAt),uid:uid,items:[]};
-      groups[key].items.push(candidate);
+      var key=text(candidate.roomId)+'|'+Number(candidate.slotAt)+'|'+uid;if(!groups[key])groups[key]={roomId:text(candidate.roomId),slotAt:Number(candidate.slotAt),uid:uid,items:[]};groups[key].items.push(candidate);
     });
-    return Object.keys(groups).sort().map(function(key){
-      var group=groups[key];group.items.sort(function(a,b){return a.routineId<b.routineId?-1:1;});return group;
-    });
+    return Object.keys(groups).sort().map(function(key){var group=groups[key];group.items.sort(function(a,b){return a.routineId<b.routineId?-1:1;});return group;});
   }
 
   function reconcileWindow(root,contract,windowValue,memberRows,standing,householdId,actorUid,timestamp,horizonWeeks){
-    if(!root.plans||typeof root.plans!=='object')root.plans={};
-    if(!root.occurrences||typeof root.occurrences!=='object')root.occurrences={};
-    if(!root.approvals||typeof root.approvals!=='object')root.approvals={};
+    if(!root.plans||typeof root.plans!=='object')root.plans={};if(!root.occurrences||typeof root.occurrences!=='object')root.occurrences={};if(!root.approvals||typeof root.approvals!=='object')root.approvals={};
     var planId=planIdForWindow(contract,windowValue),existingPlan=root.plans[planId];
     if(existingPlan&&existingPlan.rollingPlanVersion!==1)return{changed:false,planId:planId,reason:'MANUAL_PLAN_EXISTS'};
     var groups=desiredGroups(root,contract,windowValue,memberRows,standing);
     if(!groups.length&&!existingPlan)return{changed:false,planId:planId,reason:'NO_ACCEPTED_ASSIGNMENTS'};
 
-    var beforePlan=existingPlan?clone(existingPlan):null;
-    var activeIds=[],allIds=[],seen={},changed=false;
+    var beforePlan=existingPlan?clone(existingPlan):null,activeIds=[],allIds=[],seen={},changed=false;
     groups.forEach(function(group){
-      var base=contract.occurrenceIdFor(planId,group.roomId,group.slotAt);
-      var occurrenceId=base+'__uid_'+safe(group.uid);
-      var existing=root.occurrences[occurrenceId];
-      var oldCompleted={};semanticChecklist(existing&&existing.checklist).forEach(function(item){oldCompleted[item.id]=item.completed;});
-      var checklist=group.items.map(function(item){
-        return{id:item.routineId,routineItemId:item.routineId,title:text(item.title)||'Schoonmaakonderdeel',estimatedMinutes:Number(item.estimatedMinutes)||10,priority:text(item.priority)||'NORMAL',dueAt:Number(item.dueAt)||group.slotAt,dueState:'DUE_IN_WINDOW',completed:!!oldCompleted[item.routineId]};
-      });
+      var base=contract.occurrenceIdFor(planId,group.roomId,group.slotAt),occurrenceId=base+'__uid_'+safe(group.uid),existing=root.occurrences[occurrenceId],oldCompleted={};
+      semanticChecklist(existing&&existing.checklist).forEach(function(item){oldCompleted[item.id]=item.completed;});
+      var checklist=group.items.map(function(item){return{id:item.routineId,routineItemId:item.routineId,title:text(item.title)||'Schoonmaakonderdeel',estimatedMinutes:Number(item.estimatedMinutes)||10,priority:text(item.priority)||'NORMAL',dueAt:Number(item.dueAt)||group.slotAt,dueState:'DUE_IN_WINDOW',completed:!!oldCompleted[item.routineId]};});
       var minutes=checklist.reduce(function(sum,item){return sum+item.estimatedMinutes;},0);
-      var desired={
-        id:occurrenceId,householdId:householdId,planId:planId,roomId:group.roomId,slotAt:group.slotAt,
-        routineItemIds:checklist.map(function(item){return item.routineItemId;}),checklist:checklist,
-        assignmentUids:[group.uid],assignmentStatus:'ACTIVE',status:'FLEXIBLE',dueState:'DUE_IN_WINDOW',
-        earliestDueAt:Math.min.apply(Math,checklist.map(function(item){return item.dueAt;})),latestDueAt:Math.max.apply(Math,checklist.map(function(item){return item.dueAt;})),estimatedMinutes:minutes,
-        scheduledStartAt:null,scheduledEndAt:null,flexibleWindow:{startAt:group.slotAt,endAt:Math.min(windowValue.endAt,group.slotAt+Number(contract.DAY_MS||86400000))},
-        projections:existing&&existing.projections&&typeof existing.projections==='object'?clone(existing.projections):{taskId:null,calendarEventId:null},
-        recurrenceVersion:2,rollingGenerated:true,rollingHorizonWeeks:horizonWeeks,
-        activatedAt:positive(existing&&existing.activatedAt)||timestamp,activatedByUid:text(existing&&existing.activatedByUid)||actorUid,
-        createdAt:positive(existing&&existing.createdAt)||timestamp,createdByUid:text(existing&&existing.createdByUid)||actorUid,
-        updatedAt:positive(existing&&existing.updatedAt)||timestamp,updatedByUid:text(existing&&existing.updatedByUid)||actorUid,schemaVersion:3
-      };
-      if(!existing||JSON.stringify(occurrenceSemantic(existing))!==JSON.stringify(occurrenceSemantic(desired))){desired.updatedAt=timestamp;desired.updatedByUid=actorUid;root.occurrences[occurrenceId]=desired;changed=true;}
-      else root.occurrences[occurrenceId]=existing;
+      var desired={id:occurrenceId,householdId:householdId,planId:planId,roomId:group.roomId,slotAt:group.slotAt,routineItemIds:checklist.map(function(item){return item.routineItemId;}),checklist:checklist,assignmentUids:[group.uid],assignmentStatus:'ACTIVE',status:'FLEXIBLE',dueState:'DUE_IN_WINDOW',earliestDueAt:Math.min.apply(Math,checklist.map(function(item){return item.dueAt;})),latestDueAt:Math.max.apply(Math,checklist.map(function(item){return item.dueAt;})),estimatedMinutes:minutes,scheduledStartAt:null,scheduledEndAt:null,flexibleWindow:{startAt:group.slotAt,endAt:Math.min(windowValue.endAt,group.slotAt+Number(contract.DAY_MS||86400000))},projections:existing&&existing.projections&&typeof existing.projections==='object'?clone(existing.projections):{taskId:null,calendarEventId:null},recurrenceVersion:2,rollingGenerated:true,rollingHorizonWeeks:horizonWeeks,activatedAt:positive(existing&&existing.activatedAt)||timestamp,activatedByUid:text(existing&&existing.activatedByUid)||actorUid,createdAt:positive(existing&&existing.createdAt)||timestamp,createdByUid:text(existing&&existing.createdByUid)||actorUid,updatedAt:positive(existing&&existing.updatedAt)||timestamp,updatedByUid:text(existing&&existing.updatedByUid)||actorUid,schemaVersion:3};
+      if(!existing||JSON.stringify(occurrenceSemantic(existing))!==JSON.stringify(occurrenceSemantic(desired))){desired.updatedAt=timestamp;desired.updatedByUid=actorUid;root.occurrences[occurrenceId]=desired;changed=true;}else root.occurrences[occurrenceId]=existing;
       activeIds.push(occurrenceId);allIds.push(occurrenceId);seen[occurrenceId]=true;
     });
 
     (existingPlan&&Array.isArray(existingPlan.occurrenceIds)?existingPlan.occurrenceIds:[]).forEach(function(id){
-      if(seen[id])return;var row=root.occurrences[id];if(!row||row.rollingGenerated!==true)return;
-      allIds.push(id);
-      if(row.status!=='CANCELLED'&&row.status!=='COMPLETED'){
-        root.occurrences[id]=Object.assign({},clone(row),{status:'CANCELLED',assignmentStatus:'SKIPPED',cancelledAt:timestamp,cancelledByUid:actorUid,updatedAt:timestamp,updatedByUid:actorUid});changed=true;
-      }
+      if(seen[id])return;var row=root.occurrences[id];if(!row||row.rollingGenerated!==true)return;allIds.push(id);
+      if(row.status!=='CANCELLED'&&row.status!=='COMPLETED'){root.occurrences[id]=Object.assign({},clone(row),{status:'CANCELLED',assignmentStatus:'SKIPPED',cancelledAt:timestamp,cancelledByUid:actorUid,updatedAt:timestamp,updatedByUid:actorUid});changed=true;}
     });
 
     var required=[];activeIds.forEach(function(id){var uid=assignedUid(root.occurrences[id]);if(uid&&required.indexOf(uid)<0)required.push(uid);});required.sort();
     var summary=planSummary(root,activeIds,memberRows);
-    var plan={
-      id:planId,householdId:householdId,status:'ACTIVE',approvalState:'ROLLING_APPROVED',approvalRound:Number(existingPlan&&existingPlan.approvalRound)||1,
-      windowStartAt:windowValue.startAt,windowEndAt:windowValue.endAt,distributionMode:'FIXED_PERSON',occurrenceIds:allIds,
-      requiredApprovalUids:required.slice(),acceptedApprovalUids:required.slice(),declinedApprovalUids:[],approvalSummary:{requiredCount:required.length,acceptedCount:required.length,pendingCount:0},
-      summary:summary,rollingPlanVersion:1,rollingHorizonWeeks:horizonWeeks,autoActivatedFromRoutineConsent:true,
-      activatedAt:positive(existingPlan&&existingPlan.activatedAt)||timestamp,activatedByUid:text(existingPlan&&existingPlan.activatedByUid)||actorUid,
-      generatedAt:positive(existingPlan&&existingPlan.generatedAt)||timestamp,generatedByUid:text(existingPlan&&existingPlan.generatedByUid)||actorUid,
-      createdAt:positive(existingPlan&&existingPlan.createdAt)||timestamp,createdByUid:text(existingPlan&&existingPlan.createdByUid)||actorUid,
-      updatedAt:positive(existingPlan&&existingPlan.updatedAt)||timestamp,updatedByUid:text(existingPlan&&existingPlan.updatedByUid)||actorUid,schemaVersion:3
-    };
+    var plan={id:planId,householdId:householdId,status:'ACTIVE',approvalState:'ROLLING_APPROVED',approvalRound:Number(existingPlan&&existingPlan.approvalRound)||1,windowStartAt:windowValue.startAt,windowEndAt:windowValue.endAt,distributionMode:'FIXED_PERSON',occurrenceIds:allIds,requiredApprovalUids:required.slice(),acceptedApprovalUids:required.slice(),declinedApprovalUids:[],approvalSummary:{requiredCount:required.length,acceptedCount:required.length,pendingCount:0},summary:summary,rollingPlanVersion:1,rollingHorizonWeeks:horizonWeeks,autoActivatedFromRoutineConsent:true,activatedAt:positive(existingPlan&&existingPlan.activatedAt)||timestamp,activatedByUid:text(existingPlan&&existingPlan.activatedByUid)||actorUid,generatedAt:positive(existingPlan&&existingPlan.generatedAt)||timestamp,generatedByUid:text(existingPlan&&existingPlan.generatedByUid)||actorUid,createdAt:positive(existingPlan&&existingPlan.createdAt)||timestamp,createdByUid:text(existingPlan&&existingPlan.createdByUid)||actorUid,updatedAt:positive(existingPlan&&existingPlan.updatedAt)||timestamp,updatedByUid:text(existingPlan&&existingPlan.updatedByUid)||actorUid,schemaVersion:3};
     var planChanged=!beforePlan||JSON.stringify({status:beforePlan.status,occurrenceIds:beforePlan.occurrenceIds||[],required:beforePlan.requiredApprovalUids||[],summary:summarySemantic(beforePlan.summary),horizon:beforePlan.rollingHorizonWeeks})!==JSON.stringify({status:plan.status,occurrenceIds:plan.occurrenceIds,required:plan.requiredApprovalUids,summary:summarySemantic(plan.summary),horizon:plan.rollingHorizonWeeks});
-    if(planChanged){plan.updatedAt=timestamp;plan.updatedByUid=actorUid;changed=true;}else{plan.updatedAt=beforePlan.updatedAt;plan.updatedByUid=beforePlan.updatedByUid;}
-    root.plans[planId]=plan;
+    if(planChanged){plan.updatedAt=timestamp;plan.updatedByUid=actorUid;changed=true;}else{plan.updatedAt=beforePlan.updatedAt;plan.updatedByUid=beforePlan.updatedByUid;}root.plans[planId]=plan;
 
     required.forEach(function(uid){
       if(!root.approvals[uid]||typeof root.approvals[uid]!=='object')root.approvals[uid]={};
-      var ownIds=activeIds.filter(function(id){return assignedUid(root.occurrences[id])===uid;});
-      var existingApproval=root.approvals[uid][planId];
-      var same=existingApproval&&existingApproval.status==='ACCEPTED'&&JSON.stringify(existingApproval.occurrenceIds||[])===JSON.stringify(ownIds);
-      if(!same){
-        root.approvals[uid][planId]={id:planId+'__'+uid,householdId:householdId,planId:planId,uid:uid,status:'ACCEPTED',occurrenceIds:ownIds,round:plan.approvalRound,standingRoutineConsent:true,acceptedAt:positive(existingApproval&&existingApproval.acceptedAt)||timestamp,acceptedByUid:uid,createdAt:positive(existingApproval&&existingApproval.createdAt)||timestamp,createdByUid:text(existingApproval&&existingApproval.createdByUid)||actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:2};changed=true;
-      }
+      var ownIds=activeIds.filter(function(id){return assignedUid(root.occurrences[id])===uid;}),existingApproval=root.approvals[uid][planId],same=existingApproval&&existingApproval.status==='ACCEPTED'&&JSON.stringify(existingApproval.occurrenceIds||[])===JSON.stringify(ownIds);
+      if(!same){root.approvals[uid][planId]={id:planId+'__'+uid,householdId:householdId,planId:planId,uid:uid,status:'ACCEPTED',occurrenceIds:ownIds,round:plan.approvalRound,standingRoutineConsent:true,acceptedAt:positive(existingApproval&&existingApproval.acceptedAt)||timestamp,acceptedByUid:uid,createdAt:positive(existingApproval&&existingApproval.createdAt)||timestamp,createdByUid:text(existingApproval&&existingApproval.createdByUid)||actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:2};changed=true;}
     });
 
     return{changed:changed,planId:planId,reason:changed?'ROLLING_PLAN_UPDATED':'ALREADY_CURRENT',activeOccurrenceIds:activeIds};
@@ -272,8 +212,7 @@
     if(!contract||typeof contract.expandRoutineSlots!=='function'||!memberRows.length||!householdId||!actorUid)return{changed:false,root:root,reason:'NOT_READY',planIds:[]};
     var standing=standingAssignments(root,memberRows),start=weekStartAt(timestamp),planIds=[],changed=false,results=[];
     for(var index=1;index<=horizonWeeks;index++){
-      var windowValue=futureWeekWindow(start,index);
-      var result=reconcileWindow(root,contract,windowValue,memberRows,standing,householdId,actorUid,timestamp,horizonWeeks);
+      var windowValue=futureWeekWindow(start,index),result=reconcileWindow(root,contract,windowValue,memberRows,standing,householdId,actorUid,timestamp,horizonWeeks);
       results.push(result);if(result.changed)changed=true;if(['NO_OCCURRENCES','NO_ACCEPTED_ASSIGNMENTS'].indexOf(result.reason)<0)planIds.push(result.planId);
     }
     return{changed:changed,root:root,reason:changed?'ROLLING_HORIZON_UPDATED':'ALREADY_CURRENT',planIds:planIds,results:results,horizonWeeks:horizonWeeks};
@@ -283,38 +222,20 @@
 
   function reconcile(){
     if(state.inFlight)return state.inFlight;
-    var ctx=contextSnapshot(),database=firebaseDb(),token=captureContext(),contract=recurring();
-    if(!validContext(ctx)||!database||!token||!contextIsCurrent(token)||!contract)return Promise.resolve(null);
+    var ctx=contextSnapshot(),database=firebaseDb(),token=captureContext(),contract=recurring();if(!validContext(ctx)||!database||!token||!contextIsCurrent(token)||!contract)return Promise.resolve(null);
     var domain=window.CleaningDomain,path=domain&&domain.basePath?domain.basePath(ctx.householdId):'families/'+ctx.householdId+'/cleaning';
     var rootRef=database.ref(path),resultValue=null,transitionError=null;
     state.inFlight=rootRef.transaction(function(serverRoot){
       if(!contextIsCurrent(token)){transitionError=new Error('CLEANING_ROLLING_CONTEXT_CHANGED');return;}
       try{transitionError=null;resultValue=reconcileRoot({root:serverRoot||{},householdId:ctx.householdId,actorUid:ctx.uid,timestamp:now(),members:liveMembers(),recurringContract:contract,horizonWeeks:DEFAULT_HORIZON_WEEKS});return resultValue.changed?resultValue.root:undefined;}catch(error){transitionError=error;return;}
     }).then(function(result){
-      if(transitionError)throw transitionError;if(!contextIsCurrent(token))throw new Error('CLEANING_ROLLING_CONTEXT_CHANGED_AFTER_WRITE');
-      if(resultValue&&resultValue.changed&&(!result||result.committed!==true))throw new Error('CLEANING_ROLLING_WRITE_NOT_COMMITTED');
-      emit(Object.assign({status:resultValue&&resultValue.changed?'updated':'current'},resultValue||{}));return resultValue;
-    }).catch(function(error){emit({status:'error',error:error&&error.message||String(error)});throw error;}).finally(function(){state.inFlight=null;});
-    return state.inFlight;
+      if(transitionError)throw transitionError;if(!contextIsCurrent(token))throw new Error('CLEANING_ROLLING_CONTEXT_CHANGED_AFTER_WRITE');if(resultValue&&resultValue.changed&&(!result||result.committed!==true))throw new Error('CLEANING_ROLLING_WRITE_NOT_COMMITTED');emit(Object.assign({status:resultValue&&resultValue.changed?'updated':'current'},resultValue||{}));return resultValue;
+    }).catch(function(error){emit({status:'error',error:error&&error.message||String(error)});throw error;}).finally(function(){state.inFlight=null;});return state.inFlight;
   }
 
-  function schedule(){
-    if(state.debounce)clearTimeout(state.debounce);
-    state.debounce=setTimeout(function(){state.debounce=null;reconcile().catch(function(){});},120);
-  }
-
-  function attach(){
-    var repo=repository();if(!repo||typeof repo.subscribe!=='function')return false;if(state.unsubscribe)return true;
-    state.unsubscribe=repo.subscribe(function(snapshot){if(snapshot&&snapshot.ready===true)schedule();});
-    try{var initial=repo.snapshot&&repo.snapshot();if(initial&&initial.ready===true)schedule();}catch(e){}
-    return true;
-  }
-
-  function start(){
-    if(attach())return true;if(state.attachTimer)return false;var tries=0;
-    state.attachTimer=setInterval(function(){tries++;if(attach()||tries>240){clearInterval(state.attachTimer);state.attachTimer=null;}},100);return false;
-  }
-
+  function schedule(){if(state.debounce)clearTimeout(state.debounce);state.debounce=setTimeout(function(){state.debounce=null;reconcile().catch(function(){});},120);}
+  function attach(){var repo=repository();if(!repo||typeof repo.subscribe!=='function')return false;if(state.unsubscribe)return true;state.unsubscribe=repo.subscribe(function(snapshot){if(snapshot&&snapshot.ready===true)schedule();});try{var initial=repo.snapshot&&repo.snapshot();if(initial&&initial.ready===true)schedule();}catch(e){}return true;}
+  function start(){if(attach())return true;if(state.attachTimer)return false;var tries=0;state.attachTimer=setInterval(function(){tries++;if(attach()||tries>240){clearInterval(state.attachTimer);state.attachTimer=null;}},100);return false;}
   function stop(){if(state.unsubscribe){try{state.unsubscribe();}catch(e){}state.unsubscribe=null;}if(state.attachTimer){clearInterval(state.attachTimer);state.attachTimer=null;}if(state.debounce){clearTimeout(state.debounce);state.debounce=null;}state.inFlight=null;}
 
   window.CleaningRollingPlannerService={version:VERSION,start:start,stop:stop,reconcile:reconcile,status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,inFlight:!!state.inFlight});},_reconcileRoot:reconcileRoot,_weekStartAt:weekStartAt,_futureWeekWindow:futureWeekWindow,_standingAssignments:standingAssignments};
