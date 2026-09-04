@@ -16,7 +16,7 @@ context.window=context;
 vm.runInNewContext(source,context,{filename:'cleaningPauseAgendaProjection.js'});
 const projection=context.CleaningPauseAgendaProjection;
 assert.ok(projection);
-assert.strictEqual(projection.version,'0.1.0');
+assert.strictEqual(projection.version,'0.1.1');
 
 const timestamp=new Date(2026,8,4,8,0,0,0).getTime();
 const resumeAt=new Date(2026,8,18,0,0,0,0).getTime();
@@ -28,6 +28,7 @@ const cleaning={
   routines:{
     shower:{id:'shower',roomId:'bath',title:'Douche schoonmaken',active:true,paused:true,pauseSource:'ROOM',pauseUntilAt:resumeAt},
     mirror:{id:'mirror',roomId:'bath',title:'Spiegel reinigen',active:true,paused:true,pauseSource:'ROOM',pauseUntilAt:resumeAt},
+    priorDirect:{id:'priorDirect',roomId:'bath',title:'Bad ontkalken',active:true,paused:true,pauseSource:'ROUTINE',pauseUntilAt:resumeAt},
     oven:{id:'oven',roomId:'kitchen',title:'Oven reinigen',active:true,paused:true,pauseSource:'ROUTINE',pauseUntilAt:resumeAt,pausedAt:timestamp,pausedByUid:'u1'},
     manual:{id:'manual',roomId:'kitchen',title:'Koelkast',active:true,paused:true,pauseSource:'ROUTINE',pauseUntilAt:null}
   }
@@ -40,7 +41,7 @@ assert.deepStrictEqual(keys,[
   'calendarEvents/id_cleaning_pause_resume_routine_oven'
 ]);
 assert.strictEqual(result.created,2);
-assert.strictEqual(result.desiredCount,2,'room-paused routines must not create duplicate agenda markers');
+assert.strictEqual(result.desiredCount,2,'a paused room must own one marker and suppress all routine markers inside it');
 const roomMarker=result.updates['calendarEvents/id_cleaning_pause_resume_room_bath'];
 const routineMarker=result.updates['calendarEvents/id_cleaning_pause_resume_routine_oven'];
 assert.strictEqual(roomMarker.title,'Schoonmaken hervat · Badkamer');
@@ -52,6 +53,7 @@ assert.strictEqual(roomMarker.pauseResumeKind,'room');
 assert.strictEqual(routineMarker.title,'Routine hervat · Oven reinigen');
 assert.strictEqual(routineMarker.description,'Vanaf vandaag wordt Oven reinigen in Keuken automatisch hervat.');
 assert.ok(!keys.some(key=>key.includes('manual')),'indefinite pause must not invent an agenda date');
+assert.ok(!keys.some(key=>key.includes('priorDirect')),'room pause must visually win over a pre-existing direct routine pause');
 
 const existing={};
 existing[roomMarker._key]=roomMarker;
@@ -73,12 +75,15 @@ result=projection._buildUpdates({cleaning:resumed,calendarEvents:existing,househ
 assert.strictEqual(result.removed,2);
 assert.strictEqual(result.updates['calendarEvents/id_cleaning_pause_resume_room_bath'],null,'manual/automatic room resume must remove stale marker');
 assert.strictEqual(result.updates['calendarEvents/id_cleaning_pause_resume_routine_oven'],null,'routine resume must remove stale marker');
+assert.ok(result.updates['calendarEvents/id_cleaning_pause_resume_routine_priorDirect'],'a still-active direct pause becomes visible after the room itself resumes');
 
 assert.ok(source.includes("sourceType:'cleaning-pause-resume'"));
-assert.ok(source.includes("text(row.pauseSource)==='ROOM'"),'room pause must own one marker instead of one per routine');
+assert.ok(source.includes("text(row.pauseSource)==='ROOM'"),'ROOM-owned routines may not create duplicate markers');
+assert.ok(source.includes('roomPaused(root,text(row.roomId))'),'any routine marker inside an actively paused room must stay suppressed');
 assert.ok(source.includes("familyRef.child('calendarEvents').once('value')"));
 assert.ok(source.includes("familyRef.update(result.updates)"));
+assert.ok(source.includes("window.addEventListener('familyapp:calendar-repository',queue)"),'manual calendar edits/deletes must self-heal from Cleaning truth');
 assert.ok(!source.includes('.transaction('),'Agenda marker projection must not transact a parent family/root');
 assert.ok(!source.includes('cleaning-approval-copy'));
 
-console.log('cleaning finite pause -> single derived Agenda resume marker: ok');
+console.log('cleaning finite pause -> single self-healing derived Agenda resume marker: ok');
