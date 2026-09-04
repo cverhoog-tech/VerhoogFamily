@@ -41,7 +41,7 @@ const root={
 };
 
 const first=rolling._reconcileRoot({root,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
-assert.strictEqual(rolling.version,'0.1.2');
+assert.strictEqual(rolling.version,'0.1.3');
 assert.strictEqual(first.changed,true);
 assert.strictEqual(first.planIds.length,2);
 
@@ -67,6 +67,52 @@ const second=rolling._reconcileRoot({root:first.root,householdId:hid,actorUid:'u
 assert.strictEqual(second.changed,false,'rolling horizon reconciliation must be idempotent');
 assert.strictEqual(second.reason,'ALREADY_CURRENT');
 
+// A finite pause freezes the remaining countdown, not the recurrence itself.
+// Here the routine had two days left when paused on Jan 3. A pause through Jan
+// 15 therefore makes the next real clean Jan 17, then its 3-day interval keeps
+// going on Jan 20. There must be no actual clean inside the pause.
+const pauseRoot={
+  rooms:{bathroom:{id:'bathroom',name:'Badkamer',active:true,distributionMode:'FAIR_TIME'}},
+  routines:{
+    paused:{
+      id:'paused',roomId:'bathroom',title:'Douche reinigen',intervalDays:3,estimatedMinutes:12,priority:'NORMAL',active:true,
+      createdAt:start,repeatScope:'ONGOING',assignmentMode:'AUTO',assignmentRequestStatus:'AUTO',paused:true,pauseSource:'ROUTINE',
+      pausedAt:start+2*DAY,pauseUntilAt:start+14*DAY,pauseCadenceStartedAt:start+2*DAY,pauseCadenceNextDueAt:start+4*DAY,
+      nextDueAt:start+4*DAY,continuityAssigneeUid:'u1',continuityAssignmentSource:'ACCEPTED_PLAN_BEFORE_PAUSE',continuityAnchorAt:start+DAY
+    },
+    indefinite:{
+      id:'indefinite',roomId:'bathroom',title:'Voegen reinigen',intervalDays:7,estimatedMinutes:15,active:true,
+      createdAt:start,repeatScope:'ONGOING',assignmentMode:'AUTO',assignmentRequestStatus:'AUTO',paused:true,pauseSource:'ROUTINE',pauseUntilAt:null,
+      nextDueAt:start+3*DAY,continuityAssigneeUid:'u2',continuityAssignmentSource:'ACCEPTED_PLAN_BEFORE_PAUSE',continuityAnchorAt:start+DAY
+    }
+  },
+  plans:{},occurrences:{},approvals:{}
+};
+const shadow=rolling._planningRoutines(pauseRoot);
+assert.strictEqual(pauseRoot.routines.paused.paused,true,'rolling preview may never unpause canonical data');
+assert.strictEqual(shadow.paused.paused,false,'finite pause gets a planning-only active shadow');
+assert.strictEqual(shadow.paused.nextDueAt,start+16*DAY,'two days remaining at pause time must resume two days after the pause ends');
+assert.strictEqual(shadow.indefinite.paused,true,'indefinite pause must not invent a future due date');
+assert.strictEqual(rolling._finitePauseNextDue(pauseRoot,pauseRoot.routines.paused),start+16*DAY);
+assert.strictEqual(rolling._finitePauseNextDue(pauseRoot,pauseRoot.routines.indefinite),null);
+
+const pausedRolling=rolling._reconcileRoot({root:pauseRoot,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
+const pausedSlots=Object.values(pausedRolling.root.occurrences)
+  .filter((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('paused'))
+  .map((row)=>row.slotAt).sort((a,b)=>a-b);
+assert.deepStrictEqual(pausedSlots,[start+16*DAY,start+19*DAY],'after the pause, real occurrences must continue on intervalDays');
+assert.ok(pausedSlots.every((slot)=>slot>=start+14*DAY),'no real occurrence may be projected inside the pause');
+assert.ok(Object.values(pausedRolling.root.occurrences).filter((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('paused')).every((row)=>row.assignmentUids[0]==='u1'),'accepted pre-pause assignment continuity must survive sanitizer removal');
+assert.ok(!Object.values(pausedRolling.root.occurrences).some((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('indefinite')),'indefinite pause stays out of future rolling plans');
+
+// A room pause has precedence. A separately paused routine cannot leak a clean
+// into an otherwise later room pause.
+const roomPaused=JSON.parse(JSON.stringify(pauseRoot));
+roomPaused.rooms.bathroom.paused=true;
+roomPaused.rooms.bathroom.pauseUntilAt=start+18*DAY;
+roomPaused.routines.paused.pauseUntilAt=start+14*DAY;
+assert.strictEqual(rolling._finitePauseNextDue(roomPaused,roomPaused.routines.paused),start+20*DAY,'room pause must extend the effective resume before the frozen countdown continues');
+
 // A rolling plan produced by an older runtime may not promote itself into
 // standing consent. With no fixed or non-rolling accepted assignment it is
 // cleaned up instead of being extended indefinitely.
@@ -83,4 +129,4 @@ assert.strictEqual(migration.changed,true);
 assert.strictEqual(migration.root.occurrences[unsafeOccurrence].status,'CANCELLED');
 assert.ok(!Object.values(migration.root.occurrences).some((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('unsafe')));
 
-console.log('cleaning rolling four-week planner with explicit accepted consent: ok');
+console.log('cleaning rolling planner keeps real cadence across finite pauses: ok');
