@@ -38,13 +38,14 @@ assert.ok(templates.includes("import './cleaningRoutineExperience.js?v=3';"));
 assert.ok(templates.includes("import './cleaningQuickChoiceFeedback.js?v=2';"));
 assert.ok(templates.includes("import './cleaningRoomListControlsV2.js?v=1';"));
 assert.ok(templates.includes("import './cleaningRoomWorkflowUx.js?v=2';"));
-assert.ok(templates.includes("import './cleaningPauseExperience.js?v=1';"));
+assert.ok(templates.includes("import './cleaningPauseExperience.js?v=2';"));
+assert.ok(templates.includes("import './cleaningPauseAgendaProjection.js?v=1';"));
 assert.ok(templates.includes("import './cleaningSupplyExperience.js?v=2';"));
 assert.ok(templates.includes("import './cleaningSupplyDirectManager.js?v=1';"));
 assert.ok(templates.includes("import './cleaningActivePlanReconciler.js?v=2';"));
 assert.ok(templates.includes("import './cleaningPlanSanitizer.js?v=2';"));
 assert.ok(templates.includes("import './cleaningApprovalClarity.js?v=1';"));
-assert.ok(templates.includes("import './cleaningRollingPlannerService.js?v=3';"));
+assert.ok(templates.includes("import './cleaningRollingPlannerService.js?v=4';"));
 assert.ok(templates.includes("import './cleaningProjectionService.js?v=4';"));
 assert.ok(templates.includes("import './cleaningDerivedCleanup.js?v=1';"));
 assert.ok(templates.includes("import './cleaningShoppingCleanup.js?v=1';"));
@@ -52,9 +53,9 @@ assert.ok(templates.includes("import './cleaningOverviewExperience.js?v=1';"));
 
 const order=[
   'cleaningRecurringPlanContract.js?v=3','cleaningRoutineExperience.js?v=3','cleaningQuickChoiceFeedback.js?v=2',
-  'cleaningRoomListControlsV2.js?v=1','cleaningRoomWorkflowUx.js?v=2','cleaningPauseExperience.js?v=1','cleaningSupplyExperience.js?v=2',
+  'cleaningRoomListControlsV2.js?v=1','cleaningRoomWorkflowUx.js?v=2','cleaningPauseExperience.js?v=2','cleaningPauseAgendaProjection.js?v=1','cleaningSupplyExperience.js?v=2',
   'cleaningSupplyDirectManager.js?v=1','cleaningActivePlanReconciler.js?v=2','cleaningPlanSanitizer.js?v=2',
-  'cleaningApprovalClarity.js?v=1','cleaningRollingPlannerService.js?v=3','cleaningProjectionService.js?v=4',
+  'cleaningApprovalClarity.js?v=1','cleaningRollingPlannerService.js?v=4','cleaningProjectionService.js?v=4',
   'cleaningDerivedCleanup.js?v=1','cleaningShoppingCleanup.js?v=1','cleaningOverviewExperience.js?v=1'
 ];
 for(let i=1;i<order.length;i++)assert.ok(templates.indexOf(order[i-1])<templates.indexOf(order[i]),order[i-1]+' must load before '+order[i]);
@@ -82,9 +83,12 @@ assert.ok(roomWorkflow.includes('cleaning-routine-pause-button'));
 assert.ok(roomWorkflow.includes('cleaning-routine-remove-button'));
 assert.ok(roomWorkflow.includes('prepareOptionalName'));
 
-assert.ok(pauseExperience.includes("var VERSION='0.1.0'"));
+assert.ok(pauseExperience.includes("var VERSION='0.2.0'"));
 assert.ok(pauseExperience.includes("pauseSource:'ROUTINE'"));
-assert.ok(pauseExperience.includes("patch[base+'pauseSource']='ROOM'"));
+assert.ok(pauseExperience.includes("pausePatch(routine,routine.id,'ROOM'"));
+assert.ok(pauseExperience.includes('pauseCadenceStartedAt'));
+assert.ok(pauseExperience.includes('pauseCadenceNextDueAt'));
+assert.ok(pauseExperience.includes('continuityAssigneeUid'));
 assert.ok(pauseExperience.includes('nextDueOnResume'));
 assert.ok(pauseExperience.includes('data-cleaning-room-pause'));
 
@@ -125,8 +129,13 @@ assert.ok(approvalClarity.includes('Jouw akkoord is nog nodig'));
 assert.ok(approvalClarity.includes('Planning vernieuwen'));
 assert.ok(approvalClarity.includes('CleaningPlanSanitizer'));
 
-assert.ok(rolling.includes("var VERSION='0.1.2'"));
+assert.ok(rolling.includes("var VERSION='0.1.3'"));
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'rolling plans may not become their own consent source');
+assert.ok(rolling.includes('planningRoutines'));
+assert.ok(rolling.includes('finitePauseNextDue'));
+assert.ok(rolling.includes("continuityAssignmentSource)==='ACCEPTED_PLAN_BEFORE_PAUSE'"));
+assert.ok(rolling.includes('PAUSE_CONTINUITY'));
+assert.ok(!rolling.includes("routine.paused===true)return"),'finite pause must not be blanket-dropped before rolling shadow expansion');
 
 assert.ok(derivedCleanup.includes("var VERSION='0.1.0'"));
 assert.ok(derivedCleanup.includes('projectionManaged===true'));
@@ -233,4 +242,4 @@ assert.ok(shoppingCleanup.includes("CustomEvent('familyapp:cleaning-shopping-cle
 assert.ok(rolling.includes("CustomEvent('familyapp:cleaning-rolling-plans'"));
 assert.ok(exceptionRuntime.includes("CustomEvent('familyapp:cleaning-exception'"));
 
-console.log('cleaning rooms + supplies + pause/history + exception execution ownership: ok');
+console.log('cleaning rooms + supplies + pause cadence/history + exception execution ownership: ok');
