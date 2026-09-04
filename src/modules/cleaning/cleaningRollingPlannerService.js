@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CLEANING ROLLING PLANNER SERVICE v0.1.3
+// CLEANING ROLLING PLANNER SERVICE v0.1.4
 // Keeps a four-week future horizon for routines marked ONGOING.
 // Future occurrences are only created after a fixed-person request, a
 // concrete non-rolling weekly assignment has been accepted, or that exact
@@ -9,12 +9,13 @@
 // A finite pause freezes the routine countdown. The rolling horizon may show
 // work AFTER the pause using a planning-only shadow nextDueAt, while canonical
 // routine.paused stays true and no current work can leak into the pause.
-// Existing rolling plans never become their own consent source.
+// Existing rolling plans never become their own consent source. Legacy pauses
+// can recover exact consent from a sanitizer-cancelled non-rolling occurrence.
 // ============================================================
 (function(){
   if(window.CleaningRollingPlannerService)return;
 
-  var VERSION='0.1.3';
+  var VERSION='0.1.4';
   var DEFAULT_HORIZON_WEEKS=4;
   var ASSIGNMENT_PRIORITY={ACCEPTED_PLAN:2,PAUSE_CONTINUITY:3,FIXED_ROUTINE:4};
   var state={unsubscribe:null,attachTimer:null,debounce:null,inFlight:null,lastResult:null,lastError:null};
@@ -76,7 +77,7 @@
   }
 
   function occurrenceAnchor(occurrence){
-    return positive(occurrence&&occurrence.slotAt)||positive(occurrence&&occurrence.flexibleWindow&&occurrence.flexibleWindow.startAt)||positive(occurrence&&occurrence.scheduledStartAt)||positive(occurrence&&occurrence.earliestDueAt)||0;
+    return positive(occurrence&&occurrence.slotAt)||positive(occurrence&&occurrence.flexibleWindow&&occurrence.flexibleWindow.startAt)||positive(occurrence&&occurrence.scheduledStartAt)||positive(occurrence&&occurrence.earliestDueAt)||positive(occurrence&&occurrence.cancelledAt)||0;
   }
 
   function routineIds(occurrence){
@@ -92,7 +93,8 @@
 
   // Return the date on which the frozen countdown should finish after the
   // effective pause. If either a routine or its room is paused indefinitely,
-  // no future due date is invented.
+  // no future due date is invented. Legacy pauses fall back to pausedAt +
+  // nextDueAt when cadence metadata did not exist yet.
   function finitePauseNextDue(root,routine){
     var row=routine||{},room=root&&root.rooms&&root.rooms[text(row.roomId)]||null;
     var routinePaused=row.paused===true,roomPaused=!!(room&&room.active!==false&&room.paused===true);
@@ -156,6 +158,20 @@
         var row=occurrences[id],uid=assignedUid(row),anchor=occurrenceAnchor(row),assignmentStatus=text(row&&row.assignmentStatus);
         if(!row||!uid||row.status==='CANCELLED'||row.status==='SKIPPED'||['ACTIVE','ACCEPTED','COMPLETED'].indexOf(assignmentStatus)<0)return;
         routineIds(row).forEach(function(routineId){offer(routineId,uid,ASSIGNMENT_PRIORITY.ACCEPTED_PLAN,anchor);});
+      });
+    });
+
+    // Compatibility for pauses created before continuityAssigneeUid existed.
+    // PlanSanitizer intentionally keeps the historical cancelled occurrence.
+    // We only reuse it when the exact routine id is still present, the routine
+    // itself still exists and is paused, and its source plan is ACTIVE and
+    // non-rolling. Missing/ambiguous history is never guessed.
+    Object.keys(routines).forEach(function(routineId){
+      var routine=routines[routineId]||{};if(routine.active===false||routine.paused!==true||choices[routineId])return;
+      Object.keys(occurrences).forEach(function(id){
+        var row=occurrences[id],plan=plans[text(row&&row.planId)],uid=assignedUid(row),reason=text(row&&row.cancellationReason).toUpperCase();
+        if(!row||text(row.status).toUpperCase()!=='CANCELLED'||reason.indexOf('ROUTINE')!==0||!plan||plan.status!=='ACTIVE'||plan.rollingPlanVersion===1||routineIds(row).indexOf(routineId)<0)return;
+        offer(routineId,uid,ASSIGNMENT_PRIORITY.PAUSE_CONTINUITY,occurrenceAnchor(row));
       });
     });
 
