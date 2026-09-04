@@ -16,7 +16,7 @@ context.window=context;
 vm.runInNewContext(source,context,{filename:'cleaningPlanSanitizer.js'});
 const sanitizer=context.CleaningPlanSanitizer;
 assert.ok(sanitizer);
-assert.strictEqual(sanitizer.version,'0.1.0');
+assert.strictEqual(sanitizer.version,'0.2.1');
 
 const planId='week-1';
 const root={
@@ -102,10 +102,40 @@ assert.strictEqual(history.changed,true);
 assert.deepStrictEqual(Array.from(history.root.plans[planId].occurrenceIds),[]);
 assert.strictEqual(history.root.occurrences['current-occ'].status,'COMPLETED','history must stay completed');
 
+// Pausing a routine must remove its current active work from the live plan.
+const pauseRoot=JSON.parse(JSON.stringify(root));
+pauseRoot.rooms.old.active=true;
+pauseRoot.routines.oldRoutine.paused=true;
+pauseRoot.plans[planId].occurrenceIds=['old-occ'];
+pauseRoot.plans[planId].requiredApprovalUids=['u1'];
+pauseRoot.plans[planId].acceptedApprovalUids=['u1'];
+const paused=sanitizer._sanitizeRoot({root:pauseRoot,planId,householdId:'family-1',actorUid:'u1',timestamp:4000});
+assert.strictEqual(paused.changed,true);
+assert.deepStrictEqual(Array.from(paused.root.plans[planId].occurrenceIds),[]);
+assert.strictEqual(paused.root.occurrences['old-occ'].status,'CANCELLED');
+assert.strictEqual(paused.root.occurrences['old-occ'].cancellationReason,'ROUTINES_REMOVED');
+
+// Explicit skip is already canonical history and should simply disappear from
+// the live plan without being rewritten to CANCELLED.
+const skipRoot=JSON.parse(JSON.stringify(root));
+skipRoot.rooms.old.active=true;
+skipRoot.occurrences['old-occ'].status='SKIPPED';
+skipRoot.occurrences['old-occ'].assignmentStatus='SKIPPED';
+skipRoot.occurrences['old-occ'].skipReason='SKIP';
+skipRoot.plans[planId].occurrenceIds=['old-occ'];
+skipRoot.plans[planId].requiredApprovalUids=['u1'];
+skipRoot.plans[planId].acceptedApprovalUids=['u1'];
+const skipped=sanitizer._sanitizeRoot({root:skipRoot,planId,householdId:'family-1',actorUid:'u1',timestamp:5000});
+assert.strictEqual(skipped.changed,true);
+assert.deepStrictEqual(Array.from(skipped.root.plans[planId].occurrenceIds),[]);
+assert.strictEqual(skipped.root.occurrences['old-occ'].status,'SKIPPED');
+assert.strictEqual(skipped.root.occurrences['old-occ'].skipReason,'SKIP');
+
 assert.ok(source.includes('CleaningActivePlanReconciler'));
 assert.ok(source.includes('CleaningProjectionService'));
+assert.ok(source.includes('row.paused!==true'));
 assert.ok(!source.includes('MutationObserver'));
 assert.ok(!source.includes('document.'));
 assert.ok(!source.includes('cleaning-approval-copy'));
 
-console.log('cleaning stale room/routine plan sanitizer: ok');
+console.log('cleaning stale/paused/skipped live-plan sanitizer: ok');
