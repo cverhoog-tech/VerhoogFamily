@@ -1,16 +1,16 @@
 'use strict';
 // ============================================================
-// CLEANING PLAN SANITIZER v0.1.0
-// Removes references to deleted rooms/routines from non-rolling live plans.
-// Historical occurrence records stay available, but an inactive room may no
-// longer remain inside the current Planning view or derived Task/Calendar set.
-// The existing ActivePlanReconciler remains the owner that ADDS new work;
-// this service only removes/trim stale work, then hands back to that reconciler.
+// CLEANING PLAN SANITIZER v0.2.0
+// Removes references to unavailable rooms/routines from non-rolling live plans.
+// Deleted or temporarily paused routines may no longer remain inside the
+// current Planning view or derived Task/Calendar set. Historical occurrence
+// records stay available. ActivePlanReconciler remains the owner that ADDS new
+// work; this service only removes/trims stale work, then hands back to it.
 // ============================================================
 (function(){
   if(window.CleaningPlanSanitizer)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
   var state={unsubscribe:null,attachTimer:null,inFlight:{},lastResult:null,lastError:null};
 
   function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(error){return value;}}
@@ -27,7 +27,7 @@
   function assignedUid(row){var ids=row&&Array.isArray(row.assignmentUids)?row.assignmentUids.filter(Boolean).map(String):[];return ids.length===1?ids[0]:null;}
   function isFinished(row){var status=text(row&&row.status).toUpperCase();return status==='COMPLETED'||status==='SKIPPED'||status==='CANCELLED';}
   function activeRoom(root,roomId){var row=root.rooms&&root.rooms[roomId];return !!(row&&typeof row==='object'&&row.active!==false);}
-  function activeRoutine(root,routineId,roomId){var row=root.routines&&root.routines[routineId];return !!(row&&typeof row==='object'&&row.active!==false&&text(row.roomId)===text(roomId));}
+  function activeRoutine(root,routineId,roomId){var row=root.routines&&root.routines[routineId];return !!(row&&typeof row==='object'&&row.active!==false&&row.paused!==true&&text(row.roomId)===text(roomId));}
   function ensureApprovalMap(root,uid){if(!root.approvals||typeof root.approvals!=='object')root.approvals={};if(!root.approvals[uid]||typeof root.approvals[uid]!=='object')root.approvals[uid]={};return root.approvals[uid];}
   function approvalAt(root,uid,planId){var map=root.approvals&&root.approvals[uid],row=map&&map[planId];return row&&typeof row==='object'?row:null;}
 
