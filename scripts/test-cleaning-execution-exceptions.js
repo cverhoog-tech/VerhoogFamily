@@ -97,7 +97,7 @@ assert.ok(!taskUiSource.includes('cleaning-approval-copy'),'Task exception UI ma
 // Pause semantics: a pause freezes the countdown to nextDueAt and preserves
 // accepted assignment continuity, rather than stopping the recurrence chain.
 assert.ok(pauseSource.includes("var VERSION='0.2.0'"));
-assert.ok(pauseSource.includes("pauseSource:'ROUTINE'"));
+assert.ok(pauseSource.includes("pausePatch(row,id,'ROUTINE'"));
 assert.ok(pauseSource.includes("pausePatch(routine,routine.id,'ROOM'"));
 assert.ok(pauseSource.includes('pauseCadenceStartedAt'));
 assert.ok(pauseSource.includes('pauseCadenceNextDueAt'));
