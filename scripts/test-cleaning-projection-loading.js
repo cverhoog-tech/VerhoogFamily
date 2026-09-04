@@ -84,7 +84,7 @@ assert.ok(roomWorkflow.includes('cleaning-routine-remove-button'));
 assert.ok(roomWorkflow.includes('prepareOptionalName'));
 
 assert.ok(pauseExperience.includes("var VERSION='0.2.0'"));
-assert.ok(pauseExperience.includes("pauseSource:'ROUTINE'"));
+assert.ok(pauseExperience.includes("pausePatch(row,id,'ROUTINE'"));
 assert.ok(pauseExperience.includes("pausePatch(routine,routine.id,'ROOM'"));
 assert.ok(pauseExperience.includes('pauseCadenceStartedAt'));
 assert.ok(pauseExperience.includes('pauseCadenceNextDueAt'));
@@ -133,7 +133,7 @@ assert.ok(rolling.includes("var VERSION='0.1.3'"));
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'rolling plans may not become their own consent source');
 assert.ok(rolling.includes('planningRoutines'));
 assert.ok(rolling.includes('finitePauseNextDue'));
-assert.ok(rolling.includes("continuityAssignmentSource)==='ACCEPTED_PLAN_BEFORE_PAUSE'"));
+assert.ok(rolling.includes("continuitySource==='ACCEPTED_PLAN_BEFORE_PAUSE'"));
 assert.ok(rolling.includes('PAUSE_CONTINUITY'));
 assert.ok(!rolling.includes("routine.paused===true)return"),'finite pause must not be blanket-dropped before rolling shadow expansion');
 
