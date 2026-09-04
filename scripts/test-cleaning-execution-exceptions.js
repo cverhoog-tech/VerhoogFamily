@@ -94,12 +94,17 @@ assert.ok(taskUiSource.includes('Niet alles gelukt?'));
 assert.ok(taskUiSource.includes("state.confirmAction!==action"),'destructive exception choices need an explicit second tap');
 assert.ok(!taskUiSource.includes('cleaning-approval-copy'),'Task exception UI may not own Planning approval copy');
 
-// Pause semantics: both routine and room pauses converge on routine.paused,
-// while resume explicitly prevents a backlog from pre-pause due dates.
+// Pause semantics: a pause freezes the countdown to nextDueAt and preserves
+// accepted assignment continuity, rather than stopping the recurrence chain.
+assert.ok(pauseSource.includes("var VERSION='0.2.0'"));
 assert.ok(pauseSource.includes("pauseSource:'ROUTINE'"));
-assert.ok(pauseSource.includes("patch[base+'pauseSource']='ROOM'"));
+assert.ok(pauseSource.includes("pausePatch(routine,routine.id,'ROOM'"));
+assert.ok(pauseSource.includes('pauseCadenceStartedAt'));
+assert.ok(pauseSource.includes('pauseCadenceNextDueAt'));
+assert.ok(pauseSource.includes('continuityAssigneeUid'));
+assert.ok(pauseSource.includes('ACCEPTED_PLAN_BEFORE_PAUSE'));
 assert.ok(pauseSource.includes('nextDueOnResume'));
-assert.ok(pauseSource.includes("row.paused===true"));
+assert.ok(pauseSource.includes("roomIsPaused(text(row.roomId))"),'a routine may not auto-resume underneath a still-paused room');
 assert.ok(!pauseSource.includes('cleaning-approval-copy'));
 assert.ok(sanitizerSource.includes("row.paused!==true"),'live-plan sanitizer must treat paused routines as unavailable');
 assert.ok(sanitizerSource.includes("row.status==='CANCELLED'||row.status==='SKIPPED'"),'explicitly skipped turns must leave the live plan');
@@ -115,10 +120,10 @@ assert.ok(!overviewSource.includes('cleaning-approval-copy'));
 // Loading order: pause belongs to Cleaning room experience; task exception
 // contract/runtime/UI belong after execution guard and before Task supply UI.
 assert.ok(templateSource.includes("import './cleaningRoomWorkflowUx.js?v=2';"));
-assert.ok(templateSource.includes("import './cleaningPauseExperience.js?v=1';"));
+assert.ok(templateSource.includes("import './cleaningPauseExperience.js?v=2';"));
 assert.ok(templateSource.includes("import './cleaningPlanSanitizer.js?v=2';"));
 assert.ok(templateSource.includes("import './cleaningOverviewExperience.js?v=1';"));
-assert.ok(templateSource.indexOf('cleaningRoomWorkflowUx.js?v=2')<templateSource.indexOf('cleaningPauseExperience.js?v=1'));
+assert.ok(templateSource.indexOf('cleaningRoomWorkflowUx.js?v=2')<templateSource.indexOf('cleaningPauseExperience.js?v=2'));
 assert.ok(templateSource.indexOf('cleaningPlanSanitizer.js?v=2')<templateSource.indexOf('cleaningOverviewExperience.js?v=1'));
 
 const executionGuardIndex=calendarSource.indexOf('cleaningExecutionUiGuard.js?v=1');
@@ -130,4 +135,4 @@ assert.ok(executionGuardIndex>=0&&executionGuardIndex<exceptionContractIndex);
 assert.ok(exceptionContractIndex<exceptionRuntimeIndex&&exceptionRuntimeIndex<exceptionUiIndex);
 assert.ok(exceptionUiIndex<supplyUiIndex);
 
-console.log('cleaning incomplete execution + pause + history contracts: ok');
+console.log('cleaning incomplete execution + pause cadence + history contracts: ok');
