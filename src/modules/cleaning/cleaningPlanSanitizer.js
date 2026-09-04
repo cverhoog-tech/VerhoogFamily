@@ -1,16 +1,17 @@
 'use strict';
 // ============================================================
-// CLEANING PLAN SANITIZER v0.2.0
+// CLEANING PLAN SANITIZER v0.2.1
 // Removes references to unavailable rooms/routines from non-rolling live plans.
-// Deleted or temporarily paused routines may no longer remain inside the
-// current Planning view or derived Task/Calendar set. Historical occurrence
-// records stay available. ActivePlanReconciler remains the owner that ADDS new
-// work; this service only removes/trims stale work, then hands back to it.
+// Deleted or temporarily paused routines and explicitly skipped occurrences may
+// no longer remain inside the current Planning view or derived Task/Calendar
+// set. Historical occurrence records stay available. ActivePlanReconciler
+// remains the owner that ADDS new work; this service only removes/trims stale
+// work, then hands back to it.
 // ============================================================
 (function(){
   if(window.CleaningPlanSanitizer)return;
 
-  var VERSION='0.2.0';
+  var VERSION='0.2.1';
   var state={unsubscribe:null,attachTimer:null,inFlight:{},lastResult:null,lastError:null};
 
   function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(error){return value;}}
@@ -91,7 +92,7 @@
     if(!root.plans||typeof root.plans!=='object')root.plans={};if(!root.occurrences||typeof root.occurrences!=='object')root.occurrences={};if(!root.rooms||typeof root.rooms!=='object')root.rooms={};if(!root.routines||typeof root.routines!=='object')root.routines={};
     var plan=root.plans[planId];if(!plan||typeof plan!=='object')return{changed:false,root:root,reason:'PLAN_NOT_FOUND'};plan.id=plan.id||planId;if(plan.householdId&&householdId&&text(plan.householdId)!==householdId)throw new Error('CLEANING_SANITIZE_HOUSEHOLD_CONFLICT');if(plan.rollingPlanVersion===1)return{changed:false,root:root,reason:'ROLLING_PLAN_SKIPPED'};
     var before=Array.isArray(plan.occurrenceIds)?plan.occurrenceIds.map(String):[],kept=[],removed=[],trimmed=[];
-    before.forEach(function(id){var row=root.occurrences[id];if(!row||typeof row!=='object'||text(row.planId)!==planId){removed.push(id);return;}if(row.status==='CANCELLED'){removed.push(id);return;}var result=trimOccurrence(root,row,actorUid,timestamp);if(!result.keep){cancelOccurrence(row,actorUid,timestamp,result.reason);removed.push(id);return;}kept.push(id);if(result.changed)trimmed.push(id);});
+    before.forEach(function(id){var row=root.occurrences[id];if(!row||typeof row!=='object'||text(row.planId)!==planId){removed.push(id);return;}if(row.status==='CANCELLED'||row.status==='SKIPPED'){removed.push(id);return;}var result=trimOccurrence(root,row,actorUid,timestamp);if(!result.keep){cancelOccurrence(row,actorUid,timestamp,result.reason);removed.push(id);return;}kept.push(id);if(result.changed)trimmed.push(id);});
     if(!removed.length&&!trimmed.length)return{changed:false,root:root,reason:'ALREADY_CLEAN',removedOccurrenceIds:[],trimmedOccurrenceIds:[]};
     plan.occurrenceIds=kept;plan.summary=buildSummary(root,kept);syncApprovalState(root,plan,kept,actorUid,timestamp);plan.sanitizedAt=timestamp;plan.sanitizedByUid=actorUid;plan.reconciliationReason='ROOM_OR_ROUTINE_REMOVED';plan.updatedAt=timestamp;plan.updatedByUid=actorUid;root.plans[planId]=plan;
     return{changed:true,root:root,reason:'STALE_SOURCE_REMOVED',planId:planId,removedOccurrenceIds:removed,trimmedOccurrenceIds:trimmed,remainingOccurrenceIds:kept.slice()};
