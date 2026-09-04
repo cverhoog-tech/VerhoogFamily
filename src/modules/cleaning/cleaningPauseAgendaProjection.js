@@ -1,18 +1,19 @@
 'use strict';
 // ============================================================
-// CLEANING PAUSE AGENDA PROJECTION v0.1.0
+// CLEANING PAUSE AGENDA PROJECTION v0.1.1
 // Projects a finite Cleaning pause to one read-only FamilyApp Agenda marker.
 // Cleaning pause state remains canonical; Calendar is derived presentation.
 // - room pause => one room resume marker
-// - direct routine pause => one routine resume marker
-// - ROOM-paused routines do not create duplicate markers
+// - direct routine pause => one routine resume marker when its room is active
+// - room pause suppresses underlying routine markers to avoid duplicates
 // - indefinite pauses have no invented resume date
 // - manual/automatic resume removes the stale marker
+// - Calendar edits/deletes self-heal from canonical Cleaning state
 // ============================================================
 (function(){
   if(window.CleaningPauseAgendaProjection)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.1.1';
   var state={queued:false,inFlight:null,dirty:false,lastResult:null,lastError:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -31,6 +32,7 @@
   function markerKey(kind,id){return 'id_'+markerId(kind,id);}
   function isManaged(row){return !!(row&&row.pauseResumeManaged===true&&text(row.sourceType)==='cleaning-pause-resume');}
   function roomName(cleaning,roomId){var row=cleaning&&cleaning.rooms&&cleaning.rooms[roomId];return text(row&&row.name)||'Kamer';}
+  function roomPaused(cleaning,roomId){var row=cleaning&&cleaning.rooms&&cleaning.rooms[roomId];return !!(row&&row.active!==false&&row.paused===true);}
 
   function markerEvent(kind,id,row,cleaning,householdId,actorUid,timestamp,existing){
     var until=Number(row&&row.pauseUntilAt)||0,key=markerKey(kind,id),eventId=markerId(kind,id),isRoom=kind==='room';
@@ -66,7 +68,7 @@
     });
     var routines=root.routines&&typeof root.routines==='object'?root.routines:{};
     Object.keys(routines).forEach(function(id){
-      var row=routines[id],until=Number(row&&row.pauseUntilAt)||0;if(!row||row.active===false||row.paused!==true||text(row.pauseSource)==='ROOM'||until<=timestamp)return;
+      var row=routines[id],until=Number(row&&row.pauseUntilAt)||0;if(!row||row.active===false||row.paused!==true||text(row.pauseSource)==='ROOM'||roomPaused(root,text(row.roomId))||until<=timestamp)return;
       var key=markerKey('routine',id);desired[key]=markerEvent('routine',id,row,root,householdId,actorUid,timestamp,events[key]);
     });
     return desired;
@@ -95,7 +97,14 @@
   }
 
   function queue(){if(state.queued)return;state.queued=true;window.setTimeout(function(){state.queued=false;reconcile().catch(function(){});},40);}
-  function start(){if(window.__cleaningPauseAgendaProjectionStarted)return;window.__cleaningPauseAgendaProjectionStarted=true;window.addEventListener('familyapp:cleaning-repository',queue);window.addEventListener('familyapp:household-context',queue);window.addEventListener('focus',queue);queue();}
+  function start(){
+    if(window.__cleaningPauseAgendaProjectionStarted)return;window.__cleaningPauseAgendaProjectionStarted=true;
+    window.addEventListener('familyapp:cleaning-repository',queue);
+    window.addEventListener('familyapp:calendar-repository',queue);
+    window.addEventListener('familyapp:household-context',queue);
+    window.addEventListener('focus',queue);
+    queue();
+  }
 
   window.CleaningPauseAgendaProjection={version:VERSION,start:start,reconcile:reconcile,status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,busy:!!state.inFlight});},_buildUpdates:buildUpdates,_markerId:markerId,_markerKey:markerKey,_localDate:localDate};
   start();
