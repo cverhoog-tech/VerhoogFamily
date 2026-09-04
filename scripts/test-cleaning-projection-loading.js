@@ -129,12 +129,15 @@ assert.ok(approvalClarity.includes('Jouw akkoord is nog nodig'));
 assert.ok(approvalClarity.includes('Planning vernieuwen'));
 assert.ok(approvalClarity.includes('CleaningPlanSanitizer'));
 
-assert.ok(rolling.includes("var VERSION='0.1.3'"));
+assert.ok(rolling.includes("var VERSION='0.1.4'"));
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'rolling plans may not become their own consent source');
 assert.ok(rolling.includes('planningRoutines'));
 assert.ok(rolling.includes('finitePauseNextDue'));
 assert.ok(rolling.includes("continuitySource==='ACCEPTED_PLAN_BEFORE_PAUSE'"));
 assert.ok(rolling.includes('PAUSE_CONTINUITY'));
+assert.ok(rolling.includes("text(row.status).toUpperCase()!=='CANCELLED'"),'legacy pause continuity must only inspect cancelled sanitizer history');
+assert.ok(rolling.includes("reason.indexOf('ROUTINE')!==0"),'legacy pause continuity must require a routine-removal cancellation reason');
+assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'legacy fallback may never use a rolling plan as consent');
 assert.ok(!rolling.includes("routine.paused===true)return"),'finite pause must not be blanket-dropped before rolling shadow expansion');
 
 assert.ok(derivedCleanup.includes("var VERSION='0.1.0'"));
@@ -242,4 +245,4 @@ assert.ok(shoppingCleanup.includes("CustomEvent('familyapp:cleaning-shopping-cle
 assert.ok(rolling.includes("CustomEvent('familyapp:cleaning-rolling-plans'"));
 assert.ok(exceptionRuntime.includes("CustomEvent('familyapp:cleaning-exception'"));
 
-console.log('cleaning rooms + supplies + pause cadence/history + exception execution ownership: ok');
+console.log('cleaning rooms + supplies + pause cadence/history + legacy continuity ownership: ok');
