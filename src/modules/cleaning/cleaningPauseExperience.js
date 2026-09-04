@@ -1,16 +1,18 @@
 'use strict';
 // ============================================================
-// CLEANING PAUSE EXPERIENCE v0.1.0
-// Temporary routine/room pauses with explicit resume semantics.
-// - planner already excludes routine.paused === true
-// - room pause marks only currently-unpaused routines as ROOM-paused
-// - resume never creates historical backlog: overdue nextDueAt becomes today
-// - expiring pauses auto-resume through the Cleaning repository lifecycle
+// CLEANING PAUSE EXPERIENCE v0.2.0
+// Temporary routine/room pauses with real pause semantics.
+// - current Cleaning work disappears while paused
+// - finite pauses freeze the routine countdown instead of resetting cadence
+// - resume restores nextDueAt from the frozen countdown, then intervalDays
+//   continues normally (pause != stop)
+// - accepted non-rolling assignment continuity survives plan sanitizing
+// - room pause takes precedence over a routine pause without destroying it
 // ============================================================
 (function(){
   if(window.CleaningPauseExperience)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
   var DAY_MS=86400000;
   var state={observer:null,queued:false,sheet:null,busy:false,auto:{},repository:null};
 
@@ -33,19 +35,71 @@
   function routineById(id){var row=root().routines&&root().routines[id];return activeRoutine(row)?Object.assign({id:id},row):null;}
   function roomById(id){var row=root().rooms&&root().rooms[id];return row&&typeof row==='object'&&row.active!==false?Object.assign({id:id},row):null;}
   function routinesForRoom(roomId){var rows=root().routines||{};return Object.keys(rows).map(function(id){return Object.assign({id:id},rows[id]||{});}).filter(function(row){return activeRoutine(row)&&text(row.roomId)===text(roomId);});}
-  function nextDueOnResume(row,resumeAt){var due=Number(row&&row.nextDueAt)||0,day=startOfDay(resumeAt);return due>day?due:day;}
+  function roomIsPaused(roomId){var row=root().rooms&&root().rooms[roomId];return !!(row&&row.active!==false&&row.paused===true);}
   function pauseUntil(days){return days?startOfDay(now()+Number(days)*DAY_MS):null;}
 
-  function pauseRoutine(id,days){var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var row=routineById(id);if(!row)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));var stamp=now(),until=pauseUntil(days),patch={paused:true,pauseSource:'ROUTINE',pausedAt:stamp,pausedByUid:write.ctx.uid,pauseUntilAt:until,updatedAt:stamp,updatedByUid:write.ctx.uid};return write.db.ref(write.path+'/routines/'+id).update(patch).then(function(){if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return Object.assign({},row,patch);});}
-  function resumeRoutine(id,automatic){var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var row=routineById(id);if(!row)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));var stamp=now(),patch={paused:false,pauseSource:null,pauseUntilAt:null,resumedAt:stamp,resumedByUid:write.ctx.uid,resumeMode:automatic?'AUTO':'MANUAL',nextDueAt:nextDueOnResume(row,stamp),updatedAt:stamp,updatedByUid:write.ctx.uid};return write.db.ref(write.path+'/routines/'+id).update(patch).then(function(){if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return Object.assign({},row,patch);});}
+  function occurrenceRoutineIds(row){var out=[];(Array.isArray(row&&row.checklist)?row.checklist:[]).forEach(function(item){var id=text(item&&(item.routineItemId||item.id));if(id&&out.indexOf(id)<0)out.push(id);});(Array.isArray(row&&row.routineItemIds)?row.routineItemIds:[]).forEach(function(value){var id=text(value);if(id&&out.indexOf(id)<0)out.push(id);});return out;}
+  function assignedUid(row){var ids=Array.isArray(row&&row.assignmentUids)?row.assignmentUids.filter(Boolean).map(String):[];return ids.length===1?ids[0]:null;}
+  function occurrenceAnchor(row){return Number(row&&(row.slotAt||(row.flexibleWindow&&row.flexibleWindow.startAt)||row.scheduledStartAt||row.earliestDueAt||row.cancelledAt))||0;}
+
+  // Preserve only assignment consent that came from a concrete ACTIVE,
+  // non-rolling plan. A rolling plan never becomes its own consent source.
+  function acceptedContinuity(routineId){
+    var data=root(),plans=data.plans||{},occurrences=data.occurrences||{},best=null;
+    function offer(row,plan){
+      if(!row||!plan||plan.status!=='ACTIVE'||plan.rollingPlanVersion===1||occurrenceRoutineIds(row).indexOf(text(routineId))<0)return;
+      var uid=assignedUid(row);if(!uid)return;
+      var status=text(row.status).toUpperCase(),assignment=text(row.assignmentStatus).toUpperCase();
+      var wasAccepted=['ACTIVE','ACCEPTED','COMPLETED'].indexOf(assignment)>=0||((status==='CANCELLED'||status==='SKIPPED')&&text(row.cancellationReason).indexOf('ROUTINE')===0);
+      if(!wasAccepted)return;
+      var anchor=occurrenceAnchor(row)||Number(row.updatedAt)||0;if(!best||anchor>=best.anchor)best={uid:uid,anchor:anchor,planId:text(plan.id||row.planId)};
+    }
+    Object.keys(plans).forEach(function(planId){var plan=plans[planId];if(!plan||plan.status!=='ACTIVE'||plan.rollingPlanVersion===1)return;(Array.isArray(plan.occurrenceIds)?plan.occurrenceIds:[]).forEach(function(id){offer(occurrences[id],plan);});});
+    // Sanitizing a pause removes the occurrence id from the live plan but keeps
+    // the historical occurrence. Use it only when it still points to an ACTIVE
+    // non-rolling plan and was cancelled because its routine became unavailable.
+    Object.keys(occurrences).forEach(function(id){var row=occurrences[id],plan=plans[text(row&&row.planId)];if(!row||text(row.status).toUpperCase()!=='CANCELLED'||text(row.cancellationReason).indexOf('ROUTINE')!==0)return;offer(row,plan);});
+    return best;
+  }
+
+  function frozenNextDue(row,stamp){return Number(row&&row.nextDueAt)||startOfDay(stamp);}
+  function nextDueOnResume(row,resumeAt){
+    var resumeDay=startOfDay(resumeAt),pauseDay=startOfDay(row&&(row.pauseCadenceStartedAt||row.pausedAt)||resumeAt);
+    var anchor=Number(row&&(row.pauseCadenceNextDueAt||row.nextDueAt))||pauseDay;
+    var remaining=Math.max(0,anchor-pauseDay);
+    return resumeDay+remaining;
+  }
+  function continuityPatch(row,routineId,stamp){
+    var found=acceptedContinuity(routineId),uid=text(found&&found.uid)||text(row&&row.continuityAssigneeUid);if(!uid)return{};
+    return{continuityAssigneeUid:uid,continuityAssignmentSource:'ACCEPTED_PLAN_BEFORE_PAUSE',continuityAnchorAt:Number(found&&found.anchor)||Number(row&&row.continuityAnchorAt)||stamp,continuityPlanId:text(found&&found.planId)||text(row&&row.continuityPlanId)||null};
+  }
+  function pausePatch(row,routineId,source,until,stamp,uid){
+    return Object.assign({paused:true,pauseSource:source,pausedAt:stamp,pausedByUid:uid,pauseUntilAt:until,pauseCadenceStartedAt:startOfDay(stamp),pauseCadenceNextDueAt:frozenNextDue(row,stamp),updatedAt:stamp,updatedByUid:uid},continuityPatch(row,routineId,stamp));
+  }
+  function resumePatch(row,stamp,uid,automatic){
+    return{paused:false,pauseSource:null,pauseUntilAt:null,resumedAt:stamp,resumedByUid:uid,resumeMode:automatic?'AUTO':'MANUAL',nextDueAt:nextDueOnResume(row,stamp),lastPauseCadenceStartedAt:Number(row&&row.pauseCadenceStartedAt)||Number(row&&row.pausedAt)||null,lastPauseCadenceNextDueAt:Number(row&&row.pauseCadenceNextDueAt)||Number(row&&row.nextDueAt)||null,pauseCadenceStartedAt:null,pauseCadenceNextDueAt:null,updatedAt:stamp,updatedByUid:uid};
+  }
+
+  function pauseRoutine(id,days){
+    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var row=routineById(id);if(!row)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));
+    var stamp=now(),until=pauseUntil(days),patch=pausePatch(row,id,'ROUTINE',until,stamp,write.ctx.uid);
+    return write.db.ref(write.path+'/routines/'+id).update(patch).then(function(){if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return Object.assign({},row,patch);});
+  }
+  function resumeRoutine(id,automatic){
+    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var row=routineById(id);if(!row)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));
+    var stamp=now(),patch=Object.assign({},resumePatch(row,stamp,write.ctx.uid,automatic),continuityPatch(row,id,stamp));
+    return write.db.ref(write.path+'/routines/'+id).update(patch).then(function(){if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return Object.assign({},row,patch);});
+  }
   function pauseRoom(id,days){
-    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var room=roomById(id);if(!room)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));var stamp=now(),until=pauseUntil(days),patch={};patch['rooms/'+id+'/paused']=true;patch['rooms/'+id+'/pauseUntilAt']=until;patch['rooms/'+id+'/pausedAt']=stamp;patch['rooms/'+id+'/pausedByUid']=write.ctx.uid;patch['rooms/'+id+'/updatedAt']=stamp;patch['rooms/'+id+'/updatedByUid']=write.ctx.uid;
-    routinesForRoom(id).forEach(function(routine){if(routine.paused===true)return;var base='routines/'+routine.id+'/';patch[base+'paused']=true;patch[base+'pauseSource']='ROOM';patch[base+'pauseUntilAt']=until;patch[base+'pausedAt']=stamp;patch[base+'pausedByUid']=write.ctx.uid;patch[base+'updatedAt']=stamp;patch[base+'updatedByUid']=write.ctx.uid;});
+    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var room=roomById(id);if(!room)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+    var stamp=now(),until=pauseUntil(days),patch={};patch['rooms/'+id+'/paused']=true;patch['rooms/'+id+'/pauseUntilAt']=until;patch['rooms/'+id+'/pausedAt']=stamp;patch['rooms/'+id+'/pausedByUid']=write.ctx.uid;patch['rooms/'+id+'/updatedAt']=stamp;patch['rooms/'+id+'/updatedByUid']=write.ctx.uid;
+    routinesForRoom(id).forEach(function(routine){if(routine.paused===true)return;var base='routines/'+routine.id+'/',values=pausePatch(routine,routine.id,'ROOM',until,stamp,write.ctx.uid);Object.keys(values).forEach(function(key){patch[base+key]=values[key];});});
     return write.db.ref(write.path).update(patch).then(function(){if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return{roomId:id,pauseUntilAt:until};});
   }
   function resumeRoom(id,automatic){
-    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var room=roomById(id);if(!room)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));var stamp=now(),patch={};patch['rooms/'+id+'/paused']=false;patch['rooms/'+id+'/pauseUntilAt']=null;patch['rooms/'+id+'/resumedAt']=stamp;patch['rooms/'+id+'/resumedByUid']=write.ctx.uid;patch['rooms/'+id+'/updatedAt']=stamp;patch['rooms/'+id+'/updatedByUid']=write.ctx.uid;
-    routinesForRoom(id).forEach(function(routine){if(routine.paused!==true||text(routine.pauseSource)!=='ROOM')return;var base='routines/'+routine.id+'/';patch[base+'paused']=false;patch[base+'pauseSource']=null;patch[base+'pauseUntilAt']=null;patch[base+'resumedAt']=stamp;patch[base+'resumedByUid']=write.ctx.uid;patch[base+'resumeMode']=automatic?'AUTO':'MANUAL';patch[base+'nextDueAt']=nextDueOnResume(routine,stamp);patch[base+'updatedAt']=stamp;patch[base+'updatedByUid']=write.ctx.uid;});
+    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var room=roomById(id);if(!room)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));
+    var stamp=now(),patch={};patch['rooms/'+id+'/paused']=false;patch['rooms/'+id+'/pauseUntilAt']=null;patch['rooms/'+id+'/resumedAt']=stamp;patch['rooms/'+id+'/resumedByUid']=write.ctx.uid;patch['rooms/'+id+'/updatedAt']=stamp;patch['rooms/'+id+'/updatedByUid']=write.ctx.uid;
+    routinesForRoom(id).forEach(function(routine){if(routine.paused!==true||text(routine.pauseSource)!=='ROOM')return;var base='routines/'+routine.id+'/',values=Object.assign({},resumePatch(routine,stamp,write.ctx.uid,automatic),continuityPatch(routine,routine.id,stamp));Object.keys(values).forEach(function(key){patch[base+key]=values[key];});});
     return write.db.ref(write.path).update(patch).then(function(){if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return{roomId:id,resumed:true};});
   }
 
@@ -60,7 +114,7 @@
   function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(callback){return setTimeout(callback,0);})(decorate);}
 
   function entity(){if(!state.sheet)return null;return state.sheet.kind==='room'?roomById(state.sheet.id):routineById(state.sheet.id);}
-  function sheetHtml(){var row=entity();if(!row)return'';var paused=row.paused===true,title=state.sheet.kind==='room'?(row.name||'Kamer'):(row.title||'Routine');return '<section class="cleaning-pause-sheet"><div class="cleaning-pause-handle"></div><div class="cleaning-pause-head"><div><p>'+(state.sheet.kind==='room'?'Hele kamer':'Routine')+'</p><h2>'+esc(title)+'</h2></div><button type="button" class="cleaning-pause-close" data-cleaning-pause-close aria-label="Sluiten">✕</button></div>'+(paused?'<p class="cleaning-pause-copy">'+esc(formatUntil(row.pauseUntilAt))+'. Bij hervatten wordt gemiste tijd niet als een stapel achterstallige taken teruggezet.</p><button type="button" class="cleaning-pause-resume" data-cleaning-pause-resume'+(state.busy?' disabled':'')+'>'+(state.busy?'Hervatten…':'Nu hervatten')+'</button>':'<p class="cleaning-pause-copy">Tijdens de pauze worden geen nieuwe schoonmaakbeurten voor '+(state.sheet.kind==='room'?'deze kamer':'deze routine')+' gepland. Kies wanneer de planning automatisch weer mag starten.</p><div class="cleaning-pause-grid"><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="7"'+(state.busy?' disabled':'')+'>1 week</button><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="14"'+(state.busy?' disabled':'')+'>2 weken</button><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="30"'+(state.busy?' disabled':'')+'>1 maand</button><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="0"'+(state.busy?' disabled':'')+'>Tot ik hervat</button></div>')+'</section>';}
+  function sheetHtml(){var row=entity();if(!row)return'';var paused=row.paused===true,title=state.sheet.kind==='room'?(row.name||'Kamer'):(row.title||'Routine');return '<section class="cleaning-pause-sheet"><div class="cleaning-pause-handle"></div><div class="cleaning-pause-head"><div><p>'+(state.sheet.kind==='room'?'Hele kamer':'Routine')+'</p><h2>'+esc(title)+'</h2></div><button type="button" class="cleaning-pause-close" data-cleaning-pause-close aria-label="Sluiten">✕</button></div>'+(paused?'<p class="cleaning-pause-copy">'+esc(formatUntil(row.pauseUntilAt))+'. De routine-intervallen lopen na hervatten verder vanaf waar de pauze begon, zonder gemiste backlog.</p><button type="button" class="cleaning-pause-resume" data-cleaning-pause-resume'+(state.busy?' disabled':'')+'>'+(state.busy?'Hervatten…':'Nu hervatten')+'</button>':'<p class="cleaning-pause-copy">Tijdens de pauze wordt huidig werk weggehaald. Na de pauze loopt ieder interval automatisch verder; de pauze stopt de routine dus niet.</p><div class="cleaning-pause-grid"><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="7"'+(state.busy?' disabled':'')+'>1 week</button><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="14"'+(state.busy?' disabled':'')+'>2 weken</button><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="30"'+(state.busy?' disabled':'')+'>1 maand</button><button type="button" class="cleaning-pause-choice" data-cleaning-pause-days="0"'+(state.busy?' disabled':'')+'>Tot ik hervat</button></div>')+'</section>';}
   function open(kind,id){state.sheet={kind:kind,id:text(id)};renderSheet();}
   function close(){state.sheet=null;var overlay=document.getElementById('cleaning-pause-overlay');if(overlay)overlay.remove();}
   function renderSheet(){if(!state.sheet)return;var row=entity();if(!row){close();return;}var overlay=document.getElementById('cleaning-pause-overlay');if(!overlay){overlay=document.createElement('div');overlay.id='cleaning-pause-overlay';overlay.className='cleaning-pause-overlay';document.body.appendChild(overlay);}overlay.innerHTML=sheetHtml();}
@@ -73,10 +127,10 @@
   function autoResume(snapshotValue){
     var snap=snapshotValue&&snapshotValue.data?snapshotValue:null;if(!snap||snap.ready!==true)return;var data=snap.data||{},stamp=now(),rooms=data.rooms||{},routines=data.routines||{};
     Object.keys(rooms).forEach(function(id){var row=rooms[id];if(!row||row.active===false||row.paused!==true||!Number(row.pauseUntilAt)||Number(row.pauseUntilAt)>stamp||state.auto['room:'+id])return;state.auto['room:'+id]=true;resumeRoom(id,true).catch(function(){}).finally(function(){delete state.auto['room:'+id];});});
-    Object.keys(routines).forEach(function(id){var row=routines[id];if(!activeRoutine(row)||row.paused!==true||text(row.pauseSource)==='ROOM'||!Number(row.pauseUntilAt)||Number(row.pauseUntilAt)>stamp||state.auto['routine:'+id])return;state.auto['routine:'+id]=true;resumeRoutine(id,true).catch(function(){}).finally(function(){delete state.auto['routine:'+id];});});
+    Object.keys(routines).forEach(function(id){var row=routines[id];if(!activeRoutine(row)||row.paused!==true||text(row.pauseSource)==='ROOM'||roomIsPaused(text(row.roomId))||!Number(row.pauseUntilAt)||Number(row.pauseUntilAt)>stamp||state.auto['routine:'+id])return;state.auto['routine:'+id]=true;resumeRoutine(id,true).catch(function(){}).finally(function(){delete state.auto['routine:'+id];});});
   }
   function onRepository(event){state.repository=event&&event.detail||snapshot();autoResume(state.repository);queue();if(state.sheet)renderSheet();}
   function start(){if(window.__cleaningPauseExperienceStarted)return;window.__cleaningPauseExperienceStarted=true;ensureStyle();state.repository=snapshot();autoResume(state.repository);document.addEventListener('click',onClick,true);document.addEventListener('keydown',onKey,true);var target=document.getElementById('screen-cleaning')||document.documentElement;if(typeof MutationObserver!=='undefined'&&target){state.observer=new MutationObserver(queue);state.observer.observe(target,{childList:true,subtree:true});}window.addEventListener('familyapp:cleaning-repository',onRepository);queue();}
 
-  window.CleaningPauseExperience={version:VERSION,start:start,pauseRoutine:pauseRoutine,resumeRoutine:resumeRoutine,pauseRoom:pauseRoom,resumeRoom:resumeRoom,_nextDueOnResume:nextDueOnResume,_pauseUntil:pauseUntil};start();
+  window.CleaningPauseExperience={version:VERSION,start:start,pauseRoutine:pauseRoutine,resumeRoutine:resumeRoutine,pauseRoom:pauseRoom,resumeRoom:resumeRoom,_nextDueOnResume:nextDueOnResume,_pauseUntil:pauseUntil,_acceptedContinuity:acceptedContinuity,_pausePatch:pausePatch};start();
 })();
