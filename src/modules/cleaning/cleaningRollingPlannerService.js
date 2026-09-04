@@ -1,17 +1,22 @@
 'use strict';
 // ============================================================
-// CLEANING ROLLING PLANNER SERVICE v0.1.2
+// CLEANING ROLLING PLANNER SERVICE v0.1.3
 // Keeps a four-week future horizon for routines marked ONGOING.
-// Future occurrences are only created after a fixed-person request or a
-// concrete non-rolling weekly assignment has been accepted. Existing rolling
-// plans never become their own consent source. THIS_WEEK stays week-scoped.
+// Future occurrences are only created after a fixed-person request, a
+// concrete non-rolling weekly assignment has been accepted, or that exact
+// accepted assignment is preserved across a temporary pause.
+//
+// A finite pause freezes the routine countdown. The rolling horizon may show
+// work AFTER the pause using a planning-only shadow nextDueAt, while canonical
+// routine.paused stays true and no current work can leak into the pause.
+// Existing rolling plans never become their own consent source.
 // ============================================================
 (function(){
   if(window.CleaningRollingPlannerService)return;
 
-  var VERSION='0.1.2';
+  var VERSION='0.1.3';
   var DEFAULT_HORIZON_WEEKS=4;
-  var ASSIGNMENT_PRIORITY={ACCEPTED_PLAN:2,FIXED_ROUTINE:3};
+  var ASSIGNMENT_PRIORITY={ACCEPTED_PLAN:2,PAUSE_CONTINUITY:3,FIXED_ROUTINE:4};
   var state={unsubscribe:null,attachTimer:null,debounce:null,inFlight:null,lastResult:null,lastError:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -27,6 +32,7 @@
   function contextIsCurrent(token){try{return !!(window.HouseholdContext&&window.HouseholdContext.isCurrent&&window.HouseholdContext.isCurrent(token));}catch(e){return false;}}
   function firebaseDb(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}}
   function validContext(ctx){return !!(ctx&&ctx.ready===true&&ctx.uid&&ctx.householdId);}
+  function startOfDay(timestamp){var d=new Date(Number(timestamp)||now());d.setHours(0,0,0,0);return d.getTime();}
 
   function weekStartAt(timestamp){
     var d=new Date(Number(timestamp)||now());
@@ -84,6 +90,44 @@
     return out;
   }
 
+  // Return the date on which the frozen countdown should finish after the
+  // effective pause. If either a routine or its room is paused indefinitely,
+  // no future due date is invented.
+  function finitePauseNextDue(root,routine){
+    var row=routine||{},room=root&&root.rooms&&root.rooms[text(row.roomId)]||null;
+    var routinePaused=row.paused===true,roomPaused=!!(room&&room.active!==false&&room.paused===true);
+    if(!routinePaused&&!roomPaused)return null;
+
+    var routineUntil=routinePaused?positive(row.pauseUntilAt):null;
+    var roomUntil=roomPaused?positive(room.pauseUntilAt):null;
+    if((routinePaused&&!routineUntil)||(roomPaused&&!roomUntil))return null;
+
+    var resumeAt=Math.max(routineUntil||0,roomUntil||0);
+    if(!resumeAt)return null;
+    var pauseStart=startOfDay(positive(row.pauseCadenceStartedAt)||positive(row.pausedAt)||resumeAt);
+    var frozenDue=positive(row.pauseCadenceNextDueAt)||positive(row.nextDueAt)||pauseStart;
+    var remaining=Math.max(0,frozenDue-pauseStart);
+    return startOfDay(resumeAt)+remaining;
+  }
+
+  // Base planner correctly excludes canonical paused routines. For rolling
+  // preview only, finite pauses get a clone that starts at the shifted due
+  // anchor. Canonical routine.paused is never mutated by this service.
+  function planningRoutines(root){
+    var source=root&&root.routines&&typeof root.routines==='object'?root.routines:{},out={};
+    Object.keys(source).forEach(function(id){
+      var row=source[id]||{},copy=clone(row)||{},room=root&&root.rooms&&root.rooms[text(row.roomId)]||null;
+      var paused=row.paused===true||!!(room&&room.active!==false&&room.paused===true);
+      if(paused){
+        var shifted=finitePauseNextDue(root,row);
+        if(shifted){copy.paused=false;copy.nextDueAt=shifted;copy.pausePlanningShadow=true;copy.pausePlanningResumeAt=shifted;}
+        else copy.paused=true;
+      }
+      out[id]=copy;
+    });
+    return out;
+  }
+
   function standingAssignments(root,memberRows){
     var memberLookup={};memberRows.forEach(function(member){memberLookup[member.uid]=true;});
     var choices={};
@@ -99,6 +143,8 @@
     Object.keys(routines).forEach(function(id){
       var routine=routines[id]||{},uid=text(routine.preferredAssigneeUid);
       if(uid&&text(routine.assignmentMode)==='FIXED_PERSON'&&text(routine.assignmentRequestStatus)==='ACCEPTED')offer(id,uid,ASSIGNMENT_PRIORITY.FIXED_ROUTINE,Number.MAX_SAFE_INTEGER);
+      var continuityUid=text(routine.continuityAssigneeUid),continuitySource=text(routine.continuityAssignmentSource);
+      if(continuityUid&&continuitySource==='ACCEPTED_PLAN_BEFORE_PAUSE')offer(id,continuityUid,ASSIGNMENT_PRIORITY.PAUSE_CONTINUITY,Number(routine.continuityAnchorAt)||0);
     });
 
     var plans=root.plans&&typeof root.plans==='object'?root.plans:{};
@@ -157,10 +203,11 @@
   }
 
   function desiredGroups(root,contract,windowValue,memberRows,standing){
-    var expansion=contract.expandRoutineSlots({window:windowValue,rooms:root.rooms||{},routines:root.routines||{},carryOverOverdue:false});
+    var shadow=planningRoutines(root);
+    var expansion=contract.expandRoutineSlots({window:windowValue,rooms:root.rooms||{},routines:shadow,carryOverOverdue:false});
     var routines=root.routines||{},groups={};
     (expansion.candidates||[]).forEach(function(candidate){
-      var routine=routines[candidate.routineId]||{};if(text(routine.assignmentRequestStatus)==='PENDING'||routine.paused===true)return;
+      var routine=routines[candidate.routineId]||{};if(text(routine.assignmentRequestStatus)==='PENDING')return;
       var uid=pickAssignee(candidate,routine,standing,memberRows);if(!uid)return;
       var key=text(candidate.roomId)+'|'+Number(candidate.slotAt)+'|'+uid;if(!groups[key])groups[key]={roomId:text(candidate.roomId),slotAt:Number(candidate.slotAt),uid:uid,items:[]};groups[key].items.push(candidate);
     });
@@ -238,6 +285,6 @@
   function start(){if(attach())return true;if(state.attachTimer)return false;var tries=0;state.attachTimer=setInterval(function(){tries++;if(attach()||tries>240){clearInterval(state.attachTimer);state.attachTimer=null;}},100);return false;}
   function stop(){if(state.unsubscribe){try{state.unsubscribe();}catch(e){}state.unsubscribe=null;}if(state.attachTimer){clearInterval(state.attachTimer);state.attachTimer=null;}if(state.debounce){clearTimeout(state.debounce);state.debounce=null;}state.inFlight=null;}
 
-  window.CleaningRollingPlannerService={version:VERSION,start:start,stop:stop,reconcile:reconcile,status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,inFlight:!!state.inFlight});},_reconcileRoot:reconcileRoot,_weekStartAt:weekStartAt,_futureWeekWindow:futureWeekWindow,_standingAssignments:standingAssignments};
+  window.CleaningRollingPlannerService={version:VERSION,start:start,stop:stop,reconcile:reconcile,status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,inFlight:!!state.inFlight});},_reconcileRoot:reconcileRoot,_weekStartAt:weekStartAt,_futureWeekWindow:futureWeekWindow,_standingAssignments:standingAssignments,_planningRoutines:planningRoutines,_finitePauseNextDue:finitePauseNextDue};
   window.addEventListener('familyapp:cleaning-repository',start);window.addEventListener('familyapp:household-context',start);window.addEventListener('familyapp:household-identity-synced',schedule);start();
 })();
