@@ -1,18 +1,18 @@
 'use strict';
 // ============================================================
-// CLEANING ROOM WORKFLOW UX v0.1.1
+// CLEANING ROOM WORKFLOW UX v0.2.0
 // Presentation-only simplification around the canonical Cleaning screen.
 // - room type comes first; standard room names are optional
 // - an omitted standard name resolves to the room type label
 // - duplicate unnamed standard rooms get a readable numeric suffix
 // - routine actions collapse behind one compact overflow menu
-// Existing edit/assign/remove handlers stay canonical and are invoked through
-// hidden proxy controls instead of being reimplemented here.
+// Existing edit/assign/pause/remove handlers stay canonical and are invoked
+// through hidden proxy controls instead of being reimplemented here.
 // ============================================================
 (function(){
   if(window.CleaningRoomWorkflowUx)return;
 
-  var VERSION='0.1.1';
+  var VERSION='0.2.0';
   var LABELS={
     'living-room':'Woonkamer',kitchen:'Keuken',bathroom:'Badkamer',toilet:'Toilet',bedroom:'Slaapkamer',
     'kids-room':'Kinderkamer',hall:'Hal',laundry:'Wasruimte',outdoor:'Balkon / tuin',custom:'Eigen ruimte'
@@ -32,12 +32,13 @@
     if(document.getElementById('cleaning-room-workflow-ux-style'))return;var style=document.createElement('style');style.id='cleaning-room-workflow-ux-style';style.textContent='\n'
       +'#screen-cleaning .cleaning-room-name-help{display:block;margin-top:5px;color:var(--cleaning-muted);font-size:9px;font-weight:750;line-height:1.4}\n'
       +'#screen-cleaning .cleaning-routine-item-actions{position:relative;display:flex;align-items:center;gap:7px}\n'
-      +'#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-edit-button,#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-assign-button,#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-remove-button{display:none!important}\n'
+      +'#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-edit-button,#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-assign-button,#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-remove-button,#screen-cleaning .cleaning-routine-item-actions>.cleaning-routine-pause-button{display:none!important}\n'
       +'#screen-cleaning .cleaning-routine-more{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--cleaning-border);border-radius:11px;background:var(--cleaning-surface);color:var(--cleaning-text);font:inherit;font-size:18px;font-weight:950;line-height:1;cursor:pointer;touch-action:manipulation}\n'
       +'#screen-cleaning .cleaning-routine-more[aria-expanded="true"]{background:color-mix(in srgb,var(--cleaning-accent) 10%,var(--cleaning-surface));border-color:color-mix(in srgb,var(--cleaning-accent) 35%,var(--cleaning-border));color:var(--cleaning-accent)}\n'
       +'#screen-cleaning .cleaning-routine-more-menu{position:absolute;right:0;top:44px;z-index:25;min-width:184px;padding:6px;border:1px solid var(--cleaning-border);border-radius:14px;background:var(--cleaning-surface-strong,var(--cleaning-surface));box-shadow:0 14px 34px rgba(24,20,42,.16);display:grid;gap:3px}\n'
       +'#screen-cleaning .cleaning-routine-menu-action{min-height:42px;width:100%;border:0;border-radius:10px;padding:0 11px;background:transparent;color:var(--cleaning-text);font:inherit;font-size:11px;font-weight:850;text-align:left;cursor:pointer}\n'
       +'#screen-cleaning .cleaning-routine-menu-action:active{background:color-mix(in srgb,var(--cleaning-accent) 9%,var(--cleaning-surface))}\n'
+      +'#screen-cleaning .cleaning-routine-menu-action.is-pause{color:var(--cleaning-accent)}\n'
       +'#screen-cleaning .cleaning-routine-menu-action.is-danger{color:#b32636}#screen-cleaning .cleaning-routine-menu-action.is-confirm{background:#b32636;color:#fff}\n'
       +'[data-theme*="dark"] #screen-cleaning .cleaning-routine-menu-action.is-danger:not(.is-confirm){color:#ff9ba6}\n';document.head.appendChild(style);
   }
@@ -54,12 +55,18 @@
   }
 
   function originalAction(item,action){
-    if(!item)return null;if(action==='edit')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-edit]');if(action==='assign')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-assign]');if(action==='remove')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-remove]');return null;
+    if(!item)return null;
+    if(action==='edit')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-edit]');
+    if(action==='assign')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-assign]');
+    if(action==='pause')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-pause]');
+    if(action==='remove')return item.querySelector('.cleaning-routine-item-actions>[data-cleaning-routine-remove]');
+    return null;
   }
   function menuMarkup(item,routineId){
-    var assign=originalAction(item,'assign'),remove=originalAction(item,'remove'),confirming=!!(remove&&remove.classList&&remove.classList.contains('is-confirm')),busy=!!(remove&&remove.disabled),parts=[];
+    var assign=originalAction(item,'assign'),pause=originalAction(item,'pause'),remove=originalAction(item,'remove'),confirming=!!(remove&&remove.classList&&remove.classList.contains('is-confirm')),busy=!!(remove&&remove.disabled),parts=[];
     parts.push('<button type="button" class="cleaning-routine-menu-action" data-cleaning-routine-menu-action="edit" data-cleaning-routine-menu-id="'+routineId+'">Bewerken</button>');
     if(assign)parts.push('<button type="button" class="cleaning-routine-menu-action" data-cleaning-routine-menu-action="assign" data-cleaning-routine-menu-id="'+routineId+'">Toewijzen</button>');
+    if(pause)parts.push('<button type="button" class="cleaning-routine-menu-action is-pause" data-cleaning-routine-menu-action="pause" data-cleaning-routine-menu-id="'+routineId+'">'+(text(pause.textContent)||'Pauzeren')+'</button>');
     if(remove)parts.push('<button type="button" class="cleaning-routine-menu-action is-danger'+(confirming?' is-confirm':'')+'" data-cleaning-routine-menu-action="remove" data-cleaning-routine-menu-id="'+routineId+'"'+(busy?' disabled':'')+'>'+(busy?'Verwijderen…':confirming?'Tik nogmaals om te verwijderen':'Verwijderen')+'</button>');
     return parts.join('');
   }
