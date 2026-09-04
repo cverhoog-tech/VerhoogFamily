@@ -41,7 +41,7 @@ const root={
 };
 
 const first=rolling._reconcileRoot({root,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
-assert.strictEqual(rolling.version,'0.1.3');
+assert.strictEqual(rolling.version,'0.1.4');
 assert.strictEqual(first.changed,true);
 assert.strictEqual(first.planIds.length,2);
 
@@ -105,6 +105,34 @@ assert.ok(pausedSlots.every((slot)=>slot>=start+14*DAY),'no real occurrence may 
 assert.ok(Object.values(pausedRolling.root.occurrences).filter((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('paused')).every((row)=>row.assignmentUids[0]==='u1'),'accepted pre-pause assignment continuity must survive sanitizer removal');
 assert.ok(!Object.values(pausedRolling.root.occurrences).some((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('indefinite')),'indefinite pause stays out of future rolling plans');
 
+// A pause created by the previous runtime has no continuityAssigneeUid or
+// pauseCadence* fields. Exact sanitizer history is enough to recover both the
+// previously accepted assignee and the frozen countdown without guessing.
+const legacyPlanId='week_legacy_pause';
+const legacyPause={
+  rooms:{bathroom:{id:'bathroom',name:'Badkamer',active:true}},
+  routines:{legacy:{
+    id:'legacy',roomId:'bathroom',title:'Spiegel reinigen',intervalDays:3,estimatedMinutes:8,priority:'NORMAL',active:true,createdAt:start,
+    repeatScope:'ONGOING',assignmentMode:'AUTO',assignmentRequestStatus:'AUTO',paused:true,pauseSource:'ROUTINE',pausedAt:start+2*DAY,
+    pauseUntilAt:start+14*DAY,nextDueAt:start+4*DAY
+  }},
+  plans:{[legacyPlanId]:{id:legacyPlanId,householdId:hid,status:'ACTIVE',rollingPlanVersion:0,windowStartAt:start,windowEndAt:end,occurrenceIds:[]}},
+  occurrences:{'legacy-cancelled':{
+    id:'legacy-cancelled',householdId:hid,planId:legacyPlanId,roomId:'bathroom',slotAt:start+2*DAY,status:'CANCELLED',assignmentStatus:'SKIPPED',
+    assignmentUids:['u1'],routineItemIds:['legacy'],cancellationReason:'ROUTINES_REMOVED',cancelledAt:start+2*DAY,
+    checklist:[{id:'legacy',routineItemId:'legacy',title:'Spiegel reinigen',estimatedMinutes:8,dueAt:start+4*DAY,dueState:'DUE_IN_WINDOW',completed:false}]
+  }},approvals:{}
+};
+const legacyStanding=rolling._standingAssignments(legacyPause,members);
+assert.strictEqual(legacyStanding.legacy,'u1','legacy pause must recover the exact accepted assignee from sanitizer history');
+assert.strictEqual(rolling._finitePauseNextDue(legacyPause,legacyPause.routines.legacy),start+16*DAY,'legacy pause must preserve remaining countdown from pausedAt + nextDueAt');
+const legacyResult=rolling._reconcileRoot({root:legacyPause,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
+const legacySlots=Object.values(legacyResult.root.occurrences)
+  .filter((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('legacy'))
+  .map((row)=>row.slotAt).sort((a,b)=>a-b);
+assert.deepStrictEqual(legacySlots,[start+16*DAY,start+19*DAY]);
+assert.ok(Object.values(legacyResult.root.occurrences).filter((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('legacy')).every((row)=>row.assignmentUids[0]==='u1'));
+
 // A room pause has precedence. A separately paused routine cannot leak a clean
 // into an otherwise later room pause.
 const roomPaused=JSON.parse(JSON.stringify(pauseRoot));
@@ -129,4 +157,4 @@ assert.strictEqual(migration.changed,true);
 assert.strictEqual(migration.root.occurrences[unsafeOccurrence].status,'CANCELLED');
 assert.ok(!Object.values(migration.root.occurrences).some((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('unsafe')));
 
-console.log('cleaning rolling planner keeps real cadence across finite pauses: ok');
+console.log('cleaning rolling planner keeps real cadence across finite and legacy pauses: ok');
