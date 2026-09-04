@@ -7,8 +7,9 @@
 // STEP 6 calendar order is deliberate:
 // legacy UI -> canonical repository -> premium decoration -> compatibility
 // facade -> Cleaning projection runtime -> execution contract -> rules-safe
-// execution writer -> managed UI guard -> Task supply context -> virtual
-// MealPlan projection -> per-user Google sync.
+// execution writer -> managed UI guard -> incomplete-execution contract/runtime
+// -> incomplete Task UI -> Task supply context -> virtual MealPlan projection
+// -> per-user Google sync.
 //
 // CalendarSharedLive MUST load after CalendarPremiumUi because both touch the
 // legacy add-sheet globals. CleaningExecutionSync supplies the pure execution
@@ -17,6 +18,8 @@
 // projection update. Projection writes do not call repository updateOne, so
 // they cannot re-enter reverse synchronization. CleaningExecutionUiGuard keeps
 // a blocked managed Task delete from closing the legacy detail popup.
+// CleaningExceptionContract/Runtime own explicit incomplete-execution choices;
+// their UI loads only after the guard so it can resolve the active managed task.
 // CleaningTaskSupplyUi reads the canonical Cleaning aggregate to show the exact
 // materials for a projected task; Task remains a read-only supply projection.
 // FinanceSavingsInteraction then wraps the final add-sheet owner so special
@@ -57,20 +60,26 @@
                         load('src/modules/cleaning/cleaningExecutionSync.js?v=2', function(){
                           load('src/modules/cleaning/cleaningExecutionWriteRuntime.js?v=1', function(){
                             load('src/modules/cleaning/cleaningExecutionUiGuard.js?v=1', function(){
-                              load('src/modules/cleaning/cleaningTaskSupplyUi.js?v=1', function(){
-                                load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
-                                  load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
-                                    load('src/modules/finance/financeAnalysisUiV2.js?v=2', function(){
-                                      load('src/modules/finance/financeNativeTabs.js?v=348', function(){
-                                        if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
-                                        load('src/modules/finance/financeAnalysisRuntimeGuard.js?v=1', function(){
-                                          load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
-                                            load('src/modules/finance/financeAnalysisExport.js?v=1', function(){
-                                              load('src/modules/finance/financeAnalysisPolish.js?v=1', function(){
-                                                load('src/modules/finance/financeAnalysisAdvisor.js?v=1', function(){
-                                                  if(window.FinanceAnalysisAdvisor&&FinanceAnalysisAdvisor.install)FinanceAnalysisAdvisor.install();
-                                                  load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
-                                                    load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                              load('src/modules/cleaning/cleaningExceptionContract.js?v=1', function(){
+                                load('src/modules/cleaning/cleaningExceptionRuntime.js?v=1', function(){
+                                  load('src/modules/cleaning/cleaningExceptionTaskUi.js?v=1', function(){
+                                    load('src/modules/cleaning/cleaningTaskSupplyUi.js?v=1', function(){
+                                      load('src/modules/finance/financeSavingsInteraction.js?v=1', function(){
+                                        load('src/modules/finance/financeAnalysisEngine.js?v=1', function(){
+                                          load('src/modules/finance/financeAnalysisUiV2.js?v=2', function(){
+                                            load('src/modules/finance/financeNativeTabs.js?v=348', function(){
+                                              if(window.FinanceNativeTabs&&FinanceNativeTabs.boot)FinanceNativeTabs.boot();
+                                              load('src/modules/finance/financeAnalysisRuntimeGuard.js?v=1', function(){
+                                                load('src/modules/finance/financeAnalysisShellStyle.js?v=2', function(){
+                                                  load('src/modules/finance/financeAnalysisExport.js?v=1', function(){
+                                                    load('src/modules/finance/financeAnalysisPolish.js?v=1', function(){
+                                                      load('src/modules/finance/financeAnalysisAdvisor.js?v=1', function(){
+                                                        if(window.FinanceAnalysisAdvisor&&FinanceAnalysisAdvisor.install)FinanceAnalysisAdvisor.install();
+                                                        load('src/modules/calendar/calendarMealPlanIntegration.js?v=1', function(){
+                                                          load('src/modules/calendar/calendarGoogleSync.js?v=1');
+                                                        });
+                                                      });
+                                                    });
                                                   });
                                                 });
                                               });
