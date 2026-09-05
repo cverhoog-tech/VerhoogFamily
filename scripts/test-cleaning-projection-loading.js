@@ -15,6 +15,7 @@ const roomWorkflow=read('src/modules/cleaning/cleaningRoomWorkflowUx.js');
 const pauseExperience=read('src/modules/cleaning/cleaningPauseExperience.js');
 const supplies=read('src/modules/cleaning/cleaningSupplyExperience.js');
 const supplyManager=read('src/modules/cleaning/cleaningSupplyDirectManager.js');
+const availabilityContract=read('src/modules/cleaning/cleaningAvailabilityContract.js');
 const reconciler=read('src/modules/cleaning/cleaningActivePlanReconciler.js');
 const sanitizer=read('src/modules/cleaning/cleaningPlanSanitizer.js');
 const approvalClarity=read('src/modules/cleaning/cleaningApprovalClarity.js');
@@ -42,6 +43,7 @@ assert.ok(templates.includes("import './cleaningPauseExperience.js?v=2';"));
 assert.ok(templates.includes("import './cleaningPauseAgendaProjection.js?v=1';"));
 assert.ok(templates.includes("import './cleaningSupplyExperience.js?v=2';"));
 assert.ok(templates.includes("import './cleaningSupplyDirectManager.js?v=1';"));
+assert.ok(templates.includes("import './cleaningAvailabilityContract.js?v=1';"));
 assert.ok(templates.includes("import './cleaningActivePlanReconciler.js?v=2';"));
 assert.ok(templates.includes("import './cleaningPlanSanitizer.js?v=2';"));
 assert.ok(templates.includes("import './cleaningApprovalClarity.js?v=1';"));
@@ -54,7 +56,7 @@ assert.ok(templates.includes("import './cleaningOverviewExperience.js?v=1';"));
 const order=[
   'cleaningRecurringPlanContract.js?v=3','cleaningRoutineExperience.js?v=3','cleaningQuickChoiceFeedback.js?v=2',
   'cleaningRoomListControlsV2.js?v=1','cleaningRoomWorkflowUx.js?v=2','cleaningPauseExperience.js?v=2','cleaningPauseAgendaProjection.js?v=1','cleaningSupplyExperience.js?v=2',
-  'cleaningSupplyDirectManager.js?v=1','cleaningActivePlanReconciler.js?v=2','cleaningPlanSanitizer.js?v=2',
+  'cleaningSupplyDirectManager.js?v=1','cleaningAvailabilityContract.js?v=1','cleaningActivePlanReconciler.js?v=2','cleaningPlanSanitizer.js?v=2',
   'cleaningApprovalClarity.js?v=1','cleaningRollingPlannerService.js?v=4','cleaningProjectionService.js?v=4',
   'cleaningDerivedCleanup.js?v=1','cleaningShoppingCleanup.js?v=1','cleaningOverviewExperience.js?v=1'
 ];
@@ -110,7 +112,11 @@ assert.ok(supplyManager.includes('data-cleaning-supply-link-routine'));
 assert.ok(supplyManager.includes("'/routines/'"),'direct supply linking must write only the routine child');
 assert.ok(supplyManager.includes('CleaningSupplyExperience'));
 
-assert.ok(reconciler.includes("var VERSION='0.1.1'"));
+assert.ok(availabilityContract.includes("var VERSION='0.1.0'"));
+assert.ok(availabilityContract.includes('preparePlanningInput'));
+assert.ok(reconciler.includes("var VERSION='0.1.2'"));
+assert.ok(reconciler.includes('availabilityContract.preparePlanningInput'));
+assert.ok(reconciler.includes('routines:planningRoutines'));
 assert.ok(reconciler.includes("reconciliationReason='ROUTINE_SCHEDULE_CHANGED'"));
 assert.ok(reconciler.includes("plan.rollingPlanVersion===1"),'rolling future plans must have a single writer');
 assert.ok(reconciler.includes("plan.rollingPlanVersion!==1"),'rolling plans must be excluded before reconciliation starts');
