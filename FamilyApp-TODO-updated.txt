@@ -2,13 +2,15 @@
 
 # Stabiele ontwikkelbaseline
 
-* Baseline: STEP 13.6 Feed interaction/idempotency contracts.
-* Status: REAL-DEVICE GEACCEPTEERD op iPhone op 31-08-2026.
-* Canonieke baseline-commit: `aeb065b46b8c4eed45c2141af7daf6a4412fb160`.
-* `agent/household-rebuild-v2` is teruggezet op exact dezelfde bestandsboom en gebruikt deze baseline als enige actieve ontwikkelbasis.
-* `main` blijft onaangeraakt totdat een volgende fase expliciet is geaccepteerd.
-* Nieuwe wijzigingen worden voortaan in kleine, afzonderlijk te testen stappen toegevoegd met iPhone-device gate tussen de stappen.
-* Debugstaat van vóór de rollback is bewaard op `backup/rebuild-debug-2026-08-31`.
+* Historische baseline vóór STEP 14: STEP 13.6 Feed interaction/idempotency contracts.
+* STEP 13.6 status: REAL-DEVICE GEACCEPTEERD op iPhone op 31-08-2026.
+* Canonieke STEP 13.6 baseline-commit: `aeb065b46b8c4eed45c2141af7daf6a4412fb160`.
+* Actieve ontwikkelworkstream: **STEP 14 - Schoonmaken**.
+* Laatst real-device geaccepteerde STEP 14 checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` op 05-09-2026.
+* `agent/household-rebuild-v2` is de enige actieve ontwikkelbranch voor deze workstream.
+* `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
+* Nieuwe wijzigingen worden in samenhangende, afzonderlijk te testen checkpoints toegevoegd met iPhone-device gate tussen de grotere stappen.
+* Debugstaat van vóór de eerdere rollback is bewaard op `backup/rebuild-debug-2026-08-31`.
 
 ---
 
@@ -199,11 +201,14 @@ Status: gedeeltelijk gefixt
 
 ---
 
-# Nieuwe module - Schoonmaken
+# STEP 14 - Nieuwe module - Schoonmaken
 
-Status: **Fase A shell AFGEROND / real-device geaccepteerd op iPhone; Fase 0 Fundament BEZIG.**
+Status: **ZEER VER GEVORDERD; functionele kern real-device geaccepteerd op iPhone. Fase 6-8 bevatten nog resterend werk.**
+Laatste geaccepteerde functionele checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
 Volledige functionele specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
 Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
+Actuele compacte status: `FamilyApp-Schoonmaken-current-status.md`
+Milestonelog: `FamilyApp-Schoonmaken-milestone-log.md`
 
 ## Geaccepteerde veilige shell
 
@@ -213,25 +218,27 @@ Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
 * Binnen Kamers werkt Kamers / Gepland per kamer.
 * CSS is uitsluitend onder `#screen-cleaning` gescoped.
 * Schoonmaken-shell wordt lazy geladen bij openen van de module.
-* Login, Google-login, Home en terugnavigatie zijn na iedere kleine stap op iPhone gecontroleerd.
-* Geaccepteerde checkpoints: `774d464`, `567df025`, `a11a785`.
+* Login, Google-login, Home en terugnavigatie zijn tijdens de opbouw op iPhone gecontroleerd.
 
-## Fase 0 - reeds vastgelegd
+## Fase 0 - Fundament
+
+Status: **KERNCONTRACTEN ACTIEF / functioneel fundament aanwezig; gerichte technische hardening later afzonderlijk.**
+
+Reeds aanwezig:
 
 * Canonieke root: `families/{householdId}/cleaning`.
 * `CleaningOccurrence` is de enige source of truth voor één concrete schoonmaakbeurt.
 * Canonieke subpaden: rooms, routines, supplies, inventory, plans, occurrences, approvals, completionLogs, availability, preferences.
-* Domeincontract/statussen/normalizers: `src/modules/cleaning/cleaningDomain.js`.
-* Toekomstig enkel repositorycontract: `src/modules/cleaning/cleaningRepositoryContract.js`.
-* localStorage alleen als disposable UID+household read-cache; nooit tweede data-authoriteit.
+* `CleaningHouseholdRepository` en household-scoped lifecycle worden door de actieve module gebruikt.
+* Taken en Agenda zijn afgeleide projecties; reverse-sync schrijft gecontroleerd terug naar Cleaning.
+* Cleaning-root transactieboundary is rules-safe; parent-family transacties zijn verboden.
+* Contracttests bewaken de belangrijkste architectuur- en regressieregels.
 
-## Fase 0 - nog open
+Nog als technische hardening, niet blokkend voor de functionele vervolgstappen:
 
-* `CleaningHouseholdRepository` echt implementeren met HouseholdContext bind/unbind/revision lifecycle.
-* Firebase rules/rechtenmodel aansluiten op bestaande household/memberrollen.
-* Feature flag/data-activatie bepalen.
-* Integratiecontracten met Tasks, Calendar, Grocery en Notifications vastleggen.
-* Contracttests voor household-isolatie, lifecycle en idempotentie toevoegen.
+* Household-key-validatie verder aanscherpen.
+* Create-idempotency en lifecycle-randgevallen afzonderlijk hardenen.
+* Rechten/rollen voor beheerder, gezinslid en beperkt profiel later volledig uitwerken.
 
 ## Doel / modulegrenzen
 
@@ -240,7 +247,7 @@ Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
 * Agenda = geplande dag/tijd of flexibele schoonmaakblokken.
 * Boodschappen = ontbrekende schoonmaakbenodigdheden aanschaffen.
 * Notificaties = voorstellen, overdrachten, tegenvoorstellen en beperkte reminders.
-* Belangrijk: één concrete schoonmaakbeurt moet één source-of-truth-object blijven; geen losse kopieën in Schoonmaken/Taken/Agenda.
+* Belangrijk: één concrete schoonmaakbeurt blijft één source-of-truth-object; geen losse canonieke kopieën in Schoonmaken/Taken/Agenda.
 
 ## Besloten UX / functionele regels
 
@@ -250,103 +257,147 @@ Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
 * Items die tegelijk aan de beurt zijn, bundelen tot één schoonmaakbeurt met checklist.
 * Templates bij nieuwe kamers; gebruiker kan alles aanpassen.
 * Weekplan is eerst een voorstel en maakt pas na acceptatie actieve Taken/Agenda-items.
-* Verdeling: eerlijk op geschatte tijd (standaard), om de beurt, vaste persoon of handmatig.
-* Gebruiker kiest persoonlijk weergave als Tijd / Aantal taken / Beide; dit verandert de verdelingslogica niet.
-* Dag/tijd van eigen geaccepteerde beurt mag zonder nieuwe goedkeuring worden aangepast.
-* Overdracht naar een ander vereist acceptatie; elk accepteerbaar verzoek moet ook kunnen worden afgewezen.
-* Tegenvoorstellen ondersteunen.
-* Schoonmaakbeurt kan door één of meerdere gezinsleden worden uitgevoerd.
-* Niet-volledige checklist bij afronden: doorschuiven / deze week opnieuw plannen / overslaan.
-* Vakantie, drukke week, tijdelijke afwezigheid en pauzeren mogen geen onbeheersbare backlog maken.
+* Verdeling: eerlijk op geschatte tijd als basis; vaste persoon en expliciete routineverzoeken bestaan al, verdere verdelingsvarianten kunnen later worden uitgebreid.
+* Persoonlijke weergave Tijd / Aantal taken / Beide blijft nog open.
+* Dag/tijd van een geaccepteerde beurt kan gecontroleerd via Taken/Agenda worden aangepast en teruggesynchroniseerd.
+* Overdracht naar een ander vereist acceptatie en kan worden afgewezen.
+* Tegenvoorstellen blijven nog open.
+* Meerdere personen op één concrete schoonmaakbeurt blijft nog open als uitgebreidere samenwerkingsflow.
+* Niet-volledige checklist heeft inmiddels completion/exception-logica; resterende UX voor expliciet doorschuiven/deze week opnieuw/overslaan blijft nog te verfijnen.
+* Vakantie, drukke week, tijdelijke afwezigheid en pauzeren mogen geen onbeheersbare backlog maken; pauzeren is gerealiseerd, bredere beschikbaarheidssemantiek nog niet.
 * Progressie is primair gezamenlijk; geen schoonmaak-leaderboard tussen gezinsleden.
 
 ## Boodschappen / voorraad
 
-* Benodigdheden koppelen op routine-itemniveau.
-* Lichte voorraadstatus: Op voorraad / Bijna op / Op.
-* Komende week ontbrekende benodigdheden bundelen en alleen na bevestiging aan boodschappenlijst toevoegen.
-* Na aankoop kan voorraadstatus naar Op voorraad worden bijgewerkt.
+Status: **FUNCTIONEEL AFGEROND / real-device geaccepteerd, polish later mogelijk.**
+
+* Benodigdheden zijn gekoppeld op routine-itemniveau via `routine.supplyIds`.
+* Lichte voorraadstatus werkt: Op voorraad / Bijna op / Op.
+* Komende week benodigde LOW/OUT-items worden vanuit echte geplande CleaningOccurrences gebundeld.
+* Toevoegen aan Boodschappen gebeurt alleen na expliciete bevestiging.
+* Na aankoop kan de voorraad expliciet naar Op voorraad worden teruggezet.
+* Een gebruiker kan in Weekvoorraad per item `Niet kopen` kiezen; verborgen items worden niet meegenomen naar Boodschappen en kunnen later worden hersteld.
 
 ## Rollen / rechten
+
+Doel blijft:
 
 * Beheerder: structurele kamers/routines/verdelingsregels beheren.
 * Gezinslid: eigen voorstellen, planning, uitvoering en overdrachten beheren.
 * Beperkt profiel: toegewezen taken uitvoeren/accepteren/hulp vragen, geen structurele wijzigingen.
 
-## Bouwvolgorde
+Volledige rolhandhaving is nog geen afgeronde STEP 14-subfase.
+
+## Bouwvolgorde / actuele status
 
 ### Fase 0 - Fundament
 
-* Firebase/datamodel definiëren.
-* `CleaningOccurrence` als source of truth ontwerpen.
-* Integratiecontracten met Tasks, Calendar, Grocery en Notifications bepalen.
-* Feature flag en rechtenmodel voorbereiden.
+Status: **KERN AFGEROND / technische hardening later.**
+
+* Firebase/datamodel en canonieke Cleaning-root actief.
+* `CleaningOccurrence` als source of truth actief.
+* Integratiecontracten met Tasks, Calendar en Shopping functioneel actief.
+* Notification/rollen-hardening nog later.
 
 ### Fase 1 - Kamers + routines
 
-* Kamers CRUD + templates.
-* Routine-items met interval, duur en prioriteit.
-* Benodigdheden koppelen.
-* Kamerdetail/routinebeheer.
-* Persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
+Status: **FUNCTIONEEL VRIJWEL AFGEROND / real-device geaccepteerd.**
+
+* Kamers CRUD + templates: afgerond.
+* Routine-items met interval, duur en prioriteit: afgerond.
+* Benodigdheden koppelen: afgerond.
+* Kamerdetail/routinebeheer: afgerond.
+* Persoonlijke weergavevoorkeur Tijd / Aantal / Beide: **OPEN**.
 
 ### Fase 2 - Weekplanner
 
-* Vervallen routine-items bepalen en per kamer bundelen.
-* Geschatte belasting berekenen.
-* Verdeling genereren.
-* Conceptplan + persoonlijke goedkeuring.
+Status: **AFGEROND / real-device geaccepteerd.**
+
+* Vervallen routine-items bepalen en per kamer bundelen: afgerond.
+* Geschatte belasting berekenen: afgerond.
+* Verdeling genereren: afgerond.
+* Conceptplan + persoonlijke goedkeuring: afgerond.
+* Doorlopende intervallen + vierweekse rolling horizon: afgerond.
 
 ### Fase 3 - Taken-integratie
 
-* Geaccepteerde schoonmaakbeurt als één taak tonen.
-* Checklist realtime synchroniseren.
-* Afronden, overslaan, doorschuiven, overname en hulp aansluiten.
+Status: **GROTENDEELS AFGEROND / kern real-device geaccepteerd.**
+
+* Geaccepteerde schoonmaakbeurt als één taak tonen: afgerond.
+* Checklist realtime terugschrijven naar canonieke occurrence: afgerond.
+* Volledige taak afronden/heropenen + completion log: afgerond.
+* Datum/tijd vanuit Taken terugschrijven: afgerond.
+* Resterend: expliciete UX voor doorschuiven / deze week opnieuw / overslaan / overname / hulp verder afronden waar nog nodig.
 
 ### Fase 4 - Agenda-integratie
 
-* Geplande en flexibele beurten tonen.
-* Dag/tijd wijzigen zonder routine onbedoeld te veranderen.
-* Agenda-conflicten signaleren en optioneel alternatieve momenten voorstellen.
+Status: **FUNCTIONEEL AFGEROND / real-device geaccepteerd.**
+
+* Geplande en flexibele beurten tonen: afgerond.
+* Dag/tijd wijzigen zonder routine onbedoeld te veranderen: afgerond.
+* Agenda-conflicten signaleren: afgerond.
+* Zelfde-dag alternatieve momenten voorstellen en alleen na expliciete actie verplaatsen: afgerond.
+* Pauze-hervatmarkers: afgerond.
 
 ### Fase 5 - Boodschappen / voorraad
 
-* Voorraadstatus.
-* Weekbenodigdheden bundelen.
-* Bevestigde toevoeging aan boodschappenlijst.
-* Voorraad bijwerken na aankoop.
+Status: **FUNCTIONEEL AFGEROND / real-device geaccepteerd.**
+
+* Voorraadstatus: afgerond.
+* Weekbenodigdheden bundelen: afgerond.
+* Bevestigde toevoeging aan boodschappenlijst: afgerond.
+* Voorraad bijwerken na aankoop: afgerond.
+* `Niet kopen` / verbergen uit Weekvoorraad + herstel: afgerond.
 
 ### Fase 6 - Goedkeuring / notificaties
 
-* Weekvoorstellen.
-* Overdracht + tegenvoorstel + afwijzen.
-* Gebundelde, beperkte reminders.
+Status: **DEELS AFGEROND.**
+
+* Weekvoorstellen + persoonlijke approval: afgerond.
+* Routine-overdracht naar ander gezinslid met accepteren/afwijzen: afgerond.
+* Tegenvoorstel: **OPEN**.
+* Gebundelde, beperkte reminders/notificaties: **OPEN**.
+* Eventuele uitgebreidere multi-person assignment/overdracht: **OPEN**.
 
 ### Fase 7 - Historie / uitzonderingen
 
-* Completion logs en kamerhistorie.
-* Vakantie / drukke week / ziekte / tijdelijk niet beschikbaar.
-* Pauzeren + herstartplan.
-* Gezamenlijke progressie en subtiele achievements.
+Status: **DEELS AFGEROND.**
+
+* Completion logs: aanwezig.
+* Tijdelijke routine- en kamerpauzes: afgerond en real-device geaccepteerd.
+* Intervalritme na eindige pauze + geen backlog: afgerond.
+* Kamer-/routinehistorie uitgebreider presenteren: **OPEN/DEELS**.
+* Vakantie / drukke week / ziekte / tijdelijk niet beschikbaar: **OPEN**.
+* Gezamenlijke progressie en subtiele achievements: **OPEN**.
 
 ### Fase 8 - Visuele polish / slimme inzichten
 
-* Premium FamilyApp-UI en microinteracties.
-* Relevante feed-events.
-* Data-gedreven frequentie- en planningsvoorstellen.
-* Eventuele Family Assistant-inzichten zonder automatische structurele wijzigingen.
+Status: **DEELS.**
+
+* Home-Schoonmaken-tegel en functionele overzichtslagen: aanwezig.
+* Slimme benodigdhedensuggesties + weekvoorraad: aanwezig.
+* Definitieve premium FamilyApp-UI conform visual spec: **OPEN/DEELS**.
+* Relevante feed-events: **OPEN**.
+* Data-gedreven frequentie- en planningsvoorstellen: **OPEN**.
+* Family Assistant-inzichten zonder automatische structurele wijzigingen: **OPEN**.
+
+## STEP 14 - resterende hoofdblokken
+
+1. **Samenwerking afronden** - tegenvoorstellen, uitgebreidere overdracht/multi-person flows en notificaties/reminders.
+2. **Uitzonderingen + historie** - vakantie, ziekte, drukke week, tijdelijke afwezigheid en rijkere historie.
+3. **Laatste functionele gaten + hardening** - Tijd/Aantal/Beide, gerichte cleanup-validatie en beperkte technische hardening.
+4. **Definitieve polish** - premium visual spec, microinteracties, gezamenlijke progressie/feed-events en later slimme inzichten.
 
 ---
-# Grote toekomstige features
+# Grote toekomstige features buiten de huidige STEP 14 scope
 
 ## Gepland
 
-* Gezins invites
-* Accounts/auth
-* Cloud sync
-* Push notificaties
-* Realtime updates
-* AI family assistant
+* Gezins invites verder uitbouwen
+* Accounts/auth verder hardenen
+* Push notificaties appbreed
+* Realtime updates appbreed
+* AI family assistant verder uitbouwen
 * Shared calendar sync
 * Smart meal planning
 * Grocery automation
@@ -362,28 +413,30 @@ Deze regels gelden voor alle fases van de Schoonmaken-module:
 * `CleaningOccurrence` blijft de enige bron van waarheid voor een concrete schoonmaakbeurt.
 * Taken, Agenda en Boodschappen koppelen via expliciete service/repository-contracten en stabiele referenties; geen cross-module DOM-hacks.
 * Eén `CleaningHouseholdRepository` als persistence boundary; geen repository-explosie.
-* Geen dubbele Firebase/localStorage state, hardcoded gebruikers/UIDs of silent legacy fallbacks.
+* Geen dubbele Firebase/localStorage canonieke state, hardcoded gebruikers/UIDs of silent legacy fallbacks.
 * Realtime listeners hebben expliciete bind/unbind lifecycle en household/account-isolatie.
 * Mutaties die opnieuw kunnen worden uitgevoerd moeten idempotent zijn.
-* Iedere fase krijgt contracttests en waar relevant iPhone/PWA-acceptatie voordat de status op AFGEROND gaat.
-* TODO en `FamilyApp-Schoonmaken-module-architectuur.md` worden bij iedere geaccepteerde stap samen bijgewerkt.
+* Iedere grotere functionele stap krijgt contracttests en waar relevant iPhone/PWA-acceptatie voordat die als real-device geaccepteerd wordt behandeld.
+* `FamilyApp-TODO-updated.txt`, `FamilyApp-Schoonmaken-current-status.md` en het milestone-log moeten na geaccepteerde STEP 14-milestones dezelfde checkpoint/status weergeven.
 
 Statusnotatie per fase:
 
 * OPEN = nog niet gestart.
 * BEZIG = implementatie/checkpoint bestaat maar is nog niet volledig geaccepteerd.
 * ACCEPTATIE = code staat klaar; CI/Vercel/real-device gates lopen nog.
-* AFGEROND = alle Definition-of-Done checks zijn gehaald en documentatie is bijgewerkt.
+* AFGEROND = relevante Definition-of-Done checks zijn gehaald en documentatie is bijgewerkt.
 
-Huidige status Schoonmaken:
+Huidige status STEP 14 - Schoonmaken:
 
+* Laatst geaccepteerde functionele checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
 * Fase A - Veilige module-shell: AFGEROND / real-device geaccepteerd.
-* Fase 0 - Fundament: BEZIG.
-* Fase 1 - Kamers + routines: OPEN.
-* Fase 2 - Weekplanner: OPEN.
-* Fase 3 - Taken-integratie: OPEN.
-* Fase 4 - Agenda-integratie: OPEN.
-* Fase 5 - Boodschappen / voorraad: OPEN.
-* Fase 6 - Goedkeuring / notificaties: OPEN.
-* Fase 7 - Historie / uitzonderingen: OPEN.
-* Fase 8 - Visuele polish / slimme inzichten: OPEN.
+* Fase 0 - Fundament: KERN AFGEROND; gerichte hardening later.
+* Fase 1 - Kamers + routines: FUNCTIONEEL VRIJWEL AFGEROND; Tijd/Aantal/Beide nog open.
+* Fase 2 - Weekplanner: AFGEROND / real-device geaccepteerd.
+* Fase 3 - Taken-integratie: GROTENDEELS AFGEROND / kern real-device geaccepteerd; uitzonderings-UX nog deels open.
+* Fase 4 - Agenda-integratie: FUNCTIONEEL AFGEROND / real-device geaccepteerd.
+* Fase 5 - Boodschappen / voorraad: FUNCTIONEEL AFGEROND / real-device geaccepteerd.
+* Fase 6 - Goedkeuring / notificaties: DEELS; tegenvoorstel/reminders/multi-person flow nog open.
+* Fase 7 - Historie / uitzonderingen: DEELS; pauze/completion aanwezig, bredere beschikbaarheid/historie/progressie open.
+* Fase 8 - Visuele polish / slimme inzichten: DEELS.
+* `main`: NIET GEWIJZIGD.
