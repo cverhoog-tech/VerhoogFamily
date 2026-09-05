@@ -71,8 +71,9 @@ Execution status:
 - [-] Fase 6 — Existing module accept/decline UI kept as fallback/detail; not yet removed anywhere.
 - [x] Fase 7 — No new notification spreading; Cleaning tegenvoorstel routes back into existing Cleaning UI via "Ander voorstel".
 - [x] Contract tests — `scripts/test-action-inbox.js` added; full existing `scripts/test-*.js` suite re-run green.
-- [ ] CI run on pushed commit.
-- [ ] Unique Vercel preview.
+- [x] Push to `agent/household-rebuild-v2` — 12 files, byte-verified via fresh clone (only a trailing-newline non-content diff in `api/app.js`); full 110-test suite re-run green on the fresh clone too.
+- [ ] CI run confirmed — could not be verified from this session (no tool access to commit check-runs without an open PR); Vercel's own auto-deploy for each commit did succeed (see below), which strongly implies the build step is healthy, but the separate "Household Rebuild Contract Tests" GitHub Action status itself needs a manual check on github.com.
+- [x] Vercel preview — latest commit (`29e01f7e...`, "docs: note Action Inbox as separate initiative in fix backlog") deployed READY at `https://verhoog-family-ks84yij7s-cverhoog-techs-projects.vercel.app`.
 - [ ] Real-device acceptance checklist (13 points from the milestone brief).
 
 ## Validation cadence
