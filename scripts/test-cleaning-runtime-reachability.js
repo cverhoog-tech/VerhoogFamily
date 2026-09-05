@@ -8,7 +8,7 @@ const CLEANING_DIR = path.join(ROOT, 'src', 'modules', 'cleaning');
 const NAVIGATION_FILE = path.join(ROOT, 'src', 'core', 'navigation.js');
 
 const REQUIRED_CLEANING_FILES = [
-  'cleaningActivePlanReconciler.js','cleaningApprovalClarity.js','cleaningAvailabilityContract.js','cleaningAvailabilityExperience.js',
+  'cleaningActivePlanReconciler.js','cleaningActivityProjector.js','cleaningApprovalClarity.js','cleaningAvailabilityContract.js','cleaningAvailabilityExperience.js',
   'cleaningDerivedCleanup.js','cleaningDomain.js','cleaningExceptionContract.js','cleaningExceptionRuntime.js','cleaningExceptionTaskUi.js',
   'cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js','cleaningExperienceBootstrap.js','cleaningHelpRequestUi.js',
   'cleaningHistoryExperience.js','cleaningHouseholdRepository.js','cleaningNotificationProjector.js','cleaningOverviewExperience.js','cleaningPauseAgendaProjection.js','cleaningPauseExperience.js',
@@ -21,7 +21,7 @@ const REQUIRED_CLEANING_FILES = [
 const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExceptionContract.js','cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js',
   'cleaningExceptionRuntime.js','cleaningExceptionTaskUi.js','cleaningHelpRequestUi.js','cleaningAvailabilityContract.js',
-  'cleaningAvailabilityExperience.js','cleaningHistoryExperience.js','cleaningNotificationProjector.js','cleaningTaskSupplyUi.js'
+  'cleaningAvailabilityExperience.js','cleaningHistoryExperience.js','cleaningActivityProjector.js','cleaningNotificationProjector.js','cleaningTaskSupplyUi.js'
 ];
 
 let failed = false;
