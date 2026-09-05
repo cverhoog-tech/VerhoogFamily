@@ -1,14 +1,20 @@
 'use strict';
 // ============================================================
-// CLEANING EXCEPTION RUNTIME v0.1.0
+// CLEANING EXCEPTION RUNTIME v0.2.0
 // Rules-safe writer for explicit incomplete-cleaning choices from Tasks.
 // Canonical write boundary is families/{householdId}/cleaning only.
 // Task/Calendar rows are repaired afterwards by CleaningProjectionService.
+//
+// v0.2.0 adds respondToHelpRequest(), a separate entry point for the help
+// recipient, who has no Task of their own for this occurrence yet (the
+// occurrence's assignmentUids do not include them until they accept).
+// apply() itself is unchanged and already forwards REQUEST_HELP generically
+// to CleaningExceptionContract for the requester's own managed Task.
 // ============================================================
 (function(){
   if(window.CleaningExceptionRuntime)return;
 
-  var VERSION='0.1.0';
+  var VERSION='0.2.0';
   var state={inFlight:false,lastResult:null,lastError:null};
 
   function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(error){return value;}}
@@ -49,5 +55,23 @@
 
   function message(error){var contract=window.CleaningExceptionContract;if(contract&&typeof contract.userMessage==='function')return contract.userMessage(error);var code=text(error&&error.message||error);if(code.indexOf('BUSY')>=0)return'Er wordt al een schoonmaakactie opgeslagen.';return code||'Schoonmaakactie kon niet worden opgeslagen.';}
 
-  window.CleaningExceptionRuntime={version:VERSION,apply:apply,userMessage:message,status:function(){return clone({version:VERSION,inFlight:state.inFlight,lastResult:state.lastResult,lastError:state.lastError});}};
+  function respondToHelpRequest(occurrenceId,action){
+    var id=text(occurrenceId);
+    if(!id)return Promise.reject(new Error('CLEANING_EXCEPTION_OCCURRENCE_REQUIRED'));
+    if(['ACCEPT_HELP','DECLINE_HELP'].indexOf(text(action).toUpperCase())<0)return Promise.reject(new Error('CLEANING_EXCEPTION_ACTION_INVALID'));
+    if(state.inFlight)return Promise.reject(new Error('CLEANING_EXCEPTION_BUSY'));
+    var contract=window.CleaningExceptionContract;if(!contract||typeof contract.apply!=='function')return Promise.reject(new Error('CLEANING_EXCEPTION_CONTRACT_UNAVAILABLE'));
+    var write;try{write=writeContext();}catch(error){return Promise.reject(error);}
+    var resultValue=null,transitionError=null,stamp=Date.now();state.inFlight=true;state.lastError=null;
+    return write.db.ref(write.cleaningPath).transaction(function(serverCleaning){
+      if(!current(write.token)){transitionError=new Error('HOUSEHOLD_CONTEXT_CHANGED');return;}
+      try{resultValue=contract.apply({cleaning:serverCleaning||{},occurrenceIds:[id],householdId:write.ctx.householdId,actorUid:write.ctx.uid,timestamp:stamp,action:text(action).toUpperCase(),options:{}});transitionError=null;return resultValue.cleaning;}catch(error){transitionError=error;return;}
+    }).then(function(transaction){
+      if(transitionError)throw transitionError;if(!current(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');if(!transaction||transaction.committed!==true)throw new Error('CLEANING_EXCEPTION_WRITE_NOT_COMMITTED');
+      state.lastResult={action:resultValue.action,occurrenceIds:resultValue.occurrenceIds.slice(),planIds:resultValue.planIds.slice(),logIds:resultValue.logIds.slice(),schedule:clone(resultValue.schedule),helpRequest:clone(resultValue.helpRequest)};
+      return repair(resultValue.planIds).catch(function(error){try{console.warn('[CleaningExceptionRuntime] projection repair failed',error);}catch(ignore){}return[];}).then(function(){try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-exception',{detail:clone(state.lastResult)}));}catch(error){}return clone(state.lastResult);});
+    }).catch(function(error){state.lastError=error&&error.message||String(error);throw error;}).finally(function(){state.inFlight=false;});
+  }
+
+  window.CleaningExceptionRuntime={version:VERSION,apply:apply,respondToHelpRequest:respondToHelpRequest,userMessage:message,status:function(){return clone({version:VERSION,inFlight:state.inFlight,lastResult:state.lastResult,lastError:state.lastError});}};
 })();
