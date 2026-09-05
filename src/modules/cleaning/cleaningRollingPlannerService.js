@@ -1,10 +1,12 @@
 'use strict';
 // ============================================================
-// CLEANING ROLLING PLANNER SERVICE v0.1.4
+// CLEANING ROLLING PLANNER SERVICE v0.1.5
 // Keeps a four-week future horizon for routines marked ONGOING.
 // Future occurrences are only created after a fixed-person request, a
 // concrete non-rolling weekly assignment has been accepted, or that exact
 // accepted assignment is preserved across a temporary pause.
+// Pending transfers and counter-proposals never create rolling work before
+// the proposed assignee has explicitly consented.
 //
 // A finite pause freezes the routine countdown. The rolling horizon may show
 // work AFTER the pause using a planning-only shadow nextDueAt, while canonical
@@ -15,7 +17,7 @@
 (function(){
   if(window.CleaningRollingPlannerService)return;
 
-  var VERSION='0.1.4';
+  var VERSION='0.1.5';
   var DEFAULT_HORIZON_WEEKS=4;
   var ASSIGNMENT_PRIORITY={ACCEPTED_PLAN:2,PAUSE_CONTINUITY:3,FIXED_ROUTINE:4};
   var state={unsubscribe:null,attachTimer:null,debounce:null,inFlight:null,lastResult:null,lastError:null};
@@ -218,12 +220,16 @@
     var inherited=text(standing[candidate.routineId]);return inherited&&lookup[inherited]?inherited:null;
   }
 
+  function assignmentAwaitingConsent(routine){
+    return ['PENDING','COUNTER_PROPOSED'].indexOf(text(routine&&routine.assignmentRequestStatus))>=0;
+  }
+
   function desiredGroups(root,contract,windowValue,memberRows,standing){
     var shadow=planningRoutines(root);
     var expansion=contract.expandRoutineSlots({window:windowValue,rooms:root.rooms||{},routines:shadow,carryOverOverdue:false});
     var routines=root.routines||{},groups={};
     (expansion.candidates||[]).forEach(function(candidate){
-      var routine=routines[candidate.routineId]||{};if(text(routine.assignmentRequestStatus)==='PENDING')return;
+      var routine=routines[candidate.routineId]||{};if(assignmentAwaitingConsent(routine))return;
       var uid=pickAssignee(candidate,routine,standing,memberRows);if(!uid)return;
       var key=text(candidate.roomId)+'|'+Number(candidate.slotAt)+'|'+uid;if(!groups[key])groups[key]={roomId:text(candidate.roomId),slotAt:Number(candidate.slotAt),uid:uid,items:[]};groups[key].items.push(candidate);
     });
@@ -301,6 +307,6 @@
   function start(){if(attach())return true;if(state.attachTimer)return false;var tries=0;state.attachTimer=setInterval(function(){tries++;if(attach()||tries>240){clearInterval(state.attachTimer);state.attachTimer=null;}},100);return false;}
   function stop(){if(state.unsubscribe){try{state.unsubscribe();}catch(e){}state.unsubscribe=null;}if(state.attachTimer){clearInterval(state.attachTimer);state.attachTimer=null;}if(state.debounce){clearTimeout(state.debounce);state.debounce=null;}state.inFlight=null;}
 
-  window.CleaningRollingPlannerService={version:VERSION,start:start,stop:stop,reconcile:reconcile,status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,inFlight:!!state.inFlight});},_reconcileRoot:reconcileRoot,_weekStartAt:weekStartAt,_futureWeekWindow:futureWeekWindow,_standingAssignments:standingAssignments,_planningRoutines:planningRoutines,_finitePauseNextDue:finitePauseNextDue};
+  window.CleaningRollingPlannerService={version:VERSION,start:start,stop:stop,reconcile:reconcile,status:function(){return clone({version:VERSION,lastResult:state.lastResult,lastError:state.lastError,inFlight:!!state.inFlight});},_reconcileRoot:reconcileRoot,_weekStartAt:weekStartAt,_futureWeekWindow:futureWeekWindow,_standingAssignments:standingAssignments,_planningRoutines:planningRoutines,_finitePauseNextDue:finitePauseNextDue,_assignmentAwaitingConsent:assignmentAwaitingConsent};
   window.addEventListener('familyapp:cleaning-repository',start);window.addEventListener('familyapp:household-context',start);window.addEventListener('familyapp:household-identity-synced',schedule);start();
 })();
