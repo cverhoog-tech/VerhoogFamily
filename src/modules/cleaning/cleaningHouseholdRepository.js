@@ -317,7 +317,33 @@
 
   function getOccurrence(id){var occurrenceId=String(id||'');var occurrences=current.data&&current.data.occurrences||{};return clone(occurrences[occurrenceId]||null);}
 
-  window.CleaningHouseholdRepository={version:VERSION,bind:bind,unbind:unbind,subscribe:subscribe,snapshot:snapshot,createRoom:createRoom,updateRoom:updateRoom,removeRoom:removeRoom,createRoutineItem:createRoutineItem,updateRoutineItem:updateRoutineItem,removeRoutineItem:removeRoutineItem,saveDraftPlan:saveDraftPlan,getPlan:getPlan,createOccurrence:readOnlyWrite,updateOccurrence:readOnlyWrite,getOccurrence:getOccurrence,setUserPreferences:readOnlyWrite,attach:attach,stop:stop};
+  function currentPreferencesRow(uid){var prefs=current.data&&current.data.preferences||{};var row=prefs[String(uid||'')];return row&&typeof row==='object'?row:null;}
+
+  function getUserPreferences(uid){
+    var ctx=contextSnapshot();
+    var wanted=String(uid||(ctx&&ctx.uid)||'');
+    var domain=window.CleaningDomain;
+    var row=currentPreferencesRow(wanted);
+    if(domain&&typeof domain.normalizeUserPreferences==='function')return domain.normalizeUserPreferences(row||{});
+    return row?clone(row):{displayMode:'BOTH',schemaVersion:1};
+  }
+
+  function setUserPreferences(patch){
+    var write,domain;
+    try{write=requireWriteContext();domain=requireDomain();}catch(error){return Promise.reject(error);}
+    if(!domain||typeof domain.normalizeUserPreferences!=='function')return Promise.reject(new Error('CLEANING_DOMAIN_UNAVAILABLE'));
+    var basePath=domain.basePath(write.ctx.householdId);
+    if(!basePath)return Promise.reject(new Error('ACTIVE_HOUSEHOLD_REQUIRED'));
+    var existing=currentPreferencesRow(write.ctx.uid)||{};
+    var normalized=domain.normalizeUserPreferences(Object.assign({},existing,patch||{}));
+    normalized.updatedAt=Date.now();
+    normalized.updatedByUid=write.ctx.uid;
+    if(!isCurrent(write.token))return Promise.reject(new Error('HOUSEHOLD_CONTEXT_CHANGED'));
+    var prefRef=write.db.ref(basePath+'/preferences/'+write.ctx.uid);
+    return prefRef.set(normalized).then(function(){if(!isCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');return deepFreeze(clone(normalized));});
+  }
+
+  window.CleaningHouseholdRepository={version:VERSION,bind:bind,unbind:unbind,subscribe:subscribe,snapshot:snapshot,createRoom:createRoom,updateRoom:updateRoom,removeRoom:removeRoom,createRoutineItem:createRoutineItem,updateRoutineItem:updateRoutineItem,removeRoutineItem:removeRoutineItem,saveDraftPlan:saveDraftPlan,getPlan:getPlan,createOccurrence:readOnlyWrite,updateOccurrence:readOnlyWrite,getOccurrence:getOccurrence,setUserPreferences:setUserPreferences,getUserPreferences:getUserPreferences,attach:attach,stop:stop};
 
   if(window.CleaningRepositoryContract&&typeof window.CleaningRepositoryContract.validateImplementation==='function'){
     var validation=window.CleaningRepositoryContract.validateImplementation(window.CleaningHouseholdRepository);
