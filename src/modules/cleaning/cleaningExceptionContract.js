@@ -1,13 +1,19 @@
 'use strict';
 // ============================================================
-// CLEANING EXCEPTION CONTRACT v0.1.1
+// CLEANING EXCEPTION CONTRACT v0.2.0
 // Pure canonical transitions for a Cleaning task that cannot be fully finished.
 // No Firebase, repositories or DOM. CleaningOccurrence remains source of truth.
+//
+// v0.2.0 adds REQUEST_HELP / ACCEPT_HELP / DECLINE_HELP (STEP 14 Blok 2.4,
+// overname-hulp). These are purely additive: a help request never changes
+// checklist state or assignmentStatus by itself, and acceptance never
+// happens without an explicit ACCEPT_HELP action from the intended
+// recipient. Declining is always available and never silently reassigns.
 // ============================================================
 (function(){
   if(window.CleaningExceptionContract)return;
 
-  var VERSION='0.1.1';
+  var VERSION='0.2.0';
   var DAY_MS=86400000;
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -75,16 +81,61 @@
     return parts;
   }
 
-  function apply(input){
-    var source=input||{},root=ensureRoot(source.cleaning),ids=unique(source.occurrenceIds),householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=Number(source.timestamp)||Date.now(),action=text(source.action).toUpperCase(),options=source.options||{};
-    if(!householdId||!actorUid)throw new Error('CLEANING_EXCEPTION_CONTEXT_REQUIRED');if(!ids.length)throw new Error('CLEANING_EXCEPTION_OCCURRENCE_REQUIRED');if(['RESCHEDULE','CARRY_FORWARD','SKIP'].indexOf(action)<0)throw new Error('CLEANING_EXCEPTION_ACTION_INVALID');
-    var planIds=[],logIds=[],schedule=null,handled=[];
-    ids.forEach(function(id){var row=occurrence(root,id,householdId),status=text(row.status).toUpperCase(),assignment=text(row.assignmentStatus).toUpperCase();if(status==='COMPLETED'||assignment==='COMPLETED'||status==='CANCELLED'||status==='SKIPPED')return;if(planIds.indexOf(text(row.planId))<0)planIds.push(text(row.planId));if(action==='RESCHEDULE')schedule=reschedule(root,id,row,householdId,actorUid,timestamp,options);else logIds.push(finalize(root,id,row,householdId,actorUid,timestamp,action==='CARRY_FORWARD'?'CARRY_FORWARD':'SKIP'));handled.push(id);});
-    if(!handled.length)throw new Error('CLEANING_EXCEPTION_NO_ACTIVE_OCCURRENCES');
-    return{cleaning:root,action:action,occurrenceIds:handled,planIds:planIds.filter(Boolean),logIds:logIds,schedule:schedule};
+  function assignmentUidList(row){return Array.isArray(row&&row.assignmentUids)?row.assignmentUids.filter(Boolean).map(String):[];}
+
+  function requestHelp(root,id,row,householdId,actorUid,timestamp,options){
+    var toUid=text(options&&options.toUid);
+    if(!toUid)throw new Error('CLEANING_EXCEPTION_HELP_TARGET_REQUIRED');
+    if(toUid===actorUid)throw new Error('CLEANING_EXCEPTION_HELP_TARGET_INVALID');
+    if(assignmentUidList(row).indexOf(toUid)>=0)throw new Error('CLEANING_EXCEPTION_HELP_ALREADY_ASSIGNED');
+    var existing=row.helpRequest&&typeof row.helpRequest==='object'?row.helpRequest:null;
+    if(existing&&text(existing.status)==='PENDING')throw new Error('CLEANING_EXCEPTION_HELP_ALREADY_PENDING');
+    row.helpRequest={fromUid:actorUid,toUid:toUid,status:'PENDING',requestedAt:timestamp,respondedAt:null,respondedByUid:null};
+    row.updatedAt=timestamp;row.updatedByUid=actorUid;
+    return row.helpRequest;
   }
 
-  function userMessage(error){var code=text(error&&error.message||error);if(code.indexOf('DATE_OUTSIDE_PLAN')>=0)return'Kies een dag binnen deze schoonmaakweek.';if(code.indexOf('DATE_INVALID')>=0)return'Kies een geldige datum.';if(code.indexOf('TIME_INVALID')>=0)return'Kies een geldige tijd.';if(code.indexOf('NOTHING_REMAINING')>=0)return'Alle schoonmaakstappen zijn al afgerond.';if(code.indexOf('CONTEXT')>=0||code.indexOf('HOUSEHOLD')>=0)return'Het actieve huishouden veranderde. Probeer opnieuw.';return code||'Deze schoonmaakactie kon niet worden opgeslagen.';}
+  function requireOwnPendingHelp(row,actorUid){
+    var request=row.helpRequest&&typeof row.helpRequest==='object'?row.helpRequest:null;
+    if(!request||text(request.status)!=='PENDING')throw new Error('CLEANING_EXCEPTION_HELP_NOT_PENDING');
+    if(text(request.toUid)!==actorUid)throw new Error('CLEANING_EXCEPTION_HELP_NOT_FOR_ACTOR');
+    return request;
+  }
 
-  window.CleaningExceptionContract=Object.freeze({version:VERSION,apply:apply,userMessage:userMessage,_localParts:localParts,_unfinishedItems:unfinishedItems,_logId:logId,_nextCycleAfter:nextCycleAfter});
+  function acceptHelp(root,id,row,householdId,actorUid,timestamp){
+    var request=requireOwnPendingHelp(row,actorUid);
+    var assignees=assignmentUidList(row);
+    if(assignees.indexOf(actorUid)<0)assignees.push(actorUid);
+    row.assignmentUids=assignees;
+    row.helpRequest=Object.assign({},request,{status:'ACCEPTED',respondedAt:timestamp,respondedByUid:actorUid});
+    row.updatedAt=timestamp;row.updatedByUid=actorUid;
+    return row.helpRequest;
+  }
+
+  function declineHelp(root,id,row,householdId,actorUid,timestamp){
+    var request=requireOwnPendingHelp(row,actorUid);
+    row.helpRequest=Object.assign({},request,{status:'DECLINED',respondedAt:timestamp,respondedByUid:actorUid});
+    row.updatedAt=timestamp;row.updatedByUid=actorUid;
+    return row.helpRequest;
+  }
+
+  function apply(input){
+    var source=input||{},root=ensureRoot(source.cleaning),ids=unique(source.occurrenceIds),householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=Number(source.timestamp)||Date.now(),action=text(source.action).toUpperCase(),options=source.options||{};
+    var VALID_ACTIONS=['RESCHEDULE','CARRY_FORWARD','SKIP','REQUEST_HELP','ACCEPT_HELP','DECLINE_HELP'];
+    if(!householdId||!actorUid)throw new Error('CLEANING_EXCEPTION_CONTEXT_REQUIRED');if(!ids.length)throw new Error('CLEANING_EXCEPTION_OCCURRENCE_REQUIRED');if(VALID_ACTIONS.indexOf(action)<0)throw new Error('CLEANING_EXCEPTION_ACTION_INVALID');
+    var planIds=[],logIds=[],schedule=null,handled=[],helpRequest=null;
+    ids.forEach(function(id){var row=occurrence(root,id,householdId),status=text(row.status).toUpperCase(),assignment=text(row.assignmentStatus).toUpperCase();if(status==='COMPLETED'||assignment==='COMPLETED'||status==='CANCELLED'||status==='SKIPPED')return;if(planIds.indexOf(text(row.planId))<0)planIds.push(text(row.planId));
+      if(action==='RESCHEDULE')schedule=reschedule(root,id,row,householdId,actorUid,timestamp,options);
+      else if(action==='REQUEST_HELP')helpRequest=requestHelp(root,id,row,householdId,actorUid,timestamp,options);
+      else if(action==='ACCEPT_HELP')helpRequest=acceptHelp(root,id,row,householdId,actorUid,timestamp);
+      else if(action==='DECLINE_HELP')helpRequest=declineHelp(root,id,row,householdId,actorUid,timestamp);
+      else logIds.push(finalize(root,id,row,householdId,actorUid,timestamp,action==='CARRY_FORWARD'?'CARRY_FORWARD':'SKIP'));
+      handled.push(id);});
+    if(!handled.length)throw new Error('CLEANING_EXCEPTION_NO_ACTIVE_OCCURRENCES');
+    return{cleaning:root,action:action,occurrenceIds:handled,planIds:planIds.filter(Boolean),logIds:logIds,schedule:schedule,helpRequest:helpRequest};
+  }
+
+  function userMessage(error){var code=text(error&&error.message||error);if(code.indexOf('DATE_OUTSIDE_PLAN')>=0)return'Kies een dag binnen deze schoonmaakweek.';if(code.indexOf('DATE_INVALID')>=0)return'Kies een geldige datum.';if(code.indexOf('TIME_INVALID')>=0)return'Kies een geldige tijd.';if(code.indexOf('NOTHING_REMAINING')>=0)return'Alle schoonmaakstappen zijn al afgerond.';if(code.indexOf('HELP_TARGET_REQUIRED')>=0||code.indexOf('HELP_TARGET_INVALID')>=0)return'Kies een ander gezinslid om hulp te vragen.';if(code.indexOf('HELP_ALREADY_ASSIGNED')>=0)return'Deze persoon is al bij deze beurt betrokken.';if(code.indexOf('HELP_ALREADY_PENDING')>=0)return'Er staat al een hulpverzoek open voor deze beurt.';if(code.indexOf('HELP_NOT_PENDING')>=0)return'Dit hulpverzoek staat niet meer open.';if(code.indexOf('HELP_NOT_FOR_ACTOR')>=0)return'Dit hulpverzoek is niet voor jou bedoeld.';if(code.indexOf('CONTEXT')>=0||code.indexOf('HOUSEHOLD')>=0)return'Het actieve huishouden veranderde. Probeer opnieuw.';return code||'Deze schoonmaakactie kon niet worden opgeslagen.';}
+
+  window.CleaningExceptionContract=Object.freeze({version:VERSION,apply:apply,userMessage:userMessage,_localParts:localParts,_unfinishedItems:unfinishedItems,_logId:logId,_nextCycleAfter:nextCycleAfter,_requestHelp:requestHelp,_acceptHelp:acceptHelp,_declineHelp:declineHelp});
 })();
