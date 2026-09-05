@@ -10,7 +10,7 @@ const NAVIGATION_FILE = path.join(ROOT, 'src', 'core', 'navigation.js');
 const REQUIRED_CLEANING_FILES = [
   'cleaningActivePlanReconciler.js','cleaningActivityProjector.js','cleaningApprovalClarity.js','cleaningAvailabilityContract.js','cleaningAvailabilityExperience.js',
   'cleaningDerivedCleanup.js','cleaningDomain.js','cleaningExceptionContract.js','cleaningExceptionRuntime.js','cleaningExceptionTaskUi.js',
-  'cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js','cleaningExperienceBootstrap.js','cleaningHelpRequestUi.js',
+  'cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js','cleaningExperienceBootstrap.js','cleaningHelpNotificationUi.js','cleaningHelpRequestUi.js',
   'cleaningHistoryExperience.js','cleaningHouseholdRepository.js','cleaningNotificationProjector.js','cleaningOverviewExperience.js','cleaningPauseAgendaProjection.js','cleaningPauseExperience.js',
   'cleaningPlanApprovalUi.js','cleaningPlanPersistenceContract.js','cleaningPlanSanitizer.js','cleaningPlannerContract.js','cleaningPreferencesUi.js',
   'cleaningProjectionService.js','cleaningQuickChoiceFeedback.js','cleaningRecurringPlanContract.js','cleaningRepositoryContract.js','cleaningRollingPlannerService.js',
@@ -20,7 +20,7 @@ const REQUIRED_CLEANING_FILES = [
 
 const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExceptionContract.js','cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js',
-  'cleaningExceptionRuntime.js','cleaningExceptionTaskUi.js','cleaningHelpRequestUi.js','cleaningAvailabilityContract.js',
+  'cleaningExceptionRuntime.js','cleaningHelpNotificationUi.js','cleaningExceptionTaskUi.js','cleaningHelpRequestUi.js','cleaningAvailabilityContract.js',
   'cleaningAvailabilityExperience.js','cleaningHistoryExperience.js','cleaningActivityProjector.js','cleaningNotificationProjector.js','cleaningTaskSupplyUi.js'
 ];
 
