@@ -57,7 +57,8 @@ const state = {
   planning: {
     submitting: false,
     error: '',
-    notice: ''
+    notice: '',
+    memberFilterUid: ''
   },
   members: [],
   roomNotice: ''
@@ -412,13 +413,18 @@ function planFeedbackMarkup(){
 function memberLoadsMarkup(plan){
   const loads = plan && plan.summary && Array.isArray(plan.summary.memberLoads) ? plan.summary.memberLoads : [];
   if(!loads.length) return '';
+  const selectedUid = String(state.planning.memberFilterUid || '');
   return '<section class="cleaning-plan-loads" aria-label="Verdeling op geschatte tijd">'
     +'<div class="cleaning-plan-section-head"><div><span>Verdeling</span><strong>Eerlijk op geschatte tijd</strong></div><span>'+escapeText(plan.summary.imbalanceMinutes || 0)+' min verschil</span></div>'
-    +'<div class="cleaning-plan-load-grid">'+loads.map((load) => '<div class="cleaning-plan-load">'
-      +'<span>'+escapeText(memberName(load.uid))+'</span>'
-      +'<strong>'+escapeText(load.estimatedMinutes || 0)+' min</strong>'
-      +'<small>'+escapeText(load.bundleCount || 0)+' '+(Number(load.bundleCount)===1?'kamer':'kamers')+'</small>'
-    +'</div>').join('')+'</div>'
+    +'<div class="cleaning-plan-load-grid">'+loads.map((load) => {
+      const uid = String(load && load.uid || '');
+      const active = !!uid && uid === selectedUid;
+      return '<div class="cleaning-plan-load'+(active?' is-active':'')+'" data-cleaning-plan-member-filter="'+escapeText(uid)+'" role="button" tabindex="0" aria-pressed="'+(active?'true':'false')+'" aria-label="'+escapeText((active?'Toon alle schoonmaakbeurten':'Filter schoonmaakbeurten op ')+memberName(uid))+'">'
+        +'<span>'+escapeText(memberName(uid))+'</span>'
+        +'<strong>'+escapeText(load.estimatedMinutes || 0)+' min</strong>'
+        +'<small>'+(active?'✓ Filter actief':escapeText(load.bundleCount || 0)+' '+(Number(load.bundleCount)===1?'kamer':'kamers')+' · tik om te filteren')+'</small>'
+      +'</div>';
+    }).join('')+'</div>'
   +'</section>';
 }
 
@@ -455,6 +461,14 @@ function planningPanel(){
   const occurrences = occurrencesForPlan(plan);
   const members = householdMembers();
   const routines = activeRoutines();
+  const selectedUid = String(state.planning.memberFilterUid || '');
+  const selectedMember = selectedUid
+    ? members.find((member) => String(member && member.uid || '') === selectedUid) || null
+    : null;
+  const visibleOccurrences = selectedMember
+    ? occurrences.filter((occurrence) => Array.isArray(occurrence.assignmentUids) && occurrence.assignmentUids.map(String).includes(selectedUid))
+    : occurrences;
+  const visibleMinutes = visibleOccurrences.reduce((sum, occurrence) => sum + Math.max(0, Number(occurrence && occurrence.estimatedMinutes) || 0), 0);
   const draft = !plan || plan.status === 'DRAFT';
   const initialBlocked = !plan && (!routines.length || !members.length);
   const disabled = state.planning.submitting || !draft || initialBlocked;
@@ -479,9 +493,11 @@ function planningPanel(){
 
   if(!plan) return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+'</div>';
 
-  const list = occurrences.length
-    ? '<section class="cleaning-plan-list"><div class="cleaning-plan-section-head"><div><span>Deze week</span><strong>'+escapeText(occurrences.length)+' '+(occurrences.length===1?'schoonmaakbeurt':'schoonmaakbeurten')+'</strong></div><span>'+escapeText(summary.totalEstimatedMinutes || 0)+' min totaal</span></div>'+occurrences.map(occurrenceCardMarkup).join('')+'</section>'
-    : '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Alles is op schema</strong><p>Er zijn deze week geen routines aan de beurt.</p></div></section>';
+  const list = visibleOccurrences.length
+    ? '<section class="cleaning-plan-list"><div class="cleaning-plan-section-head"><div><span>Deze week</span><strong>'+escapeText(visibleOccurrences.length)+' '+(visibleOccurrences.length===1?'schoonmaakbeurt':'schoonmaakbeurten')+(selectedMember?' voor '+escapeText(selectedMember.displayName || selectedMember.name || 'gezinslid'):'')+'</strong></div><span>'+escapeText(visibleMinutes)+' min zichtbaar</span></div>'+visibleOccurrences.map(occurrenceCardMarkup).join('')+'</section>'
+    : selectedMember
+      ? '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Geen schoonmaakbeurten voor '+escapeText(selectedMember.displayName || selectedMember.name || 'dit gezinslid')+'</strong><p>Tik hetzelfde gezinslid nogmaals aan om de volledige week te tonen.</p></div></section>'
+      : '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Alles is op schema</strong><p>Er zijn deze week geen routines aan de beurt.</p></div></section>';
 
   return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+memberLoadsMarkup(plan)+list+'</div>';
 }
@@ -989,6 +1005,21 @@ function bind(root){
 
   const generateButton = root.querySelector('[data-cleaning-plan-generate]');
   if(generateButton) generateButton.addEventListener('click', () => generateWeekPlan(root));
+
+  root.querySelectorAll('[data-cleaning-plan-member-filter]').forEach((button) => {
+    const toggle = () => {
+      const uid = String(button.getAttribute('data-cleaning-plan-member-filter') || '');
+      if(!uid) return;
+      state.planning.memberFilterUid = state.planning.memberFilterUid === uid ? '' : uid;
+      renderCleaningScreen(root);
+    };
+    button.addEventListener('click', toggle);
+    button.addEventListener('keydown', (event) => {
+      if(event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      toggle();
+    });
+  });
 
   root.querySelectorAll('[data-cleaning-room-edit]').forEach((button) => {
     button.addEventListener('click', () => openEditRoom(root,button.getAttribute('data-cleaning-room-edit')));
