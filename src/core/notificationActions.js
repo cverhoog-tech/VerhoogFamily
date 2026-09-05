@@ -1,15 +1,17 @@
 'use strict';
 // ============================================================
-// NOTIFICATION ACTIONS v3.1.0 — STEP 10
+// NOTIFICATION ACTIONS v3.2.0 — STEP 10
 // Presentation-agnostic action service for actionable notification events.
 // Identity is owned by HouseholdContext; domain mutations remain delegated to
-// the accepted TaskSharedData / PartyQuestInvites services.
+// the accepted TaskSharedData / PartyQuestInvites / CleaningExceptionRuntime services.
 // v3.1 adds occurrence-safe accept/decline actions for targeted and household
 // task-help notifications.
+// v3.2 makes Cleaning help notifications actionable through the existing
+// rules-safe CleaningExceptionRuntime; no second Cleaning writer is introduced.
 // ============================================================
 (function(){
   if(window.NotificationActions)return;
-  var VERSION='3.1.0';
+  var VERSION='3.2.0';
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
@@ -23,8 +25,13 @@
   function isAssigned(task,uid){var id=String(uid||'');return !!(id&&task&&((task.assignedToUids&&task.assignedToUids[id])||String(task.assignedToUid||'')===id));}
   function householdDeclinedForEvent(task,event,uid){var map=task&&task.helpDeclinedByUids;return !!(map&&typeof map==='object'&&eventOccurrence(event)&&String(map[String(uid||'')]||'')===eventOccurrence(event));}
   function targetedDeclinedForEvent(task,event,uid){return !!(task&&eventOccurrence(event)&&String(task.helpDeclinedByUid||'')===String(uid||'')&&String(task.helpDeclinedOccurrence||'')===eventOccurrence(event));}
-  function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'||event.type==='partyQuest.created'));}
-  function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
+  function cleaningOccurrenceId(event){return String(event&&event.data&&event.data.occurrenceId||'');}
+  function cleaningOccurrenceByEvent(event){
+    var id=cleaningOccurrenceId(event);if(!id)return null;
+    try{var repo=window.CleaningHouseholdRepository,snap=repo&&typeof repo.snapshot==='function'?repo.snapshot():null,data=snap&&snap.ready===true?snap.data:null;return data&&data.occurrences&&data.occurrences[id]||null;}catch(e){return null;}
+  }
+  function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='cleaning.help.requested'||event.type==='partyQuest.invitation.sent'||event.type==='partyQuest.created'));}
+  function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='cleaning.help.requested')return'Reageren';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
   function markRead(event){return window.NotificationStore&&event&&event.id?NotificationStore.markRead(event.id):Promise.resolve();}
 
   function acceptTaskHelp(event){
@@ -52,6 +59,19 @@
     });
   }
 
+  function respondCleaningHelp(event,action){
+    var me=currentUid(),id=cleaningOccurrenceId(event),occurrence=cleaningOccurrenceByEvent(event),request=occurrence&&occurrence.helpRequest;
+    if(!me)return Promise.reject(new Error('Niet ingelogd'));
+    if(!id||!occurrence||!request)return Promise.reject(new Error('Deze schoonmaakhulpvraag is niet meer actief'));
+    if(String(request.status||'').toUpperCase()!=='PENDING')return Promise.reject(new Error('Deze schoonmaakhulpvraag is al afgehandeld'));
+    if(String(request.toUid||'')!==String(me))return Promise.reject(new Error('Deze schoonmaakhulpvraag is niet voor jou'));
+    if(!window.CleaningExceptionRuntime||typeof CleaningExceptionRuntime.respondToHelpRequest!=='function')return Promise.reject(new Error('Schoonmaakhulp is nog niet beschikbaar'));
+    var runtimeAction=action==='decline'?'DECLINE_HELP':'ACCEPT_HELP';
+    return CleaningExceptionRuntime.respondToHelpRequest(id,runtimeAction).then(function(saved){
+      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(runtimeAction==='ACCEPT_HELP'?'Je helpt mee ✓':'Hulpvraag afgewezen');return saved;});
+    });
+  }
+
   function revokePartyInvitation(event){
     var questId=event&&event.data&&event.data.questId,inviteeUid=event&&event.data&&event.data.inviteeUid;
     if(!questId||!inviteeUid)return Promise.reject(new Error('Uitnodigingsgegevens ontbreken'));
@@ -72,6 +92,7 @@
     if(!event)return Promise.resolve(false);
     if(!currentUid())return Promise.reject(new Error('Niet ingelogd'));
     if(event.type==='task.help.requested')return (action==='decline'?declineTaskHelp(event):acceptTaskHelp(event)).then(function(){return true;});
+    if(event.type==='cleaning.help.requested')return respondCleaningHelp(event,action).then(function(){return true;});
     if(event.type==='partyQuest.invitation.sent')return revokePartyInvitation(event).then(function(){return true;});
     if(event.type==='partyQuest.created')return respondPartyQuestInvite(event,action==='decline'?'declined':'active').then(function(){return true;});
     return markRead(event).then(function(){return false;});
@@ -80,6 +101,15 @@
 
   function describeStatus(event){
     if(!event)return{statusLabel:'',detail:'',actions:[]};
+    if(event.type==='cleaning.help.requested'){
+      var occurrence=cleaningOccurrenceByEvent(event),me0=currentUid(),request=occurrence&&occurrence.helpRequest,status=String(request&&request.status||'').toUpperCase();
+      if(!occurrence||!request)return{statusLabel:'Niet meer actief',detail:'Deze schoonmaakhulpvraag bestaat niet meer.',actions:[]};
+      if(status==='ACCEPTED')return{statusLabel:'Geaccepteerd ✓',detail:'Je hebt deze hulpvraag geaccepteerd.',actions:[]};
+      if(status==='DECLINED')return{statusLabel:'Afgewezen',detail:'Je hebt deze hulpvraag afgewezen.',actions:[]};
+      if(status!=='PENDING')return{statusLabel:'Niet meer actief',detail:'Deze schoonmaakhulpvraag is al afgehandeld.',actions:[]};
+      if(String(request.toUid||'')!==String(me0||''))return{statusLabel:'Niet voor jou',detail:'Deze hulpvraag is voor een ander gezinslid.',actions:[]};
+      return{statusLabel:'Wacht op jouw reactie',detail:event.body||'Er is hulp gevraagd bij een schoonmaakbeurt.',actions:[{label:'Accepteren',action:'accept',cls:''},{label:'Afwijzen',action:'decline',cls:'is-danger'}]};
+    }
     if(event.type==='task.help.requested'){
       var task=taskByEvent(event),me=currentUid();
       if(!task)return{statusLabel:'Taak niet gevonden',detail:'Deze taak bestaat niet meer.',actions:[]};
@@ -121,5 +151,5 @@
     return{statusLabel:'',detail:event.body||'',actions:[]};
   }
 
-  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,declineTaskHelp:declineTaskHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId,currentUid:currentUid};
+  window.NotificationActions={version:VERSION,isActionable:isActionable,actionLabel:actionLabel,run:run,acceptTaskHelp:acceptTaskHelp,declineTaskHelp:declineTaskHelp,respondCleaningHelp:respondCleaningHelp,revokePartyInvitation:revokePartyInvitation,respondPartyQuestInvite:respondPartyQuestInvite,describeStatus:describeStatus,byId:byId,currentUid:currentUid};
 })();
