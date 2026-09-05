@@ -17,6 +17,29 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-09-06 — Action Inbox milestone: audit accepted, Fase 2–4 implemented
+
+- New product milestone: a single, app-wide **Action Inbox** for every request that needs a yes/no decision (Task-hulp, Task-ruilen, Party Quest-uitnodigingen, Cleaning-hulp, Cleaning-routine-overdracht, Cleaning-tegenvoorstel).
+- Fase 1 audit accepted: every flow has exactly one canonical source and an existing accept/decline runtime; no architecture conflict found.
+- Product decisions confirmed by Shane:
+  - Inbox presence is ALWAYS derived from canonical domain state (taskData / TaskSwapRequests / PartyQuestInvites / CleaningHouseholdRepository), never from `NotificationStore`. `NotificationActions` may be reused for shared status/action semantics only.
+  - Inbox badge (`openActionCount`) has exactly one owner: the new `ActionInboxStore`. It is never derived from unread notifications; `#notif-dot`/`NotificationStore` stays exactly as-is for Meldingen.
+  - Cleaning tegenvoorstel: Accept/Decline fully resolvable from the Inbox card; "Ander voorstel" is a tertiary action that opens the existing Cleaning UI.
+  - `TaskSwapRequests` gets a small explicit additive API: `acceptRequest(id)` / `declineRequest(id)`, wrapping the existing internal `accept()`/`respond()` — no second writer.
+- Implemented under `src/platform/inbox/`:
+  - `actionInboxBootstrap.js` — eager-loads the read-side Cleaning modules (`CleaningHouseholdRepository`, `CleaningHelpRequestUi`, `CleaningRoutineExperience`) the Inbox needs, since those normally only load lazily when the Schoonmaken tab is opened. No new writer; these are the existing canonical/idempotent singletons.
+  - `actionInboxRegistry.js` — one adapter per domain (`task.help`, `task.swap`, `partyQuest.invite`, `cleaning.help`, `cleaning.routine.transfer`, `cleaning.routine.counter`); each adapter reads canonical state directly and routes actions to the existing runtime (`NotificationActions`, `TaskSwapRequests`, `PartyQuestInvites`, `CleaningExceptionRuntime`, `CleaningRoutineExperience`).
+  - `actionInboxStore.js` — aggregates the registry into a live list + `openActionCount`, refreshed on `HouseholdContext`, `familyapp:tasks-updated`, `familyapp:cleaning-repository`/`-exception`, a dedicated read-only `taskSwapRequests` watcher (same accepted pattern as `TaskSwapNotificationProjector`), and `PartyQuestRepository.subscribe()`.
+  - `actionInboxHeaderBridge.js` — injects the app-wide ✉️ Inbox button into `.app-header` (DOM injection, no `index.html` edit), 44×44 target, dark/light aware, badge driven only by `ActionInboxStore`.
+  - `actionInboxScreen.js` — lazily-created `#screen-inbox` (same pattern as `ensureCleaningScreen()`), compact cards with 1–2 primary actions, loading/empty/error states.
+- `api/app.js`: additively injects the five new scripts right before `</body>`, after every existing module script.
+- `src/modules/tasks/taskSwapRequests.js`: additive `acceptRequest`/`declineRequest` export; `accept()`/`respond()` now return their existing promise chains (no behavior change for existing callers).
+- New contract suite `scripts/test-action-inbox.js` (10 checks): files present, no new writer/`inboxRequests` path, actions route to existing runtimes, presence never reads `NotificationStore`, badge ownership separation, `TaskSwapRequests` API, identity-switch/logout reset, Cleaning counterproposal UX, script wiring, existing sensitive files untouched.
+- Full existing `scripts/test-*.js` suite re-run locally: all green, no regressions.
+- Still open before real-device acceptance: unique Vercel preview + the acceptance checklist from the milestone brief (badge, accept/decline per domain, wrong-user/logout safety, existing Meldingen/Schoonmaken/Taken/Quest still functioning).
+
+---
+
 ## 2026-08-30 — STEP 13 Activity / Feed scope approved + documentation synchronized
 
 - Product owner approved extending STEP 13 beyond the original immutable activity-event foundation.
