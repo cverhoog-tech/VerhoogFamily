@@ -17,6 +17,20 @@ New chats/agents should read these files before changing the rebuild branch.
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
+## Action Inbox — ACTIVE (started 2026-09-06)
+
+New cross-module milestone, independent of STEP numbering: a single app-wide Inbox for every request that needs a yes/no decision. Full detail: `docs/household-rebuild-v2-progress.md` → "Action Inbox — ACTIVE" and `docs/FAMILYAPP-UPDATE-LOG.md` → `2026-09-06 — Action Inbox milestone`.
+
+- [x] Fase 1 — Audit, accepted, no architecture conflict.
+- [x] Fase 2/3 — `src/platform/inbox/actionInboxRegistry.js` + `actionInboxStore.js` (canonical-state presence, action routing to existing runtimes only).
+- [x] Fase 4 — `actionInboxHeaderBridge.js` (envelope icon + independently-owned badge).
+- [x] Fase 5 — `actionInboxScreen.js` (functional premium basis).
+- [x] `scripts/test-action-inbox.js` + full existing suite re-run green locally.
+- [ ] Push to `agent/household-rebuild-v2` with fresh-SHA writes + byte-verified diff.
+- [ ] CI run confirmed on GitHub.
+- [ ] Unique Vercel preview.
+- [ ] Real-device acceptance checklist (13 points from the milestone brief).
+
 ## STEP 13 approved product contract
 
 - Preserve current manual social posts and their existing visual/like/comment behavior.
