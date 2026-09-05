@@ -4,6 +4,8 @@ Branch: `agent/household-rebuild-v2`
 
 Dit document bewaart de doorlopende product/fixlijst die door de product owner is aangeleverd. Rebuild-acceptanceblockers worden afzonderlijk bijgehouden in `docs/FAMILYAPP-CURRENT-TODO.md`; visuele/productproblemen die niet blokkeren blijven hier als losse backlog staan.
 
+> De **Action Inbox**-milestone (gestart 2026-09-06) is geen losse fixpunt in de onderstaande lijst maar een eigen cross-module initiatief. Status: `docs/household-rebuild-v2-progress.md` → "Action Inbox — ACTIVE" en `docs/FAMILYAPP-CURRENT-TODO.md`.
+
 ## 1. Home — Hero card backgrounds
 
 - High-quality hero card backgrounds toevoegen aan de Home-cards:
