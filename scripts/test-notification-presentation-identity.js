@@ -11,7 +11,7 @@ const deliverySource=fs.readFileSync('src/core/notificationDelivery.js','utf8');
   // Presentation/action identity must come from HouseholdContext, never a second
   // Firebase auth/global owner.
   [
-    ['NotificationActions',actionsSource,'3.2.0'],
+    ['NotificationActions',actionsSource,'3.1.0'],
     ['NotificationCenter',centerSource,'2.0.0'],
     ['NotificationDelivery',deliverySource,'2.0.0']
   ].forEach(([name,source,version])=>{
