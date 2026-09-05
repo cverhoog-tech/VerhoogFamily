@@ -8,6 +8,7 @@ import './cleaningPauseExperience.js?v=2';
 import './cleaningPauseAgendaProjection.js?v=1';
 import './cleaningSupplyExperience.js?v=2';
 import './cleaningSupplyDirectManager.js?v=1';
+import './cleaningAvailabilityContract.js?v=1';
 import './cleaningActivePlanReconciler.js?v=2';
 import './cleaningPlanSanitizer.js?v=2';
 import './cleaningApprovalClarity.js?v=1';
@@ -21,7 +22,7 @@ import './cleaningExperienceBootstrap.js?v=1';
 import './cleaningPreferencesUi.js?v=1';
 
 // ============================================================
-// CLEANING ROUTINE TEMPLATES v0.3.7
+// CLEANING ROUTINE TEMPLATES v0.3.8
 // Static routine suggestions only. Once selected, a template becomes a
 // normal CleaningRoutineItem and is fully editable by the household.
 // Side-effect imports load approvals, recurring planning, compact room/routine
@@ -34,14 +35,16 @@ import './cleaningPreferencesUi.js?v=1';
 // family (cleaningExceptionContract.js, cleaningExecutionSync.js,
 // cleaningExecutionUiGuard.js, cleaningExecutionWriteRuntime.js,
 // cleaningExceptionRuntime.js, cleaningExceptionTaskUi.js,
-// cleaningTaskSupplyUi.js) in explicit dependency order. A runtime audit
-// found these seven files were never reachable from the real app entry
-// before this line existed. See cleaningExperienceBootstrap.js for the full
-// rationale and dependency order, and FamilyApp-Schoonmaken-milestone-log.md
-// for the audit writeup.
+// cleaningTaskSupplyUi.js) in explicit dependency order. See
+// cleaningExperienceBootstrap.js for the full rationale and dependency order.
 //
-// cleaningPreferencesUi.js (STEP 14 functional end-phase, Milestone 9) adds
-// the personal Tijd/Aantal/Beide display preference to the Overzicht tab.
+// Availability contract is loaded before cleaningActivePlanReconciler so a
+// persisted unavailable/busy-week state is already known during its initial
+// reconciliation pass; the bootstrap later re-imports the same ES module URL
+// safely without re-evaluation.
+//
+// cleaningPreferencesUi.js adds the personal Tijd/Aantal/Beide display
+// preference to the Overzicht tab.
 // ============================================================
 
 const PRESETS = Object.freeze({
@@ -67,7 +70,7 @@ const PRESETS = Object.freeze({
   ]),
   toilet: Object.freeze([
     preset('toilet-bowl','Toilet grondig reinigen',3,10,'NORMAL'),
-    preset('toilet-sink','Wastafel en kraan reinigen',7,5,'BASIC'),
+    preset('toilet-sink','Wastafel en kraan schoonmaken',7,5,'BASIC'),
     preset('toilet-floor','Vloer reinigen',7,10,'NORMAL')
   ]),
   bedroom: Object.freeze([
@@ -106,4 +109,4 @@ const PRESETS = Object.freeze({
 
 function preset(key,title,intervalDays,estimatedMinutes,priority){return Object.freeze({key:key,title:title,intervalDays:intervalDays,estimatedMinutes:estimatedMinutes,priority:priority});}
 export function routineTemplatesForRoomType(roomType){const key=String(roomType||'custom');return PRESETS[key]||PRESETS.custom;}
-export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.3.7';
+export const CLEANING_ROUTINE_TEMPLATES_VERSION = '0.3.8';
