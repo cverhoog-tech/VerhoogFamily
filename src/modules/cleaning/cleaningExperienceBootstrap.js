@@ -8,11 +8,12 @@ import './cleaningHelpRequestUi.js?v=1';
 import './cleaningAvailabilityContract.js?v=1';
 import './cleaningAvailabilityExperience.js?v=1';
 import './cleaningHistoryExperience.js?v=1';
+import './cleaningActivityProjector.js?v=1';
 import './cleaningNotificationProjector.js?v=1';
 import './cleaningTaskSupplyUi.js?v=1';
 
 // ============================================================
-// CLEANING EXPERIENCE BOOTSTRAP v1.4.0
+// CLEANING EXPERIENCE BOOTSTRAP v1.5.0
 // Explicit runtime experiences that sit around the base Cleaning screen.
 // ============================================================
 // Order:
@@ -26,13 +27,14 @@ import './cleaningTaskSupplyUi.js?v=1';
 //  8 availability contract
 //  9 availability experience (reuses accepted pause semantics)
 // 10 read-only room/routine history from completionLogs
-// 11 NotificationStore-only collaboration/reminder projection
-// 12 Task-detail Cleaning supplies
+// 11 exact-once shared household activity projection from completed logs
+// 12 NotificationStore-only collaboration/reminder projection
+// 13 Task-detail Cleaning supplies
 //
-// Ownership remains unchanged: CleaningOccurrence is canonical, history is
-// derived read-only presentation, notifications never mutate Cleaning, and
-// execution reverse sync retains one writer.
+// Ownership remains unchanged: CleaningOccurrence is canonical, history and
+// activity are derived from canonical completionLogs, notifications never
+// mutate Cleaning, and execution reverse sync retains one writer.
 // ============================================================
 
-export const CLEANING_EXPERIENCE_BOOTSTRAP_VERSION = '1.4.0';
+export const CLEANING_EXPERIENCE_BOOTSTRAP_VERSION = '1.5.0';
 export function cleaningExperienceBootstrapLoaded(){return true;}
