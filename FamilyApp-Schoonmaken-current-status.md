@@ -14,10 +14,12 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Functioneel checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
-- Geaccepteerde preview: `https://verhoog-family-2h0filnik-cverhoog-techs-projects.vercel.app`.
+- Functioneel checkpoint: `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`.
+- Geaccepteerde preview: `https://verhoog-family-kp38sfagv-cverhoog-techs-projects.vercel.app`.
 - Acceptatiedatum: **05-09-2026**.
 - CI bij functioneel checkpoint: **Household Rebuild Contracts groen + Vercel success/READY**.
+- GitHub Actions run: `33956995011`.
+- Vercel deployment: `dpl_D3RNAea4TbdwzsPFnrkfV8YfweUE`.
 - `main`: **niet gewijzigd**.
 
 Documentatiecommits ná dit functionele checkpoint veranderen de functionele acceptatiebasis niet.
@@ -31,7 +33,7 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - Fase 3 - Taken-integratie: **GROTENDEELS AFGEROND / heen- en terugsync real-device geaccepteerd; uitzonderings-UX nog deels open**.
 - Fase 4 - Agenda-integratie: **FUNCTIONEEL AFGEROND / reverse sync, pauze-hervatmarker, conflictcheck en alternatieve tijden real-device geaccepteerd**.
 - Fase 5 - Boodschappen / voorraad: **FUNCTIONEEL AFGEROND / weekvoorraad, expliciete Shopping-add, aankoop-terugkoppeling en Niet kopen real-device geaccepteerd**.
-- Fase 6 - Goedkeuring / notificaties: **DEELS; persoonlijke planapproval en routineverzoeken werken, tegenvoorstellen/reminders/multi-person flow nog open**.
+- Fase 6 - Goedkeuring / notificaties: **GROTENDEELS AFGEROND / persoonlijke planapproval, routineverzoeken, overdracht en tegenvoorstellen real-device geaccepteerd; reminders en uitgebreidere multi-person flow nog open**.
 - Fase 7 - Historie / uitzonderingen: **DEELS; completion history en pauzeflow aanwezig, bredere beschikbaarheid/historie/progressie nog open**.
 - Fase 8 - Visuele polish / slimme inzichten: **DEELS; Home, live overview en slimme benodigdheden aanwezig, definitieve premium polish/insights nog open**.
 
@@ -65,11 +67,15 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 
 - Routineformulier bevat expliciet `Wie doet deze routine?`.
 - Keuzes: automatisch eerlijk verdelen, jezelf of een ander actief householdlid.
-- Toewijzen aan jezelf geldt direct.
-- Toewijzen aan een ander gezinslid maakt een expliciet verzoek.
-- Ontvanger ziet een duidelijke kaart met `Accepteren` en `Afwijzen`.
-- Een nog niet geaccepteerde overdracht deelt niet stilzwijgend extra werk uit.
+- Elk ingelogd actief gezinslid kan zelf routines aanmaken, wijzigen en zichzelf rechtstreeks toewijzen; de actor wordt niet impliciet naar de huishoudeigenaar/Shane teruggevallen.
+- `createdByUid` blijft de oorspronkelijke maker en `updatedByUid` volgt de actuele editor via de actieve household-context.
+- Toewijzen aan jezelf geldt direct als geaccepteerde vaste verantwoordelijkheid en maakt geen goedkeuringsverzoek aan jezelf.
+- Toewijzen aan een ander gezinslid maakt een expliciet verzoek aan precies dat householdlid.
+- Ontvanger ziet een duidelijke kaart met accepteren, afwijzen en een tegenvoorstel-flow.
+- Een tegenvoorstel aan een derde persoon wordt opnieuw expliciet aan die derde persoon voorgelegd en is nooit een stille auto-assignment.
+- Een nog niet geaccepteerde overdracht of tegenvoorstel deelt niet stilzwijgend extra werk uit en blokkeert rolling work voor die routine.
 - Na acceptatie wordt toekomstige overlap bij de oude verantwoordelijke opgeschoond.
+- Een geaccepteerde vaste eigenaar blijft een harde assignment-constraint en mag niet door FAIR_TIME worden overschreven.
 
 ### Herhaling / weekplanning
 
@@ -170,6 +176,8 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - Pauzes genereren geen backlog van alle gemiste schoonmaakbeurten.
 - WeekAssist bezit geen eigen Firebase-transactie en mag Planning approval-copy niet herschrijven.
 - Conflicten en weekvoorraad blijven adviserend totdat de gebruiker expliciet handelt.
+- Routine-assignment wordt tijdens opslaan uit het nog bestaande formulier gelezen vóór de busy-state de DOM opnieuw rendert; hierdoor kan een expliciete zelf-/persoontoewijzing niet meer ongemerkt naar `AUTO` terugvallen.
+- Andere householdleden die routines maken of wijzigen worden niet meer impliciet als Shane behandeld door de save-volgorde.
 
 ## Implementatie aanwezig maar apart blijven valideren
 
@@ -187,8 +195,7 @@ Deze lifecycle-opruiming blijft conservatief: onbekende legacy-records worden ni
 
 ## Bewust nog niet afgerond binnen STEP 14
 
-- Tegenvoorstellen bij overdracht en uitgebreidere samenwerkings/multi-person flows.
-- Gebundelde beperkte Cleaning-notificaties/reminders.
+- Gebundelde beperkte Cleaning-notificaties/reminders en uitgebreidere multi-person samenwerkingsflows.
 - Vakantie / drukke week / ziekte / tijdelijk niet beschikbaar.
 - Rijkere kamer- en routinehistorie en gezamenlijke progressie.
 - Expliciete uitzonderings-UX voor doorschuiven / deze week opnieuw / overslaan / overname / hulp waar nog nodig.
@@ -201,16 +208,16 @@ Deze lifecycle-opruiming blijft conservatief: onbekende legacy-records worden ni
 
 ## Resterende hoofdblokken van STEP 14
 
-1. **Samenwerking afronden** - tegenvoorstellen, uitgebreidere overdracht/multi-person flows en notificaties/reminders.
+1. **Samenwerking afronden** - uitgebreidere multi-person flows en gebundelde notificaties/reminders bovenop de geaccepteerde overdracht/tegenvoorstel-flow.
 2. **Uitzonderingen + historie** - vakantie, ziekte, drukke week, tijdelijke afwezigheid en rijkere historie.
 3. **Laatste functionele gaten + hardening** - Tijd/Aantal/Beide, gerichte cleanup-validatie en beperkte technische hardening.
 4. **Definitieve polish** - premium visual spec, microinteracties, gezamenlijke progressie/feed-events en later slimme inzichten.
 
 ## Guardrail voor vervolgchats
 
-- Behandel `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
+- Behandel `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
 - STEP 14 = Schoonmaken; STEP 13.6 is de historische stabiele baseline waar deze workstream op is gestart.
-- Reverse execution sync, pause cadence, Agenda-conflictcheck, 7-daagse Weekvoorraad en `Niet kopen` zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
+- Reverse execution sync, pause cadence, Agenda-conflictcheck, 7-daagse Weekvoorraad, `Niet kopen` en routine-overdracht/tegenvoorstellen zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
 - Documentatiecommits na dit checkpoint veranderen de functionele acceptatiebasis niet.
 - Werk uitsluitend verder op `agent/household-rebuild-v2` zolang de gebruiker niet expliciet anders zegt.
 - `main` niet aanraken of mergen zonder expliciet verzoek van de gebruiker.
