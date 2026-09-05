@@ -248,7 +248,34 @@
     if(state.statusInFlight[id])return;state.statusInFlight[id]=true;state.modalSignature='';renderModal();setSupplyStatus(id,status).then(function(){delete state.statusInFlight[id];state.modalSignature='';toast('Voorraad bijgewerkt ✓');renderModal();queue();}).catch(function(error){delete state.statusInFlight[id];state.modalSignature='';toast((error&&error.message)||'Voorraad kon niet worden bijgewerkt');renderModal();});
   }
   function addAttentionToShopping(){
-    if(!state.modal||state.shoppingInFlight)return;var model=modalModel(),rows=model?model.attention:[];if(!rows.length)return;var store=window.ShoppingListStore;if(!store||typeof store.addItems!=='function'){toast('Boodschappenlijst is nog niet beschikbaar');return;}state.shoppingInFlight=true;state.modalSignature='';renderModal();var items=rows.map(function(row){return{name:row.name,qty:'1 st',cat:'Overig',who:window.myName||'Gezin',source:'cleaning'};});store.addItems(null,items,{dedupe:true}).then(function(result){state.shoppingInFlight=false;state.modalSignature='';var added=result&&Array.isArray(result.added)?result.added.length:0,skipped=result&&Array.isArray(result.skipped)?result.skipped.length:0;if(added)toast(added+' '+(added===1?'benodigd item toegevoegd':'benodigdheden toegevoegd')+' aan Boodschappen ✓');else if(skipped)toast('Staat al op de boodschappenlijst ✓');else toast('Geen benodigdheden toegevoegd');renderModal();}).catch(function(error){state.shoppingInFlight=false;state.modalSignature='';toast((error&&error.message)||'Toevoegen aan Boodschappen mislukt');renderModal();});
+    if(!state.modal||state.shoppingInFlight)return;
+    var model=modalModel(),rows=model?model.attention:[];if(!rows.length)return;
+    var store=window.ShoppingListStore,shoppingRepo=window.ShoppingListHouseholdRepository;
+    if(!store||typeof store.active!=='function'||!shoppingRepo||typeof shoppingRepo.addItems!=='function'){toast('Boodschappenlijst is nog niet beschikbaar');return;}
+    var active=store.active();if(!active||!active.list||!active.list.id){toast('Geen winkellijst beschikbaar');return;}
+    var existing=active.list.items&&typeof active.list.items==='object'?active.list.items:{},existingNames={};Object.keys(existing).forEach(function(key){var item=existing[key];if(item&&item.done!==true)existingNames[canonicalName(item.name)]=true;});
+    var occurrenceIds=state.modal.mode==='turn'&&model.occurrence?[text(model.occurrence.id)]:[];
+    var items=[],skipped=0;
+    rows.forEach(function(row){
+      if(existingNames[canonicalName(row.name)]){skipped++;return;}
+      existingNames[canonicalName(row.name)]=true;
+      var allowed={};uniqueIds(model.routineIds||[]).forEach(function(id){allowed[id]=true;});
+      var relatedRoutineIds=activeRoutinesForRoom(model.root,model.room.id).filter(function(routine){return(!model.routineIds.length||allowed[routine.id])&&routineSupplyIds(routine).indexOf(row.id)>=0;}).map(function(routine){return text(routine.id);});
+      items.push({
+        name:row.name,qty:'1 st',cat:'Overig',who:window.myName||'Gezin',source:'cleaning',
+        cleaningSupplyId:text(row.id),
+        cleaningOccurrenceIds:uniqueIds(occurrenceIds),
+        cleaningRoomIds:[text(model.room.id)],
+        cleaningRoutineIds:uniqueIds(relatedRoutineIds)
+      });
+    });
+    if(!items.length){toast(skipped?'Staat al op de boodschappenlijst ✓':'Geen benodigdheden toegevoegd');return;}
+    state.shoppingInFlight=true;state.modalSignature='';renderModal();
+    shoppingRepo.addItems(active.scope,active.list.id,items).then(function(added){
+      state.shoppingInFlight=false;state.modalSignature='';var addedCount=Array.isArray(added)?added.length:0;
+      if(addedCount)toast(addedCount+' '+(addedCount===1?'benodigd item toegevoegd':'benodigdheden toegevoegd')+' aan Boodschappen ✓');
+      else if(skipped)toast('Staat al op de boodschappenlijst ✓');else toast('Geen benodigdheden toegevoegd');renderModal();
+    }).catch(function(error){state.shoppingInFlight=false;state.modalSignature='';toast((error&&error.message)||'Toevoegen aan Boodschappen mislukt');renderModal();});
   }
 
   function decorate(){state.queued=false;ensureStyle();installRepository();decorateRoutineForm();decorateRoutineRows();decorateRoomButtons();}
