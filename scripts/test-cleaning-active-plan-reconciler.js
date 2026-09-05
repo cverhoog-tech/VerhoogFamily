@@ -43,6 +43,7 @@ function applyUpdates(root,updates){Object.keys(updates).forEach((key)=>setPath(
 load('cleaningPlannerContract.js');
 load('cleaningPlanPersistenceContract.js');
 load('cleaningRecurringPlanContract.js');
+load('cleaningAvailabilityContract.js');
 load('cleaningActivePlanReconciler.js');
 load('cleaningPlanApprovalUi.js');
 load('cleaningProjectionService.js');
@@ -80,7 +81,8 @@ let root={
 const reconciler=context.CleaningActivePlanReconciler;
 let result=reconciler._reconcileRoot({
   root,planId,householdId,actorUid:'u1',timestamp:start+2*DAY+(12*60*60*1000),members,
-  recurringContract:context.CleaningRecurringPlanContract
+  recurringContract:context.CleaningRecurringPlanContract,
+  availabilityContract:context.CleaningAvailabilityContract
 });
 assert.strictEqual(result.changed,true);
 assert.strictEqual(result.addedOccurrenceIds.length,3,'future Wed/Fri/Sun recurrences should be added to the active plan');
@@ -113,7 +115,8 @@ root.rooms.office={id:'office',name:'Kantoor',type:'custom',active:true,distribu
 root.routines.desk={id:'desk',roomId:'office',title:'Bureau afnemen',intervalDays:2,estimatedMinutes:5,priority:'NORMAL',active:true,createdAt:start+3*DAY+(12*60*60*1000),createdByUid:'u2'};
 result=reconciler._reconcileRoot({
   root,planId,householdId,actorUid:'u1',timestamp:start+3*DAY+(12*60*60*1000),members,
-  recurringContract:context.CleaningRecurringPlanContract
+  recurringContract:context.CleaningRecurringPlanContract,
+  availabilityContract:context.CleaningAvailabilityContract
 });
 assert.strictEqual(result.changed,true);
 assert.strictEqual(result.addedOccurrenceIds.length,2,'new midweek routine should occur on its creation day and two days later');
@@ -128,7 +131,8 @@ assert.ok(root.approvals.u2[planId].occurrenceIds.every((id)=>root.occurrences[i
 
 const again=reconciler._reconcileRoot({
   root,planId,householdId,actorUid:'u2',timestamp:start+3*DAY+(13*60*60*1000),members,
-  recurringContract:context.CleaningRecurringPlanContract
+  recurringContract:context.CleaningRecurringPlanContract,
+  availabilityContract:context.CleaningAvailabilityContract
 });
 assert.strictEqual(again.changed,false,'reconciliation must be idempotent');
 assert.strictEqual(again.reason,'ALREADY_CURRENT');
@@ -154,4 +158,38 @@ assert.strictEqual(finalProjection.createdTasks,0);
 assert.strictEqual(finalProjection.createdCalendarEvents,0);
 assert.strictEqual(Object.keys(finalProjection.updates).length,0,'repeat projection must remain idempotent');
 
-console.log('cleaning active plan reconciler: ok');
+// Availability is prospective: existing accepted u2 work stays assigned, but
+// a new supplemental routine created while u2 is unavailable must go to u1.
+root.availability={
+  u2:{scope:'MEMBER',uid:'u2',status:'UNAVAILABLE',reason:'TEMPORARY',fromAt:start+4*DAY,untilAt:end}
+};
+const existingU2OccurrenceIds=root.plans[planId].occurrenceIds.filter((id)=>Array.isArray(root.occurrences[id].assignmentUids)&&root.occurrences[id].assignmentUids[0]==='u2');
+assert.ok(existingU2OccurrenceIds.length>0,'fixture must already contain accepted u2 work');
+root.rooms.study={id:'study',name:'Studeerkamer',type:'custom',active:true,distributionMode:'FAIR_TIME',createdAt:start+4*DAY};
+root.routines.studyDust={id:'studyDust',roomId:'study',title:'Studeerkamer afstoffen',intervalDays:7,estimatedMinutes:8,priority:'NORMAL',active:true,createdAt:start+4*DAY+(12*60*60*1000),createdByUid:'u2'};
+const unavailableResult=reconciler._reconcileRoot({
+  root,planId,householdId,actorUid:'u1',timestamp:start+4*DAY+(12*60*60*1000),members,
+  recurringContract:context.CleaningRecurringPlanContract,
+  availabilityContract:context.CleaningAvailabilityContract
+});
+assert.strictEqual(unavailableResult.changed,true,'new eligible work must still reconcile while one member is unavailable');
+assert.strictEqual(unavailableResult.addedOccurrenceIds.length,1);
+assert.ok(unavailableResult.addedOccurrenceIds.every((id)=>unavailableResult.root.occurrences[id].assignmentUids[0]==='u1'),'supplemental work may not be assigned to an unavailable member');
+existingU2OccurrenceIds.forEach((id)=>assert.strictEqual(unavailableResult.root.occurrences[id].assignmentUids[0],'u2','availability may not silently rewrite existing occurrence ownership'));
+root=unavailableResult.root;
+
+// Busy week is also prospective: EXTRA routines newly introduced while the
+// mode overlaps this plan are deferred rather than written into the live plan.
+root.availability.__household__={scope:'HOUSEHOLD',mode:'BUSY_WEEK',fromAt:start+5*DAY,untilAt:end};
+root.rooms.garage={id:'garage',name:'Garage',type:'custom',active:true,distributionMode:'FAIR_TIME',createdAt:start+5*DAY};
+root.routines.garageDeep={id:'garageDeep',roomId:'garage',title:'Garage grondig',intervalDays:7,estimatedMinutes:30,priority:'EXTRA',active:true,createdAt:start+5*DAY+(10*60*60*1000),createdByUid:'u1'};
+const busyResult=reconciler._reconcileRoot({
+  root,planId,householdId,actorUid:'u1',timestamp:start+5*DAY+(10*60*60*1000),members,
+  recurringContract:context.CleaningRecurringPlanContract,
+  availabilityContract:context.CleaningAvailabilityContract
+});
+assert.strictEqual(busyResult.changed,false,'busy week EXTRA work must not create a supplemental occurrence');
+assert.strictEqual(busyResult.reason,'ALREADY_CURRENT');
+assert.ok(!busyResult.root.plans[planId].occurrenceIds.some((id)=>Array.isArray(busyResult.root.occurrences[id].routineItemIds)&&busyResult.root.occurrences[id].routineItemIds.includes('garageDeep')));
+
+console.log('cleaning active plan reconciler + availability: ok');
