@@ -82,7 +82,6 @@ assert.strictEqual(summary.tone,'out');
 assert.strictEqual(summary.label,'1 ontbreekt');
 assert.deepStrictEqual(Array.from(supplies._supplyRowsForIds(root,['gloves','cloth'])).map((row)=>row.name),['Handschoenen','Microvezeldoek']);
 
-// Smart suggestions use the routine title first and then fill with room defaults.
 assert.deepStrictEqual(
   Array.from(supplies._smartSuggestions('bathroom','Douche ontkalken',[])).slice(0,3),
   ['Ontkalker','Handschoenen','Microvezeldoek']
@@ -122,9 +121,20 @@ assert.ok(taskUi._panelHtml(details).includes('Handschoenen · Op'));
 assert.strictEqual(taskUi._isManaged(task),true);
 assert.strictEqual(taskUi._isManaged({id:'normal'}),false);
 
+// Explicit Shopping add keeps canonical Cleaning context on each new item.
+// It uses the existing Shopping repository persistence boundary directly so
+// metadata is not stripped by the legacy facade normalizer.
 assert.ok(supplySource.includes('ShoppingListStore'));
-assert.ok(supplySource.includes('{dedupe:true}'),'shopping addition must deduplicate explicitly');
+assert.ok(supplySource.includes('ShoppingListHouseholdRepository'));
+assert.ok(supplySource.includes('shoppingRepo.addItems(active.scope,active.list.id,items)'));
+assert.ok(supplySource.includes('existingNames[canonicalName(item.name)]'),'Shopping addition must preserve explicit open-item name dedupe');
+assert.ok(supplySource.includes('cleaningSupplyId:text(row.id)'));
+assert.ok(supplySource.includes('cleaningOccurrenceIds:uniqueIds(occurrenceIds)'));
+assert.ok(supplySource.includes('cleaningRoomIds:[text(model.room.id)]'));
+assert.ok(supplySource.includes('cleaningRoutineIds:uniqueIds(relatedRoutineIds)'));
+assert.ok(supplySource.includes("source:'cleaning'"));
 assert.ok(supplySource.includes('Toevoegen aan Boodschappen gebeurt nooit automatisch'));
+assert.ok(!supplySource.includes("setSupplyStatus(row.id,STATUS.IN_STOCK)"),'Shopping add may never auto-change Cleaning stock');
 assert.ok(supplySource.includes('data-cleaning-smart-supply'),'routine form exposes smart supply suggestions');
 assert.ok(supplySource.includes("overlay.addEventListener('pointerup'"),'modal close must have a direct high-priority pointer handler');
 assert.ok(supplySource.includes('setRepositorySnapshot(event.detail)'),'repository event snapshot must be cached directly');
@@ -135,4 +145,4 @@ assert.ok(taskSource.includes("once('value')"),'task context may read canonical 
 assert.ok(!taskSource.includes('.transaction('));
 assert.ok(!taskSource.includes('.update('));
 
-console.log('cleaning fast supplies, smart suggestions, inventory summary and exact Task context: ok');
+console.log('cleaning fast supplies, explicit Shopping metadata, smart suggestions, inventory summary and exact Task context: ok');
