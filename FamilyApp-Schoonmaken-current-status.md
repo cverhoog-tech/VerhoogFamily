@@ -14,13 +14,14 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Functioneel checkpoint: `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`.
-- Geaccepteerde preview: `https://verhoog-family-kp38sfagv-cverhoog-techs-projects.vercel.app`.
+- Functioneel checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
+- Geaccepteerde preview: `https://verhoog-family-fhxeutuzf-cverhoog-techs-projects.vercel.app`.
 - Acceptatiedatum: **05-09-2026**.
 - CI bij functioneel checkpoint: **Household Rebuild Contracts groen + Vercel success/READY**.
-- GitHub Actions run: `33956995011`.
-- Vercel deployment: `dpl_D3RNAea4TbdwzsPFnrkfV8YfweUE`.
+- GitHub Actions run: `33959882438`.
+- Vercel deployment: `dpl_27hpdMt6PSkMXJzSDSq5oPPuiQHo`.
 - `main`: **niet gewijzigd**.
+- Vervangt functioneel het eerdere checkpoint `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`.
 
 Documentatiecommits ná dit functionele checkpoint veranderen de functionele acceptatiebasis niet.
 
@@ -88,6 +89,20 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - Plan wordt pas volledig ACTIVE wanneer alle vereiste goedkeuringen aanwezig zijn.
 - Planning toont apart of eigen akkoord nodig is, op anderen wordt gewacht of het plan actief is.
 - `Planning vernieuwen` kan stale huidige planreferenties na kamer/routinewijzigingen gecontroleerd laten opschonen.
+
+### Planning - persoonsfilter
+
+- In Planning kan de gebruiker op een gezinslid tikken om de weergave te filteren op uitsluitend de schoonmaakbeurten van die persoon.
+- Nogmaals tikken op dezelfde persoon zet het filter weer uit.
+- Tikken op een andere persoon wisselt het filter direct naar die persoon.
+- Zichtbare aantallen/minuten in Planning volgen de actieve filterselectie.
+- De verdelingsbelasting zelf (FAIR_TIME-berekening) blijft altijd op basis van de volledige weekdata; het filter verandert nooit de onderliggende verdeling.
+- Een stale geselecteerde UID (bijvoorbeeld na een household-wissel) wordt veilig gewist in plaats van een ongeldig filter te tonen.
+- Niet-passende occurrence-cards worden verborgen met `hidden` en niet uit de DOM verwijderd, zodat het bestaande card-index-contract van `cleaningPlanApprovalUi` intact blijft.
+- Filter is bedienbaar met toetsenbord (Enter/Space) op het gezinslid-element.
+- Het filter is uitsluitend lokale UI-state en schrijft niets naar Firebase.
+
+Real-device geaccepteerd checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
 
 ### Tijdelijke pauzes
 
@@ -178,6 +193,7 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - Conflicten en weekvoorraad blijven adviserend totdat de gebruiker expliciet handelt.
 - Routine-assignment wordt tijdens opslaan uit het nog bestaande formulier gelezen vóór de busy-state de DOM opnieuw rendert; hierdoor kan een expliciete zelf-/persoontoewijzing niet meer ongemerkt naar `AUTO` terugvallen.
 - Andere householdleden die routines maken of wijzigen worden niet meer impliciet als Shane behandeld door de save-volgorde.
+- Niet-gefilterde Planning-cards blijven in de DOM en gebruiken `hidden`, zodat de occurrence-card-indexering van de approval UI intact blijft ook met het persoonsfilter actief.
 
 ## Implementatie aanwezig maar apart blijven valideren
 
@@ -215,7 +231,7 @@ Deze lifecycle-opruiming blijft conservatief: onbekende legacy-records worden ni
 
 ## Guardrail voor vervolgchats
 
-- Behandel `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
+- Behandel `d81623d1051d766aaa42683e880faed9f3fd2abe` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint (vervangt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`).
 - STEP 14 = Schoonmaken; STEP 13.6 is de historische stabiele baseline waar deze workstream op is gestart.
 - Reverse execution sync, pause cadence, Agenda-conflictcheck, 7-daagse Weekvoorraad, `Niet kopen` en routine-overdracht/tegenvoorstellen zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
 - Documentatiecommits na dit checkpoint veranderen de functionele acceptatiebasis niet.
