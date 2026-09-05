@@ -10,6 +10,8 @@ function localAt(y,m,d,h=0,min=0){return new Date(y,m-1,d,h,min,0,0).getTime();}
 const contractSource=read('src/modules/cleaning/cleaningExceptionContract.js');
 const runtimeSource=read('src/modules/cleaning/cleaningExceptionRuntime.js');
 const taskUiSource=read('src/modules/cleaning/cleaningExceptionTaskUi.js');
+const helpUiSource=read('src/modules/cleaning/cleaningHelpRequestUi.js');
+const bootstrapSource=read('src/modules/cleaning/cleaningExperienceBootstrap.js');
 const pauseSource=read('src/modules/cleaning/cleaningPauseExperience.js');
 const overviewSource=read('src/modules/cleaning/cleaningOverviewExperience.js');
 const sanitizerSource=read('src/modules/cleaning/cleaningPlanSanitizer.js');
@@ -21,7 +23,7 @@ sandbox.window.window=sandbox.window;
 vm.runInNewContext(contractSource,sandbox,{filename:'cleaningExceptionContract.js'});
 const contract=sandbox.window.CleaningExceptionContract;
 assert.ok(contract,'exception contract must register');
-assert.strictEqual(contract.version,'0.1.1');
+assert.strictEqual(contract.version,'0.2.0');
 
 const windowStart=localAt(2026,9,1);
 const windowEnd=localAt(2026,9,8);
@@ -82,17 +84,53 @@ const complete=JSON.parse(JSON.stringify(base));
 complete.occurrences.o1.status='COMPLETED';complete.occurrences.o1.assignmentStatus='COMPLETED';
 assert.throws(()=>contract.apply({cleaning:complete,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u1',timestamp:stamp,action:'SKIP'}),/NO_ACTIVE_OCCURRENCES/);
 
+// Explicit ad-hoc help: requesting changes no assignment. Only the intended
+// recipient can accept, and declining must leave the assignment untouched.
+const helpRequested=contract.apply({cleaning:base,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u1',timestamp:stamp,action:'REQUEST_HELP',options:{toUid:'u2'}});
+assert.strictEqual(helpRequested.action,'REQUEST_HELP');
+assert.strictEqual(helpRequested.cleaning.occurrences.o1.helpRequest.status,'PENDING');
+assert.strictEqual(helpRequested.cleaning.occurrences.o1.helpRequest.fromUid,'u1');
+assert.strictEqual(helpRequested.cleaning.occurrences.o1.helpRequest.toUid,'u2');
+assert.deepStrictEqual(Array.from(helpRequested.cleaning.occurrences.o1.assignmentUids),['u1'],'requesting help may not auto-assign the recipient');
+assert.strictEqual(base.occurrences.o1.helpRequest,undefined,'help contract must remain pure');
+assert.throws(()=>contract.apply({cleaning:base,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u1',timestamp:stamp,action:'REQUEST_HELP',options:{toUid:'u1'}}),/HELP_TARGET_INVALID/);
+assert.throws(()=>contract.apply({cleaning:base,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u1',timestamp:stamp,action:'REQUEST_HELP',options:{toUid:'u1'}}),/HELP_TARGET_INVALID/);
+assert.throws(()=>contract.apply({cleaning:helpRequested.cleaning,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u3',timestamp:stamp+1,action:'ACCEPT_HELP'}),/HELP_NOT_FOR_ACTOR/);
+
+const helpAccepted=contract.apply({cleaning:helpRequested.cleaning,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u2',timestamp:stamp+2,action:'ACCEPT_HELP'});
+assert.strictEqual(helpAccepted.cleaning.occurrences.o1.helpRequest.status,'ACCEPTED');
+assert.deepStrictEqual(Array.from(helpAccepted.cleaning.occurrences.o1.assignmentUids),['u1','u2'],'explicit accept must add the recipient to this occurrence only');
+assert.strictEqual(base.occurrences.o1.assignmentUids.length,1,'accepting help may not mutate the caller source');
+
+const helpRequestedForDecline=contract.apply({cleaning:base,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u1',timestamp:stamp,action:'REQUEST_HELP',options:{toUid:'u2'}});
+const helpDeclined=contract.apply({cleaning:helpRequestedForDecline.cleaning,occurrenceIds:['o1'],householdId:'hh1',actorUid:'u2',timestamp:stamp+3,action:'DECLINE_HELP'});
+assert.strictEqual(helpDeclined.cleaning.occurrences.o1.helpRequest.status,'DECLINED');
+assert.deepStrictEqual(Array.from(helpDeclined.cleaning.occurrences.o1.assignmentUids),['u1'],'declining help must not change assignment');
+
 // Runtime ownership / safety.
 assert.ok(runtimeSource.includes("cleaningPath:'families/'+ctx.householdId+'/cleaning'"),'exception runtime must transact the authorized Cleaning root');
 assert.ok(runtimeSource.includes("ref(write.cleaningPath).transaction"));
 assert.ok(!runtimeSource.includes("ref('families/'+write.ctx.householdId).transaction"),'exception runtime may not transact the family parent');
 assert.ok(runtimeSource.includes('CleaningProjectionService'),'derived projection repair must stay best effort after canonical commit');
+assert.ok(runtimeSource.includes('respondToHelpRequest'),'recipient response must use the same rules-safe Cleaning runtime');
 
-// User-facing incomplete execution choices.
-for(const label of ['RESCHEDULE','CARRY_FORWARD','SKIP'])assert.ok(taskUiSource.includes(label),'Task exception UI must expose '+label);
+// User-facing incomplete execution choices + help request path.
+for(const label of ['RESCHEDULE','CARRY_FORWARD','SKIP','REQUEST_HELP'])assert.ok(taskUiSource.includes(label),'Task exception UI must expose '+label);
 assert.ok(taskUiSource.includes('Niet alles gelukt?'));
+assert.ok(taskUiSource.includes('Hulp vragen'));
 assert.ok(taskUiSource.includes("state.confirmAction!==action"),'destructive exception choices need an explicit second tap');
 assert.ok(!taskUiSource.includes('cleaning-approval-copy'),'Task exception UI may not own Planning approval copy');
+
+// Recipient UI must always expose both decisions and delegate the canonical
+// mutation to CleaningExceptionRuntime rather than writing Firebase itself.
+assert.ok(helpUiSource.includes('data-cleaning-help-request-accept'));
+assert.ok(helpUiSource.includes('data-cleaning-help-request-decline'));
+assert.ok(helpUiSource.includes("'ACCEPT_HELP'"));
+assert.ok(helpUiSource.includes("'DECLINE_HELP'"));
+assert.ok(helpUiSource.includes('respondToHelpRequest'));
+assert.ok(!helpUiSource.includes('.transaction('));
+assert.ok(!helpUiSource.includes('.update('));
+assert.ok(!helpUiSource.includes('.set('));
 
 // Pause semantics: a pause freezes the countdown to nextDueAt and preserves
 // accepted assignment continuity, rather than stopping the recurrence chain.
@@ -117,8 +155,10 @@ assert.ok(!overviewSource.includes('.transaction('));
 assert.ok(!overviewSource.includes('.update('));
 assert.ok(!overviewSource.includes('cleaning-approval-copy'));
 
-// Loading order: pause belongs to Cleaning room experience; task exception
-// contract/runtime/UI belong after execution guard and before Task supply UI.
+// Loading order: pause belongs to Cleaning room experience. The older
+// calendar bootstrap still loads the Task execution family for Tasks/Agenda;
+// the Cleaning bootstrap additionally guarantees reachability when Cleaning
+// opens and inserts recipient help UI after its runtime.
 assert.ok(templateSource.includes("import './cleaningRoomWorkflowUx.js?v=2';"));
 assert.ok(templateSource.includes("import './cleaningPauseExperience.js?v=2';"));
 assert.ok(templateSource.includes("import './cleaningPlanSanitizer.js?v=2';"));
@@ -135,4 +175,11 @@ assert.ok(executionGuardIndex>=0&&executionGuardIndex<exceptionContractIndex);
 assert.ok(exceptionContractIndex<exceptionRuntimeIndex&&exceptionRuntimeIndex<exceptionUiIndex);
 assert.ok(exceptionUiIndex<supplyUiIndex);
 
-console.log('cleaning incomplete execution + pause cadence + history contracts: ok');
+const bootstrapRuntimeIndex=bootstrapSource.indexOf('cleaningExceptionRuntime.js?v=1');
+const bootstrapTaskUiIndex=bootstrapSource.indexOf('cleaningExceptionTaskUi.js?v=1');
+const bootstrapHelpUiIndex=bootstrapSource.indexOf('cleaningHelpRequestUi.js?v=1');
+const bootstrapSupplyUiIndex=bootstrapSource.indexOf('cleaningTaskSupplyUi.js?v=1');
+assert.ok(bootstrapRuntimeIndex>=0&&bootstrapRuntimeIndex<bootstrapTaskUiIndex);
+assert.ok(bootstrapTaskUiIndex<bootstrapHelpUiIndex&&bootstrapHelpUiIndex<bootstrapSupplyUiIndex);
+
+console.log('cleaning incomplete execution + help + pause cadence + history contracts: ok');
