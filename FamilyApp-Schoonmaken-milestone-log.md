@@ -1,6 +1,72 @@
 # FamilyApp - Schoonmaken Milestone Log
 
-Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
+Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones binnen **STEP 14 - Schoonmaken**. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
+
+## Milestone 5 - Slimme weekplanning, Weekvoorraad en Niet kopen
+
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum laatste acceptatie: **05-09-2026**
+Branch: `agent/household-rebuild-v2`
+Laatste geaccepteerde functionele checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`
+Geaccepteerde preview: `https://verhoog-family-2h0filnik-cverhoog-techs-projects.vercel.app`
+Productie/main: **niet gewijzigd**.
+
+### Wat in deze milestone real-device is geaccepteerd
+
+#### Agenda-conflictdetectie en alternatieve tijden
+
+- FamilyApp vergelijkt concrete getimede schoonmaakbeurten met Agenda voor de komende zeven dagen.
+- Alleen relevante overlap wordt als conflict behandeld; expliciet verschillende verantwoordelijken botsen niet met elkaar.
+- Dezelfde CleaningOccurrence/projectie wordt niet met zichzelf als conflict vergeleken.
+- Flexibele schoonmaakbeurten krijgen geen verzonnen tijdstip en worden niet als getimed conflict behandeld.
+- Bij onzekere duur of deelnemer wordt bewust `MOGELIJK` gebruikt in plaats van een hard conflict.
+- FamilyApp stelt maximaal drie vrije alternatieven op dezelfde dag voor, op een halfuurraster tussen 08:00 en 21:00.
+- Er wordt nooit automatisch verplaatst.
+- Verplaatsen gebeurt uitsluitend na een expliciete gebruikersactie via de bestaande `CleaningExecutionWriteRuntime`, zodat de canonieke CleaningOccurrence source of truth blijft en Taken/Agenda daarna volgen.
+
+Geaccepteerde functionele basis voor deze flow: `cb48107597d60a297024e8eb02be7d330fbed3c8`.
+
+#### 7-daagse Weekvoorraad
+
+- Weekvoorraad kijkt uitsluitend naar daadwerkelijk actieve/geaccepteerde CleaningOccurrences in de komende zeven dagen.
+- Benodigdheden worden via de canonieke relatie `routine.supplyIds` afgeleid.
+- Alleen actieve benodigdheden met voorraadstatus `LOW` of `OUT` komen in de lijst.
+- Dezelfde benodigdheid wordt over meerdere kamers/routines heen veilig gebundeld.
+- Een reeds open Cleaning-item op Boodschappen wordt als `OP LIJST` herkend en niet dubbel toegevoegd.
+- Toevoegen aan Boodschappen gebeurt alleen na een expliciete tik; nooit automatisch.
+
+#### Aankoop terugkoppelen naar voorraad
+
+- Een afgevinkt `source: cleaning` Shopping-item kan aanleiding geven tot een expliciete `Aangevuld?`-suggestie.
+- De voorraad wordt nooit automatisch naar `IN_STOCK` gezet.
+- Alleen na bevestiging door de gebruiker wordt `CleaningSupplyExperience.setSupplyStatus(..., IN_STOCK)` gebruikt.
+- Een aankoop die ouder is dan de huidige inventory-status blijft niet opnieuw vragen om aanvullen.
+- Exacte unieke supplynaam blijft een veilige backward-compatible fallback wanneer Cleaning-ID-metadata niet door de Shopping-store is bewaard.
+
+#### Weekvoorraad-item `Niet kopen`
+
+- Iedere zichtbare Weekvoorraad-regel heeft een eenvoudige `×`/`Niet kopen`-actie.
+- De keuze verbergt alleen de persoonlijke weekaankoopsuggestie en verwijdert niet de routine of benodigdheid uit de canonieke Cleaning-structuur.
+- Verborgen items worden niet meegenomen bij `naar Boodschappen`.
+- Verborgen items kunnen via `verborgen item(s) · herstellen` worden teruggebracht.
+- Als exact het open door Cleaning aangemaakte Shopping-item veilig kan worden herkend, wordt alleen die gekoppelde Cleaning-regel verwijderd.
+- Handmatige, recept- of onzekere Shopping-items blijven beschermd.
+
+Laatste real-device geaccepteerde checkpoint voor de volledige milestone: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
+
+### Regressieguards van deze milestone
+
+- WeekAssist bezit geen eigen Firebase-transactie.
+- Planning approval-copy blijft eigendom van de bestaande approval UI.
+- Conflictdetectie en voorraadadvies blijven adviserend totdat de gebruiker expliciet handelt.
+- De 7-daagse WeekAssist-horizon verandert de vierweekse rolling-planninghorizon niet.
+- `CleaningOccurrence` blijft de canonieke uitvoering/source of truth.
+- Geen automatische Shopping-add, geen automatische stock reset en geen stille schedule move.
+- `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
+
+### Bekende technische caveat na deze milestone
+
+`ShoppingListStore.normalizeItemInput()` bewaart op dit checkpoint nog niet gegarandeerd `cleaningSupplyId`, `cleaningOccurrenceIds` en `cleaningRoomIds`. De geaccepteerde flow kan daarom veilig terugvallen op een exacte unieke supplynaam. Expliciete Cleaning-ID-persistentie door de Shopping-store blijft een afzonderlijke toekomstige hardening en mag niet als reeds opgelost worden behandeld.
 
 ## Milestone 4 - Uitvoering, Home, benodigdheden en tijdelijke pauzes
 
@@ -243,4 +309,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ## Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `5d139ab81038a9cf2b1dfa8ddbfee1c02f60b255` als laatst real-device geaccepteerde **functionele** branchcheckpoint behandelen. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
+Een nieuwe chat moet `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen. STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
