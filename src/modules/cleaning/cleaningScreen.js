@@ -550,7 +550,7 @@ function readableRoutineError(error){
 
 function readablePlanError(error){
   const code = String(error && error.message || error || 'Het weekplan kon niet worden gemaakt.');
-  if(code.indexOf('CLEANING_PLANNER_ACTIVE_MEMBER_REQUIRED')>-1) return 'Er is minimaal één actief huishoudlid nodig om de schoonmaakbeurten te verdelen.';
+  if(code.indexOf('CLEANING_PLANNER_ACTIVE_MEMBER_REQUIRED')>-1) return 'Er is minimaal één beschikbaar huishoudlid nodig om de schoonmaakbeurten te verdelen.';
   if(code.indexOf('CLEANING_PLAN_NOT_DRAFT')>-1 || code.indexOf('CLEANING_OCCURRENCE_NOT_DRAFT')>-1) return 'Dit weekplan is niet meer alleen een concept en kan daarom niet opnieuw worden berekend.';
   if(code.indexOf('CLEANING_PLAN_PERSISTENCE_UNAVAILABLE')>-1 || code.indexOf('CLEANING_PLANNER')>-1) return 'De weekplanner is nog niet volledig geladen. Probeer het nog een keer.';
   if(code.indexOf('CLEANING_REPOSITORY_CONTEXT_NOT_READY')>-1) return 'De schoonmaakgegevens wisselen nog naar het actieve huishouden. Probeer het zo opnieuw.';
@@ -732,10 +732,12 @@ function generateWeekPlan(root){
   if(state.planning.submitting) return;
   const repository = window.CleaningHouseholdRepository;
   const planner = window.CleaningPlannerContract;
+  const availabilityContract = window.CleaningAvailabilityContract;
   const snapshot = state.repository;
   const existingPlan = currentWeekPlan();
   const members = householdMembers();
   const routines = activeRoutines();
+  const windowValue = currentWeekWindow();
 
   if(!snapshot || snapshot.ready !== true){
     state.planning.error = 'De schoonmaakgegevens zijn nog niet geladen.';
@@ -758,14 +760,37 @@ function generateWeekPlan(root){
     return;
   }
 
+  let planningInput = {
+    window: windowValue,
+    rooms: snapshot.data && snapshot.data.rooms || {},
+    routines: snapshot.data && snapshot.data.routines || {},
+    members: members,
+    availability: snapshot.data && snapshot.data.availability || {}
+  };
+  if(availabilityContract && typeof availabilityContract.preparePlanningInput === 'function'){
+    try{
+      const adjusted = availabilityContract.preparePlanningInput(planningInput);
+      planningInput = {
+        window: windowValue,
+        rooms: planningInput.rooms,
+        routines: adjusted.routines,
+        members: adjusted.members
+      };
+      if(routines.length && !adjusted.members.length){
+        state.planning.error = 'Deze week is niemand beschikbaar voor automatische verdeling. Pas Beschikbaarheid aan of gebruik bestaande overdracht/hulp voor lopend werk.';
+        renderCleaningScreen(root);
+        return;
+      }
+    }catch(error){
+      state.planning.error = readablePlanError(error);
+      renderCleaningScreen(root);
+      return;
+    }
+  }
+
   let concept;
   try{
-    concept = planner.generateConceptPlan({
-      window: currentWeekWindow(),
-      rooms: snapshot.data && snapshot.data.rooms || {},
-      routines: snapshot.data && snapshot.data.routines || {},
-      members: members
-    });
+    concept = planner.generateConceptPlan(planningInput);
   }catch(error){
     state.planning.error = readablePlanError(error);
     renderCleaningScreen(root);
