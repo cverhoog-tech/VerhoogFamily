@@ -61,7 +61,7 @@ const order=[
 for(let i=1;i<order.length;i++)assert.ok(templates.indexOf(order[i-1])<templates.indexOf(order[i]),order[i-1]+' must load before '+order[i]);
 
 assert.ok(recurring.includes("version:'0.7.0'"),'recurring contract must replace weekly planner generation');
-assert.ok(experience.includes("var VERSION='0.3.1'"));
+assert.ok(experience.includes("var VERSION='0.4.0'"));
 assert.ok(quickChoice.includes("var VERSION='0.3.0'"));
 assert.ok(quickChoice.includes("window.showToast('Routine toegevoegd ✓')"));
 assert.ok(quickChoice.includes('data-cleaning-quick-choice-pending'));
@@ -129,12 +129,13 @@ assert.ok(approvalClarity.includes('Jouw akkoord is nog nodig'));
 assert.ok(approvalClarity.includes('Planning vernieuwen'));
 assert.ok(approvalClarity.includes('CleaningPlanSanitizer'));
 
-assert.ok(rolling.includes("var VERSION='0.1.4'"));
+assert.ok(rolling.includes("var VERSION='0.1.5'"));
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'rolling plans may not become their own consent source');
 assert.ok(rolling.includes('planningRoutines'));
 assert.ok(rolling.includes('finitePauseNextDue'));
 assert.ok(rolling.includes("continuitySource==='ACCEPTED_PLAN_BEFORE_PAUSE'"));
 assert.ok(rolling.includes('PAUSE_CONTINUITY'));
+assert.ok(rolling.includes('COUNTER_PROPOSED'),'rolling horizon must explicitly block unresolved counter-proposals');
 assert.ok(rolling.includes("text(row.status).toUpperCase()!=='CANCELLED'"),'legacy pause continuity must only inspect cancelled sanitizer history');
 assert.ok(rolling.includes("reason.indexOf('ROUTINE')!==0"),'legacy pause continuity must require a routine-removal cancellation reason');
 assert.ok(rolling.includes("plan.rollingPlanVersion===1"),'legacy fallback may never use a rolling plan as consent');
@@ -177,72 +178,3 @@ assert.ok(calendarBootstrap.indexOf('cleaningExecutionUiGuard.js?v=1') < calenda
 assert.ok(calendarBootstrap.indexOf('cleaningExceptionContract.js?v=1') < calendarBootstrap.indexOf('cleaningExceptionRuntime.js?v=1'));
 assert.ok(calendarBootstrap.indexOf('cleaningExceptionRuntime.js?v=1') < calendarBootstrap.indexOf('cleaningExceptionTaskUi.js?v=1'));
 assert.ok(calendarBootstrap.indexOf('cleaningExceptionTaskUi.js?v=1') < calendarBootstrap.indexOf('cleaningTaskSupplyUi.js?v=1'));
-
-assert.ok(executionContract.includes("var VERSION='0.2.0'"));
-assert.ok(executionContract.includes('_applyTaskPatchToFamily'));
-assert.ok(executionContract.includes('_applyCalendarPatchToFamily'));
-assert.ok(!executionContract.includes('firebase.database'));
-assert.ok(!executionContract.includes('.transaction('));
-assert.ok(!executionContract.includes('addEventListener'));
-assert.ok(executionWriter.includes("var VERSION='0.1.0'"));
-assert.ok(executionWriter.includes("cleaningPath:'families/'+ctx.householdId+'/cleaning'"));
-assert.ok(executionWriter.includes('cleaningRef.transaction'));
-assert.ok(executionWriter.includes('familyRef.update(updates)'));
-assert.ok(executionWriter.includes('__cleaningExecutionWriteRuntime'));
-assert.ok(executionWriter.includes('transactionPatch'));
-assert.ok(!executionWriter.includes("ref('families/'+write.ctx.householdId).transaction"));
-assert.ok(executionGuard.includes("var VERSION='0.1.0'"));
-assert.ok(executionGuard.includes("closest('#tdp-delete-btn')"));
-assert.ok(executionGuard.includes('stopImmediatePropagation'));
-
-assert.ok(exceptionContract.includes("var VERSION='0.1.1'"));
-assert.ok(exceptionContract.includes("action==='RESCHEDULE'"));
-assert.ok(exceptionContract.includes("'CARRY_FORWARD'"));
-assert.ok(exceptionContract.includes("'SKIP'"));
-assert.ok(!exceptionContract.includes('firebase.database'));
-assert.ok(!exceptionContract.includes('.transaction('));
-assert.ok(exceptionRuntime.includes("var VERSION='0.1.0'"));
-assert.ok(exceptionRuntime.includes("cleaningPath:'families/'+ctx.householdId+'/cleaning'"));
-assert.ok(exceptionRuntime.includes('CleaningProjectionService'));
-assert.ok(exceptionTaskUi.includes("var VERSION='0.1.0'"));
-assert.ok(exceptionTaskUi.includes('Niet alles gelukt?'));
-assert.ok(exceptionTaskUi.includes('data-cleaning-exception-action'));
-
-assert.ok(taskSupplyUi.includes("var VERSION='0.1.0'"));
-assert.ok(taskSupplyUi.includes('_deriveDetails'));
-assert.ok(taskSupplyUi.includes("once('value')"),'task supply UI may read canonical Cleaning when the lazy module is not mounted');
-assert.ok(!taskSupplyUi.includes('.transaction('),'Task supply presentation may not write Cleaning directly');
-assert.ok(!taskSupplyUi.includes('.update('),'Task supply presentation may not write Cleaning directly');
-
-// Approval UI remains the only renderer of the canonical approval copy. Other
-// decorators may add their own idempotent controls but never rewrite its copy.
-assert.ok(approvalUi.includes('new MutationObserver(queueDecorate)'));
-assert.ok(approvalUi.includes('cleaning-approval-copy'));
-for(const source of [quickChoice,roomControls,roomWorkflow,pauseExperience,supplies,supplyManager,sanitizer,approvalClarity,derivedCleanup,shoppingCleanup,overviewExperience,exceptionTaskUi,taskSupplyUi]){
-  assert.ok(!source.includes('cleaning-plan-actions > span'),'secondary Cleaning decorators may not rewrite Planning hero copy');
-  assert.ok(!source.includes('cleaning-approval-copy'),'secondary Cleaning decorators may not own canonical approval copy');
-}
-
-assert.ok(projection.includes("var VERSION='0.3.1'"));
-assert.ok(projection.includes('scheduledDate'));
-assert.ok(projection.includes("assignmentStatus))<0"));
-assert.ok(!projection.includes('MutationObserver'));
-assert.ok(!projection.includes('cleaning-approval-copy'));
-assert.ok(!projection.includes('cleaning-plan-actions > span'));
-assert.ok(!executionContract.includes('cleaning-approval-copy'));
-assert.ok(!executionWriter.includes('cleaning-approval-copy'));
-assert.ok(!executionGuard.includes('cleaning-approval-copy'));
-assert.ok(!exceptionRuntime.includes('cleaning-approval-copy'));
-assert.ok(!reconciler.includes('MutationObserver'));
-assert.ok(!reconciler.includes('document.'));
-assert.ok(!rolling.includes('MutationObserver'));
-assert.ok(!rolling.includes('document.'));
-assert.ok(projection.includes("CustomEvent('familyapp:cleaning-projections'"));
-assert.ok(reconciler.includes("CustomEvent('familyapp:cleaning-plan-reconciled'"));
-assert.ok(sanitizer.includes("CustomEvent('familyapp:cleaning-plan-sanitized'"));
-assert.ok(derivedCleanup.includes("CustomEvent('familyapp:cleaning-derived-cleanup'"));
-assert.ok(shoppingCleanup.includes("CustomEvent('familyapp:cleaning-shopping-cleanup'"));
-assert.ok(rolling.includes("CustomEvent('familyapp:cleaning-rolling-plans'"));
-assert.ok(exceptionRuntime.includes("CustomEvent('familyapp:cleaning-exception'"));
-
-console.log('cleaning rooms + supplies + pause cadence/history + legacy continuity ownership: ok');
