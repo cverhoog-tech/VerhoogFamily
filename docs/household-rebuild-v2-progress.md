@@ -58,6 +58,23 @@ Execution status:
 - [ ] 13.6 Interaction/compatibility/idempotency contracts.
 - [ ] 13.7 Integrated CI/Preview/real-device acceptance.
 
+## Action Inbox — ACTIVE (started 2026-09-06)
+
+New cross-module milestone, independent of the STEP numbering above: a single app-wide Inbox for every request that needs a yes/no decision (Task-hulp, Task-ruilen, Party Quest-uitnodigingen, Cleaning-hulp, Cleaning-routine-overdracht, Cleaning-tegenvoorstel). Architecture: `src/platform/inbox/` is a pure read/projection/action-routing layer over the existing canonical domain sources — no new writer, no `/inboxRequests` state. Full detail in the update log entry `2026-09-06 — Action Inbox milestone`.
+
+Execution status:
+- [x] Fase 1 — Audit of all actionable request flows, accepted (no architecture conflict).
+- [x] Fase 2 — Generic aggregator/store (`actionInboxRegistry.js`, `actionInboxStore.js`).
+- [x] Fase 3 — Action routing to existing domain runtimes only.
+- [x] Fase 4 — Header envelope button + independently-owned badge (`actionInboxHeaderBridge.js`).
+- [x] Fase 5 — Functional premium Inbox screen basis (`actionInboxScreen.js`); definitive visual polish deferred.
+- [-] Fase 6 — Existing module accept/decline UI kept as fallback/detail; not yet removed anywhere.
+- [x] Fase 7 — No new notification spreading; Cleaning tegenvoorstel routes back into existing Cleaning UI via "Ander voorstel".
+- [x] Contract tests — `scripts/test-action-inbox.js` added; full existing `scripts/test-*.js` suite re-run green.
+- [ ] CI run on pushed commit.
+- [ ] Unique Vercel preview.
+- [ ] Real-device acceptance checklist (13 points from the milestone brief).
+
 ## Validation cadence
 
 Bundle low/medium-risk device smokes into meaningful acceptance sweeps. Keep separate explicit checks for high-risk/destructive/auth-identity/security/cross-household/finance/idempotency/reward/release-blocking behavior. STEP 13 final acceptance still requires 13.6 contract hardening and the 13.7 integrated/two-device sweep.
