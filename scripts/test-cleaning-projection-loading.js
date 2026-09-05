@@ -103,7 +103,9 @@ assert.ok(supplies.includes('setRepositorySnapshot(event.detail)'),'supply runti
 assert.ok(!supplies.includes('function snapshot()'),'supply render path must not repeatedly clone the Cleaning snapshot');
 assert.ok(!supplies.includes("write.db.ref(write.path).transaction"),'supply create must not transact the full Cleaning aggregate');
 assert.ok(supplies.includes('ShoppingListStore'));
-assert.ok(supplies.includes('{dedupe:true}'));
+assert.ok(supplies.includes('ShoppingListHouseholdRepository'),'explicit Cleaning Shopping metadata must use the canonical repository boundary');
+assert.ok(supplies.includes('existingNames[canonicalName(item.name)]'),'explicit Cleaning Shopping add must retain open-item name dedupe');
+assert.ok(supplies.includes('cleaningSupplyId:text(row.id)'),'Shopping items must retain Cleaning supply identity');
 assert.ok(supplies.includes('__routineExperienceV3'),'supplies must wrap the final routine persistence owner');
 
 assert.ok(supplyManager.includes("var VERSION='0.1.0'"));
