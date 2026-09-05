@@ -2,37 +2,38 @@
 
 Laatst bijgewerkt: **05-09-2026**
 Branch: `agent/household-rebuild-v2`
+Bovenliggende roadmapstap: **STEP 14 - Schoonmaken**
 
 Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 
 - `FamilyApp-Schoonmaken-module-architectuur.md` - canonieke functionele/technische architectuur;
 - `FamilyApp-Schoonmaken-visual-spec.md` - canonieke visuele eindrichting;
 - `FamilyApp-Schoonmaken-milestone-log.md` - geaccepteerde grote milestones en regressielog;
-- `FamilyApp-TODO-updated.txt` - brede FamilyApp-TODO.
+- `FamilyApp-TODO-updated.txt` - brede FamilyApp-roadmap/TODO inclusief STEP 14.
 
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Functioneel checkpoint: `5d139ab81038a9cf2b1dfa8ddbfee1c02f60b255`.
-- Geaccepteerde preview: `https://verhoog-family-ecwr7qzfk-cverhoog-techs-projects.vercel.app`.
+- Functioneel checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
+- Geaccepteerde preview: `https://verhoog-family-2h0filnik-cverhoog-techs-projects.vercel.app`.
 - Acceptatiedatum: **05-09-2026**.
 - CI bij functioneel checkpoint: **Household Rebuild Contracts groen + Vercel success/READY**.
 - `main`: **niet gewijzigd**.
 
 Documentatiecommits ná dit functionele checkpoint veranderen de functionele acceptatiebasis niet.
 
-## Actuele fase-status
+## Actuele STEP 14 fase-status
 
 - Fase A - veilige module-shell: **AFGEROND / real-device geaccepteerd**.
-- Fase 0 - architectuur/repository-fundament: **KERNCONTRACTEN ACTIEF; gerichte hardening later afzonderlijk**.
-- Fase 1 - Kamers + routines: **FUNCTIONEEL VER GEVORDERD / huidige UX real-device geaccepteerd**.
-- Fase 2 - Weekplanner: **FUNCTIONEEL WERKEND / persoonlijke goedkeuring, doorlopende intervallen en rolling horizon real-device geaccepteerd**.
-- Fase 3 - Taken-integratie: **HEEN- EN TERUGSYNC FUNCTIONEEL WERKEND / real-device geaccepteerd**.
-- Fase 4 - Agenda-integratie: **HEEN- EN TERUGSYNC + pauze-hervatmarker functioneel werkend / real-device geaccepteerd**.
-- Fase 5 - Boodschappen / voorraad: **BENODIGDHEDEN + DRIE-STATEN VOORRAAD + EXPLICIETE BOODSCHAPPENACTIE WERKEND; verdere polish nog open**.
-- Fase 6 - Goedkeuring / overdracht: **PERSOONLIJKE PLANAPPROVAL + ROUTINEVERZOEKEN + duidelijke statusbanner WERKEND**.
-- Fase 7 - Historie / uitzonderingen: **DEELS; completion history en pauzeflow aanwezig, bredere uitzonderingspolish nog open**.
-- Fase 8 - Visuele polish / slimme inzichten: **DEELS; Home en slimme benodigdheden geaccepteerd, definitieve Schoonmaken-polish nog open**.
+- Fase 0 - architectuur/repository-fundament: **KERN AFGEROND; gerichte hardening later afzonderlijk**.
+- Fase 1 - Kamers + routines: **FUNCTIONEEL VRIJWEL AFGEROND / huidige UX real-device geaccepteerd; Tijd/Aantal/Beide nog open**.
+- Fase 2 - Weekplanner: **AFGEROND / persoonlijke goedkeuring, doorlopende intervallen en rolling horizon real-device geaccepteerd**.
+- Fase 3 - Taken-integratie: **GROTENDEELS AFGEROND / heen- en terugsync real-device geaccepteerd; uitzonderings-UX nog deels open**.
+- Fase 4 - Agenda-integratie: **FUNCTIONEEL AFGEROND / reverse sync, pauze-hervatmarker, conflictcheck en alternatieve tijden real-device geaccepteerd**.
+- Fase 5 - Boodschappen / voorraad: **FUNCTIONEEL AFGEROND / weekvoorraad, expliciete Shopping-add, aankoop-terugkoppeling en Niet kopen real-device geaccepteerd**.
+- Fase 6 - Goedkeuring / notificaties: **DEELS; persoonlijke planapproval en routineverzoeken werken, tegenvoorstellen/reminders/multi-person flow nog open**.
+- Fase 7 - Historie / uitzonderingen: **DEELS; completion history en pauzeflow aanwezig, bredere beschikbaarheid/historie/progressie nog open**.
+- Fase 8 - Visuele polish / slimme inzichten: **DEELS; Home, live overview en slimme benodigdheden aanwezig, definitieve premium polish/insights nog open**.
 
 ## Wat nu real-device is geaccepteerd
 
@@ -105,8 +106,23 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - `Gebruikt bij` laat zien welke routines een benodigdheid gebruiken.
 - Voorraad kent bewust drie statussen: `IN_STOCK`, `LOW`, `OUT`; geen hoeveelhedenadministratie naast Boodschappen.
 - Slimme benodigdhedensuggesties zijn deterministisch/adviserend en schrijven niet automatisch canonieke relaties.
+- Weekvoorraad kijkt naar echte actieve schoonmaakbeurten in de komende **7 dagen** en toont alleen gekoppelde benodigdheden met status Bijna op/Op.
 - Toevoegen aan Boodschappen gebeurt alleen na een expliciete gebruikersactie.
+- Na een afgevinkte Cleaning-aankoop kan FamilyApp expliciet voorstellen de voorraad weer op `IN_STOCK` te zetten; dit gebeurt nooit automatisch.
+- Een item in Weekvoorraad kan via `Niet kopen`/`×` uit het persoonlijke weekoverzicht worden verborgen.
+- Verborgen Weekvoorraad-items worden niet meegenomen bij `naar Boodschappen` en kunnen via `verborgen items · herstellen` terugkomen.
+- Als exact het door Cleaning aangemaakte open Shopping-item veilig kan worden herkend, wordt dat bij `Niet kopen` ook uit de boodschappenlijst verwijderd; handmatige of onzekere items blijven beschermd.
 - Supply rendering gebruikt een gecachte repository-snapshot en item-level writes voor betere performance.
+
+### Agenda-conflicten / weekassist
+
+- FamilyApp vergelijkt concrete getimede schoonmaakbeurten met de Agenda voor de komende 7 dagen.
+- Een overlap met een andere afspraak van dezelfde expliciete persoon wordt als conflict getoond.
+- Bij onzekere duur/deelnemer wordt het resultaat bewust als `MOGELIJK` behandeld in plaats van als hard conflict.
+- Flexibele schoonmaakbeurten krijgen geen verzonnen tijd en worden niet als getimed conflict behandeld.
+- FamilyApp stelt maximaal drie vrije alternatieve tijden op dezelfde dag voor, op een halfuurraster tussen 08:00 en 21:00.
+- Er wordt nooit automatisch verplaatst.
+- Alleen na een expliciete tik wordt via de bestaande canonical reverse-sync runtime de CleaningOccurrence verplaatst, waarna Taken/Agenda opnieuw volgen.
 
 ### Taken + Agenda projecties
 
@@ -152,6 +168,8 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - Rolling plans mogen nooit hun eigen standing consent worden.
 - Eindige pauzes mogen niet als blanket-exclusion de recurrence chain afbreken.
 - Pauzes genereren geen backlog van alle gemiste schoonmaakbeurten.
+- WeekAssist bezit geen eigen Firebase-transactie en mag Planning approval-copy niet herschrijven.
+- Conflicten en weekvoorraad blijven adviserend totdat de gebruiker expliciet handelt.
 
 ## Implementatie aanwezig maar apart blijven valideren
 
@@ -161,19 +179,38 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 
 Deze lifecycle-opruiming blijft conservatief: onbekende legacy-records worden niet op basis van gokwerk verwijderd. Een nieuwe vervolgchat mag dit niet ruimer maken zonder gerichte test/real-device validatie.
 
-## Bewust nog niet afgerond
+## Bekende technische caveat
 
-- Definitieve premium visual polish conform `FamilyApp-Schoonmaken-visual-spec.md`.
-- Verdere UX/polish voor voorraad en Boodschappen-feedback na aankoop/aanvullen.
-- Uitgebreidere historie- en uitzonderingsoverzichten waar nog nodig.
+- `ShoppingListStore.normalizeItemInput()` bewaart op dit checkpoint nog niet gegarandeerd de Cleaning-specifieke metadata `cleaningSupplyId`, `cleaningOccurrenceIds` en `cleaningRoomIds`.
+- De geaccepteerde WeekAssist-flow kan daarom voor oudere/huidige Shopping-records veilig terugvallen op een **exacte unieke supplynaam**.
+- Dit is functioneel geaccepteerd, maar expliciete ID-persistentie door de Shopping-store is nog een afzonderlijke toekomstige hardening en mag niet stilzwijgend als opgelost worden beschouwd.
+
+## Bewust nog niet afgerond binnen STEP 14
+
+- Tegenvoorstellen bij overdracht en uitgebreidere samenwerkings/multi-person flows.
+- Gebundelde beperkte Cleaning-notificaties/reminders.
+- Vakantie / drukke week / ziekte / tijdelijk niet beschikbaar.
+- Rijkere kamer- en routinehistorie en gezamenlijke progressie.
+- Expliciete uitzonderings-UX voor doorschuiven / deze week opnieuw / overslaan / overname / hulp waar nog nodig.
 - Persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
+- Definitieve premium visual polish conform `FamilyApp-Schoonmaken-visual-spec.md`.
+- Relevante feed-events en subtiele achievements.
+- Data-gedreven frequentie-/planningsvoorstellen en eventuele Family Assistant-inzichten zonder automatische structurele wijzigingen.
 - Kleine resterende tap-targets naar minimaal 44x44 waar nodig.
 - Household-key-validatie en create-idempotency later afzonderlijk hardenen; niet combineren met functionele uitbreidingen.
 
+## Resterende hoofdblokken van STEP 14
+
+1. **Samenwerking afronden** - tegenvoorstellen, uitgebreidere overdracht/multi-person flows en notificaties/reminders.
+2. **Uitzonderingen + historie** - vakantie, ziekte, drukke week, tijdelijke afwezigheid en rijkere historie.
+3. **Laatste functionele gaten + hardening** - Tijd/Aantal/Beide, gerichte cleanup-validatie en beperkte technische hardening.
+4. **Definitieve polish** - premium visual spec, microinteracties, gezamenlijke progressie/feed-events en later slimme inzichten.
+
 ## Guardrail voor vervolgchats
 
-- Behandel `5d139ab81038a9cf2b1dfa8ddbfee1c02f60b255` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
-- Reverse execution sync en pause cadence zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
+- Behandel `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint.
+- STEP 14 = Schoonmaken; STEP 13.6 is de historische stabiele baseline waar deze workstream op is gestart.
+- Reverse execution sync, pause cadence, Agenda-conflictcheck, 7-daagse Weekvoorraad en `Niet kopen` zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
 - Documentatiecommits na dit checkpoint veranderen de functionele acceptatiebasis niet.
 - Werk uitsluitend verder op `agent/household-rebuild-v2` zolang de gebruiker niet expliciet anders zegt.
 - `main` niet aanraken of mergen zonder expliciet verzoek van de gebruiker.
