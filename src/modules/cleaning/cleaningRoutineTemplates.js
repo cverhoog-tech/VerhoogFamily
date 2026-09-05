@@ -16,6 +16,7 @@ import './cleaningProjectionService.js?v=4';
 import './cleaningDerivedCleanup.js?v=1';
 import './cleaningShoppingCleanup.js?v=1';
 import './cleaningOverviewExperience.js?v=1';
+import './cleaningWeekAssist.js?v=1';
 
 // ============================================================
 // CLEANING ROUTINE TEMPLATES v0.3.6
@@ -24,7 +25,7 @@ import './cleaningOverviewExperience.js?v=1';
 // Side-effect imports load approvals, recurring planning, compact room/routine
 // management, cadence-preserving pauses + their Agenda resume marker, direct
 // smart supplies, stale-plan sanitizing, rolling plans, Task/Calendar
-// projections, derived cleanup and live overview.
+// projections, derived cleanup, live overview and the advisory week assist.
 // ============================================================
 
 const PRESETS = Object.freeze({
