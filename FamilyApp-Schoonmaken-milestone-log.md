@@ -2,6 +2,59 @@
 
 Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones binnen **STEP 14 - Schoonmaken**. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
 
+## Milestone 6 - Routine-overdracht, tegenvoorstellen en household-actor correctheid
+
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum acceptatie: **05-09-2026**
+Branch: `agent/household-rebuild-v2`
+Laatste geaccepteerde functionele checkpoint: `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`
+Geaccepteerde preview: `https://verhoog-family-kp38sfagv-cverhoog-techs-projects.vercel.app`
+GitHub Actions: `33956995011` - Household Rebuild Contract Tests **success**.
+Vercel deployment: `dpl_D3RNAea4TbdwzsPFnrkfV8YfweUE` - **READY**.
+Productie/main: **niet gewijzigd**.
+
+### Wat in deze milestone real-device is geaccepteerd
+
+#### Routine-overdracht en tegenvoorstellen
+
+- Een routine kan expliciet aan een ander actief householdlid worden gevraagd zonder dat de maker zelf het goedkeuringsverzoek krijgt.
+- Zelftoewijzing is direct geaccepteerde vaste verantwoordelijkheid en maakt geen verzoek aan jezelf.
+- Een ontvanger kan accepteren, afwijzen of een tegenvoorstel doen.
+- Een tegenvoorstel aan een derde householdpersoon wordt opnieuw als expliciet verzoek naar die derde persoon gestuurd; er vindt geen stille auto-assignment plaats.
+- Een tegenvoorstel terug naar een eerder geaccepteerde fallback-eigenaar kan die bestaande geaccepteerde verantwoordelijkheid veilig herstellen.
+- Afwijzen herstelt de geldige fallback in plaats van blind altijd naar `AUTO` terug te vallen.
+- `PENDING` en `COUNTER_PROPOSED` blokkeren rolling work voor de betrokken routine totdat geldige consent bestaat.
+- Na acceptatie wordt toekomstige overlap van de oude verantwoordelijke opgeschoond en de nieuwe vaste eigenaar blijft leidend.
+
+#### Household-actor en assignment-correctheid
+
+- Ieder ingelogd actief gezinslid kan binnen het eigen huishouden routines aanmaken en wijzigen onder de eigen household-UID.
+- Een ander gezinslid dat een routine maakt of zichzelf toewijst wordt niet impliciet als Shane/huishoudeigenaar behandeld.
+- `createdByUid` blijft de oorspronkelijke maker; `updatedByUid` volgt de actuele editor via de actieve household-context.
+- Een geaccepteerde vaste eigenaar is een harde assignment-constraint en mag niet door FAIR_TIME worden overschreven.
+- Een nog niet geaccepteerde assignment mag niet als vrije AUTO-routine in occurrences of FAIR_TIME lekken.
+
+#### Real-device save-order regressiefix
+
+- De assignment-experience leest `Wie doet deze routine?` uit het bestaande formulier tijdens de repository-call.
+- De Schoonmaken-UI riep eerder eerst een busy-state re-render aan en pas daarna de repository, waardoor de geïnjecteerde assignmentvelden al uit de DOM verdwenen konden zijn.
+- Daardoor kon een expliciete zelf-/persoontoewijzing onbedoeld als `AUTO` worden opgeslagen en daarna door FAIR_TIME bij Shane terechtkomen.
+- De repository create/update wordt nu gestart **vóór** de busy-state re-render, zodat de gekozen assignment atomair in de save-flow wordt vastgelegd.
+- Een contracttest bewaakt deze volgorde om herintroductie te voorkomen.
+
+### Regressieguards van deze milestone
+
+- Geen hardcoded Shane- of owner-fallback voor maker/editor/toewijzing.
+- Alleen actieve householdleden mogen actor/assignee zijn.
+- Zelftoewijzing vraagt nooit goedkeuring aan jezelf.
+- Een verzoek aan een ander is uitsluitend voor de bedoelde ontvanger.
+- `PENDING` en `COUNTER_PROPOSED` creëren geen stilzwijgend nieuw werk voor de ontvanger.
+- Geaccepteerd `FIXED_PERSON`-werk blijft buiten vrije FAIR_TIME-herverdeling.
+- Rolling plannen bezitten nooit hun eigen standing consent.
+- Canonieke Cleaning-mutaties blijven binnen de rules-safe Cleaning-boundary.
+- `CleaningOccurrence` blijft de enige canonieke source of truth voor concrete schoonmaakbeurten.
+- `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
+
 ## Milestone 5 - Slimme weekplanning, Weekvoorraad en Niet kopen
 
 Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
@@ -309,4 +362,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ## Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen. STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
+Een nieuwe chat moet `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen. STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
