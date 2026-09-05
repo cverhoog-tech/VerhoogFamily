@@ -6,7 +6,7 @@
 * STEP 13.6 status: REAL-DEVICE GEACCEPTEERD op iPhone op 31-08-2026.
 * Canonieke STEP 13.6 baseline-commit: `aeb065b46b8c4eed45c2141af7daf6a4412fb160`.
 * Actieve ontwikkelworkstream: **STEP 14 - Schoonmaken**.
-* Laatst real-device geaccepteerde STEP 14 checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe` op 05-09-2026.
+* Laatst real-device geaccepteerde STEP 14 checkpoint: `c0e799fdcb3cb447d4bf6af7c9759073825bbc06` op 05-09-2026 (Milestone 8 - runtime-wiring recovery; vervangt `d81623d1051d766aaa42683e880faed9f3fd2abe`).
 * `agent/household-rebuild-v2` is de enige actieve ontwikkelbranch voor deze workstream.
 * `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
 * Nieuwe wijzigingen worden in samenhangende, afzonderlijk te testen checkpoints toegevoegd met iPhone-device gate tussen de grotere stappen.
@@ -204,7 +204,7 @@ Status: gedeeltelijk gefixt
 # STEP 14 - Nieuwe module - Schoonmaken
 
 Status: **ZEER VER GEVORDERD; functionele kern real-device geaccepteerd op iPhone. Fase 6-8 bevatten nog resterend werk.**
-Laatste geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
+Laatste geaccepteerde functionele checkpoint: `c0e799fdcb3cb447d4bf6af7c9759073825bbc06` (Milestone 8 - runtime-wiring recovery).
 Volledige functionele specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
 Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
 Actuele compacte status: `FamilyApp-Schoonmaken-current-status.md`
@@ -218,6 +218,7 @@ Milestonelog: `FamilyApp-Schoonmaken-milestone-log.md`
 * Binnen Kamers werkt Kamers / Gepland per kamer.
 * CSS is uitsluitend onder `#screen-cleaning` gescoped.
 * Schoonmaken-shell wordt lazy geladen bij openen van de module.
+* Milestone 8 (05-09-2026): P0-audit stelde vast dat 7 bestanden (exception/execution/task-supply familie voor de Taken-detailpopup) niet bereikbaar waren vanaf de echte entry; `cleaningExperienceBootstrap.js` lost dit op en `scripts/test-cleaning-runtime-reachability.js` bewaakt dit voortaan.
 * Login, Google-login, Home en terugnavigatie zijn tijdens de opbouw op iPhone gecontroleerd.
 
 ## Fase 0 - Fundament
@@ -430,7 +431,7 @@ Statusnotatie per fase:
 
 Huidige status STEP 14 - Schoonmaken:
 
-* Laatst geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe` (vervangt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`, dat op zijn beurt `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` verving).
+* Laatst geaccepteerde functionele checkpoint: `c0e799fdcb3cb447d4bf6af7c9759073825bbc06` (Milestone 8 - runtime-wiring recovery; vervangt `d81623d1051d766aaa42683e880faed9f3fd2abe`, dat op zijn beurt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` verving, dat op zijn beurt `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` verving).
 * Fase A - Veilige module-shell: AFGEROND / real-device geaccepteerd.
 * Fase 0 - Fundament: KERN AFGEROND; gerichte hardening later.
 * Fase 1 - Kamers + routines: FUNCTIONEEL VRIJWEL AFGEROND; Tijd/Aantal/Beide nog open.
