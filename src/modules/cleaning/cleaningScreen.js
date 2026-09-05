@@ -428,14 +428,14 @@ function memberLoadsMarkup(plan){
   +'</section>';
 }
 
-function occurrenceCardMarkup(occurrence){
+function occurrenceCardMarkup(occurrence,hidden){
   const room = rawRoom(occurrence.roomId);
   const type = roomType(room && room.type);
   const checklist = Array.isArray(occurrence.checklist) ? occurrence.checklist : [];
   const assignedUid = Array.isArray(occurrence.assignmentUids) ? occurrence.assignmentUids[0] : null;
   const overdue = occurrence.dueState === 'OVERDUE';
   const roomName = room && room.name ? room.name : 'Ruimte';
-  return '<article class="cleaning-plan-card">'
+  return '<article class="cleaning-plan-card"'+(hidden?' hidden':'')+'>'
     +'<div class="cleaning-plan-card-head">'
       +'<div class="cleaning-plan-room-icon" aria-hidden="true">'+escapeText(type.icon)+'</div>'
       +'<div class="cleaning-plan-room"><h3>'+escapeText(roomName)+'</h3><span>'+escapeText(checklist.length)+' '+(checklist.length===1?'routine':'routines')+' · '+escapeText(occurrence.estimatedMinutes || 0)+' min</span></div>'
@@ -461,14 +461,22 @@ function planningPanel(){
   const occurrences = occurrencesForPlan(plan);
   const members = householdMembers();
   const routines = activeRoutines();
-  const selectedUid = String(state.planning.memberFilterUid || '');
-  const selectedMember = selectedUid
-    ? members.find((member) => String(member && member.uid || '') === selectedUid) || null
-    : null;
-  const visibleOccurrences = selectedMember
+  const memberLoads = plan && plan.summary && Array.isArray(plan.summary.memberLoads) ? plan.summary.memberLoads : [];
+  const filterableUids = new Set(memberLoads.map((load) => String(load && load.uid || '')).filter(Boolean));
+  let selectedUid = String(state.planning.memberFilterUid || '');
+  if(selectedUid && !filterableUids.has(selectedUid)){
+    state.planning.memberFilterUid = '';
+    selectedUid = '';
+  }
+  const selectedName = selectedUid ? memberName(selectedUid) : '';
+  const visibleOccurrences = selectedUid
     ? occurrences.filter((occurrence) => Array.isArray(occurrence.assignmentUids) && occurrence.assignmentUids.map(String).includes(selectedUid))
     : occurrences;
   const visibleMinutes = visibleOccurrences.reduce((sum, occurrence) => sum + Math.max(0, Number(occurrence && occurrence.estimatedMinutes) || 0), 0);
+  const occurrenceCards = occurrences.map((occurrence) => {
+    const assignedToSelected = !selectedUid || (Array.isArray(occurrence.assignmentUids) && occurrence.assignmentUids.map(String).includes(selectedUid));
+    return occurrenceCardMarkup(occurrence, !assignedToSelected);
+  }).join('');
   const draft = !plan || plan.status === 'DRAFT';
   const initialBlocked = !plan && (!routines.length || !members.length);
   const disabled = state.planning.submitting || !draft || initialBlocked;
@@ -493,11 +501,15 @@ function planningPanel(){
 
   if(!plan) return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+'</div>';
 
-  const list = visibleOccurrences.length
-    ? '<section class="cleaning-plan-list"><div class="cleaning-plan-section-head"><div><span>Deze week</span><strong>'+escapeText(visibleOccurrences.length)+' '+(visibleOccurrences.length===1?'schoonmaakbeurt':'schoonmaakbeurten')+(selectedMember?' voor '+escapeText(selectedMember.displayName || selectedMember.name || 'gezinslid'):'')+'</strong></div><span>'+escapeText(visibleMinutes)+' min zichtbaar</span></div>'+visibleOccurrences.map(occurrenceCardMarkup).join('')+'</section>'
-    : selectedMember
-      ? '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Geen schoonmaakbeurten voor '+escapeText(selectedMember.displayName || selectedMember.name || 'dit gezinslid')+'</strong><p>Tik hetzelfde gezinslid nogmaals aan om de volledige week te tonen.</p></div></section>'
-      : '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Alles is op schema</strong><p>Er zijn deze week geen routines aan de beurt.</p></div></section>';
+  let list;
+  if(occurrences.length){
+    const filteredEmpty = selectedUid && !visibleOccurrences.length
+      ? '<div class="cleaning-inline-empty" role="status">Geen schoonmaakbeurten voor '+escapeText(selectedName)+'. Tik hetzelfde gezinslid nogmaals aan om de volledige week te tonen.</div>'
+      : '';
+    list = '<section class="cleaning-plan-list"><div class="cleaning-plan-section-head"><div><span>Deze week</span><strong>'+escapeText(visibleOccurrences.length)+' '+(visibleOccurrences.length===1?'schoonmaakbeurt':'schoonmaakbeurten')+(selectedUid?' voor '+escapeText(selectedName):'')+'</strong></div><span>'+escapeText(visibleMinutes)+' min zichtbaar</span></div>'+filteredEmpty+occurrenceCards+'</section>';
+  } else {
+    list = '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Alles is op schema</strong><p>Er zijn deze week geen routines aan de beurt.</p></div></section>';
+  }
 
   return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+memberLoadsMarkup(plan)+list+'</div>';
 }
