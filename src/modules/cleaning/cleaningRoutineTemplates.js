@@ -17,6 +17,7 @@ import './cleaningDerivedCleanup.js?v=1';
 import './cleaningShoppingCleanup.js?v=1';
 import './cleaningOverviewExperience.js?v=1';
 import './cleaningWeekAssist.js?v=2';
+import './cleaningExperienceBootstrap.js?v=1';
 
 // ============================================================
 // CLEANING ROUTINE TEMPLATES v0.3.7
@@ -26,6 +27,17 @@ import './cleaningWeekAssist.js?v=2';
 // management, cadence-preserving pauses + their Agenda resume marker, direct
 // smart supplies, stale-plan sanitizing, rolling plans, Task/Calendar
 // projections, derived cleanup, live overview and the advisory week assist.
+//
+// P0 runtime-wiring recovery (05-09-2026): the final import above pulls in
+// cleaningExperienceBootstrap.js, which loads the Task-Detail-Popup-scoped
+// exception/execution/task-supply family (cleaningExceptionContract.js,
+// cleaningExecutionSync.js, cleaningExecutionUiGuard.js,
+// cleaningExecutionWriteRuntime.js, cleaningExceptionRuntime.js,
+// cleaningExceptionTaskUi.js, cleaningTaskSupplyUi.js) in explicit
+// dependency order. A runtime audit found these seven files were never
+// reachable from the real app entry before this line existed. See
+// cleaningExperienceBootstrap.js for the full rationale and dependency
+// order, and FamilyApp-Schoonmaken-milestone-log.md for the audit writeup.
 // ============================================================
 
 const PRESETS = Object.freeze({
