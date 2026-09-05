@@ -6,7 +6,7 @@
 * STEP 13.6 status: REAL-DEVICE GEACCEPTEERD op iPhone op 31-08-2026.
 * Canonieke STEP 13.6 baseline-commit: `aeb065b46b8c4eed45c2141af7daf6a4412fb160`.
 * Actieve ontwikkelworkstream: **STEP 14 - Schoonmaken**.
-* Laatst real-device geaccepteerde STEP 14 checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` op 05-09-2026.
+* Laatst real-device geaccepteerde STEP 14 checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe` op 05-09-2026.
 * `agent/household-rebuild-v2` is de enige actieve ontwikkelbranch voor deze workstream.
 * `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
 * Nieuwe wijzigingen worden in samenhangende, afzonderlijk te testen checkpoints toegevoegd met iPhone-device gate tussen de grotere stappen.
@@ -204,7 +204,7 @@ Status: gedeeltelijk gefixt
 # STEP 14 - Nieuwe module - Schoonmaken
 
 Status: **ZEER VER GEVORDERD; functionele kern real-device geaccepteerd op iPhone. Fase 6-8 bevatten nog resterend werk.**
-Laatste geaccepteerde functionele checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
+Laatste geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
 Volledige functionele specificatie: `FamilyApp-Schoonmaken-module-architectuur.md`
 Visuele specificatie: `FamilyApp-Schoonmaken-visual-spec.md`
 Actuele compacte status: `FamilyApp-Schoonmaken-current-status.md`
@@ -261,7 +261,8 @@ Nog als technische hardening, niet blokkend voor de functionele vervolgstappen:
 * Persoonlijke weergave Tijd / Aantal taken / Beide blijft nog open.
 * Dag/tijd van een geaccepteerde beurt kan gecontroleerd via Taken/Agenda worden aangepast en teruggesynchroniseerd.
 * Overdracht naar een ander vereist acceptatie en kan worden afgewezen.
-* Tegenvoorstellen blijven nog open.
+* Tegenvoorstellen zijn gebouwd en real-device geaccepteerd (Milestone 6).
+* In Planning kan de weergave per gezinslid worden gefilterd (persoonsfilter); dit is lokale UI-state en verandert de canonieke verdeling niet (Milestone 7).
 * Meerdere personen op één concrete schoonmaakbeurt blijft nog open als uitgebreidere samenwerkingsflow.
 * Niet-volledige checklist heeft inmiddels completion/exception-logica; resterende UX voor expliciet doorschuiven/deze week opnieuw/overslaan blijft nog te verfijnen.
 * Vakantie, drukke week, tijdelijke afwezigheid en pauzeren mogen geen onbeheersbare backlog maken; pauzeren is gerealiseerd, bredere beschikbaarheidssemantiek nog niet.
@@ -318,6 +319,7 @@ Status: **AFGEROND / real-device geaccepteerd.**
 * Verdeling genereren: afgerond.
 * Conceptplan + persoonlijke goedkeuring: afgerond.
 * Doorlopende intervallen + vierweekse rolling horizon: afgerond.
+* Planning-persoonsfilter (weergave filteren per gezinslid, geen invloed op verdeling): afgerond (Milestone 7).
 
 ### Fase 3 - Taken-integratie
 
@@ -355,7 +357,7 @@ Status: **DEELS AFGEROND.**
 
 * Weekvoorstellen + persoonlijke approval: afgerond.
 * Routine-overdracht naar ander gezinslid met accepteren/afwijzen: afgerond.
-* Tegenvoorstel: **OPEN**.
+* Tegenvoorstel: **AFGEROND / real-device geaccepteerd (Milestone 6).**
 * Gebundelde, beperkte reminders/notificaties: **OPEN**.
 * Eventuele uitgebreidere multi-person assignment/overdracht: **OPEN**.
 
@@ -383,7 +385,7 @@ Status: **DEELS.**
 
 ## STEP 14 - resterende hoofdblokken
 
-1. **Samenwerking afronden** - tegenvoorstellen, uitgebreidere overdracht/multi-person flows en notificaties/reminders.
+1. **Samenwerking afronden** - uitgebreidere overdracht/multi-person flows en notificaties/reminders bovenop de geaccepteerde overdracht/tegenvoorstel-flow.
 2. **Uitzonderingen + historie** - vakantie, ziekte, drukke week, tijdelijke afwezigheid en rijkere historie.
 3. **Laatste functionele gaten + hardening** - Tijd/Aantal/Beide, gerichte cleanup-validatie en beperkte technische hardening.
 4. **Definitieve polish** - premium visual spec, microinteracties, gezamenlijke progressie/feed-events en later slimme inzichten.
@@ -428,15 +430,15 @@ Statusnotatie per fase:
 
 Huidige status STEP 14 - Schoonmaken:
 
-* Laatst geaccepteerde functionele checkpoint: `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8`.
+* Laatst geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe` (vervangt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`, dat op zijn beurt `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` verving).
 * Fase A - Veilige module-shell: AFGEROND / real-device geaccepteerd.
 * Fase 0 - Fundament: KERN AFGEROND; gerichte hardening later.
 * Fase 1 - Kamers + routines: FUNCTIONEEL VRIJWEL AFGEROND; Tijd/Aantal/Beide nog open.
-* Fase 2 - Weekplanner: AFGEROND / real-device geaccepteerd.
+* Fase 2 - Weekplanner: AFGEROND / real-device geaccepteerd, inclusief Planning-persoonsfilter (Milestone 7).
 * Fase 3 - Taken-integratie: GROTENDEELS AFGEROND / kern real-device geaccepteerd; uitzonderings-UX nog deels open.
 * Fase 4 - Agenda-integratie: FUNCTIONEEL AFGEROND / real-device geaccepteerd.
 * Fase 5 - Boodschappen / voorraad: FUNCTIONEEL AFGEROND / real-device geaccepteerd.
-* Fase 6 - Goedkeuring / notificaties: DEELS; tegenvoorstel/reminders/multi-person flow nog open.
+* Fase 6 - Goedkeuring / notificaties: DEELS; tegenvoorstel afgerond, reminders/multi-person flow nog open.
 * Fase 7 - Historie / uitzonderingen: DEELS; pauze/completion aanwezig, bredere beschikbaarheid/historie/progressie open.
 * Fase 8 - Visuele polish / slimme inzichten: DEELS.
 * `main`: NIET GEWIJZIGD.

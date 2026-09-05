@@ -1,6 +1,6 @@
 # FamilyApp - Module-architectuur Schoonmaken
 
-Status: implementatie gestart; Kamers + Routines Foundation real-device geaccepteerd; Weekplanner Foundation BEZIG.
+Status: kernmodule real-device geaccepteerd t/m Milestone 7 (Planning persoonsfilter); zie sectie 26 en `FamilyApp-Schoonmaken-milestone-log.md` / `FamilyApp-Schoonmaken-current-status.md` voor de actuele status per fase.
 
 ## 1. Doel van de module
 
@@ -721,3 +721,17 @@ Nog open binnen Fase 0:
 - Pure conceptplangeneratie is real-device geaccepteerd op checkpoint `bd282e8b8a48929e296b982d10fb99955b0eec62`.
 - Atomaire persistente `DRAFT`-planning met canonieke occurrences en realtime Planning-UI is geïmplementeerd en wacht op real-device acceptatie.
 - Goedkeuring, scheduling en Taken-/Agenda-projecties blijven expliciet buiten deze checkpoint.
+
+## 26. Statusnotitie 05-09-2026
+
+Sectie 25 hierboven is een historische snapshot van 01-09-2026 en is inmiddels sterk achterhaald. Sindsdien zijn Milestones 2 t/m 7 real-device geaccepteerd (Weekplanner, Taken/Agenda-projecties, uitvoering/pauzes, Boodschappen/Weekvoorraad, routine-overdracht/tegenvoorstellen en de Planning-persoonsfilter).
+
+Voor de actuele status en het laatst geaccepteerde functionele checkpoint zijn leidend, in deze volgorde:
+
+1. `FamilyApp-Schoonmaken-milestone-log.md`
+2. `FamilyApp-Schoonmaken-current-status.md`
+3. de actuele implementatie + contracttests
+
+Sectie 25 blijft staan als historisch referentiepunt maar mag niet als actuele status worden gelezen. De functionele/technische ontwerpbeslissingen in secties 1-24 van dit document blijven wel leidend.
+
+Laatst geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.

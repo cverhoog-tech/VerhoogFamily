@@ -2,6 +2,37 @@
 
 Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones binnen **STEP 14 - Schoonmaken**. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
 
+## Milestone 7 - Planning persoonsfilter
+
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum acceptatie: **05-09-2026**
+Branch: `agent/household-rebuild-v2`
+Laatste geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`
+Geaccepteerde preview: `https://verhoog-family-fhxeutuzf-cverhoog-techs-projects.vercel.app`
+GitHub Actions: `33959882438` - Household Rebuild Contract Tests **success**.
+Vercel deployment: `dpl_27hpdMt6PSkMXJzSDSq5oPPuiQHo` - **READY**.
+Productie/main: **niet gewijzigd**.
+Deze checkpoint vervangt functioneel `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`.
+
+### Wat in deze milestone real-device is geaccepteerd
+
+- In Planning kan de gebruiker op een gezinslid tikken om de weergave te filteren op uitsluitend de schoonmaakbeurten van die persoon.
+- Nogmaals tikken op dezelfde persoon zet het filter uit.
+- Tikken op een andere persoon wisselt het filter direct naar die persoon.
+- Zichtbare aantallen/minuten in Planning volgen de actieve filterselectie.
+- De verdelingsbelasting zelf (FAIR_TIME) blijft altijd op hele-week-data gebaseerd; het filter raakt de onderliggende verdeling niet.
+- Een stale geselecteerde UID wordt veilig gewist in plaats van een ongeldig filter te tonen.
+- Niet-passende occurrence-cards worden met `hidden` verborgen en niet uit de DOM verwijderd, zodat het card-index-contract van `cleaningPlanApprovalUi` intact blijft.
+- Filter is bedienbaar met toetsenbord (Enter/Space).
+- Het filter is uitsluitend lokale UI-state en schrijft niets naar Firebase.
+
+### Regressieguards van deze milestone
+
+- Geen filtering via DOM-verwijdering; alleen `hidden` om de bestaande approval-UI card-indexering niet te breken.
+- Geen Firebase-writes vanuit de filter-UI.
+- Verdelingsberekening (FAIR_TIME) blijft ongewijzigd hele-week-data gebruiken, ongeacht het actieve filter.
+- `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
+
 ## Milestone 6 - Routine-overdracht, tegenvoorstellen en household-actor correctheid
 
 Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
@@ -362,4 +393,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ## Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen. STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
+Een nieuwe chat moet `d81623d1051d766aaa42683e880faed9f3fd2abe` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen (vervangt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`, dat op zijn beurt `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` verving). STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
