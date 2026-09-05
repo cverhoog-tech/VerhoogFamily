@@ -4,23 +4,9 @@
 // CONTRACT TEST: Cleaning runtime reachability (P0 wiring recovery guard)
 //
 // Statically proves that, starting from the real app entry point
-// (navigation.js's dynamic import of cleaningScreen.js), every file in
-// src/modules/cleaning/ listed below as functionally required is actually
-// reachable through the real ES-module import graph -- not merely present
-// on disk.
-//
-// This is the regression guard for the 05-09-2026 P0 runtime-wiring audit,
-// which found seven files (the Task-Detail-Popup-scoped exception/
-// execution/task-supply family) sitting in the same folder as every other
-// Cleaning module but never imported by anything reachable from the real
-// entry. A file existing under src/modules/cleaning/ is not sufficient
-// evidence that it runs; only an actual import chain from navigation.js is.
-//
-// This test intentionally does NOT just grep cleaningExperienceBootstrap.js
-// for a filename string. It walks the real static `import './x.js'`
-// declarations (and the one dynamic `import('/path.js')` at the true entry)
-// file by file, the same way a browser's module loader would, and only
-// then checks whether each required file turned up in that walk.
+// (navigation.js's dynamic import of cleaningScreen.js), every functionally
+// required Cleaning file listed below is reachable through the real ES-module
+// import graph -- not merely present on disk.
 // ============================================================
 
 const fs = require('fs');
@@ -30,10 +16,6 @@ const ROOT = path.resolve(__dirname, '..');
 const CLEANING_DIR = path.join(ROOT, 'src', 'modules', 'cleaning');
 const NAVIGATION_FILE = path.join(ROOT, 'src', 'core', 'navigation.js');
 
-// Every file that must be reachable from the real entry. Keep this list in
-// sync with src/modules/cleaning/: a file that exists on disk but is not
-// listed here is assumed intentionally excluded (e.g. genuinely unfinished
-// work); a file listed here that becomes unreachable fails this test.
 const REQUIRED_CLEANING_FILES = [
   'cleaningActivePlanReconciler.js',
   'cleaningApprovalClarity.js',
@@ -46,6 +28,7 @@ const REQUIRED_CLEANING_FILES = [
   'cleaningExecutionUiGuard.js',
   'cleaningExecutionWriteRuntime.js',
   'cleaningExperienceBootstrap.js',
+  'cleaningHelpRequestUi.js',
   'cleaningHouseholdRepository.js',
   'cleaningOverviewExperience.js',
   'cleaningPauseAgendaProjection.js',
@@ -54,6 +37,7 @@ const REQUIRED_CLEANING_FILES = [
   'cleaningPlanPersistenceContract.js',
   'cleaningPlanSanitizer.js',
   'cleaningPlannerContract.js',
+  'cleaningPreferencesUi.js',
   'cleaningProjectionService.js',
   'cleaningQuickChoiceFeedback.js',
   'cleaningRecurringPlanContract.js',
@@ -71,9 +55,8 @@ const REQUIRED_CLEANING_FILES = [
   // cleaningScreen.js is the entry file itself; asserted separately below.
 ];
 
-// The exact dependency order established by the 05-09-2026 audit for the
-// Task-Detail-Popup-scoped family. See cleaningExperienceBootstrap.js for
-// the full rationale for each ordering constraint.
+// Explicit dependency order for the execution/exception/help/task-supply
+// bootstrap. Keep this synchronized with cleaningExperienceBootstrap.js.
 const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExceptionContract.js',
   'cleaningExecutionSync.js',
@@ -81,6 +64,7 @@ const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExecutionWriteRuntime.js',
   'cleaningExceptionRuntime.js',
   'cleaningExceptionTaskUi.js',
+  'cleaningHelpRequestUi.js',
   'cleaningTaskSupplyUi.js'
 ];
 
@@ -95,11 +79,6 @@ function readFile(filePath) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
-// Matches both side-effect imports (import './x.js';) and named/default
-// imports (import { foo } from './x.js';), but only relative specifiers
-// (starting with '.'), which is the only import style used in this
-// codebase's Cleaning module. Absolute site paths used by the one dynamic
-// import() at the real entry are handled separately below.
 function extractRelativeImportSpecifiers(source) {
   const specifiers = [];
   const importRegex = /import\s*(?:[^'";]*?from\s*)?['"](\.[^'"]+)['"]/g;
@@ -159,10 +138,6 @@ function main() {
     return;
   }
 
-  // The dynamic import path is written as an absolute site path
-  // ('/src/modules/cleaning/cleaningScreen.js?v=1'), matching how the
-  // browser actually requests it. Resolve it against the repo root the
-  // same way.
   const cleanedDynamicPath = stripQuery(dynamicImportPath).replace(/^\//, '');
   const entryFile = path.join(ROOT, cleanedDynamicPath);
   if (!fs.existsSync(entryFile)) {
@@ -192,9 +167,6 @@ function main() {
     );
   }
 
-  // Guard against exactly the failure mode found in the 05-09-2026 audit:
-  // the bootstrap file must itself exist and must import all seven
-  // Task-Detail-Popup-scoped files in the documented dependency order.
   const bootstrapFile = path.join(CLEANING_DIR, 'cleaningExperienceBootstrap.js');
   if (fs.existsSync(bootstrapFile)) {
     const bootstrapSource = readFile(bootstrapFile);
@@ -207,7 +179,7 @@ function main() {
       actualOrder.every((name, index) => name === BOOTSTRAP_EXPECTED_ORDER[index]);
     if (!orderMatches) {
       fail(
-        'cleaningExperienceBootstrap.js no longer imports the exception/execution/task-supply family in the ' +
+        'cleaningExperienceBootstrap.js no longer imports the execution/exception/help/task-supply family in the ' +
         'documented dependency order. Expected: ' + BOOTSTRAP_EXPECTED_ORDER.join(' -> ') + '. ' +
         'Found: ' + actualOrder.join(' -> ') + '.'
       );
