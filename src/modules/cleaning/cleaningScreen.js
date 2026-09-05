@@ -846,9 +846,9 @@ function submitRoutine(root){
   state.routineForm.submitting = true;
   state.routineForm.deleteConfirm = false;
   state.routineForm.error = '';
-  renderCleaningScreen(root);
 
   const request = editing ? repository.updateRoutineItem(routineId,payload) : repository.createRoutineItem(payload);
+  renderCleaningScreen(root);
   request.then(() => {
     resetRoutineForm();
     state.roomNotice = editing ? 'Routine bijgewerkt ✓' : 'Routine toegevoegd ✓';
