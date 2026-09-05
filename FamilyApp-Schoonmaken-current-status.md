@@ -14,16 +14,30 @@ Deze statuspagina is de compacte actuele uitvoeringsbron naast:
 ## Laatst real-device geaccepteerde checkpoint
 
 - Status: **WERKEND / GEACCEPTEERD OP IPHONE**.
-- Functioneel checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
-- Geaccepteerde preview: `https://verhoog-family-fhxeutuzf-cverhoog-techs-projects.vercel.app`.
+- Functioneel checkpoint: `c0e799fdcb3cb447d4bf6af7c9759073825bbc06`.
+- Geaccepteerde preview: `https://verhoog-family-nsbvodlso-cverhoog-techs-projects.vercel.app`.
 - Acceptatiedatum: **05-09-2026**.
-- CI bij functioneel checkpoint: **Household Rebuild Contracts groen + Vercel success/READY**.
-- GitHub Actions run: `33959882438`.
-- Vercel deployment: `dpl_27hpdMt6PSkMXJzSDSq5oPPuiQHo`.
+- Vercel deployment: `dpl_6A5WNiYhXJPRMH7SbGujJW1g1fk7` - **READY**.
 - `main`: **niet gewijzigd**.
-- Vervangt functioneel het eerdere checkpoint `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`.
+- Vervangt functioneel het eerdere checkpoint `d81623d1051d766aaa42683e880faed9f3fd2abe` (dat op zijn beurt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` verving).
+- Dit checkpoint is een **runtime-wiring-herstelmilestone**, geen nieuwe functionaliteit: zie hieronder en `FamilyApp-Schoonmaken-milestone-log.md` Milestone 8.
 
 Documentatiecommits ná dit functionele checkpoint veranderen de functionele acceptatiebasis niet.
+
+## Runtime-wiring recovery (P0) - Milestone 8
+
+Een P0 runtime/wiring-audit (05-09-2026) bracht de werkelijke laadgraph van Schoonmaken in kaart, beginnend bij de echte app-entry (`navigation.js` -> dynamische import van `cleaningScreen.js`). Bevindingen:
+
+- 26 van de 33 Cleaning-bestanden waren al bereikbaar via `cleaningScreen.js` -> `cleaningRoutineTemplates.js`, dat zelf 18 side-effect imports bevat (hetzelfde verborgen-loader-patroon als `swipe.js`). Dit verklaart waarom persoonsfilter, tegenvoorstellen, pauzeren en Weekvoorraad al werkten op iPhone.
+- 7 bestanden waren **bevestigd onbereikbaar** vanaf de echte entry: `cleaningExceptionContract.js`, `cleaningExecutionSync.js`, `cleaningExecutionUiGuard.js`, `cleaningExecutionWriteRuntime.js`, `cleaningExceptionRuntime.js`, `cleaningExceptionTaskUi.js`, `cleaningTaskSupplyUi.js`. Deze zijn scoped aan de Taken-detailpopup (`#tdp-overlay`), niet aan het Cleaning-scherm, en zaten daarom buiten de bestaande 18-bestanden-keten.
+- Service worker/cache is expliciet onderzocht en **uitgesloten** als verklaring: `firebase-messaging-sw.js` heeft geen `fetch`-listener en cachet niets; `api/app.js` stuurt `no-store` op de HTML.
+- HEAD-diff bevestigde dat de eerdere checkpoint `d81623d1051d766aaa42683e880faed9f3fd2abe` geldig bleef: de commits erna waren uitsluitend documentatie.
+
+Fix: nieuw bestand `cleaningExperienceBootstrap.js` laadt de 7 ontbrekende bestanden in expliciete, geverifieerde dependency-volgorde; één importregel in `cleaningRoutineTemplates.js` haakt deze bootstrap in de bestaande, bewezen werkende keten. Geen bestaande implementatie is herschreven of verwijderd.
+
+Regressieguard: `scripts/test-cleaning-runtime-reachability.js` loopt de echte import-graph vanaf `navigation.js` en bevestigt dat alle 33 functioneel vereiste Cleaning-modules bereikbaar zijn, en dat `cleaningExperienceBootstrap.js` zijn gedocumenteerde dependency-volgorde behoudt. Getest tegen zowel de oude (falende) als nieuwe (slagende) staat.
+
+Real-device regressieronde (14 punten: Overzicht, Planning, persoonsfilter, planapproval, accept/afwijzen, routine toewijzen, overdracht/tegenvoorstel, pauzeren, hervatten, benodigdheden, Weekvoorraad/Niet kopen, Taken-projectie, Agenda-projectie, reverse sync) is **GEACCEPTEERD OP IPHONE** op checkpoint `c0e799fdcb3cb447d4bf6af7c9759073825bbc06`.
 
 ## Actuele STEP 14 fase-status
 
@@ -37,6 +51,7 @@ Documentatiecommits ná dit functionele checkpoint veranderen de functionele acc
 - Fase 6 - Goedkeuring / notificaties: **GROTENDEELS AFGEROND / persoonlijke planapproval, routineverzoeken, overdracht en tegenvoorstellen real-device geaccepteerd; reminders en uitgebreidere multi-person flow nog open**.
 - Fase 7 - Historie / uitzonderingen: **DEELS; completion history en pauzeflow aanwezig, bredere beschikbaarheid/historie/progressie nog open**.
 - Fase 8 - Visuele polish / slimme inzichten: **DEELS; Home, live overview en slimme benodigdheden aanwezig, definitieve premium polish/insights nog open**.
+- Runtime-wiring recovery (Milestone 8): **AFGEROND / real-device geaccepteerd**.
 
 ## Wat nu real-device is geaccepteerd
 
@@ -167,6 +182,7 @@ Real-device geaccepteerd checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
 - Afgeleide schoonmaaktaken en schoonmaakafspraken kunnen niet als canonieke bron vanuit Taken/Agenda worden verwijderd; beheer blijft in Schoonmaken.
 - Projectiewrites lopen buiten de expliciete gebruikersmutatie-wrappers om, zodat reverse sync geen listener-loop met zichzelf maakt.
 - De rules-safe writer gebruikt de geautoriseerde Cleaning-root als canonieke transactieboundary en herstelt daarna afgeleide projecties.
+- Deze reverse-syncketen (`cleaningExecutionSync.js`, `cleaningExecutionUiGuard.js`, `cleaningExecutionWriteRuntime.js`) is sinds Milestone 8 pas daadwerkelijk vanaf de echte app-entry bereikbaar; zie Milestone 8 hierboven.
 
 ### Home-integratie
 
@@ -194,6 +210,7 @@ Real-device geaccepteerd checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
 - Routine-assignment wordt tijdens opslaan uit het nog bestaande formulier gelezen vóór de busy-state de DOM opnieuw rendert; hierdoor kan een expliciete zelf-/persoontoewijzing niet meer ongemerkt naar `AUTO` terugvallen.
 - Andere householdleden die routines maken of wijzigen worden niet meer impliciet als Shane behandeld door de save-volgorde.
 - Niet-gefilterde Planning-cards blijven in de DOM en gebruiken `hidden`, zodat de occurrence-card-indexering van de approval UI intact blijft ook met het persoonsfilter actief.
+- De Taken-detailpopup-scoped exception/execution/task-supply familie (7 bestanden) is sinds Milestone 8 daadwerkelijk bereikbaar vanaf de echte app-entry in plaats van alleen op de schijf te bestaan.
 
 ## Implementatie aanwezig maar apart blijven valideren
 
@@ -231,11 +248,12 @@ Deze lifecycle-opruiming blijft conservatief: onbekende legacy-records worden ni
 
 ## Guardrail voor vervolgchats
 
-- Behandel `d81623d1051d766aaa42683e880faed9f3fd2abe` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint (vervangt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`).
+- Behandel `c0e799fdcb3cb447d4bf6af7c9759073825bbc06` als het laatst door de gebruiker real-device geaccepteerde **functionele** checkpoint (runtime-wiring recovery; vervangt `d81623d1051d766aaa42683e880faed9f3fd2abe`).
 - STEP 14 = Schoonmaken; STEP 13.6 is de historische stabiele baseline waar deze workstream op is gestart.
-- Reverse execution sync, pause cadence, Agenda-conflictcheck, 7-daagse Weekvoorraad, `Niet kopen` en routine-overdracht/tegenvoorstellen zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
+- Reverse execution sync, pause cadence, Agenda-conflictcheck, 7-daagse Weekvoorraad, `Niet kopen`, routine-overdracht/tegenvoorstellen en de Taken-detailpopup-scoped exception/execution/task-supply familie zijn real-device geaccepteerd; `CleaningOccurrence` blijft desondanks de enige canonieke source of truth.
 - Documentatiecommits na dit checkpoint veranderen de functionele acceptatiebasis niet.
 - Werk uitsluitend verder op `agent/household-rebuild-v2` zolang de gebruiker niet expliciet anders zegt.
 - `main` niet aanraken of mergen zonder expliciet verzoek van de gebruiker.
 - Taken en Agenda blijven afgeleide projecties, ook nu gebruikerswijzigingen gecontroleerd terug naar Cleaning kunnen worden vertaald.
 - Nieuwe functionele wijzigingen in samenhangende, testbare checkpoints uitvoeren en opnieuw via unieke preview op iPhone laten accepteren.
+- Nieuwe Cleaning-bestanden die daadwerkelijk moeten draaien, moeten via een expliciete import-keten vanaf `navigation.js` bereikbaar zijn; controleer dit met `scripts/test-cleaning-runtime-reachability.js` en houd de `REQUIRED_CLEANING_FILES`-lijst daarin actueel.
