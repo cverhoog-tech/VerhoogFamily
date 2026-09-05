@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CLEANING EXCEPTION TASK UI v0.2.0
+// CLEANING EXCEPTION TASK UI v0.2.1
 // Adds one compact 'Niet alles gelukt?' path to managed Cleaning tasks.
 // It owns only its own sheet and never rewrites TaskDetailPopup markup/state.
 //
@@ -8,11 +8,12 @@
 // assignee can ask one other active household member to help with THIS
 // occurrence. It never auto-accepts; the recipient sees their own
 // accept/decline card via CleaningHelpRequestUi.
+// v0.2.1 simplifies the incomplete-work copy without changing semantics.
 // ============================================================
 (function(){
   if(window.CleaningExceptionTaskUi)return;
 
-  var VERSION='0.2.0';
+  var VERSION='0.2.1';
   var state={observer:null,queued:false,sheet:null,busy:false,confirmAction:null};
 
   function text(value){return String(value==null?'':value).trim();}
@@ -45,18 +46,18 @@
   function decorate(){state.queued=false;ensureStyle();var overlay=document.getElementById('tdp-overlay');if(!overlay||!overlay.classList.contains('open'))return;var task=taskById(guardTaskId());if(!managed(task)||task.done===true)return;var left=remaining(task),footer=overlay.querySelector('.tdp-footer');if(!footer||!left.length)return;var button=overlay.querySelector('[data-cleaning-exception-entry]');if(!button){button=document.createElement('button');button.type='button';button.className='cleaning-exception-entry';button.setAttribute('data-cleaning-exception-entry','1');footer.parentNode.insertBefore(button,footer);}button.textContent='Niet alles gelukt? · '+left.length+' '+(left.length===1?'stap over':'stappen over');}
   function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(callback){return setTimeout(callback,0);})(decorate);}
 
-  function sheetHtml(task){var left=remaining(task),range=rescheduleRange(task),disabled=!range||state.busy;return '<section class="cleaning-exception-sheet"><div class="cleaning-exception-handle"></div><div class="cleaning-exception-head"><div><p>Schoonmaakbeurt</p><h2>Niet alles gelukt?</h2></div><button type="button" class="cleaning-exception-close" data-cleaning-exception-close aria-label="Sluiten">✕</button></div><p class="cleaning-exception-copy">'+left.length+' '+(left.length===1?'stap is':'stappen zijn')+' nog open. Kies bewust wat ermee moet gebeuren; er ontstaat geen verborgen achterstand.</p>'
-    +'<article class="cleaning-exception-option"><strong>↻ Later deze week opnieuw</strong><span>Verplaats de resterende schoonmaakbeurt naar een ander moment binnen dezelfde week. Reeds afgevinkte stappen blijven afgevinkt.</span>'+(range?'<div class="cleaning-exception-date-row"><input type="date" data-cleaning-exception-date min="'+esc(range.min)+'" max="'+esc(range.max)+'" value="'+esc(range.value)+'"><input type="time" data-cleaning-exception-time aria-label="Tijd optioneel"></div><button type="button" class="cleaning-exception-action" data-cleaning-exception-action="RESCHEDULE"'+(disabled?' disabled':'')+'>Opnieuw inplannen</button>':'<span>Deze schoonmaakweek heeft geen later beschikbaar moment meer.</span>')+'</article>'
-    +'<article class="cleaning-exception-option"><strong>→ Naar de volgende beurt</strong><span>Rond deze beurt af als gedeeltelijk gedaan. De open stappen komen niet als losse achterstand terug; de routine gaat verder bij de volgende normale cyclus.</span><button type="button" class="cleaning-exception-action secondary" data-cleaning-exception-action="CARRY_FORWARD"'+(state.busy?' disabled':'')+'>'+(state.confirmAction==='CARRY_FORWARD'?'Nogmaals tikken om te bevestigen':'Doorschuiven')+'</button></article>'
-    +'<article class="cleaning-exception-option"><strong>⏭ Deze beurt overslaan</strong><span>De huidige beurt wordt als overgeslagen vastgelegd. Wat al gedaan is blijft zichtbaar in de geschiedenis.</span><button type="button" class="cleaning-exception-action danger" data-cleaning-exception-action="SKIP"'+(state.busy?' disabled':'')+'>'+(state.confirmAction==='SKIP'?'Nogmaals tikken om te bevestigen':'Deze beurt overslaan')+'</button></article>'
+  function sheetHtml(task){var left=remaining(task),range=rescheduleRange(task),disabled=!range||state.busy;return '<section class="cleaning-exception-sheet"><div class="cleaning-exception-handle"></div><div class="cleaning-exception-head"><div><p>Schoonmaakbeurt</p><h2>Niet alles gelukt?</h2></div><button type="button" class="cleaning-exception-close" data-cleaning-exception-close aria-label="Sluiten">✕</button></div><p class="cleaning-exception-copy">Nog '+left.length+' '+(left.length===1?'stap':'stappen')+' open. Wat wil je doen?</p>'
+    +'<article class="cleaning-exception-option"><strong>↻ Later deze week</strong><span>Plan alleen de open stappen opnieuw.</span>'+(range?'<div class="cleaning-exception-date-row"><input type="date" data-cleaning-exception-date min="'+esc(range.min)+'" max="'+esc(range.max)+'" value="'+esc(range.value)+'"><input type="time" data-cleaning-exception-time aria-label="Tijd optioneel"></div><button type="button" class="cleaning-exception-action" data-cleaning-exception-action="RESCHEDULE"'+(disabled?' disabled':'')+'>Later inplannen</button>':'<span>Deze week is geen later moment meer beschikbaar.</span>')+'</article>'
+    +'<article class="cleaning-exception-option"><strong>→ Volgende beurt</strong><span>Stop voor nu. De routine gaat verder bij de volgende normale beurt.</span><button type="button" class="cleaning-exception-action secondary" data-cleaning-exception-action="CARRY_FORWARD"'+(state.busy?' disabled':'')+'>'+(state.confirmAction==='CARRY_FORWARD'?'Nogmaals tikken om te bevestigen':'Doorschuiven')+'</button></article>'
+    +'<article class="cleaning-exception-option"><strong>⏭ Rest overslaan</strong><span>Sla de open stappen van deze beurt over.</span><button type="button" class="cleaning-exception-action danger" data-cleaning-exception-action="SKIP"'+(state.busy?' disabled':'')+'>'+(state.confirmAction==='SKIP'?'Nogmaals tikken om te bevestigen':'Overslaan')+'</button></article>'
     +helpOptionHtml(task)+'</section>';}
   function helpOptionHtml(task){
     var pending=currentHelpRequest(task);
-    if(pending&&text(pending.status)==='PENDING')return '<article class="cleaning-exception-option"><strong>🤝 Hulp gevraagd</strong><span>Je hebt '+esc(memberDisplayName(pending.toUid))+' om hulp gevraagd bij deze beurt. Je krijgt bericht zodra die reageert.</span></article>';
+    if(pending&&text(pending.status)==='PENDING')return '<article class="cleaning-exception-option"><strong>🤝 Hulp gevraagd</strong><span>'+esc(memberDisplayName(pending.toUid))+' heeft je hulpvraag ontvangen. Je krijgt bericht na een reactie.</span></article>';
     var candidates=helpCandidates(task);
     if(!candidates.length)return '';
     var options=candidates.map(function(member){return '<option value="'+esc(member.uid)+'">'+esc(text(member.displayName||member.name)||'Gezinslid')+'</option>';}).join('');
-    return '<article class="cleaning-exception-option"><strong>🤝 Vraag hulp</strong><span>Vraag een ander gezinslid om mee te helpen met deze specifieke beurt. Er verandert niets totdat die persoon accepteert.</span>'
+    return '<article class="cleaning-exception-option"><strong>🤝 Vraag hulp</strong><span>Vraag iemand om bij deze beurt mee te helpen.</span>'
       +'<div class="cleaning-exception-date-row"><select data-cleaning-exception-help-target>'+options+'</select><button type="button" class="cleaning-exception-action secondary" data-cleaning-exception-action="REQUEST_HELP"'+(state.busy?' disabled':'')+'>Hulp vragen</button></div></article>';
   }
   function openSheet(){var task=taskById(guardTaskId());if(!managed(task))return;state.sheet={taskId:text(task.id||task._key)};state.confirmAction=null;renderSheet();}
