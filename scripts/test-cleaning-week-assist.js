@@ -46,14 +46,14 @@ const calendar=[
   cleaningEvent,
   {id:'meeting',date:'2026-09-07',time:'10:15',durationMinutes:30,title:'Tandarts',assignedToUid:'u1',completed:false},
   {id:'other-person',date:'2026-09-07',time:'10:10',durationMinutes:45,title:'Afspraak ander gezinslid',assignedToUid:'u2',completed:false},
-  {id:'same-projection-copy',date:'2026-09-07',time:'10:05',durationMinutes:30,title:'Afgeleide kopie',cleaningOccurrenceIds:['occ1'],projectionManaged:true,sourceType:'cleaning-occurrence-group',assignedToUid:'u1'},
+  {id:'same-source-reference',date:'2026-09-07',time:'10:05',durationMinutes:30,title:'Zelfde bronreferentie',sourceId:'occ1',assignedToUid:'u1'},
   {id:'flex-clean',date:'2026-09-08',time:'11:00',title:'Flexibel schoonmaken',assignedToUid:'u1',flexible:true,projectionManaged:true,sourceType:'cleaning-occurrence',cleaningOccurrenceId:'occ1'}
 ];
 
 const conflicts=assist._deriveConflicts(root,calendar,{fromIso:'2026-09-05',days:7});
 assert.strictEqual(conflicts.length,1,'only the timed cleaning event with a real overlap should conflict');
 assert.strictEqual(conflicts[0].id,'clean-1');
-assert.strictEqual(conflicts[0].conflicts.length,1,'same projection and other assignee must not become conflicts');
+assert.strictEqual(conflicts[0].conflicts.length,1,'same source reference and other assignee must not become conflicts');
 assert.strictEqual(conflicts[0].conflicts[0].id,'meeting');
 assert.strictEqual(conflicts[0].potential,false,'known duration + same explicit assignee should be a hard conflict');
 
