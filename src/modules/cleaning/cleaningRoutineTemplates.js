@@ -70,7 +70,7 @@ const PRESETS = Object.freeze({
   ]),
   toilet: Object.freeze([
     preset('toilet-bowl','Toilet grondig reinigen',3,10,'NORMAL'),
-    preset('toilet-sink','Wastafel en kraan schoonmaken',7,5,'BASIC'),
+    preset('toilet-sink','Wastafel en kraan reinigen',7,5,'BASIC'),
     preset('toilet-floor','Vloer reinigen',7,10,'NORMAL')
   ]),
   bedroom: Object.freeze([
