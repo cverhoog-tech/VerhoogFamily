@@ -11,7 +11,7 @@ const REQUIRED_CLEANING_FILES = [
   'cleaningActivePlanReconciler.js','cleaningApprovalClarity.js','cleaningAvailabilityContract.js','cleaningAvailabilityExperience.js',
   'cleaningDerivedCleanup.js','cleaningDomain.js','cleaningExceptionContract.js','cleaningExceptionRuntime.js','cleaningExceptionTaskUi.js',
   'cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js','cleaningExperienceBootstrap.js','cleaningHelpRequestUi.js',
-  'cleaningHouseholdRepository.js','cleaningNotificationProjector.js','cleaningOverviewExperience.js','cleaningPauseAgendaProjection.js','cleaningPauseExperience.js',
+  'cleaningHistoryExperience.js','cleaningHouseholdRepository.js','cleaningNotificationProjector.js','cleaningOverviewExperience.js','cleaningPauseAgendaProjection.js','cleaningPauseExperience.js',
   'cleaningPlanApprovalUi.js','cleaningPlanPersistenceContract.js','cleaningPlanSanitizer.js','cleaningPlannerContract.js','cleaningPreferencesUi.js',
   'cleaningProjectionService.js','cleaningQuickChoiceFeedback.js','cleaningRecurringPlanContract.js','cleaningRepositoryContract.js','cleaningRollingPlannerService.js',
   'cleaningRoomListControlsV2.js','cleaningRoomWorkflowUx.js','cleaningRoutineExperience.js','cleaningRoutineTemplates.js','cleaningShoppingCleanup.js',
@@ -21,7 +21,7 @@ const REQUIRED_CLEANING_FILES = [
 const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExceptionContract.js','cleaningExecutionSync.js','cleaningExecutionUiGuard.js','cleaningExecutionWriteRuntime.js',
   'cleaningExceptionRuntime.js','cleaningExceptionTaskUi.js','cleaningHelpRequestUi.js','cleaningAvailabilityContract.js',
-  'cleaningAvailabilityExperience.js','cleaningNotificationProjector.js','cleaningTaskSupplyUi.js'
+  'cleaningAvailabilityExperience.js','cleaningHistoryExperience.js','cleaningNotificationProjector.js','cleaningTaskSupplyUi.js'
 ];
 
 let failed = false;
