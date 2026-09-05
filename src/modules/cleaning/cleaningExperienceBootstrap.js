@@ -5,67 +5,55 @@ import './cleaningExecutionWriteRuntime.js?v=1';
 import './cleaningExceptionRuntime.js?v=1';
 import './cleaningExceptionTaskUi.js?v=1';
 import './cleaningHelpRequestUi.js?v=1';
+import './cleaningAvailabilityContract.js?v=1';
+import './cleaningAvailabilityExperience.js?v=1';
 import './cleaningTaskSupplyUi.js?v=1';
 
 // ============================================================
-// CLEANING EXPERIENCE BOOTSTRAP v1.1.0
+// CLEANING EXPERIENCE BOOTSTRAP v1.2.0
 //
 // WHY THIS FILE EXISTS
 // ---------------------
 // A P0 runtime audit (05-09-2026) established one explicit Cleaning-side
 // reachability path from navigation.js -> cleaningScreen.js ->
-// cleaningRoutineTemplates.js -> this bootstrap for the execution/exception
-// family. Some of these files are also loaded by calendar.js for Tasks/Agenda
-// interoperability; their own idempotency guards make the additional Cleaning
-// entry safe and ensure opening Schoonmaken never depends on that older loader.
+// cleaningRoutineTemplates.js -> this bootstrap for runtime experiences that
+// are not part of the base Cleaning screen. Some execution files are also
+// loaded by calendar.js for Tasks/Agenda interoperability; idempotency guards
+// make this Cleaning-side entry safe and deterministic.
 //
-// v1.1.0 adds cleaningHelpRequestUi.js for STEP 14 Blok 2.4. The requester
-// starts a help request from cleaningExceptionTaskUi.js. The intended recipient
-// sees explicit accept/decline controls in Schoonmaken. Acceptance is never
-// automatic and CleaningOccurrence remains the canonical source of truth.
+// v1.1.0 added cleaningHelpRequestUi.js for explicit recipient accept/decline.
+// v1.2.0 adds the pure availability contract + availability experience. The
+// experience reuses CleaningPauseExperience for fixed-routine / room cadence
+// pauses; it does not invent a second occurrence or assignment truth.
 //
-// DEPENDENCY ORDER (do not reorder without re-checking each file's
-// window.* prerequisites):
-//   1. cleaningExceptionContract.js    - pure contract, no prerequisites.
-//   2. cleaningExecutionSync.js        - pure contract, no prerequisites.
-//   3. cleaningExecutionUiGuard.js     - reads window.CleaningExecutionSync;
-//                                        polls for window.TaskDetailPopup.
-//   4. cleaningExecutionWriteRuntime.js - reads window.CleaningExecutionSync;
-//                                        polls for Task/Calendar repositories;
-//                                        soft-depends on
-//                                        window.CleaningProjectionService for
-//                                        async repair only.
-//   5. cleaningExceptionRuntime.js     - reads window.CleaningExceptionContract
-//                                        and window.CleaningExecutionSync.
-//   6. cleaningExceptionTaskUi.js      - reads window.CleaningExceptionRuntime,
-//                                        window.CleaningExecutionUiGuard and
-//                                        window.CleaningExecutionSync.
-//   7. cleaningHelpRequestUi.js        - reads window.CleaningExceptionRuntime,
-//                                        CleaningHouseholdRepository and active
-//                                        household/member identity; renders only
-//                                        explicit recipient accept/decline UI.
-//   8. cleaningTaskSupplyUi.js         - reads window.CleaningExecutionSync
-//                                        (soft), window.CleaningHouseholdRepository
-//                                        and window.CleaningDomain.
+// DEPENDENCY ORDER (do not reorder without re-checking prerequisites):
+//   1. cleaningExceptionContract.js     - pure exception contract.
+//   2. cleaningExecutionSync.js         - pure execution contract.
+//   3. cleaningExecutionUiGuard.js      - reads CleaningExecutionSync.
+//   4. cleaningExecutionWriteRuntime.js - reverse-sync Task/Calendar writer.
+//   5. cleaningExceptionRuntime.js      - reads exception + execution contract.
+//   6. cleaningExceptionTaskUi.js       - Task-detail exception actions.
+//   7. cleaningHelpRequestUi.js         - recipient accept/decline UI.
+//   8. cleaningAvailabilityContract.js  - pure availability/planning adapter.
+//   9. cleaningAvailabilityExperience.js - availability UI + cadence-safe pause
+//                                          orchestration. CleaningPauseExperience
+//                                          is already loaded earlier by
+//                                          cleaningRoutineTemplates.js.
+//  10. cleaningTaskSupplyUi.js          - Task-detail Cleaning supplies.
 //
 // OWNERSHIP GUARDS
 // -----------------
-// - This file only adds import statements. It contains no writer logic.
-// - Each imported file guards its own single-install idempotency, so the
-//   calendar bootstrap and this Cleaning bootstrap cannot install duplicate
-//   writers/listeners even when both paths are evaluated.
-// - CleaningOccurrence remains the only source of truth. Help request state
-//   is stored on the occurrence and changes assignmentUids only after an
-//   explicit ACCEPT_HELP transition by the intended recipient.
+// - This file only adds imports; it contains no writer logic.
+// - Imported files guard single-install idempotency.
+// - CleaningOccurrence remains the only concrete-clean source of truth.
+// - Help assignment changes happen only after explicit ACCEPT_HELP.
+// - Availability never silently reassigns existing accepted work.
 // - cleaningExecutionWriteRuntime.js remains the sole reverse-sync patch for
 //   Cleaning-linked Task/Calendar updateOne/remove operations.
 // ============================================================
 
-export const CLEANING_EXPERIENCE_BOOTSTRAP_VERSION = '1.1.0';
+export const CLEANING_EXPERIENCE_BOOTSTRAP_VERSION = '1.2.0';
 
-// Importing this module is itself the ensureLoaded call: ES module evaluation
-// is cached per URL by the browser. This export exists so callers/tests can
-// confirm the bootstrap itself resolved successfully.
 export function cleaningExperienceBootstrapLoaded(){
   return true;
 }
