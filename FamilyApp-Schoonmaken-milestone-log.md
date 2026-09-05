@@ -2,6 +2,54 @@
 
 Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones binnen **STEP 14 - Schoonmaken**. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
 
+## Milestone 8 - Runtime-wiring recovery (P0)
+
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum acceptatie: **05-09-2026**
+Branch: `agent/household-rebuild-v2`
+Laatste geaccepteerde functionele checkpoint: `c0e799fdcb3cb447d4bf6af7c9759073825bbc06`
+Geaccepteerde preview: `https://verhoog-family-nsbvodlso-cverhoog-techs-projects.vercel.app`
+Vercel deployment: `dpl_6A5WNiYhXJPRMH7SbGujJW1g1fk7` - **READY**.
+Productie/main: **niet gewijzigd**.
+Vervangt functioneel het eerdere checkpoint `d81623d1051d766aaa42683e880faed9f3fd2abe`.
+
+Dit is geen nieuwe functionaliteit maar een P0-herstel van de daadwerkelijke runtime-bereikbaarheid van reeds gebouwde, eerder geaccepteerde functionaliteit.
+
+### Aanleiding
+
+Een gebruikersvraag over waarom het Overzicht-scherm een placeholder leek te tonen leidde tot een volledige runtime/wiring-audit, beginnend bij de echte app-entry in plaats van bij documentatie.
+
+### Bevindingen
+
+- De echte Cleaning-entry is `navigation.js` -> `renderCleaningModule()` -> dynamische ES-import van `cleaningScreen.js`.
+- `cleaningScreen.js` importeert zelf 6 bestanden, waarvan `cleaningRoutineTemplates.js` op zijn beurt 18 side-effect imports bevat (hetzelfde verborgen-loader-patroon als `swipe.js`). Samen maakten deze 26 van de 33 Cleaning-bestanden al daadwerkelijk bereikbaar. Dit verklaart waarom persoonsfilter (Milestone 7), tegenvoorstellen/overdracht (Milestone 6), pauzeren (Milestone 4) en Weekvoorraad (Milestone 5) al echt werkten op iPhone.
+- 7 bestanden waren **bevestigd onbereikbaar** vanaf de echte entry: `cleaningExceptionContract.js`, `cleaningExecutionSync.js`, `cleaningExecutionUiGuard.js`, `cleaningExecutionWriteRuntime.js`, `cleaningExceptionRuntime.js`, `cleaningExceptionTaskUi.js`, `cleaningTaskSupplyUi.js`. Deze zijn scoped aan de Taken-detailpopup (`#tdp-overlay`) in plaats van aan het Cleaning-scherm, en vielen daardoor buiten de bestaande 18-bestanden-keten.
+- Service worker/cache is expliciet onderzocht en uitgesloten als verklaring: `firebase-messaging-sw.js` heeft geen `fetch`-listener en cachet niets; `api/app.js` stuurt `no-store` op de geserveerde HTML.
+- HEAD-diff bevestigde dat checkpoint `d81623d1051d766aaa42683e880faed9f3fd2abe` geldig bleef: de twee commits erna waren uitsluitend documentatie (`.md`/`.txt`), geen source/build/navigation/service-worker-wijzigingen.
+
+### Fix
+
+- Nieuw bestand `cleaningExperienceBootstrap.js`: laadt de 7 ontbrekende bestanden in expliciete, per-bestand geverifieerde dependency-volgorde (contracten eerst, dan execution-runtime, dan exception-runtime, dan de UI-laag die daarvan afhangt).
+- Eén importregel toegevoegd aan `cleaningRoutineTemplates.js` om de bootstrap in de bestaande, bewezen werkende keten te haken.
+- Geen bestaande implementatie herschreven, verwijderd of opnieuw gebouwd.
+- Geen dubbele writers/listeners geïntroduceerd: alleen `cleaningExecutionWriteRuntime.js` patcht Task/Calendar-repository `updateOne`/`remove` voor cleaning-gekoppelde records, en dat overlapt met geen enkele andere geladen Cleaning-module.
+
+### Regressieguard
+
+`scripts/test-cleaning-runtime-reachability.js` loopt de echte statische/dynamische import-graph vanaf `navigation.js` en bevestigt dat alle 33 functioneel vereiste Cleaning-modules bereikbaar zijn vanaf de echte entry, en dat `cleaningExperienceBootstrap.js` zijn gedocumenteerde dependency-volgorde behoudt. Lokaal geverifieerd tegen zowel de oude situatie (faalt correct op precies de 7 ontbrekende bestanden) als de nieuwe situatie (slaagt). Volledige lokale contractsuite (102 bestanden) slaagt.
+
+### Real-device regressieronde (14 punten, GEACCEPTEERD)
+
+Overzicht, Planning, persoonsfilter, persoonlijke planapproval, accept/afwijzen, routine zelf/ander toewijzen, overdracht/tegenvoorstel, pauzeren, hervatten, benodigdheden, Weekvoorraad/Niet kopen, Taken-projectie, Agenda-projectie, Taken/Agenda reverse sync.
+
+### Regressieguards van deze milestone
+
+- `CleaningOccurrence` blijft de enige canonieke source of truth.
+- Taken en Agenda blijven afgeleide projecties.
+- Approval-copy blijft eigendom van de bestaande approval UI.
+- Geen tweede canonieke writer voor dezelfde mutatie.
+- `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
+
 ## Milestone 7 - Planning persoonsfilter
 
 Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
@@ -393,4 +441,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ## Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `d81623d1051d766aaa42683e880faed9f3fd2abe` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen (vervangt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe`, dat op zijn beurt `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` verving). STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
+Een nieuwe chat moet `c0e799fdcb3cb447d4bf6af7c9759073825bbc06` als laatst real-device geaccepteerde **functionele** STEP 14 branchcheckpoint behandelen (runtime-wiring recovery; vervangt `d81623d1051d766aaa42683e880faed9f3fd2abe`, dat op zijn beurt `8d3527141c0f5fdebd6cc72d7c71013b31aa2cfe` verving, dat op zijn beurt `eccec8aef1257d8777c15ff8ae66bcd7e351a0f8` verving). STEP 13.6 blijft de historische baseline waarop deze workstream begon. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Nieuwe Cleaning-bestanden moeten via een expliciete import-keten vanaf `navigation.js` bereikbaar zijn; controleer dit met `scripts/test-cleaning-runtime-reachability.js`. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
