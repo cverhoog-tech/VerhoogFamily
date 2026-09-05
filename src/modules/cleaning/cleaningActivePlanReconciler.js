@@ -1,15 +1,18 @@
 'use strict';
 // ============================================================
-// CLEANING ACTIVE PLAN RECONCILER v0.1.1
+// CLEANING ACTIVE PLAN RECONCILER v0.1.2
 // Keeps a manually approved current weekly plan aligned with recurring slots
 // and routines added after activation. Rolling future plans are deliberately
 // owned only by CleaningRollingPlannerService to prevent competing rewrites.
 // Newly added current-week work becomes a personal proposal before projection.
+// Temporary availability is a planning input only: existing occurrences are
+// never silently reassigned, while supplemental work excludes unavailable
+// members and BUSY_WEEK defers EXTRA routines.
 // ============================================================
 (function(){
   if(window.CleaningActivePlanReconciler)return;
 
-  var VERSION='0.1.1';
+  var VERSION='0.1.2';
   var state={unsubscribe:null,attachTimer:null,inFlight:{},lastResult:null,lastError:null};
   var INVALID_KEY=/[.#$\[\]\/\u0000-\u001F\u007F]/g;
 
@@ -21,6 +24,7 @@
   function startOfLocalDay(value){var d=new Date(Number(value)||now());d.setHours(0,0,0,0);return d.getTime();}
   function repository(){return window.CleaningHouseholdRepository||null;}
   function recurring(){return window.CleaningRecurringPlanContract||null;}
+  function availability(){return window.CleaningAvailabilityContract||null;}
   function contextSnapshot(){try{return window.HouseholdContext&&typeof window.HouseholdContext.snapshot==='function'?window.HouseholdContext.snapshot():null;}catch(e){return null;}}
   function captureContext(){try{return window.HouseholdContext&&typeof window.HouseholdContext.capture==='function'?window.HouseholdContext.capture():null;}catch(e){return null;}}
   function contextIsCurrent(token){try{return !!(window.HouseholdContext&&typeof window.HouseholdContext.isCurrent==='function'&&window.HouseholdContext.isCurrent(token));}catch(e){return false;}}
@@ -190,6 +194,7 @@
     if(!root.occurrences||typeof root.occurrences!=='object')root.occurrences={};
     var planId=text(source.planId),plan=root.plans[planId];
     var contract=source.recurringContract||recurring();
+    var availabilityContract=source.availabilityContract||availability();
     var householdId=text(source.householdId),actorUid=text(source.actorUid),timestamp=positive(source.timestamp)||now();
     if(!plan||typeof plan!=='object'||!contract||typeof contract.expandRoutineSlots!=='function'||typeof contract.bundleSlots!=='function')return{changed:false,root:root,reason:'NOT_READY'};
     plan.id=plan.id||planId;
@@ -199,7 +204,19 @@
     var windowValue={startAt:Number(plan.windowStartAt),endAt:Number(plan.windowEndAt)};
     if(!(windowValue.startAt>0&&windowValue.endAt>windowValue.startAt)||windowValue.endAt<=startOfLocalDay(timestamp))return{changed:false,root:root,reason:'WINDOW_EXPIRED'};
 
-    var memberRows=eligibleMembers(source.members);
+    var planningMembers=source.members;
+    var planningRoutines=root.routines||{};
+    if(availabilityContract&&typeof availabilityContract.preparePlanningInput==='function'){
+      var adjusted=availabilityContract.preparePlanningInput({
+        window:windowValue,
+        members:source.members,
+        routines:root.routines||{},
+        availability:root.availability||{}
+      });
+      planningMembers=adjusted.members;
+      planningRoutines=adjusted.routines;
+    }
+    var memberRows=eligibleMembers(planningMembers);
     if(!memberRows.length)return{changed:false,root:root,reason:'NO_ACTIVE_MEMBERS'};
     var occurrenceIds=occurrenceIdsForPlan(root,plan);
     var loads=buildLoads(root,occurrenceIds,memberRows);
@@ -213,7 +230,7 @@
       routineIds(row).forEach(function(routineId){coverage[roomSlot+'|'+routineId]=true;});
     });
 
-    var expanded=contract.expandRoutineSlots({window:windowValue,rooms:root.rooms||{},routines:root.routines||{}});
+    var expanded=contract.expandRoutineSlots({window:windowValue,rooms:root.rooms||{},routines:planningRoutines});
     var bundles=contract.bundleSlots({window:windowValue,rooms:root.rooms||{},candidates:expanded.candidates||[]});
     var cutoff=startOfLocalDay(timestamp),added=[],affected={};
 
@@ -327,7 +344,7 @@
       if(!contextIsCurrent(token)){transitionError=new Error('CLEANING_RECONCILE_CONTEXT_CHANGED');return;}
       try{
         transitionError=null;
-        resultValue=reconcileRoot({root:serverRoot||{},planId:planId,householdId:ctx.householdId,actorUid:ctx.uid,timestamp:now(),members:members(),recurringContract:contract});
+        resultValue=reconcileRoot({root:serverRoot||{},planId:planId,householdId:ctx.householdId,actorUid:ctx.uid,timestamp:now(),members:members(),recurringContract:contract,availabilityContract:availability()});
         return resultValue.changed?resultValue.root:undefined;
       }catch(error){transitionError=error;return;}
     }).then(function(result){
