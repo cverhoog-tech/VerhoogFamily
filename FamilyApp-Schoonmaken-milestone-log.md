@@ -2,6 +2,86 @@
 
 Dit bestand is het doorlopende implementatielog voor grote Schoonmaken-milestones. Het vult `FamilyApp-Schoonmaken-module-architectuur.md` en `FamilyApp-TODO-updated.txt` aan. Alleen een flow die expliciet op real-device is geaccepteerd mag hier als geaccepteerd worden gemarkeerd.
 
+## Milestone 4 - Uitvoering, Home, benodigdheden en tijdelijke pauzes
+
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
+Datum laatste acceptatie: **05-09-2026**
+Branch: `agent/household-rebuild-v2`
+Laatste geaccepteerde functionele checkpoint: `5d139ab81038a9cf2b1dfa8ddbfee1c02f60b255`
+Geaccepteerde preview: `https://verhoog-family-ecwr7qzfk-cverhoog-techs-projects.vercel.app`
+Productie/main: **niet gewijzigd**.
+
+### Wat in deze milestone real-device is geaccepteerd
+
+#### Reverse sync / uitvoering
+
+- `CleaningOccurrence` blijft de canonieke source of truth voor een schoonmaakbeurt.
+- Checklistregels in een geprojecteerde Taak schrijven gecontroleerd terug naar de juiste occurrence/checklistregel.
+- Een volledige schoonmaaktaak afronden voltooit de gekoppelde canonieke occurrences en legt completion history vast.
+- Heropenen werkt zonder duplicate occurrence.
+- Datum/tijd wijzigen vanuit Taken schrijft terug naar Cleaning en laat Agenda meebewegen.
+- Datum/tijd wijzigen vanuit Agenda schrijft terug naar Cleaning en laat Taken meebewegen.
+- Verwijderen van een afgeleide Taak of Agenda-afspraak verwijdert de canonieke CleaningOccurrence niet.
+- Reverse sync is rules-safe: canonieke mutaties gebeuren op de Cleaning-root; projectiereparatie is afgeleid en best-effort.
+
+Geaccepteerd checkpoint: `2b0f58dae847b18350cb6f2a3cb6a83d52e182c5`.
+
+#### Home-dashboard
+
+- Home heeft een eigen Schoonmaken-tegel.
+- Schoonmaken telt open canonieke schoonmaakprojecties die vandaag of te laat zijn.
+- De algemene Taken-tegel blijft alle open taken vandaag/te laat tellen; schoonmaak kan dus terecht in beide aantallen zitten.
+- Toekomstige, ongedateerde, afgeronde, geannuleerde en overgeslagen items tellen niet mee.
+
+Geaccepteerd checkpoint: `f58c772c92df42a5762e97b425800d42dfd79d7b`.
+
+#### Benodigdheden / slimme suggesties
+
+- Benodigdheden worden canoniek via `routine.supplyIds` aan routines gekoppeld.
+- Benodigdheden zijn direct vanuit de kamer-popup te beheren.
+- Voorraad kent bewust alleen `IN_STOCK`, `LOW` en `OUT`; geen tweede hoeveelhedenadministratie.
+- Slimme suggesties zijn lokaal/deterministisch en adviserend; ze schrijven niet stilzwijgend canonieke relaties.
+- Toevoegen aan Boodschappen gebeurt uitsluitend expliciet door de gebruiker.
+- De supply-popup gebruikt een gecachte Cleaning-snapshot en item-level writes om trage re-renders te voorkomen.
+
+Geaccepteerd checkpoint: `23857d84959b6cbfdb57ebf7a6036e13eee549c5`.
+
+#### Kamer/routine UX en goedkeuringsduidelijkheid
+
+- Bij nieuwe kamers staat het kamertype vóór de naam.
+- Voor standaardkamers is naam optioneel; een lege naam wordt veilig gegenereerd en duplicaten krijgen een volgnummer.
+- Routine-acties zijn compact gebundeld in een `•••`-menu dat de bestaande canonieke Bewerk/Toewijs/Verwijder-acties proxyt.
+- Benodigdheden kunnen vanuit dezelfde kamerflow rechtstreeks worden aangemaakt en aan routines gekoppeld.
+- Planning toont duidelijk of eigen akkoord nog nodig is, op anderen wordt gewacht of het plan actief is.
+- `Planning vernieuwen` verwijdert stale live-planwerk na verwijderde kamers/routines zonder de approval-copy door meerdere DOM-eigenaars te laten herschrijven.
+
+Geaccepteerd UX-checkpoint: `a67cbe0d30eb857f5a0565c357c51b8548223e99`.
+
+#### Tijdelijke pauze zonder verlies van intervalritme
+
+- Een routine of hele kamer kan tijdelijk worden gepauzeerd.
+- Tijdens de pauze verschijnt geen echte schoonmaakbeurt.
+- Een eindige pauze heeft een aparte hervatmarker in Agenda.
+- Pauzeren betekent **niet stoppen**: de resterende countdown naar `nextDueAt` wordt bevroren.
+- Na hervatten wordt de eerste echte beurt op basis van die resterende countdown geplaatst en daarna loopt `intervalDays` normaal verder.
+- Voorbeeld: nog 2 dagen te gaan, 2 weken pauze, interval 7 dagen -> eerste beurt 2 dagen na hervatten -> daarna +7 -> +7.
+- Als een routine bij pauzeren al aan de beurt was, mag de eerste echte beurt op de hervatdag vallen.
+- Een pauze `tot ik hervat` maakt bewust geen toekomstige schoonmaakbeurten totdat handmatig wordt hervat.
+- Een kamerpauze heeft voorrang op een kortere individuele routinepauze.
+- De eerder geaccepteerde uitvoerder blijft behouden; ook oudere reeds bestaande pauzes kunnen deze assignment continuity veilig terugvinden uit een actieve niet-rollende geaccepteerde plancontext.
+- Rolling planning gebruikt alleen een planning-shadow voor eindige pauzes; de canonieke routine blijft tijdens de pauze `paused:true`.
+- De vierweekse rolling horizon blijft de zichtbare toekomstgrens.
+
+Laatste real-device geaccepteerde checkpoint: `5d139ab81038a9cf2b1dfa8ddbfee1c02f60b255`.
+
+### Regressieguards van deze milestone
+
+- Approval UI blijft de enige eigenaar van de canonieke Planning approval-copy.
+- Rolling plans mogen nooit hun eigen standing consent worden.
+- Een eindige pauze mag niet als blanket-exclusion de recurrence chain verliezen.
+- Een pauze mag geen backlog van gemiste beurten genereren.
+- `main` blijft onaangeraakt totdat de gebruiker expliciet om merge/promotie vraagt.
+
 ## Milestone 3 - Weekplanner, goedkeuring, projecties en kamer-UX
 
 Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD OP IPHONE**
@@ -163,4 +243,4 @@ De goedgekeurde visuele spec blijft leidend. De uiteindelijke module wordt premi
 
 ## Continuation checkpoint voor nieuwe chats
 
-Een nieuwe chat moet `cd7a4ec77d4cc83c023942d4eb21f5af0234d6c2` als laatst real-device geaccepteerde **functionele** branchcheckpoint behandelen. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
+Een nieuwe chat moet `5d139ab81038a9cf2b1dfa8ddbfee1c02f60b255` als laatst real-device geaccepteerde **functionele** branchcheckpoint behandelen. Documentatiecommits daarna veranderen de functionele basis niet. De afgekeurde hardening-commits blijven geen geaccepteerde basis. Werk verder op `agent/household-rebuild-v2`, raak `main` niet aan zonder expliciete toestemming en houd `CleaningOccurrence` als canonieke source of truth.
