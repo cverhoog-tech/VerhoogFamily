@@ -12,8 +12,8 @@ vm.runInNewContext(source,context,{filename:'cleaningWeekAssist.js'});
 const assist=context.CleaningWeekAssist;
 
 assert.ok(assist,'CleaningWeekAssist must register');
-assert.strictEqual(assist.version,'0.1.0');
-assert.ok(templates.includes("import './cleaningWeekAssist.js?v=1';"),'Cleaning module must load the week assist');
+assert.strictEqual(assist.version,'0.1.2');
+assert.ok(templates.includes("import './cleaningWeekAssist.js?v=2';"),'Cleaning module must load the current week assist cache version');
 
 const root={
   rooms:{bath:{id:'bath',name:'Badkamer',active:true}},
@@ -71,6 +71,8 @@ assert.deepStrictEqual(Array.from(needs).map((row)=>row.id),['cleaner'],'only LO
 assert.strictEqual(needs[0].status,'OUT');
 assert.deepStrictEqual(Array.from(needs[0].occurrenceIds),['occ1']);
 assert.deepStrictEqual(Array.from(needs[0].roomNames),['Badkamer']);
+assert.strictEqual(assist._filterHiddenNeeds(needs,{cleaner:true}).length,0,'a dismissed supply must disappear from the visible weekly bundle');
+assert.deepStrictEqual(Array.from(assist._filterHiddenNeeds(needs,{})).map((row)=>row.id),['cleaner'],'non-dismissed supplies must stay visible');
 
 const shoppingRecords=assist._shoppingRecordsForNeeds(needs);
 assert.strictEqual(shoppingRecords.length,1);
@@ -78,9 +80,17 @@ assert.strictEqual(shoppingRecords[0].source,'cleaning');
 assert.strictEqual(shoppingRecords[0].cleaningSupplyId,'cleaner');
 assert.deepStrictEqual(Array.from(shoppingRecords[0].cleaningOccurrenceIds),['occ1']);
 
-const openProjection={shared:{household_default:{id:'household_default',items:{a:{name:'Badkamerreiniger',source:'cleaning',cleaningSupplyId:'cleaner',done:false,updatedAt:150}}}},private:{}};
+const openProjection={shared:{household_default:{id:'household_default',items:{
+  a:{name:'Badkamerreiniger',source:'cleaning',cleaningSupplyId:'cleaner',done:false,updatedAt:150},
+  b:{name:'Badkamerreiniger',source:'manual',done:false,updatedAt:151},
+  c:{name:'Badkamerreiniger',source:'cleaning',cleaningSupplyId:'cleaner',done:true,updatedAt:152},
+  d:{name:'Handschoenen',source:'cleaning',cleaningSupplyId:'gloves',done:false,updatedAt:153}
+}}},private:{}};
 const openLookup=assist._openShoppingLookup(root,openProjection);
 assert.strictEqual(openLookup.cleaner,true,'an open Cleaning shopping item must suppress a duplicate weekly add prompt');
+const removable=assist._openCleaningShoppingRowsForSupply(root,openProjection,'cleaner');
+assert.strictEqual(removable.length,1,'dismiss must target only the exact open Cleaning-linked shopping row');
+assert.strictEqual(removable[0].key,'a','manual, completed or another-supply rows must be protected');
 
 const purchasedProjection={shared:{household_default:{id:'household_default',items:{a:{name:'Badkamerreiniger',source:'cleaning',cleaningSupplyId:'cleaner',done:true,updatedAt:200}}}},private:{}};
 let purchased=assist._purchasedSupplySuggestions(root,purchasedProjection);
@@ -96,9 +106,11 @@ assert.strictEqual(assist._purchasedSupplySuggestions(root,legacyNameOnly).lengt
 
 assert.ok(source.includes("runtime.transact('calendar'"),'moving a suggestion must use the existing canonical reverse-sync runtime');
 assert.ok(source.includes('store.addItems(null,records,{dedupe:true})'),'weekly supplies must only use ShoppingListStore after a user action');
+assert.ok(source.includes('repo.deleteItem(row.scope,row.listId,row.key)'),'dismiss must remove only resolved open Cleaning shopping rows through the Shopping repository');
+assert.ok(source.includes('HIDDEN_KEY_PREFIX'),'dismissed weekly supplies must use a scoped presentation preference');
 assert.ok(source.includes('supplies.setSupplyStatus(id,STATUS.IN_STOCK)'),'restock confirmation must use Cleaning supply status boundary');
 assert.ok(!source.includes('.transaction('),'week assist itself must not own a Firebase transaction');
 assert.ok(!source.includes('cleaning-approval-copy'),'week assist may not own Planning approval copy');
 assert.ok(!source.includes('cleaning-plan-actions > span'),'week assist may not rewrite Planning hero approval text');
 
-console.log('cleaning week assist detects conflicts and bundles explicit weekly supplies: ok');
+console.log('cleaning week assist detects conflicts, bundles supplies and safely dismisses unwanted purchases: ok');
