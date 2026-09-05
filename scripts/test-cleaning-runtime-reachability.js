@@ -19,6 +19,8 @@ const NAVIGATION_FILE = path.join(ROOT, 'src', 'core', 'navigation.js');
 const REQUIRED_CLEANING_FILES = [
   'cleaningActivePlanReconciler.js',
   'cleaningApprovalClarity.js',
+  'cleaningAvailabilityContract.js',
+  'cleaningAvailabilityExperience.js',
   'cleaningDerivedCleanup.js',
   'cleaningDomain.js',
   'cleaningExceptionContract.js',
@@ -55,8 +57,8 @@ const REQUIRED_CLEANING_FILES = [
   // cleaningScreen.js is the entry file itself; asserted separately below.
 ];
 
-// Explicit dependency order for the execution/exception/help/task-supply
-// bootstrap. Keep this synchronized with cleaningExperienceBootstrap.js.
+// Explicit dependency order for the execution/exception/help/availability/
+// task-supply bootstrap. Keep synchronized with cleaningExperienceBootstrap.js.
 const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExceptionContract.js',
   'cleaningExecutionSync.js',
@@ -65,6 +67,8 @@ const BOOTSTRAP_EXPECTED_ORDER = [
   'cleaningExceptionRuntime.js',
   'cleaningExceptionTaskUi.js',
   'cleaningHelpRequestUi.js',
+  'cleaningAvailabilityContract.js',
+  'cleaningAvailabilityExperience.js',
   'cleaningTaskSupplyUi.js'
 ];
 
@@ -179,7 +183,7 @@ function main() {
       actualOrder.every((name, index) => name === BOOTSTRAP_EXPECTED_ORDER[index]);
     if (!orderMatches) {
       fail(
-        'cleaningExperienceBootstrap.js no longer imports the execution/exception/help/task-supply family in the ' +
+        'cleaningExperienceBootstrap.js no longer imports the execution/exception/help/availability/task-supply family in the ' +
         'documented dependency order. Expected: ' + BOOTSTRAP_EXPECTED_ORDER.join(' -> ') + '. ' +
         'Found: ' + actualOrder.join(' -> ') + '.'
       );
