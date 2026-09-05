@@ -8,7 +8,7 @@
 (function(){
   if(window.HouseholdActivity)return;
 
-  var TYPES=Object.freeze({TASK_CREATED:'task.created',TASK_COMPLETED:'task.completed',MEAL_PLANNED:'meal.planned',SHOPPING_COMPLETED:'shopping.completed',PARTY_QUEST_COMPLETED:'partyQuest.completed'});
+  var TYPES=Object.freeze({TASK_CREATED:'task.created',TASK_COMPLETED:'task.completed',MEAL_PLANNED:'meal.planned',SHOPPING_COMPLETED:'shopping.completed',PARTY_QUEST_COMPLETED:'partyQuest.completed',CLEANING_COMPLETED:'cleaning.completed'});
   var VISIBLE={};Object.keys(TYPES).forEach(function(k){VISIBLE[TYPES[k]]=true;});
   var state={events:[],unsubscribe:null,lastError:null,timer:null,tries:0};
   var MAX_BOOT_TRIES=240;
