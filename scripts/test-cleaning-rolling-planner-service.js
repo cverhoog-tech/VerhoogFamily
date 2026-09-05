@@ -41,7 +41,10 @@ const root={
 };
 
 const first=rolling._reconcileRoot({root,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
-assert.strictEqual(rolling.version,'0.1.4');
+assert.strictEqual(rolling.version,'0.1.5');
+assert.strictEqual(rolling._assignmentAwaitingConsent({assignmentRequestStatus:'PENDING'}),true);
+assert.strictEqual(rolling._assignmentAwaitingConsent({assignmentRequestStatus:'COUNTER_PROPOSED'}),true);
+assert.strictEqual(rolling._assignmentAwaitingConsent({assignmentRequestStatus:'ACCEPTED'}),false);
 assert.strictEqual(first.changed,true);
 assert.strictEqual(first.planIds.length,2);
 
@@ -66,6 +69,23 @@ assert.strictEqual(first.root.approvals.u1[nextPlanId].standingRoutineConsent,tr
 const second=rolling._reconcileRoot({root:first.root,householdId:hid,actorUid:'u2',timestamp:start+2*DAY+1000,members,recurringContract:recurring,horizonWeeks:2});
 assert.strictEqual(second.changed,false,'rolling horizon reconciliation must be idempotent');
 assert.strictEqual(second.reason,'ALREADY_CURRENT');
+
+// A counter-proposal is still an unaccepted transfer. Even when pause
+// continuity would otherwise supply a known assignee and a finite pause gets a
+// planning shadow, the rolling horizon must not create work until consent.
+const counterProposalRoot={
+  rooms:{kitchen:{id:'kitchen',name:'Keuken',active:true}},
+  routines:{counter:{
+    id:'counter',roomId:'kitchen',title:'Werkblad overnemen',intervalDays:2,estimatedMinutes:8,priority:'NORMAL',active:true,createdAt:start,
+    repeatScope:'ONGOING',assignmentMode:'REQUESTED',assignmentRequestStatus:'COUNTER_PROPOSED',preferredAssigneeUid:'u2',
+    assignmentCounterProposedUid:'u1',assignmentCounterProposedByUid:'u2',paused:true,pauseSource:'ROUTINE',
+    pausedAt:start+2*DAY,pauseUntilAt:start+3*DAY,pauseCadenceStartedAt:start+2*DAY,pauseCadenceNextDueAt:start+4*DAY,nextDueAt:start+4*DAY,
+    continuityAssigneeUid:'u1',continuityAssignmentSource:'ACCEPTED_PLAN_BEFORE_PAUSE',continuityAnchorAt:start+DAY
+  }},
+  plans:{},occurrences:{},approvals:{}
+};
+const counterProposalRolling=rolling._reconcileRoot({root:counterProposalRoot,householdId:hid,actorUid:'u1',timestamp:start+2*DAY,members,recurringContract:recurring,horizonWeeks:2});
+assert.ok(!Object.values(counterProposalRolling.root.occurrences||{}).some((row)=>Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('counter')),'COUNTER_PROPOSED must never create rolling work before consent');
 
 // A finite pause freezes the remaining countdown, not the recurrence itself.
 // Here the routine had two days left when paused on Jan 3. A pause through Jan
@@ -157,4 +177,4 @@ assert.strictEqual(migration.changed,true);
 assert.strictEqual(migration.root.occurrences[unsafeOccurrence].status,'CANCELLED');
 assert.ok(!Object.values(migration.root.occurrences).some((row)=>row.status!=='CANCELLED'&&Array.isArray(row.routineItemIds)&&row.routineItemIds.includes('unsafe')));
 
-console.log('cleaning rolling planner keeps real cadence across finite and legacy pauses: ok');
+console.log('cleaning rolling planner keeps cadence and blocks unaccepted collaboration states: ok');
