@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// CLEANING PERMISSIONS v1.0.0
+// CLEANING PERMISSIONS v1.0.1
 // Central client-side capability policy for STEP 14.
 //
 // Existing household roles are mapped without introducing new account state:
@@ -22,7 +22,7 @@
 (function(){
   if(window.CleaningPermissions)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var ROLE={MANAGER:'MANAGER',MEMBER:'MEMBER',LIMITED:'LIMITED',UNKNOWN:'UNKNOWN'};
   var CAP={
     STRUCTURE:'STRUCTURE',
@@ -130,10 +130,10 @@
     note.textContent=currentRole===ROLE.LIMITED?'Beperkt profiel · je kunt toegewezen schoonmaakbeurten uitvoeren, verzoeken beantwoorden en hulp vragen.':'Gezinslid · je kunt plannen, voorraad bijhouden en routines overdragen. Structurele kamers en routines beheert een beheerder.';
   }
   function decorateUi(){
-    state.queued=false;installGuards();var screen=document.getElementById('screen-cleaning');if(!screen)return;var currentRole=role(),manager=currentRole===ROLE.MANAGER,member=currentRole===ROLE.MEMBER,limited=currentRole===ROLE.LIMITED;
+    state.queued=false;installGuards();var screen=document.getElementById('screen-cleaning');if(!screen)return;var currentRole=role(),manager=currentRole===ROLE.MANAGER,limited=currentRole===ROLE.LIMITED;
     each('#screen-cleaning [data-cleaning-room-add],#screen-cleaning [data-cleaning-room-edit],#screen-cleaning [data-cleaning-routine-add],#screen-cleaning [data-cleaning-routine-edit],#screen-cleaning [data-cleaning-template-add],#screen-cleaning [data-cleaning-routine-remove],#screen-cleaning [data-cleaning-room-move],#screen-cleaning [data-cleaning-room-delete-open],#screen-cleaning [data-cleaning-room-delete-confirm],#screen-cleaning [data-cleaning-routine-delete-open],#screen-cleaning [data-cleaning-routine-delete-confirm]',function(node){markHidden(node,!manager);});
     each('#screen-cleaning [data-cleaning-routine-title],#screen-cleaning [data-cleaning-routine-interval],#screen-cleaning [data-cleaning-routine-minutes],#screen-cleaning [data-cleaning-routine-priority]',function(node){markDisabled(node,!manager);});
-    each('#screen-cleaning [data-cleaning-supply-form]',function(node){markHidden(node,!manager);});
+    each('#screen-cleaning [data-cleaning-supply-form]',function(node){markHidden(node,!can(CAP.SUPPLIES));});
     each('#screen-cleaning [data-cleaning-plan-generate],#screen-cleaning [data-cleaning-routine-assign]',function(node){markHidden(node,limited||currentRole===ROLE.UNKNOWN);});
     each('#screen-cleaning [data-cleaning-routine-request-counter]',function(node){markHidden(node,!can(CAP.ASSIGNMENTS));});
     each('#screen-cleaning [data-cleaning-availability-open="member"]',function(node){markHidden(node,!can(CAP.AVAILABILITY));});
