@@ -43,3 +43,16 @@ var _oadXP=awardXP;awardXP=function(a,r){_oadXP(a,r);syncToFirebase();};
 function logoutUser(){document.body.classList.remove('logged-in');if(fbAuth)fbAuth.signOut().catch(function(){});}
 if(typeof firebase!=='undefined')initFirebase(HARDCODED_FB_CONFIG);
 function initApp(){renderNav();attachNavDelegation();renderHome();renderFeed();renderFinance();renderNotifs();updateHomeXP();setTimeout(function(){checkAchievements();checkDailyBonus();},400);}
+
+// The session controller is the single owner of authenticated bootstrap/reveal.
+// Keep this small loader here because this file is already the canonical Firebase
+// bootstrap helper and is guaranteed to run before the legacy window.load fallback.
+(function ensureAuthenticatedSessionController(){
+  if(window.AuthenticatedSessionController||document.querySelector('script[data-familyapp-session-controller]'))return;
+  var script=document.createElement('script');
+  script.src='src/core/authenticatedSessionController.js?v=2';
+  script.async=false;
+  script.setAttribute('data-familyapp-session-controller','1');
+  script.onerror=function(){console.error('[SessionController] script kon niet worden geladen');};
+  document.head.appendChild(script);
+})();
