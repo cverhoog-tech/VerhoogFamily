@@ -1,0 +1,24 @@
+/* Premium Cleaning room polish. Presentation only; canonical Cleaning state stays in JS domain modules. */
+#screen-cleaning .cleaning-room-toggle-btn,
+#screen-cleaning .cleaning-room-edit-button,
+#screen-cleaning .cleaning-add-routine-button,
+#screen-cleaning .cleaning-routine-more,
+#screen-cleaning .cleaning-routine-menu-action,
+#screen-cleaning .cleaning-icon-button{min-width:44px;min-height:44px}
+#screen-cleaning .cleaning-room-card{isolation:isolate;min-height:152px;background:linear-gradient(90deg,rgba(250,248,245,.97) 0%,rgba(250,248,245,.91) 42%,rgba(250,248,245,.42) 72%,rgba(250,248,245,.18) 100%),url('../assets/cleaning-rooms/living-room-light.webp') center/cover no-repeat!important}
+#screen-cleaning .cleaning-room-card:after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,transparent 48%,color-mix(in srgb,var(--room-accent) 10%,transparent))}
+#screen-cleaning .cleaning-room-card-main{min-height:116px;align-items:end}
+#screen-cleaning .cleaning-room-card-icon{background:rgba(255,255,255,.68);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#screen-cleaning .cleaning-room-card-copy h3{font-size:17px}
+#screen-cleaning .cleaning-room-card-copy p{font-size:10px}
+#screen-cleaning .cleaning-room-card-status,#screen-cleaning .cleaning-room-edit-button{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#screen-cleaning .cleaning-room-card .cleaning-routine-section,#screen-cleaning .cleaning-room-card .cleaning-routine-empty{background:color-mix(in srgb,var(--surface-1,var(--cleaning-surface)) 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+#screen-cleaning .cleaning-planned-room-card{position:relative;overflow:hidden;isolation:isolate;min-height:154px;padding:16px!important;border-radius:22px!important;border-color:color-mix(in srgb,var(--color-primary) 14%,var(--cleaning-border))!important;background:linear-gradient(90deg,rgba(250,248,245,.97) 0%,rgba(250,248,245,.90) 43%,rgba(250,248,245,.42) 72%,rgba(250,248,245,.17) 100%),url('../assets/cleaning-rooms/living-room-light.webp') center/cover no-repeat!important;box-shadow:var(--shadow-card)}
+#screen-cleaning .cleaning-planned-room-head,#screen-cleaning .cleaning-planned-room-items,#screen-cleaning .cleaning-planned-room-paused{position:relative;z-index:1}
+#screen-cleaning .cleaning-planned-room-head strong{font-size:16px!important;letter-spacing:-.02em}
+#screen-cleaning .cleaning-planned-room-head span{padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.68);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#screen-cleaning .cleaning-planned-room-item{min-height:52px;padding:9px 10px!important;border:1px solid rgba(255,255,255,.48);background:rgba(255,255,255,.70)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 7px 18px rgba(20,24,32,.07)}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card,[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card{color:#f8f7fb;background:linear-gradient(90deg,rgba(5,10,18,.96) 0%,rgba(5,10,18,.88) 42%,rgba(5,10,18,.48) 72%,rgba(5,10,18,.24) 100%),url('../assets/cleaning-rooms/living-room-light.webp') center/cover no-repeat!important;border-color:color-mix(in srgb,var(--room-accent,var(--color-primary)) 25%,rgba(255,255,255,.10))!important;box-shadow:0 18px 46px rgba(0,0,0,.32)}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card-icon,[data-theme*="dark"] #screen-cleaning .cleaning-room-edit-button,[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-head span{background:rgba(8,14,24,.68);color:#fff;border-color:rgba(255,255,255,.12)}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-item{background:rgba(8,14,24,.72)!important;border-color:rgba(255,255,255,.10);color:#f8f7fb}
+@media(max-width:370px){#screen-cleaning .cleaning-room-card{min-height:142px}#screen-cleaning .cleaning-room-card-main{min-height:108px}}
