@@ -41,21 +41,21 @@
 #screen-cleaning .cleaning-plan-checklist li{padding:7px 9px;border-radius:11px;background:rgba(255,255,255,.68);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 #screen-cleaning .cleaning-plan-card-footer{padding:9px 10px!important;border:1px solid rgba(255,255,255,.44)!important;border-radius:11px;background:rgba(255,255,255,.66);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 
-html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card,html[data-theme*="dark"] body #screen-cleaning .cleaning-planned-room-card,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-card{--room-photo:url('../assets/cleaning-rooms/room-atlas-dark.webp');color:#f8f7fb;background-image:linear-gradient(90deg,rgba(5,10,18,.66) 0%,rgba(5,10,18,.42) 27%,rgba(5,10,18,.14) 51%,rgba(5,10,18,.025) 71%,rgba(5,10,18,0) 84%),var(--room-photo)!important;border-color:color-mix(in srgb,var(--room-accent,var(--color-primary)) 30%,rgba(255,255,255,.10))!important;box-shadow:0 18px 46px rgba(0,0,0,.34)}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-card{background-image:linear-gradient(90deg,rgba(5,10,18,.70) 0%,rgba(5,10,18,.46) 28%,rgba(5,10,18,.16) 52%,rgba(5,10,18,.03) 72%,rgba(5,10,18,0) 85%),var(--room-photo)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card-copy h3{color:#fff;text-shadow:0 1px 9px rgba(0,0,0,.58)}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card-copy p{color:rgba(248,247,251,.76);text-shadow:0 1px 8px rgba(0,0,0,.52)}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card-icon,html[data-theme*="dark"] body #screen-cleaning .cleaning-planned-room-head span{background:rgba(8,14,24,.72);color:#fff;border-color:rgba(255,255,255,.12)}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-planned-room-item,html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card .cleaning-routine-section,html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card .cleaning-routine-empty{background:rgba(8,14,24,.76)!important;border-color:rgba(255,255,255,.10);color:#f8f7fb}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-room-icon,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-due,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-assignment,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-checklist li,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-card-footer{background:rgba(8,14,24,.72)!important;border-color:rgba(255,255,255,.10)!important;color:#f8f7fb}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-room span,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-assignment span,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-checklist small,html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-card-footer{color:rgba(248,247,251,.72)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-plan-card-footer strong{color:#fff!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card,[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card,[data-theme*="dark"] #screen-cleaning .cleaning-plan-card{--room-photo:url('../assets/cleaning-rooms/room-atlas-dark.webp');color:#f8f7fb;background-image:linear-gradient(90deg,rgba(5,10,18,.66) 0%,rgba(5,10,18,.42) 27%,rgba(5,10,18,.14) 51%,rgba(5,10,18,.025) 71%,rgba(5,10,18,0) 84%),var(--room-photo)!important;border-color:color-mix(in srgb,var(--room-accent,var(--color-primary)) 30%,rgba(255,255,255,.10))!important;box-shadow:0 18px 46px rgba(0,0,0,.34)}
+[data-theme*="dark"] #screen-cleaning .cleaning-plan-card{background-image:linear-gradient(90deg,rgba(5,10,18,.70) 0%,rgba(5,10,18,.46) 28%,rgba(5,10,18,.16) 52%,rgba(5,10,18,.03) 72%,rgba(5,10,18,0) 85%),var(--room-photo)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card-copy h3{color:#fff;text-shadow:0 1px 9px rgba(0,0,0,.58)}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card-copy p{color:rgba(248,247,251,.76);text-shadow:0 1px 8px rgba(0,0,0,.52)}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card-icon,[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-head span{background:rgba(8,14,24,.72);color:#fff;border-color:rgba(255,255,255,.12)}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-item,[data-theme*="dark"] #screen-cleaning .cleaning-room-card .cleaning-routine-section,[data-theme*="dark"] #screen-cleaning .cleaning-room-card .cleaning-routine-empty{background:rgba(8,14,24,.76)!important;border-color:rgba(255,255,255,.10);color:#f8f7fb}
+[data-theme*="dark"] #screen-cleaning .cleaning-plan-room-icon,[data-theme*="dark"] #screen-cleaning .cleaning-plan-due,[data-theme*="dark"] #screen-cleaning .cleaning-plan-assignment,[data-theme*="dark"] #screen-cleaning .cleaning-plan-checklist li,[data-theme*="dark"] #screen-cleaning .cleaning-plan-card-footer{background:rgba(8,14,24,.72)!important;border-color:rgba(255,255,255,.10)!important;color:#f8f7fb}
+[data-theme*="dark"] #screen-cleaning .cleaning-plan-room span,[data-theme*="dark"] #screen-cleaning .cleaning-plan-assignment span,[data-theme*="dark"] #screen-cleaning .cleaning-plan-checklist small,[data-theme*="dark"] #screen-cleaning .cleaning-plan-card-footer{color:rgba(248,247,251,.72)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-plan-card-footer strong{color:#fff!important}
 
 /* Room management stays discoverable: create, edit and the existing delete action in the editor remain reachable. */
 html body #screen-cleaning .cleaning-room-toolbar{display:flex!important;align-items:flex-end!important;gap:12px!important}
 html body #screen-cleaning .cleaning-add-room-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;border-radius:12px!important;padding:0 13px!important;font-size:10px!important;font-weight:900!important;white-space:nowrap!important;box-shadow:0 7px 18px rgba(39,28,72,.09)!important}
 html body #screen-cleaning .cleaning-room-card-actions>button.cleaning-room-edit-button,html body #screen-cleaning .cleaning-room-edit-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;min-width:44px!important;border-radius:11px!important;padding:0 9px!important;font-size:9px!important;font-weight:850!important;background:rgba(255,255,255,.72)!important;border:1px solid rgba(79,62,105,.14)!important;box-shadow:0 5px 14px rgba(31,25,48,.07)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-room-card-actions>button.cleaning-room-edit-button,html[data-theme*="dark"] body #screen-cleaning .cleaning-room-edit-button{background:rgba(8,14,24,.72)!important;border-color:rgba(255,255,255,.12)!important;color:#f8f7fb!important;box-shadow:0 6px 16px rgba(0,0,0,.22)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card-actions>button.cleaning-room-edit-button,[data-theme*="dark"] #screen-cleaning .cleaning-room-edit-button{background:rgba(8,14,24,.72)!important;border-color:rgba(255,255,255,.12)!important;color:#f8f7fb!important;box-shadow:0 6px 16px rgba(0,0,0,.22)!important}
 
 /* Slim room CTAs: visually quiet, still a full 44px touch target. */
 html body #screen-cleaning .cleaning-room-supplies-bar{display:grid!important;grid-template-columns:minmax(0,.94fr) minmax(0,1.30fr)!important;gap:7px!important;padding:0 12px 10px!important}
@@ -64,7 +64,7 @@ html body #screen-cleaning .cleaning-room-primary-action{font-size:10px!importan
 html body #screen-cleaning .cleaning-room-supplies-button{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:5px!important;overflow:hidden!important;background:rgba(255,255,255,.76)!important}
 html body #screen-cleaning .cleaning-room-supplies-button strong{display:block!important;min-width:0!important;max-width:100%!important;font-size:9.2px!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 html body #screen-cleaning .cleaning-room-supplies-button span{display:block!important;min-width:0!important;max-width:100%!important;font-size:7.9px!important;line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:right!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-room-primary-action,html[data-theme*="dark"] body #screen-cleaning .cleaning-room-supplies-button{background:rgba(8,14,24,.73)!important;border-color:rgba(255,255,255,.12)!important;color:#f8f7fb!important;box-shadow:0 6px 16px rgba(0,0,0,.20)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-primary-action,[data-theme*="dark"] #screen-cleaning .cleaning-room-supplies-button{background:rgba(8,14,24,.73)!important;border-color:rgba(255,255,255,.12)!important;color:#f8f7fb!important;box-shadow:0 6px 16px rgba(0,0,0,.20)!important}
 
 /* House-status LIGHT: premium glass chips and a genuinely light progress ring. */
 html body #screen-cleaning .cleaning-overview-ring{background:conic-gradient(#3a9e67 calc(var(--progress)*1%),rgba(255,255,255,.72) 0)!important;box-shadow:0 10px 28px rgba(45,64,54,.13),inset 0 0 0 1px rgba(255,255,255,.62)!important}
@@ -76,15 +76,15 @@ html body #screen-cleaning .cleaning-overview-chip.is-planned{color:#17683c!impo
 html body #screen-cleaning .cleaning-overview-chip.is-flexible{color:#6a3b91!important;background:rgba(247,239,253,.88)!important;border-color:rgba(130,78,167,.21)!important}
 html body #screen-cleaning .cleaning-overview-chip.is-attention{color:#8b5207!important;background:rgba(255,246,225,.90)!important;border-color:rgba(200,129,31,.24)!important}
 html body #screen-cleaning .cleaning-overview-chip.is-complete{color:#296b49!important;background:rgba(239,250,243,.88)!important;border-color:rgba(60,143,96,.20)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-ring{background:conic-gradient(var(--status-planned) calc(var(--progress)*1%),rgba(255,255,255,.19) 0)!important;box-shadow:0 12px 32px rgba(0,0,0,.24)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-ring:before{background:rgba(8,16,25,.78)!important;border-color:rgba(255,255,255,.06)!important;box-shadow:none!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-ring strong{color:#fff!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-ring span{color:rgba(255,255,255,.72)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip{background:rgba(7,13,21,.42)!important;border-color:rgba(255,255,255,.20)!important;box-shadow:none!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-planned{color:#6cf0a5!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-flexible{color:#d39bff!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-attention{color:#ffc35e!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-complete{color:#9ff0bd!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-ring{background:conic-gradient(var(--status-planned) calc(var(--progress)*1%),rgba(255,255,255,.19) 0)!important;box-shadow:0 12px 32px rgba(0,0,0,.24)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-ring:before{background:rgba(8,16,25,.78)!important;border-color:rgba(255,255,255,.06)!important;box-shadow:none!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-ring strong{color:#fff!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-ring span{color:rgba(255,255,255,.72)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip{background:rgba(7,13,21,.42)!important;border-color:rgba(255,255,255,.20)!important;box-shadow:none!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-planned{color:#6cf0a5!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-flexible{color:#d39bff!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-attention{color:#ffc35e!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-complete{color:#9ff0bd!important}
 
 /* Attention card: unmistakable hierarchy without a generic dashboard-warning box. */
 html body #screen-cleaning .cleaning-attention-card{padding:15px!important;border:1px solid color-mix(in srgb,var(--status-attention) 42%,var(--cleaning-border))!important;background:linear-gradient(135deg,color-mix(in srgb,var(--status-attention) 14%,var(--surface-2,var(--cleaning-surface))),var(--surface-3,var(--cleaning-surface-strong)) 72%)!important;box-shadow:0 13px 32px color-mix(in srgb,var(--status-attention) 13%,rgba(32,27,20,.16))!important}
@@ -95,8 +95,8 @@ html body #screen-cleaning .cleaning-attention-copy span{font-size:9.5px!importa
 html body #screen-cleaning .cleaning-attention-copy strong{font-size:16px!important;line-height:1.18!important}
 html body #screen-cleaning .cleaning-attention-meta{position:relative!important;z-index:1!important;margin-top:11px!important;color:var(--cleaning-text)!important;font-size:10px!important;font-weight:800!important;opacity:.82!important}
 html body #screen-cleaning .cleaning-attention-action{position:relative!important;z-index:1!important;min-height:44px!important;margin-top:12px!important;border:1px solid color-mix(in srgb,var(--status-attention) 42%,transparent)!important;border-radius:12px!important;background:linear-gradient(135deg,#edaa39,#d77b12)!important;color:#fff!important;font-size:11px!important;font-weight:900!important;box-shadow:0 8px 20px color-mix(in srgb,var(--status-attention) 24%,transparent)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-attention-card{background:linear-gradient(135deg,rgba(128,78,13,.26),rgba(8,14,24,.88) 72%)!important;border-color:rgba(255,184,72,.24)!important;box-shadow:0 16px 38px rgba(0,0,0,.26)!important}
-html[data-theme*="dark"] body #screen-cleaning .cleaning-attention-meta{color:rgba(248,247,251,.86)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-attention-card{background:linear-gradient(135deg,rgba(128,78,13,.26),rgba(8,14,24,.88) 72%)!important;border-color:rgba(255,184,72,.24)!important;box-shadow:0 16px 38px rgba(0,0,0,.26)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-attention-meta{color:rgba(248,247,251,.86)!important}
 
 /* Quick actions: coherent line icons, larger tinted containers and stronger click affordance. */
 html body #screen-cleaning .cleaning-quick-action{min-height:86px!important;padding:10px!important;border-radius:15px!important;box-shadow:0 7px 18px rgba(26,23,36,.07)!important;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important}
