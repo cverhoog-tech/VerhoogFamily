@@ -1,17 +1,187 @@
 :root {
-  --color-primary: #3f7f2f;
-  --color-primary-dark: #2f6323;
-  --color-primary-soft: #f1f7ee;
-  --color-bg: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-soft: #f8faf7;
-  --color-border: #edf0ec;
-  --color-text: #1f2933;
-  --color-muted: #697386;
+  /* FamilyApp shared visual language — premium consumer UI */
+  --color-primary: #6f3df4;
+  --color-primary-dark: #5325c9;
+  --color-primary-soft: #f1ebff;
+  --color-bg: #fbf9f6;
+  --color-surface: rgba(255, 255, 255, 0.78);
+  --color-surface-soft: rgba(255, 255, 255, 0.58);
+  --color-surface-strong: rgba(255, 255, 255, 0.94);
+  --color-border: rgba(68, 54, 89, 0.12);
+  --color-text: #1c1822;
+  --color-muted: #716a7c;
+
+  /* Semantic accents shared by Cleaning and Tasks. */
+  --status-planned: #28a965;
+  --status-planned-soft: rgba(40, 169, 101, 0.12);
+  --status-flexible: #7b42ed;
+  --status-flexible-soft: rgba(123, 66, 237, 0.12);
+  --status-attention: #e89216;
+  --status-attention-soft: rgba(232, 146, 22, 0.13);
+  --status-critical: #d84b54;
+  --status-critical-soft: rgba(216, 75, 84, 0.12);
+  --status-complete: #38ad66;
+  --status-complete-soft: rgba(56, 173, 102, 0.12);
+
+  /* Surface hierarchy. */
+  --surface-page: var(--color-bg);
+  --surface-1: var(--color-surface-soft);
+  --surface-2: var(--color-surface);
+  --surface-3: var(--color-surface-strong);
+  --surface-glass-blur: 20px;
+  --surface-glass-saturate: 1.08;
+
+  /* Spacing: intentionally compact enough for iPhone, roomy enough for premium cards. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+
   --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
   --radius-pill: 999px;
-  --shadow-card: 0 12px 30px rgba(17, 24, 39, 0.08);
-  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --shadow-soft: 0 8px 24px rgba(39, 26, 58, 0.07);
+  --shadow-card: 0 14px 34px rgba(39, 26, 58, 0.10);
+  --shadow-float: 0 20px 48px rgba(39, 26, 58, 0.14);
+  --shadow-primary: 0 10px 26px rgba(111, 61, 244, 0.22);
+
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  --text-display: clamp(30px, 8vw, 40px);
+  --text-title: clamp(24px, 6.5vw, 32px);
+  --text-section: 18px;
+  --text-card-title: 17px;
+  --text-body: 15px;
+  --text-caption: 12px;
+
+  --weight-regular: 500;
+  --weight-medium: 650;
+  --weight-semibold: 750;
+  --weight-bold: 850;
+  --tracking-tight: -0.025em;
+
+  --touch-target: 44px;
+  --control-height: 48px;
+  --motion-fast: 150ms;
+  --motion-base: 220ms;
+  --motion-slow: 360ms;
+  --ease-premium: cubic-bezier(.2, .8, .2, 1);
+}
+
+[data-theme*="dark"] {
+  --color-primary: #a35cff;
+  --color-primary-dark: #8440ec;
+  --color-primary-soft: rgba(143, 75, 255, 0.17);
+  --color-bg: #050b14;
+  --color-surface: rgba(14, 23, 36, 0.76);
+  --color-surface-soft: rgba(12, 21, 33, 0.58);
+  --color-surface-strong: rgba(17, 27, 42, 0.92);
+  --color-border: rgba(184, 199, 224, 0.14);
+  --color-text: #f7f7fb;
+  --color-muted: #a9b0be;
+
+  --status-planned: #36d67d;
+  --status-planned-soft: rgba(54, 214, 125, 0.14);
+  --status-flexible: #b05cff;
+  --status-flexible-soft: rgba(176, 92, 255, 0.16);
+  --status-attention: #ffab2f;
+  --status-attention-soft: rgba(255, 171, 47, 0.15);
+  --status-critical: #ff626d;
+  --status-critical-soft: rgba(255, 98, 109, 0.15);
+  --status-complete: #43d47a;
+  --status-complete-soft: rgba(67, 212, 122, 0.14);
+
+  --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.22);
+  --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.30);
+  --shadow-float: 0 22px 56px rgba(0, 0, 0, 0.42);
+  --shadow-primary: 0 10px 30px rgba(154, 78, 255, 0.25);
+}
+
+/* Small reusable primitives. Existing module selectors can adopt these tokens incrementally. */
+.fa-premium-surface {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(var(--surface-glass-blur)) saturate(var(--surface-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--surface-glass-blur)) saturate(var(--surface-glass-saturate));
+}
+
+.fa-section-heading {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-system);
+  font-size: var(--text-section);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.fa-status-chip {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+
+.fa-icon-button {
+  width: var(--touch-target);
+  height: var(--touch-target);
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--color-text);
+  box-shadow: var(--shadow-soft);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fa-primary-button,
+.fa-secondary-button {
+  min-height: var(--touch-target);
+  border-radius: 14px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: var(--weight-bold);
+  transition: transform var(--motion-fast) var(--ease-premium), box-shadow var(--motion-base) var(--ease-premium), opacity var(--motion-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fa-primary-button {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 70%, white 10%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 90%, white 10%), var(--color-primary-dark));
+  color: #fff;
+  box-shadow: var(--shadow-primary);
+}
+
+.fa-secondary-button {
+  border: 1px solid var(--color-border);
+  background: var(--surface-2);
+  color: var(--color-text);
+  box-shadow: var(--shadow-soft);
+}
+
+.fa-primary-button:active,
+.fa-secondary-button:active,
+.fa-icon-button:active {
+  transform: scale(.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fa-primary-button,
+  .fa-secondary-button,
+  .fa-icon-button {
+    transition: none;
+  }
 }
