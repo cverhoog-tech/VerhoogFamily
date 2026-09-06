@@ -153,10 +153,10 @@
   }
   function bindLifecycle(){
     if(lifecycleBound)return;lifecycleBound=true;
-    window.addEventListener('pageshow',function(event){
+    if(typeof window.addEventListener==='function')window.addEventListener('pageshow',function(event){
       if(event&&event.persisted&&state!=='ready'&&currentUser)resume();
     });
-    document.addEventListener('visibilitychange',function(){
+    if(document&&typeof document.addEventListener==='function')document.addEventListener('visibilitychange',function(){
       if(document.visibilityState==='visible'&&state!=='ready'&&currentUser&&!bootstrapPromise)resume();
     });
   }
