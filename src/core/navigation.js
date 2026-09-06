@@ -165,6 +165,7 @@ var _currentScreen = 'home';
 var _navBusy = false;
 var _pendingScreen = null;
 var _cleaningModulePromise = null;
+var _cleaningPremiumFeedbackPromise = null;
 var _cleaningStylePromise = null;
 
 function ensureCleaningScreen(){
@@ -209,7 +210,10 @@ function renderCleaningModule(){
   if(!_cleaningModulePromise){
     _cleaningModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1');
   }
-  Promise.all([ensureCleaningStyles(),_cleaningModulePromise]).then(function(result){
+  if(!_cleaningPremiumFeedbackPromise){
+    _cleaningPremiumFeedbackPromise=import('/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');
+  }
+  Promise.all([ensureCleaningStyles(),_cleaningModulePromise,_cleaningPremiumFeedbackPromise]).then(function(result){
     if(_currentScreen!=='cleaning')return;
     var mod=result[1];
     if(mod&&typeof mod.renderCleaningScreen==='function')mod.renderCleaningScreen(root);
