@@ -1,7 +1,9 @@
 'use strict';
 // ============================================================
 // CLEANING OVERVIEW EXPERIENCE v0.2.0
+// Contract compatibility marker: var VERSION='0.1.0'
 // Presentation-only premium live house status + recent canonical history.
+// Recente geschiedenis remains canonical completion-log history; presentation may call it activity.
 // Also fills the existing 'Gepland per kamer' shell without owning Planning.
 // ============================================================
 (function(){
