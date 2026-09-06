@@ -84,7 +84,8 @@ async function main(){
   assert(!caps.STRUCTURE&&caps.PLANNING&&caps.ASSIGNMENTS&&caps.AVAILABILITY&&caps.SUPPLIES,'member can plan/transfer/availability/supplies but not structure');
   caps=permissions.capabilities(permissions.ROLE.LIMITED);
   assert(!caps.STRUCTURE&&!caps.PLANNING&&!caps.ASSIGNMENTS&&!caps.SUPPLIES&&caps.EXECUTION&&caps.RESPOND&&caps.HELP,'limited profile only keeps execution/respond/help plus personal preferences');
-  if(!failed)ok('household roles map to the intended Cleaning capability matrix');
+  assert(source.includes("[data-cleaning-supply-form]',function(node){markHidden(node,!can(CAP.SUPPLIES))"),'supply creation UI must follow SUPPLIES capability instead of manager-only visibility');
+  if(!failed)ok('household roles map to the intended Cleaning capability matrix and UI capability ownership');
 
   currentRole='owner';
   await repo.createRoom({name:'Badkamer'});
