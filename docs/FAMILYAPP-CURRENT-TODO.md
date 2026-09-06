@@ -2,128 +2,120 @@
 
 Branch: `agent/household-rebuild-v2`
 Roadmap: `docs/household-rebuild-v2-roadmap.md`
-STEP 13 spec: `docs/STEP13-ACTIVITY-FEED-SPEC.md`
 Phase tracker: `docs/household-rebuild-v2-progress.md`
 Update history: `docs/FAMILYAPP-UPDATE-LOG.md`
 Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
+Cleaning current status: `FamilyApp-Schoonmaken-current-status.md`
+Cleaning milestone log: `FamilyApp-Schoonmaken-milestone-log.md`
 
 New chats/agents should read these files before changing the rebuild branch.
 
 ## Current phase
 
-**STEP 12 — Profile / presence / avatars is COMPLETE + REAL-DEVICE ACCEPTED and merged into `agent/household-rebuild-v2`.**
+**STEP 14 — Schoonmaken is the active roadmap phase and is now a FUNCTIONAL CLOSE-OUT CANDIDATE.**
 
-**STEP 13 — Activity / Feed is now the active roadmap phase. Product scope for the Feed additions was approved on 2026-08-30.**
+The earlier STEP 13 Activity / Feed work is already part of the rebuild branch baseline. Do not reopen it unless a concrete regression requires that.
 
 `main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
 
-## Action Inbox — ACTIVE (started 2026-09-06)
+## Action Inbox — REAL-DEVICE ACCEPTED (06-09-2026)
 
-New cross-module milestone, independent of STEP numbering: a single app-wide Inbox for every request that needs a yes/no decision. Full detail: `docs/household-rebuild-v2-progress.md` → "Action Inbox — ACTIVE" and `docs/FAMILYAPP-UPDATE-LOG.md` → `2026-09-06 — Action Inbox milestone`.
+The cross-module Action Inbox is accepted on iPhone as the central decision surface:
 
-- [x] Fase 1 — Audit, accepted, no architecture conflict.
-- [x] Fase 2/3 — `src/platform/inbox/actionInboxRegistry.js` + `actionInboxStore.js` (canonical-state presence, action routing to existing runtimes only).
-- [x] Fase 4 — `actionInboxHeaderBridge.js` (envelope icon + independently-owned badge).
-- [x] Fase 5 — `actionInboxScreen.js` (functional premium basis).
-- [x] `scripts/test-action-inbox.js` + full existing suite re-run green locally.
-- [ ] Push to `agent/household-rebuild-v2` with fresh-SHA writes + byte-verified diff.
-- [ ] CI run confirmed on GitHub.
-- [ ] Unique Vercel preview.
-- [ ] Real-device acceptance checklist (13 points from the milestone brief).
+- ✉️ Inbox = open requests requiring a decision.
+- 🔔 Meldingen = informational updates.
+- Presence in Inbox is derived from canonical domain state, never from NotificationStore delivery.
+- Task help, Task swap, Party Quest invites, Cleaning help, Cleaning routine transfer and Cleaning counterproposals route to the existing domain runtimes.
+- `ActionInboxStore` is the single owner of `openActionCount`.
+- No `/inboxRequests` canonical database and no second domain writer were introduced.
+- Functional Action Inbox contract commit: `6fd4c0cefceca0e957800a71ca5614a983ec1ae3`.
+- Real-device accepted preview: `https://verhoog-family-ks84yij7s-cverhoog-techs-projects.vercel.app`.
+- Household Rebuild Contracts and Vercel were green.
 
-## STEP 13 approved product contract
+## STEP 14 — Cleaning functional close-out candidate
 
-- Preserve current manual social posts and their existing visual/like/comment behavior.
-- Introduce separate immutable household activity events with deterministic IDs and idempotent canonical domain producers.
-- Activity cards use fixed subtle pastel families for fast scanning:
-  - Tasks: mint/green.
-  - Meals/Recipes: peach/soft orange.
-  - Shopping: soft yellow.
-  - Agenda: soft blue.
-  - Party Quest/XP/Achievements: lilac.
-  - Generic household updates: neutral cream/grey.
-- Provide deliberate dark-mode equivalents.
-- Remove fake/demo Feed counters and hardcoded activity totals.
-- Add structured member tagging using UID.
-- Add structured recipe tagging using canonical recipe ID.
-- Add interactive meal proposals from the Feed with recipe/date/message/audience and realtime approval/decline state.
-- Pending proposals are interactive state, not immutable activity events.
-- Approval transition must be exactly-once and hand off to canonical Meal planning.
-- After approval, offer **Voeg ingrediënten toe aan boodschappenlijst**.
-- Allow shopping-list selection when multiple lists are available.
-- Show ingredient preview with add/skip/merge/exclude behavior where practical; avoid blind duplicates.
-- Feed must call canonical Meal/Shopping services and never bypass their mutation authority.
-- Only confirmed successful results emit immutable meal/shopping activity events.
+Latest functional candidate before documentation-only commits:
+`cabf639382be4f0bd5a8a2c540855b914dbedffa`
 
-## STEP 13 execution TODO
+CI for this candidate:
+- Household Rebuild Contracts: **SUCCESS** — run `34000853880`.
+- Vercel: **SUCCESS**.
+- `main`: untouched.
 
-### 13.1 — Activity repository / schema / lifecycle
-- [ ] Canonical household `activityEvents` repository/schema.
-- [ ] Deterministic event IDs/occurrence keys + immutable-write contract.
-- [ ] HouseholdContext stale-context guards.
-- [ ] Exact subscribe/unsubscribe/rebind behavior.
-- [ ] Isolation/lifecycle/idempotency contract tests.
+### Functional scope now implemented
 
-### 13.2 — Domain producers
-- [ ] Tasks.
-- [ ] Meals.
-- [ ] Shopping.
-- [ ] Agenda where useful.
-- [ ] Party Quest/progression where useful.
-- [ ] Producer retry/reconnect duplicate suppression.
+- [x] Rooms + routines CRUD, templates, ordering and safe soft-delete.
+- [x] Weekplanner, personal approval, rolling horizon and member display filter.
+- [x] Task + Agenda projections and controlled reverse sync to CleaningOccurrence.
+- [x] Explicit incomplete-work flow: later this week, next occurrence, skip, ask for help.
+- [x] Cleaning help request accept/decline routed through Action Inbox and existing Cleaning runtime.
+- [x] Personal display preference: Tijd / Aantal / Beide.
+- [x] Temporary availability: sick, temporarily unavailable, busy week, vacation and planning pause without backlog.
+- [x] Richer room/routine history from canonical completionLogs.
+- [x] Bundled Cleaning collaboration notifications + daily reminder.
+- [x] Supplies / inventory / Weekvoorraad / explicit Shopping handoff.
+- [x] New Cleaning Shopping items preserve stable Cleaning IDs (`cleaningSupplyId`, occurrence/room/routine IDs).
+- [x] Conservative lifecycle cleanup for open derived Task/Agenda/Shopping projections while completed/manual history stays protected.
+- [x] Shared household activity projection for completed Cleaning work.
+- [x] Household-key safety and create-retry idempotency hardening.
+- [x] Runtime reachability contract now covers the full Cleaning runtime including role policy.
+- [x] Central client role/capability policy: Beheerder / Gezinslid / Beperkt profiel.
 
-### 13.3 — Unified Feed presentation
-- [ ] Project manual posts + activity events chronologically.
-- [ ] Preserve manual-post visuals.
-- [ ] Pastel event-family cards + dark mode.
-- [ ] Remove demo/hardcoded counters.
-- [ ] Mobile readability/premium polish.
+### Role/capability product contract
 
-### 13.4 — Rich tags
-- [ ] Member tag selection/storage/render/open by UID.
-- [ ] Recipe tag selection/storage/render/open by recipe ID.
-- [ ] Stable behavior after profile/recipe changes.
+Existing household roles are mapped without a new account model:
 
-### 13.5 — Meal proposals / approval / Shopping handoff
-- [ ] Canonical proposal state/service.
-- [ ] Feed proposal composer.
-- [ ] Explicit approval policy + approve/decline/alternative response.
-- [ ] Exactly-once accepted-proposal transition.
-- [ ] Plan-meal confirmation.
-- [ ] Optional ingredient-to-shopping-list action.
-- [ ] Shopping-list chooser.
-- [ ] Ingredient add/skip/merge/exclude preview.
-- [ ] Canonical Meal/Shopping service mutations.
-- [ ] Deterministic successful-result activity events.
+- `owner` / `admin` → **Beheerder**.
+- `adult` / `member` → **Gezinslid**.
+- `child` / `limited` / `restricted` → **Beperkt profiel**.
 
-### 13.6 — Interaction / compatibility
-- [ ] Preserve manual post likes/comments.
-- [ ] Define allowed interactions per activity/proposal type.
-- [ ] Canonical UID/avatar/member presentation.
-- [ ] Quarantine duplicate/legacy Feed authority.
-- [ ] Reload/reconnect duplicate-proposal/action/event tests.
+Current Cleaning behavior:
 
-### 13.7 — Integrated acceptance
-- [ ] Syntax/static checks.
-- [ ] STEP 13 contract/regression tests.
-- [ ] Full relevant rebuild CI.
-- [ ] Vercel Preview.
-- [ ] Bundled real-iPhone acceptance.
-- [ ] Two-device realtime Feed/tag/meal-proposal test.
-- [ ] Explicit idempotency test for meal approval + shopping ingredient handoff.
-- [ ] Sync TODO/progress/update log and close STEP 13 only after acceptance.
+- Beheerder: full structural rooms/routines, household planning, assignments, household availability, supplies and execution.
+- Gezinslid: may plan, initiate routine transfers/counterproposals, manage Cleaning supplies, manage own availability, execute work and respond to requests; structural room/routine changes remain manager-only.
+- Beperkt profiel: assigned work execution, request responses/help and personal display preference; no structural, plan-generation, supply or availability initiation.
 
-## Separate lifecycle / product regressions
-- [ ] Owner-transfer **Gezin verlaten** real smoke test.
-- [-] Google login post-auth handoff/startup follow-up remains open.
-- [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred and does not reopen STEP 11.
+`scripts/test-cleaning-permissions.js` executes this matrix as behavior, not only string assertions.
+
+### Release-security boundary — intentionally not changed in this milestone
+
+`database.rules.json` still grants active household members broad write access under the generic household `$sharedData` boundary. The new client policy provides the intended product behavior, but **true server-side role enforcement requires a deliberate Firebase Rules migration before public release**.
+
+That migration is a separate release-security gate because production Firebase Rules must not be changed/deployed from this branch without explicit approval.
+
+## Remaining before STEP 14 functional acceptance
+
+- [ ] Real-device smoke on the new role/capability layer.
+- [ ] Confirm existing owner/manager Cleaning flows did not regress.
+- [ ] Preferably check one adult/member account: structural controls blocked/hidden while planning/transfer/supplies/own availability still work.
+- [ ] If a child/limited account is available, check execution + accept/decline/help remain available while management actions are absent.
+- [ ] Mark the close-out checkpoint accepted only after explicit user confirmation.
+
+## After functional acceptance
+
+### STEP 14 visual/polish phase
+- [ ] Apply definitive premium Cleaning visual specification in light and dark mode.
+- [ ] Final hierarchy, hero/background assets, spacing, motion/microinteractions and 44×44 touch targets.
+- [ ] Final per-room scheduled-work presentation and supplies affordance.
+- [ ] Final empty/loading/error states.
+
+### Optional advisory scope
+- [ ] Data-driven frequency/planning suggestions only if they remain advisory and do not become a second planning authority.
+- [ ] Optional Cleaning assistant insights only after visual/function baseline is stable.
+
+### Public-release security gate
+- [ ] Design/test Firebase Rules role enforcement for Cleaning/shared household writes in a safe non-production rules workflow.
+- [ ] Deploy production rules only after explicit approval and regression testing.
 
 ## Standing guardrails
+
 - Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
-- Main stays untouched until explicit approval.
+- `main` stays untouched until explicit approval.
 - No production deploy or production Firebase Rules change without explicit approval.
-- Accepted domain authorities remain canonical; STEP 13 must not create second Task/Meal/Shopping/Progression/Notification authorities.
-- UID/household identity comes from HouseholdContext/Firebase Auth.
-- Realtime subscriptions require exact cleanup and stale-context protection.
-- Accelerated validation may bundle low/medium-risk checks; keep security/auth/cross-household/idempotency/release-blocking checks explicit.
-- Every meaningful development checkpoint synchronizes this TODO, the progress tracker and update log.
+- `CleaningOccurrence` remains the only canonical source of truth for a concrete Cleaning occurrence.
+- Tasks and Agenda remain derived projections.
+- Action Inbox remains a read/projection/action-routing layer and never becomes request truth.
+- Shopping add and stock replenishment remain explicit user actions.
+- Pause/availability must never create a backlog of missed occurrences.
+- Realtime subscriptions require exact cleanup and stale HouseholdContext protection.
+- New real-device checkpoints require green relevant CI and a unique Vercel preview.
