@@ -116,18 +116,21 @@ forbidRegex(inbox, /inboxRequests/, 'Action Inbox must not introduce canonical i
 if (!failed) ok('Action Inbox keeps Cleaning requests as canonical-domain projections with routed actions');
 
 // ------------------------------------------------------------
-// 6. Role policy is centralized and remains a non-writer.
+// 6. Role policy is centralized, generic for adult members and non-writer.
 // ------------------------------------------------------------
 const permissions = file('src/modules/cleaning/cleaningPermissions.js');
 requireText(permissions, "owner/admin", 'Cleaning role policy must document manager mapping');
 requireText(permissions, "adult/member", 'Cleaning role policy must document household member mapping');
 requireText(permissions, "child/limited/restricted", 'Cleaning role policy must document limited-profile mapping');
-requireText(permissions, "STRUCTURE:'STRUCTURE'", 'Cleaning role policy must expose structural capability');
+requireText(permissions, "STRUCTURE:'STRUCTURE'", 'Cleaning role policy must expose normal structural capability');
+requireText(permissions, "DESTRUCTIVE_STRUCTURE:'DESTRUCTIVE_STRUCTURE'", 'Cleaning role policy must separate destructive structural capability');
+requireText(permissions, "if(value===ROLE.MEMBER){base[CAP.STRUCTURE]=true", 'Every adult/member must receive normal room/routine management rights');
+requireText(permissions, "['removeRoom','removeRoutineItem']", 'Permanent structure removal must remain separately guarded');
 requireText(permissions, "PLANNING:'PLANNING'", 'Cleaning role policy must expose planning capability');
 requireText(permissions, "RESPOND:'RESPOND'", 'Cleaning role policy must preserve request-response capability');
 forbidRegex(permissions, /\.ref\s*\(/, 'Cleaning permission policy must never write Firebase directly');
 requireText(permissions, 'Production Firebase Rules are deliberately NOT changed/deployed here.', 'Client role policy must keep the production Firebase Rules boundary explicit');
-if (!failed) ok('role capabilities are centralized without creating a new Cleaning writer');
+if (!failed) ok('adult household members keep normal Cleaning management while destructive/admin powers stay separated');
 
 // ------------------------------------------------------------
 // 7. Dedicated regression contracts that make up functional close-out.
