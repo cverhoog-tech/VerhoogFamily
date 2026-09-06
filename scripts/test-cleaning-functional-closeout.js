@@ -42,6 +42,7 @@ function forbidRegex(source, regex, label) {
 // ------------------------------------------------------------
 const bootstrap = file('src/modules/cleaning/cleaningExperienceBootstrap.js');
 [
+  'cleaningPermissions.js',
   'cleaningExceptionContract.js',
   'cleaningExecutionSync.js',
   'cleaningExecutionUiGuard.js',
@@ -115,10 +116,25 @@ forbidRegex(inbox, /inboxRequests/, 'Action Inbox must not introduce canonical i
 if (!failed) ok('Action Inbox keeps Cleaning requests as canonical-domain projections with routed actions');
 
 // ------------------------------------------------------------
-// 6. Dedicated regression contracts that make up functional close-out.
+// 6. Role policy is centralized and remains a non-writer.
+// ------------------------------------------------------------
+const permissions = file('src/modules/cleaning/cleaningPermissions.js');
+requireText(permissions, "owner/admin", 'Cleaning role policy must document manager mapping');
+requireText(permissions, "adult/member", 'Cleaning role policy must document household member mapping');
+requireText(permissions, "child/limited/restricted", 'Cleaning role policy must document limited-profile mapping');
+requireText(permissions, "STRUCTURE:'STRUCTURE'", 'Cleaning role policy must expose structural capability');
+requireText(permissions, "PLANNING:'PLANNING'", 'Cleaning role policy must expose planning capability');
+requireText(permissions, "RESPOND:'RESPOND'", 'Cleaning role policy must preserve request-response capability');
+forbidRegex(permissions, /\.ref\s*\(/, 'Cleaning permission policy must never write Firebase directly');
+requireText(permissions, 'Production Firebase Rules are deliberately NOT changed/deployed here.', 'Client role policy must keep the production Firebase Rules boundary explicit');
+if (!failed) ok('role capabilities are centralized without creating a new Cleaning writer');
+
+// ------------------------------------------------------------
+// 7. Dedicated regression contracts that make up functional close-out.
 // ------------------------------------------------------------
 [
   'scripts/test-cleaning-runtime-reachability.js',
+  'scripts/test-cleaning-permissions.js',
   'scripts/test-cleaning-availability.js',
   'scripts/test-cleaning-execution-exceptions.js',
   'scripts/test-cleaning-execution-sync.js',
