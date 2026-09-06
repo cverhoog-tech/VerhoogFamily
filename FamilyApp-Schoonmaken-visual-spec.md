@@ -2,9 +2,85 @@
 
 Status: **GOEDGEKEURD / CANONIEKE LAYOUT**
 Datum: 2026-08-30
+Laatste visuele baseline-bevestiging: 2026-09-06
 Branch: `agent/household-rebuild-v2`
 
 Deze specificatie legt de goedgekeurde premium Schoonmaken-indeling vast. De goedgekeurde dark-mode mock-up is de visuele referentie voor compositie, informatiehiërarchie en interactie. De uiteindelijke implementatie moet dezelfde layout ook als volwaardige light-mode variant leveren.
+
+## 0. Definitieve premium art-direction baseline — 2026-09-06
+
+De op 2026-09-06 opnieuw aangeleverde light- en dark-mode mockups gelden vanaf deze fase als **primaire visuele referentie** naast de functionele regels in dit document. De implementatie hoeft niet pixel-voor-pixel een statische mockup te kopiëren, maar moet aantoonbaar dezelfde ontwerpkarakteristiek, hiërarchie en kwaliteitslat halen.
+
+Kernrichting voor FamilyApp:
+
+**warm cinematic surfaces + contextual photography + restrained glass + semantic status colour + violet FamilyApp identity + native iOS spacing/interaction.**
+
+Dit betekent concreet:
+
+- FamilyApp moet voelen als een hoogwaardige consumer-app, niet als een generiek SaaS-dashboard.
+- Schoonmaken is de visuele benchmark voor de verdere harmonisatie van FamilyApp.
+- Contextuele huis-/kamerfotografie is onderdeel van de componentcompositie en niet alleen losse decoratie.
+- Fotografie krijgt altijd gecontroleerde overlays/gradients zodat tekst en controls betrouwbaar leesbaar blijven.
+- Niet iedere kaart krijgt tegelijk glow, gradient en fotografie: hero's en belangrijke statuskaarten mogen rijk zijn; secundaire surfaces blijven rustiger zodat visuele hiërarchie behouden blijft.
+- Status beïnvloedt subtiel de hele component en niet alleen een badge: border, ambient tint/glow, icon treatment en relevante CTA mogen de statussemantiek ondersteunen.
+- Statussemantiek blijft: gepland/afgerond groen-teal, flexibel violet/paars, wacht/aandacht amber-goud/oranje, kritisch/ontbreekt gecontroleerd rood.
+- Violet blijft de herkenbare FamilyApp-identiteit voor navigatie en primaire interactie, ook wanneer een module eigen semantische statuskleuren gebruikt.
+- Iconen krijgen waar passend een hoogwaardige getinte/glass container in plaats van generieke grijze lijniconen zonder context.
+- Avatars zijn onderdeel van de informatiehiërarchie en worden compact, helder en consistent gepresenteerd.
+- Cards zijn rijk en ruim genoeg voor mobile touch, maar bevatten geen onnodige dashboard-dichtheid.
+- Alle primaire interactieve targets blijven minimaal 44x44 px.
+
+### Light mode baseline
+
+- Warme off-white/crème app-basis; geen klinisch wit canvas.
+- Zachte elevation, zeer subtiele borders en gecontroleerde shadows.
+- Heldere, warme fotografie geïntegreerd in hero's en kamerkaarten.
+- Licht getinte glass/surface-lagen in plaats van platte witte rechthoeken.
+- Veel ademruimte en sterke typografische hiërarchie.
+- Semantische kleuren zijn verfijnd en niet overdreven verzadigd.
+- Paars blijft het herkenbare primaire FamilyApp-accent.
+
+### Dark mode baseline
+
+- Diepe bijna-zwarte/navy basis, niet simpelweg `black` met dezelfde light-mode kaarten erbovenop.
+- Donkere, sfeervolle fotografie met lokale lichtbronnen en gecontroleerd contrast.
+- Translucent/donkere surfaces met subtiele gekleurde edge-glows waar status of interactie dat rechtvaardigt.
+- Groen/teal, violet en amber mogen sterker spreken dan in light mode, maar neon-overload wordt expliciet vermeden.
+- Belangrijke hero/statuscomponenten mogen cinematic zijn; ondersteunende controls blijven rustiger.
+
+### Relatie Schoonmaken ↔ Taken
+
+Schoonmaken en Taken moeten dezelfde designfamilie gebruiken voor onder andere:
+
+- spacing;
+- radii;
+- surface hierarchy;
+- shadows/glass;
+- typography;
+- chips/badges;
+- buttons en icon-buttons;
+- avatar presentation;
+- progress UI;
+- empty/loading/error states;
+- motion/microinteractions;
+- light/dark tokenlogica.
+
+Ze worden **niet identiek** gemaakt. Schoonmaken behoudt warme huis-/kamerfotografie en duidelijke cleaning/statussemantiek. Taken gebruikt dezelfde kwaliteitsstandaard en primitives, maar behoudt sterker het violet FamilyApp/quest-karakter en de bestaande taaksemantiek. Taakkaarten mogen dus dezelfde primitives gebruiken als schoonmaakkaarten zonder visueel kamerkaarten te worden.
+
+### Implementatievolgorde premium visual polish
+
+1. Audit actuele Schoonmaken- en Taken-UI + bestaande shared primitives.
+2. Shared Visual Language vastzetten zonder een groot nieuw design-framework te introduceren.
+3. Schoonmaken Overzicht redesign.
+4. Schoonmaken Planning redesign.
+5. Schoonmaken Kamers + Gepland per kamer redesign.
+6. Schoonmaken dialogs/empty/loading/error + volledige light/dark polish.
+7. Taken-overzicht visueel harmoniseren.
+8. Bestaande taakkaarten redesignen zonder functionele taakarchitectuur te wijzigen.
+9. Cross-module consistency pass.
+10. Regressie/CI/unieke preview en daarna real-device acceptatie.
+
+De functionele STEP 14-architectuur en canonical-state regels veranderen door deze visual-polishfase niet.
 
 ## 1. Niet onderhandelbare ontwerpprincipes
 
