@@ -12,6 +12,7 @@
   var startedUid=null;
   var bootstrapPromise=null;
   var bootstrapUid=null;
+  var lifecycleBound=false;
 
   function emit(){
     var snap=status();
@@ -26,9 +27,31 @@
   function assignUser(user){currentUser=user||null;window.fbUser=user||null;try{fbUser=user||null;}catch(e){}}
   function clearBootstrap(work){if(bootstrapPromise===work){bootstrapPromise=null;bootstrapUid=null;}}
 
+  function applyCachedTheme(){
+    try{
+      var dark=localStorage.getItem('familie_theme_dark');
+      var nextDark=dark===null?!!window.isDark:dark==='1';
+      var nextTheme=typeof window.currentTheme==='string'&&window.currentTheme?window.currentTheme:'nature';
+      if(typeof window.applyTheme==='function')window.applyTheme(nextTheme,nextDark);
+    }catch(e){}
+  }
+  function claimStartupReveal(){
+    // The old index fallback checks only _appStarted. Claim it immediately so
+    // it cannot reveal Home from stale localStorage before Firebase + household
+    // resolution has completed. Session state below remains the real readiness source.
+    window.__familyAppSessionBootOwner=true;
+    window._appStarted=true;
+    applyCachedTheme();
+    var el=document.getElementById('login-screen');
+    if(el)el.style.background='var(--c-bg, var(--c-surface, #ffffff))';
+  }
   function loginScreen(show){
     var el=document.getElementById('login-screen');
-    if(el)el.style.display=show?'flex':'none';
+    if(el){
+      el.style.opacity='1';
+      el.style.transition='none';
+      el.style.display=show?'flex':'none';
+    }
   }
   function resetLoginUi(){
     var s1=document.getElementById('login-step-1'),s2=document.getElementById('login-step-2');
@@ -37,17 +60,17 @@
   }
   function revealApp(user){
     if(!user||!isCurrent(generation,user))return;
-    if(startedUid===user.uid&&window._appStarted){setState('ready');return;}
+    if(startedUid===user.uid&&window._appStarted&&state==='ready')return;
     window._appStarted=true;startedUid=user.uid;
     var preloginCss=document.getElementById('prelogin-css');if(preloginCss)preloginCss.remove();
-    loginScreen(false);
     if(typeof window.renderNav==='function')window.renderNav();
     if(typeof window.showScreen==='function')window.showScreen('home');
     else if(typeof window.renderHome==='function')window.renderHome();
     if(typeof window.startFirebaseSync==='function')window.startFirebaseSync();
     if(window.NotificationStore&&typeof window.NotificationStore.ensureSubscription==='function')window.NotificationStore.ensureSubscription();
     if(typeof window.setupPushNotifications==='function')window.setupPushNotifications();
-    setState('ready');
+    var finish=function(){if(!isCurrent(generation,user))return;loginScreen(false);setState('ready');};
+    if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(finish);else finish();
   }
   function showRecoverable(error,user,token){
     if(!isCurrent(token,user))return;
@@ -81,7 +104,10 @@
     assignUser(user);
     if(!user){
       bootstrapPromise=null;bootstrapUid=null;
-      startedUid=null;window._appStarted=false;
+      startedUid=null;
+      // Keep the compatibility guard claimed. Readiness is represented by this
+      // controller's state, not by the legacy _appStarted flag.
+      window._appStarted=true;
       try{window.fbFamilyId=null;fbFamilyId=null;}catch(e){}
       resetLoginUi();loginScreen(true);setState('signedOut');return Promise.resolve();
     }
@@ -125,19 +151,31 @@
     if(currentUser&&currentUser.uid)return Promise.resolve(currentUser);
     return new Promise(function(resolve,reject){var timer=setTimeout(function(){off();reject(new Error('Firebase gebruiker is nog niet beschikbaar'));},6000);var off=subscribe(function(s){if(s.user&&s.user.uid){clearTimeout(timer);off();resolve(s.user);}});});
   }
+  function bindLifecycle(){
+    if(lifecycleBound)return;lifecycleBound=true;
+    window.addEventListener('pageshow',function(event){
+      if(event&&event.persisted&&state!=='ready'&&currentUser)resume();
+    });
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible'&&state!=='ready'&&currentUser&&!bootstrapPromise)resume();
+    });
+  }
   function start(){
     if(authUnsubscribe)return;
+    claimStartupReveal();
+    bindLifecycle();
     var auth=window.fbAuth;
     if(!auth&&window.firebase&&firebase.auth){try{auth=firebase.auth();}catch(e){}}
     if(!auth||typeof auth.onAuthStateChanged!=='function'){setState('recoverableError',new Error('Firebase Auth niet beschikbaar'));loginScreen(true);return;}
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
-  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;setState('stopped');}
+  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;setState('stopped');}
 
   window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};
   window.useOfflineMode=function(){if(typeof window.showAuthError==='function')window.showAuthError('Offline openen zonder ingelogd account is niet beschikbaar.');};
 
+  claimStartupReveal();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
