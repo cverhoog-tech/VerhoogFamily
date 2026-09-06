@@ -2,7 +2,7 @@
 
 Branch: `agent/household-rebuild-v2`
 
-Purpose: persistent handoff log. Read with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md`, `docs/household-rebuild-v2-roadmap.md`, `docs/STEP13-ACTIVITY-FEED-SPEC.md` and `docs/FAMILYAPP-FIX-LIST.md` before changing the rebuild branch.
+Purpose: persistent handoff log. Read with `docs/FAMILYAPP-CURRENT-TODO.md`, `docs/household-rebuild-v2-progress.md`, `FamilyApp-Schoonmaken-current-status.md` and `docs/FAMILYAPP-FIX-LIST.md` before changing the rebuild branch.
 
 Historical entries through STEP 11.1 remain in `docs/FAMILYAPP-UPDATE-LOG-ARCHIVE-THROUGH-STEP11.1.md`.
 
@@ -17,6 +17,32 @@ Newest entries belong at the top.
 
 ---
 
+## 2026-09-06 — Cleaning functional close-out candidate + role capabilities
+
+- Action Inbox is now **REAL-DEVICE ACCEPTED** by the product owner. Accepted product split: ✉️ Inbox = actionable decisions; 🔔 Meldingen = informational updates. Accepted preview: `https://verhoog-family-ks84yij7s-cverhoog-techs-projects.vercel.app`.
+- Re-audited the stale Cleaning TODO against live branch code/tests. Availability, history, reminders, help/exceptions, Shopping metadata, shared activity, derived cleanup, household-key safety and create-retry idempotency were already implemented and covered by dedicated tests.
+- Added `scripts/test-cleaning-functional-closeout.js` to guard the whole late STEP 14 functional/hardening surface together.
+- The only genuine old functional gap found was the documented role/permission subphase.
+- Added `src/modules/cleaning/cleaningPermissions.js`, a centralized client-side capability policy that owns no Cleaning data and performs no direct Firebase writes.
+- Existing household roles are mapped without a new account model:
+  - owner/admin → Beheerder;
+  - adult/member → Gezinslid;
+  - child/limited/restricted → Beperkt profiel.
+- Intended Cleaning capabilities:
+  - Beheerder: full structural rooms/routines, planning, assignments, household availability, supplies and execution.
+  - Gezinslid: planning, transfer/counterproposal initiation, supplies, own availability, own accepted-routine pause, execution and responses; no structural room/routine mutation.
+  - Beperkt profiel: assigned execution, accept/decline/help and personal display preference; no management initiation.
+- Capability policy is wired before both runtime paths: `cleaningExperienceBootstrap.js` and the Action Inbox eager Cleaning bootstrap.
+- Added `scripts/test-cleaning-permissions.js`; it executes the role matrix against mocked mutation APIs instead of only checking strings.
+- Updated `scripts/test-cleaning-runtime-reachability.js`; it now requires 42 Cleaning modules including the permission policy and preserves dependency order.
+- Latest functional close-out candidate before docs-only commits: `cabf639382be4f0bd5a8a2c540855b914dbedffa`.
+- Household Rebuild Contracts on that candidate: **SUCCESS**, run `34000853880`. Vercel: **SUCCESS**.
+- Important security boundary: current Firebase Rules still grant active household members broad `$sharedData` writes. The new role policy provides intended product/client behavior, but true server-side role enforcement remains a separate pre-public-release Firebase Rules migration. Production rules were deliberately not changed/deployed.
+- STEP 14 is therefore a **FUNCTIONAL CLOSE-OUT CANDIDATE**, not yet accepted: a compact real-device role/regression smoke remains before definitive premium visual polish.
+- `main` remains untouched.
+
+---
+
 ## 2026-09-06 — Action Inbox milestone: audit accepted, Fase 2–4 implemented
 
 - New product milestone: a single, app-wide **Action Inbox** for every request that needs a yes/no decision (Task-hulp, Task-ruilen, Party Quest-uitnodigingen, Cleaning-hulp, Cleaning-routine-overdracht, Cleaning-tegenvoorstel).
@@ -27,16 +53,14 @@ Newest entries belong at the top.
   - Cleaning tegenvoorstel: Accept/Decline fully resolvable from the Inbox card; "Ander voorstel" is a tertiary action that opens the existing Cleaning UI.
   - `TaskSwapRequests` gets a small explicit additive API: `acceptRequest(id)` / `declineRequest(id)`, wrapping the existing internal `accept()`/`respond()` — no second writer.
 - Implemented under `src/platform/inbox/`:
-  - `actionInboxBootstrap.js` — eager-loads the read-side Cleaning modules (`CleaningHouseholdRepository`, `CleaningHelpRequestUi`, `CleaningRoutineExperience`) the Inbox needs, since those normally only load lazily when the Schoonmaken tab is opened. No new writer; these are the existing canonical/idempotent singletons.
-  - `actionInboxRegistry.js` — one adapter per domain (`task.help`, `task.swap`, `partyQuest.invite`, `cleaning.help`, `cleaning.routine.transfer`, `cleaning.routine.counter`); each adapter reads canonical state directly and routes actions to the existing runtime (`NotificationActions`, `TaskSwapRequests`, `PartyQuestInvites`, `CleaningExceptionRuntime`, `CleaningRoutineExperience`).
-  - `actionInboxStore.js` — aggregates the registry into a live list + `openActionCount`, refreshed on `HouseholdContext`, `familyapp:tasks-updated`, `familyapp:cleaning-repository`/`-exception`, a dedicated read-only `taskSwapRequests` watcher (same accepted pattern as `TaskSwapNotificationProjector`), and `PartyQuestRepository.subscribe()`.
-  - `actionInboxHeaderBridge.js` — injects the app-wide ✉️ Inbox button into `.app-header` (DOM injection, no `index.html` edit), 44×44 target, dark/light aware, badge driven only by `ActionInboxStore`.
-  - `actionInboxScreen.js` — lazily-created `#screen-inbox` (same pattern as `ensureCleaningScreen()`), compact cards with 1–2 primary actions, loading/empty/error states.
-- `api/app.js`: additively injects the five new scripts right before `</body>`, after every existing module script.
-- `src/modules/tasks/taskSwapRequests.js`: additive `acceptRequest`/`declineRequest` export; `accept()`/`respond()` now return their existing promise chains (no behavior change for existing callers).
-- New contract suite `scripts/test-action-inbox.js` (10 checks): files present, no new writer/`inboxRequests` path, actions route to existing runtimes, presence never reads `NotificationStore`, badge ownership separation, `TaskSwapRequests` API, identity-switch/logout reset, Cleaning counterproposal UX, script wiring, existing sensitive files untouched.
-- Full existing `scripts/test-*.js` suite re-run locally: all green, no regressions.
-- Still open before real-device acceptance: unique Vercel preview + the acceptance checklist from the milestone brief (badge, accept/decline per domain, wrong-user/logout safety, existing Meldingen/Schoonmaken/Taken/Quest still functioning).
+  - `actionInboxBootstrap.js` — eager-loads the read-side Cleaning modules the Inbox needs, since those normally only load lazily when Schoonmaken is opened.
+  - `actionInboxRegistry.js` — one adapter per domain (`task.help`, `task.swap`, `partyQuest.invite`, `cleaning.help`, `cleaning.routine.transfer`, `cleaning.routine.counter`); each adapter reads canonical state directly and routes actions to the existing runtime.
+  - `actionInboxStore.js` — aggregates the registry into a live list + `openActionCount` and cleans/rebinds on identity/lifecycle changes.
+  - `actionInboxHeaderBridge.js` — app-wide ✉️ Inbox button, 44×44 target, independent badge.
+  - `actionInboxScreen.js` — premium functional Inbox cards with direct actions and loading/empty/error states.
+- `src/modules/tasks/taskSwapRequests.js`: additive public accept/decline wrappers around the existing internal mutation path.
+- `scripts/test-action-inbox.js` covers no new writer/`inboxRequests` path, canonical presence, action routing, badge ownership, lifecycle and sensitive NotificationActions/PartyQuest compatibility.
+- Product owner subsequently real-device tested and accepted this milestone on 2026-09-06. Accepted preview: `https://verhoog-family-ks84yij7s-cverhoog-techs-projects.vercel.app`.
 
 ---
 
@@ -118,4 +142,3 @@ Newest entries belong at the top.
 - STEP 10 Notifications: accepted/frozen 2026-08-26; code checkpoint `538a5b89ab270bfdfc2c9f3a3d97093260133641`.
 - Frozen `notificationActions.js` blob through STEP 11: `60a48daa628bc56531395d188a0811711d82a328`.
 - STEP 11 final integrated candidate: `3f01b3f2265c88dcc6480e7458d16cb21da2a146`.
-- STEP 12 accepted/merged through PR #29 on 2026-08-30.
