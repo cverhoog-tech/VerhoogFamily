@@ -39,7 +39,8 @@ function prepareReturningSessionSurface() {
   try { hasLocalProfile = !!localStorage.getItem('familyapp-profile-name-v1'); } catch (e) {}
   if (!hasLocalProfile) return;
 
-  document.documentElement.classList.add('familyapp-session-pending');
+  var root = document && document.documentElement;
+  if (root && root.classList) root.classList.add('familyapp-session-pending');
   var login = document.getElementById('login-screen');
   if (login) {
     login.style.visibility = 'hidden';
