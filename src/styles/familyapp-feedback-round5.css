@@ -86,23 +86,21 @@ html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded>.
     #080d16 100%)!important;
 }
 
-/* Dark overview: the completed chip previously inherited a pale light-mode
-   treatment, making mint-on-mint text almost disappear. Keep its green semantic
-   tone, but use a deliberately dark surface with a high-contrast mint label. */
-[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-completed{
-  color:#dcffea!important;
-  background:rgba(17,92,57,.92)!important;
-  border-color:rgba(116,240,168,.56)!important;
-  box-shadow:0 7px 20px rgba(0,0,0,.30),inset 0 1px 0 rgba(190,255,218,.08)!important;
+/* Dark overview completed chip.
+   cleaningOverviewExperience renders this chip as `.is-complete` (not the
+   previously targeted `.is-completed`). Use a dark green glass surface with a
+   near-white mint label and a bright status dot for deliberate dark contrast. */
+[data-theme*="dark"] body #screen-cleaning .cleaning-overview-statuses .cleaning-overview-chip.is-complete{
+  color:#effff5!important;
+  background:rgba(13,76,47,.96)!important;
+  border-color:rgba(126,244,176,.58)!important;
+  box-shadow:0 7px 20px rgba(0,0,0,.34),inset 0 1px 0 rgba(210,255,228,.10)!important;
   text-shadow:none!important;
   opacity:1!important;
 }
-[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-completed span,
-[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-completed strong{
-  color:inherit!important;
+[data-theme*="dark"] body #screen-cleaning .cleaning-overview-statuses .cleaning-overview-chip.is-complete i{
+  background:#a8f7c9!important;
+  color:#a8f7c9!important;
   opacity:1!important;
-}
-[data-theme*="dark"] body #screen-cleaning .cleaning-overview-chip.is-completed::before{
-  filter:saturate(1.08) brightness(1.22)!important;
-  opacity:1!important;
+  box-shadow:0 0 0 3px rgba(168,247,201,.12)!important;
 }
