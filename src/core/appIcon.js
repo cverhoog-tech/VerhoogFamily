@@ -131,7 +131,7 @@ function ensureFeedbackRound4() {
   ensureCloudinaryPreconnect();
   if (!window.__familyAppFeedbackRound4 && !document.querySelector('script[data-familyapp-feedback-round4]')) {
     var script = document.createElement('script');
-    script.src = '/src/core/familyappFeedbackRound4.js?v=20260907-2';
+    script.src = '/src/core/familyappFeedbackRound4.js?v=20260907-4';
     script.async = false;
     script.setAttribute('data-familyapp-feedback-round4', '1');
     script.onerror = function(){ console.error('[FamilyApp] feedback ronde 4 kon niet worden geladen'); };
@@ -150,7 +150,7 @@ function ensureFeedbackRound4() {
       style = document.createElement('link');
       style.id = styleId;
       style.rel = 'stylesheet';
-      style.href = '/src/styles/familyapp-feedback-round4.css?v=20260907-2';
+      style.href = '/src/styles/familyapp-feedback-round4.css?v=20260907-4';
     }
     if (anchor && anchor.parentNode) {
       if (anchor.nextElementSibling !== style) anchor.parentNode.insertBefore(style, anchor.nextSibling);
