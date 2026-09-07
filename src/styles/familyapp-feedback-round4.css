@@ -1,0 +1,72 @@
+/* FamilyApp feedback round 4 — presentation/lifecycle polish only. */
+
+/* --------------------------------------------------------------------------
+   Room cards: quiet edit affordance and readable metadata on photography.
+   Keep the full 44px hit target but remove the visible circular control.
+   -------------------------------------------------------------------------- */
+html body #screen-cleaning .cleaning-room-card-actions>button.cleaning-room-edit-button,
+html body #screen-cleaning .cleaning-room-edit-button{
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  color:rgba(28,35,42,.88)!important;
+}
+html body #screen-cleaning .cleaning-room-edit-button::before{
+  width:19px!important;
+  height:19px!important;
+  filter:drop-shadow(0 1px 1px rgba(255,255,255,.85)) drop-shadow(0 1px 2px rgba(0,0,0,.16))!important;
+}
+html body #screen-cleaning .cleaning-room-card-copy p,
+html body #screen-cleaning .cleaning-room-card-copy .cleaning-room-card-meta{
+  color:rgba(38,42,48,.78)!important;
+  font-weight:800!important;
+  text-shadow:0 1px 7px rgba(255,255,255,.96),0 1px 1px rgba(255,255,255,.78)!important;
+}
+[data-theme*="dark"] body #screen-cleaning .cleaning-room-edit-button{
+  color:rgba(248,250,252,.92)!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+[data-theme*="dark"] body #screen-cleaning .cleaning-room-edit-button::before{
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.72))!important;
+}
+[data-theme*="dark"] body #screen-cleaning .cleaning-room-card-copy p,
+[data-theme*="dark"] body #screen-cleaning .cleaning-room-card-copy .cleaning-room-card-meta{
+  color:rgba(247,249,252,.82)!important;
+  text-shadow:0 1px 7px rgba(0,0,0,.72),0 1px 2px rgba(0,0,0,.62)!important;
+}
+
+/* Home photography must never inherit a temporary flat card fill while the
+   image is decoding. The JS layer owns the URLs and reapplies them after every
+   Home render/theme/navigation lifecycle transition. */
+#screen-home .epic-card.familyapp-photo-hero{
+  background-color:#30352f!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  transition:transform .16s ease,box-shadow .16s ease!important;
+}
+#screen-home .epic-card.familyapp-photo-hero>.card-inner{
+  background:transparent!important;
+  background-image:none!important;
+}
+[data-theme*="dark"] #screen-home .epic-card.familyapp-photo-hero{
+  background-color:#080d12!important;
+}
+
+/* Keep the lifecycle hold visually inert rather than fading whole screens. */
+html.familyapp-resume-stable .screen.active,
+html.familyapp-resume-stable .app-header,
+html.familyapp-resume-stable .bottom-nav{
+  transition:none!important;
+  animation:none!important;
+}
