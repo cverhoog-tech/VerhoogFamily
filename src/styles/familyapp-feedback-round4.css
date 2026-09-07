@@ -46,21 +46,83 @@ html body #screen-cleaning .cleaning-room-card-copy .cleaning-room-card-meta{
   text-shadow:0 1px 7px rgba(0,0,0,.72),0 1px 2px rgba(0,0,0,.62)!important;
 }
 
-/* Home photography must never inherit a temporary flat card fill while the
-   image is decoding. The JS layer owns the URLs and reapplies them after every
-   Home render/theme/navigation lifecycle transition. */
-#screen-home .epic-card.familyapp-photo-hero{
+/* --------------------------------------------------------------------------
+   Home hero cards: ONE visible image owner.
+
+   Older runtime adapters still need to exist for accepted Cleaning interactions,
+   but some of them also rewrite the card element's background-image. That caused
+   the rapid old/new/empty image race after Cleaning -> Home. The approved v3
+   photography therefore lives exclusively on the card ::before layer. Legacy
+   element-background writes can continue underneath without ever becoming the
+   visible image, and no observer/re-apply loop is required for Home anymore.
+   -------------------------------------------------------------------------- */
+#screen-home .home-epic-cards .epic-card{
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
   background-color:#30352f!important;
-  background-size:cover!important;
-  background-repeat:no-repeat!important;
   transition:transform .16s ease,box-shadow .16s ease!important;
 }
-#screen-home .epic-card.familyapp-photo-hero>.card-inner{
+#screen-home .home-epic-cards .epic-card::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:0!important;
+  display:block!important;
+  opacity:1!important;
+  pointer-events:none!important;
+  background-repeat:no-repeat!important;
+  background-size:cover!important;
+  transform:none!important;
+  transition:none!important;
+  animation:none!important;
+  will-change:auto!important;
+}
+#screen-home .home-epic-cards .tasks-card::before{
+  background-image:linear-gradient(180deg,rgba(5,10,16,.04) 0%,rgba(5,10,16,.17) 42%,rgba(5,10,16,.66) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788808948/familyapp-home-tasks-hero-v3.webp")!important;
+  background-position:center 62%!important;
+}
+#screen-home .home-epic-cards .shop-card::before{
+  background-image:linear-gradient(180deg,rgba(20,17,12,.02) 0%,rgba(20,17,12,.10) 42%,rgba(20,17,12,.62) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788809037/familyapp-home-groceries-hero-v3.webp")!important;
+  background-position:center 59%!important;
+}
+#screen-home .home-epic-cards .cleaning-card::before,
+#screen-home .home-epic-cards .feed-card::before{
+  background-image:linear-gradient(180deg,rgba(9,14,17,.02) 0%,rgba(9,14,17,.11) 42%,rgba(9,14,17,.62) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788809095/familyapp-home-cleaning-hero-v3.webp")!important;
+  background-position:center 57%!important;
+}
+#screen-home .home-epic-cards .epic-card>.card-inner{
+  position:relative!important;
+  z-index:1!important;
   background:transparent!important;
   background-image:none!important;
 }
-[data-theme*="dark"] #screen-home .epic-card.familyapp-photo-hero{
+[data-theme*="dark"] #screen-home .home-epic-cards .epic-card{
   background-color:#080d12!important;
+}
+/* Keep the exact same image source in dark mode; only strengthen the readability
+   overlay. This prevents a theme change from being another image lifecycle. */
+[data-theme*="dark"] #screen-home .home-epic-cards .tasks-card::before{
+  background-image:linear-gradient(180deg,rgba(2,5,9,.08) 0%,rgba(2,5,9,.22) 42%,rgba(2,5,9,.72) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788808948/familyapp-home-tasks-hero-v3.webp")!important;
+}
+[data-theme*="dark"] #screen-home .home-epic-cards .shop-card::before{
+  background-image:linear-gradient(180deg,rgba(5,5,4,.07) 0%,rgba(5,5,4,.18) 42%,rgba(5,5,4,.69) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788809037/familyapp-home-groceries-hero-v3.webp")!important;
+}
+[data-theme*="dark"] #screen-home .home-epic-cards .cleaning-card::before,
+[data-theme*="dark"] #screen-home .home-epic-cards .feed-card::before{
+  background-image:linear-gradient(180deg,rgba(3,6,8,.07) 0%,rgba(3,6,8,.19) 42%,rgba(3,6,8,.69) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788809095/familyapp-home-cleaning-hero-v3.webp")!important;
+}
+
+/* Fast first-open placeholder: visible immediately while the already-started
+   core module import finishes. It intentionally uses no expensive blur/filter. */
+#screen-cleaning .familyapp-cleaning-fast-shell{
+  min-height:calc(100vh - 150px)!important;
+  contain:layout paint!important;
+}
+#screen-cleaning .familyapp-cleaning-fast-shell .familyapp-loading-hero,
+#screen-cleaning .familyapp-cleaning-fast-shell .familyapp-loading-tabs,
+#screen-cleaning .familyapp-cleaning-fast-shell .familyapp-loading-cards i{
+  animation:none!important;
 }
 
 /* Keep the lifecycle hold visually inert rather than fading whole screens. */
