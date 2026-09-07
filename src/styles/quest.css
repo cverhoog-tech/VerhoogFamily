@@ -1,3 +1,11 @@
 /* FamilyApp stylesheet entrypoint. Keep legacy quest styling intact, then layer Cleaning premium visuals. */
 @import url('./quest.legacy.css');
 @import url('./cleaning-room-premium.css?v=20260906-1');
+@import url('./familyapp-feedback-round2.css?v=20260907-1');
+
+/* Returning signed-in users should not see the login screen flash while Firebase restores the session. */
+html.familyapp-session-pending,
+html.familyapp-session-pending body{background:var(--c-bg,#f8f7fb)!important}
+html.familyapp-session-pending #login-screen{visibility:hidden!important;pointer-events:none!important;transition:none!important}
+html[data-theme*="dark"].familyapp-session-pending,
+html[data-theme*="dark"].familyapp-session-pending body{background:#070b12!important}
