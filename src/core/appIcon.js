@@ -171,6 +171,40 @@ function ensureFeedbackRound4() {
   observer.observe(document.head, {childList:true});
 }
 
+function ensureFeedbackRound5Styles() {
+  var styleId = 'familyapp-feedback-round5-runtime';
+  var observer = null;
+
+  function placeRound5Last() {
+    var round4 = document.getElementById('familyapp-feedback-round4-runtime');
+    var round3 = document.getElementById('familyapp-feedback-round3-runtime');
+    var anchor = round4 || round3 || document.getElementById('familyapp-feedback-round2-runtime') || document.getElementById('cleaning-room-premium-stylesheet');
+    var style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement('link');
+      style.id = styleId;
+      style.rel = 'stylesheet';
+      style.href = '/src/styles/familyapp-feedback-round5.css?v=20260907-1';
+    }
+    if (anchor && anchor.parentNode) {
+      if (anchor.nextElementSibling !== style) anchor.parentNode.insertBefore(style, anchor.nextSibling);
+      return !!round4;
+    }
+    if (!style.parentNode && document.head) document.head.appendChild(style);
+    return false;
+  }
+
+  var settled = placeRound5Last();
+  if (settled || typeof MutationObserver !== 'function' || !document.head) return;
+  observer = new MutationObserver(function(){
+    if (placeRound5Last() && observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  });
+  observer.observe(document.head, {childList:true});
+}
+
 function applyAppIcon() {
   ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '180x180');
   ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '32x32');
@@ -212,5 +246,6 @@ function saveAppIconToLink() {
   ensureFeedbackStyleCascade();
   ensureFeedbackRound3Styles();
   ensureFeedbackRound4();
+  ensureFeedbackRound5Styles();
   applyAppIcon();
 })();
