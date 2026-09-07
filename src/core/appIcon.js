@@ -59,17 +59,10 @@ function ensureCloudinaryPreconnect() {
   document.head.appendChild(preconnect);
 }
 
-function ensureFeedbackRound2() {
-  ensureCloudinaryPreconnect();
-  if (window.__familyAppFeedbackRound2 || document.querySelector('script[data-familyapp-feedback-round2]')) return;
-  var script = document.createElement('script');
-  script.src = '/src/core/familyappFeedbackRound2.js?v=20260907-2';
-  script.async = false;
-  script.setAttribute('data-familyapp-feedback-round2', '1');
-  script.onerror = function(){ console.error('[FamilyApp] feedback round adapter kon niet worden geladen'); };
-  document.head.appendChild(script);
-}
-
+// Round 2/3 JavaScript used to start eagerly here. Those adapters both set up
+// observers and attempted to warm/render Cleaning during app startup. Their CSS
+// can stay cheap and declarative; their JS is now loaded lazily by round 4 only
+// when the user actually opens Cleaning.
 function ensureFeedbackStyleCascade() {
   var premiumId = 'cleaning-room-premium-stylesheet';
   var feedbackId = 'familyapp-feedback-round2-runtime';
@@ -83,7 +76,7 @@ function ensureFeedbackStyleCascade() {
       feedback = document.createElement('link');
       feedback.id = feedbackId;
       feedback.rel = 'stylesheet';
-      feedback.href = '/src/styles/familyapp-feedback-round2.css?v=20260907-2';
+      feedback.href = '/src/styles/familyapp-feedback-round2.css?v=20260907-3';
     }
     if (premium.nextElementSibling !== feedback) premium.parentNode.insertBefore(feedback, premium.nextSibling);
     return true;
@@ -100,19 +93,10 @@ function ensureFeedbackStyleCascade() {
   observer.observe(document.head, {childList:true});
 }
 
-function ensureFeedbackRound3() {
-  ensureCloudinaryPreconnect();
-  if (!window.__familyAppFeedbackRound3 && !document.querySelector('script[data-familyapp-feedback-round3]')) {
-    var script = document.createElement('script');
-    script.src = '/src/core/familyappFeedbackRound3.js?v=20260907-2';
-    script.async = false;
-    script.setAttribute('data-familyapp-feedback-round3', '1');
-    script.onerror = function(){ console.error('[FamilyApp] feedback ronde 3 kon niet worden geladen'); };
-    document.head.appendChild(script);
-  }
-
+function ensureFeedbackRound3Styles() {
   var styleId = 'familyapp-feedback-round3-runtime';
   var observer = null;
+
   function placeRound3Last() {
     var round2 = document.getElementById('familyapp-feedback-round2-runtime');
     var premium = document.getElementById('cleaning-room-premium-stylesheet');
@@ -122,7 +106,7 @@ function ensureFeedbackRound3() {
       style = document.createElement('link');
       style.id = styleId;
       style.rel = 'stylesheet';
-      style.href = '/src/styles/familyapp-feedback-round3.css?v=20260907-2';
+      style.href = '/src/styles/familyapp-feedback-round3.css?v=20260907-3';
     }
     if (anchor && anchor.parentNode) {
       if (anchor.nextElementSibling !== style) anchor.parentNode.insertBefore(style, anchor.nextSibling);
@@ -136,6 +120,50 @@ function ensureFeedbackRound3() {
   if (settled || typeof MutationObserver !== 'function' || !document.head) return;
   observer = new MutationObserver(function(){
     if (placeRound3Last() && observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  });
+  observer.observe(document.head, {childList:true});
+}
+
+function ensureFeedbackRound4() {
+  ensureCloudinaryPreconnect();
+  if (!window.__familyAppFeedbackRound4 && !document.querySelector('script[data-familyapp-feedback-round4]')) {
+    var script = document.createElement('script');
+    script.src = '/src/core/familyappFeedbackRound4.js?v=20260907-2';
+    script.async = false;
+    script.setAttribute('data-familyapp-feedback-round4', '1');
+    script.onerror = function(){ console.error('[FamilyApp] feedback ronde 4 kon niet worden geladen'); };
+    document.head.appendChild(script);
+  }
+
+  var styleId = 'familyapp-feedback-round4-runtime';
+  var observer = null;
+  function placeRound4Last() {
+    var round3 = document.getElementById('familyapp-feedback-round3-runtime');
+    var round2 = document.getElementById('familyapp-feedback-round2-runtime');
+    var premium = document.getElementById('cleaning-room-premium-stylesheet');
+    var anchor = round3 || round2 || premium;
+    var style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement('link');
+      style.id = styleId;
+      style.rel = 'stylesheet';
+      style.href = '/src/styles/familyapp-feedback-round4.css?v=20260907-2';
+    }
+    if (anchor && anchor.parentNode) {
+      if (anchor.nextElementSibling !== style) anchor.parentNode.insertBefore(style, anchor.nextSibling);
+      return !!round3;
+    }
+    if (!style.parentNode && document.head) document.head.appendChild(style);
+    return false;
+  }
+
+  var settled = placeRound4Last();
+  if (settled || typeof MutationObserver !== 'function' || !document.head) return;
+  observer = new MutationObserver(function(){
+    if (placeRound4Last() && observer) {
       observer.disconnect();
       observer = null;
     }
@@ -180,8 +208,9 @@ function saveAppIconToLink() {
   } catch (e) {}
   prepareReturningSessionSurface();
   ensureScaleFix();
-  ensureFeedbackRound2();
+  ensureCloudinaryPreconnect();
   ensureFeedbackStyleCascade();
-  ensureFeedbackRound3();
+  ensureFeedbackRound3Styles();
+  ensureFeedbackRound4();
   applyAppIcon();
 })();
