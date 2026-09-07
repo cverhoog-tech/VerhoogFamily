@@ -102,8 +102,12 @@
       var count=routines.length||domRows.length,next=plannedNext(domRows),summary=card.querySelector('[data-familyapp-planned-summary]');
       if(!summary){summary=document.createElement('div');summary.className='familyapp-planned-summary';summary.setAttribute('data-familyapp-planned-summary','1');if(items)card.insertBefore(summary,items);else card.appendChild(summary);}
       var icons=(titles.length?titles:['Schoonmaakroutine']).slice(0,5).map(function(title){var visual=routineVisual(title);return'<span class="familyapp-planned-icon" data-routine-tone="'+visual.tone+'" role="img" aria-label="'+esc(title)+'" title="'+esc(title)+'">'+visual.icon+'</span>';}).join('');
-      var existingToggle=summary.querySelector('[data-familyapp-planned-toggle]'),expanded=card.classList.contains('is-familyapp-expanded'),expandedAttr=existingToggle&&existingToggle.getAttribute('aria-expanded')==='true';
-      summary.innerHTML='<div class="familyapp-planned-summary-main"><div class="familyapp-planned-icons">'+icons+'</div><span class="familyapp-planned-meta">'+count+' '+(count===1?'routine':'routines')+' · ± '+Math.round(minutes)+' min'+(next?' <span class="familyapp-planned-next">· '+esc(next)+'</span>':'')+'</span></div><button type="button" class="familyapp-planned-toggle" data-familyapp-planned-toggle aria-expanded="'+((expanded||expandedAttr)?'true':'false')+'" aria-label="'+((expanded||expandedAttr)?'Verberg routines':'Toon routines')+'"><span>'+(expanded?'⌃':'⌄')+'</span></button>';
+      var expanded=card.classList.contains('is-familyapp-expanded');
+      var signature=[count,Math.round(minutes),next,titles.slice(0,5).join('|'),expanded?'1':'0'].join('::');
+      if(summary.getAttribute('data-familyapp-signature')!==signature){
+        summary.setAttribute('data-familyapp-signature',signature);
+        summary.innerHTML='<div class="familyapp-planned-summary-main"><div class="familyapp-planned-icons">'+icons+'</div><span class="familyapp-planned-meta">'+count+' '+(count===1?'routine':'routines')+' · ± '+Math.round(minutes)+' min'+(next?' <span class="familyapp-planned-next">· '+esc(next)+'</span>':'')+'</span></div><button type="button" class="familyapp-planned-toggle" data-familyapp-planned-toggle aria-expanded="'+(expanded?'true':'false')+'" aria-label="'+(expanded?'Verberg routines':'Toon routines')+'"><span>⌄</span></button>';
+      }
     }
   }
 
