@@ -6,8 +6,8 @@
   if(window.__familyAppFeedbackRound4)return;
   window.__familyAppFeedbackRound4=true;
 
-  var VERSION='0.1.0';
-  var state={homeFrame:0,observer:null,adapterPromise:null,networkPrimed:false,resumeTimer:0};
+  var VERSION='0.2.0';
+  var state={homeFrame:0,observer:null,adapterPromise:null,adapterScheduled:false,networkPrimed:false,homePrimed:false,resumeTimer:0};
   var HERO={
     tasks:{url:'https://res.cloudinary.com/rg86slp4/image/upload/v1788808948/familyapp-home-tasks-hero-v3.webp',pos:'center 62%',overlay:'linear-gradient(180deg,rgba(5,10,16,.04) 0%,rgba(5,10,16,.17) 42%,rgba(5,10,16,.66) 100%)'},
     shop:{url:'https://res.cloudinary.com/rg86slp4/image/upload/v1788809037/familyapp-home-groceries-hero-v3.webp',pos:'center 59%',overlay:'linear-gradient(180deg,rgba(20,17,12,.02) 0%,rgba(20,17,12,.10) 42%,rgba(20,17,12,.62) 100%)'},
@@ -17,6 +17,21 @@
     {key:'round2',flag:'__familyAppFeedbackRound2',attr:'data-familyapp-feedback-round2',src:'/src/core/familyappFeedbackRound2.js?v=20260907-3'},
     {key:'round3',flag:'__familyAppFeedbackRound3',attr:'data-familyapp-feedback-round3',src:'/src/core/familyappFeedbackRound3.js?v=20260907-3'}
   ];
+
+  function addHint(rel,href,as){
+    if(document.querySelector('link[data-familyapp-r4-hint="'+href+'"]'))return;
+    var link=document.createElement('link');
+    link.rel=rel;link.href=href;if(as)link.as=as;
+    link.setAttribute('data-familyapp-r4-hint',href);
+    document.head.appendChild(link);
+  }
+  function primeHomeHeroes(){
+    if(state.homePrimed)return;state.homePrimed=true;
+    Object.keys(HERO).forEach(function(key){
+      var def=HERO[key];addHint('preload',def.url,'image');
+      try{var img=new Image();img.decoding='async';img.src=def.url;}catch(error){}
+    });
+  }
 
   function setHero(card,def){
     if(!card||!def)return;
@@ -37,7 +52,12 @@
   function queueHome(){
     if(state.homeFrame)return;
     var raf=window.requestAnimationFrame||function(fn){return window.setTimeout(fn,16);};
-    state.homeFrame=raf(function(){state.homeFrame=0;applyHomeHeroes();});
+    state.homeFrame=raf(function(){
+      // Older presentation adapters still run after Cleaning is opened. Apply
+      // the canonical v3 photos one frame after their single-frame decorators,
+      // so Home always has one deterministic final image owner.
+      state.homeFrame=raf(function(){state.homeFrame=0;applyHomeHeroes();});
+    });
   }
 
   function wrapRenderHome(){
@@ -50,12 +70,20 @@
     var wrapped=function(){var result=raw.apply(this,arguments);queueHome();return result;};
     wrapped.__familyappRound4=true;window.applyTheme=wrapped;
   }
+  function scheduleCleaningAdapters(){
+    if(state.adapterScheduled||state.adapterPromise||window.__familyAppFeedbackRound3)return;
+    state.adapterScheduled=true;
+    var run=function(){state.adapterScheduled=false;loadCleaningAdapters();};
+    if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(run,{timeout:1600});
+    else window.setTimeout(run,850);
+  }
   function wrapNavigation(){
     var raw=window.showScreen;if(typeof raw!=='function'||raw.__familyappRound4)return;
     var wrapped=function(name){
       var target=String(name==null?'':name).toLowerCase();
-      if(target==='cleaning')loadCleaningAdapters();
+      if(target==='cleaning')primeCleaningNetwork();
       var result=raw.apply(this,arguments);
+      if(target==='cleaning')scheduleCleaningAdapters();
       if(target==='home')queueHome();
       return result;
     };
@@ -63,10 +91,6 @@
   }
   function installHooks(){wrapRenderHome();wrapTheme();wrapNavigation();}
 
-  function addHint(rel,href,as){
-    if(document.querySelector('link[data-familyapp-r4-hint="'+href+'"]'))return;
-    var link=document.createElement('link');link.rel=rel;link.href=href;if(as)link.as=as;link.setAttribute('data-familyapp-r4-hint',href);document.head.appendChild(link);
-  }
   function primeCleaningNetwork(){
     if(state.networkPrimed)return;state.networkPrimed=true;
     ADAPTERS.forEach(function(item){addHint('prefetch',item.src,'script');});
@@ -77,9 +101,9 @@
   function scheduleNetworkPrime(){
     function later(){
       window.setTimeout(function(){
-        if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(primeCleaningNetwork,{timeout:3200});
-        else window.setTimeout(primeCleaningNetwork,900);
-      },750);
+        if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(primeCleaningNetwork,{timeout:3600});
+        else window.setTimeout(primeCleaningNetwork,1100);
+      },950);
     }
     try{
       var controller=window.AuthenticatedSessionController,snapshot=controller&&typeof controller.status==='function'?controller.status():null;
@@ -115,7 +139,10 @@
     var target=mutation&&mutation.target,node=target&&target.nodeType===1?target:target&&target.parentElement;
     if(node&&node.closest&&node.closest('#screen-home'))return true;
     var added=mutation&&mutation.addedNodes||[];
-    for(var i=0;i<added.length;i++){var child=added[i];if(child&&child.nodeType===1&&(child.id==='screen-home'||(child.closest&&child.closest('#screen-home'))||(child.querySelector&&child.querySelector('#screen-home'))))return true;}
+    for(var i=0;i<added.length;i++){
+      var child=added[i];
+      if(child&&child.nodeType===1&&(child.id==='screen-home'||(child.closest&&child.closest('#screen-home'))||(child.querySelector&&child.querySelector('#screen-home'))))return true;
+    }
     return false;
   }
   function resetHomeObserver(){
@@ -144,9 +171,15 @@
     document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')beginResumeStability();else{beginResumeStability();endResumeStability();}});
   }
   function bindCleaningIntent(){
-    document.addEventListener('pointerdown',function(event){var target=event.target;if(target&&target.closest&&target.closest('#screen-home .cleaning-card, #screen-home .feed-card'))primeCleaningNetwork();},{passive:true,capture:true});
+    document.addEventListener('pointerdown',function(event){
+      var target=event.target;
+      if(target&&target.closest&&target.closest('#screen-home .cleaning-card, #screen-home .feed-card'))primeCleaningNetwork();
+    },{passive:true,capture:true});
   }
-  function start(){installHooks();resetHomeObserver();bindResume();bindCleaningIntent();scheduleNetworkPrime();applyHomeHeroes();window.setTimeout(installHooks,0);window.setTimeout(installHooks,250);window.setTimeout(installHooks,900);}
+  function start(){
+    primeHomeHeroes();installHooks();resetHomeObserver();bindResume();bindCleaningIntent();scheduleNetworkPrime();applyHomeHeroes();
+    window.setTimeout(installHooks,0);window.setTimeout(installHooks,250);window.setTimeout(installHooks,900);
+  }
 
   window.FamilyAppFeedbackRound4={version:VERSION,refreshHome:queueHome,loadCleaningAdapters:loadCleaningAdapters,primeCleaningNetwork:primeCleaningNetwork};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
