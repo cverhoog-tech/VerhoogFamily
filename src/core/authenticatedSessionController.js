@@ -36,6 +36,7 @@
       if(typeof window.applyTheme==='function')window.applyTheme(nextTheme,nextDark);
     }catch(e){}
   }
+  function sessionRoot(){return document&&document.documentElement||null;}
   function claimStartupReveal(){
     // The old index fallback checks only _appStarted. Claim it immediately so
     // it cannot reveal Home from stale localStorage before Firebase + household
@@ -45,7 +46,8 @@
     applyCachedTheme();
     var returning=false;
     try{returning=!!localStorage.getItem('familyapp-profile-name-v1');}catch(e){}
-    if(returning)document.documentElement.classList.add('familyapp-session-pending');
+    var root=sessionRoot();
+    if(returning&&root&&root.classList)root.classList.add('familyapp-session-pending');
     var el=document.getElementById('login-screen');
     if(el){
       el.style.background='var(--c-bg, var(--c-surface, #ffffff))';
@@ -53,7 +55,7 @@
     }
   }
   function loginScreen(show){
-    document.documentElement.classList.remove('familyapp-session-pending');
+    var root=sessionRoot();if(root&&root.classList)root.classList.remove('familyapp-session-pending');
     var el=document.getElementById('login-screen');
     if(el){
       el.style.opacity='1';
@@ -180,7 +182,7 @@
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
-  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;document.documentElement.classList.remove('familyapp-session-pending');setState('stopped');}
+  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;var root=sessionRoot();if(root&&root.classList)root.classList.remove('familyapp-session-pending');setState('stopped');}
 
   window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};
