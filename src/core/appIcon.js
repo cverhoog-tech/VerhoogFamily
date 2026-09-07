@@ -49,16 +49,18 @@ function prepareReturningSessionSurface() {
   }
 }
 
-function ensureFeedbackRound2() {
-  if (!document.querySelector('link[data-familyapp-cloudinary-preconnect]')) {
-    var preconnect = document.createElement('link');
-    preconnect.rel = 'preconnect';
-    preconnect.href = 'https://res.cloudinary.com';
-    preconnect.crossOrigin = 'anonymous';
-    preconnect.setAttribute('data-familyapp-cloudinary-preconnect', '1');
-    document.head.appendChild(preconnect);
-  }
+function ensureCloudinaryPreconnect() {
+  if (document.querySelector('link[data-familyapp-cloudinary-preconnect]')) return;
+  var preconnect = document.createElement('link');
+  preconnect.rel = 'preconnect';
+  preconnect.href = 'https://res.cloudinary.com';
+  preconnect.crossOrigin = 'anonymous';
+  preconnect.setAttribute('data-familyapp-cloudinary-preconnect', '1');
+  document.head.appendChild(preconnect);
+}
 
+function ensureFeedbackRound2() {
+  ensureCloudinaryPreconnect();
   if (window.__familyAppFeedbackRound2 || document.querySelector('script[data-familyapp-feedback-round2]')) return;
   var script = document.createElement('script');
   script.src = '/src/core/familyappFeedbackRound2.js?v=20260907-2';
@@ -91,6 +93,49 @@ function ensureFeedbackStyleCascade() {
   if (typeof MutationObserver !== 'function' || !document.head) return;
   observer = new MutationObserver(function(){
     if (placeFeedbackAfterPremium() && observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  });
+  observer.observe(document.head, {childList:true});
+}
+
+function ensureFeedbackRound3() {
+  ensureCloudinaryPreconnect();
+  if (!window.__familyAppFeedbackRound3 && !document.querySelector('script[data-familyapp-feedback-round3]')) {
+    var script = document.createElement('script');
+    script.src = '/src/core/familyappFeedbackRound3.js?v=20260907-2';
+    script.async = false;
+    script.setAttribute('data-familyapp-feedback-round3', '1');
+    script.onerror = function(){ console.error('[FamilyApp] feedback ronde 3 kon niet worden geladen'); };
+    document.head.appendChild(script);
+  }
+
+  var styleId = 'familyapp-feedback-round3-runtime';
+  var observer = null;
+  function placeRound3Last() {
+    var round2 = document.getElementById('familyapp-feedback-round2-runtime');
+    var premium = document.getElementById('cleaning-room-premium-stylesheet');
+    var anchor = round2 || premium;
+    var style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement('link');
+      style.id = styleId;
+      style.rel = 'stylesheet';
+      style.href = '/src/styles/familyapp-feedback-round3.css?v=20260907-2';
+    }
+    if (anchor && anchor.parentNode) {
+      if (anchor.nextElementSibling !== style) anchor.parentNode.insertBefore(style, anchor.nextSibling);
+      return !!round2;
+    }
+    if (!style.parentNode && document.head) document.head.appendChild(style);
+    return false;
+  }
+
+  var settled = placeRound3Last();
+  if (settled || typeof MutationObserver !== 'function' || !document.head) return;
+  observer = new MutationObserver(function(){
+    if (placeRound3Last() && observer) {
       observer.disconnect();
       observer = null;
     }
@@ -137,5 +182,6 @@ function saveAppIconToLink() {
   ensureScaleFix();
   ensureFeedbackRound2();
   ensureFeedbackStyleCascade();
+  ensureFeedbackRound3();
   applyAppIcon();
 })();
