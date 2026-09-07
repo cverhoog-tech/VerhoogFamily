@@ -1,34 +1,38 @@
 'use strict';
-// FamilyApp feedback round 2: presentation/performance adapters only.
-// CleaningHouseholdRepository remains the only Cleaning writer and CleaningOccurrence stays canonical.
+// FamilyApp feedback round 2.
+// Presentation/performance adapter only: CleaningHouseholdRepository remains the
+// only Cleaning writer and CleaningOccurrence remains the canonical concrete state.
 (function(){
   if(window.__familyAppFeedbackRound2)return;
   window.__familyAppFeedbackRound2=true;
 
-  var state={
-    queued:false,observer:null,turn:null,pendingSupply:null,roomCreateInFlight:false,
-    themeWrapped:false,screenWrapped:false,screenWrapTimer:null,prewarmScheduled:false
-  };
-  var ROOM_LABELS={
-    'living-room':'Woonkamer',kitchen:'Keuken',bathroom:'Badkamer',bedroom:'Slaapkamer',
-    'kids-room':'Kinderkamer',toilet:'Toilet',hall:'Hal',laundry:'Wasruimte',outdoor:'Balkon / tuin',custom:'Kamer'
+  var state={queued:false,observer:null,turn:null,pendingSupply:null,roomCreateInFlight:false,popupWrapped:false,themeWrapped:false,prewarmStarted:false};
+  var ROOM_LABELS={'living-room':'Woonkamer',kitchen:'Keuken',bathroom:'Badkamer',bedroom:'Slaapkamer','kids-room':'Kinderkamer',toilet:'Toilet',hall:'Hal',laundry:'Wasruimte',outdoor:'Balkon / tuin',custom:'Kamer'};
+  var HERO={
+    tasks:{url:'https://res.cloudinary.com/dcnhl3mti/image/upload/v1788732320/familyapp-home-tasks-hero-v2.webp',pos:'center 70%'},
+    shop:{url:'https://res.cloudinary.com/dcnhl3mti/image/upload/v1788733572/familyapp-home-groceries-hero-v2.webp',pos:'center 63%'},
+    cleaning:{url:'https://res.cloudinary.com/dcnhl3mti/image/upload/v1788733601/familyapp-home-cleaning-hero-v2.webp',pos:'center 61%'}
   };
 
   function text(value){return String(value==null?'':value).trim();}
-  function escapeHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  function esc(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function rootData(){try{var repo=window.CleaningHouseholdRepository,snap=repo&&repo.snapshot?repo.snapshot():null;return snap&&snap.data||{};}catch(error){return{};}}
-  function roomsMap(root){return root&&root.rooms&&typeof root.rooms==='object'?root.rooms:{};}
-  function occurrencesMap(root){return root&&root.occurrences&&typeof root.occurrences==='object'?root.occurrences:{};}
+  function roomMap(root){return root&&root.rooms&&typeof root.rooms==='object'?root.rooms:{};}
+  function occurrenceMap(root){return root&&root.occurrences&&typeof root.occurrences==='object'?root.occurrences:{};}
+  function room(root,id){var row=roomMap(root)[id];return row?Object.assign({id:id},row):null;}
+  function roomType(row){var type=text(row&&row.type);return type&&type!=='custom'?type:'';}
+  function roomName(row){return text(row&&row.name)||ROOM_LABELS[text(row&&row.type)]||'Kamer';}
+  function taskRows(){return Array.isArray(window.taskData)?window.taskData:[];}
+  function findTask(id){return taskRows().find(function(row){return row&&text(row.id)===text(id);})||null;}
+  function isCleaningTask(task){return !!(task&&(text(task.sourceType).toUpperCase()==='CLEANING_OCCURRENCE'||text(task.source).toLowerCase()==='cleaning'||text(task.cleaningOccurrenceId)||Array.isArray(task.cleaningOccurrenceIds)));}
   function occurrenceAnchor(row){
     if(!row)return Number.MAX_SAFE_INTEGER;
-    if(text(row.scheduledDate)){
-      var parts=text(row.scheduledDate).split('-').map(Number);
-      if(parts.length===3){var local=new Date(parts[0],parts[1]-1,parts[2],0,0,0,0).getTime();if(Number.isFinite(local))return local;}
-    }
+    var date=text(row.scheduledDate);
+    if(date){var parts=date.split('-').map(Number);if(parts.length===3){var local=new Date(parts[0],parts[1]-1,parts[2]).getTime();if(Number.isFinite(local))return local;}}
     return Number(row.scheduledStartAt)||Number(row.slotAt)||Number(row.flexibleWindow&&row.flexibleWindow.startAt)||Number(row.earliestDueAt)||Number.MAX_SAFE_INTEGER;
   }
-  function activeOccurrenceForRoom(root,roomId){
-    var rows=occurrencesMap(root),best=null,bestAt=Number.MAX_SAFE_INTEGER;
+  function nextOccurrence(root,roomId){
+    var rows=occurrenceMap(root),best=null,bestAt=Number.MAX_SAFE_INTEGER;
     Object.keys(rows).forEach(function(id){
       var row=rows[id];if(!row||text(row.roomId)!==text(roomId))return;
       var status=text(row.status).toUpperCase(),assignment=text(row.assignmentStatus).toUpperCase();
@@ -37,10 +41,6 @@
     });
     return best;
   }
-  function roomRecord(root,roomId){var row=roomsMap(root)[roomId];return row?Object.assign({id:roomId},row):null;}
-  function roomLabel(room){return text(room&&room.name)||ROOM_LABELS[text(room&&room.type)]||'Kamer';}
-  function roomType(room){var type=text(room&&room.type);return type&&type!=='custom'?type:'';}
-  function taskRows(){return Array.isArray(window.taskData)?window.taskData:[];}
   function taskForOccurrence(occurrence){
     if(!occurrence)return null;var id=text(occurrence.id);
     return taskRows().find(function(task){
@@ -49,236 +49,127 @@
       return Array.isArray(task.cleaningOccurrenceIds)&&task.cleaningOccurrenceIds.some(function(value){return text(value)===id;});
     })||null;
   }
-  function occurrenceParts(occurrence){
-    var checklist=Array.isArray(occurrence&&occurrence.checklist)?occurrence.checklist:[];
-    var ids=Array.isArray(occurrence&&occurrence.routineItemIds)?occurrence.routineItemIds:[];
-    return checklist.length||ids.length||0;
-  }
-  function occurrenceMinutes(occurrence){return Math.max(0,Math.round(Number(occurrence&&occurrence.estimatedMinutes)||0));}
-  function occurrenceWhen(occurrence){
-    if(!occurrence)return'';
-    var date=text(occurrence.scheduledDate),time=text(occurrence.scheduledTime||occurrence.time);
-    if(date){
-      var p=date.split('-').map(Number),d=p.length===3?new Date(p[0],p[1]-1,p[2]):null;
-      var label=d&&Number.isFinite(d.getTime())?d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}):date;
-      return label+(time?' · '+time:'');
-    }
-    var stamp=Number(occurrence.scheduledStartAt)||Number(occurrence.slotAt)||0;
-    if(stamp){var when=new Date(stamp);return when.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'})+' · '+when.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
-    return 'Gepland';
+  function occurrenceWhen(row){
+    if(!row)return'Gepland';
+    var date=text(row.scheduledDate),time=text(row.scheduledTime||row.time);
+    if(date){var p=date.split('-').map(Number),d=p.length===3?new Date(p[0],p[1]-1,p[2]):null;var label=d&&Number.isFinite(d.getTime())?d.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}):date;return label+(time?' · '+time:'');}
+    var stamp=Number(row.scheduledStartAt)||Number(row.slotAt)||0;if(stamp){var d2=new Date(stamp);return d2.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'})+' · '+d2.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});}
+    return'Gepland';
   }
 
-  function openTurnDetail(primary){
-    var card=primary&&primary.closest&&primary.closest('.cleaning-room-card');
+  function clearTurnDecoration(){
+    var overlay=document.getElementById('tdp-overlay');if(!overlay)return;
+    overlay.classList.remove('familyapp-cleaning-turn');overlay.removeAttribute('data-cleaning-room-visual');
+    var injected=overlay.querySelectorAll('[data-familyapp-turn-context],[data-familyapp-turn-status],[data-familyapp-turn-start],[data-familyapp-turn-supplies]');
+    for(var i=0;i<injected.length;i++)injected[i].remove();
+  }
+  function installPopupGuard(){
+    var popup=window.TaskDetailPopup;if(state.popupWrapped||!popup||typeof popup.open!=='function')return;
+    var rawOpen=popup.open,rawClose=typeof popup.close==='function'?popup.close:null;
+    popup.open=function(id){var task=findTask(id);if(!isCleaningTask(task)){state.turn=null;clearTurnDecoration();}return rawOpen.apply(this,arguments);};
+    if(rawClose)popup.close=function(){state.turn=null;clearTurnDecoration();return rawClose.apply(this,arguments);};
+    state.popupWrapped=true;
+  }
+  function openTurn(primary){
+    var card=primary&&primary.closest?primary.closest('.cleaning-room-card'):null;
     var roomId=text(primary&&primary.getAttribute('data-cleaning-room-primary-action'))||text(card&&card.getAttribute('data-cleaning-room-id'));
     if(!card||!roomId||!window.TaskDetailPopup||typeof window.TaskDetailPopup.open!=='function')return false;
-    var root=rootData(),occurrence=activeOccurrenceForRoom(root,roomId),room=roomRecord(root,roomId),task=taskForOccurrence(occurrence);
-    if(!occurrence||!room||!task||!task.id)return false;
-    state.turn={roomId:roomId,room:room,occurrence:occurrence,taskId:text(task.id),openedAt:Date.now()};
-    window.TaskDetailPopup.open(task.id);
-    queue();
-    return true;
+    var root=rootData(),occ=nextOccurrence(root,roomId),roomRow=room(root,roomId),task=taskForOccurrence(occ);
+    if(!occ||!roomRow||!task||!task.id)return false;
+    state.turn={roomId:roomId,room:roomRow,occurrence:occ,taskId:text(task.id)};
+    window.TaskDetailPopup.open(task.id);queue();return true;
+  }
+  function watchTurnOverlay(overlay){
+    if(!overlay||overlay.__familyappTurnWatch||typeof MutationObserver==='undefined')return;
+    overlay.__familyappTurnWatch=true;
+    new MutationObserver(function(){if(!overlay.classList.contains('open')){state.turn=null;clearTurnDecoration();}}).observe(overlay,{attributes:true,attributeFilter:['class']});
+  }
+  function decorateTurn(){
+    if(!state.turn)return;var overlay=document.getElementById('tdp-overlay');if(!overlay||!overlay.classList.contains('open'))return;
+    var task=findTask(state.turn.taskId);if(!task)return;
+    var roomRow=state.turn.room,occ=state.turn.occurrence,type=roomType(roomRow),body=overlay.querySelector('.tdp-body');if(!body)return;
+    overlay.classList.add('familyapp-cleaning-turn');if(type)overlay.setAttribute('data-cleaning-room-visual',type);watchTurnOverlay(overlay);
+    var hero=overlay.querySelector('.tdp-hero');if(hero&&!hero.querySelector('[data-familyapp-turn-status]')){var badge=document.createElement('span');badge.className='familyapp-turn-status';badge.setAttribute('data-familyapp-turn-status','1');badge.textContent='GEPLAND';hero.appendChild(badge);}
+    var title=body.querySelector('.tdp-title');if(title)title.textContent=roomName(roomRow)+' schoonmaken';
+    var person=body.querySelector('.tdp-person'),context=body.querySelector('[data-familyapp-turn-context]');
+    if(!context){context=document.createElement('div');context.className='familyapp-turn-context';context.setAttribute('data-familyapp-turn-context','1');if(person)body.insertBefore(context,person);else body.insertBefore(context,body.firstChild);}
+    var subtasks=Array.isArray(task.subtasks)?task.subtasks:[],parts=subtasks.length||((Array.isArray(occ.checklist)&&occ.checklist.length)||(Array.isArray(occ.routineItemIds)&&occ.routineItemIds.length)||0),minutes=Math.max(0,Math.round(Number(task.estimatedMinutes)||Number(occ.estimatedMinutes)||0));
+    context.innerHTML='<div class="familyapp-turn-when"><span aria-hidden="true">▣</span><strong>'+esc(occurrenceWhen(occ))+'</strong></div><div class="familyapp-turn-meta">'+parts+' '+(parts===1?'onderdeel':'onderdelen')+' <span>•</span> ± '+minutes+' min</div>';
+    var footer=body.querySelector('.tdp-footer'),start=body.querySelector('[data-familyapp-turn-start]');
+    if(!start){start=document.createElement('button');start.type='button';start.className='familyapp-turn-start';start.setAttribute('data-familyapp-turn-start','1');if(footer)body.insertBefore(start,footer);else body.appendChild(start);}
+    var anyDone=!!overlay.querySelector('.tdp-sub-chk.done'),undone=overlay.querySelector('.tdp-sub-chk:not(.done)');start.innerHTML='<span aria-hidden="true">✦</span> '+(anyDone?'Ga verder met schoonmaken':'Start schoonmaken');if(!undone&&overlay.querySelector('.tdp-sub-chk'))start.textContent='✓ Alle onderdelen klaar';
+    start.onclick=function(event){event.preventDefault();event.stopPropagation();var target=overlay.querySelector('.tdp-sub-chk:not(.done)')||overlay.querySelector('.tdp-box');if(target&&target.scrollIntoView)target.scrollIntoView({behavior:'smooth',block:'center'});};
+    var supplies=body.querySelector('[data-familyapp-turn-supplies]');if(!supplies){supplies=document.createElement('button');supplies.type='button';supplies.className='familyapp-turn-supplies';supplies.setAttribute('data-familyapp-turn-supplies','1');supplies.innerHTML='<span aria-hidden="true">▣</span> Benodigdheden';body.appendChild(supplies);}
   }
 
-  function turnHeroBadge(overlay){
-    var hero=overlay.querySelector('.tdp-hero');if(!hero||hero.querySelector('[data-familyapp-turn-status]'))return;
-    var badge=document.createElement('span');badge.className='familyapp-turn-status';badge.setAttribute('data-familyapp-turn-status','1');badge.textContent='GEPLAND';hero.appendChild(badge);
-  }
-  function decorateTurnDetail(){
-    if(!state.turn)return;
-    var overlay=document.getElementById('tdp-overlay');if(!overlay||!overlay.classList.contains('open'))return;
-    var task=taskRows().find(function(row){return row&&text(row.id)===state.turn.taskId;});if(!task)return;
-    var room=state.turn.room,occurrence=state.turn.occurrence,type=roomType(room);
-    overlay.classList.add('familyapp-cleaning-turn');
-    if(type)overlay.setAttribute('data-cleaning-room-visual',type);else overlay.removeAttribute('data-cleaning-room-visual');
-    turnHeroBadge(overlay);
-    var body=overlay.querySelector('.tdp-body'),person=body&&body.querySelector('.tdp-person');if(!body)return;
-    var title=body.querySelector('.tdp-title');if(title)title.textContent=roomLabel(room)+' schoonmaken';
-    var context=body.querySelector('[data-familyapp-turn-context]');
-    if(!context){
-      context=document.createElement('div');context.className='familyapp-turn-context';context.setAttribute('data-familyapp-turn-context','1');
-      if(person)body.insertBefore(context,person);else body.insertBefore(context,body.firstChild);
-    }
-    var count=occurrenceParts(occurrence),minutes=occurrenceMinutes(occurrence);
-    context.innerHTML='<div class="familyapp-turn-when"><span aria-hidden="true">▣</span><strong>'+escapeHtml(occurrenceWhen(occurrence))+'</strong></div>'+
-      '<div class="familyapp-turn-meta">'+count+' '+(count===1?'onderdeel':'onderdelen')+' <span>•</span> ± '+minutes+' min</div>';
-
-    var footer=body.querySelector('.tdp-footer');
-    var start=body.querySelector('[data-familyapp-turn-start]');
-    if(!start){
-      start=document.createElement('button');start.type='button';start.className='familyapp-turn-start';start.setAttribute('data-familyapp-turn-start','1');
-      if(footer)body.insertBefore(start,footer);else body.appendChild(start);
-    }
-    var undone=overlay.querySelector('.tdp-sub-chk:not(.done)');
-    start.innerHTML='<span aria-hidden="true">✦</span> '+(overlay.querySelector('.tdp-sub-chk.done')?'Ga verder met schoonmaken':'Start schoonmaken');
-    start.onclick=function(event){
-      event.preventDefault();event.stopPropagation();
-      var target=overlay.querySelector('.tdp-sub-chk:not(.done)')||overlay.querySelector('.tdp-box');
-      if(target&&target.scrollIntoView)target.scrollIntoView({behavior:'smooth',block:'center'});
-      if(target&&target.focus)window.setTimeout(function(){try{target.focus({preventScroll:true});}catch(error){try{target.focus();}catch(ignore){}}},260);
-    };
-    if(!undone&&overlay.querySelector('.tdp-sub-chk'))start.textContent='✓ Alle onderdelen klaar';
-
-    var supplies=body.querySelector('[data-familyapp-turn-supplies]');
-    if(!supplies){
-      supplies=document.createElement('button');supplies.type='button';supplies.className='familyapp-turn-supplies';supplies.setAttribute('data-familyapp-turn-supplies','1');supplies.innerHTML='<span aria-hidden="true">▣</span> Benodigdheden';body.appendChild(supplies);
-    }
-  }
-
-  function supplyStateForRow(row){
-    if(!row)return'IN_STOCK';var active=row.querySelector('.cleaning-supply-status.is-active');return text(active&&active.getAttribute('data-cleaning-supply-status')).toUpperCase()||'IN_STOCK';
-  }
-  function decorateSupplyOverlay(){
+  function supplyState(row){var active=row&&row.querySelector('.cleaning-supply-status.is-active');return text(active&&active.getAttribute('data-cleaning-supply-status')).toUpperCase()||'IN_STOCK';}
+  function decorateSupply(){
     var overlay=document.getElementById('cleaning-supplies-overlay');if(!overlay)return;
-    var roomId=text(state.pendingSupply&&state.pendingSupply.roomId),root=rootData(),room=roomId?roomRecord(root,roomId):null;
-    if(room&&roomType(room))overlay.setAttribute('data-cleaning-room-visual',roomType(room));
-    var rows=overlay.querySelectorAll('.cleaning-supply-row'),low=0,out=0;
-    for(var i=0;i<rows.length;i++){
-      var status=supplyStateForRow(rows[i]);rows[i].setAttribute('data-familyapp-supply-state',status);if(status==='LOW')low++;if(status==='OUT')out++;
-    }
+    var root=rootData(),roomId=text(state.pendingSupply&&state.pendingSupply.roomId),roomRow=roomId?room(root,roomId):null;if(roomRow&&roomType(roomRow))overlay.setAttribute('data-cleaning-room-visual',roomType(roomRow));
+    var rows=overlay.querySelectorAll('.cleaning-supply-row'),low=0,out=0;for(var i=0;i<rows.length;i++){var status=supplyState(rows[i]);rows[i].setAttribute('data-familyapp-supply-state',status);if(status==='LOW')low++;if(status==='OUT')out++;}
     var sheet=overlay.querySelector('.cleaning-supply-sheet'),footer=sheet&&sheet.querySelector('.cleaning-supply-footer');if(!sheet||!footer)return;
-    var summary=sheet.querySelector('[data-familyapp-supply-summary]');
-    if(!summary){summary=document.createElement('section');summary.className='familyapp-supply-summary';summary.setAttribute('data-familyapp-supply-summary','1');footer.parentNode.insertBefore(summary,footer);}
+    var summary=sheet.querySelector('[data-familyapp-supply-summary]');if(!summary){summary=document.createElement('section');summary.className='familyapp-supply-summary';summary.setAttribute('data-familyapp-supply-summary','1');footer.parentNode.insertBefore(summary,footer);}
     summary.innerHTML='<span>Kamer voorraad status</span><strong>'+(low?'<em>'+low+' bijna op</em>':'')+(low&&out?' <b>•</b> ':'')+(out?'<i>'+out+' ontbreekt</i>':(!low?'Alles aanwezig':''))+'</strong>';
-    var prompt=sheet.querySelector('[data-familyapp-supply-prompt]');
-    if(!prompt){
-      prompt=document.createElement('section');prompt.className='familyapp-supply-prompt';prompt.setAttribute('data-familyapp-supply-prompt','1');
-      prompt.innerHTML='<div><strong>Ontbreekt iets?</strong><span>Voeg gemarkeerde items direct toe aan Boodschappen</span></div><button type="button" data-familyapp-supply-prompt-button aria-label="Naar boodschappen">＋</button>';
-      footer.parentNode.insertBefore(prompt,summary);
-    }
-    var attention=low+out,promptButton=prompt.querySelector('[data-familyapp-supply-prompt-button]');
-    if(promptButton){promptButton.disabled=!attention;promptButton.setAttribute('aria-disabled',attention?'false':'true');promptButton.onclick=function(event){event.preventDefault();var shopping=overlay.querySelector('[data-cleaning-supply-shopping]');if(shopping&&!shopping.disabled)shopping.click();};}
-    var actions=sheet.querySelector('[data-familyapp-supply-actions]');
-    if(!actions){
-      actions=document.createElement('div');actions.className='familyapp-supply-actions';actions.setAttribute('data-familyapp-supply-actions','1');
-      actions.innerHTML='<button type="button" data-familyapp-supply-all>Bekijk alle kameritems</button><button type="button" data-familyapp-supply-shopping>Boodschappen <span>0</span></button>';
-      footer.appendChild(actions);
-    }
-    var all=actions.querySelector('[data-familyapp-supply-all]'),shoppingButton=actions.querySelector('[data-familyapp-supply-shopping]');
-    if(all)all.onclick=function(event){event.preventDefault();var tab=overlay.querySelector('[data-cleaning-supply-mode="all"]');if(tab)tab.click();};
-    if(shoppingButton){var countEl=shoppingButton.querySelector('span');if(countEl)countEl.textContent=String(attention);shoppingButton.disabled=!attention;shoppingButton.onclick=function(event){event.preventDefault();var nativeButton=overlay.querySelector('.cleaning-supply-footer > [data-cleaning-supply-shopping]');if(nativeButton&&!nativeButton.disabled)nativeButton.click();};}
+    var prompt=sheet.querySelector('[data-familyapp-supply-prompt]');if(!prompt){prompt=document.createElement('section');prompt.className='familyapp-supply-prompt';prompt.setAttribute('data-familyapp-supply-prompt','1');prompt.innerHTML='<div><strong>Ontbreekt iets?</strong><span>Voeg gemarkeerde items direct toe aan Boodschappen</span></div><button type="button" data-familyapp-supply-prompt-button aria-label="Naar boodschappen">＋</button>';footer.parentNode.insertBefore(prompt,summary);}
+    var attention=low+out,promptButton=prompt.querySelector('[data-familyapp-supply-prompt-button]');if(promptButton){promptButton.disabled=!attention;promptButton.onclick=function(event){event.preventDefault();var nativeButton=overlay.querySelector('.cleaning-supply-footer > [data-cleaning-supply-shopping]');if(nativeButton&&!nativeButton.disabled)nativeButton.click();};}
+    var actions=sheet.querySelector('[data-familyapp-supply-actions]');if(!actions){actions=document.createElement('div');actions.className='familyapp-supply-actions';actions.setAttribute('data-familyapp-supply-actions','1');actions.innerHTML='<button type="button" data-familyapp-supply-all>Bekijk alle kameritems</button><button type="button" data-familyapp-supply-shopping>Boodschappen <span>0</span></button>';footer.appendChild(actions);}
+    var all=actions.querySelector('[data-familyapp-supply-all]'),shopping=actions.querySelector('[data-familyapp-supply-shopping]');if(all)all.onclick=function(event){event.preventDefault();var tab=overlay.querySelector('[data-cleaning-supply-mode="all"]');if(tab)tab.click();};if(shopping){var count=shopping.querySelector('span');if(count)count.textContent=String(attention);shopping.disabled=!attention;shopping.onclick=function(event){event.preventDefault();var nativeButton=overlay.querySelector('.cleaning-supply-footer > [data-cleaning-supply-shopping]');if(nativeButton&&!nativeButton.disabled)nativeButton.click();};}
   }
 
-  function iconForRoutine(title){
-    var raw=text(title).toLocaleLowerCase('nl-NL');
-    if(/speel|kind/.test(raw))return'🧸';if(/dweil|vloer|veeg|stofzuig/.test(raw))return'🧹';if(/toilet|wc/.test(raw))return'🚽';if(/bad|douche|kraan|wastafel/.test(raw))return'🫧';if(/was|kleding/.test(raw))return'🧺';if(/glas|spiegel|raam/.test(raw))return'✨';if(/keuken|aanrecht|oven/.test(raw))return'🧽';return'✓';
-  }
-  function decoratePlannedCard(card){
-    if(!card||card.querySelector('[data-familyapp-planned-summary]'))return;
-    card.classList.add('familyapp-planned-card');
-    var items=card.querySelector('.cleaning-planned-room-items'),rows=items?items.querySelectorAll('.cleaning-planned-room-item'):[];
-    var minutes=0,titles=[],next='';
-    for(var i=0;i<rows.length;i++){
-      var strong=rows[i].querySelector('strong'),small=rows[i].querySelector('small'),date=rows[i].querySelector(':scope > span');
-      var title=text(strong&&strong.textContent);if(title)titles.push(title);
-      var match=text(small&&small.textContent).match(/(\d+)\s*min/i);if(match)minutes+=Number(match[1])||0;
-      if(!next&&date)next=text(date.textContent);
+  function routineIcon(title){var raw=text(title).toLocaleLowerCase('nl-NL');if(/speel|kind/.test(raw))return'🧸';if(/dweil|vloer|veeg|stofzuig/.test(raw))return'🧹';if(/toilet|wc/.test(raw))return'🚽';if(/bad|douche|kraan|wastafel/.test(raw))return'🫧';if(/was|kleding/.test(raw))return'🧺';if(/glas|spiegel|raam/.test(raw))return'✨';if(/keuken|aanrecht|oven/.test(raw))return'🧽';return'✓';}
+  function decoratePlannedCards(){
+    var cards=document.querySelectorAll('#screen-cleaning .cleaning-planned-room-card');
+    for(var c=0;c<cards.length;c++){
+      var card=cards[c];if(card.querySelector('[data-familyapp-planned-summary]'))continue;card.classList.add('familyapp-planned-card');
+      var items=card.querySelector('.cleaning-planned-room-items'),rows=items?items.querySelectorAll('.cleaning-planned-room-item'):[],minutes=0,titles=[],next='';
+      for(var i=0;i<rows.length;i++){var strong=rows[i].querySelector('strong'),small=rows[i].querySelector('small'),date=rows[i].querySelector(':scope > span'),title=text(strong&&strong.textContent),match=text(small&&small.textContent).match(/(\d+)\s*min/i);if(title)titles.push(title);if(match)minutes+=Number(match[1])||0;if(!next&&date)next=text(date.textContent);}
+      var summary=document.createElement('div');summary.className='familyapp-planned-summary';summary.setAttribute('data-familyapp-planned-summary','1');var icons=(titles.length?titles:['Routine']).slice(0,5).map(function(title){return'<span class="familyapp-planned-icon" title="'+esc(title)+'">'+routineIcon(title)+'</span>';}).join('');
+      summary.innerHTML='<div class="familyapp-planned-summary-main"><div class="familyapp-planned-icons">'+icons+'</div><span class="familyapp-planned-meta">'+rows.length+' '+(rows.length===1?'routine':'routines')+' · ± '+minutes+' min'+(next?' · '+esc(next):'')+'</span></div><button type="button" class="familyapp-planned-toggle" data-familyapp-planned-toggle aria-expanded="false" aria-label="Toon routines"><span>⌄</span></button>';
+      if(items)card.insertBefore(summary,items);else card.appendChild(summary);
     }
-    var summary=document.createElement('div');summary.className='familyapp-planned-summary';summary.setAttribute('data-familyapp-planned-summary','1');
-    var icons=(titles.length?titles:['Routine']).slice(0,5).map(function(title){return '<span class="familyapp-planned-icon" title="'+escapeHtml(title)+'">'+iconForRoutine(title)+'</span>';}).join('');
-    summary.innerHTML='<div class="familyapp-planned-summary-main"><div class="familyapp-planned-icons">'+icons+'</div><span class="familyapp-planned-meta">'+rows.length+' '+(rows.length===1?'routine':'routines')+' · ± '+minutes+' min'+(next?' · '+escapeHtml(next):'')+'</span></div><button type="button" class="familyapp-planned-toggle" data-familyapp-planned-toggle aria-expanded="false" aria-label="Toon routines"><span>⌄</span></button>';
-    if(items)card.insertBefore(summary,items);else card.appendChild(summary);
   }
-  function decoratePlannedCards(){var cards=document.querySelectorAll('#screen-cleaning .cleaning-planned-room-card');for(var i=0;i<cards.length;i++)decoratePlannedCard(cards[i]);}
+  function overviewTone(value){var raw=text(value).toLocaleLowerCase('nl-NL');if(raw.indexOf('planningcheck')>=0||raw.indexOf('planning check')>=0)return'planning';if(raw.indexOf('weekvoorraad')>=0)return'supplies';if(raw.indexOf('aangevuld')>=0)return'restock';if(raw.indexOf('recente activiteit')>=0)return'activity';if(raw.indexOf('geschiedenis')>=0)return'history';if(raw.indexOf('snelle')>=0||raw.indexOf('quick')>=0)return'quick';return'';}
+  function decorateOverview(){var nodes=document.querySelectorAll('#screen-cleaning .cleaning-week-assist-card,#screen-cleaning .cleaning-overview-section,#screen-cleaning .cleaning-history-detail');for(var i=0;i<nodes.length;i++){var tone=overviewTone(nodes[i].textContent);if(tone)nodes[i].setAttribute('data-familyapp-tone',tone);}}
 
-  function overviewTone(value){
-    var raw=text(value).toLocaleLowerCase('nl-NL');
-    if(raw.indexOf('planningcheck')>=0||raw.indexOf('planning check')>=0)return'planning';
-    if(raw.indexOf('weekvoorraad')>=0)return'supplies';
-    if(raw.indexOf('aangevuld')>=0)return'restock';
-    if(raw.indexOf('recente activiteit')>=0)return'activity';
-    if(raw.indexOf('geschiedenis')>=0)return'history';
-    if(raw.indexOf('snelle')>=0||raw.indexOf('quick')>=0)return'quick';
-    return'';
+  function heroBackground(url,dark){return 'linear-gradient(90deg,'+(dark?'rgba(6,11,17,.91) 0%,rgba(6,11,17,.76) 42%,rgba(6,11,17,.28) 73%,rgba(6,11,17,.10) 100%':'rgba(250,248,241,.90) 0%,rgba(250,248,241,.70) 42%,rgba(250,248,241,.24) 73%,rgba(250,248,241,.06) 100%')+'),url("'+url+'")';}
+  function decorateHomeHeroes(){
+    var dark=(document.documentElement.getAttribute('data-theme')||'').indexOf('dark')>=0,defs=[['.tasks-card',HERO.tasks],['.shop-card',HERO.shop],['.cleaning-card',HERO.cleaning]];
+    defs.forEach(function(entry){var card=document.querySelector(entry[0]);if(!card)return;var nodes=[card,card.querySelector('.home-hero-inner')].filter(Boolean),bg=heroBackground(entry[1].url,dark);nodes.forEach(function(node){node.style.setProperty('background-image',bg,'important');node.style.setProperty('background-size','cover','important');node.style.setProperty('background-position',entry[1].pos,'important');node.style.setProperty('background-repeat','no-repeat','important');});});
   }
-  function decorateOverviewTones(){
-    var nodes=document.querySelectorAll('#screen-cleaning .cleaning-week-assist-card,#screen-cleaning .cleaning-overview-section,#screen-cleaning .cleaning-history-detail');
-    for(var i=0;i<nodes.length;i++){var tone=overviewTone(nodes[i].textContent);if(tone&&nodes[i].getAttribute('data-familyapp-tone')!==tone)nodes[i].setAttribute('data-familyapp-tone',tone);}
-  }
-
-  function stableThemeAttr(themeId,dark){if(themeId==='nature')return dark?'dark':'';return themeId+(dark?'-dark':'');}
-  function validTheme(themeId){try{return Array.isArray(window.THEMES)&&window.THEMES.some(function(theme){return theme&&theme.id===themeId;});}catch(error){return themeId==='nature';}}
-  function applyCachedThemeAttr(){
-    try{
-      var cached=localStorage.getItem('familie_theme_id'),dark=localStorage.getItem('familie_theme_dark')==='1';
-      var theme=validTheme(cached)?cached:(validTheme(window.currentTheme)?window.currentTheme:'nature');
-      if(theme){window.currentTheme=theme;window.isDark=dark;document.documentElement.setAttribute('data-theme',stableThemeAttr(theme,dark));}
-    }catch(error){}
-  }
-  function installThemeGuard(){
-    if(state.themeWrapped||typeof window.applyTheme!=='function')return;var raw=window.applyTheme;if(raw.__familyappFeedbackRound2)return;
-    window.applyTheme=function(themeId,dark){
-      var next=validTheme(themeId)?themeId:'nature',nextDark=!!dark,expected=stableThemeAttr(next,nextDark);
-      try{localStorage.setItem('familie_theme_id',next);}catch(error){}
-      if(window.currentTheme===next&&!!window.isDark===nextDark&&document.documentElement.getAttribute('data-theme')===expected){if(typeof window.updateDarkToggleUI==='function')window.updateDarkToggleUI();return;}
-      return raw.apply(this,arguments);
-    };
-    window.applyTheme.__familyappFeedbackRound2=true;state.themeWrapped=true;applyCachedThemeAttr();
-  }
-  function installShowScreenGuard(){
-    if(state.screenWrapped||typeof window.showScreen!=='function')return false;var raw=window.showScreen;if(raw.__familyappFeedbackRound2){state.screenWrapped=true;return true;}
-    window.showScreen=function(id){
-      var target=text(id),screen=target&&document.getElementById('screen-'+target),login=document.getElementById('login-screen');
-      if(target==='home'&&window._currentScreen==='home'&&screen&&screen.classList.contains('active')&&window._appStarted&&(!login||login.style.display==='none')){if(typeof window.renderNav==='function')window.renderNav();return;}
-      return raw.apply(this,arguments);
-    };
-    window.showScreen.__familyappFeedbackRound2=true;state.screenWrapped=true;return true;
+  function installThemeCache(){
+    if(state.themeWrapped||typeof window.applyTheme!=='function')return;var raw=window.applyTheme;
+    window.applyTheme=function(themeId,dark){try{if(themeId)localStorage.setItem('familie_theme_id',themeId);}catch(error){}var result=raw.apply(this,arguments);queue();return result;};state.themeWrapped=true;
   }
 
   function prewarmCleaning(){
-    if(state.prewarmScheduled)return;state.prewarmScheduled=true;
-    function add(rel,href,as){if(document.querySelector('link[data-familyapp-prewarm="'+href+'"]'))return;var link=document.createElement('link');link.rel=rel;link.href=href;link.setAttribute('data-familyapp-prewarm',href);if(as)link.as=as;document.head.appendChild(link);}
-    add('preload','/src/styles/cleaning.css?v=1','style');
-    add('modulepreload','/src/modules/cleaning/cleaningScreen.js?v=1');
-    add('modulepreload','/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');
+    if(state.prewarmStarted)return;state.prewarmStarted=true;
+    try{if(typeof window.ensureCleaningScreen==='function')window.ensureCleaningScreen();if(typeof window.renderCleaningModule==='function')window.renderCleaningModule();}catch(error){console.warn('[Cleaning] prewarm skipped',error);}
   }
-  function schedulePrewarm(){var run=function(){if(window.requestIdleCallback)window.requestIdleCallback(prewarmCleaning,{timeout:1400});else window.setTimeout(prewarmCleaning,450);};if(document.readyState==='complete')run();else window.addEventListener('load',run,{once:true});}
-  function ensureCleaningLoadingShell(){
-    var screen=document.getElementById('screen-cleaning'),content=document.getElementById('cleaning-content');
-    if(!screen||!screen.classList.contains('active')||!content||content.children.length)return;
-    content.innerHTML='<div class="familyapp-cleaning-loading-shell" aria-live="polite"><div class="familyapp-loading-head"><span></span><span></span></div><div class="familyapp-loading-hero"></div><div class="familyapp-loading-tabs"></div><div class="familyapp-loading-cards"><i></i><i></i><i></i></div><p>Schoonmaken wordt klaargezet…</p></div>';
-  }
+  function schedulePrewarm(){var run=function(){if(window.requestIdleCallback)window.requestIdleCallback(prewarmCleaning,{timeout:1100});else window.setTimeout(prewarmCleaning,350);};if(document.readyState==='complete')run();else window.addEventListener('load',run,{once:true});}
+  function ensureLoadingShell(){var screen=document.getElementById('screen-cleaning'),content=document.getElementById('cleaning-content');if(!screen||!screen.classList.contains('active')||!content||content.children.length)return;content.innerHTML='<div class="familyapp-cleaning-loading-shell" aria-live="polite"><div class="familyapp-loading-head"><span></span><span></span></div><div class="familyapp-loading-hero"></div><div class="familyapp-loading-tabs"></div><div class="familyapp-loading-cards"><i></i><i></i><i></i></div><p>Schoonmaken wordt klaargezet…</p></div>';}
 
-  function handleRoomCreate(event){
+  function interceptRoomCreate(event){
     var form=event.target&&event.target.closest?event.target.closest('#screen-cleaning [data-cleaning-room-form]'):null;if(!form||state.roomCreateInFlight)return false;
     var submit=form.querySelector('[type="submit"]'),label=text(submit&&submit.textContent);if(!/kamer toevoegen|maak kamer|kamer maken/i.test(label))return false;
-    var nameInput=form.querySelector('[data-cleaning-room-name]'),typeInput=form.querySelector('[data-cleaning-room-type]'),name=text(nameInput&&nameInput.value),type=text(typeInput&&typeInput.value)||'custom';
-    var repo=window.CleaningHouseholdRepository;if(!name||!repo||typeof repo.createRoom!=='function')return false;
-    event.preventDefault();event.stopImmediatePropagation();state.roomCreateInFlight=true;form.classList.add('is-familyapp-submitting');
-    if(submit){submit.disabled=true;submit.setAttribute('aria-busy','true');submit.textContent='Kamer maken…';}
-    var note=form.querySelector('[data-familyapp-room-create-status]');if(!note){note=document.createElement('div');note.className='familyapp-room-create-status';note.setAttribute('data-familyapp-room-create-status','1');note.textContent='Kamer wordt toegevoegd zonder het scherm te blokkeren…';if(submit&&submit.parentNode)submit.parentNode.insertBefore(note,submit);}
-    window.requestAnimationFrame(function(){
-      Promise.resolve().then(function(){return repo.createRoom({name:name,type:type});}).then(function(){
-        state.roomCreateInFlight=false;var current=document.querySelector('#screen-cleaning [data-cleaning-room-form]'),cancel=current&&current.querySelector('[data-cleaning-room-cancel]');if(cancel)cancel.click();if(typeof window.showToast==='function')window.showToast(name+' toegevoegd ✓');queue();
-      }).catch(function(error){
-        state.roomCreateInFlight=false;var current=document.querySelector('#screen-cleaning [data-cleaning-room-form]')||form,currentSubmit=current.querySelector('[type="submit"]');current.classList.remove('is-familyapp-submitting');if(currentSubmit){currentSubmit.disabled=false;currentSubmit.removeAttribute('aria-busy');currentSubmit.textContent='Kamer toevoegen';}var currentNote=current.querySelector('[data-familyapp-room-create-status]');if(currentNote)currentNote.textContent='Opslaan lukte niet. Probeer opnieuw.';if(typeof window.showToast==='function')window.showToast((error&&error.message)||'Kamer kon niet worden toegevoegd');
-      });
-    });
+    var nameInput=form.querySelector('[data-cleaning-room-name]'),typeInput=form.querySelector('[data-cleaning-room-type]'),name=text(nameInput&&nameInput.value),type=text(typeInput&&typeInput.value)||'custom',repo=window.CleaningHouseholdRepository;if(!name||!repo||typeof repo.createRoom!=='function')return false;
+    event.preventDefault();event.stopImmediatePropagation();state.roomCreateInFlight=true;form.classList.add('is-familyapp-submitting');if(submit){submit.disabled=true;submit.setAttribute('aria-busy','true');submit.textContent='Kamer maken…';}
+    var note=form.querySelector('[data-familyapp-room-create-status]');if(!note){note=document.createElement('div');note.className='familyapp-room-create-status';note.setAttribute('data-familyapp-room-create-status','1');note.textContent='Kamer wordt toegevoegd…';if(submit&&submit.parentNode)submit.parentNode.insertBefore(note,submit);}
+    window.requestAnimationFrame(function(){Promise.resolve().then(function(){return repo.createRoom({name:name,type:type});}).then(function(){state.roomCreateInFlight=false;var current=document.querySelector('#screen-cleaning [data-cleaning-room-form]'),cancel=current&&current.querySelector('[data-cleaning-room-cancel]');if(cancel)cancel.click();if(typeof window.showToast==='function')window.showToast(name+' toegevoegd ✓');queue();}).catch(function(error){state.roomCreateInFlight=false;var current=document.querySelector('#screen-cleaning [data-cleaning-room-form]')||form,button=current.querySelector('[type="submit"]');current.classList.remove('is-familyapp-submitting');if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent='Kamer toevoegen';}var currentNote=current.querySelector('[data-familyapp-room-create-status]');if(currentNote)currentNote.textContent='Opslaan lukte niet. Probeer opnieuw.';if(typeof window.showToast==='function')window.showToast((error&&error.message)||'Kamer kon niet worden toegevoegd');});});
     return true;
   }
 
-  function onClickCapture(event){
-    var target=event.target,closest=target&&target.closest?target.closest.bind(target):null;if(!closest)return;
-    var primary=closest('[data-cleaning-room-primary-action]');if(primary&&openTurnDetail(primary)){event.preventDefault();event.stopImmediatePropagation();return;}
-    var toggle=closest('[data-familyapp-planned-toggle]');if(toggle){event.preventDefault();event.stopPropagation();var card=toggle.closest('.cleaning-planned-room-card');if(card){var expanded=card.classList.toggle('is-familyapp-expanded');toggle.setAttribute('aria-expanded',expanded?'true':'false');toggle.setAttribute('aria-label',expanded?'Verberg routines':'Toon routines');}return;}
-    var roomSupply=closest('[data-cleaning-room-supplies]');if(roomSupply){var roomId=text(roomSupply.getAttribute('data-cleaning-room-supplies')),room=roomRecord(rootData(),roomId);state.pendingSupply={roomId:roomId,type:roomType(room)};window.setTimeout(decorateSupplyOverlay,0);return;}
-    if(closest('[data-familyapp-turn-supplies]')&&state.turn){event.preventDefault();event.stopImmediatePropagation();var info={roomId:state.turn.roomId,type:roomType(state.turn.room)};state.pendingSupply=info;if(window.TaskDetailPopup&&typeof window.TaskDetailPopup.close==='function')window.TaskDetailPopup.close();window.setTimeout(function(){if(window.CleaningSupplyExperience&&typeof window.CleaningSupplyExperience.openRoom==='function'){window.CleaningSupplyExperience.openRoom(info.roomId);window.setTimeout(decorateSupplyOverlay,0);}},180);return;}
-    if(closest('#tdp-close-btn')||target&&target.id==='tdp-overlay'){window.setTimeout(function(){if(!document.getElementById('tdp-overlay'))state.turn=null;},280);}
+  function onClick(event){
+    var target=event.target;if(!target||!target.closest)return;
+    var primary=target.closest('[data-cleaning-room-primary-action]');if(primary&&openTurn(primary)){event.preventDefault();event.stopImmediatePropagation();return;}
+    var toggle=target.closest('[data-familyapp-planned-toggle]');if(toggle){event.preventDefault();event.stopPropagation();var card=toggle.closest('.cleaning-planned-room-card');if(card){var expanded=card.classList.toggle('is-familyapp-expanded');toggle.setAttribute('aria-expanded',expanded?'true':'false');toggle.setAttribute('aria-label',expanded?'Verberg routines':'Toon routines');}return;}
+    var roomSupply=target.closest('[data-cleaning-room-supplies]');if(roomSupply){var roomId=text(roomSupply.getAttribute('data-cleaning-room-supplies')),roomRow=room(rootData(),roomId);state.pendingSupply={roomId:roomId,type:roomType(roomRow)};window.setTimeout(function(){decorateSupply();},0);return;}
+    if(target.closest('[data-familyapp-turn-supplies]')&&state.turn){event.preventDefault();event.stopImmediatePropagation();var info={roomId:state.turn.roomId,type:roomType(state.turn.room)};state.pendingSupply=info;if(window.TaskDetailPopup&&typeof window.TaskDetailPopup.close==='function')window.TaskDetailPopup.close();window.setTimeout(function(){if(window.CleaningSupplyExperience&&typeof window.CleaningSupplyExperience.openRoom==='function'){window.CleaningSupplyExperience.openRoom(info.roomId);window.setTimeout(decorateSupply,0);}},120);return;}
+    if(target.closest('#tdp-close-btn')||target.id==='tdp-overlay'){state.turn=null;}
   }
-  function onSubmitCapture(event){handleRoomCreate(event);}
-
-  function decorateAll(){
-    state.queued=false;installThemeGuard();installShowScreenGuard();ensureCleaningLoadingShell();decoratePlannedCards();decorateOverviewTones();decorateTurnDetail();decorateSupplyOverlay();
-  }
-  function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(callback){return window.setTimeout(callback,0);})(decorateAll);}
-  function observe(){
-    if(typeof MutationObserver==='undefined'||state.observer)return;state.observer=new MutationObserver(queue);state.observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','data-theme']});
-  }
-  function start(){
-    applyCachedThemeAttr();installThemeGuard();schedulePrewarm();document.addEventListener('click',onClickCapture,true);document.addEventListener('submit',onSubmitCapture,true);
-    window.addEventListener('pageshow',function(){applyCachedThemeAttr();queue();});document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'){applyCachedThemeAttr();queue();}});
-    state.screenWrapTimer=window.setInterval(function(){if(installShowScreenGuard()&&state.screenWrapTimer){window.clearInterval(state.screenWrapTimer);state.screenWrapTimer=null;}},50);window.setTimeout(function(){if(state.screenWrapTimer){window.clearInterval(state.screenWrapTimer);state.screenWrapTimer=null;}},10000);
-    observe();queue();
-  }
-  start();
+  function onSubmit(event){interceptRoomCreate(event);}
+  function decorate(){state.queued=false;installPopupGuard();installThemeCache();ensureLoadingShell();decorateHomeHeroes();decoratePlannedCards();decorateOverview();decorateTurn();decorateSupply();}
+  function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(fn){return window.setTimeout(fn,0);})(decorate);}
+  function observe(){if(state.observer||typeof MutationObserver==='undefined'||!document.body)return;state.observer=new MutationObserver(queue);state.observer.observe(document.body,{childList:true,subtree:true});}
+  function start(){installPopupGuard();installThemeCache();schedulePrewarm();document.addEventListener('click',onClick,true);document.addEventListener('submit',onSubmit,true);observe();queue();window.addEventListener('pageshow',queue);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')queue();});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
