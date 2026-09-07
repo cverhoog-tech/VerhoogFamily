@@ -184,7 +184,7 @@ function ensureFeedbackRound5Styles() {
       style = document.createElement('link');
       style.id = styleId;
       style.rel = 'stylesheet';
-      style.href = '/src/styles/familyapp-feedback-round5.css?v=20260907-1';
+      style.href = '/src/styles/familyapp-feedback-round5.css?v=20260907-2';
     }
     if (anchor && anchor.parentNode) {
       if (anchor.nextElementSibling !== style) anchor.parentNode.insertBefore(style, anchor.nextSibling);
