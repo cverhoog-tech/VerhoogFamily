@@ -3,6 +3,8 @@
 // HOME
 // ============================================================
 
+var HOME_CLEANING_FALLBACK_IMAGE='familieapp_white_assets/tasks_background.png';
+
 function ensureHomeControls() {
   var hero=document.querySelector('#screen-home .home-hero');
   if(hero&&!document.getElementById('home-dark-toggle')){
@@ -36,10 +38,15 @@ function ensureHomeCleaningCard(){
   var icon=card.querySelector('.card-icon .icon');
   if(icon&&!window.FamilyIcons)icon.textContent='🧹';
 
-  // Image ownership lives in FamilyAppFeedbackRound4. The legacy Posts class
-  // remains only for shell compatibility and must never install its own image.
+  // Round 4 owns the actual approved photo. Keep the old local household-work
+  // image only as a no-network fallback for the tiny window before round 4 is
+  // available, never as a competing steady-state image owner.
   card.style.setProperty('--card-color','#47745a','important');
-  card.style.removeProperty('background-image');
+  if(!window.FamilyAppFeedbackRound4){
+    card.style.backgroundImage="linear-gradient(rgba(63,127,47,.24),rgba(63,127,47,.24)),url('"+HOME_CLEANING_FALLBACK_IMAGE+"')";
+  }else{
+    card.style.removeProperty('background-image');
+  }
   var inner=card.querySelector('.card-inner');
   if(inner){inner.style.setProperty('background','transparent','important');inner.style.setProperty('background-image','none','important');}
 }
