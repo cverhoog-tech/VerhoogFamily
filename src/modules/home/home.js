@@ -36,14 +36,12 @@ function ensureHomeCleaningCard(){
   var icon=card.querySelector('.card-icon .icon');
   if(icon&&!window.FamilyIcons)icon.textContent='🧹';
 
-  // The old Posts class remains for shell compatibility. Inline important
-  // styling guarantees that its old pink/social background cannot win over
-  // the semantic Cleaning treatment, regardless of stylesheet load order.
-  var background="linear-gradient(180deg,rgba(34,86,61,.12),rgba(20,33,28,.78)),url('src/styles/familieapp_white_assets/tasks_background.png')";
+  // Image ownership lives in FamilyAppFeedbackRound4. The legacy Posts class
+  // remains only for shell compatibility and must never install its own image.
   card.style.setProperty('--card-color','#47745a','important');
-  card.style.setProperty('background-image',background,'important');
+  card.style.removeProperty('background-image');
   var inner=card.querySelector('.card-inner');
-  if(inner)inner.style.setProperty('background-image',background,'important');
+  if(inner){inner.style.setProperty('background','transparent','important');inner.style.setProperty('background-image','none','important');}
 }
 
 function applyHomeIconSet(){
@@ -79,6 +77,7 @@ function renderHome() {
   applyHomeIconSet();
   updateStats();
   renderActivityList();
+  if(window.FamilyAppFeedbackRound4&&typeof window.FamilyAppFeedbackRound4.refreshHome==='function')window.FamilyAppFeedbackRound4.refreshHome();
   setTimeout(initCarousel, 60);
 }
 
