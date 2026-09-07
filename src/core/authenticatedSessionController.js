@@ -30,8 +30,9 @@
   function applyCachedTheme(){
     try{
       var dark=localStorage.getItem('familie_theme_dark');
+      var cachedTheme=localStorage.getItem('familie_theme_id');
       var nextDark=dark===null?!!window.isDark:dark==='1';
-      var nextTheme=typeof window.currentTheme==='string'&&window.currentTheme?window.currentTheme:'nature';
+      var nextTheme=cachedTheme||(typeof window.currentTheme==='string'&&window.currentTheme?window.currentTheme:'nature');
       if(typeof window.applyTheme==='function')window.applyTheme(nextTheme,nextDark);
     }catch(e){}
   }
@@ -42,15 +43,24 @@
     window.__familyAppSessionBootOwner=true;
     window._appStarted=true;
     applyCachedTheme();
+    var returning=false;
+    try{returning=!!localStorage.getItem('familyapp-profile-name-v1');}catch(e){}
+    if(returning)document.documentElement.classList.add('familyapp-session-pending');
     var el=document.getElementById('login-screen');
-    if(el)el.style.background='var(--c-bg, var(--c-surface, #ffffff))';
+    if(el){
+      el.style.background='var(--c-bg, var(--c-surface, #ffffff))';
+      if(returning){el.style.visibility='hidden';el.style.pointerEvents='none';el.style.transition='none';}
+    }
   }
   function loginScreen(show){
+    document.documentElement.classList.remove('familyapp-session-pending');
     var el=document.getElementById('login-screen');
     if(el){
       el.style.opacity='1';
       el.style.transition='none';
       el.style.display=show?'flex':'none';
+      el.style.visibility=show?'visible':'hidden';
+      el.style.pointerEvents=show?'auto':'none';
     }
   }
   function resetLoginUi(){
@@ -170,7 +180,7 @@
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
-  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;setState('stopped');}
+  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;document.documentElement.classList.remove('familyapp-session-pending');setState('stopped');}
 
   window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};
