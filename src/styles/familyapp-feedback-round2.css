@@ -1,0 +1,154 @@
+/* FamilyApp feedback round 2 — visual/performance polish only. */
+
+/* Keep the resume/login surface on the current theme instead of flashing a hard white frame. */
+#login-screen{background:var(--c-bg,#f8f7fb)!important}
+[data-theme*="dark"] #login-screen{background:#070b12!important}
+
+/* Room edit is a quiet pencil control; the hit target stays 44px. */
+html body #screen-cleaning .cleaning-room-card-actions>button.cleaning-room-edit-button,
+html body #screen-cleaning .cleaning-room-edit-button{
+  width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;
+  border-radius:999px!important;font-size:0!important;line-height:0!important;display:grid!important;place-items:center!important;
+  background:rgba(255,255,255,.76)!important;border:1px solid rgba(56,47,73,.14)!important;
+  box-shadow:0 6px 18px rgba(33,27,45,.08)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
+}
+html body #screen-cleaning .cleaning-room-edit-button::before{
+  content:"";display:block;width:18px;height:18px;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Zm9.5-13.5 4 4'/%3E%3C/svg%3E") center/18px 18px no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Zm9.5-13.5 4 4'/%3E%3C/svg%3E") center/18px 18px no-repeat;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-edit-button{background:rgba(8,14,24,.72)!important;border-color:rgba(255,255,255,.14)!important;color:#f7f8fb!important}
+
+/* Expanded room cards keep a fixed, cropped photo header. Extra content sits on its own surfaces. */
+#screen-cleaning .cleaning-room-card.is-expanded{
+  background:linear-gradient(180deg,rgba(250,249,247,.18),rgba(250,249,247,.96) 168px,var(--cleaning-surface,#fff) 168px)!important;
+  overflow:hidden!important;min-height:0!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:178px;z-index:0;pointer-events:none;
+  background-image:linear-gradient(90deg,rgba(250,248,245,.52),rgba(250,248,245,.12) 55%,rgba(250,248,245,0) 82%),var(--room-photo)!important;
+  background-size:100% 100%,300% 300%!important;background-position:center,var(--room-photo-x) var(--room-photo-y)!important;background-repeat:no-repeat!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded::after{
+  content:"";position:absolute;inset:0 0 auto 0;height:178px;z-index:0;pointer-events:none;background:linear-gradient(180deg,transparent 55%,rgba(250,249,247,.96) 100%)!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-room-card-main,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-room-supplies-bar,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-room-manage-row,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-routine-section,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-routine-empty{position:relative!important;z-index:1!important}
+#screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-section,
+#screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-empty{
+  margin:10px 12px 12px!important;border:1px solid rgba(70,59,85,.12)!important;border-radius:18px!important;background:rgba(255,255,255,.90)!important;
+  box-shadow:0 13px 32px rgba(35,29,48,.08)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded{background:linear-gradient(180deg,rgba(5,10,18,.12),rgba(7,12,21,.97) 170px,#080d16 170px)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded::before{background-image:linear-gradient(90deg,rgba(5,10,18,.52),rgba(5,10,18,.12) 58%,rgba(5,10,18,0) 84%),var(--room-photo)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded::after{background:linear-gradient(180deg,transparent 54%,rgba(7,12,21,.97) 100%)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-section,
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-empty{background:rgba(10,16,27,.92)!important;border-color:rgba(255,255,255,.10)!important;box-shadow:0 16px 38px rgba(0,0,0,.30)!important}
+
+/* Dark house-status chips: semantic colour stays, contrast becomes deliberate. */
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip{font-weight:900!important;text-shadow:none!important;box-shadow:0 7px 20px rgba(0,0,0,.28)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-planned{color:#baffd2!important;background:rgba(20,88,52,.78)!important;border-color:rgba(111,255,165,.48)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-flexible{color:#e5c5ff!important;background:rgba(78,39,116,.80)!important;border-color:rgba(205,145,255,.50)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-attention{color:#ffe1a4!important;background:rgba(113,72,20,.82)!important;border-color:rgba(255,191,92,.54)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip.is-completed{color:#bdf5d5!important;background:rgba(21,77,55,.78)!important;border-color:rgba(104,222,158,.44)!important}
+[data-theme*="dark"] #screen-cleaning .cleaning-overview-chip::before{filter:saturate(1.18) brightness(1.28)}
+
+/* Overview blocks: one family, distinct semantic accents. */
+#screen-cleaning [data-familyapp-tone]{
+  --familyapp-tone-rgb:109,92,198;position:relative!important;overflow:hidden!important;
+  border-color:rgba(var(--familyapp-tone-rgb),.24)!important;
+  box-shadow:inset 3px 0 0 rgba(var(--familyapp-tone-rgb),.58),0 14px 34px rgba(var(--familyapp-tone-rgb),.07)!important;
+}
+#screen-cleaning [data-familyapp-tone]::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 96% 0%,rgba(var(--familyapp-tone-rgb),.10),transparent 36%);opacity:.75}
+#screen-cleaning [data-familyapp-tone="planning"]{--familyapp-tone-rgb:96,88,210}
+#screen-cleaning [data-familyapp-tone="supplies"]{--familyapp-tone-rgb:192,128,42}
+#screen-cleaning [data-familyapp-tone="restock"]{--familyapp-tone-rgb:42,151,116}
+#screen-cleaning [data-familyapp-tone="activity"]{--familyapp-tone-rgb:85,120,190}
+#screen-cleaning [data-familyapp-tone="history"]{--familyapp-tone-rgb:74,145,90}
+#screen-cleaning [data-familyapp-tone="quick"]{--familyapp-tone-rgb:142,92,198}
+[data-theme*="dark"] #screen-cleaning [data-familyapp-tone]{border-color:rgba(var(--familyapp-tone-rgb),.38)!important;box-shadow:inset 3px 0 0 rgba(var(--familyapp-tone-rgb),.72),0 16px 40px rgba(0,0,0,.24),0 0 24px rgba(var(--familyapp-tone-rgb),.06)!important}
+[data-theme*="dark"] #screen-cleaning [data-familyapp-tone]::before{opacity:.45;background:radial-gradient(circle at 96% 0%,rgba(var(--familyapp-tone-rgb),.18),transparent 38%)}
+
+/* Gepland per kamer: concise collapsed summary with horizontal routine icons. */
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card{min-height:132px!important;padding:15px!important;transition:min-height .22s ease,box-shadow .22s ease!important}
+#screen-cleaning .familyapp-planned-summary{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding:11px 10px 10px;border-radius:16px;background:rgba(255,255,255,.70);border:1px solid rgba(255,255,255,.52);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 8px 22px rgba(26,30,40,.07)}
+#screen-cleaning .familyapp-planned-summary-main{min-width:0;flex:1;display:flex;align-items:center;gap:11px}
+#screen-cleaning .familyapp-planned-icons{display:flex;align-items:center;min-width:0}
+#screen-cleaning .familyapp-planned-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;margin-left:-5px;font-size:15px;background:rgba(255,255,255,.86);border:1px solid rgba(69,57,86,.11);box-shadow:0 4px 10px rgba(27,24,34,.07)}
+#screen-cleaning .familyapp-planned-icon:first-child{margin-left:0}
+#screen-cleaning .familyapp-planned-meta{min-width:0;color:#77717f;font-size:9.5px;font-weight:760;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#screen-cleaning .familyapp-planned-toggle{width:44px;height:44px;min-width:44px;min-height:44px;border:0;background:transparent;color:var(--cleaning-text,#20232b);display:grid;place-items:center;padding:0;cursor:pointer}
+#screen-cleaning .familyapp-planned-toggle>span{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.84);border:1px solid rgba(65,55,80,.12);font-size:18px;line-height:1;transition:transform .22s ease}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card:not(.is-familyapp-expanded)>.cleaning-planned-room-items{display:none!important}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded>.cleaning-planned-room-items{display:grid!important;margin-top:10px!important}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded .familyapp-planned-toggle>span{transform:rotate(180deg)}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-summary{background:rgba(8,14,24,.73);border-color:rgba(255,255,255,.11);box-shadow:0 10px 26px rgba(0,0,0,.26)}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon,[data-theme*="dark"] #screen-cleaning .familyapp-planned-toggle>span{background:rgba(15,22,34,.88);border-color:rgba(255,255,255,.11);color:#f8f7fb}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-meta{color:rgba(239,240,245,.64)}
+
+/* Cleaning turn detail: use the existing projected task popup/writers, but present it as a calm room screen. */
+#tdp-overlay.familyapp-cleaning-turn{--turn-photo:url('/src/assets/cleaning-rooms/room-atlas-light.webp');--room-photo-x:0%;--room-photo-y:0%;padding:0!important;align-items:stretch!important;background:rgba(245,244,241,.98)!important;overflow:auto!important}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="living-room"]{--room-photo-x:0%;--room-photo-y:0%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="kitchen"]{--room-photo-x:50%;--room-photo-y:0%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="bathroom"]{--room-photo-x:100%;--room-photo-y:0%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="bedroom"]{--room-photo-x:0%;--room-photo-y:50%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="kids-room"]{--room-photo-x:50%;--room-photo-y:50%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="toilet"]{--room-photo-x:100%;--room-photo-y:50%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="hall"]{--room-photo-x:0%;--room-photo-y:100%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="laundry"]{--room-photo-x:50%;--room-photo-y:100%}
+#tdp-overlay.familyapp-cleaning-turn[data-cleaning-room-visual="outdoor"]{--room-photo-x:100%;--room-photo-y:100%}
+#tdp-overlay.familyapp-cleaning-turn .tdp-card{width:100%!important;max-width:520px!important;max-height:none!important;min-height:100dvh!important;margin:0 auto!important;border:0!important;border-radius:0!important;background:#fbfaf7!important;color:#171a20!important;box-shadow:none!important;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif!important;transform:none!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-hero{height:235px!important;border-radius:0 0 26px 26px!important;background-image:var(--turn-photo)!important;background-size:300% 300%!important;background-position:var(--room-photo-x) var(--room-photo-y)!important;background-repeat:no-repeat!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-hero::after{background:linear-gradient(180deg,rgba(0,0,0,.08),transparent 44%,rgba(0,0,0,.18))!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-close{top:max(18px,env(safe-area-inset-top))!important;left:18px!important;width:44px!important;height:44px!important;background:rgba(255,255,255,.92)!important;border:1px solid rgba(24,28,34,.10)!important;box-shadow:0 8px 22px rgba(0,0,0,.12)!important}
+#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-status{position:absolute;z-index:4;right:18px;top:max(22px,env(safe-area-inset-top));padding:8px 12px;border-radius:999px;color:#24854d;background:rgba(247,255,249,.91);border:1px solid rgba(42,153,85,.28);font-size:10px;font-weight:900;letter-spacing:.055em;box-shadow:0 7px 20px rgba(0,0,0,.09)}
+#tdp-overlay.familyapp-cleaning-turn .tdp-xp-ribbon,#tdp-overlay.familyapp-cleaning-turn .tdp-icon-ring,#tdp-overlay.familyapp-cleaning-turn .tdp-divider,#tdp-overlay.familyapp-cleaning-turn .tdp-help-box,#tdp-overlay.familyapp-cleaning-turn .tdp-more,#tdp-overlay.familyapp-cleaning-turn .tdp-sub-add,#tdp-overlay.familyapp-cleaning-turn .tdp-empty-add,#tdp-overlay.familyapp-cleaning-turn .tdp-save{display:none!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-body{padding:20px 20px calc(28px + env(safe-area-inset-bottom))!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-title{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif!important;font-size:28px!important;line-height:1.08!important;letter-spacing:-.035em!important;font-weight:850!important;margin:4px 0 13px!important;color:#171a20!important}
+#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-context{display:flex;flex-direction:column;gap:6px;margin:0 0 15px;color:#555a64}
+#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-when{display:flex;align-items:center;gap:8px;font-size:13px}#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-when>span{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;color:#6650c8;background:#f0ecff;font-size:12px}#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-when strong{font-weight:760;color:#353943}
+#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-meta{padding-left:33px;font-size:12px;color:#747985}#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-meta span{padding:0 5px}
+#tdp-overlay.familyapp-cleaning-turn .tdp-person{padding:12px 13px!important;margin:0 0 16px!important;border:1px solid #e9e7e3!important;border-radius:16px!important;background:#fff!important;box-shadow:0 5px 15px rgba(35,38,44,.04)!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-person-avatar,#tdp-overlay.familyapp-cleaning-turn .tdp-party-avatar{width:38px!important;height:38px!important;font-size:11px!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-person-name{font-size:13px!important}#tdp-overlay.familyapp-cleaning-turn .tdp-person-meta{font-size:10px!important;color:#747985!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-progress-head{margin:3px 0 7px!important}#tdp-overlay.familyapp-cleaning-turn .tdp-progress-label{font-family:inherit!important;font-size:11px!important;color:#595f68!important;letter-spacing:.02em!important;text-transform:none!important}#tdp-overlay.familyapp-cleaning-turn .tdp-progress-value{font-size:11px!important;color:#343943!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-progress-track{gap:3px!important}#tdp-overlay.familyapp-cleaning-turn .tdp-progress-seg{height:8px!important;background:#e9ebee!important}#tdp-overlay.familyapp-cleaning-turn .tdp-progress-seg.done{background:linear-gradient(90deg,#45ad68,#35bd68)!important}#tdp-overlay.familyapp-cleaning-turn .tdp-xp-shield{display:none!important}#tdp-overlay.familyapp-cleaning-turn .tdp-hint{text-align:left!important;font-style:normal!important;margin:6px 0 14px!important;color:#818690!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-box{border:1px solid #e8e7e3!important;border-radius:18px!important;background:#fff!important;padding:2px 14px!important;margin-bottom:16px!important;box-shadow:0 7px 22px rgba(32,35,41,.045)!important}
+#tdp-overlay.familyapp-cleaning-turn .tdp-sub{min-height:47px!important;padding:8px 1px!important}#tdp-overlay.familyapp-cleaning-turn .tdp-sub-row{border-bottom-color:#efefed!important}#tdp-overlay.familyapp-cleaning-turn .tdp-sub-chk{width:26px!important;height:26px!important;min-width:26px!important;border-color:#cfd3d8!important}#tdp-overlay.familyapp-cleaning-turn .tdp-sub-chk.done{background:#3fae62!important;border-color:#3fae62!important}#tdp-overlay.familyapp-cleaning-turn .tdp-sub-text{font-size:13px!important;color:#262a31!important}
+#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-start{width:100%;min-height:54px;border:0;border-radius:15px;margin:2px 0 10px;padding:0 18px;background:linear-gradient(135deg,#46b665,#309a55);color:white;font-size:14px;font-weight:900;letter-spacing:.005em;box-shadow:0 12px 28px rgba(48,153,85,.24)}
+#tdp-overlay.familyapp-cleaning-turn .tdp-footer{gap:8px!important;margin:0!important}#tdp-overlay.familyapp-cleaning-turn .tdp-cta{min-height:48px!important;border-radius:14px!important;font-family:inherit!important;font-size:13px!important;box-shadow:none!important}#tdp-overlay.familyapp-cleaning-turn .tdp-cta.active{background:#f2effc!important;color:#5f48bc!important;border-color:#ded5fa!important}
+#tdp-overlay.familyapp-cleaning-turn .familyapp-turn-supplies{width:100%;min-height:48px;border:1px solid #dedbe7;border-radius:14px;margin-top:8px;background:#fff;color:#514274;font-size:13px;font-weight:820}
+[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn{--turn-photo:url('/src/assets/cleaning-rooms/room-atlas-dark.webp');background:#050a12!important}
+[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-card{background:#070c14!important;color:#f8f8fa!important}
+[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-title{color:#fff!important}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .familyapp-turn-context{color:#aeb6c2}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .familyapp-turn-when strong{color:#e8ebef}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .familyapp-turn-meta{color:#8f98a6}
+[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-person,[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-box,[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .familyapp-turn-supplies{background:#0c131e!important;border-color:rgba(255,255,255,.10)!important;color:#f5f6f8!important;box-shadow:none!important}
+[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-sub-row{border-bottom-color:rgba(255,255,255,.08)!important}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-sub-text{color:#edf0f4!important}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-progress-seg{background:#1d2633!important}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-progress-label,[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-progress-value{color:#c7cdd6!important}[data-theme*="dark"] #tdp-overlay.familyapp-cleaning-turn .tdp-cta.active{background:#13291f!important;color:#8ae6a8!important;border-color:#245b38!important}
+
+/* Benodigdheden: room-photo header, readable rows and a single explicit shopping flow. */
+#cleaning-supplies-overlay{--supply-photo:url('/src/assets/cleaning-rooms/room-atlas-light.webp');--room-photo-x:0%;--room-photo-y:0%}
+#cleaning-supplies-overlay[data-cleaning-room-visual="living-room"]{--room-photo-x:0%;--room-photo-y:0%}#cleaning-supplies-overlay[data-cleaning-room-visual="kitchen"]{--room-photo-x:50%;--room-photo-y:0%}#cleaning-supplies-overlay[data-cleaning-room-visual="bathroom"]{--room-photo-x:100%;--room-photo-y:0%}#cleaning-supplies-overlay[data-cleaning-room-visual="bedroom"]{--room-photo-x:0%;--room-photo-y:50%}#cleaning-supplies-overlay[data-cleaning-room-visual="kids-room"]{--room-photo-x:50%;--room-photo-y:50%}#cleaning-supplies-overlay[data-cleaning-room-visual="toilet"]{--room-photo-x:100%;--room-photo-y:50%}#cleaning-supplies-overlay[data-cleaning-room-visual="hall"]{--room-photo-x:0%;--room-photo-y:100%}#cleaning-supplies-overlay[data-cleaning-room-visual="laundry"]{--room-photo-x:50%;--room-photo-y:100%}#cleaning-supplies-overlay[data-cleaning-room-visual="outdoor"]{--room-photo-x:100%;--room-photo-y:100%}
+#cleaning-supplies-overlay .cleaning-supply-sheet{position:relative!important;max-width:520px!important;padding-top:158px!important;border-radius:26px 26px 0 0!important;overflow:auto!important}
+#cleaning-supplies-overlay .cleaning-supply-sheet::before{content:"";position:absolute;left:14px;right:14px;top:16px;height:128px;border-radius:20px;background-image:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.13)),var(--supply-photo);background-size:100% 100%,300% 300%;background-position:center,var(--room-photo-x) var(--room-photo-y);background-repeat:no-repeat;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+#cleaning-supplies-overlay .cleaning-supply-handle{display:none!important}#cleaning-supplies-overlay .cleaning-supply-sheet-head{padding-top:2px!important}#cleaning-supplies-overlay .cleaning-supply-sheet-head h2{letter-spacing:-.03em!important}
+#cleaning-supplies-overlay .cleaning-supply-tabs{border-radius:14px!important;padding:3px!important;background:rgba(120,104,159,.07)!important;border:1px solid rgba(88,68,135,.10)!important}#cleaning-supplies-overlay .cleaning-supply-tab{min-height:44px!important;border-radius:11px!important;font-weight:820!important}#cleaning-supplies-overlay .cleaning-supply-tab.is-active{background:#fff!important;color:#684cc4!important;box-shadow:0 4px 14px rgba(52,42,78,.09)!important}
+#cleaning-supplies-overlay .cleaning-supply-list{gap:7px!important}#cleaning-supplies-overlay .cleaning-supply-row{position:relative!important;min-height:72px!important;padding:11px 10px 10px 58px!important;border-radius:16px!important;background:#fff!important;border:1px solid #ebe8e4!important;box-shadow:0 5px 16px rgba(35,39,45,.035)!important}
+#cleaning-supplies-overlay .cleaning-supply-row::before{position:absolute;left:12px;top:14px;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;font-weight:900;background:#eef8f1;color:#37a45b;content:"✓"}#cleaning-supplies-overlay .cleaning-supply-row[data-familyapp-supply-state="LOW"]::before{content:"!";background:#fff5df;color:#dc8b14}#cleaning-supplies-overlay .cleaning-supply-row[data-familyapp-supply-state="OUT"]::before{content:"×";background:#fff0f0;color:#df3f45}
+#cleaning-supplies-overlay .cleaning-supply-row-head strong{font-size:13px!important}#cleaning-supplies-overlay .cleaning-supply-row-head span{font-size:9px!important;color:#858995!important}
+#cleaning-supplies-overlay .cleaning-supply-statuses{margin-top:7px!important;display:flex!important;gap:4px!important}#cleaning-supplies-overlay .cleaning-supply-status{min-height:30px!important;padding:4px 7px!important;border-radius:9px!important;font-size:8px!important;opacity:.52!important}#cleaning-supplies-overlay .cleaning-supply-status.is-active{opacity:1!important;font-weight:900!important;box-shadow:0 3px 10px rgba(30,34,40,.07)!important}
+#cleaning-supplies-overlay .familyapp-supply-prompt,#cleaning-supplies-overlay .familyapp-supply-summary{margin:12px 0 0;padding:14px;border:1px solid rgba(104,76,197,.16);border-radius:17px;background:linear-gradient(135deg,rgba(247,244,255,.96),rgba(255,255,255,.94));display:flex;align-items:center;justify-content:space-between;gap:12px}#cleaning-supplies-overlay .familyapp-supply-prompt>div{display:flex;flex-direction:column;gap:4px}#cleaning-supplies-overlay .familyapp-supply-prompt strong{font-size:13px;color:#6444c6}#cleaning-supplies-overlay .familyapp-supply-prompt span{font-size:10px;color:#676b76}#cleaning-supplies-overlay .familyapp-supply-prompt button{width:44px;height:44px;min-width:44px;border:0;border-radius:50%;background:linear-gradient(135deg,#7c4ee6,#5731cd);color:#fff;font-size:24px;box-shadow:0 10px 22px rgba(91,55,202,.22)}#cleaning-supplies-overlay .familyapp-supply-prompt button:disabled{opacity:.34;box-shadow:none}
+#cleaning-supplies-overlay .familyapp-supply-summary{display:block;background:#fff;border-color:#ebe8e4}#cleaning-supplies-overlay .familyapp-supply-summary>span{display:block;font-size:10px;color:#7c8088;margin-bottom:7px}#cleaning-supplies-overlay .familyapp-supply-summary>strong{font-size:12px;font-weight:850}#cleaning-supplies-overlay .familyapp-supply-summary em{font-style:normal;color:#d48a16}#cleaning-supplies-overlay .familyapp-supply-summary i{font-style:normal;color:#d8424b}#cleaning-supplies-overlay .familyapp-supply-summary b{color:#969aa2;padding:0 4px}
+#cleaning-supplies-overlay .cleaning-supply-footer>.cleaning-supply-shopping{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}#cleaning-supplies-overlay .cleaning-supply-footnote{font-size:8.5px!important;line-height:1.4!important;color:#91949b!important}#cleaning-supplies-overlay .familyapp-supply-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}#cleaning-supplies-overlay .familyapp-supply-actions button{min-height:46px;border-radius:14px;border:1px solid #dedbe4;background:#fff;color:#50465f;font-size:10px;font-weight:850}#cleaning-supplies-overlay .familyapp-supply-actions button:last-child{background:#f3efff;border-color:#ded2ff;color:#6540cc}#cleaning-supplies-overlay .familyapp-supply-actions button:disabled{opacity:.42}
+[data-theme*="dark"] #cleaning-supplies-overlay{--supply-photo:url('/src/assets/cleaning-rooms/room-atlas-dark.webp')}[data-theme*="dark"] #cleaning-supplies-overlay .cleaning-supply-tab.is-active,[data-theme*="dark"] #cleaning-supplies-overlay .cleaning-supply-row,[data-theme*="dark"] #cleaning-supplies-overlay .familyapp-supply-summary,[data-theme*="dark"] #cleaning-supplies-overlay .familyapp-supply-actions button{background:#0d1420!important;border-color:rgba(255,255,255,.10)!important;color:#f5f6f8!important}[data-theme*="dark"] #cleaning-supplies-overlay .cleaning-supply-tabs{background:#090f19!important;border-color:rgba(255,255,255,.08)!important}[data-theme*="dark"] #cleaning-supplies-overlay .familyapp-supply-prompt{background:linear-gradient(135deg,rgba(55,37,92,.58),rgba(11,17,27,.95));border-color:rgba(151,109,255,.28)}[data-theme*="dark"] #cleaning-supplies-overlay .familyapp-supply-prompt span{color:#aeb4bf}[data-theme*="dark"] #cleaning-supplies-overlay .familyapp-supply-actions button:last-child{background:#21183a!important;color:#c9b8ff!important;border-color:#493471!important}
+
+/* First-open shell paints immediately while lazy modules are already prewarmed. */
+.familyapp-cleaning-loading-shell{padding:18px 0 34px;animation:familyapp-shell-in .18s ease both}.familyapp-loading-head{display:flex;justify-content:space-between;gap:20px;margin-bottom:18px}.familyapp-loading-head span{height:14px;border-radius:999px;background:color-mix(in srgb,var(--c-border,#dfe1e6) 65%,transparent)}.familyapp-loading-head span:first-child{width:42%}.familyapp-loading-head span:last-child{width:24%}.familyapp-loading-hero{height:220px;border-radius:24px;background:linear-gradient(105deg,rgba(118,104,156,.10) 10%,rgba(118,104,156,.18) 28%,rgba(118,104,156,.10) 46%);background-size:220% 100%;animation:familyapp-shell-shimmer 1.2s linear infinite}.familyapp-loading-tabs{height:64px;margin:16px 0;border-radius:18px;background:rgba(118,104,156,.08)}.familyapp-loading-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.familyapp-loading-cards i{height:86px;border-radius:17px;background:rgba(118,104,156,.07)}.familyapp-cleaning-loading-shell p{text-align:center;color:var(--c-text2,#7b7f88);font-size:10px;font-weight:750;margin-top:16px}@keyframes familyapp-shell-in{from{opacity:.25}to{opacity:1}}@keyframes familyapp-shell-shimmer{to{background-position:-220% 0}}
+[data-theme*="dark"] .familyapp-loading-hero,[data-theme*="dark"] .familyapp-loading-tabs,[data-theme*="dark"] .familyapp-loading-cards i{background-color:rgba(255,255,255,.055)}
+
+/* Create-room feedback stays local to the form instead of visually blocking the module. */
+#screen-cleaning .cleaning-room-form.is-familyapp-submitting{position:relative}#screen-cleaning .cleaning-room-form.is-familyapp-submitting input,#screen-cleaning .cleaning-room-form.is-familyapp-submitting select{opacity:.72}#screen-cleaning .familyapp-room-create-status{grid-column:1/-1;padding:9px 11px;border-radius:11px;background:rgba(61,155,91,.09);border:1px solid rgba(61,155,91,.16);color:#368451;font-size:9px;font-weight:760;line-height:1.35}
+
+@media (min-width:600px){#tdp-overlay.familyapp-cleaning-turn{padding:18px!important;align-items:center!important;background:rgba(7,10,16,.62)!important}#tdp-overlay.familyapp-cleaning-turn .tdp-card{min-height:0!important;max-height:calc(100dvh - 36px)!important;border-radius:28px!important;box-shadow:0 28px 90px rgba(0,0,0,.28)!important}#tdp-overlay.familyapp-cleaning-turn .tdp-hero{border-radius:28px 28px 24px 24px!important}}
+@media (prefers-reduced-motion:reduce){#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card,#screen-cleaning .familyapp-planned-toggle>span,.familyapp-cleaning-loading-shell,.familyapp-loading-hero{transition:none!important;animation:none!important}}
