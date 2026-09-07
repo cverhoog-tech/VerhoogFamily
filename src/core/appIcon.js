@@ -34,6 +34,39 @@ function ensureScaleFix() {
   document.head.appendChild(link);
 }
 
+function prepareReturningSessionSurface() {
+  var hasLocalProfile = false;
+  try { hasLocalProfile = !!localStorage.getItem('familyapp-profile-name-v1'); } catch (e) {}
+  if (!hasLocalProfile) return;
+
+  document.documentElement.classList.add('familyapp-session-pending');
+  var login = document.getElementById('login-screen');
+  if (login) {
+    login.style.visibility = 'hidden';
+    login.style.pointerEvents = 'none';
+    login.style.transition = 'none';
+  }
+}
+
+function ensureFeedbackRound2() {
+  if (!document.querySelector('link[data-familyapp-cloudinary-preconnect]')) {
+    var preconnect = document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = 'https://res.cloudinary.com';
+    preconnect.crossOrigin = 'anonymous';
+    preconnect.setAttribute('data-familyapp-cloudinary-preconnect', '1');
+    document.head.appendChild(preconnect);
+  }
+
+  if (window.__familyAppFeedbackRound2 || document.querySelector('script[data-familyapp-feedback-round2]')) return;
+  var script = document.createElement('script');
+  script.src = '/src/core/familyappFeedbackRound2.js?v=20260907-2';
+  script.async = false;
+  script.setAttribute('data-familyapp-feedback-round2', '1');
+  script.onerror = function(){ console.error('[FamilyApp] feedback round adapter kon niet worden geladen'); };
+  document.head.appendChild(script);
+}
+
 function applyAppIcon() {
   ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '180x180');
   ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '32x32');
@@ -69,6 +102,8 @@ function saveAppIconToLink() {
     localStorage.removeItem('familie_icon_color');
     localStorage.removeItem('familie_icon_photo');
   } catch (e) {}
+  prepareReturningSessionSurface();
   ensureScaleFix();
+  ensureFeedbackRound2();
   applyAppIcon();
 })();
