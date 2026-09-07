@@ -1,0 +1,89 @@
+@import url('./familyapp-feedback-round4.css?v=20260907-4');
+
+/* FamilyApp feedback round 5 — expanded room photography only.
+   The room atlas stays the source of truth; this changes presentation only. */
+
+/* The prior WebKit mask could turn the photo into an oval/arch on iOS when an
+   expanded room was composited. Give the atlas tile its native 16:9 geometry,
+   let the card clip only the outer corners, and fade the full-width photo into
+   the light surface instead. */
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded{
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  background:#fff!important;
+  background-image:none!important;
+}
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded::before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+  bottom:auto!important;
+  left:0!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:16 / 9!important;
+  z-index:0!important;
+  pointer-events:none!important;
+  border:0!important;
+  border-radius:0!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+  -webkit-mask:none!important;
+  -webkit-mask-image:none!important;
+  mask:none!important;
+  mask-image:none!important;
+  opacity:1!important;
+  transform:none!important;
+  background-color:transparent!important;
+  background-image:var(--room-photo)!important;
+  background-size:300% 300%!important;
+  background-position:var(--room-photo-x) var(--room-photo-y)!important;
+  background-repeat:no-repeat!important;
+}
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  width:auto!important;
+  height:auto!important;
+  z-index:1!important;
+  pointer-events:none!important;
+  border-radius:0!important;
+  clip-path:none!important;
+  -webkit-clip-path:none!important;
+  -webkit-mask:none!important;
+  mask:none!important;
+  background:linear-gradient(180deg,
+    rgba(255,255,255,.02) 0,
+    rgba(255,255,255,.04) 84px,
+    rgba(255,255,255,.18) 126px,
+    rgba(255,255,255,.50) 164px,
+    rgba(255,255,255,.84) 204px,
+    #fff 252px,
+    #fff 100%)!important;
+}
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded>.cleaning-room-card-main,
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded>.cleaning-room-supplies-bar,
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded>.cleaning-room-manage-row,
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded>.cleaning-routine-section,
+html body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded>.cleaning-routine-empty{
+  position:relative!important;
+  z-index:2!important;
+}
+
+[data-theme*="dark"] body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded{
+  background:#080d16!important;
+  background-image:none!important;
+}
+[data-theme*="dark"] body #screen-cleaning .cleaning-room-grid .cleaning-room-card.is-expanded::after{
+  background:linear-gradient(180deg,
+    rgba(8,13,22,.03) 0,
+    rgba(8,13,22,.06) 84px,
+    rgba(8,13,22,.24) 126px,
+    rgba(8,13,22,.56) 164px,
+    rgba(8,13,22,.86) 204px,
+    #080d16 252px,
+    #080d16 100%)!important;
+}
