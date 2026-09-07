@@ -68,6 +68,36 @@ function ensureFeedbackRound2() {
   document.head.appendChild(script);
 }
 
+function ensureFeedbackStyleCascade() {
+  var premiumId = 'cleaning-room-premium-stylesheet';
+  var feedbackId = 'familyapp-feedback-round2-runtime';
+  var observer = null;
+
+  function placeFeedbackAfterPremium() {
+    var premium = document.getElementById(premiumId);
+    if (!premium || !premium.parentNode) return false;
+    var feedback = document.getElementById(feedbackId);
+    if (!feedback) {
+      feedback = document.createElement('link');
+      feedback.id = feedbackId;
+      feedback.rel = 'stylesheet';
+      feedback.href = '/src/styles/familyapp-feedback-round2.css?v=20260907-2';
+    }
+    if (premium.nextElementSibling !== feedback) premium.parentNode.insertBefore(feedback, premium.nextSibling);
+    return true;
+  }
+
+  if (placeFeedbackAfterPremium()) return;
+  if (typeof MutationObserver !== 'function' || !document.head) return;
+  observer = new MutationObserver(function(){
+    if (placeFeedbackAfterPremium() && observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  });
+  observer.observe(document.head, {childList:true});
+}
+
 function applyAppIcon() {
   ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '180x180');
   ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '32x32');
@@ -106,5 +136,6 @@ function saveAppIconToLink() {
   prepareReturningSessionSurface();
   ensureScaleFix();
   ensureFeedbackRound2();
+  ensureFeedbackStyleCascade();
   applyAppIcon();
 })();
