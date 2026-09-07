@@ -6,111 +6,131 @@
   if(window.__familyAppFeedbackRound4)return;
   window.__familyAppFeedbackRound4=true;
 
-  var VERSION='0.2.0';
-  var state={homeFrame:0,observer:null,adapterPromise:null,adapterScheduled:false,networkPrimed:false,homePrimed:false,resumeTimer:0};
-  var HERO={
-    tasks:{url:'https://res.cloudinary.com/rg86slp4/image/upload/v1788808948/familyapp-home-tasks-hero-v3.webp',pos:'center 62%',overlay:'linear-gradient(180deg,rgba(5,10,16,.04) 0%,rgba(5,10,16,.17) 42%,rgba(5,10,16,.66) 100%)'},
-    shop:{url:'https://res.cloudinary.com/rg86slp4/image/upload/v1788809037/familyapp-home-groceries-hero-v3.webp',pos:'center 59%',overlay:'linear-gradient(180deg,rgba(20,17,12,.02) 0%,rgba(20,17,12,.10) 42%,rgba(20,17,12,.62) 100%)'},
-    cleaning:{url:'https://res.cloudinary.com/rg86slp4/image/upload/v1788809095/familyapp-home-cleaning-hero-v3.webp',pos:'center 57%',overlay:'linear-gradient(180deg,rgba(9,14,17,.02) 0%,rgba(9,14,17,.11) 42%,rgba(9,14,17,.62) 100%)'}
+  var VERSION='0.3.0';
+  var state={
+    hookTimer:null,
+    coreModulePromise:null,
+    coreStylePromise:null,
+    premiumPromise:null,
+    adapterPromise:null,
+    presentationScheduled:false,
+    prewarmScheduled:false,
+    cleaningEntry:0,
+    renderingEntry:-1,
+    renderedEntry:-1,
+    resumeTimer:0
   };
   var ADAPTERS=[
     {key:'round2',flag:'__familyAppFeedbackRound2',attr:'data-familyapp-feedback-round2',src:'/src/core/familyappFeedbackRound2.js?v=20260907-3'},
     {key:'round3',flag:'__familyAppFeedbackRound3',attr:'data-familyapp-feedback-round3',src:'/src/core/familyappFeedbackRound3.js?v=20260907-3'}
   ];
 
-  function addHint(rel,href,as){
-    if(document.querySelector('link[data-familyapp-r4-hint="'+href+'"]'))return;
-    var link=document.createElement('link');
-    link.rel=rel;link.href=href;if(as)link.as=as;
-    link.setAttribute('data-familyapp-r4-hint',href);
-    document.head.appendChild(link);
-  }
-  function primeHomeHeroes(){
-    if(state.homePrimed)return;state.homePrimed=true;
-    Object.keys(HERO).forEach(function(key){
-      var def=HERO[key];addHint('preload',def.url,'image');
-      try{var img=new Image();img.decoding='async';img.src=def.url;}catch(error){}
-    });
+  // Home Hero photography is deliberately NOT written from JavaScript anymore.
+  // familyapp-feedback-round4.css owns the visible photo layer with ::before so
+  // older presentation adapters can no longer race each other by rewriting the
+  // card background-image after returning from Cleaning.
+  function refreshHome(){
+    var card=document.querySelector('#screen-home .feed-card, #screen-home .cleaning-card');
+    if(card)card.classList.add('cleaning-card');
   }
 
-  function setHero(card,def){
-    if(!card||!def)return;
-    card.classList.add('familyapp-photo-hero');
-    card.style.setProperty('background-image',def.overlay+',url("'+def.url+'")','important');
-    card.style.setProperty('background-size','cover','important');
-    card.style.setProperty('background-position',def.pos,'important');
-    card.style.setProperty('background-repeat','no-repeat','important');
-    var inner=card.querySelector('.card-inner');
-    if(inner){inner.style.setProperty('background','transparent','important');inner.style.setProperty('background-image','none','important');}
-  }
-  function applyHomeHeroes(){
-    var home=document.getElementById('screen-home');if(!home)return;
-    var tasks=home.querySelector('.tasks-card'),shop=home.querySelector('.shop-card'),cleaning=home.querySelector('.cleaning-card, .feed-card');
-    if(cleaning)cleaning.classList.add('cleaning-card');
-    setHero(tasks,HERO.tasks);setHero(shop,HERO.shop);setHero(cleaning,HERO.cleaning);
-  }
-  function queueHome(){
-    if(state.homeFrame)return;
-    var raf=window.requestAnimationFrame||function(fn){return window.setTimeout(fn,16);};
-    state.homeFrame=raf(function(){
-      // Older presentation adapters still run after Cleaning is opened. Apply
-      // the canonical v3 photos one frame after their single-frame decorators,
-      // so Home always has one deterministic final image owner.
-      state.homeFrame=raf(function(){state.homeFrame=0;applyHomeHeroes();});
-    });
+  function ensureCleaningShell(){
+    if(typeof window.ensureCleaningScreen==='function')return window.ensureCleaningScreen();
+    return document.getElementById('screen-cleaning');
   }
 
-  function wrapRenderHome(){
-    var raw=window.renderHome;if(typeof raw!=='function'||raw.__familyappRound4)return;
-    var wrapped=function(){var result=raw.apply(this,arguments);applyHomeHeroes();queueHome();return result;};
-    wrapped.__familyappRound4=true;window.renderHome=wrapped;
-  }
-  function wrapTheme(){
-    var raw=window.applyTheme;if(typeof raw!=='function'||raw.__familyappRound4)return;
-    var wrapped=function(){var result=raw.apply(this,arguments);queueHome();return result;};
-    wrapped.__familyappRound4=true;window.applyTheme=wrapped;
-  }
-  function scheduleCleaningAdapters(){
-    if(state.adapterScheduled||state.adapterPromise||window.__familyAppFeedbackRound3)return;
-    state.adapterScheduled=true;
-    var run=function(){state.adapterScheduled=false;loadCleaningAdapters();};
-    if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(run,{timeout:1600});
-    else window.setTimeout(run,850);
-  }
-  function wrapNavigation(){
-    var raw=window.showScreen;if(typeof raw!=='function'||raw.__familyappRound4)return;
-    var wrapped=function(name){
-      var target=String(name==null?'':name).toLowerCase();
-      if(target==='cleaning')primeCleaningNetwork();
-      var result=raw.apply(this,arguments);
-      if(target==='cleaning')scheduleCleaningAdapters();
-      if(target==='home')queueHome();
-      return result;
-    };
-    wrapped.__familyappRound4=true;window.showScreen=wrapped;
-  }
-  function installHooks(){wrapRenderHome();wrapTheme();wrapNavigation();}
-
-  function primeCleaningNetwork(){
-    if(state.networkPrimed)return;state.networkPrimed=true;
-    ADAPTERS.forEach(function(item){addHint('prefetch',item.src,'script');});
-    addHint('prefetch','/src/modules/cleaning/cleaningScreen.js?v=1','script');
-    addHint('prefetch','/src/modules/cleaning/cleaningPremiumFeedback.js?v=2','script');
-    addHint('prefetch','/src/styles/cleaning.css?v=1','style');
-  }
-  function scheduleNetworkPrime(){
-    function later(){
-      window.setTimeout(function(){
-        if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(primeCleaningNetwork,{timeout:3600});
-        else window.setTimeout(primeCleaningNetwork,1100);
-      },950);
+  function ensureCoreStyle(){
+    if(state.coreStylePromise)return state.coreStylePromise;
+    if(window._cleaningStylePromise){state.coreStylePromise=window._cleaningStylePromise;return state.coreStylePromise;}
+    if(typeof window.ensureCleaningStyles==='function'){
+      try{state.coreStylePromise=window.ensureCleaningStyles();window._cleaningStylePromise=state.coreStylePromise;return state.coreStylePromise;}catch(error){}
     }
-    try{
-      var controller=window.AuthenticatedSessionController,snapshot=controller&&typeof controller.status==='function'?controller.status():null;
-      if(snapshot&&snapshot.ready){later();return;}
-    }catch(error){}
-    var onSession=function(event){if(event&&event.detail&&event.detail.ready){window.removeEventListener('familyapp:session-state',onSession);later();}};
-    window.addEventListener('familyapp:session-state',onSession);
+    state.coreStylePromise=new Promise(function(resolve,reject){
+      var existing=document.querySelector('link[data-familyapp-cleaning-style]');
+      if(existing){
+        if(existing.sheet){resolve();return;}
+        existing.addEventListener('load',resolve,{once:true});
+        existing.addEventListener('error',reject,{once:true});
+        return;
+      }
+      var link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href='/src/styles/cleaning.css?v=1';
+      link.setAttribute('data-familyapp-cleaning-style','1');
+      link.addEventListener('load',resolve,{once:true});
+      link.addEventListener('error',reject,{once:true});
+      document.head.appendChild(link);
+    });
+    window._cleaningStylePromise=state.coreStylePromise;
+    return state.coreStylePromise;
+  }
+
+  function ensureCoreModule(){
+    if(state.coreModulePromise)return state.coreModulePromise;
+    if(window._cleaningModulePromise){state.coreModulePromise=window._cleaningModulePromise;return state.coreModulePromise;}
+    state.coreModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1');
+    window._cleaningModulePromise=state.coreModulePromise;
+    return state.coreModulePromise;
+  }
+
+  function prepareCleaningCore(){
+    ensureCleaningShell();
+    var style=ensureCoreStyle();
+    var module=ensureCoreModule();
+    return Promise.all([style,module]);
+  }
+
+  function showImmediateShell(){
+    var screen=document.getElementById('screen-cleaning');
+    var root=document.getElementById('cleaning-content');
+    if(!screen||!screen.classList.contains('active')||!root||root.children.length)return;
+    root.innerHTML='<div class="familyapp-cleaning-loading-shell familyapp-cleaning-fast-shell" aria-live="polite">'
+      +'<div class="familyapp-loading-head"><span></span><span></span></div>'
+      +'<div class="familyapp-loading-hero"></div>'
+      +'<div class="familyapp-loading-tabs"></div>'
+      +'<div class="familyapp-loading-cards"><i></i><i></i><i></i></div>'
+      +'<p>Schoonmaken openen…</p>'
+      +'</div>';
+  }
+
+  function renderCleaningFast(){
+    var root=document.getElementById('cleaning-content');
+    if(!root)return;
+    // Calls made by older warmers while Cleaning is not active may prepare the
+    // module graph, but must never trigger an off-screen DOM render.
+    if(window._currentScreen!=='cleaning'){
+      prepareCleaningCore().catch(function(error){console.warn('[Cleaning] core prewarm skipped',error);});
+      return;
+    }
+    var entry=state.cleaningEntry;
+    if(state.renderedEntry===entry||state.renderingEntry===entry){schedulePresentation();return;}
+    state.renderingEntry=entry;
+    showImmediateShell();
+    prepareCleaningCore().then(function(result){
+      if(window._currentScreen!=='cleaning'){state.renderingEntry=-1;return;}
+      var mod=result&&result[1];
+      if(mod&&typeof mod.renderCleaningScreen==='function'){
+        mod.renderCleaningScreen(root);
+        root.setAttribute('data-familyapp-cleaning-core-mounted','1');
+        state.renderedEntry=entry;
+      }
+      state.renderingEntry=-1;
+      schedulePresentation();
+    }).catch(function(error){
+      state.renderingEntry=-1;
+      console.error('[Cleaning] snelle core kon niet worden geladen:',error);
+      if(root&&window._currentScreen==='cleaning')root.innerHTML='<section class="cleaning-status-card cleaning-status-error" role="alert"><strong>Schoonmaken kon niet worden geopend</strong><span>Probeer het nogmaals.</span></section>';
+    });
+  }
+  renderCleaningFast.__familyappRound4Fast=true;
+
+  function loadPremiumFeedback(){
+    if(window.CleaningPremiumFeedback)return Promise.resolve(true);
+    if(state.premiumPromise)return state.premiumPromise;
+    if(window._cleaningPremiumFeedbackPromise){state.premiumPromise=window._cleaningPremiumFeedbackPromise;return state.premiumPromise;}
+    state.premiumPromise=import('/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');
+    window._cleaningPremiumFeedbackPromise=state.premiumPromise;
+    return state.premiumPromise;
   }
 
   function loadScript(item){
@@ -119,37 +139,117 @@
     if(existing&&existing.getAttribute('data-familyapp-loaded')==='1')return Promise.resolve(true);
     return new Promise(function(resolve,reject){
       var script=existing||document.createElement('script');
-      if(!existing){script.src=item.src;script.async=false;script.setAttribute(item.attr,'1');document.head.appendChild(script);}
       var done=function(){script.setAttribute('data-familyapp-loaded','1');resolve(true);};
       var fail=function(){reject(new Error(item.key+' kon niet worden geladen'));};
-      if(window[item.flag]){done();return;}
-      script.addEventListener('load',done,{once:true});script.addEventListener('error',fail,{once:true});
+      if(!existing){
+        script.src=item.src;
+        script.async=false;
+        script.setAttribute(item.attr,'1');
+        script.addEventListener('load',done,{once:true});
+        script.addEventListener('error',fail,{once:true});
+        document.head.appendChild(script);
+      }else{
+        if(window[item.flag]){done();return;}
+        script.addEventListener('load',done,{once:true});
+        script.addEventListener('error',fail,{once:true});
+      }
     });
   }
+
   function loadCleaningAdapters(){
-    primeCleaningNetwork();
     if(state.adapterPromise)return state.adapterPromise;
-    state.adapterPromise=loadScript(ADAPTERS[0]).then(function(){return loadScript(ADAPTERS[1]);}).then(function(){
-      installHooks();resetHomeObserver();queueHome();return true;
-    }).catch(function(error){state.adapterPromise=null;console.error('[FamilyApp] Cleaning visual adapters',error);return false;});
+    state.adapterPromise=loadScript(ADAPTERS[0])
+      .then(function(){return loadScript(ADAPTERS[1]);})
+      .then(function(){refreshHome();return true;})
+      .catch(function(error){state.adapterPromise=null;console.error('[FamilyApp] Cleaning visual adapters',error);return false;});
     return state.adapterPromise;
   }
 
-  function relevantHomeMutation(mutation){
-    var target=mutation&&mutation.target,node=target&&target.nodeType===1?target:target&&target.parentElement;
-    if(node&&node.closest&&node.closest('#screen-home'))return true;
-    var added=mutation&&mutation.addedNodes||[];
-    for(var i=0;i<added.length;i++){
-      var child=added[i];
-      if(child&&child.nodeType===1&&(child.id==='screen-home'||(child.closest&&child.closest('#screen-home'))||(child.querySelector&&child.querySelector('#screen-home'))))return true;
-    }
-    return false;
+  function schedulePresentation(){
+    if(state.presentationScheduled)return;
+    state.presentationScheduled=true;
+    var run=function(){
+      loadPremiumFeedback()
+        .catch(function(error){console.warn('[Cleaning] premium feedback kon niet worden geladen',error);})
+        .then(function(){return loadCleaningAdapters();});
+    };
+    // Core content has already rendered. Presentation-only decorators may now
+    // arrive during idle time without sitting on the critical first-open path.
+    if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(run,{timeout:800});
+    else window.setTimeout(run,180);
   }
-  function resetHomeObserver(){
-    if(state.observer){state.observer.disconnect();state.observer=null;}
-    if(typeof MutationObserver==='undefined'||!document.body)return;
-    state.observer=new MutationObserver(function(mutations){for(var i=0;i<mutations.length;i++){if(relevantHomeMutation(mutations[i])){queueHome();break;}}});
-    state.observer.observe(document.body,{childList:true,subtree:true});
+
+  function installFastPath(){
+    var installed=false;
+    if(typeof window.renderCleaningModule==='function'){
+      if(!window.renderCleaningModule.__familyappRound4Fast)window.renderCleaningModule=renderCleaningFast;
+      if(state.coreModulePromise)window._cleaningModulePromise=state.coreModulePromise;
+      if(state.coreStylePromise)window._cleaningStylePromise=state.coreStylePromise;
+      installed=true;
+    }
+    if(typeof window.showScreen==='function'&&!window.showScreen.__familyappRound4Stable){
+      var raw=window.showScreen;
+      var wrapped=function(name){
+        var target=String(name==null?'':name).toLowerCase();
+        if(target==='cleaning'){
+          if(window._currentScreen!=='cleaning')state.cleaningEntry++;
+          prepareCleaningCore().catch(function(error){console.warn('[Cleaning] tap prewarm skipped',error);});
+        }
+        var result=raw.apply(this,arguments);
+        if(target==='home')refreshHome();
+        return result;
+      };
+      wrapped.__familyappRound4Stable=true;
+      wrapped.__familyappRaw=raw;
+      window.showScreen=wrapped;
+      installed=true;
+    }
+    return installed&&typeof window.renderCleaningModule==='function'&&typeof window.showScreen==='function';
+  }
+
+  function pollForNavigation(){
+    if(installFastPath()){
+      if(state.hookTimer){window.clearInterval(state.hookTimer);state.hookTimer=null;}
+      return;
+    }
+    if(state.hookTimer)return;
+    var attempts=0;
+    state.hookTimer=window.setInterval(function(){
+      attempts++;
+      if(installFastPath()||attempts>120){window.clearInterval(state.hookTimer);state.hookTimer=null;}
+    },50);
+  }
+
+  function idlePrepare(){
+    prepareCleaningCore().catch(function(error){console.warn('[Cleaning] idle prewarm skipped',error);});
+  }
+  function scheduleCorePrewarm(){
+    if(state.prewarmScheduled)return;
+    state.prewarmScheduled=true;
+    var schedule=function(){
+      window.setTimeout(function(){
+        if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(idlePrepare,{timeout:1800});
+        else window.setTimeout(idlePrepare,650);
+      },500);
+    };
+    try{
+      var controller=window.AuthenticatedSessionController,snapshot=controller&&typeof controller.status==='function'?controller.status():null;
+      if(snapshot&&snapshot.ready){schedule();return;}
+    }catch(error){}
+    var onSession=function(event){
+      if(event&&event.detail&&event.detail.ready){window.removeEventListener('familyapp:session-state',onSession);schedule();}
+    };
+    window.addEventListener('familyapp:session-state',onSession);
+    window.addEventListener('load',function(){window.setTimeout(schedule,700);},{once:true});
+  }
+
+  function bindCleaningIntent(){
+    document.addEventListener('pointerdown',function(event){
+      var target=event.target;
+      if(target&&target.closest&&target.closest('#screen-home .cleaning-card, #screen-home .feed-card')){
+        prepareCleaningCore().catch(function(){});
+      }
+    },{passive:true,capture:true});
   }
 
   function beginResumeStability(){
@@ -162,7 +262,7 @@
     if(state.resumeTimer)window.clearTimeout(state.resumeTimer);
     state.resumeTimer=window.setTimeout(function(){
       var raf=window.requestAnimationFrame||function(fn){return window.setTimeout(fn,16);};
-      raf(function(){raf(function(){root.classList.remove('familyapp-resume-stable');state.resumeTimer=0;queueHome();});});
+      raf(function(){raf(function(){root.classList.remove('familyapp-resume-stable');state.resumeTimer=0;});});
     },150);
   }
   function bindResume(){
@@ -170,17 +270,21 @@
     window.addEventListener('pageshow',function(){beginResumeStability();endResumeStability();});
     document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')beginResumeStability();else{beginResumeStability();endResumeStability();}});
   }
-  function bindCleaningIntent(){
-    document.addEventListener('pointerdown',function(event){
-      var target=event.target;
-      if(target&&target.closest&&target.closest('#screen-home .cleaning-card, #screen-home .feed-card'))primeCleaningNetwork();
-    },{passive:true,capture:true});
-  }
+
   function start(){
-    primeHomeHeroes();installHooks();resetHomeObserver();bindResume();bindCleaningIntent();scheduleNetworkPrime();applyHomeHeroes();
-    window.setTimeout(installHooks,0);window.setTimeout(installHooks,250);window.setTimeout(installHooks,900);
+    window.__familyappCanonicalHomeHeroOwner='css-v3';
+    refreshHome();
+    pollForNavigation();
+    bindCleaningIntent();
+    bindResume();
+    scheduleCorePrewarm();
   }
 
-  window.FamilyAppFeedbackRound4={version:VERSION,refreshHome:queueHome,loadCleaningAdapters:loadCleaningAdapters,primeCleaningNetwork:primeCleaningNetwork};
+  window.FamilyAppFeedbackRound4={
+    version:VERSION,
+    refreshHome:refreshHome,
+    prepareCleaningCore:prepareCleaningCore,
+    loadCleaningAdapters:loadCleaningAdapters
+  };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
