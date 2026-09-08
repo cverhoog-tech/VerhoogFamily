@@ -25,12 +25,18 @@
   function emptyData(){var out={};COLLECTIONS.forEach(function(name){out[name]={};});return out;}
   var current={version:VERSION,ready:false,source:'idle',uid:null,householdId:null,revision:0,data:emptyData(),error:null};
   function deepFreeze(value){if(!value||typeof value!=='object'||Object.isFrozen(value))return value;Object.keys(value).forEach(function(key){deepFreeze(value[key]);});try{return Object.freeze(value);}catch(e){return value;}}
-  function snapshot(){return deepFreeze(clone(current));}
+  // snapshot() is a hot read path for Cleaning presentation adapters. The
+  // repository state only changes through emit(), so build/freeze one immutable
+  // snapshot per revision instead of JSON-cloning the full Cleaning tree on
+  // every lookup.
+  var currentSnapshot=deepFreeze(clone(current));
+  function snapshot(){return currentSnapshot;}
   function emit(next){
     current=Object.assign({version:VERSION,ready:false,source:'unknown',uid:null,householdId:null,revision:0,data:emptyData(),error:null},next||{});
     if(!current.data||typeof current.data!=='object')current.data=emptyData();
     COLLECTIONS.forEach(function(name){if(!current.data[name]||typeof current.data[name]!=='object')current.data[name]={};});
-    var snap=snapshot();subscribers.slice().forEach(function(fn){try{fn(snap);}catch(e){console.warn('[CleaningHouseholdRepository] subscriber failed',e);}});
+    currentSnapshot=deepFreeze(clone(current));
+    var snap=currentSnapshot;subscribers.slice().forEach(function(fn){try{fn(snap);}catch(e){console.warn('[CleaningHouseholdRepository] subscriber failed',e);}});
     try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-repository',{detail:snap}));}catch(e){}
   }
   function subscribe(fn){if(typeof fn!=='function')return function(){};subscribers.push(fn);try{fn(snapshot());}catch(e){}return function(){var index=subscribers.indexOf(fn);if(index>=0)subscribers.splice(index,1);};}
