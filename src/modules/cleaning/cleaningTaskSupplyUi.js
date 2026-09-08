@@ -62,7 +62,9 @@
   }
 
   function repositoryRoot(){
-    try{var repository=window.CleaningHouseholdRepository,snapshot=repository&&repository.snapshot?repository.snapshot():null;return snapshot&&snapshot.ready===true&&snapshot.data?clone(snapshot.data):null;}catch(error){return null;}
+    // CleaningHouseholdRepository snapshots are immutable and revision-cached.
+    // Do not JSON-clone the complete Cleaning aggregate in the popup hot path.
+    try{var repository=window.CleaningHouseholdRepository,snapshot=repository&&repository.snapshot?repository.snapshot():null;return snapshot&&snapshot.ready===true&&snapshot.data?snapshot.data:null;}catch(error){return null;}
   }
   function readCleaningRoot(){
     var cached=repositoryRoot();if(cached)return Promise.resolve(cached);
@@ -93,14 +95,23 @@
     if(!state.loading&&!state.details)loadDetails(task);
   }
   function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(callback){return window.setTimeout(callback,0);})(decorate);}
+  function queueAfterFirstFrame(){
+    var raf=window.requestAnimationFrame||function(callback){return window.setTimeout(callback,0);};
+    raf(function(){raf(queue);});
+  }
 
   function loadDetails(task){
     var token=++state.loadToken;state.loading=true;state.details=null;queue();readCleaningRoot().then(function(root){if(token!==state.loadToken)return;state.loading=false;state.details=root?deriveDetails(task,root):{roomId:'',routineIds:[],supplyIds:[],items:[],summary:{total:0,inStock:0,low:0,out:0,attention:0,label:'Open Schoonmaken',tone:'empty'}};queue();}).catch(function(){if(token!==state.loadToken)return;state.loading=false;state.details=null;queue();});
   }
 
+  function observeOverlay(){
+    if(state.observer||typeof MutationObserver==='undefined')return;
+    var target=document.getElementById('tdp-overlay');if(!target)return;
+    state.observer=new MutationObserver(queue);state.observer.observe(target,{childList:true,subtree:true});
+  }
   function install(){
     var popup=window.TaskDetailPopup;if(!popup||typeof popup.open!=='function')return false;if(popup.open.__cleaningTaskSupplyUi){state.installed=true;return true;}
-    var rawOpen=popup.open;popup.open=function(id){state.currentTaskId=text(id);state.details=null;state.loading=false;state.loadToken++;var result=rawOpen.apply(this,arguments);queue();return result;};popup.open.__cleaningTaskSupplyUi=true;popup.open.__raw=rawOpen;state.installed=true;return true;
+    var rawOpen=popup.open;popup.open=function(id){state.currentTaskId=text(id);state.details=null;state.loading=false;state.loadToken++;var task=taskById(id),result=rawOpen.apply(this,arguments);observeOverlay();if(isManaged(task))queueAfterFirstFrame();else queue();return result;};popup.open.__cleaningTaskSupplyUi=true;popup.open.__raw=rawOpen;state.installed=true;return true;
   }
 
   function openInCleaning(){
@@ -113,7 +124,7 @@
   function onCleaningChanged(){var task=taskById(state.currentTaskId);if(isManaged(task)){state.details=null;state.loading=false;state.loadToken++;queue();}}
 
   function start(){
-    if(window.__cleaningTaskSupplyUiStarted)return;window.__cleaningTaskSupplyUiStarted=true;ensureStyle();document.addEventListener('click',onClick,true);var target=document.body||document.documentElement;if(typeof MutationObserver!=='undefined'&&target){state.observer=new MutationObserver(queue);state.observer.observe(target,{childList:true,subtree:true});}
+    if(window.__cleaningTaskSupplyUiStarted)return;window.__cleaningTaskSupplyUiStarted=true;ensureStyle();document.addEventListener('click',onClick,true);observeOverlay();
     window.addEventListener('familyapp:cleaning-repository',onCleaningChanged);if(!install()){var tries=0;state.installTimer=window.setInterval(function(){tries++;if(install()||tries>300){window.clearInterval(state.installTimer);state.installTimer=null;}},50);}queue();
   }
 
