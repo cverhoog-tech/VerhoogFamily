@@ -11,14 +11,11 @@
   if(window.CleaningExecutionWriteRuntime)return;
 
   var VERSION='0.1.0';
-  var state={installTimer:null,taskInstalled:false,calendarInstalled:false,inFlight:{},lastResult:null,lastError:null,repairScheduled:{},perf:{canonicalWriteMs:null,projectionMs:null,totalMs:null,repairRuns:0}};
+  var state={installTimer:null,taskInstalled:false,calendarInstalled:false,inFlight:{},lastResult:null,lastError:null};
 
   function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(error){return value;}}
   function text(value){return String(value==null?'':value).trim();}
   function now(){return Date.now();}
-  function perfNow(){return window.performance&&typeof window.performance.now==='function'?window.performance.now():Date.now();}
-  function roundedMs(value){return Math.round(value*10)/10;}
-  function perfLog(label,value){if(window.FAMILYAPP_CLEANING_PERF_DEBUG===true&&window.console&&typeof console.debug==='function')console.debug('[CleaningExecutionWriteRuntime]',label,value);}
   function contextSnapshot(){try{return window.HouseholdContext&&window.HouseholdContext.snapshot?window.HouseholdContext.snapshot():null;}catch(error){return null;}}
   function captureContext(){try{return window.HouseholdContext&&window.HouseholdContext.capture?window.HouseholdContext.capture():null;}catch(error){return null;}}
   function contextIsCurrent(token){try{return !!(window.HouseholdContext&&window.HouseholdContext.isCurrent&&window.HouseholdContext.isCurrent(token));}catch(error){return false;}}
@@ -186,31 +183,14 @@
     return out;
   }
 
-  function cancelScheduledRepair(entry){
-    if(!entry)return;
-    try{if(entry.idle&&typeof window.cancelIdleCallback==='function')window.cancelIdleCallback(entry.handle);else window.clearTimeout(entry.handle);}catch(error){}
-  }
-
-  function scheduleProjectionRepair(planIds,urgent){
+  function scheduleProjectionRepair(planIds){
     var service=window.CleaningProjectionService;
     if(!service||typeof service.reconcilePlan!=='function')return;
-    planIds.forEach(function(rawPlanId){
-      var planId=text(rawPlanId);if(!planId)return;
-      var existing=state.repairScheduled[planId];
-      if(existing){
-        if(!urgent||existing.urgent)return;
-        cancelScheduledRepair(existing);delete state.repairScheduled[planId];
-      }
-      var run=function(){
-        delete state.repairScheduled[planId];state.perf.repairRuns++;
-        Promise.resolve(service.reconcilePlan(planId)).catch(function(error){try{console.warn('[CleaningExecutionWriteRuntime] projection repair failed',error);}catch(ignore){}});
-      };
-      if(!urgent&&typeof window.requestIdleCallback==='function'){
-        var idleHandle=window.requestIdleCallback(run,{timeout:1200});state.repairScheduled[planId]={handle:idleHandle,idle:true,urgent:false};
-      }else{
-        var timeoutHandle=window.setTimeout(run,urgent?0:250);state.repairScheduled[planId]={handle:timeoutHandle,idle:false,urgent:!!urgent};
-      }
-    });
+    window.setTimeout(function(){
+      planIds.forEach(function(planId){
+        Promise.resolve(service.reconcilePlan(planId)).then(function(){return service.reconcilePlan(planId);}).catch(function(error){try{console.warn('[CleaningExecutionWriteRuntime] projection repair failed',error);}catch(ignore){}});
+      });
+    },0);
   }
 
   function emit(detail){
@@ -226,7 +206,7 @@
 
     var key=kind+'|'+text(id);
     if(state.inFlight[key])return state.inFlight[key];
-    var timestamp=now(),startedAt=perfNow(),transition=null,transitionError=null;
+    var timestamp=now(),transition=null,transitionError=null;
     var cleaningRef=write.database.ref(write.cleaningPath);
 
     var work=cleaningRef.transaction(function(serverCleaning){
@@ -240,29 +220,23 @@
       if(transitionError)throw transitionError;
       if(!contextIsCurrent(write.token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED_AFTER_WRITE');
       if(!result||result.committed!==true||!transition)throw new Error('CLEANING_EXECUTION_WRITE_NOT_COMMITTED');
-      state.perf.canonicalWriteMs=roundedMs(perfNow()-startedAt);perfLog('canonical-write-ms',state.perf.canonicalWriteMs);
       var cleaning=result.snapshot&&result.snapshot.val?result.snapshot.val():transition.family.cleaning;
-      var occurrenceIds=sync._recordOccurrenceIds(record.row),planIds=planIdsFor(cleaning,occurrenceIds),projectionStarted=perfNow();
+      var occurrenceIds=sync._recordOccurrenceIds(record.row),planIds=planIdsFor(cleaning,occurrenceIds);
       return rebuildDerived(kind,record,patch||{},write,timestamp,cleaning).then(function(derived){
-        state.perf.projectionMs=roundedMs(perfNow()-projectionStarted);state.perf.totalMs=roundedMs(perfNow()-startedAt);perfLog('projection-ms',state.perf.projectionMs);perfLog('total-write-ms',state.perf.totalMs);
-        // The derived write already updated Tasks/Agenda. Keep one deferred,
-        // deduplicated safety repair instead of reconciling the same plan twice.
-        scheduleProjectionRepair(planIds,false);
+        scheduleProjectionRepair(planIds);
         var detail={kind:kind,id:text(id),occurrenceIds:occurrenceIds,planIds:planIds,timestamp:timestamp,projectionState:'updated'};
         emit(detail);
         return derived.saved||(kind==='task'?transition.task:transition.event);
       }).catch(function(projectionError){
-        state.perf.projectionMs=roundedMs(perfNow()-projectionStarted);state.perf.totalMs=roundedMs(perfNow()-startedAt);perfLog('projection-failed-ms',state.perf.projectionMs);
         // Canonical cleaning state has already committed. Do not claim the user
-        // action failed solely because a derived view needs repair. A failed
-        // projection is exceptional, so its single repair stays urgent.
-        scheduleProjectionRepair(planIds,true);
+        // action failed solely because a derived view needs repair.
+        scheduleProjectionRepair(planIds);
         state.lastError='PROJECTION_REPAIR_PENDING: '+text(projectionError&&projectionError.message||projectionError);
         var detail={kind:kind,id:text(id),occurrenceIds:occurrenceIds,planIds:planIds,timestamp:timestamp,projectionState:'repair-pending'};
         try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-execution-synced',{detail:clone(detail)}));}catch(error){}
         return kind==='task'?transition.task:transition.event;
       });
-    }).catch(function(error){state.perf.totalMs=roundedMs(perfNow()-startedAt);state.lastError=text(error&&error.message||error);throw error;}).finally(function(){delete state.inFlight[key];});
+    }).catch(function(error){state.lastError=text(error&&error.message||error);throw error;}).finally(function(){delete state.inFlight[key];});
 
     state.inFlight[key]=work;
     return work;
@@ -306,11 +280,11 @@
     return false;
   }
 
-  function stop(){if(state.installTimer){window.clearInterval(state.installTimer);state.installTimer=null;}Object.keys(state.repairScheduled).forEach(function(planId){cancelScheduledRepair(state.repairScheduled[planId]);});state.repairScheduled={};state.inFlight={};}
+  function stop(){if(state.installTimer){window.clearInterval(state.installTimer);state.installTimer=null;}state.inFlight={};}
 
   window.CleaningExecutionWriteRuntime={
     version:VERSION,start:start,stop:stop,transact:transact,
-    status:function(){return clone({version:VERSION,taskInstalled:state.taskInstalled,calendarInstalled:state.calendarInstalled,inFlight:Object.keys(state.inFlight),repairScheduled:Object.keys(state.repairScheduled),lastResult:state.lastResult,lastError:state.lastError,perf:state.perf});},
+    status:function(){return clone({version:VERSION,taskInstalled:state.taskInstalled,calendarInstalled:state.calendarInstalled,inFlight:Object.keys(state.inFlight),lastResult:state.lastResult,lastError:state.lastError});},
     _transactionPatch:transactionPatch,_projectionUpdates:projectionUpdates,_cleaningPath:function(householdId){return'families/'+householdId+'/cleaning';}
   };
   window.addEventListener('familyapp:task-repository',install);
