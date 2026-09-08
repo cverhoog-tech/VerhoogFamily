@@ -6,7 +6,7 @@
   if(window.__familyAppFeedbackRound2)return;
   window.__familyAppFeedbackRound2=true;
 
-  var state={queued:false,observer:null,turn:null,pendingSupply:null,roomCreateInFlight:false,popupWrapped:false,themeWrapped:false,prewarmStarted:false};
+  var state={queued:false,observers:[],turn:null,pendingSupply:null,roomCreateInFlight:false,popupWrapped:false,themeWrapped:false,prewarmStarted:false};
   var ROOM_LABELS={'living-room':'Woonkamer',kitchen:'Keuken',bathroom:'Badkamer',bedroom:'Slaapkamer','kids-room':'Kinderkamer',toilet:'Toilet',hall:'Hal',laundry:'Wasruimte',outdoor:'Balkon / tuin',custom:'Kamer'};
   var HERO={
     tasks:{url:'https://res.cloudinary.com/dcnhl3mti/image/upload/v1788732320/familyapp-home-tasks-hero-v2.webp',pos:'center 70%'},
@@ -66,7 +66,7 @@
   function installPopupGuard(){
     var popup=window.TaskDetailPopup;if(state.popupWrapped||!popup||typeof popup.open!=='function')return;
     var rawOpen=popup.open,rawClose=typeof popup.close==='function'?popup.close:null;
-    popup.open=function(id){var task=findTask(id);if(!isCleaningTask(task)){state.turn=null;clearTurnDecoration();}return rawOpen.apply(this,arguments);};
+    popup.open=function(id){var task=findTask(id);if(!isCleaningTask(task)){state.turn=null;clearTurnDecoration();}var result=rawOpen.apply(this,arguments);queue();return result;};
     if(rawClose)popup.close=function(){state.turn=null;clearTurnDecoration();return rawClose.apply(this,arguments);};
     state.popupWrapped=true;
   }
@@ -77,7 +77,7 @@
     var root=rootData(),occ=nextOccurrence(root,roomId),roomRow=room(root,roomId),task=taskForOccurrence(occ);
     if(!occ||!roomRow||!task||!task.id)return false;
     state.turn={roomId:roomId,room:roomRow,occurrence:occ,taskId:text(task.id)};
-    window.TaskDetailPopup.open(task.id);queue();return true;
+    window.TaskDetailPopup.open(task.id);return true;
   }
   function watchTurnOverlay(overlay){
     if(!overlay||overlay.__familyappTurnWatch||typeof MutationObserver==='undefined')return;
@@ -162,14 +162,15 @@
     var target=event.target;if(!target||!target.closest)return;
     var primary=target.closest('[data-cleaning-room-primary-action]');if(primary&&openTurn(primary)){event.preventDefault();event.stopImmediatePropagation();return;}
     var toggle=target.closest('[data-familyapp-planned-toggle]');if(toggle){event.preventDefault();event.stopPropagation();var card=toggle.closest('.cleaning-planned-room-card');if(card){var expanded=card.classList.toggle('is-familyapp-expanded');toggle.setAttribute('aria-expanded',expanded?'true':'false');toggle.setAttribute('aria-label',expanded?'Verberg routines':'Toon routines');}return;}
-    var roomSupply=target.closest('[data-cleaning-room-supplies]');if(roomSupply){var roomId=text(roomSupply.getAttribute('data-cleaning-room-supplies')),roomRow=room(rootData(),roomId);state.pendingSupply={roomId:roomId,type:roomType(roomRow)};window.setTimeout(function(){decorateSupply();},0);return;}
-    if(target.closest('[data-familyapp-turn-supplies]')&&state.turn){event.preventDefault();event.stopImmediatePropagation();var info={roomId:state.turn.roomId,type:roomType(state.turn.room)};state.pendingSupply=info;if(window.TaskDetailPopup&&typeof window.TaskDetailPopup.close==='function')window.TaskDetailPopup.close();window.setTimeout(function(){if(window.CleaningSupplyExperience&&typeof window.CleaningSupplyExperience.openRoom==='function'){window.CleaningSupplyExperience.openRoom(info.roomId);window.setTimeout(decorateSupply,0);}},120);return;}
+    var roomSupply=target.closest('[data-cleaning-room-supplies]');if(roomSupply){var roomId=text(roomSupply.getAttribute('data-cleaning-room-supplies')),roomRow=room(rootData(),roomId);state.pendingSupply={roomId:roomId,type:roomType(roomRow)};window.setTimeout(function(){decorateSupply();observe();},0);return;}
+    if(target.closest('[data-familyapp-turn-supplies]')&&state.turn){event.preventDefault();event.stopImmediatePropagation();var info={roomId:state.turn.roomId,type:roomType(state.turn.room)};state.pendingSupply=info;if(window.TaskDetailPopup&&typeof window.TaskDetailPopup.close==='function')window.TaskDetailPopup.close();(window.requestAnimationFrame||function(fn){return window.setTimeout(fn,0);})(function(){if(window.CleaningSupplyExperience&&typeof window.CleaningSupplyExperience.openRoom==='function'){window.CleaningSupplyExperience.openRoom(info.roomId);queue();}});return;}
     if(target.closest('#tdp-close-btn')||target.id==='tdp-overlay'){state.turn=null;}
   }
   function onSubmit(event){interceptRoomCreate(event);}
-  function decorate(){state.queued=false;installPopupGuard();installThemeCache();ensureLoadingShell();decorateHomeHeroes();decoratePlannedCards();decorateOverview();decorateTurn();decorateSupply();}
+  function decorate(){state.queued=false;installPopupGuard();installThemeCache();ensureLoadingShell();decorateHomeHeroes();decoratePlannedCards();decorateOverview();decorateTurn();decorateSupply();observe();}
   function queue(){if(state.queued)return;state.queued=true;(window.requestAnimationFrame||function(fn){return window.setTimeout(fn,0);})(decorate);}
-  function observe(){if(state.observer||typeof MutationObserver==='undefined'||!document.body)return;state.observer=new MutationObserver(queue);state.observer.observe(document.body,{childList:true,subtree:true});}
-  function start(){installPopupGuard();installThemeCache();schedulePrewarm();document.addEventListener('click',onClick,true);document.addEventListener('submit',onSubmit,true);observe();queue();window.addEventListener('pageshow',queue);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')queue();});}
+  function observeRoot(node){if(!node||node.__familyappFeedbackRound2Observed||typeof MutationObserver==='undefined')return;node.__familyappFeedbackRound2Observed=true;var observer=new MutationObserver(queue);observer.observe(node,{childList:true,subtree:true});state.observers.push(observer);}
+  function observe(){observeRoot(document.getElementById('screen-cleaning'));observeRoot(document.getElementById('tdp-overlay'));observeRoot(document.getElementById('cleaning-supplies-overlay'));}
+  function start(){installPopupGuard();installThemeCache();schedulePrewarm();document.addEventListener('click',onClick,true);document.addEventListener('submit',onSubmit,true);observe();queue();window.addEventListener('pageshow',queue);window.addEventListener('familyapp:cleaning-repository',queue);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')queue();});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
