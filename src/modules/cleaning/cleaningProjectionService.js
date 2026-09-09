@@ -224,13 +224,18 @@
   function reconcilePlan(planId){
     planId=text(planId);if(!planId)return Promise.resolve(null);if(state.inFlight[planId])return state.inFlight[planId];
     var ctx=contextSnapshot(),database=firebaseDb(),token=captureContext();if(!validContext(ctx)||!database||!token||!contextIsCurrent(token))return Promise.resolve(null);
+    var trace=window.CleaningFreezeTrace;
+    if(trace)trace.mark('projection-service-reconcile-plan',{planId:planId});
+    var reconcileStartedAt=trace?now():0;
     var familyRef=database.ref('families/'+ctx.householdId);
     var work=Promise.all([familyRef.child('cleaning').once('value'),familyRef.child('tasks').once('value'),familyRef.child('calendarEvents').once('value')]).then(function(snaps){
       if(!contextIsCurrent(token))throw new Error('CLEANING_PROJECTION_CONTEXT_CHANGED');
       var family={cleaning:snaps[0]&&snaps[0].val?snaps[0].val():{},tasks:snaps[1]&&snaps[1].val?snaps[1].val():{},calendarEvents:snaps[2]&&snaps[2].val?snaps[2].val():{}};
-      var result=buildProjectionUpdates({family:family,planId:planId,householdId:ctx.householdId,actorUid:ctx.uid,timestamp:now(),members:members()}),keys=Object.keys(result.updates);
-      if(!keys.length){emit(Object.assign({planId:planId,status:'synced'},result));return result;}
-      return familyRef.update(result.updates).then(function(){if(!contextIsCurrent(token))throw new Error('CLEANING_PROJECTION_CONTEXT_CHANGED_AFTER_WRITE');emit(Object.assign({planId:planId,status:'projected'},result));return result;});
+      var result=trace?trace.time('projection-service-build-updates',function(){return buildProjectionUpdates({family:family,planId:planId,householdId:ctx.householdId,actorUid:ctx.uid,timestamp:now(),members:members()});}):buildProjectionUpdates({family:family,planId:planId,householdId:ctx.householdId,actorUid:ctx.uid,timestamp:now(),members:members()});
+      var keys=Object.keys(result.updates);
+      if(!keys.length){emit(Object.assign({planId:planId,status:'synced'},result));if(trace)trace.mark('projection-service-reconcile-plan-done',{planId:planId,ms:Math.round(now()-reconcileStartedAt),wroteCleaningKeys:false});return result;}
+      var touchesCleaning=keys.some(function(key){return key.indexOf('cleaning/')===0;});
+      return familyRef.update(result.updates).then(function(){if(!contextIsCurrent(token))throw new Error('CLEANING_PROJECTION_CONTEXT_CHANGED_AFTER_WRITE');emit(Object.assign({planId:planId,status:'projected'},result));if(trace)trace.mark('projection-service-reconcile-plan-done',{planId:planId,ms:Math.round(now()-reconcileStartedAt),wroteCleaningKeys:touchesCleaning,updateCount:keys.length});return result;});
     }).catch(function(error){emit({planId:planId,status:'error',error:error&&error.message||String(error)});throw error;}).finally(function(){delete state.inFlight[planId];});
     state.inFlight[planId]=work;return work;
   }
@@ -246,7 +251,7 @@
     status:function(){return clone({version:VERSION,lastError:state.lastError,lastResult:state.lastResult,inFlight:Object.keys(state.inFlight)});},
     _buildProjectionUpdates:buildProjectionUpdates,_taskIdForOccurrence:projectionTaskId,_calendarIdForOccurrence:projectionCalendarId,_groupProjectionId:groupProjectionId,_occurrenceDateTime:occurrenceDateTime
   };
-  window.addEventListener('familyapp:cleaning-repository',function(){start();try{var repo=repository();if(repo&&repo.snapshot)reconcileSnapshot(repo.snapshot());}catch(error){}});
+  window.addEventListener('familyapp:cleaning-repository',function(){var trace=window.CleaningFreezeTrace;if(trace)trace.mark('projection-service-event-triggered');start();try{var repo=repository();if(repo&&repo.snapshot)reconcileSnapshot(repo.snapshot());}catch(error){}});
   window.addEventListener('familyapp:household-context',start);
   start();
 })();
