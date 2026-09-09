@@ -90,6 +90,13 @@
     overlay.__familyappTurnWatch=true;
     new MutationObserver(function(){if(!overlay.classList.contains('open')){state.turn=null;state.turnWrite=null;clearTurnDecoration();}}).observe(overlay,{attributes:true,attributeFilter:['class']});
   }
+  function moveTurnToChecklist(overlay,target){
+    if(!overlay||!target)return;
+    var targetRect=target.getBoundingClientRect(),overlayRect=overlay.getBoundingClientRect(),topPad=Math.min(132,Math.max(82,(overlay.clientHeight||window.innerHeight||600)*.18));
+    if(targetRect.top>=overlayRect.top+topPad&&targetRect.bottom<=overlayRect.bottom-28)return;
+    var next=(Number(overlay.scrollTop)||0)+(targetRect.top-overlayRect.top)-topPad;
+    if(Number.isFinite(next))overlay.scrollTop=Math.max(0,next);
+  }
   function decorateTurn(){
     state.turnQueued=false;state.perf.turnDecorates++;
     if(!state.turn)return;var overlay=document.getElementById('tdp-overlay');if(!overlay||!overlay.classList.contains('open'))return;
@@ -106,7 +113,7 @@
     if(!start){start=document.createElement('button');start.type='button';start.className='familyapp-turn-start';start.setAttribute('data-familyapp-turn-start','1');if(footer)body.insertBefore(start,footer);else body.appendChild(start);}
     var anyDone=!!overlay.querySelector('.tdp-sub-chk.done'),undone=overlay.querySelector('.tdp-sub-chk:not(.done)'),hasChecks=!!overlay.querySelector('.tdp-sub-chk'),startMode=!undone&&hasChecks?'done':(anyDone?'continue':'start');
     if(start.getAttribute('data-familyapp-signature')!==startMode){start.setAttribute('data-familyapp-signature',startMode);if(startMode==='done')start.textContent='✓ Alle onderdelen klaar';else start.innerHTML='<span aria-hidden="true">✦</span> '+(startMode==='continue'?'Ga verder met schoonmaken':'Start schoonmaken');}
-    start.onclick=function(event){event.preventDefault();event.stopPropagation();var target=overlay.querySelector('.tdp-sub-chk:not(.done)')||overlay.querySelector('.tdp-box');if(target&&target.scrollIntoView)target.scrollIntoView({behavior:'smooth',block:'center'});};
+    start.onclick=function(event){event.preventDefault();event.stopImmediatePropagation();var target=overlay.querySelector('.tdp-sub-chk:not(.done)')||overlay.querySelector('.tdp-box');moveTurnToChecklist(overlay,target);};
     var supplies=body.querySelector('[data-familyapp-turn-supplies]');if(!supplies){supplies=document.createElement('button');supplies.type='button';supplies.className='familyapp-turn-supplies';supplies.setAttribute('data-familyapp-turn-supplies','1');supplies.innerHTML='<span aria-hidden="true">▣</span> Benodigdheden';body.appendChild(supplies);}
   }
 
