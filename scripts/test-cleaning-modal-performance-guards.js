@@ -20,6 +20,13 @@ assert.match(round2,/summary\.getAttribute\('data-familyapp-signature'\)!==summa
 assert.match(round2,/context\.getAttribute\('data-familyapp-signature'\)!==contextSignature/,'Turn context innerHTML must be signature-gated');
 assert.match(round2,/start\.getAttribute\('data-familyapp-signature'\)!==startMode/,'Turn CTA innerHTML must be signature-gated');
 
+// A successful checkbox write must keep the already-mounted task sheet stable.
+// Re-opening TaskDetailPopup after every canonical acknowledgement makes iOS
+// visibly jump even though the optimistic checkbox state was already correct.
+assert.match(round2,/function settleTurnFromCanonical\(taskId\)/,'Successful checkbox writes need an in-place settle path');
+assert.match(round2,/state\.turnWrite=null;settleTurnFromCanonical\(taskId\)/,'Successful checkbox writes must not reopen the popup');
+assert.match(round2,/\.catch\(function\(error\)\{state\.perf\.checkboxFailures\+\+;state\.turnWrite=null;refreshTurnFromCanonical\(taskId\)/,'Failed checkbox writes must still restore authoritative popup state');
+
 // iOS/WebKit close guard: do not remove the overlay in the native pointerup
 // handler before the compatibility click has had a stable target.
 assert.match(round2,/function onPointerUp\(event\)/,'Round2 must guard the supply close pointerup');
