@@ -1,3 +1,4 @@
+import './cleaningFreezeTrace.js?v=1';
 import './cleaningPermissions.js?v=1';
 import './cleaningExceptionContract.js?v=1';
 import './cleaningExecutionSync.js?v=1';
@@ -19,6 +20,8 @@ import './cleaningTaskSupplyUi.js?v=1';
 // Explicit runtime experiences that sit around the base Cleaning screen.
 // ============================================================
 // Order:
+//  0 temporary CleaningFreezeTrace diagnostic instrumentation (no-op unless
+//    explicitly enabled; see cleaningFreezeTrace.js for how to turn it on)
 //  1 central role/capability policy (no data ownership)
 //  2 exception contract
 //  3 execution sync
