@@ -689,6 +689,12 @@ function openEditRoutine(root,routineId){
 function renderIfActive(){
   const screen = document.getElementById('screen-cleaning');
   if(!mountedRoot || !mountedRoot.isConnected || !screen || !screen.classList.contains('active')) return;
+  const trace = window.CleaningFreezeTrace;
+  if(trace){
+    let popupOpen = false;
+    try{ popupOpen = !!(window.CleaningTurnExperience && window.CleaningTurnExperience.isOpen && window.CleaningTurnExperience.isOpen()); }catch(e){}
+    trace.mark('cleaningscreen-render-if-active', {popupOpen: popupOpen});
+  }
   renderCleaningScreen(mountedRoot);
 }
 
@@ -1176,19 +1182,27 @@ export function renderCleaningScreen(target){
   ensureRepositorySubscription();
   ensureMemberSubscription();
 
-  root.innerHTML = '<div class="cleaning-shell">'
-    +'<header class="cleaning-intro">'
-      +'<p class="cleaning-kicker">Huishouden</p>'
-      +'<h1 class="cleaning-title">Schoonmaken</h1>'
-      +'<p class="cleaning-subtitle">Kamers, routines en weekplanning op één plek.</p>'
-    +'</header>'
-    +'<nav class="cleaning-tabs" aria-label="Schoonmaken onderdelen">'
-      +tabButton('overview','Overzicht')
-      +tabButton('planning','Planning')
-      +tabButton('rooms','Kamers')
-    +'</nav>'
-    +'<div class="cleaning-panel">'+panelContent()+'</div>'
-  +'</div>';
+  const trace = window.CleaningFreezeTrace;
+  if(trace)trace.mark('cleaningscreen-render');
 
-  bind(root);
+  const build = () => {
+    root.innerHTML = '<div class="cleaning-shell">'
+      +'<header class="cleaning-intro">'
+        +'<p class="cleaning-kicker">Huishouden</p>'
+        +'<h1 class="cleaning-title">Schoonmaken</h1>'
+        +'<p class="cleaning-subtitle">Kamers, routines en weekplanning op één plek.</p>'
+      +'</header>'
+      +'<nav class="cleaning-tabs" aria-label="Schoonmaken onderdelen">'
+        +tabButton('overview','Overzicht')
+        +tabButton('planning','Planning')
+        +tabButton('rooms','Kamers')
+      +'</nav>'
+      +'<div class="cleaning-panel">'+panelContent()+'</div>'
+    +'</div>';
+
+    bind(root);
+  };
+
+  if(trace) trace.time('cleaningscreen-render-duration', build);
+  else build();
 }
