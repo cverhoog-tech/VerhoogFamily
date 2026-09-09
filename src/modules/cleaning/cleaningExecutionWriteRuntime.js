@@ -186,9 +186,14 @@
   function scheduleProjectionRepair(planIds){
     var service=window.CleaningProjectionService;
     if(!service||typeof service.reconcilePlan!=='function')return;
+    var trace=window.CleaningFreezeTrace;
     window.setTimeout(function(){
       planIds.forEach(function(planId){
-        Promise.resolve(service.reconcilePlan(planId)).then(function(){return service.reconcilePlan(planId);}).catch(function(error){try{console.warn('[CleaningExecutionWriteRuntime] projection repair failed',error);}catch(ignore){}});
+        if(trace)trace.mark('write-runtime-schedule-repair-pass-1',{planId:planId});
+        Promise.resolve(service.reconcilePlan(planId)).then(function(){
+          if(trace)trace.mark('write-runtime-schedule-repair-pass-2',{planId:planId});
+          return service.reconcilePlan(planId);
+        }).catch(function(error){try{console.warn('[CleaningExecutionWriteRuntime] projection repair failed',error);}catch(ignore){}});
       });
     },0);
   }
@@ -206,6 +211,9 @@
 
     var key=kind+'|'+text(id);
     if(state.inFlight[key])return state.inFlight[key];
+    var trace=window.CleaningFreezeTrace;
+    if(trace)trace.mark('write-runtime-transact',{kind:kind});
+    var transactStartedAt=trace?now():0;
     var timestamp=now(),transition=null,transitionError=null;
     var cleaningRef=write.database.ref(write.cleaningPath);
 
@@ -226,6 +234,7 @@
         scheduleProjectionRepair(planIds);
         var detail={kind:kind,id:text(id),occurrenceIds:occurrenceIds,planIds:planIds,timestamp:timestamp,projectionState:'updated'};
         emit(detail);
+        if(trace)trace.mark('write-runtime-transact-done',{kind:kind,ms:Math.round(now()-transactStartedAt),planCount:planIds.length});
         return derived.saved||(kind==='task'?transition.task:transition.event);
       }).catch(function(projectionError){
         // Canonical cleaning state has already committed. Do not claim the user
@@ -234,9 +243,10 @@
         state.lastError='PROJECTION_REPAIR_PENDING: '+text(projectionError&&projectionError.message||projectionError);
         var detail={kind:kind,id:text(id),occurrenceIds:occurrenceIds,planIds:planIds,timestamp:timestamp,projectionState:'repair-pending'};
         try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-execution-synced',{detail:clone(detail)}));}catch(error){}
+        if(trace)trace.mark('write-runtime-transact-done',{kind:kind,ms:Math.round(now()-transactStartedAt),planCount:planIds.length,repairPending:true});
         return kind==='task'?transition.task:transition.event;
       });
-    }).catch(function(error){state.lastError=text(error&&error.message||error);throw error;}).finally(function(){delete state.inFlight[key];});
+    }).catch(function(error){state.lastError=text(error&&error.message||error);if(trace)trace.mark('write-runtime-transact-error',{kind:kind,message:text(error&&error.message||error)});throw error;}).finally(function(){delete state.inFlight[key];});
 
     state.inFlight[key]=work;
     return work;
