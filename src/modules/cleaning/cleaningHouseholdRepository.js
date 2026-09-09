@@ -35,7 +35,9 @@
     current=Object.assign({version:VERSION,ready:false,source:'unknown',uid:null,householdId:null,revision:0,data:emptyData(),error:null},next||{});
     if(!current.data||typeof current.data!=='object')current.data=emptyData();
     COLLECTIONS.forEach(function(name){if(!current.data[name]||typeof current.data[name]!=='object')current.data[name]={};});
-    currentSnapshot=deepFreeze(clone(current));
+    var trace=window.CleaningFreezeTrace;
+    if(trace)trace.mark('repository-emit',{source:current.source});
+    currentSnapshot=trace?trace.time('repository-emit-clone-freeze',function(){return deepFreeze(clone(current));}):deepFreeze(clone(current));
     var snap=currentSnapshot;subscribers.slice().forEach(function(fn){try{fn(snap);}catch(e){console.warn('[CleaningHouseholdRepository] subscriber failed',e);}});
     try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-repository',{detail:snap}));}catch(e){}
   }
