@@ -115,6 +115,13 @@
     if(window.TaskDetailPopup&&typeof window.TaskDetailPopup.open==='function')window.TaskDetailPopup.open(taskId);
     queueTurn();
   }
+  function settleTurnFromCanonical(taskId){
+    if(!state.turn||text(state.turn.taskId)!==text(taskId))return;
+    // The checkbox already reflects the accepted write optimistically. Re-opening
+    // TaskDetailPopup here rebuilds the whole modal and causes a visible iOS jump.
+    // Keep the mounted sheet stable and only refresh the lightweight Cleaning UI.
+    queueTurn();
+  }
   function runTurnWrite(){
     var pending=state.turnWrite;if(!pending||pending.inFlight)return;
     var shared=window.TaskSharedData;if(!shared||typeof shared.update!=='function'){state.turnWrite=null;refreshTurnFromCanonical(pending.taskId);return;}
@@ -124,7 +131,7 @@
       var current=state.turnWrite;if(!current||text(current.taskId)!==text(taskId))return;
       current.inFlight=false;
       if(current.version!==version){raf(runTurnWrite);return;}
-      state.turnWrite=null;refreshTurnFromCanonical(taskId);
+      state.turnWrite=null;settleTurnFromCanonical(taskId);
     }).catch(function(error){state.perf.checkboxFailures++;state.turnWrite=null;refreshTurnFromCanonical(taskId);if(typeof window.showToast==='function')window.showToast((error&&error.message)||'Schoonmaakwijziging kon niet worden opgeslagen');});
   }
   function handleTurnCheckbox(button,event){
