@@ -9,6 +9,11 @@
 // ============================================================
 (function(){
   if(window.CleaningHouseholdRepository)return;
+  // Best-effort load of the temporary freeze-trace diagnostic module. Safe
+  // no-op if it's already loaded (e.g. via cleaningExperienceBootstrap.js) or
+  // if dynamic import isn't reachable here; emit() below only uses it if
+  // window.CleaningFreezeTrace ends up defined.
+  if(!window.CleaningFreezeTrace){try{import('./cleaningFreezeTrace.js?v=1').catch(function(){});}catch(e){}}
 
   var VERSION='0.7.0';
   var subscribers=[];
