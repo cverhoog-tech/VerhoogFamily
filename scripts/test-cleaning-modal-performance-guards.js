@@ -27,6 +27,14 @@ assert.match(round2,/function settleTurnFromCanonical\(taskId\)/,'Successful che
 assert.match(round2,/state\.turnWrite=null;settleTurnFromCanonical\(taskId\)/,'Successful checkbox writes must not reopen the popup');
 assert.match(round2,/\.catch\(function\(error\)\{state\.perf\.checkboxFailures\+\+;state\.turnWrite=null;refreshTurnFromCanonical\(taskId\)/,'Failed checkbox writes must still restore authoritative popup state');
 
+// Start Cleaning must keep scrolling inside the Cleaning overlay. Using
+// scrollIntoView({behavior:'smooth'}) on a descendant of the fixed full-screen
+// iOS/PWA overlay can leave WebKit scroll/touch hit-testing in a broken state.
+assert.match(round2,/function moveTurnToChecklist\(overlay,target\)/,'Start Cleaning needs an overlay-local scroll helper');
+assert.match(round2,/moveTurnToChecklist\(overlay,target\)/,'Start Cleaning must scroll the Cleaning overlay directly');
+assert.match(round2,/start\.onclick=function\(event\)\{event\.preventDefault\(\);event\.stopImmediatePropagation\(\)/,'Start Cleaning must terminate its injected click action');
+assert.doesNotMatch(round2,/scrollIntoView\(\{behavior:'smooth'/,'Cleaning turn must not use browser-managed smooth scrollIntoView');
+
 // iOS/WebKit close guard: do not remove the overlay in the native pointerup
 // handler before the compatibility click has had a stable target.
 assert.match(round2,/function onPointerUp\(event\)/,'Round2 must guard the supply close pointerup');
