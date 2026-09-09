@@ -1,17 +1,18 @@
 'use strict';
 // FamilyApp feedback round 4.
-// Lifecycle/performance adapter only. CleaningHouseholdRepository remains the sole
-// Cleaning writer and CleaningOccurrence remains the canonical concrete state.
+// Lifecycle/performance adapter only. CleaningOccurrence remains canonical and
+// the dedicated CleaningTurnExperience owns the Cleaning turn popup lifecycle.
 (function(){
   if(window.__familyAppFeedbackRound4)return;
   window.__familyAppFeedbackRound4=true;
 
-  var VERSION='0.3.0';
+  var VERSION='0.4.0';
   var state={
     hookTimer:null,
     coreModulePromise:null,
     coreStylePromise:null,
     premiumPromise:null,
+    turnPromise:null,
     adapterPromise:null,
     presentationScheduled:false,
     prewarmScheduled:false,
@@ -21,7 +22,7 @@
     resumeTimer:0
   };
   var ADAPTERS=[
-    {key:'round2',flag:'__familyAppFeedbackRound2',attr:'data-familyapp-feedback-round2',src:'/src/core/familyappFeedbackRound2.js?v=20260907-3'},
+    {key:'round2',flag:'__familyAppFeedbackRound2',attr:'data-familyapp-feedback-round2',src:'/src/core/familyappFeedbackRound2.js?v=20260909-turn-rebuild-1'},
     {key:'round3',flag:'__familyAppFeedbackRound3',attr:'data-familyapp-feedback-round3',src:'/src/core/familyappFeedbackRound3.js?v=20260907-3'}
   ];
 
@@ -124,6 +125,15 @@
   }
   renderCleaningFast.__familyappRound4Fast=true;
 
+  function loadCleaningTurnExperience(){
+    if(window.CleaningTurnExperience)return Promise.resolve(true);
+    if(state.turnPromise)return state.turnPromise;
+    state.turnPromise=import('/src/modules/cleaning/cleaningTurnExperience.js?v=20260909-1')
+      .then(function(){return !!window.CleaningTurnExperience;})
+      .catch(function(error){state.turnPromise=null;throw error;});
+    return state.turnPromise;
+  }
+
   function loadPremiumFeedback(){
     if(window.CleaningPremiumFeedback)return Promise.resolve(true);
     if(state.premiumPromise)return state.premiumPromise;
@@ -169,7 +179,12 @@
     if(state.presentationScheduled)return;
     state.presentationScheduled=true;
     var run=function(){
-      loadPremiumFeedback()
+      // The dedicated turn popup is deliberately registered before PremiumFeedback
+      // and Round2. It therefore owns the primary room action before any visual
+      // decorator can observe or reinterpret that click.
+      loadCleaningTurnExperience()
+        .catch(function(error){console.warn('[Cleaning] beurt-popup kon niet worden geladen',error);})
+        .then(function(){return loadPremiumFeedback();})
         .catch(function(error){console.warn('[Cleaning] premium feedback kon niet worden geladen',error);})
         .then(function(){return loadCleaningAdapters();});
     };
@@ -284,6 +299,7 @@
     version:VERSION,
     refreshHome:refreshHome,
     prepareCleaningCore:prepareCleaningCore,
+    loadCleaningTurnExperience:loadCleaningTurnExperience,
     loadCleaningAdapters:loadCleaningAdapters
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
