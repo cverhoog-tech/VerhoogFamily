@@ -11,6 +11,12 @@ const contractSource=read('src/modules/cleaning/cleaningCollaborationContract.js
 const experienceSource=read('src/modules/cleaning/cleaningCollaborationExperience.js');
 const premiumSource=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const registrySource=read('src/platform/inbox/actionInboxRegistry.js');
+const todoSource=read('FamilyApp-TODO-updated.txt');
+const currentTodoSource=read('docs/FAMILYAPP-CURRENT-TODO.md');
+const progressSource=read('docs/household-rebuild-v2-progress.md');
+const statusSource=read('FamilyApp-Schoonmaken-current-status.md');
+const milestoneSource=read('FamilyApp-Schoonmaken-milestone-log.md');
+const architectureSource=read('FamilyApp-Schoonmaken-module-architectuur.md');
 
 const sandbox={window:{},Date:Date,JSON:JSON,Error:Error,String:String,Number:Number,Array:Array,Object:Object,Math:Math};
 vm.createContext(sandbox);
@@ -87,5 +93,15 @@ assert.match(registrySource,/type:'cleaning\.occurrence\.counter'/,'Action Inbox
 assert.match(registrySource,/type:'cleaning\.help'/,'Action Inbox must expose help decisions');
 assert.match(registrySource,/CleaningCollaborationV21\.handleInboxAction/,'Inbox decisions must route into the v2.1 collaboration writer');
 assert.doesNotMatch(registrySource,/\.ref\s*\(/,'Action Inbox must remain writer-free');
+
+[todoSource,currentTodoSource,progressSource,statusSource,milestoneSource].forEach((source)=>{
+  assert.match(source,/V2\.1/,'current roadmap/status docs must mention Cleaning V2.1');
+  assert.match(source,/real-device/i,'current roadmap/status docs must keep the real-device acceptance gate explicit');
+});
+assert.match(statusSource,/CODECANDIDATE GEREED/,'Cleaning current status must describe V2.1 as a candidate, not accepted');
+assert.doesNotMatch(statusSource,/STEP 14 is FUNCTIONEEL AFGEROND EN REAL-DEVICE GEACCEPTEERD/,'stale pre-reset STEP 14 completion claim must not return');
+assert.match(architectureSource,/CleaningOccurrence is de concrete authority/,'architecture must keep CleaningOccurrence canonical');
+assert.match(architectureSource,/Third-person counter safety/,'architecture must document explicit third-person consent');
+assert.match(architectureSource,/geen tweede Firebase `value` listener/,'architecture must preserve the one-listener performance rule');
 
 console.log('Cleaning V2.1 collaboration contracts: PASS');
