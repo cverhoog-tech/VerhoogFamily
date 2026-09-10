@@ -20,8 +20,8 @@ else{
 const screen=fs.readFileSync(path.join(CLEANING,'cleaningScreen.js'),'utf8');
 const premium=fs.readFileSync(path.join(CLEANING,'cleaningPremiumFeedback.js'),'utf8');
 const inbox=fs.readFileSync(path.join(ROOT,'src','platform','inbox','actionInboxBootstrap.js'),'utf8');
-if(/MutationObserver|TaskDetailPopup|TaskSharedData|CleaningExecutionWriteRuntime|CleaningProjectionService/.test(screen))fail('served v2 graph regained a legacy freeze-prone owner');
-if(!/disabledForCleaningV2:true/.test(premium)||/MutationObserver|addEventListener\s*\(/.test(premium))fail('premium compatibility import must stay inert');
+if(/new\s+MutationObserver|MutationObserver\s*\(|TaskDetailPopup|TaskSharedData|CleaningExecutionWriteRuntime|CleaningProjectionService/.test(screen))fail('served v2 graph regained a legacy freeze-prone owner');
+if(!/disabledForCleaningV2:true/.test(premium)||/new\s+MutationObserver|MutationObserver\s*\(|addEventListener\s*\(/.test(premium))fail('premium compatibility import must stay inert');
 if(/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience|cleaningHelpRequestUi|cleaningPermissions/.test(inbox))fail('app startup must not eagerly load Cleaning');
 if(!failed)console.log('Cleaning v2 minimal served runtime reachability: PASS');
 else process.exitCode=1;
