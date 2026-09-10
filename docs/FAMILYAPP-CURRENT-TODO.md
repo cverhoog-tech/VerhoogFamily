@@ -1,6 +1,6 @@
 # FamilyApp — Current TODO / Execution State
 
-Last updated: 2026-09-10  
+Last updated: 2026-09-11  
 Branch: `agent/household-rebuild-v2`  
 Production/main baseline: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`  
 Accepted Cleaning-v2 rollback basis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a`
@@ -12,69 +12,86 @@ Read together with:
 - `FamilyApp-Schoonmaken-current-status.md`
 - `FamilyApp-Schoonmaken-milestone-log.md`
 - `FamilyApp-Schoonmaken-module-architectuur.md`
-- `FamilyApp-Schoonmaken-visual-spec.md`
 
 ## Hard branch rule
 
-`main` must not change until the product owner has real-device accepted the milestone and explicitly asks to promote that exact accepted state. Production Firebase Rules and fallback/lock branches are out of scope without explicit permission.
+`main` stays read-only until the product owner real-device accepts an exact milestone checkpoint and separately asks to promote it. Production Firebase Rules and fallback/lock branches are also read-only without explicit permission.
 
-## CURRENT GATE — Cleaning V2.1 collaboration
+## Deferred gate — Cleaning V2.1 collaboration
 
-Status: **implementation complete, repository contract suite green, Vercel candidate flow, real-device acceptance pending**.
+Status: **codecandidate complete; single-device path appears good; multi-user verification deferred by product owner**.
 
-Latest functional/test checkpoint:
+Last fully tested V2.1 checkpoint:
 `7e34cb60b78cf45664fdb82202e9673bb2ae9672`
 
-GitHub Actions `Household Rebuild Contract Tests` run `34534350216`: **SUCCESS**.
+GitHub Actions run `34534350216`: **SUCCESS**.
 
-Built in this slice:
-- transfer a concrete CleaningOccurrence to another active household member;
-- recipient accept/decline in Action Inbox;
-- counterproposal for assignee/date/time;
-- third-person counterproposal becomes a new explicit pending request rather than silent reassignment;
-- request help, accept/decline help and withdraw pending help;
-- withdraw pending/counter-proposed transfer;
-- help acceptance does not create multi-person assignment;
-- transfer acceptance updates the same canonical occurrence and bounded existing Task/Agenda projections;
-- duplicate-tap guard and idempotent same-request behavior;
-- no second request database;
-- no additional long-lived Cleaning Firebase listener;
-- no additional Cleaning startup work;
-- no notification projector/reminder loop added in V2.1;
-- no week-plan approval flow reintroduced;
-- **no standalone `Samenwerken` menu below Rooms/Kamers**;
-- collaboration actions now live inside the existing concrete turn detail sheet: `Overdragen`, `Hulp vragen`, current request state and `Intrekken`;
-- incoming decisions remain in Action Inbox;
-- `Ander voorstel` routes back to the concrete turn detail flow;
-- collaboration lazy import cache key bumped to `?v=2` to prevent stale PWA/iPhone UI.
+Built and retained:
+- occurrence transfer / accept / decline / withdraw;
+- counter proposal for person/date/time;
+- explicit third-person consent;
+- help request / accept / decline / withdraw;
+- no implicit multi-person assignment;
+- contextual collaboration controls inside existing turn detail sheet;
+- no standalone `Samenwerken` menu below Kamers;
+- Action Inbox fresh-session hydration on demand;
+- accepted transfer updates existing Task/Agenda projections;
+- idempotency/double-tap guards;
+- no extra long-lived Firebase listener, popup owner, MutationObserver or notification projector.
 
-### Real-device tests required before acceptance
+The product owner reported on 2026-09-11 that the available-device flow appears to work, but multi-user testing was not possible at that moment. Therefore V2.1 remains **NOT fully real-device/multi-user accepted**. Test later with two/three accounts before final acceptance/promotion.
 
-1. Open Cleaning and confirm there is no standalone `Samenwerken` block under Kamers.
-2. Open a concrete Cleaning turn; confirm `Overdragen` and `Hulp vragen` are inside the existing turn detail sheet.
-3. Request transfer to another household member.
-4. On a fresh recipient session/device, open Action Inbox directly; the request must appear without manually opening Cleaning first.
-5. Accept; confirm the same occurrence, Task and Agenda projection show the new assignee.
-6. Repeat and decline; confirm the original assignee remains unchanged.
-7. Create a counterproposal with person/date/time; accept/decline it.
-8. If the counter proposes a third person, verify that third person must separately accept before assignment changes.
-9. Withdraw a pending transfer.
-10. Ask for help; test accept, decline and withdraw.
-11. Tap request/action controls rapidly; confirm no duplicate occurrence/task/calendar/request records.
-12. Leave/reopen Cleaning and use other modules; confirm no freeze/jank or background Cleaning slowdown.
+## CURRENT GATE — Cleaning V2.2 history / Activity / useful attention
 
-Do not mark this milestone REAL-DEVICE ACCEPTED until the product owner explicitly says so.
+Status: **implementation candidate complete; full contract suite green; real-device iPhone verification pending**.
 
-## NEXT ONLY AFTER V2.1 ACCEPTANCE
+Functional/test checkpoint:
+`ffb0552bad734309e02361de87bde7a3e96a3464`
 
-### Cleaning V2.2 — History / Activity / reminders
-- room history;
-- routine history;
-- visible completion logs;
-- who completed what and when;
-- relevant Cleaning events into existing household activity feed;
-- only useful reminders;
-- optional subtle shared progress, no competitive leaderboard.
+GitHub Actions `Household Rebuild Contract Tests` run `34537327502`: **SUCCESS**.
+
+Built:
+- pure `cleaningHistoryContract.js` read model over canonical `completionLogs`;
+- lightweight `cleaningHistoryV22.js` companion, lazy behind Cleaning navigation;
+- fourth `Historie` tab next to Vandaag / Kamers / Weekplan;
+- completion history grouped by room;
+- routine history from stored completion checklists;
+- last execution time and member;
+- 30-day activity counts per room/routine;
+- current-week count/minutes/people summary;
+- compact current-assignee attention on Vandaag for own today/overdue work;
+- best-effort projection of newly observed completed logs to existing Household Activity as `cleaning.completed`;
+- deterministic Activity occurrence key for append-once dedupe;
+- first existing history snapshot is baseline, preventing historical feed flood;
+- REOPENED logs do not emit a new completed Activity event.
+
+Performance/safety:
+- primary accepted `cleaningScreen.js` remains unchanged;
+- same CleaningHouseholdRepository snapshot/subscription;
+- no second raw Firebase listener;
+- no second history database;
+- no MutationObserver;
+- no polling/setInterval;
+- no notification/push projector;
+- no second popup owner;
+- old `cleaningHistoryExperience.js`, `cleaningActivityProjector.js` and `cleaningNotificationProjector.js` remain disconnected historical reference.
+
+### Real-device tests required for V2.2
+
+1. Four Cleaning tabs fit cleanly on one row on iPhone.
+2. Vandaag remains responsive; attention row only appears for current user's today/overdue work.
+3. Historie opens/closes without jank.
+4. Existing completionLogs display by room.
+5. Expanded room shows routine, last moment and household member.
+6. Complete a new turn; Historie updates from canonical completionLogs.
+7. Household Activity gets at most one matching `cleaning.completed` event.
+8. Reopen a completed turn; no duplicate completed Activity event.
+9. Repeated tab switching creates no duplicate Historie tab/sections.
+10. Leave Cleaning and use other modules; no background Cleaning performance regression.
+
+Do not mark V2.2 REAL-DEVICE ACCEPTED until the product owner explicitly confirms it.
+
+## NEXT AFTER V2.2 TEST
 
 ### Cleaning V2.3 — Function gaps + hardening
 - incomplete occurrence: move / later this week / skip;
@@ -96,7 +113,7 @@ Do not mark this milestone REAL-DEVICE ACCEPTED until the product owner explicit
 
 ## Explicitly NOT in Cleaning roadmap
 
-Do not rebuild availability per member, vacations, sickness/absence, busy-week capacity logic, automatic availability scheduling, or complex pause/exception engines.
+Do not rebuild availability per member, vacations, sickness/absence, busy-week capacity logic, automatic availability scheduling, or complex pause/exception engines unless the product owner explicitly reverses that decision.
 
 ## STEP 15 after Cleaning
 
@@ -118,4 +135,4 @@ Branding / PWA / Login & Auth:
 
 ## Historical status rule
 
-Older documents/tests can retain old availability/approval/pause implementations as historical rollback/reference material. They do not make those features active backlog and must never be used to reactivate the pre-performance-reset Cleaning runtime.
+Historical code can remain for rollback/product reference but must never be treated as permission to reactivate the pre-performance-reset Cleaning runtime.
