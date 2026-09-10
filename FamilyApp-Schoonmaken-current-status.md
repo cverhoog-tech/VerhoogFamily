@@ -51,8 +51,8 @@ Functioneel aanwezig in V2.0:
 Naam: **Samenwerking / overdracht / hulp**  
 Status: **CODECANDIDATE GEREED, CI GROEN, REAL-DEVICE ACCEPTATIE NOG OPEN**.
 
-Implementatiecheckpoint vóór deze documentatie-updates:
-`a9fa6afd7781898fdadf16c10ca50f7a007eaca8`
+Laatste functionele/testcheckpoint vóór deze documentatie-update:
+`1460b9de4405364a9bea54502620d76347b41c5e`
 
 ### Gebouwd
 
@@ -87,6 +87,19 @@ Nieuwe collaboration-state blijft op de bestaande occurrence:
 
 Er is geen aparte Cleaning request-database en geen tweede canonical writer/store.
 
+### Action Inbox op verse sessie
+
+De Inbox hoeft Cleaning niet tijdens app-startup te laden.
+
+Wanneer een gebruiker de Action Inbox opent terwijl Cleaning in die sessie nog niet actief is:
+- `cleaningScreen.js` wordt pas dan dynamisch/lazy geïmporteerd;
+- dezelfde `CleaningHouseholdRepository` wordt tijdelijk gestart;
+- de behouden oude snapshot wordt genegeerd totdat een verse household-snapshot binnen is;
+- Action Inbox wordt daarna uit de canonical occurrence-state ververst;
+- de tijdelijke repository/listener wordt direct weer gestopt.
+
+Hierdoor kan een ontvanger een nieuw Cleaning-verzoek op een verse sessie in de Inbox zien zonder permanente Cleaning-startupruntime of tweede langlevende Firebase-listener.
+
 ### Projecties
 
 Alleen een geaccepteerde assignment-/schedulewijziging vraagt projection sync.
@@ -96,12 +109,12 @@ De V2.1 writer werkt de reeds bestaande Task/Calendar records bij met een bounde
 
 V2.1:
 - hergebruikt `CleaningHouseholdRepository` / CleaningV2Repository;
-- maakt geen tweede Firebase `value` listener;
-- wordt alleen via de lazy Cleaning-route geladen;
+- maakt geen tweede langlevende Firebase `value` listener;
+- wordt alleen via de lazy Cleaning-route geladen, of éénmalig on-demand wanneer de Action Inbox zelf wordt geopend;
 - voegt geen Cleaning startupwerk toe;
 - gebruikt een eigen klein inline samenwerking-subroot, geen tweede popup;
 - gebruikt geen MutationObserver;
-- heeft geen document-wide click owner;
+- heeft geen document-wide Cleaning click owner;
 - maakt geen notificatieprojector/reminder-loop;
 - gebruikt Action Inbox als actionable beslissingsoppervlak;
 - bouwt weekplan approval niet terug.
@@ -116,10 +129,12 @@ V2.1:
 
 ## 4. Teststatus
 
-Op implementatiecheckpoint `a9fa6afd7781898fdadf16c10ca50f7a007eaca8`:
+Op functioneel/testcheckpoint `1460b9de4405364a9bea54502620d76347b41c5e`:
 - volledige repositorysuite `scripts/test-*.js`: **PASS**;
-- `Household Rebuild Contracts`: **SUCCESS**;
-- Vercel Git deployment: **SUCCESS**.
+- GitHub Actions `Household Rebuild Contract Tests` run `34519907566`: **SUCCESS**;
+- Vercel Git deployment: **READY / SUCCESS**;
+- immutable deployment van dat checkpoint: `https://verhoog-family-j4tekgf2i-cverhoog-techs-projects.vercel.app`;
+- branch-preview alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 
 Nieuwe V2.1-testdekking:
 - pure transfer state-machine;
@@ -129,12 +144,13 @@ Nieuwe V2.1-testdekking:
 - geen multi-person assignment via help;
 - active-member validation;
 - recipient validation;
-- geen extra Firebase listener;
+- geen extra langlevende Firebase listener;
+- verse Action Inbox sessie hydrateert Cleaning alleen on-demand en doet daarna teardown;
 - geen Firebase push-path voor collaboration;
 - geen legacy MutationObserver/popup/execution/projection-runtime;
 - geen notificatiepublisher in V2.1;
 - Action Inbox writer-free occurrence adapters;
-- lazy load achter Cleaning-route.
+- lazy load achter Cleaning-route/Inbox-open, niet app-startup.
 
 ## 5. Real-device gate — nog open
 
@@ -143,15 +159,16 @@ V2.1 is **NIET** real-device geaccepteerd.
 Te testen door product owner op echte iPhone:
 1. Cleaning openen/sluiten/heropenen — geen freeze/jank.
 2. Transfer verzoek maken.
-3. Recipient accepteert; dezelfde occurrence + Task + Agenda tonen nieuwe assignee.
-4. Transfer weigeren; assignment blijft staan.
-5. Counter persoon/dag/tijd maken en accepteren/weigeren.
-6. Counter naar derde persoon; derde persoon moet apart akkoord geven.
-7. PENDING transfer intrekken.
-8. Hulp vragen; accepteren en weigeren.
-9. PENDING hulpvraag intrekken.
-10. Snelle dubbele taps; geen dubbele occurrence/task/event/requeststate.
-11. Na verlaten Cleaning geen merkbare achtergrondvertraging in andere modules.
+3. Op een verse ontvanger-sessie direct de Action Inbox openen; Cleaning-beslissing moet verschijnen zonder eerst Schoonmaken handmatig te openen.
+4. Recipient accepteert; dezelfde occurrence + Task + Agenda tonen nieuwe assignee.
+5. Transfer weigeren; assignment blijft staan.
+6. Counter persoon/dag/tijd maken en accepteren/weigeren.
+7. Counter naar derde persoon; derde persoon moet apart akkoord geven.
+8. PENDING transfer intrekken.
+9. Hulp vragen; accepteren en weigeren.
+10. PENDING hulpvraag intrekken.
+11. Snelle dubbele taps; geen dubbele occurrence/task/event/requeststate.
+12. Na verlaten Cleaning/Inbox geen merkbare achtergrondvertraging in andere modules.
 
 Pas na expliciete bevestiging wordt de exacte geaccepteerde SHA als nieuwe rollbackbasis vastgelegd.
 
