@@ -5,7 +5,7 @@ Working branch: `agent/household-rebuild-v2`
 Production/main baseline: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`  
 Accepted Cleaning-v2 rollback basis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a`
 
-Read with `docs/FAMILYAPP-CURRENT-TODO.md` and `FamilyApp-Schoonmaken-current-status.md` for current execution truth. Historical code/documents can remain in git for reference but do not override the current product decisions below.
+Read with `docs/FAMILYAPP-CURRENT-TODO.md` and `FamilyApp-Schoonmaken-current-status.md` for current execution truth. Historical code/documents remain reference only when they conflict with the current performance-first roadmap.
 
 ## Completed rebuild milestones
 
@@ -24,30 +24,23 @@ Read with `docs/FAMILYAPP-CURRENT-TODO.md` and `FamilyApp-Schoonmaken-current-st
 - [x] STEP 10 — Notifications / push foundation.
 - [x] STEP 11 — Party Quest lifecycle.
 - [x] STEP 12 — Profile / presence / avatars.
-- [x] STEP 13 — Household Activity / Feed, including later interaction and proposal slices.
+- [x] STEP 13 — Household Activity / Feed.
 
 ## STEP 14 — Cleaning
 
 ### Historical pre-reset Cleaning
 
-The old branch history contains a much larger Cleaning implementation with availability, approval, pause/exception engines, heavy experience layers, projection/reconcile runtimes and additional notification logic. That state is **historical reference only**. It was removed from the active experience after serious real-device freezes.
-
-Do not use old green contracts as evidence that those historical features should be reactivated.
+The old history contains a much larger Cleaning runtime with availability, approval, pause/exception engines, heavy experience layers, projection/reconcile runtimes and extra notification logic. That state is **historical reference only** because it caused serious real-device freezes.
 
 ### Cleaning V2.0 — performance-first rebuild
 
 - [x] Real-device accepted on iPhone at `b4511561f0885023e5ca6649a1eecd8f4a611d6a`.
-- [x] Lazy module loading.
-- [x] Listener/runtime teardown when leaving Cleaning.
-- [x] Household-scoped repository.
-- [x] CleaningOccurrence canonical execution state.
-- [x] Rooms CRUD.
-- [x] Routines CRUD + presets.
-- [x] Supplies/inventory.
+- [x] Lazy module loading and teardown when leaving Cleaning.
+- [x] Household-scoped repository / CleaningOccurrence canonical state.
+- [x] Rooms CRUD; routines CRUD + presets; supplies/inventory.
 - [x] Week planning + member filter.
 - [x] Lightweight own detail sheet.
-- [x] Optimistic/coalesced checklists.
-- [x] Complete-all/completion logs.
+- [x] Optimistic/coalesced checklists and completion logs.
 - [x] Task/Calendar projections.
 - [x] Roles/capabilities.
 - [x] No active legacy TaskDetailPopup / CleaningExecutionWriteRuntime / CleaningProjectionService / MutationObserver stack.
@@ -56,38 +49,38 @@ Do not use old green contracts as evidence that those historical features should
 
 Current status: **implementation candidate complete; automated acceptance green; real-device acceptance pending**.
 
-Implementation checkpoint before documentation commits:
-`a9fa6afd7781898fdadf16c10ca50f7a007eaca8`
+Latest functional/test checkpoint:
+`7e34cb60b78cf45664fdb82202e9673bb2ae9672`
 
 - [x] Transfer concrete occurrence to another active member.
 - [x] Recipient accept/decline.
 - [x] Counterproposal for person/date/time.
 - [x] Third-person counter remains explicit opt-in; no silent assignment.
-- [x] Ask for help.
-- [x] Accept/decline help.
-- [x] Withdraw pending help request.
+- [x] Ask for help / accept / decline / withdraw.
 - [x] Withdraw pending/counter-proposed transfer.
-- [x] Action Inbox decisions derived from occurrence state.
-- [x] Action Inbox remains writer-free.
+- [x] Action Inbox decisions derived from occurrence state and writer-free.
 - [x] Transfer/help state stays on CleaningOccurrence; no second request store.
 - [x] Help does not create multi-person assignment.
 - [x] Accepted transfer updates existing Task/Calendar projections without creating new records.
 - [x] Idempotent duplicate request behavior and UI double-tap guard.
-- [x] No extra Cleaning Firebase listener.
+- [x] No extra long-lived Cleaning Firebase listener.
 - [x] No Cleaning startup path added.
 - [x] No new notification projector/reminder loop.
 - [x] No week-plan approval engine reintroduced.
-- [x] New V2.1 pure/state/architecture contracts added.
-- [x] Full repository `scripts/test-*.js` suite green on `a9fa6afd…`.
-- [x] Household Rebuild Contracts status green on `a9fa6afd…`.
-- [x] Vercel deployment green on `a9fa6afd…`.
+- [x] **Standalone `Samenwerken` menu removed.**
+- [x] `Overdragen`, `Hulp vragen`, request status and `Intrekken` live inside the existing concrete turn detail sheet.
+- [x] Incoming decisions remain in Action Inbox; counter routes back to the concrete turn.
+- [x] Collaboration lazy-import cache key bumped to `?v=2` for fresh PWA/iPhone code.
+- [x] Contracts guard that collaboration cannot return as a standalone menu and cannot add forbidden runtime patterns.
+- [x] Full repository `scripts/test-*.js` suite green on `7e34cb60…`.
+- [x] GitHub Actions run `34534350216` successful on `7e34cb60…`.
 - [ ] Product-owner real-device iPhone acceptance.
-- [ ] Only after that acceptance: record exact accepted SHA as new rollback basis.
-- [ ] Only after explicit promotion permission: promote exact accepted state to main.
+- [ ] Only after acceptance: record exact accepted SHA as new rollback basis.
+- [ ] Only after separate explicit promotion permission: promote exact accepted state to main.
 
 ### Product decision retained for Cleaning V2
 
-Never rebuild these unless the product owner explicitly reverses the decision:
+Never rebuild unless explicitly reversed:
 - member availability engine;
 - vacations;
 - sickness/absence;
@@ -106,16 +99,16 @@ Never rebuild these unless the product owner explicitly reverses the decision:
 - [ ] Final premium FamilyApp logo and icon family.
 - [ ] PWA icon + maskable + Apple Touch + favicon.
 - [ ] New premium login screen.
-- [ ] Preserve Google / Apple / normal login and registration under the existing auth/session authority.
-- [ ] Explicitly test normal non-social account creation, validation, onboarding, logout/login and PWA session restore.
-- [ ] Apple action also reachable from Home through the same auth authority.
+- [ ] Preserve Google / Apple / normal login and registration.
+- [ ] Explicit normal-account lifecycle tests.
+- [ ] Apple action reachable from Home through the same auth authority.
 - [ ] Verify manifest, colors, launch appearance, caching and sharp iPhone Home Screen icon.
-- [ ] Re-test historical Google post-auth freeze only on the current basis; do not reopen blindly.
+- [ ] Re-test historical Google post-auth freeze only if currently reproducible.
 
 ## Later/open platform work
 
 - [ ] i18n: NL / EN / TR / DE / FR with central architecture and saved per-user choice.
-- [ ] Party Quest toast: real-device verification of existing candidate before any new code.
+- [ ] Party Quest toast: real-device verification of existing candidate before new code.
 - [ ] Release/security: server-side role rules, Apple provider/release setup, App Store/native/PWA decisions.
 
 ## Safety rails
