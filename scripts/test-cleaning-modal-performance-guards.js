@@ -8,6 +8,7 @@ function read(rel){return fs.readFileSync(path.join(__dirname,'..',rel),'utf8');
 const round2=read('src/core/familyappFeedbackRound2.js');
 const round4=read('src/core/familyappFeedbackRound4.js');
 const turn=read('src/modules/cleaning/cleaningTurnExperience.js');
+const guard=read('src/modules/cleaning/cleaningTurnRenderGuard.js');
 const direct=read('src/modules/cleaning/cleaningSupplyDirectManager.js');
 
 // September 2026 rebuild guard: the Cleaning turn UI is a dedicated component.
@@ -21,6 +22,28 @@ assert.match(turn,/CleaningSupplyExperience/,'Supplies must keep the existing Cl
 assert.doesNotMatch(turn,/TaskDetailPopup/,'Cleaning turn UI must never reuse the generic TaskDetailPopup');
 assert.doesNotMatch(turn,/MutationObserver/,'Dedicated Cleaning turn popup must not use DOM observers');
 assert.doesNotMatch(turn,/scrollIntoView/,'Cleaning turn popup must not invoke browser-managed scrollIntoView');
+
+// The heavy Cleaning screen must be detached while the fullscreen turn modal
+// owns the interaction. This prevents repository/member emissions from doing a
+// full root.innerHTML rebuild behind the modal and prevents presentation
+// MutationObservers from decorating that hidden DOM. Restore exactly once when
+// the modal closes, using the same canonical CleaningScreen module identity.
+assert.match(turn,/import '\.\/cleaningTurnRenderGuard\.js\?v=20260910-1';/,'Turn experience must load the render guard before registering its capture owner');
+assert.match(guard,/window\.CleaningTurnRenderGuard\s*=\s*\{/,'Cleaning turn render guard must be exported');
+assert.match(guard,/replaceChild\(placeholder,root\)/,'Render guard must detach the Cleaning content root while the modal is open');
+assert.match(guard,/familyapp:cleaning-turn-closed/,'Render guard must restore after the dedicated turn modal closes');
+assert.match(guard,/import\('\/src\/modules\/cleaning\/cleaningScreen\.js\?v=1'\)/,'Render guard must reuse the canonical CleaningScreen module identity');
+assert.match(guard,/renderCleaningScreen\(root\)/,'Render guard must perform one fresh render after restoring the root');
+assert.doesNotMatch(guard,/MutationObserver/,'Render guard must not introduce another DOM observer');
+assert.doesNotMatch(guard,/TaskSharedData|CleaningHouseholdRepository\.(create|update|remove|save)|\.transaction\(/,'Render guard must remain presentation-only and must not write Cleaning/task data');
+assert.doesNotMatch(guard,/scrollIntoView/,'Render guard must not use browser-managed scrolling');
+assert.doesNotMatch(guard,/TaskDetailPopup/,'Render guard must not reintroduce the generic task popup');
+
+// A single ES-module URL must own CleaningSupplyExperience. Different query
+// strings create different module identities in browsers even for the same
+// source file, so the turn fallback stays aligned with the canonical v=2 import.
+assert.match(turn,/cleaningSupplyExperience\.js\?v=2/,'Turn supplies must use the canonical v=2 CleaningSupplyExperience identity');
+assert.doesNotMatch(turn,/cleaningSupplyExperience\.js\?v=1/,'Turn supplies must not create a second v=1 module identity');
 
 // The Start button is intentionally local presentation state only. It must not
 // write data, rebuild the popup, or move browser scroll state.
