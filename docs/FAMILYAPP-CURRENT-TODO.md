@@ -1,8 +1,8 @@
 # FamilyApp — Current TODO / Execution State
 
-Last updated: 2026-09-10
-Branch: `agent/household-rebuild-v2`
-Production/main baseline: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`
+Last updated: 2026-09-10  
+Branch: `agent/household-rebuild-v2`  
+Production/main baseline: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`  
 Accepted Cleaning-v2 rollback basis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a`
 
 Read together with:
@@ -16,47 +16,52 @@ Read together with:
 
 ## Hard branch rule
 
-`main` must not change until the product owner has real-device accepted the milestone and explicitly asks to promote that exact accepted state. Production Firebase Rules and fallback branches are also out of scope without explicit permission.
+`main` must not change until the product owner has real-device accepted the milestone and explicitly asks to promote that exact accepted state. Production Firebase Rules and fallback/lock branches are out of scope without explicit permission.
 
 ## CURRENT GATE — Cleaning V2.1 collaboration
 
-Status: **implementation complete, repository contract suite green, Vercel green, real-device acceptance pending**.
+Status: **implementation complete, repository contract suite green, Vercel candidate flow, real-device acceptance pending**.
 
-Implementation checkpoint before documentation updates:
-`a9fa6afd7781898fdadf16c10ca50f7a007eaca8`
+Latest functional/test checkpoint:
+`7e34cb60b78cf45664fdb82202e9673bb2ae9672`
+
+GitHub Actions `Household Rebuild Contract Tests` run `34534350216`: **SUCCESS**.
 
 Built in this slice:
 - transfer a concrete CleaningOccurrence to another active household member;
 - recipient accept/decline in Action Inbox;
 - counterproposal for assignee/date/time;
 - third-person counterproposal becomes a new explicit pending request rather than silent reassignment;
-- request help;
-- recipient accept/decline help in Action Inbox;
-- withdraw pending help request;
-- withdraw pending/counter-proposed transfer request;
+- request help, accept/decline help and withdraw pending help;
+- withdraw pending/counter-proposed transfer;
 - help acceptance does not create multi-person assignment;
 - transfer acceptance updates the same canonical occurrence and bounded existing Task/Agenda projections;
 - duplicate-tap guard and idempotent same-request behavior;
 - no second request database;
-- no additional Cleaning Firebase listener;
+- no additional long-lived Cleaning Firebase listener;
 - no additional Cleaning startup work;
 - no notification projector/reminder loop added in V2.1;
-- no week-plan approval flow reintroduced.
+- no week-plan approval flow reintroduced;
+- **no standalone `Samenwerken` menu below Rooms/Kamers**;
+- collaboration actions now live inside the existing concrete turn detail sheet: `Overdragen`, `Hulp vragen`, current request state and `Intrekken`;
+- incoming decisions remain in Action Inbox;
+- `Ander voorstel` routes back to the concrete turn detail flow;
+- collaboration lazy import cache key bumped to `?v=2` to prevent stale PWA/iPhone UI.
 
 ### Real-device tests required before acceptance
 
-1. Open Cleaning repeatedly and confirm no freeze/jank regression.
-2. From an assigned occurrence, request transfer to another household member.
-3. On recipient account/device, accept; confirm the same occurrence now belongs to recipient.
-4. Confirm Task and Agenda projection show the same new assignee.
-5. Repeat transfer flow and decline; confirm original assignee remains unchanged.
-6. Create a counterproposal with another person/date/time; accept it.
-7. When the counter proposes a third person, verify that third person still receives an explicit decision before assignment changes.
-8. Withdraw a pending transfer.
-9. Ask for help; accept and decline variants.
-10. Withdraw a pending help request.
-11. Tap request/accept controls rapidly/repeatedly; confirm no duplicate occurrence/task/calendar records.
-12. Leave Cleaning and use other modules; confirm no background Cleaning slowdown.
+1. Open Cleaning and confirm there is no standalone `Samenwerken` block under Kamers.
+2. Open a concrete Cleaning turn; confirm `Overdragen` and `Hulp vragen` are inside the existing turn detail sheet.
+3. Request transfer to another household member.
+4. On a fresh recipient session/device, open Action Inbox directly; the request must appear without manually opening Cleaning first.
+5. Accept; confirm the same occurrence, Task and Agenda projection show the new assignee.
+6. Repeat and decline; confirm the original assignee remains unchanged.
+7. Create a counterproposal with person/date/time; accept/decline it.
+8. If the counter proposes a third person, verify that third person must separately accept before assignment changes.
+9. Withdraw a pending transfer.
+10. Ask for help; test accept, decline and withdraw.
+11. Tap request/action controls rapidly; confirm no duplicate occurrence/task/calendar/request records.
+12. Leave/reopen Cleaning and use other modules; confirm no freeze/jank or background Cleaning slowdown.
 
 Do not mark this milestone REAL-DEVICE ACCEPTED until the product owner explicitly says so.
 
