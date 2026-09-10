@@ -1,6 +1,8 @@
 'use strict';
-// Cleaning v2 owns its complete presentation. Kept only as a compatibility
-// import for shared navigation; intentionally installs no observer, listener,
-// timer, decorator, popup owner or writer.
-window.CleaningPremiumFeedback=Object.freeze({version:'2.0.0',disabledForCleaningV2:true});
+import './cleaningCollaborationExperience.js?v=1';
+// Cleaning v2 owns its complete primary presentation. This compatibility
+// import remains free of observers, listeners, timers, decorators, popup
+// owners and writers; it only lazy-loads the official v2.1 collaboration
+// companion when Cleaning itself is opened by navigation.
+window.CleaningPremiumFeedback=Object.freeze({version:'2.1.0',disabledForCleaningV2:true});
 export const CLEANING_PREMIUM_FEEDBACK_DISABLED=true;
