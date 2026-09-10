@@ -42,10 +42,13 @@ need(collaboration,/CleaningHouseholdRepository/,'v2.1 collaboration must reuse 
 need(collaboration,/\.transaction\(function\(server\)/,'collaboration writes must transact an occurrence');
 need(collaboration,/syncAcceptedProjection/,'accepted transfer must update existing projections');
 need(collaboration,/state\.busy\.has\(occurrenceId\)/,'duplicate-tap guard must exist');
+need(collaboration,/data-cc21-turn/,'v2.1 collaboration must render inside the concrete turn detail flow');
+forbid(collaboration,/screen\.appendChild\(panel\)|cc21-shell/,'v2.1 must not render a standalone collaboration menu');
 forbid(collaboration,/\.on\(\s*['"]value['"]/,'v2.1 must not add a second Cleaning Firebase listener');
 forbid(collaboration,/new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.1 must not reactivate forbidden runtime patterns');
 forbid(collaboration,/NotificationStore|publishSelf|publishTo/,'v2.1 collaboration must not create noisy notification projection work');
-need(premium,/import '\.\/cleaningCollaborationExperience\.js\?v=1'/,'v2.1 collaboration must lazy-load with Cleaning');
+need(premium,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
+need(premium,/version:'2\.1\.1'/,'v2.1 contextual collaboration UX marker must be current');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
 forbid(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work itself');
 
