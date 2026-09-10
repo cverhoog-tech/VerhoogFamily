@@ -58,7 +58,7 @@ Kern blijft: **wat moet gebeuren → wanneer → door wie → uitvoeren / overdr
 ## V2.1 Samenwerking / overdracht / hulp
 Status: **CODECANDIDATE GEREED — CI GROEN — NOG NIET REAL-DEVICE GEACCEPTEERD**
 
-Implementatiecheckpoint vóór documentatie: `a9fa6afd7781898fdadf16c10ca50f7a007eaca8`.
+Laatste functionele/testcheckpoint vóór finale documentatie: `1460b9de4405364a9bea54502620d76347b41c5e`.
 
 Gebouwd:
 - occurrence-level overdracht naar ander actief gezinslid;
@@ -74,8 +74,10 @@ Gebouwd:
 - geaccepteerde overdracht past de bestaande occurrence aan en synchroniseert bestaande Task/Agenda-projecties, zonder nieuwe occurrence/task/event te creëren;
 - duplicate-tap guard + idempotente state-machine voor herhaald dezelfde aanvraag;
 - Action Inbox is writer-free en deriveert beslissingen uit canonical occurrence-state;
-- samenwerking laadt alleen samen met de Cleaning-route en hergebruikt dezelfde CleaningV2Repository snapshot/listener;
-- geen extra notificatieprojector/listener toegevoegd; V2.1 gebruikt alleen de actionable Inbox om notificatieruis te voorkomen;
+- samenwerking laadt samen met de Cleaning-route en hergebruikt dezelfde CleaningV2Repository snapshot/listener;
+- op een verse ontvanger-sessie hydrateert de Action Inbox Cleaning alleen wanneer de Inbox zelf wordt geopend: één verse canonical snapshot, daarna direct repository/listener teardown;
+- geen Cleaning-work tijdens normale app-startup;
+- geen extra notificatieprojector/listener toegevoegd; V2.1 gebruikt de actionable Inbox om notificatieruis te voorkomen;
 - weekplan approval niet teruggebouwd omdat dit de huidige simpele UX niet vereenvoudigt.
 
 Nieuwe/gewijzigde kernbestanden:
@@ -87,14 +89,18 @@ Nieuwe/gewijzigde kernbestanden:
 - `scripts/test-cleaning-collaboration-v21.js`
 - V2.1-updates in Action Inbox en Cleaning closeout-contracttests.
 
-Teststatus op implementatiecheckpoint `a9fa6afd…`:
+Teststatus op functioneel/testcheckpoint `1460b9de…`:
 - volledige `scripts/test-*.js` repositorysuite: **PASS**;
-- `Household Rebuild Contracts`: **success**;
-- Vercel Git deployment: **success**.
+- GitHub Actions run `34519907566`: **success**;
+- Vercel Git deployment: **READY / success**;
+- immutable preview van dat functionele checkpoint: `https://verhoog-family-j4tekgf2i-cverhoog-techs-projects.vercel.app`;
+- vaste branch-preview alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 
 Nog vereist voor V2.1 acceptance:
 - real-device iPhone test door product owner;
+- Cleaning openen/sluiten/heropenen zonder performance-regressie;
 - overdracht → acceptatie;
+- op een verse ontvanger-sessie direct Action Inbox openen; verzoek zichtbaar zonder eerst Cleaning handmatig te openen;
 - overdracht → weigering;
 - overdracht → tegenvoorstel persoon/dag/tijd;
 - tegenvoorstel naar derde persoon → expliciet nieuw akkoord;
@@ -103,7 +109,7 @@ Nog vereist voor V2.1 acceptance:
 - hulpvraag intrekken;
 - snelle dubbele taps/verzoeken zonder dubbele records;
 - na geaccepteerde overdracht dezelfde assignee/datum in Schoonmaken, Taken en Agenda;
-- Cleaning verlaten/heropenen zonder freeze of achterblijvende runtime.
+- na verlaten Cleaning/Inbox geen achterblijvende Cleaning runtime.
 
 **Niet als real-device geaccepteerd markeren totdat de product owner dat expliciet bevestigt.**
 
