@@ -6,6 +6,7 @@ function read(rel){return fs.readFileSync(path.join(__dirname,'..',rel),'utf8');
 const screen=read('src/modules/cleaning/cleaningScreen.js');
 const premium=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const inbox=read('src/platform/inbox/actionInboxBootstrap.js');
+const navigation=read('src/core/navigation.js');
 
 assert.match(screen,/const VERSION='2\.0\.0'/,'served Cleaning UI must be v2');
 assert.doesNotMatch(screen,/new\s+MutationObserver|MutationObserver\s*\(/,'v2 must not create DOM observers');
@@ -18,6 +19,10 @@ assert.match(screen,/write\.timer=setTimeout\(flushTurnWrite,120\)/,'rapid check
 assert.match(screen,/write\.db\.ref\(write\.cleaningPath\+'\/occurrences\/'\+safeKey\(occurrenceId\)\)/,'turn writes must target one canonical occurrence');
 assert.match(screen,/return Object\.keys\(updates\)\.length\?write\.db\.ref\(write\.familyPath\)\.update\(updates\)/,'derived Task/Agenda sync must use one bounded multi-location update');
 assert.match(screen,/if\(ui\.sheet\)\{ui\.dirty=true;return;\}/,'background root renders must be suppressed while a sheet owns the interaction');
+assert.match(screen,/function repoStop\(\)/,'v2 repository must expose real teardown');
+assert.match(screen,/export function stopCleaningScreen\(\)/,'v2 screen must expose navigation teardown');
+assert.match(navigation,/function stopCleaningModule\(\)/,'navigation must own Cleaning teardown handoff');
+assert.match(navigation,/previousScreenId==='cleaning'&&id!=='cleaning'\)stopCleaningModule\(\)/,'leaving Cleaning must stop its runtime');
 assert.match(premium,/disabledForCleaningV2:true/,'legacy premium layer must remain inert');
 assert.doesNotMatch(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work');
 assert.doesNotMatch(inbox,/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience/,'app startup must not eager-load Cleaning');
