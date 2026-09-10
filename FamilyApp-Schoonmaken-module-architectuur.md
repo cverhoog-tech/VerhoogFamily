@@ -78,7 +78,9 @@ Primaire Cleaning-v2:
 - geen MutationObserver-architectuur;
 - geen meerdere popup owners.
 
-V2.1 Collaboration gebruikt daarom geen nieuwe modal/popup. Het heeft een klein eigen inline sub-root onder het Cleaning-scherm en luistert alleen op dat sub-root.
+V2.1 Collaboration gebruikt **geen zelfstandig Samenwerken-menu onder Kamers en geen nieuwe modal/popup**. Samenwerken is contextueel onderdeel van één concrete schoonmaakbeurt. `cleaningCollaborationExperience.js` voegt daarom alleen een compacte sectie toe binnen de reeds geopende V2 beurt-detail-sheet. De bestaande Cleaning V2 sheet blijft de enige popup owner.
+
+De collaborationmodule luistert alleen op `#screen-cleaning` om het openen van een beurt te herkennen en op de bestaande `#cleaning-v2-sheet` voor de eigen collaborationcontrols. Er is geen document-wide Cleaning listener en geen observer.
 
 Definitieve visuele polish blijft V2.4; functionele V2-slices moeten licht blijven.
 
@@ -186,7 +188,18 @@ Regels:
 - geen `.push()` voor collaboration occurrence/task/calendar records;
 - geen nieuwe request store.
 
-## 11. Task/Agenda projection sync bij transfer
+## 11. Contextuele beurt-UX
+
+Een gebruiker start samenwerking vanaf de **concrete beurt-detail-sheet**:
+- `Overdragen` opent in dezelfde sheet de keuze voor een ander gezinslid;
+- `Hulp vragen` opent in dezelfde sheet de keuze voor een helper;
+- een lopend verzoek toont daar de actuele status en `Intrekken`;
+- een ontvangen verzoek verwijst naar de Action Inbox voor de beslissing;
+- er bestaat geen los overzichtsmenu “Samenwerken” onder de kamers.
+
+Een `counter` vanuit Action Inbox navigeert terug naar de concrete occurrence en opent het tegenvoorstelformulier in diezelfde beurt-detailflow.
+
+## 12. Task/Agenda projection sync bij transfer
 
 Alleen een geaccepteerde collaboration transition die assignment/schedule wijzigt zet `projectionChanged=true`.
 
@@ -198,7 +211,7 @@ Daarna:
 
 V2.3 doet verdere projectieconsistentie-hardening; V2.1 introduceert geen brede reconcile-engine.
 
-## 12. Action Inbox
+## 13. Action Inbox
 
 Action Inbox is de beslissingslaag voor incoming collaboration requests.
 
@@ -211,12 +224,12 @@ Architectuur:
 - Inbox deriveert item presence rechtstreeks uit `CleaningHouseholdRepository` / occurrence-state;
 - Action Inbox is writer-free;
 - acties routeren naar `CleaningCollaborationV21.handleInboxAction`;
-- een `counter` action opent de Cleaning collaboration form;
+- een `counter` action opent de concrete Cleaning beurt en toont daar het tegenvoorstelformulier;
 - accept/decline/counter decisions gebruiken dezelfde canonical occurrence transition path.
 
 Er is geen aparte Inbox request database.
 
-## 13. Notifications/reminders
+## 14. Notifications/reminders
 
 V2.1 voegt geen nieuwe notification projector, push loop of reminder listener toe.
 
@@ -225,7 +238,7 @@ Reden:
 - productbesluit vraagt beperkt/gebundeld gedrag;
 - V2.2 is de plek voor uitsluitend nuttige Cleaning reminders/activity.
 
-## 14. Expliciet uitgesloten engines
+## 15. Expliciet uitgesloten engines
 
 Niet opnieuw bouwen binnen Cleaning v2:
 - availability per member;
@@ -237,7 +250,7 @@ Niet opnieuw bouwen binnen Cleaning v2:
 
 Oude bestanden met deze logica mogen alleen als historische/productreferentie worden gelezen.
 
-## 15. Testcontracten
+## 16. Testcontracten
 
 Belangrijke actieve guards:
 - `scripts/test-cleaning-runtime-reachability.js`
@@ -249,9 +262,11 @@ Belangrijke actieve guards:
 - `scripts/test-action-inbox.js`
 - `scripts/test-cleaning-collaboration-v21.js`
 
+`test-cleaning-collaboration-v21.js` bewaakt nu expliciet dat V2.1 geen standalone collaborationmenu rendert en dat de collaborationcontrols in de bestaande beurt-detailflow zitten.
+
 De GitHub workflow draait alle `scripts/test-*.js` bestanden op iedere relevante branchpush.
 
-## 16. Milestone order
+## 17. Milestone order
 
 - V2.0 — accepted performance base.
 - V2.1 — collaboration candidate; real-device acceptance pending.
