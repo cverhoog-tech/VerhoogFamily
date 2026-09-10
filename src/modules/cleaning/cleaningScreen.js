@@ -1,1208 +1,225 @@
-import './cleaningDomain.js?v=6';
 import './cleaningPlannerContract.js?v=1';
 import './cleaningPlanPersistenceContract.js?v=1';
-import './cleaningRepositoryContract.js?v=7';
-import './cleaningHouseholdRepository.js?v=7';
-import { routineTemplatesForRoomType } from './cleaningRoutineTemplates.js?v=1';
 
-const ROOM_TYPES = Object.freeze([
-  {id:'living-room', label:'Woonkamer', icon:'🛋️'},
-  {id:'kitchen', label:'Keuken', icon:'🍳'},
-  {id:'bathroom', label:'Badkamer', icon:'🛁'},
-  {id:'toilet', label:'Toilet', icon:'🚽'},
-  {id:'bedroom', label:'Slaapkamer', icon:'🛏️'},
-  {id:'kids-room', label:'Kinderkamer', icon:'🧸'},
-  {id:'hall', label:'Hal', icon:'🚪'},
-  {id:'laundry', label:'Wasruimte', icon:'🧺'},
-  {id:'outdoor', label:'Balkon / tuin', icon:'🌿'},
-  {id:'custom', label:'Eigen ruimte', icon:'✨'}
+// ============================================================
+// CLEANING V2
+// Performance-first rebuild. One repository, one screen render owner,
+// one sheet owner, no MutationObservers and no legacy execution cascade.
+// Existing families/{householdId}/cleaning data remains authoritative.
+// ============================================================
+const VERSION='2.0.0';
+const DAY_MS=86400000;
+const ROOM_TYPES=Object.freeze([
+  {id:'living-room',label:'Woonkamer',icon:'🛋️'},
+  {id:'kitchen',label:'Keuken',icon:'🍳'},
+  {id:'bathroom',label:'Badkamer',icon:'🛁'},
+  {id:'toilet',label:'Toilet',icon:'🚽'},
+  {id:'bedroom',label:'Slaapkamer',icon:'🛏️'},
+  {id:'kids-room',label:'Kinderkamer',icon:'🧸'},
+  {id:'hall',label:'Hal',icon:'🚪'},
+  {id:'laundry',label:'Wasruimte',icon:'🧺'},
+  {id:'outdoor',label:'Balkon / tuin',icon:'🌿'},
+  {id:'custom',label:'Eigen ruimte',icon:'✨'}
 ]);
-
-const PRIORITY_LABELS = Object.freeze({
-  BASIC:'Basis',
-  NORMAL:'Normaal',
-  EXTRA:'Extra'
+const ROOM_LOOKUP=ROOM_TYPES.reduce((out,row)=>{out[row.id]=row;return out;},{});
+const PRESETS=Object.freeze({
+  'living-room':[{title:'Stofzuigen',days:7,min:20},{title:'Afstoffen',days:7,min:15},{title:'Dweilen',days:14,min:20}],
+  kitchen:[{title:'Werkblad en kookplaat',days:2,min:10},{title:'Spoelbak en kraan',days:3,min:10},{title:'Vloer reinigen',days:7,min:15}],
+  bathroom:[{title:'Douche / bad',days:7,min:15},{title:'Wastafel en spiegel',days:7,min:10},{title:'Vloer reinigen',days:7,min:10}],
+  toilet:[{title:'Toilet reinigen',days:3,min:10},{title:'Wastafel en kraan',days:7,min:5},{title:'Vloer reinigen',days:7,min:10}],
+  bedroom:[{title:'Stofzuigen',days:7,min:15},{title:'Afstoffen',days:14,min:10},{title:'Beddengoed',days:14,min:15}],
+  'kids-room':[{title:'Stofzuigen',days:7,min:15},{title:'Afstoffen',days:14,min:10},{title:'Speelgoed opruimen',days:7,min:15}],
+  hall:[{title:'Stofzuigen',days:7,min:10},{title:'Vloer reinigen',days:14,min:15}],
+  laundry:[{title:'Vloer reinigen',days:14,min:15},{title:'Machines afnemen',days:14,min:10}],
+  outdoor:[{title:'Vegen',days:14,min:20},{title:'Oppervlakken reinigen',days:30,min:25}],
+  custom:[{title:'Schoonmaken',days:7,min:15}]
 });
+const SUPPLY_STATUS={IN_STOCK:'Op voorraad',LOW:'Bijna op',OUT:'Op'};
+const CAP=Object.freeze({STRUCTURE:'STRUCTURE',DESTRUCTIVE:'DESTRUCTIVE',PLANNING:'PLANNING',SUPPLIES:'SUPPLIES',EXECUTION:'EXECUTION',RESPOND:'RESPOND'});
 
-const state = {
-  primaryTab: 'overview',
-  roomView: 'rooms',
-  repository: null,
-  templatePending: null,
-  roomForm: {
-    open: false,
-    mode: 'create',
-    roomId: null,
-    name: '',
-    type: 'living-room',
-    submitting: false,
-    deleting: false,
-    deleteConfirm: false,
-    error: ''
-  },
-  routineForm: {
-    open: false,
-    mode: 'create',
-    routineId: null,
-    roomId: null,
-    title: '',
-    intervalDays: 7,
-    estimatedMinutes: 15,
-    priority: 'NORMAL',
-    submitting: false,
-    deleting: false,
-    deleteConfirm: false,
-    error: ''
-  },
-  planning: {
-    submitting: false,
-    error: '',
-    notice: '',
-    memberFilterUid: ''
-  },
-  members: [],
-  roomNotice: ''
-};
+function text(value){return String(value==null?'':value).trim();}
+function clone(value){if(value===undefined)return undefined;try{return JSON.parse(JSON.stringify(value));}catch(error){return value;}}
+function esc(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function now(){return Date.now();}
+function safeKey(value){return text(value).replace(/[.#$\[\]\/\u0000-\u001F\u007F]/g,'_');}
+function hash(value){var h=2166136261,s=String(value||'');for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return(h>>>0).toString(36);}
+function roomType(value){return ROOM_LOOKUP[text(value)]||ROOM_LOOKUP.custom;}
+function emptyData(){return{rooms:{},routines:{},supplies:{},inventory:{},plans:{},occurrences:{},completionLogs:{},availability:{},preferences:{}};}
+function normalizeData(value){var source=value&&typeof value==='object'?value:{},out=emptyData();Object.keys(out).forEach(key=>{out[key]=source[key]&&typeof source[key]==='object'?source[key]:{};});return out;}
+function contextSnapshot(){try{return window.HouseholdContext&&typeof window.HouseholdContext.snapshot==='function'?window.HouseholdContext.snapshot():null;}catch(error){return null;}}
+function captureContext(){try{return window.HouseholdContext&&typeof window.HouseholdContext.capture==='function'?window.HouseholdContext.capture():null;}catch(error){return null;}}
+function contextCurrent(token){try{return !!(window.HouseholdContext&&typeof window.HouseholdContext.isCurrent==='function'&&window.HouseholdContext.isCurrent(token));}catch(error){return false;}}
+function firebaseDb(){try{return window.fbDb||(window.firebase&&typeof window.firebase.database==='function'&&window.firebase.database())||null;}catch(error){return null;}}
+function validContext(ctx){return !!(ctx&&ctx.ready===true&&ctx.uid&&ctx.householdId);}
+function members(){try{var bridge=window.HouseholdIdentityFirebaseBridge,rows=bridge&&bridge.getMembers?bridge.getMembers():[];return Array.isArray(rows)?rows.filter(Boolean):[];}catch(error){return[];}}
+function memberName(uid){var wanted=text(uid),row=members().find(item=>text(item&&(item.uid||item.id))===wanted);return row?text(row.displayName||row.name)||'Gezinslid':'Gezinslid';}
+function currentMember(){var ctx=contextSnapshot(),uid=text(ctx&&ctx.uid);return uid?members().find(row=>text(row&&(row.uid||row.id))===uid&&text(row.status||'active').toLowerCase()==='active')||null:null;}
+function currentRole(){var raw=text(currentMember()&&currentMember().role).toLowerCase();if(['owner','admin','manager','beheerder'].includes(raw))return'MANAGER';if(['adult','member','gezinslid'].includes(raw))return'MEMBER';if(['child','limited','restricted','beperkt'].includes(raw))return'LIMITED';return'UNKNOWN';}
+function can(capability){var role=currentRole();if(capability===CAP.EXECUTION||capability===CAP.RESPOND)return role!=='UNKNOWN';if(role==='MANAGER')return true;if(role==='MEMBER')return capability===CAP.STRUCTURE||capability===CAP.PLANNING||capability===CAP.SUPPLIES;return false;}
+function permissionError(capability){var message=capability===CAP.DESTRUCTIVE?'Alleen een beheerder kan dit verwijderen.':capability===CAP.PLANNING?'Dit profiel kan geen weekplan maken.':capability===CAP.SUPPLIES?'Dit profiel kan benodigdheden niet beheren.':capability===CAP.EXECUTION?'Dit profiel kan deze schoonmaakbeurt niet uitvoeren.':'Dit profiel kan kamers of routines niet beheren.';var error=new Error(message);error.code='CLEANING_PERMISSION_DENIED';return error;}
+function requireCap(capability){if(!can(capability))throw permissionError(capability);}
+function toast(message){if(typeof window.showToast==='function')window.showToast(message);else try{console.info('[CleaningV2]',message);}catch(error){}}
+function localDate(timestamp){var d=new Date(Number(timestamp)||now());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function startOfDay(timestamp){var d=new Date(Number(timestamp)||now());d.setHours(0,0,0,0);return d.getTime();}
+function weekWindow(){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return{startAt:d.getTime(),endAt:d.getTime()+7*DAY_MS};}
+function formatDate(value){if(!value)return'Flexibel';try{var date=/^\d{4}-\d{2}-\d{2}$/.test(String(value))?new Date(String(value)+'T12:00:00'):new Date(Number(value)||value);return date.toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'});}catch(error){return text(value);}}
+function formatMinutes(value){return Math.max(0,Math.round(Number(value)||0))+' min';}
+function recordOccurrenceIds(row){var ids=[];(Array.isArray(row&&row.cleaningOccurrenceIds)?row.cleaningOccurrenceIds:[]).forEach(value=>{var id=text(value);if(id&&ids.indexOf(id)<0)ids.push(id);});[row&&row.cleaningOccurrenceId,row&&row.sourceId].forEach(value=>{var id=text(value);if(id&&ids.indexOf(id)<0)ids.push(id);});return ids;}
+function supplyIdForName(value){var name=text(value).toLocaleLowerCase('nl-NL').replace(/\s+/g,' ');return name?'supply_'+hash(name):'';}
 
-let repositoryUnsubscribe = null;
-let repositorySubscribing = false;
-let memberUnsubscribe = null;
-let memberSubscribing = false;
-let mountedRoot = null;
-
-function escapeText(value){
-  return String(value == null ? '' : value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+// ------------------------------------------------------------
+// One lazy Firebase repository. It starts only when Cleaning opens and stops
+// when navigation leaves Cleaning.
+// ------------------------------------------------------------
+const repoState={started:false,contextUnsubscribe:null,contextHandler:null,binding:null,subscribers:new Set(),snapshot:{ready:false,error:null,uid:null,householdId:null,data:emptyData()}};
+function repoSnapshot(){return repoState.snapshot;}
+function repoEmit(next){repoState.snapshot=Object.freeze(Object.assign({},repoState.snapshot,next||{}));repoState.subscribers.forEach(fn=>{try{fn(repoState.snapshot);}catch(error){console.warn('[CleaningV2] subscriber failed',error);}});try{if(window.ActionInboxStore&&typeof window.ActionInboxStore.refresh==='function')window.ActionInboxStore.refresh();}catch(error){}}
+function unbindFirebase(){var binding=repoState.binding;if(binding&&binding.ref&&binding.handler){try{binding.ref.off('value',binding.handler);}catch(error){}}repoState.binding=null;}
+function bindContext(ctx){
+  unbindFirebase();
+  if(!validContext(ctx)){repoEmit({ready:false,error:null,uid:null,householdId:null,data:emptyData()});return false;}
+  var db=firebaseDb();if(!db){repoEmit({ready:false,error:'Firebase is niet beschikbaar.',uid:ctx.uid,householdId:ctx.householdId,data:emptyData()});return false;}
+  var token=captureContext();if(!token||!contextCurrent(token)){repoEmit({ready:false,error:'Huishouden wordt nog geladen.',uid:ctx.uid,householdId:ctx.householdId,data:emptyData()});return false;}
+  var ref=db.ref('families/'+ctx.householdId+'/cleaning');
+  var handler=function(snapshot){if(!contextCurrent(token))return;repoEmit({ready:true,error:null,uid:ctx.uid,householdId:ctx.householdId,data:normalizeData(snapshot&&snapshot.val?snapshot.val():null)});};
+  repoState.binding={ref:ref,handler:handler,token:token,uid:ctx.uid,householdId:ctx.householdId};
+  ref.on('value',handler,function(error){if(contextCurrent(token))repoEmit({ready:false,error:text(error&&error.message)||'Schoonmaakgegevens konden niet worden geladen.',uid:ctx.uid,householdId:ctx.householdId});});
+  return true;
 }
-
-function tabButton(id, label){
-  const active = state.primaryTab === id;
-  return '<button type="button" class="cleaning-tab'+(active?' is-active':'')+'" data-cleaning-tab="'+id+'" aria-pressed="'+(active?'true':'false')+'">'+escapeText(label)+'</button>';
-}
-
-function emptyCard(icon, title, copy){
-  return '<section class="cleaning-empty-card" aria-live="polite">'
-    +'<div class="cleaning-empty-icon" aria-hidden="true">'+escapeText(icon)+'</div>'
-    +'<h2 class="cleaning-empty-title">'+escapeText(title)+'</h2>'
-    +'<p class="cleaning-empty-copy">'+escapeText(copy)+'</p>'
-    +'</section>';
-}
-
-function roomType(type){
-  return ROOM_TYPES.find((entry) => entry.id === type) || ROOM_TYPES[ROOM_TYPES.length - 1];
-}
-
-function repositoryRooms(){
-  const repository = state.repository;
-  const raw = repository && repository.data && repository.data.rooms;
-  if(!raw || typeof raw !== 'object') return [];
-  return Object.keys(raw).map((key) => {
-    const value = raw[key] && typeof raw[key] === 'object' ? raw[key] : {};
-    return Object.assign({id:key}, value);
-  }).filter((room) => room && room.active !== false)
-    .sort((a,b) => {
-      const aCreated = Number(a.createdAt || 0);
-      const bCreated = Number(b.createdAt || 0);
-      if(aCreated !== bCreated) return aCreated - bCreated;
-      return String(a.name || '').localeCompare(String(b.name || ''), 'nl');
-    });
-}
-
-function repositoryRoutinesForRoom(roomId){
-  const repository = state.repository;
-  const raw = repository && repository.data && repository.data.routines;
-  if(!raw || typeof raw !== 'object') return [];
-  return Object.keys(raw).map((key) => {
-    const value = raw[key] && typeof raw[key] === 'object' ? raw[key] : {};
-    return Object.assign({id:key}, value);
-  }).filter((routine) => routine && routine.active !== false && String(routine.roomId) === String(roomId))
-    .sort((a,b) => {
-      const aCreated = Number(a.createdAt || 0);
-      const bCreated = Number(b.createdAt || 0);
-      if(aCreated !== bCreated) return aCreated - bCreated;
-      return String(a.title || '').localeCompare(String(b.title || ''), 'nl');
-    });
-}
-
-function findRoom(roomId){
-  return repositoryRooms().find((room) => String(room.id) === String(roomId)) || null;
-}
-
-function findRoutine(routineId){
-  const repository = state.repository;
-  const raw = repository && repository.data && repository.data.routines;
-  if(!raw || typeof raw !== 'object') return null;
-  const routine = raw[routineId];
-  return routine && typeof routine === 'object' && routine.active !== false
-    ? Object.assign({id:routineId}, routine)
-    : null;
-}
-
-function rawRoom(roomId){
-  const raw = state.repository && state.repository.data && state.repository.data.rooms;
-  const room = raw && raw[roomId];
-  return room && typeof room === 'object' ? Object.assign({id:roomId},room) : null;
-}
-
-function activeRoutines(){
-  const raw = state.repository && state.repository.data && state.repository.data.routines;
-  if(!raw || typeof raw !== 'object') return [];
-  return Object.keys(raw).map((key) => Object.assign({id:key},raw[key] || {}))
-    .filter((routine) => routine.active !== false && rawRoom(routine.roomId) && rawRoom(routine.roomId).active !== false);
-}
-
-function householdMembers(){
-  const bridge = window.HouseholdIdentityFirebaseBridge;
-  if(!bridge || typeof bridge.getMembers !== 'function') return state.members.slice();
-  try{
-    const members = bridge.getMembers();
-    return Array.isArray(members) ? members.slice() : state.members.slice();
-  }catch(error){
-    return state.members.slice();
+function repoStart(){
+  if(repoState.started)return true;repoState.started=true;
+  if(window.HouseholdContext&&typeof window.HouseholdContext.subscribe==='function'){
+    repoState.contextUnsubscribe=window.HouseholdContext.subscribe(function(ctx){var active=repoState.binding;if(active&&validContext(ctx)&&active.uid===ctx.uid&&active.householdId===ctx.householdId)return;bindContext(ctx);});
+  }else{
+    repoState.contextHandler=function(event){bindContext(event&&event.detail&&event.detail.context||contextSnapshot());};
+    window.addEventListener('familyapp:household-context',repoState.contextHandler);
+    bindContext(contextSnapshot());
   }
+  if(!repoState.binding)bindContext(contextSnapshot());
+  return true;
 }
+function repoStop(){unbindFirebase();if(repoState.contextUnsubscribe){try{repoState.contextUnsubscribe();}catch(error){}repoState.contextUnsubscribe=null;}if(repoState.contextHandler){window.removeEventListener('familyapp:household-context',repoState.contextHandler);repoState.contextHandler=null;}repoState.started=false;}
+function repoSubscribe(fn){if(typeof fn!=='function')return function(){};repoState.subscribers.add(fn);try{fn(repoState.snapshot);}catch(error){}return function(){repoState.subscribers.delete(fn);};}
+function writeContext(){var ctx=contextSnapshot(),db=firebaseDb(),token=captureContext();if(!validContext(ctx))throw new Error('ACTIVE_HOUSEHOLD_REQUIRED');if(!db)throw new Error('FIREBASE_DATABASE_UNAVAILABLE');if(!token||!contextCurrent(token))throw new Error('HOUSEHOLD_CONTEXT_CHANGED');return{ctx:ctx,db:db,token:token,familyPath:'families/'+ctx.householdId,cleaningPath:'families/'+ctx.householdId+'/cleaning'};}
 
-function memberName(uid){
-  const member = householdMembers().find((entry) => String(entry.uid || '') === String(uid || ''));
-  return member ? String(member.displayName || member.name || 'Gezinslid') : 'Gezinslid';
+function currentRoom(id){var row=repoState.snapshot.data.rooms[id];return row&&typeof row==='object'?row:null;}
+function currentRoutine(id){var row=repoState.snapshot.data.routines[id];return row&&typeof row==='object'?row:null;}
+function createRoom(input){try{requireCap(CAP.STRUCTURE);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var type=roomType(input&&input.type).id,name=text(input&&input.name)||roomType(type).label,ref=write.db.ref(write.cleaningPath+'/rooms').push(),id=ref.key,timestamp=now();if(!id)return Promise.reject(new Error('CLEANING_ROOM_ID_FAILED'));var row={id:id,householdId:write.ctx.householdId,name:name,type:type,active:true,distributionMode:'FAIR_TIME',createdAt:timestamp,createdByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid,schemaVersion:2};return ref.set(row).then(()=>row);}
+function updateRoom(id,input){try{requireCap(CAP.STRUCTURE);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var existing=currentRoom(id);if(!existing)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));var type=roomType(input&&input.type||existing.type).id,name=text(input&&input.name)||roomType(type).label,patch={name:name,type:type,updatedAt:now(),updatedByUid:write.ctx.uid};return write.db.ref(write.cleaningPath+'/rooms/'+safeKey(id)).update(patch).then(()=>Object.assign({},existing,patch));}
+function removeRoom(id){try{requireCap(CAP.DESTRUCTIVE);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var timestamp=now();return write.db.ref(write.cleaningPath+'/rooms/'+safeKey(id)).update({active:false,deletedAt:timestamp,deletedByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid});}
+function createRoutine(input){try{requireCap(CAP.STRUCTURE);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var roomId=text(input&&input.roomId),room=currentRoom(roomId),title=text(input&&input.title);if(!room||room.active===false)return Promise.reject(new Error('CLEANING_ROOM_NOT_FOUND'));if(!title)return Promise.reject(new Error('CLEANING_ROUTINE_TITLE_REQUIRED'));var ref=write.db.ref(write.cleaningPath+'/routines').push(),id=ref.key,timestamp=now();if(!id)return Promise.reject(new Error('CLEANING_ROUTINE_ID_FAILED'));var row={id:id,householdId:write.ctx.householdId,roomId:roomId,title:title,intervalDays:Math.max(1,Math.min(365,parseInt(input.intervalDays,10)||7)),estimatedMinutes:Math.max(1,Math.min(480,parseInt(input.estimatedMinutes,10)||15)),priority:['BASIC','NORMAL','EXTRA'].includes(text(input.priority).toUpperCase())?text(input.priority).toUpperCase():'NORMAL',active:true,supplyIds:[],createdAt:timestamp,createdByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid,schemaVersion:2};return ref.set(row).then(()=>row);}
+function updateRoutine(id,input){try{requireCap(CAP.STRUCTURE);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var existing=currentRoutine(id);if(!existing)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));var patch={title:text(input&&input.title)||existing.title,intervalDays:Math.max(1,Math.min(365,parseInt(input&&input.intervalDays,10)||7)),estimatedMinutes:Math.max(1,Math.min(480,parseInt(input&&input.estimatedMinutes,10)||15)),priority:['BASIC','NORMAL','EXTRA'].includes(text(input&&input.priority).toUpperCase())?text(input.priority).toUpperCase():'NORMAL',updatedAt:now(),updatedByUid:write.ctx.uid};return write.db.ref(write.cleaningPath+'/routines/'+safeKey(id)).update(patch).then(()=>Object.assign({},existing,patch));}
+function removeRoutine(id){try{requireCap(CAP.DESTRUCTIVE);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var timestamp=now();return write.db.ref(write.cleaningPath+'/routines/'+safeKey(id)).update({active:false,deletedAt:timestamp,deletedByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid});}
+function setInventoryStatus(id,status){try{requireCap(CAP.SUPPLIES);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var normalized=SUPPLY_STATUS[status]?status:'IN_STOCK',timestamp=now();return write.db.ref(write.cleaningPath+'/inventory/'+safeKey(id)).update({supplyId:id,householdId:write.ctx.householdId,status:normalized,updatedAt:timestamp,updatedByUid:write.ctx.uid});}
+function addRoomSupply(roomId,name){try{requireCap(CAP.SUPPLIES);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}name=text(name);if(!name)return Promise.reject(new Error('CLEANING_SUPPLY_NAME_REQUIRED'));var routines=activeRoutinesForRoom(roomId);if(!routines.length)return Promise.reject(new Error('CLEANING_SUPPLY_ROUTINE_REQUIRED'));var id=supplyIdForName(name),timestamp=now(),updates={};updates['cleaning/supplies/'+id]={id:id,householdId:write.ctx.householdId,name:name,active:true,createdAt:timestamp,createdByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid,schemaVersion:2};updates['cleaning/inventory/'+id]={supplyId:id,householdId:write.ctx.householdId,status:'IN_STOCK',updatedAt:timestamp,updatedByUid:write.ctx.uid};routines.forEach(routine=>{var ids=Array.isArray(routine.supplyIds)?routine.supplyIds.slice():[];if(ids.indexOf(id)<0)ids.push(id);updates['cleaning/routines/'+routine.id+'/supplyIds']=ids;updates['cleaning/routines/'+routine.id+'/updatedAt']=timestamp;updates['cleaning/routines/'+routine.id+'/updatedByUid']=write.ctx.uid;});return write.db.ref(write.familyPath).update(updates).then(()=>({id:id,name:name}));}
+
+function activeRooms(){var map=repoState.snapshot.data.rooms;return Object.keys(map).map(id=>Object.assign({id:id},map[id]||{})).filter(row=>row.active!==false).sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||text(a.name).localeCompare(text(b.name),'nl'));}
+function activeRoutinesForRoom(roomId){var map=repoState.snapshot.data.routines;return Object.keys(map).map(id=>Object.assign({id:id},map[id]||{})).filter(row=>row.active!==false&&text(row.roomId)===text(roomId)).sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0)||text(a.title).localeCompare(text(b.title),'nl'));}
+function occurrenceAnchor(row){if(text(row&&row.scheduledDate)){var parsed=new Date(text(row.scheduledDate)+'T12:00:00').getTime();if(Number.isFinite(parsed))return parsed;}return Number(row&&row.scheduledStartAt)||Number(row&&row.slotAt)||Number(row&&row.flexibleWindow&&row.flexibleWindow.startAt)||Number(row&&row.earliestDueAt)||Number.MAX_SAFE_INTEGER;}
+function activeOccurrences(){var map=repoState.snapshot.data.occurrences;return Object.keys(map).map(id=>Object.assign({id:id},map[id]||{})).filter(row=>{var status=text(row.status).toUpperCase(),assignment=text(row.assignmentStatus).toUpperCase();return status!=='CANCELLED'&&status!=='SKIPPED'&&assignment!=='SKIPPED';}).sort((a,b)=>occurrenceAnchor(a)-occurrenceAnchor(b)||text(a.id).localeCompare(text(b.id)));}
+function roomById(id){var row=repoState.snapshot.data.rooms[id];return row?Object.assign({id:id},row):null;}
+function occurrenceById(id){var row=repoState.snapshot.data.occurrences[id];return row?Object.assign({id:id},row):null;}
+function checklistMap(checklist){var out={};(Array.isArray(checklist)?checklist:[]).forEach((item,index)=>{var key=text(item&&(item.routineItemId||item.id))||String(index);out[key]=!!(item&&(item.completed===true||item.done===true));});return out;}
+function supplyRowsForOccurrence(occurrence){var data=repoState.snapshot.data,ids=[];(Array.isArray(occurrence&&occurrence.checklist)?occurrence.checklist:[]).forEach(item=>{var routine=data.routines[text(item&&(item.routineItemId||item.id))];(Array.isArray(routine&&routine.supplyIds)?routine.supplyIds:[]).forEach(id=>{if(ids.indexOf(id)<0)ids.push(id);});});return ids.map(id=>{var row=data.supplies[id],inventory=data.inventory[id];if(!row||row.active===false)return null;return{id:id,name:text(row.name)||'Benodigd item',status:text(typeof inventory==='string'?inventory:inventory&&inventory.status).toUpperCase()||'IN_STOCK'};}).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name,'nl'));}
+function roomSupplyRows(roomId){return supplyRowsForOccurrence({checklist:activeRoutinesForRoom(roomId).map(routine=>({routineItemId:routine.id}))});}
+
+// ------------------------------------------------------------
+// Fast execution path: optimistic UI -> 120 ms coalescing -> one canonical
+// occurrence transaction -> one bounded Task/Agenda projection update.
+// ------------------------------------------------------------
+function projectionTaskForOccurrence(occurrenceId){var rows=Array.isArray(window.taskData)?window.taskData:[];return rows.find(row=>recordOccurrenceIds(row).indexOf(text(occurrenceId))>=0)||null;}
+function projectionEventForOccurrence(occurrenceId){var repository=window.CalendarEventHouseholdRepository||window.CalendarEventRepository,rows=[];try{rows=repository&&typeof repository.list==='function'?repository.list():[];}catch(error){rows=[];}return (Array.isArray(rows)?rows:[]).find(row=>recordOccurrenceIds(row).indexOf(text(occurrenceId))>=0)||null;}
+function syncDerivedOccurrence(occurrence){
+  if(!occurrence)return Promise.resolve();var write;try{write=writeContext();}catch(error){return Promise.resolve();}
+  var updates={},timestamp=now(),states=checklistMap(occurrence.checklist),task=projectionTaskForOccurrence(occurrence.id),taskDone=null;
+  if(task){var only=recordOccurrenceIds(task).length===1?occurrence.id:null,subtasks=(Array.isArray(task.subtasks)?task.subtasks:[]).map((item,index)=>{var copy=Object.assign({},item),occurrenceId=text(copy.cleaningOccurrenceId)||only;if(occurrenceId===occurrence.id){var key=text(copy.sourceRoutineItemId||copy.routineItemId||copy.id)||String(index);if(Object.prototype.hasOwnProperty.call(states,key)){copy.done=states[key];copy.completed=states[key];}}return copy;}),doneCount=subtasks.filter(row=>row&&row.done===true).length;taskDone=subtasks.length>0&&doneCount===subtasks.length;var taskKey=text(task._key||task.id);if(taskKey){updates['tasks/'+taskKey+'/subtasks']=subtasks;updates['tasks/'+taskKey+'/progress']=subtasks.length?Math.round(doneCount/subtasks.length*100):0;updates['tasks/'+taskKey+'/done']=taskDone;updates['tasks/'+taskKey+'/status']=taskDone?'done':'open';updates['tasks/'+taskKey+'/completedAt']=taskDone?(Number(task.completedAt)||timestamp):null;updates['tasks/'+taskKey+'/completedByUid']=taskDone?(text(task.completedByUid)||write.ctx.uid):null;updates['tasks/'+taskKey+'/updatedAt']=timestamp;updates['tasks/'+taskKey+'/updatedByUid']=write.ctx.uid;}}
+  var event=projectionEventForOccurrence(occurrence.id),eventKey=event&&text(event._key||event.id);if(!eventKey&&occurrence.projections&&occurrence.projections.calendarEventId)eventKey='id_'+safeKey(occurrence.projections.calendarEventId);if(eventKey){var occurrenceDone=text(occurrence.status).toUpperCase()==='COMPLETED'||text(occurrence.assignmentStatus).toUpperCase()==='COMPLETED';updates['calendarEvents/'+eventKey+'/completed']=taskDone===null?occurrenceDone:taskDone;updates['calendarEvents/'+eventKey+'/updatedAt']=timestamp;updates['calendarEvents/'+eventKey+'/updatedByUid']=write.ctx.uid;}
+  return Object.keys(updates).length?write.db.ref(write.familyPath).update(updates).catch(error=>{console.warn('[CleaningV2] derived sync failed',error);}):Promise.resolve();
 }
-
-function currentWeekWindow(){
-  const start = new Date();
-  start.setHours(0,0,0,0);
-  const daysSinceMonday = (start.getDay()+6)%7;
-  start.setDate(start.getDate()-daysSinceMonday);
-  const end = new Date(start.getTime());
-  end.setDate(end.getDate()+7);
-  return {startAt:start.getTime(),endAt:end.getTime()};
-}
-
-function formatWeekWindow(windowValue){
-  try{
-    const formatter = new Intl.DateTimeFormat('nl-NL',{day:'numeric',month:'short'});
-    return formatter.format(new Date(windowValue.startAt))+' – '+formatter.format(new Date(windowValue.endAt-1));
-  }catch(error){
-    return 'Deze week';
-  }
-}
-
-function currentWeekPlan(){
-  const repository = state.repository;
-  const plans = repository && repository.data && repository.data.plans;
-  const persistence = window.CleaningPlanPersistenceContract;
-  if(!plans || typeof plans !== 'object' || !persistence || typeof persistence.planIdForWindow !== 'function') return null;
-  try{
-    const planId = persistence.planIdForWindow(currentWeekWindow());
-    const plan = plans[planId];
-    return plan && typeof plan === 'object' ? Object.assign({},plan,{id:planId}) : null;
-  }catch(error){
-    return null;
-  }
-}
-
-function occurrencesForPlan(plan){
-  const raw = state.repository && state.repository.data && state.repository.data.occurrences;
-  if(!plan || !Array.isArray(plan.occurrenceIds) || !raw || typeof raw !== 'object') return [];
-  return plan.occurrenceIds.map((id) => {
-    const occurrence = raw[id];
-    return occurrence && typeof occurrence === 'object' ? Object.assign({},occurrence,{id:id}) : null;
-  }).filter((occurrence) => occurrence && occurrence.status !== 'CANCELLED' && String(occurrence.planId) === String(plan.id));
-}
-
-function roomFormMarkup(){
-  if(!state.roomForm.open) return '';
-  const editing = state.roomForm.mode === 'edit';
-  const busy = state.roomForm.submitting || state.roomForm.deleting;
-  const options = ROOM_TYPES.map((type) => '<option value="'+escapeText(type.id)+'"'+(state.roomForm.type===type.id?' selected':'')+'>'+escapeText(type.icon+' '+type.label)+'</option>').join('');
-  const danger = !editing ? '' : (
-    '<div class="cleaning-room-danger">'
-      +(!state.roomForm.deleteConfirm
-        ? '<button type="button" class="cleaning-danger-link" data-cleaning-room-delete-open'+(busy?' disabled':'')+'>Kamer verwijderen</button>'
-        : '<div class="cleaning-delete-confirm" role="alert">'
-          +'<div><strong>Kamer verwijderen?</strong><span>De kamer verdwijnt uit jullie actieve kamers. Historie en toekomstige verwijzingen blijven veilig bewaard.</span></div>'
-          +'<div class="cleaning-delete-actions">'
-            +'<button type="button" class="cleaning-secondary-button" data-cleaning-room-delete-cancel'+(busy?' disabled':'')+'>Niet verwijderen</button>'
-            +'<button type="button" class="cleaning-danger-button" data-cleaning-room-delete-confirm'+(busy?' disabled':'')+'>'+(state.roomForm.deleting?'Verwijderen…':'Ja, verwijder kamer')+'</button>'
-          +'</div>'
-        +'</div>')
-    +'</div>'
-  );
-
-  return '<form class="cleaning-room-form" data-cleaning-room-form>'
-    +'<div class="cleaning-form-heading">'
-      +'<div><p class="cleaning-form-kicker">'+(editing?'Kamer aanpassen':'Nieuwe ruimte')+'</p><h3>'+(editing?'Kamer bewerken':'Nieuwe kamer')+'</h3></div>'
-      +'<button type="button" class="cleaning-icon-button" data-cleaning-room-cancel aria-label="Sluiten"'+(busy?' disabled':'')+'>✕</button>'
-    +'</div>'
-    +'<label class="cleaning-field">'
-      +'<span>Naam</span>'
-      +'<input type="text" name="roomName" maxlength="60" autocomplete="off" placeholder="Bijv. Badkamer boven" value="'+escapeText(state.roomForm.name)+'" data-cleaning-room-name'+(busy?' disabled':'')+'>'
-    +'</label>'
-    +'<label class="cleaning-field">'
-      +'<span>Type kamer</span>'
-      +'<select name="roomType" data-cleaning-room-type'+(busy?' disabled':'')+'>'+options+'</select>'
-    +'</label>'
-    +(state.roomForm.error?'<p class="cleaning-form-error" role="alert">'+escapeText(state.roomForm.error)+'</p>':'')
-    +'<div class="cleaning-form-actions">'
-      +'<button type="button" class="cleaning-secondary-button" data-cleaning-room-cancel'+(busy?' disabled':'')+'>Annuleren</button>'
-      +'<button type="submit" class="cleaning-primary-button"'+(busy?' disabled':'')+'>'+(state.roomForm.submitting?'Opslaan…':(editing?'Wijzigingen opslaan':'Kamer toevoegen'))+'</button>'
-    +'</div>'
-    +danger
-  +'</form>';
-}
-
-function routineFormMarkup(){
-  if(!state.routineForm.open) return '';
-  const room = findRoom(state.routineForm.roomId);
-  if(!room) return '';
-  const editing = state.routineForm.mode === 'edit';
-  const busy = state.routineForm.submitting || state.routineForm.deleting;
-  const danger = !editing ? '' : (
-    '<div class="cleaning-room-danger">'
-      +(!state.routineForm.deleteConfirm
-        ? '<button type="button" class="cleaning-danger-link" data-cleaning-routine-delete-open'+(busy?' disabled':'')+'>Routine verwijderen</button>'
-        : '<div class="cleaning-delete-confirm" role="alert">'
-          +'<div><strong>Routine verwijderen?</strong><span>De routine verdwijnt uit de actieve planning. Historie en verwijzingen blijven bewaard.</span></div>'
-          +'<div class="cleaning-delete-actions">'
-            +'<button type="button" class="cleaning-secondary-button" data-cleaning-routine-delete-cancel'+(busy?' disabled':'')+'>Niet verwijderen</button>'
-            +'<button type="button" class="cleaning-danger-button" data-cleaning-routine-delete-confirm'+(busy?' disabled':'')+'>'+(state.routineForm.deleting?'Verwijderen…':'Ja, verwijder routine')+'</button>'
-          +'</div>'
-        +'</div>')
-    +'</div>'
-  );
-
-  return '<form class="cleaning-room-form cleaning-routine-form" data-cleaning-routine-form>'
-    +'<div class="cleaning-form-heading">'
-      +'<div><p class="cleaning-form-kicker">Routine voor '+escapeText(room.name)+'</p><h3>'+(editing?'Routine bewerken':'Routine toevoegen')+'</h3></div>'
-      +'<button type="button" class="cleaning-icon-button" data-cleaning-routine-cancel aria-label="Sluiten"'+(busy?' disabled':'')+'>✕</button>'
-    +'</div>'
-    +'<label class="cleaning-field">'
-      +'<span>Wat moet er gebeuren?</span>'
-      +'<input type="text" maxlength="80" autocomplete="off" placeholder="Bijv. Douche en wastafel schoonmaken" value="'+escapeText(state.routineForm.title)+'" data-cleaning-routine-title'+(busy?' disabled':'')+'>'
-    +'</label>'
-    +'<div class="cleaning-routine-fields">'
-      +'<label class="cleaning-field"><span>Elke hoeveel dagen?</span><input type="number" inputmode="numeric" min="1" max="365" value="'+escapeText(state.routineForm.intervalDays)+'" data-cleaning-routine-interval'+(busy?' disabled':'')+'></label>'
-      +'<label class="cleaning-field"><span>Geschatte tijd</span><div class="cleaning-number-with-unit"><input type="number" inputmode="numeric" min="1" max="480" step="1" value="'+escapeText(state.routineForm.estimatedMinutes)+'" data-cleaning-routine-minutes'+(busy?' disabled':'')+'><span>min</span></div></label>'
-    +'</div>'
-    +'<label class="cleaning-field">'
-      +'<span>Prioriteit</span>'
-      +'<select data-cleaning-routine-priority'+(busy?' disabled':'')+'>'
-        +'<option value="BASIC"'+(state.routineForm.priority==='BASIC'?' selected':'')+'>Basis</option>'
-        +'<option value="NORMAL"'+(state.routineForm.priority==='NORMAL'?' selected':'')+'>Normaal</option>'
-        +'<option value="EXTRA"'+(state.routineForm.priority==='EXTRA'?' selected':'')+'>Extra</option>'
-      +'</select>'
-    +'</label>'
-    +(state.routineForm.error?'<p class="cleaning-form-error" role="alert">'+escapeText(state.routineForm.error)+'</p>':'')
-    +'<div class="cleaning-form-actions">'
-      +'<button type="button" class="cleaning-secondary-button" data-cleaning-routine-cancel'+(busy?' disabled':'')+'>Annuleren</button>'
-      +'<button type="submit" class="cleaning-primary-button"'+(busy?' disabled':'')+'>'+(state.routineForm.submitting?'Opslaan…':(editing?'Wijzigingen opslaan':'Routine toevoegen'))+'</button>'
-    +'</div>'
-    +danger
-  +'</form>';
-}
-
-function routineTemplateMarkup(room){
-  const activeKeys = new Set(repositoryRoutinesForRoom(room.id).map((routine) => String(routine.templateKey || '')).filter(Boolean));
-  const templates = routineTemplatesForRoomType(room.type).filter((template) => !activeKeys.has(template.key));
-  if(!templates.length){
-    return '<div class="cleaning-routine-section"><div class="cleaning-routine-section-head"><span>Snelle suggesties</span><span>Alles toegevoegd ✓</span></div></div>';
-  }
-  return '<div class="cleaning-routine-section">'
-    +'<div class="cleaning-routine-section-head"><span>Snelle suggesties</span><span>1 tik om toe te voegen</span></div>'
-    +'<div class="cleaning-routine-list">'+templates.map((template) => {
-      const pending = !!(state.templatePending && String(state.templatePending.roomId)===String(room.id) && state.templatePending.key===template.key);
-      return '<button type="button" class="cleaning-add-routine-button" data-cleaning-template-add="'+escapeText(room.id)+'" data-cleaning-template-key="'+escapeText(template.key)+'"'+(pending?' disabled':'')+'>'
-        +(pending?'Toevoegen…':'＋ '+escapeText(template.title)+' · elke '+escapeText(template.intervalDays)+' d · '+escapeText(template.estimatedMinutes)+' min')
-      +'</button>';
-    }).join('')+'</div>'
-  +'</div>';
-}
-
-function routineListMarkup(room){
-  const routines = repositoryRoutinesForRoom(room.id);
-  const activeMarkup = !routines.length
-    ? '<div class="cleaning-routine-empty"><span>Nog geen vaste routines</span><button type="button" class="cleaning-add-routine-button" data-cleaning-routine-add="'+escapeText(room.id)+'">＋ Eigen routine</button></div>'
-    : '<div class="cleaning-routine-section">'
-      +'<div class="cleaning-routine-section-head"><span>'+routines.length+' '+(routines.length===1?'routine':'routines')+'</span><button type="button" class="cleaning-add-routine-button" data-cleaning-routine-add="'+escapeText(room.id)+'">＋ Eigen routine</button></div>'
-      +'<div class="cleaning-routine-list">'+routines.map((routine) => {
-        const priority = PRIORITY_LABELS[routine.priority] || PRIORITY_LABELS.NORMAL;
-        return '<div class="cleaning-routine-item">'
-          +'<div class="cleaning-routine-dot" aria-hidden="true"></div>'
-          +'<div class="cleaning-routine-copy"><strong>'+escapeText(routine.title)+'</strong><span>Elke '+escapeText(routine.intervalDays)+' dagen · '+escapeText(routine.estimatedMinutes)+' min</span></div>'
-          +'<div class="cleaning-routine-item-actions">'
-            +'<span class="cleaning-priority-badge" data-priority="'+escapeText(routine.priority||'NORMAL')+'">'+escapeText(priority)+'</span>'
-            +'<button type="button" class="cleaning-routine-edit-button" data-cleaning-routine-edit="'+escapeText(routine.id)+'" aria-label="'+escapeText((routine.title||'Routine')+' bewerken')+'">Bewerken</button>'
-          +'</div>'
-        +'</div>';
-      }).join('')+'</div>'
-    +'</div>';
-  return activeMarkup + routineTemplateMarkup(room);
-}
-
-function roomCardsMarkup(rooms){
-  return '<div class="cleaning-room-grid">'+rooms.map((room) => {
-    const type = roomType(room.type);
-    const routines = repositoryRoutinesForRoom(room.id);
-    return '<article class="cleaning-room-card" data-cleaning-room-id="'+escapeText(room.id)+'">'
-      +'<div class="cleaning-room-card-main">'
-        +'<div class="cleaning-room-card-icon" aria-hidden="true">'+escapeText(type.icon)+'</div>'
-        +'<div class="cleaning-room-card-copy">'
-          +'<h3>'+escapeText(room.name || type.label)+'</h3>'
-          +'<p>'+escapeText(type.label)+' · '+(routines.length?(routines.length+' '+(routines.length===1?'routine':'routines')):'Nog geen routine')+'</p>'
-        +'</div>'
-        +'<div class="cleaning-room-card-actions">'
-          +'<span class="cleaning-room-card-status">'+(routines.length?'Actief':'Nieuw')+'</span>'
-          +'<button type="button" class="cleaning-room-edit-button" data-cleaning-room-edit="'+escapeText(room.id)+'" aria-label="'+escapeText((room.name||type.label)+' bewerken')+'">Bewerken</button>'
-        +'</div>'
-      +'</div>'
-      +routineListMarkup(room)
-    +'</article>';
-  }).join('')+'</div>';
-}
-
-function roomsContent(){
-  const repository = state.repository;
-  if(repository && repository.error){
-    return '<section class="cleaning-status-card cleaning-status-error" role="alert">'
-      +'<strong>Kamers konden niet worden geladen</strong>'
-      +'<span>'+escapeText(repository.error)+'</span>'
-    +'</section>';
-  }
-
-  if(!repository || repository.ready !== true){
-    return '<section class="cleaning-status-card" aria-live="polite">'
-      +'<strong>Kamers laden…</strong>'
-      +'<span>We verbinden met het actieve huishouden.</span>'
-    +'</section>';
-  }
-
-  const rooms = repositoryRooms();
-  const notice = state.roomNotice ? '<p class="cleaning-room-notice" role="status">'+escapeText(state.roomNotice)+'</p>' : '';
-  const body = rooms.length
-    ? roomCardsMarkup(rooms)
-    : emptyCard('🛋️','Nog geen kamers','Voeg je eerste kamer toe. Daarna kun je per kamer vaste schoonmaakroutines instellen.');
-
-  return notice + roomFormMarkup() + routineFormMarkup() + body;
-}
-
-function roomsPanel(){
-  const roomsActive = state.roomView === 'rooms';
-  const plannedActive = state.roomView === 'planned';
-  return '<div class="cleaning-room-toggle" role="group" aria-label="Kamerweergave">'
-    +'<button type="button" class="cleaning-room-toggle-btn'+(roomsActive?' is-active':'')+'" data-cleaning-room-view="rooms" aria-pressed="'+(roomsActive?'true':'false')+'">Kamers</button>'
-    +'<button type="button" class="cleaning-room-toggle-btn'+(plannedActive?' is-active':'')+'" data-cleaning-room-view="planned" aria-pressed="'+(plannedActive?'true':'false')+'">Gepland per kamer</button>'
-    +'</div>'
-    +(roomsActive
-      ? '<div class="cleaning-room-toolbar"><div><h2>Kamers</h2><p>Beheer ruimtes en vaste schoonmaakroutines.</p></div><button type="button" class="cleaning-add-room-button" data-cleaning-room-add>＋ Nieuwe kamer</button></div>'+roomsContent()
-      : emptyCard('📍','Gepland per kamer','Hier komt straks in één overzicht wat er per kamer gepland, flexibel of afgerond is.'));
-}
-
-function planFeedbackMarkup(){
-  if(state.planning.error){
-    return '<p class="cleaning-plan-feedback is-error" role="alert">'+escapeText(state.planning.error)+'</p>';
-  }
-  if(state.planning.notice){
-    return '<p class="cleaning-plan-feedback is-success" role="status">'+escapeText(state.planning.notice)+'</p>';
-  }
-  return '';
-}
-
-function memberLoadsMarkup(plan){
-  const loads = plan && plan.summary && Array.isArray(plan.summary.memberLoads) ? plan.summary.memberLoads : [];
-  if(!loads.length) return '';
-  const selectedUid = String(state.planning.memberFilterUid || '');
-  return '<section class="cleaning-plan-loads" aria-label="Verdeling op geschatte tijd">'
-    +'<div class="cleaning-plan-section-head"><div><span>Verdeling</span><strong>Eerlijk op geschatte tijd</strong></div><span>'+escapeText(plan.summary.imbalanceMinutes || 0)+' min verschil</span></div>'
-    +'<div class="cleaning-plan-load-grid">'+loads.map((load) => {
-      const uid = String(load && load.uid || '');
-      const active = !!uid && uid === selectedUid;
-      return '<div class="cleaning-plan-load'+(active?' is-active':'')+'" data-cleaning-plan-member-filter="'+escapeText(uid)+'" role="button" tabindex="0" aria-pressed="'+(active?'true':'false')+'" aria-label="'+escapeText((active?'Toon alle schoonmaakbeurten':'Filter schoonmaakbeurten op ')+memberName(uid))+'">'
-        +'<span>'+escapeText(memberName(uid))+'</span>'
-        +'<strong>'+escapeText(load.estimatedMinutes || 0)+' min</strong>'
-        +'<small>'+(active?'✓ Filter actief':escapeText(load.bundleCount || 0)+' '+(Number(load.bundleCount)===1?'kamer':'kamers')+' · tik om te filteren')+'</small>'
-      +'</div>';
-    }).join('')+'</div>'
-  +'</section>';
-}
-
-function occurrenceCardMarkup(occurrence,hidden){
-  const room = rawRoom(occurrence.roomId);
-  const type = roomType(room && room.type);
-  const checklist = Array.isArray(occurrence.checklist) ? occurrence.checklist : [];
-  const assignedUid = Array.isArray(occurrence.assignmentUids) ? occurrence.assignmentUids[0] : null;
-  const overdue = occurrence.dueState === 'OVERDUE';
-  const roomName = room && room.name ? room.name : 'Ruimte';
-  return '<article class="cleaning-plan-card"'+(hidden?' hidden':'')+'>'
-    +'<div class="cleaning-plan-card-head">'
-      +'<div class="cleaning-plan-room-icon" aria-hidden="true">'+escapeText(type.icon)+'</div>'
-      +'<div class="cleaning-plan-room"><h3>'+escapeText(roomName)+'</h3><span>'+escapeText(checklist.length)+' '+(checklist.length===1?'routine':'routines')+' · '+escapeText(occurrence.estimatedMinutes || 0)+' min</span></div>'
-      +'<span class="cleaning-plan-due'+(overdue?' is-overdue':'')+'">'+(overdue?'Achterstallig':'Deze week')+'</span>'
-    +'</div>'
-    +'<div class="cleaning-plan-assignment"><span>Voorgesteld voor</span><strong>'+escapeText(memberName(assignedUid))+'</strong></div>'
-    +'<ul class="cleaning-plan-checklist">'+checklist.map((item) => '<li><span aria-hidden="true"></span><strong>'+escapeText(item.title || 'Schoonmaakonderdeel')+'</strong><small>'+escapeText(item.estimatedMinutes || 0)+' min</small></li>').join('')+'</ul>'
-    +'<div class="cleaning-plan-card-footer"><span>Nog geen moment gekozen</span><strong>'+escapeText(occurrence.estimatedMinutes || 0)+' min totaal</strong></div>'
-  +'</article>';
-}
-
-function planningPanel(){
-  const repository = state.repository;
-  if(repository && repository.error){
-    return '<section class="cleaning-status-card cleaning-status-error" role="alert"><strong>Planning kon niet worden geladen</strong><span>'+escapeText(repository.error)+'</span></section>';
-  }
-  if(!repository || repository.ready !== true){
-    return '<section class="cleaning-status-card" aria-live="polite"><strong>Planning laden…</strong><span>We verbinden met het actieve huishouden.</span></section>';
-  }
-
-  const windowValue = currentWeekWindow();
-  const plan = currentWeekPlan();
-  const occurrences = occurrencesForPlan(plan);
-  const members = householdMembers();
-  const routines = activeRoutines();
-  const memberLoads = plan && plan.summary && Array.isArray(plan.summary.memberLoads) ? plan.summary.memberLoads : [];
-  const filterableUids = new Set(memberLoads.map((load) => String(load && load.uid || '')).filter(Boolean));
-  let selectedUid = String(state.planning.memberFilterUid || '');
-  if(selectedUid && !filterableUids.has(selectedUid)){
-    state.planning.memberFilterUid = '';
-    selectedUid = '';
-  }
-  const selectedName = selectedUid ? memberName(selectedUid) : '';
-  const visibleOccurrences = selectedUid
-    ? occurrences.filter((occurrence) => Array.isArray(occurrence.assignmentUids) && occurrence.assignmentUids.map(String).includes(selectedUid))
-    : occurrences;
-  const visibleMinutes = visibleOccurrences.reduce((sum, occurrence) => sum + Math.max(0, Number(occurrence && occurrence.estimatedMinutes) || 0), 0);
-  const occurrenceCards = occurrences.map((occurrence) => {
-    const assignedToSelected = !selectedUid || (Array.isArray(occurrence.assignmentUids) && occurrence.assignmentUids.map(String).includes(selectedUid));
-    return occurrenceCardMarkup(occurrence, !assignedToSelected);
-  }).join('');
-  const draft = !plan || plan.status === 'DRAFT';
-  const initialBlocked = !plan && (!routines.length || !members.length);
-  const disabled = state.planning.submitting || !draft || initialBlocked;
-  const summary = plan && plan.summary || {};
-  const actionLabel = state.planning.submitting ? 'Weekplan maken…' : (plan ? 'Opnieuw berekenen' : 'Maak weekplan');
-  const statusLabel = plan ? (draft ? 'Concept · realtime' : String(plan.status || 'Plan')) : 'Nog niet gemaakt';
-  let availability = '';
-  if(!routines.length) availability = 'Voeg eerst minimaal één actieve routine toe bij Kamers.';
-  else if(!members.length) availability = 'We wachten nog op de actieve huishoudleden.';
-
-  const hero = '<section class="cleaning-plan-hero">'
-    +'<div class="cleaning-plan-hero-head"><div><p class="cleaning-plan-eyebrow">Week van '+escapeText(formatWeekWindow(windowValue))+'</p><h2>'+(plan?'Conceptplan voor deze week':'Zet jullie weekplan klaar')+'</h2></div><span class="cleaning-plan-status">'+escapeText(statusLabel)+'</span></div>'
-    +'<p class="cleaning-plan-intro">'+(plan?'Routines zijn per kamer gebundeld en eerlijk verdeeld op geschatte tijd.':'Routines die deze week aan de beurt zijn worden per kamer één schoonmaakbeurt, met een eerlijke tijdsverdeling.')+'</p>'
-    +'<div class="cleaning-plan-stats">'
-      +'<div><strong>'+escapeText(plan ? (summary.occurrenceCount || 0) : routines.length)+'</strong><span>'+(plan?'schoonmaakbeurten':'actieve routines')+'</span></div>'
-      +'<div><strong>'+escapeText(plan ? (summary.routineCount || 0) : members.length)+'</strong><span>'+(plan?'routines deze week':'gezinsleden')+'</span></div>'
-      +'<div><strong>'+escapeText(plan ? (summary.totalEstimatedMinutes || 0) : '—')+'</strong><span>'+(plan?'minuten totaal':'na berekening')+'</span></div>'
-    +'</div>'
-    +'<div class="cleaning-plan-actions"><button type="button" class="cleaning-plan-generate" data-cleaning-plan-generate'+(disabled?' disabled':'')+'>'+escapeText(actionLabel)+'</button><span>Dit is alleen een concept; er worden nog geen Taken- of Agenda-items aangemaakt.</span></div>'
-    +(availability?'<p class="cleaning-plan-availability">'+escapeText(availability)+'</p>':'')
-  +'</section>';
-
-  if(!plan) return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+'</div>';
-
-  let list;
-  if(occurrences.length){
-    const filteredEmpty = selectedUid && !visibleOccurrences.length
-      ? '<div class="cleaning-inline-empty" role="status">Geen schoonmaakbeurten voor '+escapeText(selectedName)+'. Tik hetzelfde gezinslid nogmaals aan om de volledige week te tonen.</div>'
-      : '';
-    list = '<section class="cleaning-plan-list"><div class="cleaning-plan-section-head"><div><span>Deze week</span><strong>'+escapeText(visibleOccurrences.length)+' '+(visibleOccurrences.length===1?'schoonmaakbeurt':'schoonmaakbeurten')+(selectedUid?' voor '+escapeText(selectedName):'')+'</strong></div><span>'+escapeText(visibleMinutes)+' min zichtbaar</span></div>'+filteredEmpty+occurrenceCards+'</section>';
-  } else {
-    list = '<section class="cleaning-plan-empty"><span aria-hidden="true">✓</span><div><strong>Alles is op schema</strong><p>Er zijn deze week geen routines aan de beurt.</p></div></section>';
-  }
-
-  return '<div class="cleaning-plan-stack">'+planFeedbackMarkup()+hero+memberLoadsMarkup(plan)+list+'</div>';
-}
-
-function panelContent(){
-  if(state.primaryTab === 'planning'){
-    return planningPanel();
-  }
-  if(state.primaryTab === 'rooms') return roomsPanel();
-  return emptyCard('✨','Huisoverzicht','Hier komt straks de huisstatus, aandachtspunten, snelle acties en recente activiteit.');
-}
-
-function readableRoomError(error){
-  const code = String(error && error.message || error || 'Kamer kon niet worden opgeslagen.');
-  if(code.indexOf('CLEANING_ROOM_NAME_REQUIRED')>-1) return 'Geef de kamer eerst een naam.';
-  if(code.indexOf('CLEANING_ROOM_INACTIVE')>-1) return 'Deze kamer is al verwijderd.';
-  if(code.indexOf('CLEANING_ROOM_NOT_FOUND')>-1) return 'Deze kamer bestaat niet meer. Ververs de lijst en probeer opnieuw.';
-  if(code.indexOf('CLEANING_ROOM_ID_REQUIRED')>-1) return 'De kamer kon niet worden herkend.';
-  if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
-  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
-  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze kamerwijziging nog niet toe voor dit huishouden.';
-  return code;
-}
-
-function readableRoutineError(error){
-  const code = String(error && error.message || error || 'Routine kon niet worden opgeslagen.');
-  if(code.indexOf('CLEANING_ROUTINE_TITLE_REQUIRED')>-1) return 'Geef de routine eerst een naam.';
-  if(code.indexOf('CLEANING_ROUTINE_ID_REQUIRED')>-1) return 'De routine kon niet worden herkend.';
-  if(code.indexOf('CLEANING_ROUTINE_INACTIVE')>-1) return 'Deze routine is al verwijderd.';
-  if(code.indexOf('CLEANING_ROUTINE_NOT_FOUND')>-1) return 'Deze routine bestaat niet meer.';
-  if(code.indexOf('CLEANING_ROUTINE_ROOM_REQUIRED')>-1) return 'Kies eerst een geldige kamer.';
-  if(code.indexOf('CLEANING_ROOM_INACTIVE')>-1 || code.indexOf('CLEANING_ROOM_NOT_FOUND')>-1) return 'Deze kamer is niet meer actief.';
-  if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
-  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de actie. Probeer opnieuw.';
-  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat deze routinewijziging nog niet toe voor dit huishouden.';
-  return code;
-}
-
-function readablePlanError(error){
-  const code = String(error && error.message || error || 'Het weekplan kon niet worden gemaakt.');
-  if(code.indexOf('CLEANING_PLANNER_ACTIVE_MEMBER_REQUIRED')>-1) return 'Er is minimaal één beschikbaar huishoudlid nodig om de schoonmaakbeurten te verdelen.';
-  if(code.indexOf('CLEANING_PLAN_NOT_DRAFT')>-1 || code.indexOf('CLEANING_OCCURRENCE_NOT_DRAFT')>-1) return 'Dit weekplan is niet meer alleen een concept en kan daarom niet opnieuw worden berekend.';
-  if(code.indexOf('CLEANING_PLAN_PERSISTENCE_UNAVAILABLE')>-1 || code.indexOf('CLEANING_PLANNER')>-1) return 'De weekplanner is nog niet volledig geladen. Probeer het nog een keer.';
-  if(code.indexOf('CLEANING_REPOSITORY_CONTEXT_NOT_READY')>-1) return 'De schoonmaakgegevens wisselen nog naar het actieve huishouden. Probeer het zo opnieuw.';
-  if(code.indexOf('ACTIVE_HOUSEHOLD_REQUIRED')>-1) return 'Er is geen actief huishouden beschikbaar.';
-  if(code.indexOf('ACTIVE_MEMBER_REQUIRED')>-1) return 'Je bent geen actief lid van dit huishouden.';
-  if(code.indexOf('HOUSEHOLD_CONTEXT_CHANGED')>-1) return 'Het actieve huishouden veranderde tijdens de berekening. Probeer opnieuw.';
-  if(code.indexOf('PERMISSION_DENIED')>-1 || code.toLowerCase().indexOf('permission')>-1) return 'Firebase staat het opslaan van dit weekplan nog niet toe voor dit huishouden.';
-  return code;
-}
-
-function resetRoomForm(){
-  state.roomForm = {
-    open: false,
-    mode: 'create',
-    roomId: null,
-    name: '',
-    type: 'living-room',
-    submitting: false,
-    deleting: false,
-    deleteConfirm: false,
-    error: ''
-  };
-}
-
-function resetRoutineForm(){
-  state.routineForm = {
-    open: false,
-    mode: 'create',
-    routineId: null,
-    roomId: null,
-    title: '',
-    intervalDays: 7,
-    estimatedMinutes: 15,
-    priority: 'NORMAL',
-    submitting: false,
-    deleting: false,
-    deleteConfirm: false,
-    error: ''
-  };
-}
-
-function openCreateRoom(root){
-  resetRoutineForm();
-  resetRoomForm();
-  state.roomForm.open = true;
-  state.roomNotice = '';
-  renderCleaningScreen(root);
-  window.setTimeout(() => {
-    const input = root.querySelector('[data-cleaning-room-name]');
-    if(input) input.focus();
-  }, 0);
-}
-
-function openEditRoom(root,roomId){
-  const room = findRoom(roomId);
-  if(!room){
-    state.roomNotice = 'Kamer niet gevonden.';
-    renderCleaningScreen(root);
-    return;
-  }
-  resetRoutineForm();
-  state.roomForm = {
-    open: true,
-    mode: 'edit',
-    roomId: room.id,
-    name: String(room.name || ''),
-    type: room.type || 'custom',
-    submitting: false,
-    deleting: false,
-    deleteConfirm: false,
-    error: ''
-  };
-  state.roomNotice = '';
-  renderCleaningScreen(root);
-  window.setTimeout(() => {
-    const input = root.querySelector('[data-cleaning-room-name]');
-    if(input){input.focus();input.select();}
-  }, 0);
-}
-
-function openRoutineForm(root,roomId){
-  const room = findRoom(roomId);
-  if(!room){
-    state.roomNotice = 'Kamer niet gevonden.';
-    renderCleaningScreen(root);
-    return;
-  }
-  resetRoomForm();
-  resetRoutineForm();
-  state.routineForm.open = true;
-  state.routineForm.roomId = room.id;
-  state.roomNotice = '';
-  renderCleaningScreen(root);
-  window.setTimeout(() => {
-    const input = root.querySelector('[data-cleaning-routine-title]');
-    if(input) input.focus();
-  }, 0);
-}
-
-function openEditRoutine(root,routineId){
-  const routine = findRoutine(routineId);
-  if(!routine){
-    state.roomNotice = 'Routine niet gevonden.';
-    renderCleaningScreen(root);
-    return;
-  }
-  const room = findRoom(routine.roomId);
-  if(!room){
-    state.roomNotice = 'De kamer van deze routine is niet meer actief.';
-    renderCleaningScreen(root);
-    return;
-  }
-  resetRoomForm();
-  state.routineForm = {
-    open: true,
-    mode: 'edit',
-    routineId: routine.id,
-    roomId: routine.roomId,
-    title: String(routine.title || ''),
-    intervalDays: Number(routine.intervalDays) || 7,
-    estimatedMinutes: Number(routine.estimatedMinutes) || 15,
-    priority: routine.priority || 'NORMAL',
-    submitting: false,
-    deleting: false,
-    deleteConfirm: false,
-    error: ''
-  };
-  state.roomNotice = '';
-  renderCleaningScreen(root);
-  window.setTimeout(() => {
-    const input = root.querySelector('[data-cleaning-routine-title]');
-    if(input){input.focus();input.select();}
-  }, 0);
-}
-
-function renderIfActive(){
-  const screen = document.getElementById('screen-cleaning');
-  if(!mountedRoot || !mountedRoot.isConnected || !screen || !screen.classList.contains('active')) return;
-  const trace = window.CleaningFreezeTrace;
-  if(trace){
-    let popupOpen = false;
-    try{ popupOpen = !!(window.CleaningTurnExperience && window.CleaningTurnExperience.isOpen && window.CleaningTurnExperience.isOpen()); }catch(e){}
-    trace.mark('cleaningscreen-render-if-active', {popupOpen: popupOpen});
-  }
-  renderCleaningScreen(mountedRoot);
-}
-
-function ensureRepositorySubscription(){
-  if(repositoryUnsubscribe || repositorySubscribing) return;
-  const repository = window.CleaningHouseholdRepository;
-  if(!repository || typeof repository.subscribe !== 'function') return;
-  repositorySubscribing = true;
-  const unsubscribe = repository.subscribe((snapshot) => {
-    state.repository = snapshot;
-    if(state.templatePending){
-      const exists = repositoryRoutinesForRoom(state.templatePending.roomId)
-        .some((routine) => String(routine.templateKey || '') === state.templatePending.key);
-      if(exists) state.templatePending = null;
-    }
-    renderIfActive();
-  });
-  repositoryUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : function(){};
-  repositorySubscribing = false;
-}
-
-function ensureMemberSubscription(){
-  if(memberUnsubscribe || memberSubscribing) return;
-  const bridge = window.HouseholdIdentityFirebaseBridge;
-  if(!bridge || typeof bridge.subscribe !== 'function') return;
-  memberSubscribing = true;
-  try{
-    const unsubscribe = bridge.subscribe((members) => {
-      state.members = Array.isArray(members) ? members.slice() : [];
-      renderIfActive();
-    });
-    memberUnsubscribe = typeof unsubscribe === 'function' ? unsubscribe : function(){};
-  }catch(error){
-    memberUnsubscribe = null;
-  }finally{
-    memberSubscribing = false;
-  }
-}
-
-function generateWeekPlan(root){
-  if(state.planning.submitting) return;
-  const repository = window.CleaningHouseholdRepository;
-  const planner = window.CleaningPlannerContract;
-  const availabilityContract = window.CleaningAvailabilityContract;
-  const snapshot = state.repository;
-  const existingPlan = currentWeekPlan();
-  const members = householdMembers();
-  const routines = activeRoutines();
-  const windowValue = currentWeekWindow();
-
-  if(!snapshot || snapshot.ready !== true){
-    state.planning.error = 'De schoonmaakgegevens zijn nog niet geladen.';
-    renderCleaningScreen(root);
-    return;
-  }
-  if(!existingPlan && !routines.length){
-    state.planning.error = 'Voeg eerst minimaal één actieve routine toe bij Kamers.';
-    renderCleaningScreen(root);
-    return;
-  }
-  if(routines.length && !members.length){
-    state.planning.error = 'Er is minimaal één actief huishoudlid nodig om de schoonmaakbeurten te verdelen.';
-    renderCleaningScreen(root);
-    return;
-  }
-  if(!planner || typeof planner.generateConceptPlan !== 'function' || !repository || typeof repository.saveDraftPlan !== 'function'){
-    state.planning.error = 'De weekplanner is nog niet volledig geladen. Probeer het nog een keer.';
-    renderCleaningScreen(root);
-    return;
-  }
-
-  let planningInput = {
-    window: windowValue,
-    rooms: snapshot.data && snapshot.data.rooms || {},
-    routines: snapshot.data && snapshot.data.routines || {},
-    members: members,
-    availability: snapshot.data && snapshot.data.availability || {}
-  };
-  if(availabilityContract && typeof availabilityContract.preparePlanningInput === 'function'){
-    try{
-      const adjusted = availabilityContract.preparePlanningInput(planningInput);
-      planningInput = {
-        window: windowValue,
-        rooms: planningInput.rooms,
-        routines: adjusted.routines,
-        members: adjusted.members
-      };
-      if(routines.length && !adjusted.members.length){
-        state.planning.error = 'Deze week is niemand beschikbaar voor automatische verdeling. Pas Beschikbaarheid aan of gebruik bestaande overdracht/hulp voor lopend werk.';
-        renderCleaningScreen(root);
-        return;
-      }
-    }catch(error){
-      state.planning.error = readablePlanError(error);
-      renderCleaningScreen(root);
-      return;
-    }
-  }
-
-  let concept;
-  try{
-    concept = planner.generateConceptPlan(planningInput);
-  }catch(error){
-    state.planning.error = readablePlanError(error);
-    renderCleaningScreen(root);
-    return;
-  }
-
-  state.planning.submitting = true;
-  state.planning.error = '';
-  state.planning.notice = '';
-  renderCleaningScreen(root);
-
-  repository.saveDraftPlan(concept).then((result) => {
-    const count = result && result.plan && result.plan.summary ? Number(result.plan.summary.occurrenceCount || 0) : 0;
-    state.planning.submitting = false;
-    state.planning.notice = count
-      ? 'Weekplan staat realtime klaar: '+count+' '+(count===1?'schoonmaakbeurt':'schoonmaakbeurten')+'.'
-      : 'Weekplan staat realtime klaar: alles is op schema.';
-    renderCleaningScreen(root);
-    window.setTimeout(() => {
-      if(state.planning.notice){
-        state.planning.notice = '';
-        renderIfActive();
-      }
-    },3000);
-  }).catch((error) => {
-    state.planning.submitting = false;
-    state.planning.error = readablePlanError(error);
-    renderCleaningScreen(root);
+function writeOccurrenceChecklist(occurrenceId,desiredChecklist){
+  try{requireCap(CAP.EXECUTION);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}
+  var timestamp=now(),desired=checklistMap(desiredChecklist),completionLog=null,reopenedLogId=null,ref=write.db.ref(write.cleaningPath+'/occurrences/'+safeKey(occurrenceId));
+  return ref.transaction(function(server){
+    if(!server||typeof server!=='object'||!contextCurrent(write.token))return;var row=clone(server),list=Array.isArray(row.checklist)?row.checklist:[],wasDone=text(row.status).toUpperCase()==='COMPLETED'||text(row.assignmentStatus).toUpperCase()==='COMPLETED';
+    row.checklist=list.map((item,index)=>{var copy=Object.assign({},item),key=text(copy.routineItemId||copy.id)||String(index);if(Object.prototype.hasOwnProperty.call(desired,key)){var done=desired[key];copy.completed=done;copy.completedAt=done?(Number(copy.completedAt)||timestamp):null;copy.completedByUid=done?(text(copy.completedByUid)||write.ctx.uid):null;copy.updatedAt=timestamp;copy.updatedByUid=write.ctx.uid;}return copy;});
+    var allDone=row.checklist.length>0&&row.checklist.every(item=>item&&item.completed===true);
+    if(allDone&&!wasDone){var logId='completion_'+safeKey(occurrenceId)+'_'+timestamp;row.status='COMPLETED';row.assignmentStatus='COMPLETED';row.completedAt=timestamp;row.completedByUid=write.ctx.uid;row.completionLogId=logId;row.completionRevision=Math.max(0,Number(row.completionRevision)||0)+1;completionLog={id:logId,householdId:write.ctx.householdId,occurrenceId:occurrenceId,planId:row.planId||null,roomId:row.roomId||null,assignmentUids:Array.isArray(row.assignmentUids)?row.assignmentUids.slice():[],checklist:clone(row.checklist),estimatedMinutes:Number(row.estimatedMinutes)||0,status:'COMPLETED',source:'CLEANING_V2',completedAt:timestamp,completedByUid:write.ctx.uid,createdAt:timestamp,createdByUid:write.ctx.uid,schemaVersion:2};}
+    else if(!allDone&&wasDone){reopenedLogId=text(row.completionLogId);row.status=Number(row.scheduledStartAt)>0?'SCHEDULED':'FLEXIBLE';row.assignmentStatus='ACTIVE';row.reopenedAt=timestamp;row.reopenedByUid=write.ctx.uid;row.completedAt=null;row.completedByUid=null;row.completionLogId=null;row.completionRevision=Math.max(0,Number(row.completionRevision)||0)+1;}
+    row.updatedAt=timestamp;row.updatedByUid=write.ctx.uid;row.lastExecutionSource='CLEANING_V2';return row;
+  }).then(function(result){
+    if(!result||result.committed!==true||!result.snapshot)throw new Error('CLEANING_OCCURRENCE_WRITE_NOT_COMMITTED');var occurrence=Object.assign({id:occurrenceId},result.snapshot.val()),updates={};
+    if(completionLog){updates['cleaning/completionLogs/'+completionLog.id]=completionLog;(Array.isArray(occurrence.checklist)?occurrence.checklist:[]).forEach(item=>{var routineId=text(item&&(item.routineItemId||item.id)),routine=currentRoutine(routineId);if(!routineId||!routine)return;updates['cleaning/routines/'+routineId+'/lastCompletedAt']=timestamp;updates['cleaning/routines/'+routineId+'/nextDueAt']=timestamp+Math.max(1,parseInt(routine.intervalDays,10)||7)*DAY_MS;updates['cleaning/routines/'+routineId+'/updatedAt']=timestamp;updates['cleaning/routines/'+routineId+'/updatedByUid']=write.ctx.uid;});}
+    if(reopenedLogId){updates['cleaning/completionLogs/'+safeKey(reopenedLogId)+'/status']='REOPENED';updates['cleaning/completionLogs/'+safeKey(reopenedLogId)+'/reopenedAt']=timestamp;updates['cleaning/completionLogs/'+safeKey(reopenedLogId)+'/reopenedByUid']=write.ctx.uid;}
+    var extras=Object.keys(updates).length?write.db.ref(write.familyPath).update(updates):Promise.resolve();return extras.then(()=>syncDerivedOccurrence(occurrence)).then(()=>occurrence);
   });
 }
 
-function submitRoom(root){
-  if(state.roomForm.submitting || state.roomForm.deleting) return;
-  const name = String(state.roomForm.name || '').trim();
-  if(!name){
-    state.roomForm.error = 'Geef de kamer eerst een naam.';
-    renderCleaningScreen(root);
-    return;
-  }
-
-  const repository = window.CleaningHouseholdRepository;
-  const editing = state.roomForm.mode === 'edit';
-  const method = editing ? 'updateRoom' : 'createRoom';
-  if(!repository || typeof repository[method] !== 'function'){
-    state.roomForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
-    renderCleaningScreen(root);
-    return;
-  }
-
-  const roomId = state.roomForm.roomId;
-  const payload = {name:name,type:state.roomForm.type};
-  state.roomForm.name = name;
-  state.roomForm.submitting = true;
-  state.roomForm.deleteConfirm = false;
-  state.roomForm.error = '';
-  renderCleaningScreen(root);
-
-  const request = editing ? repository.updateRoom(roomId,payload) : repository.createRoom(payload);
-  request.then(() => {
-    resetRoomForm();
-    state.roomNotice = editing ? 'Kamer bijgewerkt ✓' : 'Kamer toegevoegd ✓';
-    renderCleaningScreen(root);
-    window.setTimeout(() => {
-      if(state.roomNotice){
-        state.roomNotice = '';
-        renderIfActive();
-      }
-    }, 2500);
-  }).catch((error) => {
-    state.roomForm.submitting = false;
-    state.roomForm.error = readableRoomError(error);
-    renderCleaningScreen(root);
-  });
+// ------------------------------------------------------------
+// Lightweight weekly planning. Pure accepted planner contracts calculate the
+// work; v2 persists canonical occurrences + projections once in one update.
+// ------------------------------------------------------------
+function currentWeekPlan(){var data=repoState.snapshot.data,windowRange=weekWindow(),id='week_'+windowRange.startAt+'_'+windowRange.endAt,row=data.plans[id];return row?Object.assign({id:id},row):null;}
+function buildProjectionRows(occurrence,room,actorUid,householdId,timestamp){var taskId='cleaning_v2_'+hash(occurrence.id),eventId=taskId,assigned=text((occurrence.assignmentUids||[])[0]),display=memberName(assigned),subtasks=(occurrence.checklist||[]).map((item,index)=>({id:safeKey(text(item.routineItemId||item.id)||'item_'+index),title:text(item.title)||'Schoonmaakonderdeel',done:item.completed===true,completed:item.completed===true,sourceRoutineItemId:text(item.routineItemId||item.id),cleaningOccurrenceId:occurrence.id,estimatedMinutes:Number(item.estimatedMinutes)||0,priority:text(item.priority)||'NORMAL'})),date=text(occurrence.scheduledDate)||localDate(occurrence.earliestDueAt),minutes=Number(occurrence.estimatedMinutes)||subtasks.reduce((sum,item)=>sum+(Number(item.estimatedMinutes)||0),0),task={id:taskId,_key:taskId,householdId:householdId,type:'SIDE QUEST',category:'cleaning',title:'Schoonmaken · '+(room&&room.name||'Ruimte'),description:subtasks.length+' '+(subtasks.length===1?'onderdeel':'onderdelen')+' · '+minutes+' min',date:date,dueDate:date,time:'',assignedToUid:assigned,assignedToUids:assigned?{[assigned]:true}:{},who:display?[display]:[],priority:'normaal',prio:'normaal',subtasks:subtasks,done:false,status:'open',progress:0,sourceType:'cleaning-occurrence',sourceId:occurrence.id,cleaningOccurrenceId:occurrence.id,cleaningOccurrenceIds:[occurrence.id],cleaningPlanId:occurrence.planId,projectionManaged:true,projectionVersion:4,createdAt:timestamp,createdByUid:actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:4},event={id:eventId,_key:'id_'+safeKey(eventId),householdId:householdId,title:'Schoonmaken · '+(room&&room.name||'Ruimte'),date:date,time:'',description:minutes+' min · '+subtasks.map(item=>item.title).join(', '),who:display,assignedToUid:assigned,flexible:true,completed:false,sourceType:'cleaning-occurrence',sourceId:occurrence.id,cleaningOccurrenceId:occurrence.id,cleaningOccurrenceIds:[occurrence.id],cleaningPlanId:occurrence.planId,projectionManaged:true,projectionVersion:4,createdAt:timestamp,createdByUid:actorUid,updatedAt:timestamp,updatedByUid:actorUid,schemaVersion:4};return{taskId:taskId,eventId:eventId,task:task,event:event};}
+function generateWeekPlan(){
+  try{requireCap(CAP.PLANNING);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}
+  var planner=window.CleaningPlannerContract,persistence=window.CleaningPlanPersistenceContract;if(!planner||!persistence)return Promise.reject(new Error('CLEANING_PLANNER_UNAVAILABLE'));var data=repoState.snapshot.data,range=weekWindow(),existing=currentWeekPlan();if(existing&&text(existing.status).toUpperCase()==='ACTIVE')return Promise.reject(new Error('CLEANING_PLAN_ALREADY_ACTIVE'));
+  var concept=planner.generateConceptPlan({window:range,rooms:data.rooms,routines:data.routines,members:members()});if(!concept.occurrenceDrafts.length)return Promise.resolve({empty:true});var material=persistence.materializeDraft({conceptPlan:concept,householdId:write.ctx.householdId,actorUid:write.ctx.uid,timestamp:now(),existingData:data}),timestamp=now(),updates={},plan=Object.assign({},material.plan,{status:'ACTIVE',activatedAt:timestamp,activatedByUid:write.ctx.uid,approvedAt:timestamp,approvedByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid}),occurrenceIds=[];
+  Object.keys(material.occurrences).forEach(id=>{var base=material.occurrences[id];if(base.status==='CANCELLED'){updates['cleaning/occurrences/'+id]=base;return;}var anchor=Math.max(range.startAt,Math.min(Number(base.earliestDueAt)||range.startAt,range.endAt-1)),day=startOfDay(anchor),occurrence=Object.assign({},base,{id:id,planId:material.planId,status:'FLEXIBLE',assignmentStatus:'ACTIVE',assignmentUids:Array.isArray(base.assignmentUids)?base.assignmentUids.slice():[],scheduledDate:localDate(anchor),scheduledTime:'',scheduledStartAt:null,scheduledEndAt:null,scheduledWindow:{startAt:day,endAt:day+DAY_MS},flexibleWindow:{startAt:day,endAt:day+DAY_MS},updatedAt:timestamp,updatedByUid:write.ctx.uid}),projection=buildProjectionRows(occurrence,data.rooms[occurrence.roomId],write.ctx.uid,write.ctx.householdId,timestamp);occurrence.projections={taskId:projection.taskId,calendarEventId:projection.eventId,version:4,projectedAt:timestamp,projectedByUid:write.ctx.uid};updates['cleaning/occurrences/'+id]=occurrence;updates['tasks/'+projection.taskId]=projection.task;updates['calendarEvents/'+projection.event._key]=projection.event;occurrenceIds.push(id);});
+  plan.occurrenceIds=occurrenceIds;updates['cleaning/plans/'+material.planId]=plan;return write.db.ref(write.familyPath).update(updates).then(()=>({planId:material.planId,occurrenceCount:occurrenceIds.length,empty:false}));
 }
 
-function submitRoutine(root){
-  if(state.routineForm.submitting || state.routineForm.deleting) return;
-  const title = String(state.routineForm.title || '').trim();
-  if(!title){
-    state.routineForm.error = 'Geef de routine eerst een naam.';
-    renderCleaningScreen(root);
-    return;
-  }
-  const intervalDays = Math.min(365, Math.max(1, parseInt(state.routineForm.intervalDays,10) || 7));
-  const estimatedMinutes = Math.min(480, Math.max(1, parseInt(state.routineForm.estimatedMinutes,10) || 15));
-  const repository = window.CleaningHouseholdRepository;
-  const editing = state.routineForm.mode === 'edit';
-  const method = editing ? 'updateRoutineItem' : 'createRoutineItem';
-  if(!repository || typeof repository[method] !== 'function'){
-    state.routineForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
-    renderCleaningScreen(root);
-    return;
-  }
+// Action Inbox compatibility uses the same v2 repository/state, never another
+// Cleaning runtime or writer.
+function pendingHelpRequestsForMe(){var me=text(contextSnapshot()&&contextSnapshot().uid),data=repoState.snapshot.data;if(!me)return[];return Object.keys(data.occurrences).map(id=>({occurrence:Object.assign({id:id},data.occurrences[id]||{}),data:data})).filter(entry=>{var request=entry.occurrence.helpRequest||{},status=text(request.status||request.state).toUpperCase(),targets=Array.isArray(request.targetUids)?request.targetUids:[];return status==='PENDING'&&(text(request.toUid)===me||targets.indexOf(me)>=0);});}
+function respondHelp(occurrenceId,action){try{requireCap(CAP.RESPOND);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var accept=action==='ACCEPT_HELP',timestamp=now();return write.db.ref(write.cleaningPath+'/occurrences/'+safeKey(occurrenceId)+'/helpRequest').update({status:accept?'ACCEPTED':'DECLINED',respondedAt:timestamp,respondedByUid:write.ctx.uid});}
+function resolveRoutineRequest(routineId,accept){try{requireCap(CAP.RESPOND);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var routine=currentRoutine(routineId);if(!routine)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));var timestamp=now(),patch={assignmentRequestStatus:accept?'ACCEPTED':'DECLINED',assignmentResolvedAt:timestamp,assignmentResolvedByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid};if(accept&&routine.preferredAssigneeUid){patch.assignmentMode='FIXED_PERSON';patch.assignedUid=routine.preferredAssigneeUid;}return write.db.ref(write.cleaningPath+'/routines/'+safeKey(routineId)).update(patch);}
+function resolveRoutineCounter(routineId,accept){try{requireCap(CAP.RESPOND);}catch(error){return Promise.reject(error);}var write;try{write=writeContext();}catch(error){return Promise.reject(error);}var routine=currentRoutine(routineId);if(!routine)return Promise.reject(new Error('CLEANING_ROUTINE_NOT_FOUND'));var timestamp=now(),target=text(routine.assignmentCounterProposedUid),patch={assignmentRequestStatus:accept?'ACCEPTED':'DECLINED',assignmentResolvedAt:timestamp,assignmentResolvedByUid:write.ctx.uid,updatedAt:timestamp,updatedByUid:write.ctx.uid};if(accept&&target){patch.preferredAssigneeUid=target;patch.assignmentMode='FIXED_PERSON';patch.assignedUid=target;}return write.db.ref(write.cleaningPath+'/routines/'+safeKey(routineId)).update(patch);}
 
-  const routineId = state.routineForm.routineId;
-  const payload = {
-    roomId: state.routineForm.roomId,
-    title: title,
-    intervalDays: intervalDays,
-    estimatedMinutes: estimatedMinutes,
-    priority: state.routineForm.priority
-  };
-  state.routineForm.title = title;
-  state.routineForm.intervalDays = intervalDays;
-  state.routineForm.estimatedMinutes = estimatedMinutes;
-  state.routineForm.submitting = true;
-  state.routineForm.deleteConfirm = false;
-  state.routineForm.error = '';
+const CleaningV2Repository={version:VERSION,start:repoStart,stop:repoStop,subscribe:repoSubscribe,snapshot:repoSnapshot,createRoom:createRoom,updateRoom:updateRoom,removeRoom:removeRoom,createRoutineItem:createRoutine,updateRoutineItem:updateRoutine,removeRoutineItem:removeRoutine,setInventoryStatus:setInventoryStatus,addRoomSupply:addRoomSupply,writeOccurrenceChecklist:writeOccurrenceChecklist,generateWeekPlan:generateWeekPlan,getOccurrence:id=>clone(repoState.snapshot.data.occurrences[id]||null),getPlan:id=>clone(repoState.snapshot.data.plans[id]||null)};
+window.CleaningV2Repository=CleaningV2Repository;
+window.CleaningHouseholdRepository=CleaningV2Repository;
+window.CleaningHelpRequestUi={version:VERSION,_pendingRequestsForMe:pendingHelpRequestsForMe};
+window.CleaningRoutineExperience={version:VERSION,resolveRequest:resolveRoutineRequest,resolveCounter:resolveRoutineCounter};
+window.CleaningExceptionRuntime={version:VERSION,respondToHelpRequest:respondHelp};
 
-  const request = editing ? repository.updateRoutineItem(routineId,payload) : repository.createRoutineItem(payload);
-  renderCleaningScreen(root);
-  request.then(() => {
-    resetRoutineForm();
-    state.roomNotice = editing ? 'Routine bijgewerkt ✓' : 'Routine toegevoegd ✓';
-    renderCleaningScreen(root);
-    window.setTimeout(() => {
-      if(state.roomNotice){
-        state.roomNotice = '';
-        renderIfActive();
-      }
-    }, 2500);
-  }).catch((error) => {
-    state.routineForm.submitting = false;
-    state.routineForm.error = readableRoutineError(error);
-    renderCleaningScreen(root);
-  });
-}
+// ------------------------------------------------------------
+// One screen owner + one modal/sheet owner.
+// ------------------------------------------------------------
+const ui={root:null,repoUnsubscribe:null,renderQueued:false,dirty:false,tab:'today',memberFilterUid:'',sheet:null,busy:false,turnWrite:null};
+function isActive(){var screen=document.getElementById('screen-cleaning');return !!(ui.root&&ui.root.isConnected&&screen&&screen.classList.contains('active')&&window._currentScreen==='cleaning');}
+function scheduleRender(){if(ui.sheet){ui.dirty=true;return;}if(ui.renderQueued)return;ui.renderQueued=true;(window.requestAnimationFrame||function(fn){setTimeout(fn,0);})(function(){ui.renderQueued=false;if(isActive())renderRoot();});}
+function ensureBound(root){if(ui.root!==root){if(ui.repoUnsubscribe){ui.repoUnsubscribe();ui.repoUnsubscribe=null;}ui.root=root;root.addEventListener('click',onRootClick);}if(!ui.repoUnsubscribe)ui.repoUnsubscribe=repoSubscribe(scheduleRender);repoStart();ensureSheet();}
+function progress(occurrence){var list=Array.isArray(occurrence&&occurrence.checklist)?occurrence.checklist:[],done=list.filter(item=>item&&item.completed===true).length;return{done:done,total:list.length,pct:list.length?Math.round(done/list.length*100):0};}
+function openOccurrences(){return activeOccurrences().filter(row=>text(row.status).toUpperCase()!=='COMPLETED'&&text(row.assignmentStatus).toUpperCase()!=='COMPLETED');}
+function completedOccurrences(){return activeOccurrences().filter(row=>text(row.status).toUpperCase()==='COMPLETED'||text(row.assignmentStatus).toUpperCase()==='COMPLETED');}
+function turnCard(occurrence){var room=roomById(occurrence.roomId),p=progress(occurrence),assignee=(occurrence.assignmentUids||[])[0];return '<button type="button" class="cv2-turn-card" data-cv2-turn="'+esc(occurrence.id)+'" data-room-type="'+esc(room&&room.type||'custom')+'"><div class="cv2-turn-photo"></div><div class="cv2-turn-copy"><span>'+esc(formatDate(occurrence.scheduledDate||occurrence.earliestDueAt))+(assignee?' · '+esc(memberName(assignee)):'')+'</span><strong>'+esc(room&&room.name||'Ruimte')+'</strong><div class="cv2-progress"><i style="width:'+p.pct+'%"></i></div><small>'+p.done+' / '+p.total+' klaar · '+formatMinutes(occurrence.estimatedMinutes)+'</small></div><span class="cv2-chevron">›</span></button>';}
+function overviewMarkup(){var open=openOccurrences(),done=completedOccurrences(),today=localDate(now()),todayRows=open.filter(row=>text(row.scheduledDate)===today),visible=todayRows.length?todayRows:open.slice(0,6),minutes=visible.reduce((sum,row)=>sum+(Number(row.estimatedMinutes)||0),0);return '<section class="cv2-hero"><div><span class="cv2-kicker">Schoonmaken</span><h2>Rust in huis, zonder gedoe.</h2><p>'+visible.length+' '+(visible.length===1?'beurt':'beurten')+' in beeld · '+formatMinutes(minutes)+'</p></div><div class="cv2-hero-stat"><strong>'+visible.length+'</strong><span>te doen</span></div></section>'+(visible.length?'<section class="cv2-section"><div class="cv2-section-head"><div><span>'+(todayRows.length?'Vandaag':'Eerstvolgend')+'</span><h3>Beurten</h3></div><span>'+done.length+' afgerond</span></div><div class="cv2-turn-list">'+visible.map(turnCard).join('')+'</div></section>':'<section class="cv2-empty"><strong>Geen open schoonmaakbeurten</strong><span>Maak een weekplan of voeg eerst kamers en routines toe.</span></section>');}
+function roomsMarkup(){var rooms=activeRooms();return '<section class="cv2-section"><div class="cv2-section-head"><div><span>Huishouden</span><h3>Kamers</h3></div>'+(can(CAP.STRUCTURE)?'<button type="button" class="cv2-mini-primary" data-cv2-room-new>＋ Kamer</button>':'')+'</div>'+(rooms.length?'<div class="cv2-room-grid">'+rooms.map(room=>'<button type="button" class="cv2-room-card" data-cv2-room="'+esc(room.id)+'" data-room-type="'+esc(room.type||'custom')+'"><div class="cv2-room-photo"></div><div class="cv2-room-copy"><strong>'+esc(room.name||roomType(room.type).label)+'</strong><span>'+activeRoutinesForRoom(room.id).length+' routines</span></div><span>›</span></button>').join('')+'</div>':'<div class="cv2-empty"><strong>Nog geen kamers</strong><span>Voeg je eerste kamer toe en stel daarna routines in.</span></div>')+'</section>';}
+function planMarkup(){var plan=currentWeekPlan(),all=plan&&Array.isArray(plan.occurrenceIds)?plan.occurrenceIds.map(id=>occurrenceById(id)).filter(Boolean):[],status=text(plan&&plan.status).toUpperCase(),assignees=[];all.forEach(row=>(row.assignmentUids||[]).forEach(uid=>{uid=text(uid);if(uid&&assignees.indexOf(uid)<0)assignees.push(uid);}));if(ui.memberFilterUid&&assignees.indexOf(ui.memberFilterUid)<0)ui.memberFilterUid='';var visible=ui.memberFilterUid?all.filter(row=>(row.assignmentUids||[]).map(String).includes(ui.memberFilterUid)):all,minutes=visible.reduce((sum,row)=>sum+(Number(row.estimatedMinutes)||0),0),filters=assignees.length>1?'<div class="cv2-filter-chips"><button type="button" data-cv2-member-filter="" class="'+(!ui.memberFilterUid?'is-active':'')+'">Iedereen</button>'+assignees.map(uid=>'<button type="button" data-cv2-member-filter="'+esc(uid)+'" class="'+(ui.memberFilterUid===uid?'is-active':'')+'">'+esc(memberName(uid))+'</button>').join('')+'</div>':'';return '<section class="cv2-plan-hero"><span class="cv2-kicker">Weekplan</span><h2>'+esc(formatDate(weekWindow().startAt))+' – '+esc(formatDate(weekWindow().endAt-1))+'</h2><p>'+(plan?(visible.length+' beurten · '+formatMinutes(minutes)):'Nog geen actief plan voor deze week.')+'</p>'+(can(CAP.PLANNING)?'<button type="button" class="cv2-primary" data-cv2-plan-generate'+((ui.busy||status==='ACTIVE')?' disabled':'')+'>'+((status==='ACTIVE')?'Weekplan actief':(ui.busy?'Plan maken…':'Maak weekplan'))+'</button>':'')+'</section>'+filters+(visible.length?'<section class="cv2-section"><div class="cv2-section-head"><div><span>Planning</span><h3>Per kamer</h3></div></div><div class="cv2-turn-list">'+visible.map(turnCard).join('')+'</div></section>':'');}
+function renderRoot(){if(!ui.root)return;var snapshot=repoSnapshot();if(snapshot.error){ui.root.innerHTML='<div class="cv2-shell"><section class="cv2-empty is-error"><strong>Schoonmaken kon niet laden</strong><span>'+esc(snapshot.error)+'</span></section></div>';return;}if(!snapshot.ready){ui.root.innerHTML='<div class="cv2-shell"><div class="cv2-loading"><span></span><strong>Schoonmaken laden…</strong></div></div>';return;}ui.root.innerHTML='<div class="cv2-shell"><div class="cv2-tabs"><button data-cv2-tab="today" class="'+(ui.tab==='today'?'is-active':'')+'">Vandaag</button><button data-cv2-tab="rooms" class="'+(ui.tab==='rooms'?'is-active':'')+'">Kamers</button><button data-cv2-tab="plan" class="'+(ui.tab==='plan'?'is-active':'')+'">Weekplan</button></div>'+(ui.tab==='rooms'?roomsMarkup():(ui.tab==='plan'?planMarkup():overviewMarkup()))+'</div>';ui.dirty=false;}
 
-function addRoutineTemplate(root,roomId,templateKey){
-  const room = findRoom(roomId);
-  if(!room) return;
-  const template = routineTemplatesForRoomType(room.type).find((entry) => entry.key === templateKey);
-  if(!template) return;
-  const duplicate = repositoryRoutinesForRoom(room.id).some((routine) => String(routine.templateKey || '') === template.key);
-  if(duplicate) return;
-  if(state.templatePending && String(state.templatePending.roomId)===String(room.id) && state.templatePending.key===template.key) return;
+function ensureSheet(){var sheet=document.getElementById('cleaning-v2-sheet');if(sheet)return sheet;sheet=document.createElement('div');sheet.id='cleaning-v2-sheet';sheet.className='cv2-overlay';sheet.setAttribute('aria-hidden','true');sheet.innerHTML='<div class="cv2-sheet" role="dialog" aria-modal="true"><div class="cv2-sheet-head"><button type="button" data-cv2-close aria-label="Sluiten">×</button><div data-cv2-sheet-title></div></div><div class="cv2-sheet-scroll" data-cv2-sheet-body></div></div>';sheet.addEventListener('click',onSheetClick);sheet.addEventListener('submit',onSheetSubmit);sheet.addEventListener('change',onSheetChange);document.body.appendChild(sheet);return sheet;}
+function openSheet(kind,payload){var sheet=ensureSheet(),previous=ui.sheet?ui.sheet.previousOverflow:document.body.style.overflow;ui.sheet={kind:kind,payload:payload||{},previousOverflow:previous};document.body.style.overflow='hidden';sheet.classList.add('is-open');sheet.setAttribute('aria-hidden','false');renderSheet();}
+function closeSheet(){var sheet=document.getElementById('cleaning-v2-sheet');if(ui.turnWrite)flushTurnWrite().catch(function(){});if(ui.sheet)document.body.style.overflow=ui.sheet.previousOverflow||'';ui.sheet=null;ui.turnWrite=null;if(sheet){sheet.classList.remove('is-open');sheet.setAttribute('aria-hidden','true');}if(ui.dirty||isActive())scheduleRender();}
+function sheetEls(){var sheet=ensureSheet();return{title:sheet.querySelector('[data-cv2-sheet-title]'),body:sheet.querySelector('[data-cv2-sheet-body]')};}
+function renderSheet(){if(!ui.sheet)return;var elements=sheetEls(),kind=ui.sheet.kind,payload=ui.sheet.payload;if(kind==='turn')renderTurnSheet(elements,payload);else if(kind==='room')renderRoomSheet(elements,payload);else if(kind==='room-form')renderRoomForm(elements,payload);else if(kind==='routine-form')renderRoutineForm(elements,payload);else if(kind==='supplies')renderSupplies(elements,payload);}
+function renderTurnSheet(elements,payload){var occurrence=occurrenceById(payload.occurrenceId);if(!occurrence){closeSheet();return;}var room=roomById(occurrence.roomId),list=ui.turnWrite&&ui.turnWrite.occurrenceId===occurrence.id?ui.turnWrite.checklist:clone(occurrence.checklist||[]),done=list.filter(item=>item&&item.completed===true).length;elements.title.innerHTML='<span>Beurt</span><strong>'+esc(room&&room.name||'Ruimte')+'</strong>';elements.body.innerHTML='<div class="cv2-sheet-hero" data-room-type="'+esc(room&&room.type||'custom')+'"><div></div><span>'+esc(formatDate(occurrence.scheduledDate||occurrence.earliestDueAt))+'</span><strong>'+esc(room&&room.name||'Ruimte')+'</strong><small>'+esc(memberName((occurrence.assignmentUids||[])[0]))+' · '+formatMinutes(occurrence.estimatedMinutes)+'</small></div><div class="cv2-sheet-progress"><span><b data-cv2-done-count>'+done+'</b> / '+list.length+' klaar</span><i><b data-cv2-sheet-progress style="width:'+(list.length?Math.round(done/list.length*100):0)+'%"></b></i></div><div class="cv2-checklist">'+list.map((item,index)=>'<button type="button" class="cv2-check '+(item.completed===true?'is-done':'')+'" data-cv2-check="'+index+'"><i>✓</i><span>'+esc(item.title||'Schoonmaakonderdeel')+'</span><small>'+formatMinutes(item.estimatedMinutes)+'</small></button>').join('')+'</div><div class="cv2-sheet-actions"><button type="button" class="cv2-secondary" data-cv2-supplies="'+esc(occurrence.id)+'">Benodigdheden</button><button type="button" class="cv2-primary" data-cv2-complete-all="'+esc(occurrence.id)+'">Alles afronden</button></div><div class="cv2-save-state" data-cv2-save-state></div>';if(!ui.turnWrite||ui.turnWrite.occurrenceId!==occurrence.id)ui.turnWrite={occurrenceId:occurrence.id,checklist:list,version:0,savedVersion:0,timer:null,inFlight:false,promise:null};}
+function renderRoomSheet(elements,payload){var room=roomById(payload.roomId);if(!room){closeSheet();return;}var routines=activeRoutinesForRoom(room.id),presets=PRESETS[room.type]||PRESETS.custom,structure=can(CAP.STRUCTURE),supplies=can(CAP.SUPPLIES);elements.title.innerHTML='<span>Kamer</span><strong>'+esc(room.name||roomType(room.type).label)+'</strong>';elements.body.innerHTML='<div class="cv2-room-manage-hero" data-room-type="'+esc(room.type||'custom')+'"><div></div><strong>'+esc(room.name||roomType(room.type).label)+'</strong><span>'+routines.length+' '+(routines.length===1?'routine':'routines')+'</span></div>'+((structure||supplies)?'<div class="cv2-inline-actions">'+(structure?'<button type="button" class="cv2-secondary" data-cv2-room-edit="'+esc(room.id)+'">Kamer bewerken</button>':'')+(supplies?'<button type="button" class="cv2-secondary" data-cv2-supplies-room="'+esc(room.id)+'">Benodigdheden</button>':'')+'</div>':'')+'<div class="cv2-sheet-section"><div class="cv2-section-head"><div><span>Vaste taken</span><h3>Routines</h3></div>'+(structure?'<button type="button" class="cv2-mini-primary" data-cv2-routine-new="'+esc(room.id)+'">＋ Routine</button>':'')+'</div>'+(routines.length?'<div class="cv2-routines">'+routines.map(routine=>'<button type="button" '+(structure?'data-cv2-routine-edit="'+esc(routine.id)+'"':'disabled')+'><span><strong>'+esc(routine.title)+'</strong><small>Elke '+Number(routine.intervalDays||7)+' dagen · '+formatMinutes(routine.estimatedMinutes)+'</small></span>'+(structure?'<b>›</b>':'')+'</button>').join('')+'</div>':'<div class="cv2-empty compact"><span>Nog geen routines.</span></div>')+'</div>'+(structure?'<div class="cv2-sheet-section"><div class="cv2-section-head"><div><span>Snel toevoegen</span><h3>Suggesties</h3></div></div><div class="cv2-chips">'+presets.slice(0,5).map((preset,index)=>'<button type="button" data-cv2-preset="'+index+'" data-room-id="'+esc(room.id)+'">＋ '+esc(preset.title)+'</button>').join('')+'</div></div>':'');}
+function renderRoomForm(elements,payload){var room=payload.roomId?roomById(payload.roomId):null,type=room&&room.type||'living-room';elements.title.innerHTML='<span>'+(room?'Bewerken':'Nieuw')+'</span><strong>'+(room?'Kamer':'Nieuwe kamer')+'</strong>';elements.body.innerHTML='<form class="cv2-form" data-cv2-room-form data-room-id="'+esc(room&&room.id||'')+'"><label><span>Naam</span><input name="name" maxlength="60" value="'+esc(room&&room.name||'')+'" placeholder="Bijv. Badkamer boven"></label><label><span>Type</span><select name="type">'+ROOM_TYPES.map(row=>'<option value="'+esc(row.id)+'"'+(row.id===type?' selected':'')+'>'+esc(row.icon+' '+row.label)+'</option>').join('')+'</select></label><button class="cv2-primary" type="submit">Opslaan</button>'+(room&&can(CAP.DESTRUCTIVE)?'<button class="cv2-danger" type="button" data-cv2-room-delete="'+esc(room.id)+'">Kamer verwijderen</button>':'')+'</form>';}
+function renderRoutineForm(elements,payload){var routine=payload.routineId?currentRoutine(payload.routineId):null,room=roomById(payload.roomId||routine&&routine.roomId);if(!room){closeSheet();return;}elements.title.innerHTML='<span>'+esc(room.name||'Kamer')+'</span><strong>'+(routine?'Routine bewerken':'Nieuwe routine')+'</strong>';elements.body.innerHTML='<form class="cv2-form" data-cv2-routine-form data-routine-id="'+esc(routine&&routine.id||'')+'" data-room-id="'+esc(room.id)+'"><label><span>Wat moet er gebeuren?</span><input name="title" maxlength="80" value="'+esc(routine&&routine.title||'')+'" required></label><div class="cv2-form-grid"><label><span>Elke … dagen</span><input name="intervalDays" type="number" min="1" max="365" value="'+Number(routine&&routine.intervalDays||7)+'"></label><label><span>Tijd (min)</span><input name="estimatedMinutes" type="number" min="1" max="480" value="'+Number(routine&&routine.estimatedMinutes||15)+'"></label></div><label><span>Prioriteit</span><select name="priority"><option value="BASIC"'+(routine&&routine.priority==='BASIC'?' selected':'')+'>Basis</option><option value="NORMAL"'+(!routine||routine.priority==='NORMAL'?' selected':'')+'>Normaal</option><option value="EXTRA"'+(routine&&routine.priority==='EXTRA'?' selected':'')+'>Extra</option></select></label><button class="cv2-primary" type="submit">Opslaan</button>'+(routine&&can(CAP.DESTRUCTIVE)?'<button class="cv2-danger" type="button" data-cv2-routine-delete="'+esc(routine.id)+'">Routine verwijderen</button>':'')+'</form>';}
+function renderSupplies(elements,payload){var occurrence=payload.occurrenceId?occurrenceById(payload.occurrenceId):null,room=roomById(payload.roomId||occurrence&&occurrence.roomId),rows=occurrence?supplyRowsForOccurrence(occurrence):roomSupplyRows(room&&room.id),editable=can(CAP.SUPPLIES);elements.title.innerHTML='<span>Benodigdheden</span><strong>'+esc(room&&room.name||'Kamer')+'</strong>';elements.body.innerHTML='<div class="cv2-supplies">'+(rows.length?rows.map(row=>'<div class="cv2-supply"><span>'+esc(row.name)+'</span>'+(editable?'<select data-cv2-supply-status="'+esc(row.id)+'"><option value="IN_STOCK"'+(row.status==='IN_STOCK'?' selected':'')+'>Op voorraad</option><option value="LOW"'+(row.status==='LOW'?' selected':'')+'>Bijna op</option><option value="OUT"'+(row.status==='OUT'?' selected':'')+'>Op</option></select>':'<small>'+esc(SUPPLY_STATUS[row.status]||row.status)+'</small>')+'</div>').join(''):'<div class="cv2-empty compact"><span>Nog geen benodigdheden gekoppeld.</span></div>')+'</div>'+(editable?'<form class="cv2-form cv2-supply-add" data-cv2-supply-form data-room-id="'+esc(room&&room.id||'')+'"><label><span>Benodigd item toevoegen</span><input name="name" placeholder="Bijv. Allesreiniger" required></label><button type="submit" class="cv2-secondary">Toevoegen</button></form>':'');}
+function updateTurnProgressDom(){var sheet=document.getElementById('cleaning-v2-sheet'),write=ui.turnWrite;if(!sheet||!write)return;var done=write.checklist.filter(item=>item&&item.completed===true).length,total=write.checklist.length,count=sheet.querySelector('[data-cv2-done-count]'),bar=sheet.querySelector('[data-cv2-sheet-progress]');if(count)count.textContent=String(done);if(bar)bar.style.width=(total?Math.round(done/total*100):0)+'%';}
+function setSaveState(message,error){var node=document.querySelector('#cleaning-v2-sheet [data-cv2-save-state]');if(node){node.textContent=message||'';node.classList.toggle('is-error',!!error);}}
+function queueTurnWrite(){var write=ui.turnWrite;if(!write)return;write.version++;if(write.timer)clearTimeout(write.timer);write.timer=setTimeout(flushTurnWrite,120);setSaveState('Opslaan…',false);}
+function flushTurnWrite(){var write=ui.turnWrite;if(!write)return Promise.resolve();if(write.timer){clearTimeout(write.timer);write.timer=null;}if(write.inFlight)return write.promise||Promise.resolve();if(write.savedVersion===write.version)return Promise.resolve();var targetVersion=write.version,payload=clone(write.checklist);write.inFlight=true;write.promise=writeOccurrenceChecklist(write.occurrenceId,payload).then(function(){write.savedVersion=targetVersion;write.inFlight=false;setSaveState('Opgeslagen ✓',false);if(write.version!==write.savedVersion)return flushTurnWrite();}).catch(function(error){write.inFlight=false;setSaveState(text(error&&error.message)||'Opslaan mislukt',true);throw error;});return write.promise;}
 
-  const repository = window.CleaningHouseholdRepository;
-  if(!repository || typeof repository.createRoutineItem !== 'function'){
-    state.roomNotice = 'De schoonmaakrepository is nog niet beschikbaar.';
-    renderCleaningScreen(root);
-    return;
-  }
+function onRootClick(event){var target=event.target&&event.target.closest?event.target.closest('button'):null;if(!target)return;if(target.dataset.cv2Tab){ui.tab=target.dataset.cv2Tab;scheduleRender();return;}if(target.dataset.cv2MemberFilter!==undefined){ui.memberFilterUid=text(target.dataset.cv2MemberFilter);scheduleRender();return;}if(target.dataset.cv2Turn){openSheet('turn',{occurrenceId:target.dataset.cv2Turn});return;}if(target.hasAttribute('data-cv2-room-new')){openSheet('room-form',{});return;}if(target.dataset.cv2Room){openSheet('room',{roomId:target.dataset.cv2Room});return;}if(target.hasAttribute('data-cv2-plan-generate')){if(ui.busy)return;ui.busy=true;scheduleRender();generateWeekPlan().then(result=>toast(result&&result.empty?'Er zijn geen routines die deze week gepland hoeven te worden.':'Weekplan staat klaar ✓')).catch(error=>toast(error&&error.message==='CLEANING_PLAN_ALREADY_ACTIVE'?'Er staat al een actief weekplan.':text(error&&error.message)||'Weekplan kon niet worden gemaakt.')).finally(()=>{ui.busy=false;scheduleRender();});}}
+function onSheetClick(event){var target=event.target&&event.target.closest?event.target.closest('button'):null;if(!target)return;if(target.hasAttribute('data-cv2-close')){closeSheet();return;}if(target.dataset.cv2Check!==undefined){var write=ui.turnWrite,index=Number(target.dataset.cv2Check);if(!write||!Number.isInteger(index)||!write.checklist[index])return;write.checklist[index]=Object.assign({},write.checklist[index],{completed:!write.checklist[index].completed});target.classList.toggle('is-done',write.checklist[index].completed===true);updateTurnProgressDom();queueTurnWrite();return;}if(target.dataset.cv2CompleteAll){var writeAll=ui.turnWrite;if(!writeAll)return;writeAll.checklist=writeAll.checklist.map(item=>Object.assign({},item,{completed:true}));document.querySelectorAll('#cleaning-v2-sheet [data-cv2-check]').forEach(button=>button.classList.add('is-done'));updateTurnProgressDom();queueTurnWrite();return;}if(target.dataset.cv2Supplies){flushTurnWrite().catch(function(){});openSheet('supplies',{occurrenceId:target.dataset.cv2Supplies});return;}if(target.dataset.cv2SuppliesRoom){openSheet('supplies',{roomId:target.dataset.cv2SuppliesRoom});return;}if(target.dataset.cv2RoomEdit){openSheet('room-form',{roomId:target.dataset.cv2RoomEdit});return;}if(target.dataset.cv2RoutineNew){openSheet('routine-form',{roomId:target.dataset.cv2RoutineNew});return;}if(target.dataset.cv2RoutineEdit){var routine=currentRoutine(target.dataset.cv2RoutineEdit);openSheet('routine-form',{routineId:target.dataset.cv2RoutineEdit,roomId:routine&&routine.roomId});return;}if(target.dataset.cv2Preset!==undefined){var room=roomById(target.dataset.roomId),preset=(PRESETS[room&&room.type]||PRESETS.custom)[Number(target.dataset.cv2Preset)];if(!room||!preset)return;target.disabled=true;createRoutine({roomId:room.id,title:preset.title,intervalDays:preset.days,estimatedMinutes:preset.min,priority:'NORMAL'}).then(()=>{toast('Routine toegevoegd ✓');openSheet('room',{roomId:room.id});}).catch(error=>{target.disabled=false;toast(text(error&&error.message)||'Routine kon niet worden toegevoegd.');});return;}if(target.dataset.cv2RoomDelete){if(!confirm('Deze kamer verwijderen? Historie blijft bewaard.'))return;removeRoom(target.dataset.cv2RoomDelete).then(()=>{toast('Kamer verwijderd');closeSheet();}).catch(error=>toast(text(error&&error.message)||'Verwijderen mislukt'));return;}if(target.dataset.cv2RoutineDelete){if(!confirm('Deze routine verwijderen?'))return;var row=currentRoutine(target.dataset.cv2RoutineDelete),roomId=row&&row.roomId;removeRoutine(target.dataset.cv2RoutineDelete).then(()=>{toast('Routine verwijderd');openSheet('room',{roomId:roomId});}).catch(error=>toast(text(error&&error.message)||'Verwijderen mislukt'));}}
+function formValues(form){var data=new FormData(form),out={};data.forEach((value,key)=>{out[key]=value;});return out;}
+function disableForm(form,value){Array.from(form.elements||[]).forEach(element=>{element.disabled=!!value;});}
+function onSheetSubmit(event){event.preventDefault();var form=event.target;if(form.matches('[data-cv2-room-form]')){var roomValues=formValues(form),roomId=text(form.dataset.roomId),roomAction=roomId?updateRoom(roomId,roomValues):createRoom(roomValues);disableForm(form,true);roomAction.then(row=>{toast('Kamer opgeslagen ✓');openSheet('room',{roomId:roomId||row.id});}).catch(error=>{disableForm(form,false);toast(text(error&&error.message)||'Kamer kon niet worden opgeslagen.');});return;}if(form.matches('[data-cv2-routine-form]')){var routineValues=formValues(form),routineId=text(form.dataset.routineId),targetRoomId=text(form.dataset.roomId),routineAction=routineId?updateRoutine(routineId,routineValues):createRoutine(Object.assign({},routineValues,{roomId:targetRoomId}));disableForm(form,true);routineAction.then(()=>{toast('Routine opgeslagen ✓');openSheet('room',{roomId:targetRoomId});}).catch(error=>{disableForm(form,false);toast(text(error&&error.message)||'Routine kon niet worden opgeslagen.');});return;}if(form.matches('[data-cv2-supply-form]')){var supplyValues=formValues(form),supplyRoomId=text(form.dataset.roomId);disableForm(form,true);addRoomSupply(supplyRoomId,supplyValues.name).then(()=>{toast('Benodigd item toegevoegd ✓');openSheet('supplies',{roomId:supplyRoomId});}).catch(error=>{disableForm(form,false);toast(error&&error.message==='CLEANING_SUPPLY_ROUTINE_REQUIRED'?'Voeg eerst een routine toe aan deze kamer.':text(error&&error.message)||'Kon item niet toevoegen.');});}}
+function onSheetChange(event){var target=event.target;if(target&&target.dataset&&target.dataset.cv2SupplyStatus)setInventoryStatus(target.dataset.cv2SupplyStatus,target.value).catch(error=>toast(text(error&&error.message)||'Voorraadstatus kon niet worden opgeslagen.'));}
 
-  state.templatePending = {roomId:room.id,key:template.key};
-  state.roomNotice = '';
-  renderCleaningScreen(root);
-
-  repository.createRoutineItem({
-    roomId: room.id,
-    title: template.title,
-    intervalDays: template.intervalDays,
-    estimatedMinutes: template.estimatedMinutes,
-    priority: template.priority,
-    templateKey: template.key
-  }).then(() => {
-    state.roomNotice = 'Suggestie toegevoegd ✓';
-    renderCleaningScreen(root);
-    window.setTimeout(() => {
-      if(state.roomNotice){
-        state.roomNotice = '';
-        renderIfActive();
-      }
-    },2500);
-  }).catch((error) => {
-    state.templatePending = null;
-    state.roomNotice = readableRoutineError(error);
-    renderCleaningScreen(root);
-  });
-}
-
-function removeRoom(root){
-  if(state.roomForm.mode !== 'edit' || state.roomForm.deleting || state.roomForm.submitting) return;
-  const repository = window.CleaningHouseholdRepository;
-  if(!repository || typeof repository.removeRoom !== 'function'){
-    state.roomForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
-    renderCleaningScreen(root);
-    return;
-  }
-  const roomId = state.roomForm.roomId;
-  state.roomForm.deleting = true;
-  state.roomForm.error = '';
-  renderCleaningScreen(root);
-
-  repository.removeRoom(roomId).then(() => {
-    resetRoomForm();
-    state.roomNotice = 'Kamer verwijderd ✓';
-    renderCleaningScreen(root);
-    window.setTimeout(() => {
-      if(state.roomNotice){
-        state.roomNotice = '';
-        renderIfActive();
-      }
-    }, 2500);
-  }).catch((error) => {
-    state.roomForm.deleting = false;
-    state.roomForm.error = readableRoomError(error);
-    renderCleaningScreen(root);
-  });
-}
-
-function removeRoutine(root){
-  if(state.routineForm.mode !== 'edit' || state.routineForm.deleting || state.routineForm.submitting) return;
-  const repository = window.CleaningHouseholdRepository;
-  if(!repository || typeof repository.removeRoutineItem !== 'function'){
-    state.routineForm.error = 'De schoonmaakrepository is nog niet beschikbaar.';
-    renderCleaningScreen(root);
-    return;
-  }
-  const routineId = state.routineForm.routineId;
-  state.routineForm.deleting = true;
-  state.routineForm.error = '';
-  renderCleaningScreen(root);
-
-  repository.removeRoutineItem(routineId).then(() => {
-    resetRoutineForm();
-    state.roomNotice = 'Routine verwijderd ✓';
-    renderCleaningScreen(root);
-    window.setTimeout(() => {
-      if(state.roomNotice){
-        state.roomNotice = '';
-        renderIfActive();
-      }
-    }, 2500);
-  }).catch((error) => {
-    state.routineForm.deleting = false;
-    state.routineForm.error = readableRoutineError(error);
-    renderCleaningScreen(root);
-  });
-}
-
-function bind(root){
-  root.querySelectorAll('[data-cleaning-tab]').forEach((button) => {
-    button.addEventListener('click', () => {
-      state.primaryTab = button.getAttribute('data-cleaning-tab') || 'overview';
-      renderCleaningScreen(root);
-    });
-  });
-
-  root.querySelectorAll('[data-cleaning-room-view]').forEach((button) => {
-    button.addEventListener('click', () => {
-      state.roomView = button.getAttribute('data-cleaning-room-view') || 'rooms';
-      renderCleaningScreen(root);
-    });
-  });
-
-  const addButton = root.querySelector('[data-cleaning-room-add]');
-  if(addButton) addButton.addEventListener('click', () => openCreateRoom(root));
-
-  const generateButton = root.querySelector('[data-cleaning-plan-generate]');
-  if(generateButton) generateButton.addEventListener('click', () => generateWeekPlan(root));
-
-  root.querySelectorAll('[data-cleaning-plan-member-filter]').forEach((button) => {
-    const toggle = () => {
-      const uid = String(button.getAttribute('data-cleaning-plan-member-filter') || '');
-      if(!uid) return;
-      state.planning.memberFilterUid = state.planning.memberFilterUid === uid ? '' : uid;
-      renderCleaningScreen(root);
-    };
-    button.addEventListener('click', toggle);
-    button.addEventListener('keydown', (event) => {
-      if(event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      toggle();
-    });
-  });
-
-  root.querySelectorAll('[data-cleaning-room-edit]').forEach((button) => {
-    button.addEventListener('click', () => openEditRoom(root,button.getAttribute('data-cleaning-room-edit')));
-  });
-
-  root.querySelectorAll('[data-cleaning-routine-add]').forEach((button) => {
-    button.addEventListener('click', () => openRoutineForm(root,button.getAttribute('data-cleaning-routine-add')));
-  });
-
-  root.querySelectorAll('[data-cleaning-routine-edit]').forEach((button) => {
-    button.addEventListener('click', () => openEditRoutine(root,button.getAttribute('data-cleaning-routine-edit')));
-  });
-
-  root.querySelectorAll('[data-cleaning-template-add]').forEach((button) => {
-    button.addEventListener('click', () => addRoutineTemplate(root,button.getAttribute('data-cleaning-template-add'),button.getAttribute('data-cleaning-template-key')));
-  });
-
-  root.querySelectorAll('[data-cleaning-room-cancel]').forEach((button) => {
-    button.addEventListener('click', () => {
-      if(state.roomForm.submitting || state.roomForm.deleting) return;
-      resetRoomForm();
-      renderCleaningScreen(root);
-    });
-  });
-
-  root.querySelectorAll('[data-cleaning-routine-cancel]').forEach((button) => {
-    button.addEventListener('click', () => {
-      if(state.routineForm.submitting || state.routineForm.deleting) return;
-      resetRoutineForm();
-      renderCleaningScreen(root);
-    });
-  });
-
-  const deleteOpen = root.querySelector('[data-cleaning-room-delete-open]');
-  if(deleteOpen) deleteOpen.addEventListener('click', () => {
-    state.roomForm.deleteConfirm = true;
-    state.roomForm.error = '';
-    renderCleaningScreen(root);
-  });
-
-  const deleteCancel = root.querySelector('[data-cleaning-room-delete-cancel]');
-  if(deleteCancel) deleteCancel.addEventListener('click', () => {
-    if(state.roomForm.deleting) return;
-    state.roomForm.deleteConfirm = false;
-    renderCleaningScreen(root);
-  });
-
-  const deleteConfirm = root.querySelector('[data-cleaning-room-delete-confirm]');
-  if(deleteConfirm) deleteConfirm.addEventListener('click', () => removeRoom(root));
-
-  const routineDeleteOpen = root.querySelector('[data-cleaning-routine-delete-open]');
-  if(routineDeleteOpen) routineDeleteOpen.addEventListener('click', () => {
-    state.routineForm.deleteConfirm = true;
-    state.routineForm.error = '';
-    renderCleaningScreen(root);
-  });
-
-  const routineDeleteCancel = root.querySelector('[data-cleaning-routine-delete-cancel]');
-  if(routineDeleteCancel) routineDeleteCancel.addEventListener('click', () => {
-    if(state.routineForm.deleting) return;
-    state.routineForm.deleteConfirm = false;
-    renderCleaningScreen(root);
-  });
-
-  const routineDeleteConfirm = root.querySelector('[data-cleaning-routine-delete-confirm]');
-  if(routineDeleteConfirm) routineDeleteConfirm.addEventListener('click', () => removeRoutine(root));
-
-  const nameInput = root.querySelector('[data-cleaning-room-name]');
-  if(nameInput) nameInput.addEventListener('input', () => {
-    state.roomForm.name = nameInput.value;
-    if(state.roomForm.error) state.roomForm.error = '';
-  });
-
-  const typeSelect = root.querySelector('[data-cleaning-room-type]');
-  if(typeSelect) typeSelect.addEventListener('change', () => {
-    state.roomForm.type = typeSelect.value || 'custom';
-  });
-
-  const routineTitle = root.querySelector('[data-cleaning-routine-title]');
-  if(routineTitle) routineTitle.addEventListener('input', () => {
-    state.routineForm.title = routineTitle.value;
-    if(state.routineForm.error) state.routineForm.error = '';
-  });
-
-  const routineInterval = root.querySelector('[data-cleaning-routine-interval]');
-  if(routineInterval) routineInterval.addEventListener('input', () => {
-    state.routineForm.intervalDays = routineInterval.value;
-  });
-
-  const routineMinutes = root.querySelector('[data-cleaning-routine-minutes]');
-  if(routineMinutes) routineMinutes.addEventListener('input', () => {
-    state.routineForm.estimatedMinutes = routineMinutes.value;
-  });
-
-  const routinePriority = root.querySelector('[data-cleaning-routine-priority]');
-  if(routinePriority) routinePriority.addEventListener('change', () => {
-    state.routineForm.priority = routinePriority.value || 'NORMAL';
-  });
-
-  const roomForm = root.querySelector('[data-cleaning-room-form]');
-  if(roomForm) roomForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    submitRoom(root);
-  });
-
-  const routineForm = root.querySelector('[data-cleaning-routine-form]');
-  if(routineForm) routineForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    submitRoutine(root);
-  });
-}
-
-export function renderCleaningScreen(target){
-  const root = target || document.getElementById('cleaning-content');
-  if(!root) return;
-  mountedRoot = root;
-  ensureRepositorySubscription();
-  ensureMemberSubscription();
-
-  const trace = window.CleaningFreezeTrace;
-  if(trace)trace.mark('cleaningscreen-render');
-
-  const build = () => {
-    root.innerHTML = '<div class="cleaning-shell">'
-      +'<header class="cleaning-intro">'
-        +'<p class="cleaning-kicker">Huishouden</p>'
-        +'<h1 class="cleaning-title">Schoonmaken</h1>'
-        +'<p class="cleaning-subtitle">Kamers, routines en weekplanning op één plek.</p>'
-      +'</header>'
-      +'<nav class="cleaning-tabs" aria-label="Schoonmaken onderdelen">'
-        +tabButton('overview','Overzicht')
-        +tabButton('planning','Planning')
-        +tabButton('rooms','Kamers')
-      +'</nav>'
-      +'<div class="cleaning-panel">'+panelContent()+'</div>'
-    +'</div>';
-
-    bind(root);
-  };
-
-  if(trace) trace.time('cleaningscreen-render-duration', build);
-  else build();
-}
+export function renderCleaningScreen(root){if(!root)return;ensureBound(root);renderRoot();}
+export function stopCleaningScreen(){if(ui.sheet)closeSheet();if(ui.repoUnsubscribe){ui.repoUnsubscribe();ui.repoUnsubscribe=null;}repoStop();ui.renderQueued=false;ui.dirty=false;}
+export const CLEANING_V2_VERSION=VERSION;
