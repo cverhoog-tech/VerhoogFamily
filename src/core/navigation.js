@@ -222,6 +222,15 @@ function renderCleaningModule(){
   });
 }
 
+function stopCleaningModule(){
+  if(!_cleaningModulePromise)return;
+  _cleaningModulePromise.then(function(mod){
+    if(mod&&typeof mod.stopCleaningScreen==='function')mod.stopCleaningScreen();
+  }).catch(function(err){
+    console.warn('[Cleaning] runtime kon niet netjes stoppen:',err);
+  });
+}
+
 function showScreen(id) {
   if(id === _currentScreen && !_navBusy) {
     _renderScreen(id);
@@ -232,10 +241,13 @@ function showScreen(id) {
   _navBusy = true;
   _pendingScreen = null;
 
-  var prev = document.getElementById('screen-'+_currentScreen);
+  var previousScreenId = _currentScreen;
+  var prev = document.getElementById('screen-'+previousScreenId);
   if(id==='cleaning')ensureCleaningScreen();
   var next = document.getElementById('screen-'+id);
   if(!next) { _navBusy = false; return; }
+
+  if(previousScreenId==='cleaning'&&id!=='cleaning')stopCleaningModule();
 
   document.getElementById('hdr-title').textContent = screenTitles[id]||'FamilieApp';
   closeMore();
