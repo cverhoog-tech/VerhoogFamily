@@ -1,12 +1,16 @@
 'use strict';
 // ============================================================
-// ACTION INBOX BOOTSTRAP v1.1.0
+// ACTION INBOX BOOTSTRAP v1.2.0
 // The Action Inbox needs read access to the Cleaning canonical repository
 // even when the user has never opened the Schoonmaken tab (that screen's
-// own scripts load lazily on first visit, see navigation.js
-// ensureCleaningScreen()). This loader brings in exactly the read-side
-// Cleaning modules the Inbox depends on, using the same script-injection
-// technique already used by calendar.js's bootstrap chain.
+// own modules load lazily on first visit, see navigation.js).
+//
+// IMPORTANT: Cleaning dependencies are loaded with dynamic import() using the
+// exact same versioned URLs as the Cleaning ES-module graph. Loading these files
+// as classic <script> tags as well as ES modules creates two browser execution
+// identities for the same source and therefore two independent top-level
+// closures/listener-registration opportunities. One canonical module identity
+// is required here.
 //
 // CleaningPermissions loads first so the final public Cleaning mutation APIs
 // are capability-guarded even when Action Inbox eager-loads Cleaning before
@@ -16,18 +20,26 @@
 (function(){
   if(window.ActionInboxBootstrap)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var readyCallbacks=[];
   var isReady=false;
+  var startPromise=null;
 
-  function load(src,done){
-    var existing=document.querySelector('script[data-action-inbox-boot="'+src+'"]');
-    if(existing){if(done)done();return;}
-    var s=document.createElement('script');
-    s.src=src;s.async=false;s.setAttribute('data-action-inbox-boot',src);
-    s.onload=function(){if(done)done();};
-    s.onerror=function(){try{console.error('[ActionInboxBootstrap] failed to load',src);}catch(e){}if(done)done();};
-    document.head.appendChild(s);
+  var MODULES=[
+    '/src/modules/cleaning/cleaningPermissions.js?v=1',
+    '/src/modules/cleaning/cleaningHouseholdRepository.js?v=7',
+    '/src/modules/cleaning/cleaningHelpRequestUi.js?v=1',
+    '/src/modules/cleaning/cleaningRoutineExperience.js?v=3'
+  ];
+
+  function loadModule(src){
+    return import(src).catch(function(error){
+      try{console.error('[ActionInboxBootstrap] failed to import',src,error);}catch(e){}
+      // Preserve the previous bootstrap's best-effort behavior: continue the
+      // dependency chain so other Inbox adapters remain usable if one optional
+      // Cleaning presentation module cannot load.
+      return null;
+    });
   }
 
   function markReady(){
@@ -39,17 +51,22 @@
   }
 
   function start(){
-    if(window.CleaningPermissions&&window.CleaningHouseholdRepository&&window.CleaningHelpRequestUi&&window.CleaningRoutineExperience){markReady();return;}
-    load('src/modules/cleaning/cleaningPermissions.js?v=1',function(){
-      load('src/modules/cleaning/cleaningHouseholdRepository.js?v=7',function(){
-        load('src/modules/cleaning/cleaningHelpRequestUi.js?v=1',function(){
-          load('src/modules/cleaning/cleaningRoutineExperience.js?v=3',function(){
-            if(window.CleaningPermissions&&CleaningPermissions._installGuards)CleaningPermissions._installGuards();
-            markReady();
-          });
-        });
-      });
-    });
+    if(isReady)return Promise.resolve(true);
+    if(startPromise)return startPromise;
+    if(window.CleaningPermissions&&window.CleaningHouseholdRepository&&window.CleaningHelpRequestUi&&window.CleaningRoutineExperience){
+      markReady();
+      return Promise.resolve(true);
+    }
+
+    startPromise=MODULES.reduce(function(chain,src){
+      return chain.then(function(){return loadModule(src);});
+    },Promise.resolve()).then(function(){
+      if(window.CleaningPermissions&&window.CleaningPermissions._installGuards)window.CleaningPermissions._installGuards();
+      markReady();
+      return true;
+    }).finally(function(){startPromise=null;});
+
+    return startPromise;
   }
 
   function ready(callback){
