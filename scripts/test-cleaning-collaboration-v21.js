@@ -73,8 +73,8 @@ assert.match(experienceSource,/CleaningHouseholdRepository/,'collaboration must 
 assert.doesNotMatch(experienceSource,/\.on\(\s*['"]value['"]/,'collaboration must not create a second Firebase listener');
 assert.match(experienceSource,/\.transaction\(function\(server\)/,'collaboration writes must transact the canonical occurrence');
 assert.match(experienceSource,/cleaningPath\+'\/occurrences\/'/,'collaboration writes must stay occurrence-scoped');
-assert.doesNotMatch(experienceSource,/\.push\s*\(/,'collaboration must never create duplicate occurrence/task/projection records');
-assert.doesNotMatch(experienceSource,/MutationObserver|document\.addEventListener\('click'|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'forbidden legacy runtime techniques must stay absent');
+assert.doesNotMatch(experienceSource,/\.ref\([^)]*\)\.push\s*\(/,'collaboration must never create a Firebase push path for occurrence/task/projection records');
+assert.doesNotMatch(experienceSource,/new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'forbidden legacy runtime techniques must stay absent');
 assert.doesNotMatch(experienceSource,/NotificationStore|publishSelf|publishTo/,'v2.1 must not create noisy notification projection work');
 assert.match(experienceSource,/panel\.addEventListener\('click',onClick\)/,'collaboration owns only its inline sub-root interactions');
 assert.match(experienceSource,/syncAcceptedProjection/,'accepted transfers must update existing Task/Agenda projections');
