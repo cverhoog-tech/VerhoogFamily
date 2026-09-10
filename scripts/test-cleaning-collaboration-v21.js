@@ -83,7 +83,8 @@ assert.match(experienceSource,/openTurnForCounter/,'Action Inbox counter must ro
 assert.match(experienceSource,/syncAcceptedProjection/,'accepted transfers must update existing Task\/Agenda projections');
 assert.match(experienceSource,/state\.busy\.has\(occurrenceId\)/,'double tap guard must exist');
 assert.match(premiumSource,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'collaboration must remain lazy behind Cleaning navigation with a bumped cache key');
-assert.match(premiumSource,/version:'2\.1\.1'/,'premium shim should expose the contextual collaboration UX version');
+assert.match(premiumSource,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'V2.2 may extend the same Cleaning-only companion graph without moving V2.1');
+assert.match(premiumSource,/version:'2\.2\.0'/,'premium shim should expose the current Cleaning companion version');
 assert.match(premiumSource,/disabledForCleaningV2:true/,'legacy premium compatibility marker must remain inert');
 assert.doesNotMatch(premiumSource,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim itself must remain runtime-free');
 assert.match(registrySource,/type:'cleaning\.occurrence\.transfer'/,'Action Inbox must expose occurrence transfer decisions');
