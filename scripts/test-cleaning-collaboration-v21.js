@@ -102,6 +102,6 @@ assert.match(statusSource,/CODECANDIDATE GEREED/,'Cleaning current status must d
 assert.doesNotMatch(statusSource,/STEP 14 is FUNCTIONEEL AFGEROND EN REAL-DEVICE GEACCEPTEERD/,'stale pre-reset STEP 14 completion claim must not return');
 assert.match(architectureSource,/CleaningOccurrence is de concrete authority/,'architecture must keep CleaningOccurrence canonical');
 assert.match(architectureSource,/Third-person counter safety/,'architecture must document explicit third-person consent');
-assert.match(architectureSource,/geen tweede Firebase `value` listener/,'architecture must preserve the one-listener performance rule');
+assert.match(architectureSource,/CleaningV2Repository` heeft één actieve household-scoped Firebase `value` listener/,'architecture must preserve the one-listener performance rule');
 
 console.log('Cleaning V2.1 collaboration contracts: PASS');
