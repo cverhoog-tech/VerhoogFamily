@@ -4,212 +4,170 @@ Laatst bijgewerkt: **10-09-2026**
 Branch: `agent/household-rebuild-v2`  
 Roadmapstap: **STEP 14 — Cleaning v2**
 
-Dit document is de actuele compacte waarheid voor de actieve Cleaning-implementatie. Oudere versies van dit bestand beschreven de grote pre-performance-reset Cleaning-runtime en zijn alleen nog via git history bruikbaar als historische productreferentie.
+Dit document is de actuele compacte waarheid voor de actieve Cleaning-implementatie. Oudere versies die de grote pre-performance-reset runtime beschrijven zijn alleen historische productreferentie.
 
 ## 1. Geaccepteerde stabiele basis
 
-Cleaning V2.0 performance-first basis:
+Cleaning V2.0 performance-first basis:  
 `b4511561f0885023e5ca6649a1eecd8f4a611d6a`
 
-Real-device status: **GEACCEPTEERD OP IPHONE**. Product-owner reactie: “Top dit werkt perfect.”
-
-Deze basis is daarna naar main gepromoveerd. De huidige productie/main-baseline blijft:
+Real-device status: **GEACCEPTEERD OP IPHONE**. Deze basis is naar main gepromoveerd. Production/main blijft:
 `b7f233ebfe1fbb20ecdf426003f332528562ab0f`
 
 ## 2. Actieve Cleaning-v2 architectuur
 
-De actieve primaire runtime is `src/modules/cleaning/cleaningScreen.js` v2.0.0.
+De primaire runtime is `src/modules/cleaning/cleaningScreen.js` v2.0.0.
 
 Eigenschappen:
 - lazy geladen wanneer Cleaning wordt geopend;
-- één CleaningV2Repository listener op de household-scoped Cleaning-root;
-- listener/runtime teardown bij verlaten van Cleaning;
+- één household-scoped CleaningV2Repository Firebase `value` listener;
+- teardown bij verlaten van Cleaning;
 - `CleaningOccurrence` is canonical concrete execution state;
-- één primaire screen owner en één primaire Cleaning-detail-sheet owner;
-- snelle optimistic checkbox-updates met coalescing;
+- één primaire screen owner en één Cleaning-detail-sheet owner;
+- snelle optimistic checklistupdates met coalescing;
 - completion logs in Cleaning;
 - Tasks en Calendar/Agenda zijn projecties;
 - geen actieve generieke TaskDetailPopup voor Cleaning;
-- geen actieve legacy execution/projection cascade;
+- geen legacy execution/projection cascade;
 - geen MutationObserver-stack.
 
-Functioneel aanwezig in V2.0:
-- kamers aanmaken/bewerken/verwijderen;
-- routines aanmaken/bewerken/verwijderen;
-- presets;
-- supplies/voorraad;
-- weekplanning;
-- persoonsfilter;
-- lichte Cleaning detail-sheet;
-- checklist/complete-all;
-- completion logs;
-- Task/Agenda projecties;
-- household roles/capabilities.
+V2.0 bevat kamers/routines CRUD, presets, supplies/voorraad, weekplanning, persoonsfilter, de lichte detail-sheet, checklist/complete-all, completion logs, Task/Agenda-projecties en household capabilities.
 
 ## 3. Huidige milestone — Cleaning V2.1
 
 Naam: **Samenwerking / overdracht / hulp**  
 Status: **CODECANDIDATE GEREED, CI GROEN, REAL-DEVICE ACCEPTATIE NOG OPEN**.
 
-Laatste functionele/testcheckpoint vóór deze documentatie-update:
-`1460b9de4405364a9bea54502620d76347b41c5e`
+Laatste functionele/testcheckpoint:
+`7e34cb60b78cf45664fdb82202e9673bb2ae9672`
 
-### Gebouwd
+GitHub Actions:
+- workflow: `Household Rebuild Contract Tests`;
+- run: `34534350216`;
+- volledige `scripts/test-*.js` suite: **PASS**;
+- conclusion: **SUCCESS**.
 
-#### Overdracht
+### Product-UX na correctie 10-09-2026
+
+Samenwerken is **geen apart menu of blok meer onder Kamers**.
+
+De entrypoint is nu de concrete schoonmaakbeurt:
+- gebruiker opent een beurt via Vandaag of Weekplan;
+- in de bestaande Cleaning V2 beurt-detail-sheet staat een compacte sectie `Samenwerken`;
+- daar staan, afhankelijk van state/rechten, `Overdragen`, `Hulp vragen`, actuele verzoekstatus en `Intrekken`;
+- ontvangen beslissingen blijven in de Action Inbox;
+- `Ander voorstel` vanuit de Action Inbox navigeert terug naar de concrete occurrence en opent het tegenvoorstel in diezelfde beurt-detailflow;
+- de bestaande Cleaning V2 detail-sheet blijft de enige popup owner.
+
+Er wordt dus geen tweede Cleaning-popup of los samenwerkingsoverzicht geïntroduceerd.
+
+### Overdracht
 - Assigned member/manager kan een concrete open occurrence overdragen aan een actief household member.
 - Verzoek verandert de assignee nog niet.
-- Ontvanger krijgt een Action Inbox-beslissing.
-- Ontvanger kan accepteren of weigeren.
+- Ontvanger accepteert/weigert via Action Inbox.
 - Acceptatie wijzigt dezelfde CleaningOccurrence.
 - Weigering laat de oorspronkelijke assignee staan.
 - Aanvrager kan een PENDING of COUNTER_PROPOSED overdracht intrekken.
 
-#### Tegenvoorstel
+### Tegenvoorstel
 - Ontvanger kan vanuit Action Inbox `Ander voorstel` kiezen.
-- Counter bevat persoon, datum en optionele tijd.
-- Oorspronkelijke aanvrager accepteert/weigert het tegenvoorstel in Action Inbox.
-- Als de voorgestelde persoon de counter-auteur of oorspronkelijke aanvrager is, kan acceptatie direct de bestaande occurrence aanpassen.
-- Als een derde gezinslid wordt voorgesteld, wordt die persoon **niet** stil toegewezen: de state-machine maakt een nieuw expliciet PENDING overdrachtsverzoek aan die derde persoon.
+- Counter ondersteunt persoon, datum en optionele tijd.
+- Oorspronkelijke aanvrager accepteert/weigert via Action Inbox.
+- Een voorgestelde derde persoon wordt nooit stil toegewezen: na acceptatie ontstaat een nieuw expliciet PENDING verzoek aan die derde persoon.
 
-#### Hulp
+### Hulp
 - Assigned member/manager kan hulp vragen aan een actief household member.
 - Ontvanger accepteert/weigert via Action Inbox.
 - Aanvrager kan PENDING hulp intrekken.
-- Hulpacceptatie noteert de helper op `helpRequest`, maar voegt de helper niet toe aan `assignmentUids`.
-- Er is dus bewust nog geen multi-person assignment-model.
+- Hulpacceptatie noteert de helper op `helpRequest`, maar wijzigt `assignmentUids` niet.
+- Er is dus bewust geen impliciet multi-person assignment-model.
 
 ### Canonical state
 
-Nieuwe collaboration-state blijft op de bestaande occurrence:
+Collaboration-state blijft op de bestaande occurrence:
 - `CleaningOccurrence.transferRequest`
 - `CleaningOccurrence.helpRequest`
 
-Er is geen aparte Cleaning request-database en geen tweede canonical writer/store.
+Er is geen aparte requestdatabase of tweede Cleaning authority.
 
 ### Action Inbox op verse sessie
 
-De Inbox hoeft Cleaning niet tijdens app-startup te laden.
-
-Wanneer een gebruiker de Action Inbox opent terwijl Cleaning in die sessie nog niet actief is:
-- `cleaningScreen.js` wordt pas dan dynamisch/lazy geïmporteerd;
+Cleaning blijft buiten app-startup. Als een ontvanger direct Action Inbox opent terwijl Cleaning nog niet actief was:
+- `cleaningScreen.js` wordt pas on-demand lazy geïmporteerd;
 - dezelfde `CleaningHouseholdRepository` wordt tijdelijk gestart;
-- de behouden oude snapshot wordt genegeerd totdat een verse household-snapshot binnen is;
-- Action Inbox wordt daarna uit de canonical occurrence-state ververst;
-- de tijdelijke repository/listener wordt direct weer gestopt.
-
-Hierdoor kan een ontvanger een nieuw Cleaning-verzoek op een verse sessie in de Inbox zien zonder permanente Cleaning-startupruntime of tweede langlevende Firebase-listener.
+- er wordt gewacht op een verse household snapshot;
+- Action Inbox wordt uit canonical occurrence-state ververst;
+- de tijdelijke repositorybinding wordt direct weer gestopt.
 
 ### Projecties
 
-Alleen een geaccepteerde assignment-/schedulewijziging vraagt projection sync.
-De V2.1 writer werkt de reeds bestaande Task/Calendar records bij met een bounded family-root update en maakt geen nieuwe occurrence/task/event via push aan.
+Alleen accepted assignment/schedulewijzigingen vragen projection sync. Bestaande Task/Calendar-projecties worden bounded bijgewerkt; V2.1 maakt geen nieuwe occurrence/task/event via `push()`.
 
 ### Performance-keuzes
 
 V2.1:
-- hergebruikt `CleaningHouseholdRepository` / CleaningV2Repository;
-- maakt geen tweede langlevende Firebase `value` listener;
-- wordt alleen via de lazy Cleaning-route geladen, of éénmalig on-demand wanneer de Action Inbox zelf wordt geopend;
+- hergebruikt dezelfde Cleaning repository/snapshot;
+- maakt geen tweede langlevende Firebase listener;
 - voegt geen Cleaning startupwerk toe;
-- gebruikt een eigen klein inline samenwerking-subroot, geen tweede popup;
+- gebruikt de bestaande V2 beurt-detail-sheet in plaats van een extra popup/menu;
 - gebruikt geen MutationObserver;
 - heeft geen document-wide Cleaning click owner;
 - maakt geen notificatieprojector/reminder-loop;
-- gebruikt Action Inbox als actionable beslissingsoppervlak;
+- gebruikt Action Inbox voor actionable decisions;
 - bouwt weekplan approval niet terug.
 
 ### Idempotency
+- identiek PENDING transferrequest naar dezelfde persoon is idempotent;
+- identieke PENDING hulpvraag is idempotent;
+- occurrence-level busy/double-tap guard;
+- state-transitions valideren actuele requeststatus en recipient;
+- derde-persoons counter wijzigt assignment pas na expliciet akkoord van die derde persoon.
 
-- dezelfde PENDING transfer naar dezelfde persoon is idempotent;
-- dezelfde PENDING hulpvraag naar dezelfde persoon is idempotent;
-- UI heeft occurrence-level busy/double-tap guard;
-- accept/decline/counter transitions valideren actuele requeststatus en ontvanger;
-- derde-persoons counter creëert pas na expliciete acceptatie de echte assignmentwijziging.
+## 4. Testdekking
 
-## 4. Teststatus
-
-Op functioneel/testcheckpoint `1460b9de4405364a9bea54502620d76347b41c5e`:
-- volledige repositorysuite `scripts/test-*.js`: **PASS**;
-- GitHub Actions `Household Rebuild Contract Tests` run `34519907566`: **SUCCESS**;
-- Vercel Git deployment: **READY / SUCCESS**;
-- immutable deployment van dat checkpoint: `https://verhoog-family-j4tekgf2i-cverhoog-techs-projects.vercel.app`;
-- branch-preview alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
-
-Nieuwe V2.1-testdekking:
-- pure transfer state-machine;
-- accept/decline/withdraw;
-- counterproposal + derde-persoon opt-in;
-- help accept/withdraw;
-- geen multi-person assignment via help;
-- active-member validation;
-- recipient validation;
-- geen extra langlevende Firebase listener;
-- verse Action Inbox sessie hydrateert Cleaning alleen on-demand en doet daarna teardown;
+Automatisch afgedekt:
+- transfer request/accept/decline/withdraw;
+- counter persoon/datum/tijd + derde-persoon consent;
+- help accept/decline/withdraw zonder multi-person assignment;
+- active-member/recipient validation;
+- geen extra Firebase listener;
+- verse Action Inbox on-demand hydration + teardown;
 - geen Firebase push-path voor collaboration;
-- geen legacy MutationObserver/popup/execution/projection-runtime;
-- geen notificatiepublisher in V2.1;
+- geen verboden legacy runtimepatronen;
 - Action Inbox writer-free occurrence adapters;
-- lazy load achter Cleaning-route/Inbox-open, niet app-startup.
+- geen standalone samenwerkingmenu;
+- collaborationcontrols moeten in de bestaande beurt-detailflow zitten;
+- cache-bumped lazy import (`cleaningCollaborationExperience.js?v=2`) om stale iPhone/PWA UI te vermijden.
 
 ## 5. Real-device gate — nog open
 
 V2.1 is **NIET** real-device geaccepteerd.
 
-Te testen door product owner op echte iPhone:
-1. Cleaning openen/sluiten/heropenen — geen freeze/jank.
-2. Transfer verzoek maken.
-3. Op een verse ontvanger-sessie direct de Action Inbox openen; Cleaning-beslissing moet verschijnen zonder eerst Schoonmaken handmatig te openen.
-4. Recipient accepteert; dezelfde occurrence + Task + Agenda tonen nieuwe assignee.
-5. Transfer weigeren; assignment blijft staan.
-6. Counter persoon/dag/tijd maken en accepteren/weigeren.
-7. Counter naar derde persoon; derde persoon moet apart akkoord geven.
-8. PENDING transfer intrekken.
-9. Hulp vragen; accepteren en weigeren.
-10. PENDING hulpvraag intrekken.
-11. Snelle dubbele taps; geen dubbele occurrence/task/event/requeststate.
-12. Na verlaten Cleaning/Inbox geen merkbare achtergrondvertraging in andere modules.
+Te testen op echte iPhone:
+1. Open Cleaning en controleer dat onder Kamers géén los `Samenwerken`-menu meer staat.
+2. Open een concrete beurt; `Overdragen` en `Hulp vragen` moeten in die beurt-detail-sheet staan.
+3. Maak een transferverzoek.
+4. Open op een verse ontvanger-sessie direct Action Inbox; het verzoek moet zichtbaar zijn zonder eerst Cleaning handmatig te openen.
+5. Accepteer; dezelfde occurrence + Task + Agenda moeten de nieuwe assignee tonen.
+6. Test weigeren en intrekken; oorspronkelijke assignee blijft waar van toepassing staan.
+7. Test tegenvoorstel persoon/dag/tijd, inclusief expliciet akkoord van een eventuele derde persoon.
+8. Test hulp accepteren, weigeren en intrekken.
+9. Probeer snelle dubbele taps; geen dubbele occurrence/task/event/requeststate.
+10. Open/sluit/heropen Cleaning en gebruik daarna andere modules; geen freeze, jank of achterblijvende Cleaning runtime.
 
-Pas na expliciete bevestiging wordt de exacte geaccepteerde SHA als nieuwe rollbackbasis vastgelegd.
+Pas na expliciete product-ownerbevestiging wordt de exacte geaccepteerde SHA als nieuwe rollbackbasis vastgelegd.
 
 ## 6. Volgende Cleaning-stappen
 
 ### V2.2 — Historie / Activity / reminders
-Pas na V2.1 acceptance:
-- kamerhistorie;
-- routinehistorie;
-- completion logs zichtbaar;
-- wie/wat/wanneer;
-- relevante household activity feed events;
-- alleen nuttige reminders;
-- eventueel subtiele gezamenlijke progressie, geen leaderboard.
+Pas na V2.1 acceptance: kamer-/routinehistorie, zichtbare completion logs, wie/wat/wanneer, relevante household activity feed events en alleen nuttige reminders.
 
 ### V2.3 — Functionele gaten + hardening
-- onvolledige beurt: doorschuiven / later deze week / overslaan;
-- handmatig ander moment/persoon;
-- projection consistency;
-- household key safety;
-- idempotency/double-submit;
-- account/household switch lifecycle;
-- soft-delete;
-- cache/versioning;
-- extra contracts.
+Onvolledige beurt (doorschuiven/later/overslaan), handmatige persoon/moment-wijziging, projection consistency, household key safety, idempotency, lifecycle, soft-delete en cache/versioning.
 
 ### V2.4 — Definitieve premium visual polish
-- light/dark;
-- premium room assets/atlassen;
-- duidelijke hiërarchie;
-- lichte native iOS microinteracties;
-- geen repaint-zware blur/glass effecten.
+Light/dark, premium room assets/atlassen, duidelijke hiërarchie en lichte native-iOS microinteracties zonder repaint-zware effecten.
 
 ## 7. Expliciet niet opnieuw bouwen
 
-Geen:
-- availability per gezinslid;
-- vakanties;
-- ziekte/afwezigheid;
-- drukke-week/capacity engine;
-- automatische planning op persoonlijke beschikbaarheid;
-- complexe tijdelijke planning-pauzes/exception engines.
-
-Oude bestanden die dergelijke functies bevatten mogen alleen als product-/historische referentie worden gelezen. Ze mogen niet opnieuw in de actieve v2 runtime worden geïmporteerd om snel feature parity te bereiken.
+Geen member availability, vakanties, ziekte/afwezigheid, busy-week/capacity engine, automatische personal-availability planning of complexe planning-pause/exception engines.
