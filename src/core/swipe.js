@@ -48,5 +48,11 @@ function loadTaskNotificationProjector(){if(window.__familyTaskNotificationProje
 function loadTaskSwapNotificationProjector(){if(window.__familyTaskSwapNotificationProjectorLoader)return;window.__familyTaskSwapNotificationProjectorLoader=true;var script=document.createElement('script');script.src='src/modules/tasks/taskSwapNotificationProjector.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);}
 function loadPartyQuestNotificationProjector(){if(window.__familyPartyQuestNotificationProjectorLoader)return;window.__familyPartyQuestNotificationProjectorLoader=true;var script=document.createElement('script');script.src='src/modules/tasks/partyQuestNotificationProjector.js?v=2';script.async=false;script.defer=true;document.head.appendChild(script);}
 
-(function loadShoppingLists(){if(window.__familyShoppingListsLoader)return;window.__familyShoppingListsLoader=true;var script=document.createElement('script');script.src='src/modules/shop/shoppingLists.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);})();
-(function loadShoppingSyncDiagnostics(){if(window.__familyShoppingSyncDiagnosticsLoader)return;window.__familyShoppingSyncDiagnosticsLoader=true;var script=document.createElement('script');script.src='src/core/shoppingSyncDiagnostics.js?v=1';script.async=false;script.defer=true;document.head.appendChild(script);})();
+// NOTE: shoppingLists.js and shoppingSyncDiagnostics.js used to be loaded
+// here via the same dynamic-injection pattern as the notification chain
+// above. That was a genuine, if fragile, live load path — it raced against
+// the synchronous local-first render in shop.js/store.js, which is one of
+// the root causes of the shopping counter/sync bugs. Shopping now loads
+// statically and deterministically via api/app.js (shoppingListStore.js and
+// its supporting files), so this dynamic chain has been removed rather than
+// pointed at the new files, to avoid recreating the same race.

@@ -1,0 +1,64 @@
+name: Household Rebuild Contract Tests
+
+on:
+  push:
+    branches:
+      - agent/household-rebuild-v2
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'scripts/**'
+      - 'database.rules.json'
+      - 'firebase.json'
+      - '.github/workflows/rebuild-contract-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: household-rebuild-contract-tests
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Node contract checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark contract tests pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=pending -f context='Household Rebuild Contracts' -f description='Running rebuild contract tests' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run rebuild contract tests
+        shell: bash
+        run: |
+          failed=0
+          for test_file in scripts/test-*.js; do
+            echo "Running ${test_file}"
+            if ! node "${test_file}"; then
+              failed=1
+            fi
+          done
+          exit "${failed}"
+
+      - name: Mark contract tests successful
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=success -f context='Household Rebuild Contracts' -f description='Rebuild contract tests passed' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Mark contract tests failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context='Household Rebuild Contracts' -f description='Rebuild contract tests failed' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

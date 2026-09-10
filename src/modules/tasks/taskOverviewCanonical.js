@@ -1,15 +1,23 @@
 'use strict';
 // ============================================================
-// CANONICAL TASK OVERVIEW v2.1
-// TaskCompactHome owns Overzicht. PersonTabPremium owns Persoon.
-// Legacy tasks.js person rendering is intentionally unreachable live.
+// CANONICAL TASK OVERVIEW v2.3
+// TaskCompactHome owns Overzicht. PersonTabV2 owns Persoon.
+// Router owns the task-shell view state used by theme tokens.
 // ============================================================
 (function(){
-  if(window.__taskOverviewCanonicalV21)return;
+  if(window.__taskOverviewCanonicalV23)return;
+  window.__taskOverviewCanonicalV23=true;
+  window.__taskOverviewCanonicalV22=true;
   window.__taskOverviewCanonicalV21=true;
   window.__taskOverviewCanonicalV2=true;
 
   function taskEl(){ return document.getElementById('task-content'); }
+  function setTaskView(view){
+    try{
+      if(view)document.body.setAttribute('data-task-view',view);
+      else document.body.removeAttribute('data-task-view');
+    }catch(e){}
+  }
   function applyLifecycle(){
     try{
       if(window.TaskCompactLifecycle&&typeof window.TaskCompactLifecycle.apply==='function'){
@@ -18,6 +26,7 @@
     }catch(e){}
   }
   function renderCompact(){
+    setTaskView('overview');
     try { window.taskTab='compact'; if(typeof taskTab!=='undefined') taskTab='compact'; } catch(e) {}
     var el=taskEl();
     if(el && window.TaskCompactHome && typeof window.TaskCompactHome.render==='function') {
@@ -26,17 +35,13 @@
     return false;
   }
   function renderPerson(){
+    setTaskView('person');
     var el=taskEl();if(!el)return false;
-    if(window.PersonTabPremium&&typeof window.PersonTabPremium.render==='function'){
-      window.PersonTabPremium.render(el);return true;
-    }
-    // PersonTabPremium normally loads before this canonical router. This
-    // fallback only handles unusually slow/script-delayed clients.
-    if(typeof window.renderTasksPersoon==='function' && window.renderTasksPersoon.__canonicalPremium===true){
-      window.renderTasksPersoon(el);return true;
+    if(window.PersonTabV2&&typeof window.PersonTabV2.render==='function'){
+      window.PersonTabV2.render(el);return true;
     }
     el.innerHTML='<div style="padding:30px 16px;text-align:center;color:var(--c-text2);font-size:13px">Persoonsdashboard laden…</div>';
-    var tries=0,timer=setInterval(function(){tries++;if(window.PersonTabPremium&&typeof window.PersonTabPremium.render==='function'){clearInterval(timer);window.PersonTabPremium.render(el);}else if(tries>30){clearInterval(timer);}},100);
+    var tries=0,timer=setInterval(function(){tries++;if(window.PersonTabV2&&typeof window.PersonTabV2.render==='function'){clearInterval(timer);window.PersonTabV2.render(el);}else if(tries>30){clearInterval(timer);}},100);
     return true;
   }
 
@@ -60,6 +65,10 @@
       if(id==='tasks'){
         var current='compact';try{current=window.taskTab||(typeof taskTab!=='undefined'?taskTab:'compact');}catch(e){}
         return current==='persoon'?renderPerson():renderCompact();
+      }
+      setTaskView(null);
+      if(window.PersonTabV2&&typeof window.PersonTabV2.destroy==='function'){
+        try{window.PersonTabV2.destroy();}catch(e){}
       }
       return legacyRenderScreen.apply(this,arguments);
     };

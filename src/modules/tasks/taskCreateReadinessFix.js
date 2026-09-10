@@ -1,8 +1,9 @@
 'use strict';
 // ============================================================
-// TASK CREATE READINESS v2.0
+// TASK CREATE READINESS v2.1
 // Keeps TaskSharedData/Firebase authoritative while resolving the authenticated
-// household context on demand. No install polling or dynamic script loading.
+// household context on demand. Auth readiness is consumed from the canonical
+// AuthenticatedSessionController; this feature owns no Firebase auth observer.
 // ============================================================
 (function(){
   if(window.__taskCreateReadinessV2)return;
@@ -41,27 +42,16 @@
   }
 
   function currentUser(){
-    try{return window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;}catch(e){return null;}
+    try{return window.fbUser||(window.AuthenticatedSessionController&&window.AuthenticatedSessionController.status().user)||null;}catch(e){return null;}
   }
 
   function waitForAuthenticatedUser(){
     var existing=currentUser();
     if(existing&&existing.uid)return Promise.resolve(existing);
-    return new Promise(function(resolve,reject){
-      var auth=null,done=false,off=null,timer=null;
-      try{auth=window.firebase&&firebase.auth?firebase.auth():null;}catch(e){}
-      function finish(err,user){
-        if(done)return;done=true;
-        if(timer)clearTimeout(timer);
-        if(typeof off==='function')try{off();}catch(e){}
-        if(err)reject(err);else resolve(user);
-      }
-      if(!auth||typeof auth.onAuthStateChanged!=='function'){
-        finish(new Error('Firebase gebruiker is nog niet beschikbaar'));return;
-      }
-      off=auth.onAuthStateChanged(function(user){if(user&&user.uid){window.fbUser=user;finish(null,user);}});
-      timer=setTimeout(function(){finish(new Error('Firebase gebruiker is nog niet beschikbaar'));},6000);
-    });
+    if(window.AuthenticatedSessionController&&typeof window.AuthenticatedSessionController.whenAuthenticated==='function'){
+      return window.AuthenticatedSessionController.whenAuthenticated();
+    }
+    return Promise.reject(new Error('Canonical sessie is nog niet beschikbaar'));
   }
 
   function resolveHouseholdContext(){

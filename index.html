@@ -365,22 +365,18 @@ function completeSetup() {
     <!-- Sticker picker -->
     <div id="sticker-picker" style="display:none;flex-wrap:wrap;gap:6px;margin-top:10px;padding:10px;background:var(--c-surface2);border-radius:12px"></div>
 
-    <!-- Toolbar -->
-    <div style="display:flex;align-items:center;gap:6px;margin-top:10px;border-top:.5px solid var(--c-border);padding-top:10px">
+    <!-- Toolbar: canonical action row. All composer actions (photo, tag tools
+         inserted by feedTagging.js, post button) are direct siblings of this
+         one container — see .feed-compose-actions in feed.js for the layout
+         rules (flex, nowrap, gap, Posten pushed right). -->
+    <div class="feed-compose-actions" style="margin-top:10px;border-top:.5px solid var(--c-border);padding-top:10px">
       <!-- Photo -->
       <button onclick="document.getElementById('feed-photo-inp').click()" title="Foto"
         style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--c-text2)">📷</button>
       <input type="file" id="feed-photo-inp" accept="image/*,image/gif" style="display:none">
-      <!-- GIF -->
-      <button onclick="openGifPicker()" title="GIF"
-        style="background:none;border:none;font-size:13px;font-weight:800;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--c-text2)">GIF</button>
-      <!-- Sticker -->
-      <button onclick="toggleStickerPicker()" title="Sticker"
-        style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--c-text2)">😊</button>
       <!-- Taak koppelen -->
       <button onclick="openTaskStatusPicker()" title="Koppel aan taak"
         style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--c-text2)">📌</button>
-      <div style="flex:1"></div>
       <button id="feed-send-btn" onclick="publishPost()" style="background:var(--c-primary);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">Posten</button>
     </div>
   </div>

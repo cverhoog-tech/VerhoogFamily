@@ -1,0 +1,33 @@
+'use strict';
+const fs=require('fs');
+const assert=require('assert');
+function read(path){return fs.readFileSync(path,'utf8');}
+const producers=read('src/platform/activity/activityDomainProducers.js');
+const facade=read('src/platform/activity/householdActivity.js');
+const receipt=read('src/modules/shop/shoppingReceiptFinance.js');
+const loader=read('api/app.js');
+
+assert.ok(producers.includes("TASK_CREATED:'task.created'"),'task.created producer must exist');
+assert.ok(producers.includes("TASK_COMPLETED:'task.completed'"),'task.completed producer must exist');
+assert.ok(producers.includes("MEAL_PLANNED:'meal.planned'"),'meal.planned producer must exist');
+assert.ok(producers.includes("SHOPPING_COMPLETED:'shopping.completed'"),'shopping.completed producer must exist');
+assert.ok(producers.includes("PARTY_QUEST_COMPLETED:'partyQuest.completed'"),'partyQuest.completed producer must exist');
+assert.ok(producers.includes("occurrenceKey:'task:'+key+':created'"),'task creation must use deterministic occurrence key');
+assert.ok(producers.includes("occurrenceKey:'task:'+key+':completion:'+completionId"),'task completion must be occurrence-scoped');
+assert.ok(producers.includes("occurrenceKey:'shopping:'+detail.sourceId+':completed'"),'shopping completion must use stable receipt source id');
+assert.ok(producers.includes("occurrenceKey:String(occ)"),'party quest must reuse canonical completion occurrence id');
+assert.ok(!producers.includes('FinanceStore.upsertSourceTransaction'),'producer bridge must not own Finance persistence');
+assert.ok(!producers.includes('TaskHouseholdRepository.updateOne'),'producer bridge must not own Task persistence');
+assert.ok(!producers.includes('MealPlanHouseholdRepository'),'producer bridge must not own Meal persistence');
+assert.ok(!producers.includes('PartyQuestRepository'),'producer bridge must not own Party Quest persistence');
+assert.ok(!facade.includes('wrapTasks()'),'HouseholdActivity must no longer wrap task mutations');
+assert.ok(!facade.includes('wrapMeals()'),'HouseholdActivity must no longer wrap meal mutations');
+assert.ok(!facade.includes('wrapReceiptFinance()'),'HouseholdActivity must no longer wrap Finance mutations');
+assert.ok(facade.includes("SHOPPING_COMPLETED:'shopping.completed'"),'facade must expose amount-free shopping completion event');
+assert.ok(facade.includes("PARTY_QUEST_COMPLETED:'partyQuest.completed'"),'facade must expose party quest completion event');
+assert.ok(receipt.includes('function onProcessed(fn)'),'shopping receipt flow must expose post-canonical success signal');
+assert.ok(receipt.includes('emitProcessed({sourceId:sourceId'),'shopping signal must use stable source id');
+assert.ok(!/emitProcessed\(\{[^}]*amount/.test(receipt),'shopping activity signal must not contain receipt amount');
+assert.ok(loader.includes('activityDomainProducers.js?v=1'),'served runtime must load STEP 13.2 producers');
+assert.ok(loader.indexOf('householdActivity.js?v=7')<loader.indexOf('activityDomainProducers.js?v=1'),'activity facade must load before domain producers');
+console.log('activity STEP 13.2 canonical domain producers: PASS');

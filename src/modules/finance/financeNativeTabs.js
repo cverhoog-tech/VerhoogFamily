@@ -1,11 +1,12 @@
 'use strict';
 // ============================================================
-// FINANCE NATIVE TABS v0.346
+// FINANCE NATIVE TABS v0.347
 // Stable finance tabbar + shared finance runtime bootstrap.
+// Analyse has one explicit render owner to avoid legacy/UI render storms.
 // ============================================================
 
 (function(){
-  var VERSION = '0.346';
+  var VERSION = '0.347';
   var STYLE_ID = 'finance-native-tabs-style';
   var NAV_ID = 'finance-native-tabs';
   var activeTab = 'maandplan';
@@ -124,12 +125,16 @@
         if(!transPanel || !transPanel.innerHTML.trim()) renderTransactionsFallback();
       }
       if(activeTab === 'analyse') {
-        if(typeof window.renderFinance === 'function') window.renderFinance();
-        var analysePanel = document.getElementById('fin-analyse');
-        if(!analysePanel || !analysePanel.innerHTML.trim()) renderAnalysisFallback();
+        if(window.FinanceAnalysisUI && typeof FinanceAnalysisUI.render === 'function') {
+          FinanceAnalysisUI.render();
+        } else {
+          var analysePanel = document.getElementById('fin-analyse');
+          if(!analysePanel || !analysePanel.innerHTML.trim()) renderAnalysisFallback();
+        }
       }
       if(activeTab === 'sparen' && typeof window.renderSparen === 'function') window.renderSparen();
     } catch(error) {
+      console.error('[FinanceNativeTabs] render failed', activeTab, error);
       if(activeTab === 'trans') renderTransactionsFallback();
       if(activeTab === 'analyse') renderAnalysisFallback();
     }
@@ -138,6 +143,7 @@
 
   function activate(tab){
     activeTab = tab || activeTab;
+    window.finTab = activeTab;
     var screen = document.getElementById('screen-finance');
     if(!screen) return;
     tabs.forEach(function(t){ ensurePanel(t.id); });

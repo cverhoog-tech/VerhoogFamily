@@ -3,6 +3,8 @@
 // HOME
 // ============================================================
 
+var HOME_CLEANING_FALLBACK_IMAGE='familieapp_white_assets/tasks_background.png';
+
 function ensureHomeControls() {
   var hero=document.querySelector('#screen-home .home-hero');
   if(hero&&!document.getElementById('home-dark-toggle')){
@@ -19,9 +21,39 @@ function ensureHomeControls() {
   if(typeof window.updateDarkToggleUI==='function')window.updateDarkToggleUI();
 }
 
+// The original third Home hero card is still present in the static shell for
+// backwards compatibility. Turn it into the Cleaning entry point at runtime so
+// the card follows the live cleaning workload without adding a second Home DOM
+// owner or risking a large shell rewrite.
+function ensureHomeCleaningCard(){
+  var card=document.querySelector('#screen-home .cleaning-card, #screen-home .feed-card');
+  if(!card)return;
+  card.classList.add('cleaning-card');
+  card.setAttribute('aria-label','Schoonmaken');
+  card.onclick=function(){if(typeof window.showScreen==='function')window.showScreen('cleaning');};
+  var count=card.querySelector('.card-number');
+  if(count)count.id='stat-cleaning';
+  var label=card.querySelector('.card-label');
+  if(label)label.textContent='schoonmaken';
+  var icon=card.querySelector('.card-icon .icon');
+  if(icon&&!window.FamilyIcons)icon.textContent='🧹';
+
+  // Round 4 owns the actual approved photo. Keep the old local household-work
+  // image only as a no-network fallback for the tiny window before round 4 is
+  // available, never as a competing steady-state image owner.
+  card.style.setProperty('--card-color','#47745a','important');
+  if(!window.FamilyAppFeedbackRound4){
+    card.style.backgroundImage="linear-gradient(rgba(63,127,47,.24),rgba(63,127,47,.24)),url('"+HOME_CLEANING_FALLBACK_IMAGE+"')";
+  }else{
+    card.style.removeProperty('background-image');
+  }
+  var inner=card.querySelector('.card-inner');
+  if(inner){inner.style.setProperty('background','transparent','important');inner.style.setProperty('background-image','none','important');}
+}
+
 function applyHomeIconSet(){
   if(!window.FamilyIcons||typeof FamilyIcons.svg!=='function')return;
-  var map=[['.tasks-card .card-icon .icon','tasks'],['.shop-card .card-icon .icon','cart'],['.feed-card .card-icon .icon','chat'],['.recipes-slide .slide-icon','recipes'],['.agenda-slide .slide-icon','calendar'],['.meals-slide .slide-icon','meals']];
+  var map=[['.tasks-card .card-icon .icon','tasks'],['.shop-card .card-icon .icon','cart'],['.cleaning-card .card-icon .icon','cleaning'],['.recipes-slide .slide-icon','recipes'],['.agenda-slide .slide-icon','calendar'],['.meals-slide .slide-icon','meals']];
   map.forEach(function(x){var el=document.querySelector('#screen-home '+x[0]);if(el){el.innerHTML=FamilyIcons.svg(x[1],22);el.setAttribute('aria-hidden','true');}});
   var bell=document.querySelector('.app-header .header-notif');
   if(bell){
@@ -48,25 +80,24 @@ function renderHome() {
   if(sub) sub.textContent=days[now.getDay()]+' · '+now.getDate()+' '+months[now.getMonth()];
   renderHomeBg(currentTheme);
   ensureHomeControls();
+  ensureHomeCleaningCard();
   applyHomeIconSet();
   updateStats();
   renderActivityList();
-  _carouselBound = false;
+  if(window.FamilyAppFeedbackRound4&&typeof window.FamilyAppFeedbackRound4.refreshHome==='function')window.FamilyAppFeedbackRound4.refreshHome();
   setTimeout(initCarousel, 60);
 }
 
 // ── CARROUSEL ──
 var _carouselIndex = 0;
 var _carouselTotal = 3;
-var _carouselBound = false;
 
 function initCarousel() {
   var track = document.getElementById('home-carousel-track');
   var prev  = document.getElementById('home-prev');
   var next  = document.getElementById('home-next');
   var dotsEl = document.getElementById('home-dots');
-  if (!track || !prev || !next || _carouselBound) return;
-  _carouselBound = true;
+  if (!track || !prev || !next) return;
 
   function goTo(index) {
     _carouselIndex = ((index % _carouselTotal) + _carouselTotal) % _carouselTotal;
@@ -78,28 +109,34 @@ function initCarousel() {
     }
   }
 
-  prev.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex - 1); });
-  next.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex + 1); });
+  // Home can rerender many times while keeping the same carousel DOM nodes.
+  // Bind once per actual track element so taps never accumulate duplicate listeners.
+  if (track.dataset.carouselBound !== '1') {
+    track.dataset.carouselBound = '1';
+    prev.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex - 1); });
+    next.addEventListener('click', function(e) { e.stopPropagation(); goTo(_carouselIndex + 1); });
 
-  if (dotsEl) {
-    dotsEl.querySelectorAll('button').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        goTo(parseInt(btn.dataset.index) || 0);
+    if (dotsEl) {
+      dotsEl.querySelectorAll('button').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          goTo(parseInt(btn.dataset.index,10) || 0);
+        });
       });
-    });
+    }
+
+    var touchStartX = 0;
+    track.addEventListener('touchstart', function(e) {
+      if(e.touches&&e.touches[0]) touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    track.addEventListener('touchend', function(e) {
+      if(!e.changedTouches||!e.changedTouches[0]) return;
+      var delta = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(delta) > 40) goTo(_carouselIndex + (delta > 0 ? 1 : -1));
+    }, { passive: true });
   }
 
-  var _touchStartX = 0;
-  track.addEventListener('touchstart', function(e) {
-    _touchStartX = e.touches[0].clientX;
-  }, { passive: true });
-  track.addEventListener('touchend', function(e) {
-    var delta = _touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(delta) > 40) goTo(_carouselIndex + (delta > 0 ? 1 : -1));
-  }, { passive: true });
-
-  goTo(0);
+  goTo(_carouselIndex);
 }
 
 function renderActivityList() {

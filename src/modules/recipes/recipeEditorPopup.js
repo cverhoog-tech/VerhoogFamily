@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// RECIPE EDITOR POPUP v1.0
+// RECIPE EDITOR POPUP v1.1
 // Premium "recipe card" create/edit popup for the receptenmodule.
 // Visual language mirrors src/modules/tasks/taskDetailPopup.js
 // (parchment card, Cinzel/Cormorant type, gold hairline, soft depth)
@@ -13,6 +13,8 @@
 // through window.RecipeStore.create()/.upsert() — the same write path
 // recipes.js already used. No direct localStorage/HouseholdRepository
 // writes, no DOM hacks/MutationObservers.
+// STEP 2B.7: visible recipe-category content icons use the canonical
+// FamilyApp food-icon resolver; legacy emoji stays compatibility metadata.
 // ============================================================
 (function(){
   if(window.RecipeEditorPopup) return;
@@ -24,6 +26,7 @@
   function RH(){return window.RecipeHero;}
   function store(){return window.RecipeStore||null;}
   function toast(msg){if(typeof window.showToast==='function')window.showToast(msg);}
+  function foodIcon(cat,size){var r=window.FamilyAppFoodIconResolver;return r&&typeof r.renderCategory==='function'?r.renderCategory(cat,{size:size||'xs',label:false,className:'fa-utility-icon rep-food-icon'}):'';}
 
   function ingredientText(ing){if(ing&&typeof ing==='object')return String(ing.rawText||ing.text||ing.name||'').trim();return String(ing||'').trim();}
   function ingredientLines(list){return (list||[]).map(ingredientText).filter(Boolean);}
@@ -82,23 +85,9 @@
 
       '.rep-hero{position:relative;height:150px;background-size:cover;background-position:center;overflow:hidden}'+
       '.rep-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}'+
-      // Readability shade: keeps title/subtitle legible against any preset
-      // gradient or uploaded photo. Same treatment for both — this layer
-      // never reads draft.imageMode, it just sits on top of whichever
-      // background-image/background-color the hero currently has.
-      '.rep-hero-shade{position:absolute;inset:0;pointer-events:none;z-index:1;'+
-        'background:linear-gradient(180deg,rgba(0,0,0,.10) 0%,rgba(0,0,0,.08) 28%,rgba(18,10,6,.20) 58%,rgba(18,10,6,.54) 82%,rgba(18,10,6,.74) 100%)}'+
-      // Soft edge/corner vignette — takes the hard rectangular feel off the
-      // top and bottom of the hero without affecting readability.
-      '.rep-hero:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;'+
-        'background:radial-gradient(120% 85% at 50% 0%,rgba(255,255,255,.08),transparent 60%),radial-gradient(130% 100% at 50% 100%,rgba(0,0,0,.10),transparent 68%)}'+
-      // Bottom wash: melts the hero into the card body colour instead of
-      // ending in a hard rule. Uses --rep-bg-rgb so it always matches the
-      // card's own background (light/dark), and the strongest part of the
-      // fade is confined to a thin band right at the seam so it never
-      // washes out the title/subtitle sitting just above it.
-      '.rep-hero:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:56px;pointer-events:none;z-index:1;'+
-        'background:linear-gradient(to bottom,rgba(var(--rep-bg-rgb),0) 0%,rgba(var(--rep-bg-rgb),.10) 46%,rgba(var(--rep-bg-rgb),.32) 66%,rgba(var(--rep-bg-rgb),.7) 84%,rgba(var(--rep-bg-rgb),1) 100%)}'+
+      '.rep-hero-shade{position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg,rgba(0,0,0,.10) 0%,rgba(0,0,0,.08) 28%,rgba(18,10,6,.20) 58%,rgba(18,10,6,.54) 82%,rgba(18,10,6,.74) 100%)}'+
+      '.rep-hero:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 85% at 50% 0%,rgba(255,255,255,.08),transparent 60%),radial-gradient(130% 100% at 50% 100%,rgba(0,0,0,.10),transparent 68%)}'+
+      '.rep-hero:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:56px;pointer-events:none;z-index:1;background:linear-gradient(to bottom,rgba(var(--rep-bg-rgb),0) 0%,rgba(var(--rep-bg-rgb),.10) 46%,rgba(var(--rep-bg-rgb),.32) 66%,rgba(var(--rep-bg-rgb),.7) 84%,rgba(var(--rep-bg-rgb),1) 100%)}'+
 
       '.rep-close{position:absolute;top:9px;left:9px;width:27px;height:27px;border-radius:50%;background:rgba(20,15,10,.4);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,.4);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;-webkit-appearance:none;appearance:none;padding:0}'+
       '.rep-photo-remove{position:absolute;top:9px;right:9px;z-index:3;background:rgba(20,15,10,.5);backdrop-filter:blur(6px);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:99px;padding:5px 11px;font-size:10.5px;font-weight:800;cursor:pointer}'+
@@ -106,7 +95,8 @@
       '.rep-hero-content{position:absolute;left:14px;right:14px;bottom:12px;z-index:2}'+
       '.rep-badge{display:inline-block;font-family:"Cinzel",Georgia,serif;font-size:9px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:3px 9px;margin-bottom:6px}'+
       '.rep-hero-title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:22px;color:#fff;line-height:1.12;text-shadow:0 1px 3px rgba(0,0,0,.85),0 2px 12px rgba(0,0,0,.5);word-break:break-word}'+
-      '.rep-hero-sub{display:inline-block;margin-top:5px;font-size:11.5px;font-weight:700;color:#fff;opacity:.95;text-shadow:0 1px 2px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.5)}'+
+      '.rep-hero-sub{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:11.5px;font-weight:700;color:#fff;opacity:.95;text-shadow:0 1px 2px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.5)}'+
+      '.rep-hero-sub .rep-food-icon{width:15px!important;height:15px!important;flex:0 0 15px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}'+
 
       '.rep-body{padding:14px 15px 15px}'+
       '.rep-divider{display:flex;align-items:center;gap:8px;margin:2px 0 12px;color:var(--rep-gold);opacity:.6}'+
@@ -144,7 +134,7 @@
       '<div class="rep-hero-content">'+
         '<span class="rep-badge" id="rep-badge">'+esc(heroBadgeText())+'</span>'+
         '<div class="rep-hero-title" id="rep-hero-title">'+esc(heroTitleText())+'</div>'+
-        '<div class="rep-hero-sub" id="rep-hero-sub">'+hero.emoji+' '+esc(draft.cat)+'</div>'+
+        '<div class="rep-hero-sub" id="rep-hero-sub">'+foodIcon(draft.cat,'xs')+esc(draft.cat)+'</div>'+
       '</div>'+
     '</div>';
   }
@@ -194,7 +184,7 @@
     var hero=heroOf();
     if(!hero.hasPhoto)heroEl.style.backgroundImage=hero.background;
     var t=document.getElementById('rep-hero-title');if(t)t.textContent=heroTitleText();
-    var sub=document.getElementById('rep-hero-sub');if(sub)sub.textContent=hero.emoji+' '+draft.cat;
+    var sub=document.getElementById('rep-hero-sub');if(sub)sub.innerHTML=foodIcon(draft.cat,'xs')+esc(draft.cat);
     var hint=heroEl.parentNode?heroEl.parentNode.querySelector('.rep-hint'):null;
     if(hint)hint.textContent='Zonder eigen foto krijgt dit recept automatisch de FamilyApp '+draft.cat+' Hero.';
   }

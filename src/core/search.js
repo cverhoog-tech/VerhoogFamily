@@ -9,6 +9,12 @@ function openSearch() {
   if(inp){inp.value='';inp.oninput=function(){runSearch(inp.value.toLowerCase());};}
 }
 function closeSearch(){var ov=document.getElementById('search-overlay');if(ov)ov.style.display='none';}
+function shoppingSearchItems(){
+  var s=window.ShoppingListStore;
+  if(!s||typeof s.projection!=='function')return[];
+  var view=s.projection();
+  return (view.openItems||[]).concat(view.doneItems||[]);
+}
 function runSearch(q){
   var el=document.getElementById('search-results');if(!el)return;
   if(!q||q.length<2){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--c-text3);font-size:14px">Begin met typen...</div>';return;}
@@ -19,7 +25,7 @@ function runSearch(q){
   recipesData.filter(function(r){return r.name&&r.name.toLowerCase().indexOf(q)>-1;}).forEach(function(r){
     results.push({type:'Recept',icon:'🍳',label:r.name,sub:r.cat,action:function(){closeSearch();showScreen('recipes');setTimeout(function(){openRecipeDetail(r.id);},200);}});
   });
-  shopData.filter(function(s){return s.name&&s.name.toLowerCase().indexOf(q)>-1;}).forEach(function(s){
+  shoppingSearchItems().filter(function(s){return s.name&&s.name.toLowerCase().indexOf(q)>-1;}).forEach(function(s){
     results.push({type:'Boodschap',icon:'🛒',label:s.name,sub:s.qty||s.cat||'',action:function(){closeSearch();showScreenMore('shop');}});
   });
   (noteData||[]).filter(function(n){return n.title&&n.title.toLowerCase().indexOf(q)>-1;}).forEach(function(n){
@@ -44,4 +50,3 @@ function runSearch(q){
   }).join('');
   el.querySelectorAll('.search-result-item').forEach(function(item,i){item.onclick=allR[i].action;});
 }
-

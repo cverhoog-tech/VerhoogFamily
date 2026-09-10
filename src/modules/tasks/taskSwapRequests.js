@@ -90,15 +90,25 @@
     var c=e.querySelector('[data-close]');if(c)c.onclick=close;var a=e.querySelector('[data-accept]');if(a)a.onclick=function(){accept(r);};var n=e.querySelector('[data-decline]');if(n)n.onclick=function(){respond(r,'declined');};var x=e.querySelector('[data-cancel]');if(x)x.onclick=function(){respond(r,'cancelled');};
   }
 
-  function respond(r,status){var d=db(),family=hid();if(!d||!family||!r)return;d.ref('families/'+family+'/taskSwapRequests/'+r.id).update({status:status,updatedAt:firebase.database.ServerValue.TIMESTAMP,respondedAt:firebase.database.ServerValue.TIMESTAMP}).then(function(){close();toast(status==='declined'?'Ruilverzoek geweigerd':'Ruilverzoek ingetrokken');});}
+  function respond(r,status){var d=db(),family=hid();if(!d||!family||!r)return Promise.reject(new Error('Ruilverzoek niet beschikbaar'));return d.ref('families/'+family+'/taskSwapRequests/'+r.id).update({status:status,updatedAt:firebase.database.ServerValue.TIMESTAMP,respondedAt:firebase.database.ServerValue.TIMESTAMP}).then(function(){close();toast(status==='declined'?'Ruilverzoek geweigerd':'Ruilverzoek ingetrokken');});}
 
   function accept(r){
-    var t=task(r.taskId),me=uid();if(!t||!me||String(r.targetUid)!==String(me))return;
-    if(!window.TaskSharedData||typeof TaskSharedData.update!=='function'){toast('Taakdata is nog niet klaar');return;}
+    var t=task(r.taskId),me=uid();if(!t||!me||String(r.targetUid)!==String(me))return Promise.reject(new Error('Ruilverzoek niet gevonden'));
+    if(!window.TaskSharedData||typeof TaskSharedData.update!=='function'){toast('Taakdata is nog niet klaar');return Promise.reject(new Error('Taakdata is nog niet klaar'));}
     var next={};Object.keys(t.assignedToUids||{}).forEach(function(k){if(t.assignedToUids[k]&&String(k)!==String(r.requesterUid))next[k]=true;});next[me]=true;
     var names=Object.keys(next).map(function(k){return nameOf(k);});
-    TaskSharedData.update(t.id||t._key,{assignedToUids:next,assignedToUid:me,who:names}).then(function(){return db().ref('families/'+hid()+'/taskSwapRequests/'+r.id).update({status:'accepted',updatedAt:firebase.database.ServerValue.TIMESTAMP,respondedAt:firebase.database.ServerValue.TIMESTAMP,acceptedAt:firebase.database.ServerValue.TIMESTAMP});}).then(function(){close();toast('Taak overgenomen: '+(t.title||'Taak'));}).catch(function(){toast('Taak ruilen mislukt');});
+    return TaskSharedData.update(t.id||t._key,{assignedToUids:next,assignedToUid:me,who:names}).then(function(){return db().ref('families/'+hid()+'/taskSwapRequests/'+r.id).update({status:'accepted',updatedAt:firebase.database.ServerValue.TIMESTAMP,respondedAt:firebase.database.ServerValue.TIMESTAMP,acceptedAt:firebase.database.ServerValue.TIMESTAMP});}).then(function(){close();toast('Taak overgenomen: '+(t.title||'Taak'));}).catch(function(error){toast('Taak ruilen mislukt');throw error;});
   }
+
+  // ------------------------------------------------------------
+  // Public, minimal API for external callers (e.g. Action Inbox) that need
+  // to accept/decline a specific pending incoming swap request by id without
+  // opening the modal UI. No new writer: delegates to the same accept()/
+  // respond() functions the modal itself uses.
+  // ------------------------------------------------------------
+  function incomingPendingById(id){return pendingIncoming.find(function(r){return String(r.id)===String(id);})||null;}
+  function acceptRequest(id){var r=incomingPendingById(id);if(!r)return Promise.reject(new Error('Ruilverzoek is niet meer actief'));return accept(r);}
+  function declineRequest(id){var r=incomingPendingById(id);if(!r)return Promise.reject(new Error('Ruilverzoek is niet meer actief'));return respond(r,'declined');}
 
   function decorateTrigger(){
     ensureCss();var hero=document.querySelector('#tdp-overlay .tdp-hero');if(!hero||!currentTaskId)return;
@@ -134,7 +144,7 @@
   window.addEventListener('focus',start);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 
-  window.TaskSwapRequests={version:VERSION,open:function(taskId){chooseTarget(taskId);},openPicker:openPicker,pending:function(){return pendingIncoming.slice();},requests:function(){return requests.slice();},refresh:start};
+  window.TaskSwapRequests={version:VERSION,open:function(taskId){chooseTarget(taskId);},openPicker:openPicker,pending:function(){return pendingIncoming.slice();},requests:function(){return requests.slice();},refresh:start,acceptRequest:acceptRequest,declineRequest:declineRequest};
   // Existing task-tab markup still calls openTradeSheet(). Make that public
   // entrypoint use the UID-based controller; the old name-based implementation
   // in achievements.js is no longer the runtime owner.

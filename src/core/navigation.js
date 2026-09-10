@@ -17,10 +17,11 @@ var ALL_SCREENS = [
   {id:'achievements', icon:'🏆', label:'Achievements'},
   {id:'notif',        icon:'🔔', label:'Meldingen'},
   {id:'profile',      icon:'👤', label:'Profiel'},
-  {id:'recipes',       icon:'🍳', label:'Recepten'},
-  {id:'skills',        icon:'⚡', label:'Skills'},
-  {id:'meals',         icon:'🗓️', label:'Maaltijden'},
-  {id:'templates',     icon:'📋', label:'Templates'},
+  {id:'recipes',      icon:'🍳', label:'Recepten'},
+  {id:'skills',       icon:'⚡', label:'Skills'},
+  {id:'meals',        icon:'🗓️', label:'Maaltijden'},
+  {id:'templates',    icon:'📋', label:'Templates'},
+  {id:'cleaning',     icon:'🧹', label:'Schoonmaken'},
 ];
 
 // Fixed primary mobile ribbon: Home · Boodschappen · Feed (+) · Taken · Meer
@@ -158,11 +159,77 @@ function selectNavSlot(idx){navConfigEditSlot=idx;renderNavConfig();setTimeout(a
 function setNavSlot(screenId){if(navConfigEditSlot===null)return;navSlots[navConfigEditSlot]=screenId;navConfigEditSlot=null;renderNavConfig();renderNav();setTimeout(attachNavDelegation,10);setTimeout(attachNavConfigDelegation,10);showToast('Navigatie opgeslagen ✓');}
 function clearNavSlot(idx){navSlots[idx]='more';renderNavConfig();renderNav();}
 
-var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates'};
+var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates',cleaning:'Schoonmaken'};
 
 var _currentScreen = 'home';
 var _navBusy = false;
 var _pendingScreen = null;
+var _cleaningModulePromise = null;
+var _cleaningPremiumFeedbackPromise = null;
+var _cleaningStylePromise = null;
+
+function ensureCleaningScreen(){
+  var existing=document.getElementById('screen-cleaning');
+  if(existing)return existing;
+  var screen=document.createElement('div');
+  screen.className='screen';
+  screen.id='screen-cleaning';
+  var content=document.createElement('div');
+  content.id='cleaning-content';
+  screen.appendChild(content);
+  var profile=document.getElementById('screen-profile');
+  if(profile&&profile.parentNode)profile.parentNode.insertBefore(screen,profile);
+  else document.body.appendChild(screen);
+  return screen;
+}
+
+function ensureCleaningStyles(){
+  if(_cleaningStylePromise)return _cleaningStylePromise;
+  _cleaningStylePromise=new Promise(function(resolve,reject){
+    var existing=document.querySelector('link[data-familyapp-cleaning-style]');
+    if(existing){
+      if(existing.sheet){resolve();return;}
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return;
+    }
+    var link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='/src/styles/cleaning.css?v=1';
+    link.setAttribute('data-familyapp-cleaning-style','1');
+    link.addEventListener('load',resolve,{once:true});
+    link.addEventListener('error',reject,{once:true});
+    document.head.appendChild(link);
+  });
+  return _cleaningStylePromise;
+}
+
+function renderCleaningModule(){
+  var root=document.getElementById('cleaning-content');
+  if(!root)return;
+  if(!_cleaningModulePromise){
+    _cleaningModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1');
+  }
+  if(!_cleaningPremiumFeedbackPromise){
+    _cleaningPremiumFeedbackPromise=import('/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');
+  }
+  Promise.all([ensureCleaningStyles(),_cleaningModulePromise,_cleaningPremiumFeedbackPromise]).then(function(result){
+    if(_currentScreen!=='cleaning')return;
+    var mod=result[1];
+    if(mod&&typeof mod.renderCleaningScreen==='function')mod.renderCleaningScreen(root);
+  }).catch(function(err){
+    console.error('[Cleaning] shell kon niet worden geladen:',err);
+  });
+}
+
+function stopCleaningModule(){
+  if(!_cleaningModulePromise)return;
+  _cleaningModulePromise.then(function(mod){
+    if(mod&&typeof mod.stopCleaningScreen==='function')mod.stopCleaningScreen();
+  }).catch(function(err){
+    console.warn('[Cleaning] runtime kon niet netjes stoppen:',err);
+  });
+}
 
 function showScreen(id) {
   if(id === _currentScreen && !_navBusy) {
@@ -174,9 +241,13 @@ function showScreen(id) {
   _navBusy = true;
   _pendingScreen = null;
 
-  var prev = document.getElementById('screen-'+_currentScreen);
+  var previousScreenId = _currentScreen;
+  var prev = document.getElementById('screen-'+previousScreenId);
+  if(id==='cleaning')ensureCleaningScreen();
   var next = document.getElementById('screen-'+id);
   if(!next) { _navBusy = false; return; }
+
+  if(previousScreenId==='cleaning'&&id!=='cleaning')stopCleaningModule();
 
   document.getElementById('hdr-title').textContent = screenTitles[id]||'FamilieApp';
   closeMore();
@@ -247,6 +318,7 @@ function _renderScreen(id) {
   else if(id==='skills')  renderSkills();
   else if(id==='meals')   renderMeals();
   else if(id==='templates') renderTemplates();
+  else if(id==='cleaning') renderCleaningModule();
 }
 
 function showScreenMore(id){closeMore();showScreen(id);}
@@ -258,19 +330,3 @@ function closeMore(){
   var menu=document.getElementById('more-menu');
   if(menu)menu.classList.remove('open');
 }
-
-(function installMoreOutsideDismiss(){
-  if(window.__familyMoreOutsideDismiss)return;
-  window.__familyMoreOutsideDismiss=true;
-  function dismiss(e){
-    var menu=document.getElementById('more-menu');
-    if(!menu||!menu.classList.contains('open'))return;
-    var moreBtn=document.getElementById('nav-more-btn');
-    var target=e.target;
-    if(menu.contains(target)||(moreBtn&&moreBtn.contains(target)))return;
-    closeMore();
-    e.preventDefault();
-    e.stopPropagation();
-  }
-  document.addEventListener('pointerdown',dismiss,true);
-})();

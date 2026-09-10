@@ -1,0 +1,441 @@
+/* FamilyApp feedback round 3 — presentation/lifecycle polish only. */
+
+/* --------------------------------------------------------------------------
+   Returning-session stability
+   -------------------------------------------------------------------------- */
+html.familyapp-session-pending,
+html.familyapp-session-pending body{
+  background:var(--c-bg,#f8f7fb)!important;
+}
+html.familyapp-session-pending .app-header,
+html.familyapp-session-pending .bottom-nav,
+html.familyapp-session-pending .screen,
+html.familyapp-session-pending #ai-fab,
+html.familyapp-session-pending #ai-panel{
+  visibility:hidden!important;
+  opacity:0!important;
+  transition:none!important;
+  animation:none!important;
+}
+html.familyapp-session-pending #login-screen{
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:none!important;
+}
+html[data-theme*="dark"].familyapp-session-pending,
+html[data-theme*="dark"].familyapp-session-pending body{
+  background:#070b12!important;
+}
+
+html.familyapp-resume-stable #login-screen{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+html.familyapp-resume-stable .app-header,
+html.familyapp-resume-stable .bottom-nav,
+html.familyapp-resume-stable .screen,
+html.familyapp-resume-stable #ai-fab,
+html.familyapp-resume-stable #ai-panel{
+  transition:none!important;
+  animation:none!important;
+}
+html.familyapp-resume-stable .screen.active,
+html.familyapp-resume-stable .app-header,
+html.familyapp-resume-stable .bottom-nav{
+  opacity:1!important;
+  transform:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   Home module cards — the approved photos are the actual card backgrounds.
+   Inline background URLs are applied by familyappFeedbackRound3.js; these rules
+   keep competing legacy card-inner artwork from covering them.
+   -------------------------------------------------------------------------- */
+#screen-home .epic-card.familyapp-photo-hero{
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  background-color:#3b403a!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+}
+#screen-home .epic-card.familyapp-photo-hero>.card-inner{
+  background:transparent!important;
+  background-image:none!important;
+  position:relative!important;
+  z-index:2!important;
+}
+#screen-home .epic-card.familyapp-photo-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,12,10,.03) 0%,rgba(8,12,10,.16) 43%,rgba(8,12,10,.63) 100%);
+}
+#screen-home .epic-card.familyapp-photo-hero::after{
+  background:linear-gradient(180deg,rgba(0,0,0,.01),rgba(0,0,0,.18))!important;
+  z-index:1!important;
+}
+#screen-home .epic-card.familyapp-photo-hero .card-number,
+#screen-home .epic-card.familyapp-photo-hero .card-label{
+  color:#fff!important;
+  text-shadow:0 2px 12px rgba(0,0,0,.45)!important;
+}
+#screen-home .epic-card.familyapp-photo-hero .card-icon,
+#screen-home .epic-card.familyapp-photo-hero .card-arrow{
+  background:rgba(255,255,255,.91)!important;
+  border-color:rgba(255,255,255,.55)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.13)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+}
+[data-theme*="dark"] #screen-home .epic-card.familyapp-photo-hero::before{
+  background:linear-gradient(180deg,rgba(3,7,9,.12) 0%,rgba(3,7,9,.31) 46%,rgba(3,7,9,.76) 100%);
+}
+[data-theme*="dark"] #screen-home .epic-card.familyapp-photo-hero .card-icon,
+[data-theme*="dark"] #screen-home .epic-card.familyapp-photo-hero .card-arrow{
+  background:rgba(245,247,246,.92)!important;
+}
+
+/* --------------------------------------------------------------------------
+   Kamers — expanded photography now stays cropped and fades vertically into
+   the content surface. No stretched atlas tile and no hard split.
+   -------------------------------------------------------------------------- */
+#screen-cleaning .cleaning-room-card.is-expanded{
+  background:var(--cleaning-surface,#fbfaf8)!important;
+  background-image:none!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  min-height:0!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0 0 auto 0!important;
+  height:330px!important;
+  z-index:0!important;
+  pointer-events:none!important;
+  background-image:var(--room-photo)!important;
+  background-size:300% 300%!important;
+  background-position:var(--room-photo-x) var(--room-photo-y)!important;
+  background-repeat:no-repeat!important;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 42%,rgba(0,0,0,.92) 56%,rgba(0,0,0,.60) 72%,rgba(0,0,0,.20) 88%,transparent 100%)!important;
+  mask-image:linear-gradient(to bottom,#000 0%,#000 42%,rgba(0,0,0,.92) 56%,rgba(0,0,0,.60) 72%,rgba(0,0,0,.20) 88%,transparent 100%)!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:0!important;
+  pointer-events:none!important;
+  background:linear-gradient(180deg,rgba(250,249,247,.07) 0%,rgba(250,249,247,.05) 120px,rgba(250,249,247,.34) 225px,var(--cleaning-surface,#fbfaf8) 330px,var(--cleaning-surface,#fbfaf8) 100%)!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-room-card-main,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-room-supplies-bar,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-room-manage-row,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-routine-section,
+#screen-cleaning .cleaning-room-card.is-expanded>.cleaning-routine-empty{
+  position:relative!important;
+  z-index:2!important;
+}
+#screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-section,
+#screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-empty{
+  background:rgba(255,255,255,.54)!important;
+  border-color:rgba(63,56,75,.11)!important;
+  box-shadow:0 12px 28px rgba(34,30,42,.055)!important;
+  backdrop-filter:blur(14px)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded{
+  background:#080d16!important;
+  background-image:none!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded::after{
+  background:linear-gradient(180deg,rgba(5,10,18,.08) 0%,rgba(5,10,18,.08) 120px,rgba(5,10,18,.40) 225px,#080d16 330px,#080d16 100%)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-section,
+[data-theme*="dark"] #screen-cleaning .cleaning-room-card.is-expanded .cleaning-routine-empty{
+  background:rgba(8,14,24,.48)!important;
+  border-color:rgba(255,255,255,.09)!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.18)!important;
+}
+
+/* --------------------------------------------------------------------------
+   Gepland per kamer — photo first. No large white summary panel, clearer
+   routine pictograms, metadata beneath the icon row, minimal disclosure.
+   -------------------------------------------------------------------------- */
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card{
+  min-height:154px!important;
+  padding:15px!important;
+  isolation:isolate!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(250,248,244,.08) 0%,rgba(250,248,244,.05) 35%,rgba(250,248,244,.24) 73%,rgba(250,248,244,.42) 100%);
+}
+#screen-cleaning .cleaning-planned-room-head,
+#screen-cleaning .familyapp-planned-summary,
+#screen-cleaning .cleaning-planned-room-items,
+#screen-cleaning .cleaning-planned-room-paused{
+  position:relative!important;
+  z-index:2!important;
+}
+#screen-cleaning .familyapp-planned-summary{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 44px!important;
+  align-items:end!important;
+  gap:8px!important;
+  margin-top:26px!important;
+  padding:4px 0 0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#screen-cleaning .familyapp-planned-summary-main{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  gap:7px!important;
+}
+#screen-cleaning .familyapp-planned-icons{
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  min-width:0!important;
+  flex-wrap:nowrap!important;
+}
+#screen-cleaning .familyapp-planned-icon{
+  width:36px!important;
+  height:36px!important;
+  min-width:36px!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid rgba(255,255,255,.54)!important;
+  border-radius:12px!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:18px!important;
+  line-height:1!important;
+  background:rgba(246,248,245,.72)!important;
+  box-shadow:0 5px 16px rgba(23,29,26,.09)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+#screen-cleaning .familyapp-planned-icon[data-routine-tone="floor"]{background:rgba(230,245,237,.82)!important}
+#screen-cleaning .familyapp-planned-icon[data-routine-tone="water"]{background:rgba(228,242,252,.84)!important}
+#screen-cleaning .familyapp-planned-icon[data-routine-tone="family"]{background:rgba(250,239,221,.84)!important}
+#screen-cleaning .familyapp-planned-icon[data-routine-tone="laundry"]{background:rgba(238,233,252,.84)!important}
+#screen-cleaning .familyapp-planned-icon[data-routine-tone="glass"]{background:rgba(235,246,249,.84)!important}
+#screen-cleaning .familyapp-planned-icon[data-routine-tone="outdoor"]{background:rgba(231,246,226,.84)!important}
+#screen-cleaning .familyapp-planned-meta{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  color:rgba(50,50,58,.62)!important;
+  font-size:9.4px!important;
+  font-weight:760!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  text-shadow:0 1px 8px rgba(255,255,255,.92)!important;
+}
+#screen-cleaning .familyapp-planned-meta .familyapp-planned-next{
+  opacity:.86;
+}
+#screen-cleaning .familyapp-planned-toggle{
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  display:grid!important;
+  place-items:center!important;
+  cursor:pointer!important;
+}
+#screen-cleaning .familyapp-planned-toggle>span{
+  width:34px!important;
+  height:34px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.80)!important;
+  border:1px solid rgba(255,255,255,.56)!important;
+  box-shadow:0 6px 17px rgba(30,27,36,.10)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+
+/* Expanded planned room: keep a fixed crop, then fade it into the card instead
+   of stretching the atlas tile to the expanded card height. */
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded{
+  background:var(--cleaning-surface,#fbfaf8)!important;
+  background-image:none!important;
+  overflow:hidden!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height:360px;
+  z-index:0;
+  pointer-events:none;
+  background-image:var(--room-photo)!important;
+  background-size:300% 300%!important;
+  background-position:var(--room-photo-x) var(--room-photo-y)!important;
+  background-repeat:no-repeat!important;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 45%,rgba(0,0,0,.90) 61%,rgba(0,0,0,.48) 80%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 0%,#000 45%,rgba(0,0,0,.90) 61%,rgba(0,0,0,.48) 80%,transparent 100%);
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded::after{
+  background:linear-gradient(180deg,rgba(250,248,244,.05) 0%,rgba(250,248,244,.10) 145px,rgba(250,248,244,.36) 260px,var(--cleaning-surface,#fbfaf8) 365px,var(--cleaning-surface,#fbfaf8) 100%)!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded>.cleaning-planned-room-items{
+  display:grid!important;
+  gap:0!important;
+  margin:12px 0 0!important;
+  padding:4px 2px 2px!important;
+  border-top:1px solid rgba(56,54,62,.13)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item{
+  min-height:58px!important;
+  padding:10px 4px!important;
+  margin:0!important;
+  border:0!important;
+  border-bottom:1px solid rgba(54,52,60,.10)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  text-shadow:0 1px 9px rgba(255,255,255,.95)!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item:last-child{
+  border-bottom:0!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item strong{
+  color:#20232a!important;
+  font-weight:850!important;
+}
+#screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item small{
+  color:rgba(49,51,58,.62)!important;
+}
+
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card::after{
+  background:linear-gradient(180deg,rgba(5,10,18,.10) 0%,rgba(5,10,18,.08) 34%,rgba(5,10,18,.36) 74%,rgba(5,10,18,.60) 100%);
+}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon{
+  color:#f9fafb!important;
+  background:rgba(12,20,31,.76)!important;
+  border-color:rgba(255,255,255,.13)!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.24)!important;
+}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon[data-routine-tone="floor"]{background:rgba(22,67,48,.78)!important}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon[data-routine-tone="water"]{background:rgba(24,52,76,.80)!important}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon[data-routine-tone="family"]{background:rgba(82,57,29,.80)!important}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon[data-routine-tone="laundry"]{background:rgba(55,42,83,.80)!important}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon[data-routine-tone="glass"]{background:rgba(28,60,68,.80)!important}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-icon[data-routine-tone="outdoor"]{background:rgba(34,68,34,.80)!important}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-meta{
+  color:rgba(245,246,249,.67)!important;
+  text-shadow:0 2px 9px rgba(0,0,0,.92)!important;
+}
+[data-theme*="dark"] #screen-cleaning .familyapp-planned-toggle>span{
+  color:#f8f9fb!important;
+  background:rgba(10,17,27,.80)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.24)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded{
+  background:#080d16!important;
+  background-image:none!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded::after{
+  background:linear-gradient(180deg,rgba(5,10,18,.08) 0%,rgba(5,10,18,.12) 145px,rgba(5,10,18,.46) 260px,#080d16 365px,#080d16 100%)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card.is-familyapp-expanded>.cleaning-planned-room-items{
+  border-top-color:rgba(255,255,255,.10)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item{
+  border-bottom-color:rgba(255,255,255,.08)!important;
+  background:transparent!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.92)!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item strong{
+  color:#f7f8fa!important;
+}
+[data-theme*="dark"] #screen-cleaning .cleaning-planned-room-card.familyapp-planned-card .cleaning-planned-room-item small{
+  color:rgba(238,241,246,.66)!important;
+}
+
+/* --------------------------------------------------------------------------
+   Planning hero stats — labels always stay inside their cards on narrow iPhones.
+   -------------------------------------------------------------------------- */
+#screen-cleaning .cleaning-plan-stats{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+}
+#screen-cleaning .cleaning-plan-stats>div{
+  min-width:0!important;
+  overflow:hidden!important;
+  padding:11px 9px!important;
+}
+#screen-cleaning .cleaning-plan-stats>div strong{
+  display:block!important;
+  min-width:0!important;
+  font-size:clamp(20px,6vw,27px)!important;
+  line-height:1!important;
+  margin-bottom:6px!important;
+}
+#screen-cleaning .cleaning-plan-stats>div span,
+#screen-cleaning .cleaning-plan-stats>div small,
+#screen-cleaning .cleaning-plan-stats>div p{
+  display:block!important;
+  max-width:100%!important;
+  margin:0!important;
+  font-size:clamp(7.4px,2.15vw,9px)!important;
+  line-height:1.18!important;
+  letter-spacing:.01em!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+
+@media (max-width:370px){
+  #screen-cleaning .cleaning-plan-stats{gap:6px!important}
+  #screen-cleaning .cleaning-plan-stats>div{padding:10px 7px!important}
+  #screen-cleaning .familyapp-planned-icon{width:34px!important;height:34px!important;min-width:34px!important;font-size:17px!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html.familyapp-resume-stable .app-header,
+  html.familyapp-resume-stable .bottom-nav,
+  html.familyapp-resume-stable .screen,
+  #screen-cleaning .familyapp-planned-toggle>span{
+    transition:none!important;
+    animation:none!important;
+  }
+}
