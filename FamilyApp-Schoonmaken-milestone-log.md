@@ -67,7 +67,7 @@ V2.0 is de rollback-/performancebasis die iedere volgende Cleaning-milestone moe
 ## Cleaning V2.1 — Samenwerking / overdracht / hulp
 
 Status: **MILESTONE CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE ACCEPTATIE OPEN**  
-Implementatiecheckpoint vóór documentatie: `a9fa6afd7781898fdadf16c10ca50f7a007eaca8`
+Laatste functionele/testcheckpoint vóór de finale documentatie-updates: `1460b9de4405364a9bea54502620d76347b41c5e`
 
 ### Doel
 
@@ -104,19 +104,28 @@ De gewenste samenwerking uit de oude productflow opnieuw lichtgewicht aanbieden,
 - accepted help noteert helper in requeststate;
 - `assignmentUids` wordt niet uitgebreid: multi-person assignment is bewust niet onderdeel van V2.1.
 
+#### Action Inbox verse sessie
+- Cleaning blijft uit de app-startup;
+- wanneer Action Inbox wordt geopend, kan de Inbox Cleaning v2 on-demand lazy importeren;
+- buiten een actieve Cleaning-sessie wordt de bestaande repository eerst gestopt, waarna één verse household-snapshot wordt opgehaald;
+- de retained oude snapshot wordt niet als verse decision-state gebruikt;
+- na de eerste verse snapshot/error wordt de tijdelijke Cleaning repositorybinding direct weer gestopt;
+- er is daardoor geen blijvende tweede Cleaning listener buiten de Cleaning-module.
+
 #### Task/Agenda projections
 - alleen accepted assignment/schedule changes triggeren projection sync;
 - bestaande Task/Calendar projections worden bounded bijgewerkt;
 - V2.1 maakt geen nieuwe occurrence/task/calendar record via `push()`.
 
 #### Performance en lifecycle
-- collaboration experience laadt uitsluitend via de lazy Cleaning-route;
+- collaboration experience laadt via de lazy Cleaning-route;
+- Action Inbox mag Cleaning alleen on-demand kort hydrateren wanneer de Inbox zelf wordt geopend;
 - hergebruikt dezelfde `CleaningHouseholdRepository` snapshot/listener;
-- geen tweede Firebase `value` listener;
+- geen tweede langlevende Firebase `value` listener;
 - geen app-startup Cleaning work;
 - eigen klein inline collaboration sub-root;
 - geen extra popup owner;
-- geen document-wide click owner;
+- geen document-wide Cleaning click owner;
 - geen MutationObserver;
 - geen oude Cleaning execution/projection runtime;
 - geen nieuwe notification projector/listener/reminder-loop.
@@ -138,22 +147,28 @@ De gewenste samenwerking uit de oude productflow opnieuw lichtgewicht aanbieden,
 
 ### Automatische teststatus
 
-Op `a9fa6afd7781898fdadf16c10ca50f7a007eaca8`:
+Op `1460b9de4405364a9bea54502620d76347b41c5e`:
 - volledige repositorysuite `scripts/test-*.js`: **PASS**;
-- GitHub status `Household Rebuild Contracts`: **SUCCESS**;
-- Vercel Git deployment: **SUCCESS**.
+- GitHub Actions run `34519907566`: **SUCCESS**;
+- Vercel deployment: **READY / SUCCESS**;
+- immutable deployment: `https://verhoog-family-j4tekgf2i-cverhoog-techs-projects.vercel.app`;
+- branch-preview alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
 
 Nieuwe relevante test:
 `scripts/test-cleaning-collaboration-v21.js`
 
-Deze dekt onder andere:
+Aanvullend uitgebreid:
+`scripts/test-action-inbox.js`
+
+Deze dekken onder andere:
 - request/accept/decline/withdraw;
 - counter person/date/time;
 - expliciet derde-persoon akkoord;
 - help zonder multi-person assignment;
 - active-member en recipient validation;
 - idempotent repeat requests;
-- geen tweede Firebase listener;
+- geen tweede langlevende Firebase listener;
+- verse Action Inbox sessie hydrateert Cleaning uitsluitend on-demand en doet daarna teardown;
 - geen Firebase push-path voor collaboration records;
 - geen verboden legacy runtimepatronen;
 - Action Inbox occurrence adapters en writer-free routing.
@@ -163,16 +178,17 @@ Deze dekt onder andere:
 Te verifiëren op echte iPhone:
 1. Cleaning openen/sluiten/heropenen zonder freeze of jank.
 2. Transfer request aanmaken.
-3. Recipient accepteert — same occurrence + Task + Agenda tonen recipient.
-4. Recipient weigert — oorspronkelijke assignment blijft staan.
-5. Tegenvoorstel persoon/dag/tijd.
-6. Tegenvoorstel naar derde persoon — derde persoon moet expliciet akkoord geven.
-7. Transfer intrekken vóór acceptatie.
-8. Hulp vragen → acceptatie.
-9. Hulp vragen → weigering.
-10. Hulpvraag intrekken.
-11. Rapid repeat taps zonder dubbele occurrences/tasks/events.
-12. Na verlaten Cleaning geen achtergrondperformance-regressie.
+3. Op verse ontvanger-sessie direct Action Inbox openen; verzoek moet zichtbaar worden zonder eerst Schoonmaken handmatig te openen.
+4. Recipient accepteert — same occurrence + Task + Agenda tonen recipient.
+5. Recipient weigert — oorspronkelijke assignment blijft staan.
+6. Tegenvoorstel persoon/dag/tijd.
+7. Tegenvoorstel naar derde persoon — derde persoon moet expliciet akkoord geven.
+8. Transfer intrekken vóór acceptatie.
+9. Hulp vragen → acceptatie.
+10. Hulp vragen → weigering.
+11. Hulpvraag intrekken.
+12. Rapid repeat taps zonder dubbele occurrences/tasks/events.
+13. Na verlaten Cleaning/Inbox geen achtergrondperformance-regressie.
 
 **Niet markeren als REAL-DEVICE GEACCEPTEERD totdat de product owner dit expliciet bevestigt.**
 
