@@ -11,6 +11,13 @@ const contractSource=read('src/modules/cleaning/cleaningHistoryContract.js');
 const historySource=read('src/modules/cleaning/cleaningHistoryV22.js');
 const premiumSource=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const navigationSource=read('src/core/navigation.js');
+const statusSource=read('FamilyApp-Schoonmaken-current-status.md');
+const milestoneSource=read('FamilyApp-Schoonmaken-milestone-log.md');
+const todoSource=read('FamilyApp-TODO-updated.txt');
+const currentTodoSource=read('docs/FAMILYAPP-CURRENT-TODO.md');
+const progressSource=read('docs/household-rebuild-v2-progress.md');
+const fixSource=read('docs/FAMILYAPP-FIX-LIST.md');
+const architectureSource=read('FamilyApp-Schoonmaken-module-architectuur.md');
 
 const sandbox={window:{},Date:Date,JSON:JSON,Error:Error,String:String,Number:Number,Array:Array,Object:Object,Math:Math,Set:Set};
 vm.createContext(sandbox);
@@ -69,6 +76,7 @@ assert.strictEqual(contract.activityEvent(data,'log3',data.completionLogs.log3),
 assert.match(historySource,/CleaningHouseholdRepository/,'V2.2 must reuse the existing Cleaning repository');
 assert.match(historySource,/repo\.subscribe/,'V2.2 history must derive from the existing repository snapshot');
 assert.match(historySource,/data-ch22-history/,'V2.2 must expose a History tab');
+assert.match(historySource,/ch22-has-history/,'four-tab layout must explicitly adapt the accepted three-tab grid');
 assert.match(historySource,/data-ch22-attention/,'V2.2 must expose a quiet in-module attention row');
 assert.match(historySource,/HouseholdActivity/,'new Cleaning completions may project into the existing Activity feed');
 assert.match(historySource,/state\.seen=new Set\(Object\.keys\(logs\)\)/,'first ready snapshot must baseline existing logs instead of flooding Activity');
@@ -84,5 +92,16 @@ assert.match(premiumSource,/import '\.\/cleaningCollaborationExperience\.js\?v=2
 assert.match(premiumSource,/version:'2\.2\.0'/,'Cleaning companion marker must advance to V2.2');
 assert.doesNotMatch(premiumSource,/cleaningHistoryExperience|cleaningActivityProjector|cleaningNotificationProjector/,'old pre-reset history/activity/notification runtimes must stay disconnected');
 assert.doesNotMatch(navigationSource,/cleaningHistoryV22|cleaningHistoryContract/,'V2.2 must not move onto global app startup/navigation bootstrap');
+
+[statusSource,milestoneSource,todoSource,currentTodoSource,progressSource,fixSource].forEach(source=>{
+  assert.match(source,/V2\.2/,'current status/roadmap docs must mention V2.2');
+  assert.match(source,/multi-user|MULTI-USER/i,'current docs must preserve the deferred V2.1 multi-user verification gate');
+});
+assert.match(statusSource,/V2\.2[\s\S]{0,200}CODECANDIDATE GEREED/,'current Cleaning status must mark V2.2 as candidate, not accepted');
+assert.match(milestoneSource,/V2\.2[\s\S]{0,200}CODECANDIDATE GEREED/,'milestone log must record the V2.2 candidate');
+assert.match(architectureSource,/Cleaning V2\.2 pure history contract/,'architecture must document the V2.2 read-model layer');
+assert.match(architectureSource,/geen tweede raw Firebase listener/,'architecture must preserve one raw Cleaning listener');
+assert.match(architectureSource,/cleaningActivityProjector\.js` blijft disconnected historical reference/,'old activity projector must remain explicitly disconnected');
+assert.match(architectureSource,/cleaningNotificationProjector\.js` blijft disconnected historical reference/,'old notification projector must remain explicitly disconnected');
 
 console.log('Cleaning V2.2 history/activity/reminder contracts: PASS');
