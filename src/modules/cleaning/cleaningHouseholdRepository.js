@@ -8,6 +8,7 @@
 // preventing duplicate rooms/routines after an ambiguous network failure.
 // ============================================================
 (function(){
+  if(window.CleaningFreezeTrace)window.CleaningFreezeTrace.noteInit('CleaningHouseholdRepository');
   if(window.CleaningHouseholdRepository)return;
   // Best-effort load of the temporary freeze-trace diagnostic module. Safe
   // no-op if it's already loaded (e.g. via cleaningExperienceBootstrap.js) or
@@ -41,7 +42,7 @@
     if(!current.data||typeof current.data!=='object')current.data=emptyData();
     COLLECTIONS.forEach(function(name){if(!current.data[name]||typeof current.data[name]!=='object')current.data[name]={};});
     var trace=window.CleaningFreezeTrace;
-    if(trace)trace.mark('repository-emit',{source:current.source});
+    if(trace)trace.markEmit({source:current.source});
     currentSnapshot=trace?trace.time('repository-emit-clone-freeze',function(){return deepFreeze(clone(current));}):deepFreeze(clone(current));
     var snap=currentSnapshot;subscribers.slice().forEach(function(fn){try{fn(snap);}catch(e){console.warn('[CleaningHouseholdRepository] subscriber failed',e);}});
     try{window.dispatchEvent(new CustomEvent('familyapp:cleaning-repository',{detail:snap}));}catch(e){}
