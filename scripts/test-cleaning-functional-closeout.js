@@ -11,6 +11,8 @@ const screen=read('src/modules/cleaning/cleaningScreen.js');
 const premium=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const collaboration=read('src/modules/cleaning/cleaningCollaborationExperience.js');
 const contract=read('src/modules/cleaning/cleaningCollaborationContract.js');
+const history=read('src/modules/cleaning/cleaningHistoryV22.js');
+const historyContract=read('src/modules/cleaning/cleaningHistoryContract.js');
 const inbox=read('src/platform/inbox/actionInboxRegistry.js');
 const inboxBoot=read('src/platform/inbox/actionInboxBootstrap.js');
 const workflow=read('src/modules/cleaning/cleaningRoomWorkflowUx.js');
@@ -34,7 +36,7 @@ need(screen,/cleaningPath\+'\/occurrences\/'/,'CleaningOccurrence remains canoni
 need(screen,/completionLogs/,'completion history must stay in canonical Cleaning data');
 need(screen,/updates\['tasks\/'/,'Tasks remain derived projections');
 need(screen,/updates\['calendarEvents\/'/,'Agenda remains derived projection');
-need(screen,/window\.CleaningHouseholdRepository=CleaningV2Repository/,'collaboration must read the same v2 repository');
+need(screen,/window\.CleaningHouseholdRepository=CleaningV2Repository/,'v2 companions must read the same v2 repository');
 
 need(contract,/VERSION='2\.1\.0'/,'v2.1 pure collaboration state machine must exist');
 ['REQUEST_TRANSFER','WITHDRAW_TRANSFER','ACCEPT_TRANSFER','DECLINE_TRANSFER','COUNTER_TRANSFER','ACCEPT_COUNTER','DECLINE_COUNTER','REQUEST_HELP','WITHDRAW_HELP','ACCEPT_HELP','DECLINE_HELP'].forEach(function(command){need(contract,new RegExp("'"+command+"'"),'collaboration command '+command+' must exist');});
@@ -47,10 +49,27 @@ forbid(collaboration,/screen\.appendChild\(panel\)|cc21-shell/,'v2.1 must not re
 forbid(collaboration,/\.on\(\s*['"]value['"]/,'v2.1 must not add a second Cleaning Firebase listener');
 forbid(collaboration,/new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.1 must not reactivate forbidden runtime patterns');
 forbid(collaboration,/NotificationStore|publishSelf|publishTo/,'v2.1 collaboration must not create noisy notification projection work');
+
+need(historyContract,/VERSION='2\.2\.0'/,'v2.2 pure history contract must exist');
+need(historyContract,/completionLogs/,'v2.2 history must derive from canonical completion logs');
+need(historyContract,/activityEvent/,'v2.2 history contract must derive deterministic activity events');
+forbid(historyContract,/\.ref\s*\(|firebase|document\.|MutationObserver|setInterval|setTimeout/,'v2.2 history contract must stay pure');
+need(history,/CleaningHouseholdRepository/,'v2.2 history must reuse v2 repository');
+need(history,/data-ch22-history/,'v2.2 must expose a History tab');
+need(history,/data-ch22-attention/,'v2.2 must expose quiet in-module reminders');
+need(history,/HouseholdActivity/,'v2.2 may project new completions to existing Activity');
+need(history,/state\.seen=new Set\(Object\.keys\(logs\)\)/,'v2.2 must baseline existing completion logs without feed flooding');
+forbid(history,/\.on\(\s*['"]value['"]|firebase\.database|fbDb/,'v2.2 must not add a Firebase owner/listener');
+forbid(history,/new\s+MutationObserver|MutationObserver\s*\(|setInterval\s*\(|setTimeout\s*\(/,'v2.2 must not add observer or polling loops');
+forbid(history,/NotificationStore|publishSelf|publishToUids|CleaningNotificationProjector/,'v2.2 reminders must not create notification noise');
+forbid(history,/TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.2 must not reactivate legacy freeze-prone owners');
+
 need(premium,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
-need(premium,/version:'2\.1\.1'/,'v2.1 contextual collaboration UX marker must be current');
+need(premium,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
+need(premium,/version:'2\.2\.0'/,'Cleaning companion marker must be v2.2');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
 forbid(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work itself');
+forbid(premium,/cleaningHistoryExperience|cleaningActivityProjector|cleaningNotificationProjector/,'old pre-reset v2.2 runtimes must remain disconnected');
 
 need(inbox,/type:'cleaning\.help'/,'Action Inbox projects Cleaning help');
 need(inbox,/type:'cleaning\.occurrence\.transfer'/,'Action Inbox projects occurrence transfers');
@@ -67,6 +86,6 @@ forbid(screen,/new\s+MutationObserver|MutationObserver\s*\(/,'primary v2 must no
 forbid(inboxBoot,/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience|cleaningCollaboration/,'Cleaning must stay off the global startup path');
 need(workflow,/var VERSION='0\.2\.0'/,'locked historical room workflow rollback file must remain unchanged');
 [
- 'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js'
+ 'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js','scripts/test-cleaning-history-v22.js'
 ].forEach(read);
-if(failed){console.error('\nCleaning v2.1 functional closeout FAILED.');process.exitCode=1;}else console.log('Cleaning v2.1 functional closeout: PASS');
+if(failed){console.error('\nCleaning v2.2 functional closeout FAILED.');process.exitCode=1;}else console.log('Cleaning v2.2 functional closeout: PASS');
