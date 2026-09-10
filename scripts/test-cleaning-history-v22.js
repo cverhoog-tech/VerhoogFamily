@@ -100,7 +100,7 @@ assert.doesNotMatch(navigationSource,/cleaningHistoryV22|cleaningHistoryContract
 assert.match(statusSource,/V2\.2[\s\S]{0,200}CODECANDIDATE GEREED/,'current Cleaning status must mark V2.2 as candidate, not accepted');
 assert.match(milestoneSource,/V2\.2[\s\S]{0,200}CODECANDIDATE GEREED/,'milestone log must record the V2.2 candidate');
 assert.match(architectureSource,/Cleaning V2\.2 pure history contract/,'architecture must document the V2.2 read-model layer');
-assert.match(architectureSource,/geen tweede raw Firebase listener/,'architecture must preserve one raw Cleaning listener');
+assert.match(architectureSource,/(?:geen|nooit een) tweede raw Firebase listener/,'architecture must preserve one raw Cleaning listener');
 assert.match(architectureSource,/cleaningActivityProjector\.js` blijft disconnected historical reference/,'old activity projector must remain explicitly disconnected');
 assert.match(architectureSource,/cleaningNotificationProjector\.js` blijft disconnected historical reference/,'old notification projector must remain explicitly disconnected');
 
