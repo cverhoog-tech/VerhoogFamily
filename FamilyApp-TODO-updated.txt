@@ -6,18 +6,26 @@ Laatst bijgewerkt: 10-09-2026
 
 - Productie/main: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`.
 - Cleaning v2 real-device geaccepteerd op iPhone op checkpoint `b4511561f0885023e5ca6649a1eecd8f4a611d6a`.
-- De main-merge bevat exact dezelfde tree als dit geaccepteerde checkpoint.
+- De main-merge bevat inhoudelijk exact dezelfde tree als dit geaccepteerde checkpoint.
 - Vervolgwerk gebeurt uitsluitend op `agent/household-rebuild-v2`.
-- `main` blijft vanaf nu weer onaangeraakt tot een volgende milestone expliciet is geaccepteerd en promotie is gevraagd.
+- `main` blijft vanaf deze baseline onaangeraakt tot een volgende milestone expliciet is geaccepteerd en promotie is gevraagd.
+
+# Belangrijke statusregel
+
+De oude TODO- en fixlijsten bevatten historische punten die inmiddels zijn gebouwd of real-device geaccepteerd. Die worden NIET opnieuw als open werk behandeld zonder een concrete huidige regressie.
+
+Voor Schoonmaken geldt een uitzondering: veel geavanceerde functies waren historisch al gebouwd in de oude Cleaning-runtime, maar die runtime veroorzaakte ernstige freezes en is bewust uit de actieve app gehaald. Die functies tellen daarom niet als nieuw productidee, maar moeten waar gewenst opnieuw lichtgewicht in Cleaning v2 worden ingebouwd zonder de oude runtime terug te activeren.
+
+---
 
 # STEP 14 - Schoonmaken v2
 
 ## V2.0 Performance-first kern
-Status: AFGEROND / REAL-DEVICE GEACCEPTEERD
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
 
 Actief en bewezen soepel:
 - Cleaning lazy laden; geen Cleaning-startupwerk via Action Inbox.
-- Runtime/listereners stoppen bij verlaten van Cleaning.
+- Runtime/listeners stoppen bij verlaten van Cleaning.
 - Household-scoped Firebase onder `families/{householdId}/cleaning`.
 - `CleaningOccurrence` blijft source of truth.
 - Kamers CRUD.
@@ -38,11 +46,13 @@ Vaste architectuurregels:
 - Listener start/stop lifecycle verplicht.
 - Geen zware reconcile na iedere tap.
 - Geen parallelle canonieke writers.
-- Tasks/Agenda blijven projecties van CleaningOccurrence.
+- Tasks/Agenda blijven projecties van `CleaningOccurrence`.
 - Iedere grote uitbreiding moet ook op echte iPhone soepel blijven.
 
 ## V2.1 Beschikbaarheid / pauzes / drukke weken
-Status: VOLGENDE STAP
+Status: **VOLGENDE STAP - OPNIEUW LICHTGEWICHT IN V2 BOUWEN**
+
+Deze functies bestonden historisch al, maar zijn niet actief in de nieuwe performance-first runtime.
 
 - Beschikbaarheid per gezinslid in planning.
 - Tijdelijk niet beschikbaar.
@@ -58,37 +68,41 @@ Status: VOLGENDE STAP
 - Alleen pure availability-logica hergebruiken waar nuttig; oude experience-runtime niet terughalen.
 
 ## V2.2 Samenwerking / approval / hulp
-Status: OPEN
+Status: **OPEN VOOR V2-HERBOUW**
 
-- Weekplan approval waar nodig opnieuw lichtgewicht in v2.
+Historisch bestonden approval, overdracht, tegenvoorstellen en hulpflows al. De productlogica mag als referentie dienen, de oude runtime niet.
+
+- Weekplan approval lichtgewicht in v2.
 - Beurt overdragen aan ander gezinslid.
 - Accepteren/weigeren.
 - Tegenvoorstel voor persoon/dag/tijd.
 - Hulp vragen en intrekken.
 - Overdracht/verzoek intrekken zolang niet geaccepteerd.
-- Action Inbox-items voor deze flows.
+- Action Inbox-routing voor deze flows.
 - Beperkte gebundelde reminders/notificaties.
-- Multi-person assignment als aparte uitbreiding.
+- Multi-person assignment eventueel als aparte uitbreiding.
 - Idempotent: herhaald klikken mag geen dubbele occurrence/task maken.
 
 ## V2.3 Historie / activity / reminders
-Status: OPEN
+Status: **OPEN VOOR V2-HERBOUW**
+
+Historische Cleaning completion/activity-logica bestaat als referentie, maar de zware presentation/runtime-laag blijft uitgeschakeld.
 
 - Kamerhistorie.
 - Routinehistorie.
 - Completion-log zichtbaar maken.
 - Tonen wie wat wanneer heeft afgerond.
-- Relevante Cleaning-events naar activity feed.
+- Relevante Cleaning-events naar de bestaande household activity feed.
 - Alleen nuttige reminders.
-- Subtiele gezamenlijke Cleaning-progressie/achievements; geen schoonmaak-leaderboard.
+- Eventueel subtiele gezamenlijke Cleaning-progressie/achievements; geen schoonmaak-leaderboard.
 
 ## V2.4 Functionele gaten + hardening
-Status: OPEN
+Status: **OPEN / CONTROLEREN IN V2**
 
-- Persoonlijke voorkeur Tijd / Aantal taken / Beide.
+- Persoonlijke voorkeur Tijd / Aantal taken / Beide opnieuw lichtgewicht aanbieden indien nog gewenst.
 - Onvolledige beurt: doorschuiven / deze week opnieuw / overslaan.
 - Datum/tijd-wijzigingen vanuit Taken/Agenda op v2-consistentie controleren.
-- Conflicten/alternatieve momenten lichtgewicht aanbieden waar nodig.
+- Conflicten/alternatieve momenten alleen lichtgewicht aanbieden waar nodig.
 - Household-key-validatie.
 - Create-idempotency en dubbele-submit bescherming.
 - Projection consistency Tasks/Calendar.
@@ -98,115 +112,119 @@ Status: OPEN
 - Contracttests per nieuwe v2-slice.
 
 ## V2.5 Premium visual polish
-Status: OPEN - NA FUNCTIONELE V2-SLICES
+Status: **OPEN - NA FUNCTIONELE V2-SLICES**
 
 - Definitieve premium FamilyApp-look.
-- Light/dark mode gelijk trekken.
+- Light/dark mode binnen Cleaning gelijk trekken.
 - Kameratlassen definitief positioneren.
 - Sterkere kaart- en informatiehierarchie.
 - Korte native-feeling microinteracties zonder performance-regressie.
 - Geen zware blur/glass-effecten die iPhone repaint-jank terugbrengen.
 
 ## V2.6 Slimme inzichten
-Status: LATER
+Status: **LATER / OPTIONEEL**
 
 - Data-gedreven frequentievoorstellen.
 - Slimmere weekverdeling op historie/beschikbaarheid.
-- Family Assistant geeft voorstellen maar wijzigt nooit stilzwijgend structurele planning.
+- Family Assistant geeft alleen voorstellen en wijzigt nooit stilzwijgend structurele planning.
 - Supplies-suggesties verder verfijnen.
 
-# Overige FamilyApp TODO
+---
 
-## Carousel / Hero
-- iPhone Safari, Chrome mobile en desktop consistent testen.
-- Witte flashes/crop glitches/overlay gradients oplossen.
-- Oude inline background overrides en dubbele CSS nalopen.
+# Bevestigd afgerond - NIET opnieuw openen zonder concrete regressie
 
-## Avatar / Profiel
-- Avatar-sync profiel/feed/notificaties/taken/comments/activity testen.
-- Upload-avatar flow en cache cleanup.
-- Avatar categorie-tabs.
-- Foto-cropper.
-- Save feedback/toast.
-- Partnernaam-edit UX.
+De volgende onderdelen zijn aantoonbaar gebouwd en/of real-device geaccepteerd en horen niet meer in de actieve algemene backlog:
 
-## Feed
-- Mobiele composer/GIF/emoji/comment/bookmark spacing polish.
-- Floating assistant overlap oplossen.
-- Live comments controleren/afronden.
-- Persistente like-state.
-- Posts mogen niet verdwijnen na refresh.
-- Filtering uitbreiden.
-- Demo-content vervangen door echte gezinsactiviteit.
+- **Profiel / presence / avatars (STEP 12)** - real-device geaccepteerd; UID-geisoleerde avatarstate en cachemigratie zijn gebouwd.
+- **Activity / Feed (STEP 13 t/m 13.6)** - real-device geaccepteerd; record-based household feed, likes/comments/persistence, composer/tagging en interactie/idempotency zijn onderdeel van de baseline.
+- **Maaltijd voorstellen vanuit Recepten (STEP 13.5)** - household-scoped proposalflow, accepteren/weigeren en planning/feed-handoff real-device geaccepteerd.
+- **Action Inbox** - real-device geaccepteerd als centrale beslissingslaag; Task/Party/Cleaning request routing bestaat.
+- **UI-schaal in Profiel** - 90/100/110/120% selector + persistente globale UI-scale bestaat.
+- **Safe-area / dark-mode device gates** - eerder real-device geaccepteerd.
+- **Live in-app notificaties / pushregistratie / push-tap routing** - STEP 10 device gates eerder geaccepteerd.
+- **Home hero ownership / oude hero writer-race** - op 07-09-2026 technisch gestabiliseerd; legacy hero sources/writer-races zijn verwijderd. Alleen opnieuw openen bij een concrete huidige visuele regressie.
+- **Boodschappen kernarchitectuur** - `ShoppingListStore` is canonical owner, ShoppingPageV2 heeft snelle optimistic interactie, recipe/meal handoff werkt via de canonical store.
+- **Boodschappen bon/Finance/activity kern** - receipt bridge, idempotente Finance-upsert, activity-event en veilig verwijderen van de verwerkte gekochte items bestaan. Alleen eventuele UX-consolidatie blijft optioneel.
+- **Taken create-card** - gedeelde Task Card/create-mode, prominente titelinput, assignees, datum/herhaling, subtaken en canonical TaskSharedData-save bestaan.
+- **Apple Sign-In clientimplementatie** - code en Apple-login UI bestaan. Alleen provider-/entitlement-/App-Store-configuratie moet voor release nog worden geverifieerd.
 
-## Taken
-- Card crop/overlay/spacing consistent.
-- XP badges gelijk trekken.
-- Delete UX verbeteren.
-- Side-quest labels en party-avatar spacing.
-Later: drag & drop, quest chains, weekly quests, difficulty scaling, rewards inventory.
+---
 
-## Home
-- Greeting/XP spacing op kleine schermen.
-- Carousel indicators.
-- Activity feed compacter.
-- Muziekbutton responsive.
-- Floating assistant overlap voorkomen.
-- Hero image positioning finetunen.
+# Echte algemene open punten buiten Cleaning
 
-## Navigatie / mobile shell
-- Bottom-nav spacing iPhone.
-- Safe-area ondersteuning.
-- Geen onnodige volledige state refresh per tab.
-- Back-navigation consistent.
-- Waar mogelijk module runtimes netjes stoppen bij verlaten scherm.
+## 1. Internationalisatie / talen
+Status: **OPEN / GEEN ACTIEVE IMPLEMENTATIE AANGETROFFEN**
 
-## Performance / technische schuld
-- Oude assets en dubbele image folders opruimen.
-- Oude build/patchmappen opruimen waar veilig.
-- CSS gefaseerd consolideren.
-- Grote inline styles refactoren.
-- Inactieve runtime-shims/tests pas verwijderen als rollbackwaarde weg is.
-- Cache busting structureren.
-- Startup-work verder reduceren.
-- Geen nieuwe globale observers zonder noodzaak.
+Doel:
+- Nederlands.
+- Engels.
+- Turks.
+- Duits.
+- Frans.
+- Centrale schaalbare i18n-structuur.
+- Taalkeuze in profiel/settings.
+- Keuze onthouden per gebruiker.
+- Geen nieuwe verspreide hardcoded UI-teksten.
 
-## Vercel / deployment
-- Build/asset cache hardening.
-- Rebuild triggers controleren.
-- Public asset-structuur later rationaliseren.
-- Preview/productie altijd aan exacte Git SHA koppelen bij acceptatie.
+## 2. Party Quest acceptatie-toast
+Status: **ALLEEN REAL-DEVICE VERIFICATIE NOG OPEN**
 
-## App-brede design polish
-- Shadows/radii/spacing consistent.
-- Microinteracties en page transitions zonder performanceverlies.
-- Skeleton/loading states waar nuttig.
-- Dark-mode consistentie.
-- Ambient gradients / animated XP waar passend.
+- De contrastfix/candidate bestaat en contracts waren groen.
+- Historisch was de visuele iPhone-check uitgesteld.
+- Geen nieuw ontwikkelwerk doen tenzij de huidige productie-toast nog fout blijkt.
 
-# Grote toekomstige features
+## 3. Google login post-auth handoff
+Status: **HISTORISCHE REGRESSIE - EERST HUIDIGE PRODUCTIE HERTESTEN**
 
-- Gezins-invites verder uitbouwen.
-- Accounts/auth hardening.
-- Pushnotificaties appbreed.
-- Realtime updates appbreed harmoniseren.
-- AI Family Assistant.
-- Shared calendar sync.
-- Smart meal planning.
-- Grocery automation.
-- Achievement system verder uitbouwen.
-- Household economy.
-- Family levels/seasons/events.
-- App Store/native traject en Apple Sign-In/store-compliance.
+- Historisch was er op iPhone/PWA een 5-10 seconden freeze na Google accountkeuze.
+- Een eerdere fix bleek destijds niet voldoende; tijdelijke timingdiagnostiek is later weer verwijderd.
+- Dit punt alleen technisch heropenen als het op de huidige production/main nog reproduceerbaar is.
+
+## 4. Release/security readiness
+Status: **OPEN VOOR PUBLIEKE RELEASE, NIET BLOKKEND VOOR HUIDIGE ONTWIKKELING**
+
+- Firebase Rules server-side rolhandhaving voor gevoelige shared-household writes ontwerpen en veilig testen; clientrollen alleen zijn geen security boundary.
+- Apple Sign-In provider/configuratie, redirect/entitlements en store-compliance verifiëren.
+- App Store/native/PWA releasekeuzes en packaging verder uitwerken wanneer we richting publicatie gaan.
+- Production rules alleen wijzigen na expliciete toestemming en regressietest.
+
+## 5. Optionele UX-polish op bestaande modules
+Status: **ALLEEN OP BASIS VAN HUIDIGE OBSERVATIE / PRODUCTKEUZE**
+
+Niet meer als generieke buglijst behandelen. Voorbeelden:
+- Boodschappen eventueel samenvoegen tot één duidelijke `Boodschappen afronden` flow met keuze `Bon toevoegen` / `Zonder bon` bovenop de al bestaande receipt + clear-done kern.
+- Gericht visueel finetunen van Home/Taken/Feed/Profile als de gebruiker een concreet scherm aanwijst.
+- Geen oude polishpunten automatisch opnieuw openen.
+
+---
+
+# Technisch onderhoud - GEEN productbacklog
+
+Deze punten mogen later in rustige, afzonderlijke onderhoudsslices worden gedaan en zijn niet hetzelfde als ontbrekende functionaliteit:
+
+- Oude/inactieve Cleaning-runtimebestanden pas verwijderen wanneer rollback/reference-waarde niet meer nodig is.
+- Oude assets en dubbele build/patchmappen gecontroleerd opruimen.
+- CSS/inline styles gefaseerd consolideren zonder regressies.
+- Cache-busting/versioning structureren.
+- Startup-work per module blijven reduceren waar profiling dat rechtvaardigt.
+- Geen nieuwe globale observers toevoegen zonder harde noodzaak.
+
+---
 
 # Werkvolgorde vanaf 10-09-2026
 
-1. Cleaning V2.1 - beschikbaarheid / vakantie / drukke week / pauzes.
-2. Cleaning V2.2 - samenwerking / approval / overdracht / hulp / notificaties.
-3. Cleaning V2.3 - historie / activity / reminders.
-4. Cleaning V2.4 - functionele gaten + technische hardening.
-5. Cleaning V2.5 - premium visual polish.
-6. Cleaning V2.6 - slimme inzichten.
-7. Daarna algemene FamilyApp-backlog opnieuw prioriteren op productimpact.
+1. **Cleaning V2.1** - beschikbaarheid / vakantie / drukke week / pauzes lichtgewicht terugbrengen.
+2. **Cleaning V2.2** - samenwerking / approval / overdracht / hulp / notificaties lichtgewicht terugbrengen.
+3. **Cleaning V2.3** - historie / activity / reminders terugbrengen.
+4. **Cleaning V2.4** - resterende v2-gaten + technische hardening.
+5. **Cleaning V2.5** - definitieve premium visual polish.
+6. **Cleaning V2.6** - slimme/adviserende inzichten, indien gewenst.
+7. Daarna: **i18n** en **release/security readiness**, tenzij de gebruiker eerder herprioriteert.
 
-Na iedere grote stap: contracttests, exacte Vercel preview, regressiecheck Home/Taken/Boodschappen/Navigatie, real-device iPhone-test waar relevant, en pas na expliciete gebruikersacceptatie promotie naar main.
+Na iedere grote stap:
+- contracttests;
+- exacte Vercel preview;
+- regressiecheck op relevante bestaande modules;
+- bij runtime/UX-wijzigingen echte iPhone-test;
+- alleen na expliciete gebruikersacceptatie milestone als geaccepteerd markeren;
+- `main` alleen op expliciet verzoek/promotie wijzigen.
