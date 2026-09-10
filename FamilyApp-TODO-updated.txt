@@ -131,6 +131,81 @@ Status: **LATER / OPTIONEEL**
 
 ---
 
+# STEP 15 - Branding / PWA / Login & Auth UX
+Status: **OPEN - NA CLEANING V2 CORE, VOOR I18N/RELEASE-HARDENING**
+
+Dit is een eigen productmilestone en geen losse polish-taak.
+
+## 15.1 Definitieve FamilyApp branding
+
+Gekozen richting:
+- Premium en minimalistisch.
+- Eenvoudig huis-symbool als kern.
+- Warme FamilyApp-achtergrondkleur.
+- Licht crème/wit huis-silhouet.
+- Geen druk of generiek app-icoon.
+- Logo, PWA-icoon en inlogscherm moeten duidelijk uit dezelfde visuele familie komen.
+
+Te doen:
+- Definitief hoofdlogo vastleggen als source of truth.
+- Definitieve PWA-appiconen genereren/verwerken in de benodigde formaten.
+- Maskable PWA-icon correct instellen.
+- Apple touch icon controleren/vervangen.
+- Favicon(s) controleren/vervangen.
+- `manifest` icon-references opschonen en op de nieuwe assets zetten.
+- PWA `theme_color` / `background_color` en launch appearance op de gekozen branding afstemmen.
+- Op iPhone controleren dat Add to Home Screen het scherpe nieuwe icoon toont en niet een oude gecachte variant.
+
+## 15.2 Nieuw inlogscherm
+
+- Huidige login visueel vervangen door het gekozen premium FamilyApp-loginconcept.
+- Nieuwe branding/logo als primaire identiteit.
+- Rustig, warm en premium; mobiel/iPhone eerst.
+- Google-login behouden.
+- Apple-login behouden en visueel volgens Apple-richtlijnen tonen.
+- Normale account-login/account-aanmaak zonder sociale provider duidelijk beschikbaar houden.
+- Loading-, fout- en disabled-states netjes vormgeven.
+- Geen nieuwe auth authority creëren; bestaande canonical session/household bootstrap behouden.
+
+## 15.3 Account aanmaken zonder Google of Apple - functionele verificatie
+
+Dit moet aantoonbaar werken en wordt niet aangenomen op basis van alleen aanwezige UI/code.
+
+Testen op preview en echte iPhone/PWA:
+- Nieuw account aanmaken zonder Google of Apple via de normale accountflow.
+- Validatie van verplichte velden en foutmeldingen.
+- Na registratie correct doorstromen naar de bestaande household/onboarding flow.
+- Uitloggen en opnieuw inloggen met hetzelfde normale account.
+- Sessiepersistence na sluiten/heropenen.
+- Geen dubbele gebruiker/household-bootstrap.
+- Bestaande Google- en Apple-login mogen hierdoor niet regressieren.
+
+Als deze route momenteel niet werkt:
+- repareren binnen de bestaande Firebase/Auth/session authority;
+- geen aparte parallelle login- of household-loader introduceren.
+
+## 15.4 Apple button ook op Home
+
+- Een Apple-login/-accountactie ook op het Home-scherm opnemen zoals door de product owner gevraagd.
+- De Home-actie gebruikt exact dezelfde Apple-auth authority als het inlogscherm; geen tweede implementatie.
+- Gedrag moet veilig zijn voor zowel ingelogde als niet-ingelogde toestand en mag geen dubbele sessiebootstrap veroorzaken.
+- Positionering moet passen binnen de premium Home-UI en mag hero cards, activity feed of bottom navigation niet hinderen.
+- Real-device controleren op iPhone/PWA.
+
+## 15.5 Branding/auth acceptatiegate
+
+Voor acceptatie:
+- PWA-icoon scherp en correct op iPhone Home Screen.
+- Nieuwe login visueel akkoord in light/dark waar van toepassing.
+- Normaal account aanmaken + opnieuw inloggen werkt.
+- Google-login smoke test.
+- Apple-login smoke test/configuratie voor beschikbare omgeving.
+- Apple-actie op Home werkt via dezelfde auth flow.
+- Geen post-auth freeze of dubbele household-load.
+- Contracttests + unieke Vercel preview groen.
+
+---
+
 # Bevestigd afgerond - NIET opnieuw openen zonder concrete regressie
 
 De volgende onderdelen zijn aantoonbaar gebouwd en/of real-device geaccepteerd en horen niet meer in de actieve algemene backlog:
@@ -146,13 +221,22 @@ De volgende onderdelen zijn aantoonbaar gebouwd en/of real-device geaccepteerd e
 - **Boodschappen kernarchitectuur** - `ShoppingListStore` is canonical owner, ShoppingPageV2 heeft snelle optimistic interactie, recipe/meal handoff werkt via de canonical store.
 - **Boodschappen bon/Finance/activity kern** - receipt bridge, idempotente Finance-upsert, activity-event en veilig verwijderen van de verwerkte gekochte items bestaan. Alleen eventuele UX-consolidatie blijft optioneel.
 - **Taken create-card** - gedeelde Task Card/create-mode, prominente titelinput, assignees, datum/herhaling, subtaken en canonical TaskSharedData-save bestaan.
-- **Apple Sign-In clientimplementatie** - code en Apple-login UI bestaan. Alleen provider-/entitlement-/App-Store-configuratie moet voor release nog worden geverifieerd.
+- **Apple Sign-In clientimplementatie** - code en Apple-login UI bestaan. De nieuwe STEP 15 controleert/vernieuwt presentatie, Home-entry en provider-/releaseconfiguratie.
 
 ---
 
 # Echte algemene open punten buiten Cleaning
 
-## 1. Internationalisatie / talen
+## 1. Branding / PWA / Login & Auth UX
+Status: **OPEN - ZIE STEP 15**
+
+- Nieuw logo/PWA-icoon.
+- Nieuw inlogscherm.
+- Normale accountregistratie zonder Google/Apple aantoonbaar testen/repareren.
+- Apple button/action ook op Home.
+- Auth-smoke en PWA real-device gate.
+
+## 2. Internationalisatie / talen
 Status: **OPEN / GEEN ACTIEVE IMPLEMENTATIE AANGETROFFEN**
 
 Doel:
@@ -166,21 +250,22 @@ Doel:
 - Keuze onthouden per gebruiker.
 - Geen nieuwe verspreide hardcoded UI-teksten.
 
-## 2. Party Quest acceptatie-toast
+## 3. Party Quest acceptatie-toast
 Status: **ALLEEN REAL-DEVICE VERIFICATIE NOG OPEN**
 
 - De contrastfix/candidate bestaat en contracts waren groen.
 - Historisch was de visuele iPhone-check uitgesteld.
 - Geen nieuw ontwikkelwerk doen tenzij de huidige productie-toast nog fout blijkt.
 
-## 3. Google login post-auth handoff
-Status: **HISTORISCHE REGRESSIE - EERST HUIDIGE PRODUCTIE HERTESTEN**
+## 4. Google login post-auth handoff
+Status: **HISTORISCHE REGRESSIE - WORDT MEEGENOMEN IN STEP 15 AUTH GATE**
 
 - Historisch was er op iPhone/PWA een 5-10 seconden freeze na Google accountkeuze.
 - Een eerdere fix bleek destijds niet voldoende; tijdelijke timingdiagnostiek is later weer verwijderd.
-- Dit punt alleen technisch heropenen als het op de huidige production/main nog reproduceerbaar is.
+- Tijdens STEP 15 opnieuw testen op huidige preview/productiebasis.
+- Alleen technisch heropenen als hij nog reproduceerbaar is.
 
-## 4. Release/security readiness
+## 5. Release/security readiness
 Status: **OPEN VOOR PUBLIEKE RELEASE, NIET BLOKKEND VOOR HUIDIGE ONTWIKKELING**
 
 - Firebase Rules server-side rolhandhaving voor gevoelige shared-household writes ontwerpen en veilig testen; clientrollen alleen zijn geen security boundary.
@@ -188,7 +273,7 @@ Status: **OPEN VOOR PUBLIEKE RELEASE, NIET BLOKKEND VOOR HUIDIGE ONTWIKKELING**
 - App Store/native/PWA releasekeuzes en packaging verder uitwerken wanneer we richting publicatie gaan.
 - Production rules alleen wijzigen na expliciete toestemming en regressietest.
 
-## 5. Optionele UX-polish op bestaande modules
+## 6. Optionele UX-polish op bestaande modules
 Status: **ALLEEN OP BASIS VAN HUIDIGE OBSERVATIE / PRODUCTKEUZE**
 
 Niet meer als generieke buglijst behandelen. Voorbeelden:
@@ -218,8 +303,10 @@ Deze punten mogen later in rustige, afzonderlijke onderhoudsslices worden gedaan
 3. **Cleaning V2.3** - historie / activity / reminders terugbrengen.
 4. **Cleaning V2.4** - resterende v2-gaten + technische hardening.
 5. **Cleaning V2.5** - definitieve premium visual polish.
-6. **Cleaning V2.6** - slimme/adviserende inzichten, indien gewenst.
-7. Daarna: **i18n** en **release/security readiness**, tenzij de gebruiker eerder herprioriteert.
+6. **STEP 15 Branding / PWA / Login & Auth UX** - logo, PWA, nieuw inlogscherm, normale accountregistratie, Apple op Home en auth real-device gate.
+7. **Internationalisatie / talen**.
+8. **Release/security readiness**.
+9. **Cleaning V2.6 slimme/adviserende inzichten** en overige optionele productuitbreidingen wanneer gewenst.
 
 Na iedere grote stap:
 - contracttests;
