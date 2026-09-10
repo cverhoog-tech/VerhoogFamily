@@ -5,9 +5,9 @@ Laatst bijgewerkt: 10-09-2026
 # Branch- en baseline-regels
 
 - Productie/main blijft `b7f233ebfe1fbb20ecdf426003f332528562ab0f`.
-- Stabiele Cleaning-v2 performancebasis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a` — real-device geaccepteerd op iPhone met “Top dit werkt perfect.”
+- Stabiele Cleaning-v2 performancebasis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a` — real-device geaccepteerd op iPhone.
 - Vervolgwerk gebeurt uitsluitend op `agent/household-rebuild-v2`.
-- Main, production Firebase Rules en fallbackbranches blijven onaangeraakt totdat de product owner na een real-device milestone expliciet promotie toestaat.
+- Main, production Firebase Rules en fallback/lock branches blijven onaangeraakt totdat de product owner na real-device acceptatie expliciet promotie toestaat.
 - Oude TODO’s/statusdocumenten zijn historische referentie als ze botsen met deze roadmap of de huidige code.
 
 # STEP 14 — Schoonmaken v2
@@ -17,99 +17,73 @@ Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
 
 Actieve basis:
 - Cleaning lazy geladen; geen Cleaning-work tijdens app-startup.
-- Cleaning repository/listeners stoppen bij verlaten van de module.
+- Repository/listeners stoppen bij verlaten van de module.
 - Household-scoped Firebase onder `families/{householdId}/cleaning`.
 - `CleaningOccurrence` is canonical concrete execution state.
-- Kamers CRUD.
-- Routines CRUD + presets.
-- Supplies/voorraad.
-- Weekplanning + persoonsfilter.
+- Kamers/routines CRUD, presets, supplies/voorraad, weekplanning + persoonsfilter.
 - Lichte eigen Cleaning-detail-sheet.
-- Optimistic checklist + 120ms coalescing + gebundelde writes.
+- Optimistic checklist + coalescing + gebundelde writes.
 - Complete-all + completion logs.
 - Tasks en Calendar/Agenda blijven afgeleide projecties.
 - Household role/capability basis.
 
-Blijvende verboden runtimepatronen:
-- geen oude `CleaningExecutionWriteRuntime` activeren;
-- geen oude `CleaningProjectionService` activeren;
-- geen generieke `TaskDetailPopup` voor Cleaning;
-- geen oude Cleaning experience-stack opnieuw koppelen;
-- geen MutationObserver-architectuur voor Cleaning;
-- geen document-wide click owners voor Cleaning;
-- geen meerdere popup owners;
-- geen zware reconcile-cascade na checkbox-taps;
-- geen Cleaning startupwerk;
-- geen parallelle canonieke Cleaning writers.
+Blijvend verboden: oude `CleaningExecutionWriteRuntime`, oude `CleaningProjectionService`, generieke `TaskDetailPopup` voor Cleaning, oude experience-stack, MutationObserver-architectuur, document-wide Cleaning click owners, meerdere popup owners, zware reconcile-cascade, Cleaning startupwerk en parallelle canonical Cleaning writers.
 
 ## Vast productbesluit — Cleaning simpel houden
 Status: **VAST, 10-09-2026**
 
-Niet opnieuw bouwen:
-- beschikbaarheid per gezinslid;
-- vakanties;
-- ziekte/afwezigheid;
-- drukke-week/capaciteitsengine;
-- automatische planning op persoonlijke beschikbaarheid;
-- complexe tijdelijke planning-pauzes/exception engines.
+Niet opnieuw bouwen: member availability, vakanties, ziekte/afwezigheid, drukke-week/capaciteitsengine, automatische planning op persoonlijke beschikbaarheid en complexe tijdelijke planning-pauzes/exception engines.
 
 Kern blijft: **wat moet gebeuren → wanneer → door wie → uitvoeren / overdragen / handmatig aanpassen.**
 
 ## V2.1 Samenwerking / overdracht / hulp
 Status: **CODECANDIDATE GEREED — CI GROEN — NOG NIET REAL-DEVICE GEACCEPTEERD**
 
-Laatste functionele/testcheckpoint vóór finale documentatie: `1460b9de4405364a9bea54502620d76347b41c5e`.
+Laatste functionele/testcheckpoint: `7e34cb60b78cf45664fdb82202e9673bb2ae9672`.
+
+GitHub Actions `Household Rebuild Contract Tests` run `34534350216`: **SUCCESS**; volledige `scripts/test-*.js` suite: **PASS**.
 
 Gebouwd:
 - occurrence-level overdracht naar ander actief gezinslid;
-- ontvanger accepteert of weigert via Action Inbox;
-- ontvanger kan een tegenvoorstel maken voor persoon/dag/tijd;
-- tegenvoorstel naar een derde persoon wordt nooit stil toegewezen: er ontstaat opnieuw een expliciet PENDING verzoek aan die persoon;
-- hulp vragen aan een gezinslid;
-- hulp accepteren/weigeren via Action Inbox;
-- hulpvraag intrekken zolang PENDING;
-- overdracht intrekken zolang PENDING/COUNTER_PROPOSED;
-- hulpacceptatie maakt bewust géén multi-person assignment;
-- `CleaningOccurrence.transferRequest` en `CleaningOccurrence.helpRequest` zijn de request-state; er is geen tweede requestdatabase;
-- geaccepteerde overdracht past de bestaande occurrence aan en synchroniseert bestaande Task/Agenda-projecties, zonder nieuwe occurrence/task/event te creëren;
-- duplicate-tap guard + idempotente state-machine voor herhaald dezelfde aanvraag;
-- Action Inbox is writer-free en deriveert beslissingen uit canonical occurrence-state;
-- samenwerking laadt samen met de Cleaning-route en hergebruikt dezelfde CleaningV2Repository snapshot/listener;
-- op een verse ontvanger-sessie hydrateert de Action Inbox Cleaning alleen wanneer de Inbox zelf wordt geopend: één verse canonical snapshot, daarna direct repository/listener teardown;
-- geen Cleaning-work tijdens normale app-startup;
-- geen extra notificatieprojector/listener toegevoegd; V2.1 gebruikt de actionable Inbox om notificatieruis te voorkomen;
-- weekplan approval niet teruggebouwd omdat dit de huidige simpele UX niet vereenvoudigt.
+- ontvanger accepteert/weigert via Action Inbox;
+- tegenvoorstel persoon/dag/tijd;
+- derde-persoon counter wordt nooit stil toegewezen maar vraagt apart akkoord;
+- hulp vragen, accepteren/weigeren en intrekken;
+- transfer intrekken zolang PENDING/COUNTER_PROPOSED;
+- hulpacceptatie maakt geen multi-person assignment;
+- request-state blijft op `CleaningOccurrence.transferRequest` / `helpRequest`;
+- accepted transfer synchroniseert bestaande Task/Agenda-projecties zonder nieuwe records;
+- duplicate-tap guard + idempotente request-state;
+- Action Inbox is writer-free en hydrateert Cleaning op een verse sessie alleen on-demand;
+- geen Cleaning startupwerk, extra long-lived listener of notification projector;
+- weekplan approval niet teruggebouwd.
 
-Nieuwe/gewijzigde kernbestanden:
-- `src/modules/cleaning/cleaningCollaborationContract.js`
-- `src/modules/cleaning/cleaningCollaborationExperience.js`
-- `src/modules/cleaning/cleaningPremiumFeedback.js` als lazy importbridge; oude premium runtime blijft inert
-- `src/platform/inbox/actionInboxRegistry.js`
-- `src/platform/inbox/actionInboxScreen.js`
-- `scripts/test-cleaning-collaboration-v21.js`
-- V2.1-updates in Action Inbox en Cleaning closeout-contracttests.
+### V2.1 UX-besluit / correctie
 
-Teststatus op functioneel/testcheckpoint `1460b9de…`:
-- volledige `scripts/test-*.js` repositorysuite: **PASS**;
-- GitHub Actions run `34519907566`: **success**;
-- Vercel Git deployment: **READY / success**;
-- immutable preview van dat functionele checkpoint: `https://verhoog-family-j4tekgf2i-cverhoog-techs-projects.vercel.app`;
-- vaste branch-preview alias: `https://verhoog-family-git-agent-househo-3f9e18-cverhoog-techs-projects.vercel.app`.
+Samenwerken is **geen zelfstandig menu onder Kamers**.
+
+De flow is nu:
+- open een concrete beurt in Vandaag/Weekplan;
+- in de bestaande beurt-detail-sheet staan `Overdragen` en `Hulp vragen`;
+- lopende requeststate en `Intrekken` staan daar contextueel bij die beurt;
+- incoming accept/decline/counter blijft in Action Inbox;
+- `Ander voorstel` brengt terug naar precies die concrete beurt;
+- de bestaande V2 detail-sheet blijft de enige popup owner;
+- de collaboration lazy-import gebruikt cache key `?v=2` zodat iPhone/PWA geen oude standalone UI blijft laden.
+
+Contracts bewaken expliciet dat het standalone collaborationmenu niet terugkomt en dat geen verboden zware runtimepatronen worden toegevoegd.
 
 Nog vereist voor V2.1 acceptance:
-- real-device iPhone test door product owner;
-- Cleaning openen/sluiten/heropenen zonder performance-regressie;
-- overdracht → acceptatie;
-- op een verse ontvanger-sessie direct Action Inbox openen; verzoek zichtbaar zonder eerst Cleaning handmatig te openen;
-- overdracht → weigering;
-- overdracht → tegenvoorstel persoon/dag/tijd;
-- tegenvoorstel naar derde persoon → expliciet nieuw akkoord;
-- overdracht intrekken;
-- hulp vragen → accepteren/weigeren;
-- hulpvraag intrekken;
-- snelle dubbele taps/verzoeken zonder dubbele records;
-- na geaccepteerde overdracht dezelfde assignee/datum in Schoonmaken, Taken en Agenda;
-- na verlaten Cleaning/Inbox geen achterblijvende Cleaning runtime.
+- echte iPhone real-device test;
+- geen los Samenwerken-menu onder Kamers;
+- open concrete beurt → Overdragen/Hulp vragen zichtbaar in detail-sheet;
+- transfer → accept/decline/counter/withdraw;
+- verse ontvanger-sessie → direct Action Inbox → request zichtbaar;
+- derde-persoon counter → apart akkoord;
+- help → accept/decline/withdraw;
+- snelle dubbele taps zonder duplicates;
+- accepted transfer consistent in Cleaning/Taken/Agenda;
+- Cleaning openen/sluiten/heropenen zonder freeze/jank of achterblijvende runtime.
 
 **Niet als real-device geaccepteerd markeren totdat de product owner dat expliciet bevestigt.**
 
@@ -118,27 +92,24 @@ Status: **VOLGENDE PRODUCTMILESTONE, PAS NA ACCEPTATIE V2.1**
 
 - kamerhistorie;
 - routinehistorie;
-- completion logs zichtbaar maken;
-- tonen wie wat wanneer heeft afgerond;
+- completion logs zichtbaar;
+- wie/wat/wanneer;
 - relevante Cleaning-events naar bestaande household activity feed;
 - alleen nuttige reminders;
-- eventueel subtiele gezamenlijke progressie;
-- geen competitief schoonmaakleaderboard.
+- eventueel subtiele gezamenlijke progressie, geen leaderboard.
 
 ## V2.3 Functionele gaten + hardening
 Status: **OPEN NA V2.2**
 
 - onvolledige beurt: doorschuiven / later deze week / overslaan;
-- handmatig ander moment/persoon kiezen;
-- Tasks/Agenda projectieconsistentie verder hardenen;
+- handmatig ander moment/persoon;
+- projection consistency;
 - household-key safety;
 - create/submit/tap idempotency;
-- listener lifecycle bij account/household switch;
-- soft-delete randgevallen;
+- account/household switch lifecycle;
+- soft-delete;
 - cache/versioning;
 - extra contracttests.
-
-Geen availability-, vakantie-, ziekte- of capaciteitsengine toevoegen.
 
 ## V2.4 Definitieve premium visual polish
 Status: **OPEN NA FUNCTIONELE STABILITEIT**
@@ -148,57 +119,37 @@ Status: **OPEN NA FUNCTIONELE STABILITEIT**
 - kameratlassen/assets;
 - duidelijke kaart-hiërarchie;
 - lichte native-iOS microinteracties;
-- geen zware blur/glass/repaint-effecten die performance verslechteren.
+- geen zware blur/glass/repaint-effecten.
 
 # STEP 15 — Branding / PWA / Login & Auth
 Status: **OPEN NA CLEANING**
 
-Branding:
-- nieuw FamilyApp-logo;
-- PWA-icoon + maskable icon;
-- Apple Touch icon;
-- favicon-set;
-- premium minimalistisch huis-symbool, warme achtergrond, licht crème/wit silhouet.
-
-Login/auth:
-- nieuw premium inlogscherm;
-- Google behouden;
-- Apple behouden;
-- normale accountlogin + registratie behouden en expliciet testen;
-- normale accountflow: validatie, onboarding/household, logout/login, PWA sessiepersistence, geen dubbele bootstrap;
-- Apple-loginactie ook bereikbaar vanaf Home via exact dezelfde auth authority;
-- Google post-auth freeze opnieuw alleen onderzoeken als hij op huidige basis reproduceerbaar is.
-
-PWA-gate:
-- manifest;
-- icon references;
-- maskable icon;
-- theme/background color;
-- launch appearance;
-- caching;
-- scherp icoon op echte iPhone Home Screen.
+- nieuw FamilyApp-logo en icon family;
+- PWA/maskable/Apple Touch/favicon;
+- premium login screen;
+- Google, Apple en normale accountlogin/registratie behouden en testen;
+- Apple-loginactie ook via Home onder dezelfde auth authority;
+- manifest/theme/background/caching/Home Screen icon real-device verificatie;
+- Google post-auth freeze alleen opnieuw openen als reproduceerbaar.
 
 # Overige werkelijk open hoofdlijnen
 
 ## Internationalisatie
 Status: **LATER**
-- Nederlands, Engels, Turks, Duits, Frans;
-- centrale i18n-architectuur;
-- taalkeuze per gebruiker opslaan.
+- NL / EN / TR / DE / FR via centrale i18n en opgeslagen taalkeuze.
 
 ## Party Quest toast
 Status: **ALLEEN HUIDIGE REAL-DEVICE STATUS VERIFIËREN**
-- fixcandidate bestaat;
-- geen nieuwe code schrijven zonder reproduceerbare huidige regressie.
+- bestaande fixcandidate eerst testen, geen nieuwe code zonder actuele regressie.
 
 ## Release/security
 Status: **LATER RICHTING PUBLIEKE RELEASE**
 - server-side Firebase Rules voor rollen ontwerpen/testen;
 - Apple provider/configuratie;
 - App Store requirements;
-- native/PWA releasekeuzes.
-- Production Firebase Rules nooit wijzigen zonder expliciete toestemming.
+- native/PWA releasekeuzes;
+- production Firebase Rules nooit wijzigen zonder expliciete toestemming.
 
 # Afgerond — niet automatisch heropenen
 
-Reeds gebouwde/geaccepteerde delen, waaronder STEP 12 Profiel/presence/avatar, STEP 13 Activity/Feed, maaltijdfollow-up, bestaande Action Inbox basis, UI-schaal, safe-area/dark-mode gates, notificatie/push basis, boodschappenarchitectuur, Taken create-card en bestaande Apple Sign-In clientbasis, worden alleen heropend bij een actuele reproduceerbare regressie.
+Reeds gebouwde/geaccepteerde delen zoals STEP 12 Profiel/presence/avatar, STEP 13 Activity/Feed, maaltijdfollow-up, Action Inbox basis, UI-schaal, safe-area/dark-mode gates, notificatie/push basis, boodschappenarchitectuur, Taken create-card en bestaande Apple Sign-In clientbasis worden alleen heropend bij een actuele reproduceerbare regressie.
