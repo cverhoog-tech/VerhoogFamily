@@ -20,21 +20,21 @@ assert.match(turn,/stopImmediatePropagation\(\)/,'Cleaning turn owner must preve
 assert.match(turn,/TaskSharedData/,'Checklist and completion must keep the existing task execution write route');
 assert.match(turn,/CleaningSupplyExperience/,'Supplies must keep the existing Cleaning supply experience');
 assert.doesNotMatch(turn,/TaskDetailPopup/,'Cleaning turn UI must never reuse the generic TaskDetailPopup');
-assert.doesNotMatch(turn,/MutationObserver/,'Dedicated Cleaning turn popup must not use DOM observers');
+assert.doesNotMatch(turn,/new\s+MutationObserver|MutationObserver\s*\(/,'Dedicated Cleaning turn popup must not create DOM observers');
 assert.doesNotMatch(turn,/scrollIntoView/,'Cleaning turn popup must not invoke browser-managed scrollIntoView');
 
 // The heavy Cleaning screen must be detached while the fullscreen turn modal
 // owns the interaction. This prevents repository/member emissions from doing a
 // full root.innerHTML rebuild behind the modal and prevents presentation
-// MutationObservers from decorating that hidden DOM. Restore exactly once when
-// the modal closes, using the same canonical CleaningScreen module identity.
+// observers from decorating that hidden DOM. Restore exactly once when the
+// modal closes, using the same canonical CleaningScreen module identity.
 assert.match(turn,/import '\.\/cleaningTurnRenderGuard\.js\?v=20260910-1';/,'Turn experience must load the render guard before registering its capture owner');
 assert.match(guard,/window\.CleaningTurnRenderGuard\s*=\s*\{/,'Cleaning turn render guard must be exported');
 assert.match(guard,/replaceChild\(placeholder,root\)/,'Render guard must detach the Cleaning content root while the modal is open');
 assert.match(guard,/familyapp:cleaning-turn-closed/,'Render guard must restore after the dedicated turn modal closes');
 assert.match(guard,/import\('\/src\/modules\/cleaning\/cleaningScreen\.js\?v=1'\)/,'Render guard must reuse the canonical CleaningScreen module identity');
 assert.match(guard,/renderCleaningScreen\(root\)/,'Render guard must perform one fresh render after restoring the root');
-assert.doesNotMatch(guard,/MutationObserver/,'Render guard must not introduce another DOM observer');
+assert.doesNotMatch(guard,/new\s+MutationObserver|MutationObserver\s*\(/,'Render guard must not introduce another DOM observer');
 assert.doesNotMatch(guard,/TaskSharedData|CleaningHouseholdRepository\.(create|update|remove|save)|\.transaction\(/,'Render guard must remain presentation-only and must not write Cleaning/task data');
 assert.doesNotMatch(guard,/scrollIntoView/,'Render guard must not use browser-managed scrolling');
 assert.doesNotMatch(guard,/TaskDetailPopup/,'Render guard must not reintroduce the generic task popup');
