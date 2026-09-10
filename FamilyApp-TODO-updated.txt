@@ -14,7 +14,7 @@ Laatst bijgewerkt: 10-09-2026
 
 De oude TODO- en fixlijsten bevatten historische punten die inmiddels zijn gebouwd of real-device geaccepteerd. Die worden NIET opnieuw als open werk behandeld zonder een concrete huidige regressie.
 
-Voor Schoonmaken geldt een uitzondering: veel geavanceerde functies waren historisch al gebouwd in de oude Cleaning-runtime, maar die runtime veroorzaakte ernstige freezes en is bewust uit de actieve app gehaald. Die functies tellen daarom niet als nieuw productidee, maar moeten waar gewenst opnieuw lichtgewicht in Cleaning v2 worden ingebouwd zonder de oude runtime terug te activeren.
+Voor Schoonmaken geldt: veel geavanceerde functies waren historisch al gebouwd in de oude Cleaning-runtime, maar die runtime veroorzaakte ernstige freezes en is bewust uit de actieve app gehaald. Alleen functies die productmatig nog gewenst zijn worden opnieuw lichtgewicht in Cleaning v2 ingebouwd. Oude complexiteit wordt niet automatisch teruggebracht.
 
 ---
 
@@ -49,30 +49,25 @@ Vaste architectuurregels:
 - Tasks/Agenda blijven projecties van `CleaningOccurrence`.
 - Iedere grote uitbreiding moet ook op echte iPhone soepel blijven.
 
-## V2.1 Beschikbaarheid / pauzes / drukke weken
-Status: **VOLGENDE STAP - OPNIEUW LICHTGEWICHT IN V2 BOUWEN**
+## Productbesluit - Cleaning bewust simpel houden
+Status: **VAST BESLUIT 10-09-2026**
 
-Deze functies bestonden historisch al, maar zijn niet actief in de nieuwe performance-first runtime.
-
-- Beschikbaarheid per gezinslid in planning.
-- Tijdelijk niet beschikbaar.
-- Vakantie.
+De volgende oude complexiteit komt NIET terug in Cleaning v2:
+- Beschikbaarheid per gezinslid.
+- Vakantieperiodes.
 - Ziekte/afwezigheid.
-- Drukke week / tijdelijk lagere capaciteit.
-- Kamer pauzeren.
-- Routine pauzeren.
-- Optionele einddatum.
-- Na hervatten geen backlog-explosie.
-- Intervalritme logisch voortzetten.
-- In planning tonen waarom iets niet/anders gepland is.
-- Alleen pure availability-logica hergebruiken waar nuttig; oude experience-runtime niet terughalen.
+- Drukke-week/capaciteitslogica.
+- Tijdelijke planning-pauzes of vergelijkbare uitzonderingsmodellen.
+- Automatische herplanning op basis van persoonlijke beschikbaarheid.
 
-## V2.2 Samenwerking / approval / hulp
-Status: **OPEN VOOR V2-HERBOUW**
+Reden: dit maakt de module onnodig complex. Cleaning moet primair snel duidelijk maken wat er moet gebeuren, door wie en wanneer, en gebruikers moeten eenvoudig kunnen uitvoeren, verdelen of handmatig aanpassen.
+
+## V2.1 Samenwerking / approval / hulp
+Status: **VOLGENDE STAP - LICHTGEWICHT IN V2 HERBOUWEN**
 
 Historisch bestonden approval, overdracht, tegenvoorstellen en hulpflows al. De productlogica mag als referentie dienen, de oude runtime niet.
 
-- Weekplan approval lichtgewicht in v2.
+- Weekplan approval alleen als dit de flow echt eenvoudiger maakt.
 - Beurt overdragen aan ander gezinslid.
 - Accepteren/weigeren.
 - Tegenvoorstel voor persoon/dag/tijd.
@@ -83,7 +78,7 @@ Historisch bestonden approval, overdracht, tegenvoorstellen en hulpflows al. De 
 - Multi-person assignment eventueel als aparte uitbreiding.
 - Idempotent: herhaald klikken mag geen dubbele occurrence/task maken.
 
-## V2.3 Historie / activity / reminders
+## V2.2 Historie / activity / reminders
 Status: **OPEN VOOR V2-HERBOUW**
 
 Historische Cleaning completion/activity-logica bestaat als referentie, maar de zware presentation/runtime-laag blijft uitgeschakeld.
@@ -96,13 +91,13 @@ Historische Cleaning completion/activity-logica bestaat als referentie, maar de 
 - Alleen nuttige reminders.
 - Eventueel subtiele gezamenlijke Cleaning-progressie/achievements; geen schoonmaak-leaderboard.
 
-## V2.4 Functionele gaten + hardening
+## V2.3 Functionele gaten + hardening
 Status: **OPEN / CONTROLEREN IN V2**
 
 - Persoonlijke voorkeur Tijd / Aantal taken / Beide opnieuw lichtgewicht aanbieden indien nog gewenst.
 - Onvolledige beurt: doorschuiven / deze week opnieuw / overslaan.
 - Datum/tijd-wijzigingen vanuit Taken/Agenda op v2-consistentie controleren.
-- Conflicten/alternatieve momenten alleen lichtgewicht aanbieden waar nodig.
+- Handmatig een ander moment/persoon kiezen waar nodig, zonder availability-engine.
 - Household-key-validatie.
 - Create-idempotency en dubbele-submit bescherming.
 - Projection consistency Tasks/Calendar.
@@ -111,7 +106,7 @@ Status: **OPEN / CONTROLEREN IN V2**
 - Cache keys Cleaning modules/assets gecontroleerd beheren.
 - Contracttests per nieuwe v2-slice.
 
-## V2.5 Premium visual polish
+## V2.4 Premium visual polish
 Status: **OPEN - NA FUNCTIONELE V2-SLICES**
 
 - Definitieve premium FamilyApp-look.
@@ -121,11 +116,11 @@ Status: **OPEN - NA FUNCTIONELE V2-SLICES**
 - Korte native-feeling microinteracties zonder performance-regressie.
 - Geen zware blur/glass-effecten die iPhone repaint-jank terugbrengen.
 
-## V2.6 Slimme inzichten
+## V2.5 Slimme inzichten
 Status: **LATER / OPTIONEEL**
 
 - Data-gedreven frequentievoorstellen.
-- Slimmere weekverdeling op historie/beschikbaarheid.
+- Slimmere weekverdeling op basis van historie en bestaande taakverdeling, zonder beschikbaarheidsmodel.
 - Family Assistant geeft alleen voorstellen en wijzigt nooit stilzwijgend structurele planning.
 - Supplies-suggesties verder verfijnen.
 
@@ -298,15 +293,14 @@ Deze punten mogen later in rustige, afzonderlijke onderhoudsslices worden gedaan
 
 # Werkvolgorde vanaf 10-09-2026
 
-1. **Cleaning V2.1** - beschikbaarheid / vakantie / drukke week / pauzes lichtgewicht terugbrengen.
-2. **Cleaning V2.2** - samenwerking / approval / overdracht / hulp / notificaties lichtgewicht terugbrengen.
-3. **Cleaning V2.3** - historie / activity / reminders terugbrengen.
-4. **Cleaning V2.4** - resterende v2-gaten + technische hardening.
-5. **Cleaning V2.5** - definitieve premium visual polish.
-6. **STEP 15 Branding / PWA / Login & Auth UX** - logo, PWA, nieuw inlogscherm, normale accountregistratie, Apple op Home en auth real-device gate.
-7. **Internationalisatie / talen**.
-8. **Release/security readiness**.
-9. **Cleaning V2.6 slimme/adviserende inzichten** en overige optionele productuitbreidingen wanneer gewenst.
+1. **Cleaning V2.1** - samenwerking / approval / overdracht / hulp / notificaties lichtgewicht terugbrengen.
+2. **Cleaning V2.2** - historie / activity / reminders terugbrengen.
+3. **Cleaning V2.3** - resterende v2-gaten + technische hardening.
+4. **Cleaning V2.4** - definitieve premium visual polish.
+5. **STEP 15 Branding / PWA / Login & Auth UX** - logo, PWA, nieuw inlogscherm, normale accountregistratie, Apple op Home en auth real-device gate.
+6. **Internationalisatie / talen**.
+7. **Release/security readiness**.
+8. **Cleaning V2.5 slimme/adviserende inzichten** en overige optionele productuitbreidingen wanneer gewenst.
 
 Na iedere grote stap:
 - contracttests;
