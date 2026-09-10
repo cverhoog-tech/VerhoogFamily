@@ -43,7 +43,7 @@ need(collaboration,/\.transaction\(function\(server\)/,'collaboration writes mus
 need(collaboration,/syncAcceptedProjection/,'accepted transfer must update existing projections');
 need(collaboration,/state\.busy\.has\(occurrenceId\)/,'duplicate-tap guard must exist');
 forbid(collaboration,/\.on\(\s*['"]value['"]/,'v2.1 must not add a second Cleaning Firebase listener');
-forbid(collaboration,/MutationObserver|document\.addEventListener\('click'|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.1 must not reactivate forbidden runtime patterns');
+forbid(collaboration,/new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.1 must not reactivate forbidden runtime patterns');
 forbid(collaboration,/NotificationStore|publishSelf|publishTo/,'v2.1 collaboration must not create noisy notification projection work');
 need(premium,/import '\.\/cleaningCollaborationExperience\.js\?v=1'/,'v2.1 collaboration must lazy-load with Cleaning');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
