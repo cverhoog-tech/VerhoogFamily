@@ -82,7 +82,8 @@ assert.match(experienceSource,/sheet\.addEventListener\('click',onSheetClick\)/,
 assert.match(experienceSource,/openTurnForCounter/,'Action Inbox counter must route back to the concrete turn');
 assert.match(experienceSource,/syncAcceptedProjection/,'accepted transfers must update existing Task\/Agenda projections');
 assert.match(experienceSource,/state\.busy\.has\(occurrenceId\)/,'double tap guard must exist');
-assert.match(premiumSource,/import '\.\/cleaningCollaborationExperience\.js\?v=1'/,'collaboration must remain lazy behind Cleaning navigation');
+assert.match(premiumSource,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'collaboration must remain lazy behind Cleaning navigation with a bumped cache key');
+assert.match(premiumSource,/version:'2\.1\.1'/,'premium shim should expose the contextual collaboration UX version');
 assert.match(premiumSource,/disabledForCleaningV2:true/,'legacy premium compatibility marker must remain inert');
 assert.doesNotMatch(premiumSource,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim itself must remain runtime-free');
 assert.match(registrySource,/type:'cleaning\.occurrence\.transfer'/,'Action Inbox must expose occurrence transfer decisions');
@@ -100,5 +101,6 @@ assert.doesNotMatch(statusSource,/STEP 14 is FUNCTIONEEL AFGEROND EN REAL-DEVICE
 assert.match(architectureSource,/CleaningOccurrence is de concrete authority/,'architecture must keep CleaningOccurrence canonical');
 assert.match(architectureSource,/Third-person counter safety/,'architecture must document explicit third-person consent');
 assert.match(architectureSource,/CleaningV2Repository` heeft één actieve household-scoped Firebase `value` listener/,'architecture must preserve the one-listener performance rule');
+assert.match(architectureSource,/geen zelfstandig Samenwerken-menu onder Kamers/,'architecture must document contextual collaboration UX');
 
 console.log('Cleaning V2.1 collaboration contracts: PASS');
