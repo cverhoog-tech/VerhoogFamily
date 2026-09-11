@@ -9,6 +9,7 @@ function read(rel){return fs.readFileSync(path.join(ROOT,rel),'utf8');}
 
 const contractSource=read('src/modules/cleaning/cleaningHistoryContract.js');
 const historySource=read('src/modules/cleaning/cleaningHistoryV22.js');
+const companionSource=read('src/modules/cleaning/cleaningCompanionLoader.js');
 const premiumSource=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const navigationSource=read('src/core/navigation.js');
 const statusSource=read('FamilyApp-Schoonmaken-current-status.md');
@@ -87,9 +88,9 @@ assert.doesNotMatch(historySource,/setInterval\s*\(|setTimeout\s*\(/,'V2.2 must 
 assert.doesNotMatch(historySource,/NotificationStore|publishSelf|publishToUids|pushDelivery|notificationProjector/i,'V2.2 reminders stay in-module and must not create notification noise');
 assert.doesNotMatch(historySource,/TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'V2.2 must not reactivate legacy freeze-prone owners');
 assert.doesNotMatch(contractSource,/\.ref\s*\(|firebase|document\.|MutationObserver|setInterval|setTimeout/,'history contract must remain pure');
-assert.match(premiumSource,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'V2.2 history must stay lazy behind Cleaning navigation');
-assert.match(premiumSource,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'V2.1 collaboration must remain present while V2.2 is added');
-assert.match(premiumSource,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'V2.2.1 visual companion may extend the same Cleaning-only graph without replacing V2.2');
+assert.match(companionSource,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'V2.2 history must stay lazy behind the Cleaning-only companion loader');
+assert.match(companionSource,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'V2.1 collaboration must remain present while V2.2 is added');
+assert.match(companionSource,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'V2.2.1 visual companion may extend the same Cleaning-only graph without replacing V2.2');
 assert.match(premiumSource,/version:'2\.2\.1'/,'Cleaning companion marker must reflect the current downstream visual milestone');
 assert.doesNotMatch(premiumSource,/cleaningHistoryExperience|cleaningActivityProjector|cleaningNotificationProjector/,'old pre-reset history/activity/notification runtimes must stay disconnected');
 assert.doesNotMatch(navigationSource,/cleaningHistoryV22|cleaningHistoryContract/,'V2.2 must not move onto global app startup/navigation bootstrap');
