@@ -2,7 +2,7 @@
 // FamilyApp Login Brand v7 — native DOM/CSS surface. No screenshot-as-UI.
 (function(){
   if(window.FamilyAppLoginBrandV7)return;
-  var VERSION='7.0.1';
+  var VERSION='7.1.0';
   var screen=null,sheet=null,mode='login',messageTimer=null;
 
   function providers(){return window.FamilyAppAuthProviders||{};}
@@ -31,12 +31,15 @@
   function googleSvg(){
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.52h3.24c1.9-1.75 2.98-4.33 2.98-7.37Z"/><path fill="#34A853" d="M12 22c2.7 0 4.98-.9 6.64-2.4l-3.24-2.52c-.9.6-2.05.96-3.4.96-2.6 0-4.8-1.75-5.6-4.11H3.07v2.59A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 13.93A6 6 0 0 1 6.08 12c0-.67.12-1.32.32-1.93V7.48H3.07A10 10 0 0 0 2 12c0 1.61.39 3.14 1.07 4.52l3.33-2.59Z"/><path fill="#EA4335" d="M12 5.96c1.48 0 2.79.51 3.84 1.5l2.87-2.87A9.65 9.65 0 0 0 12 2a10 10 0 0 0-8.93 5.48l3.33 2.59C7.2 7.71 9.4 5.96 12 5.96Z"/></svg>';
   }
+  function appleSvg(){
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 1.43c.1 1.05-.27 2.08-.92 2.83-.7.8-1.83 1.42-2.91 1.34-.13-1.01.33-2.09.95-2.8.69-.79 1.87-1.35 2.88-1.37ZM20.5 17.05c-.56 1.28-.83 1.85-1.55 2.95-1 1.52-2.41 3.42-4.16 3.44-1.55.02-1.95-1.01-4.05-1-2.1.01-2.54 1.02-4.09 1-1.75-.02-3.09-1.73-4.09-3.25C-.21 15.99-.5 11.07 1.2 8.47c1.21-1.85 3.12-2.94 4.92-2.94 1.83 0 2.98 1.02 4.49 1.02 1.46 0 2.35-1.02 4.47-1.02 1.6 0 3.3.9 4.51 2.44-3.96 2.23-3.31 8.07.91 9.08Z"/></svg>';
+  }
   function featureSvg(kind){
     var map={
-      people:'<svg viewBox="0 0 32 32"><circle cx="11" cy="10" r="4"/><circle cx="22" cy="11" r="3.5"/><path d="M4 25c0-5 3-8 7-8s7 3 7 8M17 24c.4-4 2.6-6 5.5-6 3.2 0 5.5 2.5 5.5 6.5"/></svg>',
-      places:'<svg viewBox="0 0 32 32"><path d="M6 25 14 9l5 9 3-5 5 12"/><path d="M3 25h26"/></svg>',
-      grow:'<svg viewBox="0 0 32 32"><path d="M16 27V14"/><path d="M16 18c-6 0-9-3-9-8 6 0 9 3 9 8ZM16 16c0-6 3-9 9-9 0 6-3 9-9 9Z"/></svg>',
-      sun:'<svg viewBox="0 0 32 32"><path d="M5 24h22"/><path d="M9 24a7 7 0 0 1 14 0"/><path d="M16 5v5M5 15l4 2M27 15l-4 2M9 8l3 4M23 8l-3 4"/></svg>'
+      family:'<svg viewBox="0 0 32 32"><circle cx="10" cy="10" r="3.5"/><circle cx="22" cy="10" r="3.5"/><circle cx="16" cy="7" r="3"/><path d="M3.5 25c0-5 2.5-8 6.5-8s6.5 3 6.5 8M15.5 25c0-5 2.5-8 6.5-8s6.5 3 6.5 8M10.5 17c.6-3.2 2.5-5 5.5-5s4.9 1.8 5.5 5"/></svg>',
+      home:'<svg viewBox="0 0 32 32"><path d="M5 14.5 16 5l11 9.5V27H5V14.5Z"/><path d="M12 27v-8h8v8"/></svg>',
+      broom:'<svg viewBox="0 0 32 32"><path d="M22.5 4 13 17.5"/><path d="m11.5 16 6 4.5"/><path d="M8 19.5 18.5 27c2-3.5 2.3-6.6-.9-9L15 16c-2.7-2-5.2.1-7 3.5Z"/><path d="M6.5 22 14 27.5"/></svg>',
+      bed:'<svg viewBox="0 0 32 32"><path d="M4 11v16M28 16v11M4 21h24"/><path d="M7 14h7c2.2 0 4 1.8 4 4v3H4v-4c0-1.7 1.3-3 3-3Z"/><path d="M18 15h6c2.2 0 4 1.8 4 4v2H18v-6Z"/><circle cx="10" cy="17" r="1.8"/></svg>'
     };
     return map[kind]||'';
   }
@@ -47,20 +50,20 @@
       +'<main class="flv7-layout">'
       +'<section class="flv7-hero">'
       +'<div class="flv7-brand"><div class="flv7-mark">'+logoSvg()+'</div><div class="flv7-wordmark">FamilyApp</div><div class="flv7-subtitle">SAMEN RUST EN OVERZICHT</div></div>'
-      +'<div class="flv7-tagline"><span>EEN</span><span>LICHTERE</span><span>MORGEN</span><span>SAMEN</span><i></i></div>'
+      +'<div class="flv7-tagline"><span>SAMEN</span><span>RUST</span><span>EN</span><span>OVERZICHT</span><i></i></div>'
       +'</section>'
       +'<section class="flv7-panel" aria-label="Inloggen bij FamilyApp">'
       +'<div id="flv7-message" class="flv7-message" hidden></div>'
       +'<button type="button" id="flv7-login" class="flv7-btn flv7-primary"><span>Inloggen</span><b aria-hidden="true">→</b></button>'
       +'<button type="button" id="flv7-register" class="flv7-btn flv7-secondary">Account maken</button>'
       +'<div class="flv7-divider"><span></span><em>OF</em><span></span></div>'
-      +'<button type="button" id="flv7-google" class="flv7-btn flv7-social"><i class="flv7-provider-icon">'+googleSvg()+'</i><span>Doorgaan met Google</span></button>'
-      +'<button type="button" id="flv7-apple" class="flv7-btn flv7-social"><i class="flv7-provider-icon flv7-apple-icon"></i><span>Doorgaan met Apple</span></button>'
+      +'<button type="button" id="flv7-google" class="flv7-btn flv7-social"><i class="flv7-provider-icon">'+googleSvg()+'</i><span class="flv7-provider-label">Doorgaan met Google</span><i class="flv7-provider-spacer" aria-hidden="true"></i></button>'
+      +'<button type="button" id="flv7-apple" class="flv7-btn flv7-social"><i class="flv7-provider-icon flv7-apple-icon">'+appleSvg()+'</i><span class="flv7-provider-label">Doorgaan met Apple</span><i class="flv7-provider-spacer" aria-hidden="true"></i></button>'
       +'<div class="flv7-values" aria-label="FamilyApp waarden">'
-      +'<div><i>'+featureSvg('people')+'</i><span>MENSEN</span></div>'
-      +'<div><i>'+featureSvg('places')+'</i><span>PLEKKEN</span></div>'
-      +'<div><i>'+featureSvg('grow')+'</i><span>GROEI</span></div>'
-      +'<div><i>'+featureSvg('sun')+'</i><span>LICHTERE<br>MORGENS</span></div>'
+      +'<div><i>'+featureSvg('family')+'</i><span>FAMILIE</span></div>'
+      +'<div><i>'+featureSvg('home')+'</i><span>THUIS</span></div>'
+      +'<div><i>'+featureSvg('broom')+'</i><span>TAKEN</span></div>'
+      +'<div><i>'+featureSvg('bed')+'</i><span>RUST</span></div>'
       +'</div>'
       +'</section>'
       +'</main>'
