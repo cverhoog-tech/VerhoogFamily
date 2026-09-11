@@ -14,7 +14,7 @@ Cleaning V2.0 performance-first basis:
 Status: **REAL-DEVICE GEACCEPTEERD OP IPHONE**. Deze basis is naar main gepromoveerd. Production/main blijft:
 `b7f233ebfe1fbb20ecdf426003f332528562ab0f`
 
-De primaire Cleaning-runtime blijft `src/modules/cleaning/cleaningScreen.js` v2.0.0. Die accepted kern is voor V2.2 niet opengebroken.
+De primaire Cleaning-runtime blijft `src/modules/cleaning/cleaningScreen.js` v2.0.0. Die accepted kern is ook tijdens V2.1/V2.2/V2.2.1 niet vervangen als canonical execution/write authority.
 
 Blijvende architectuur:
 - lazy Cleaning load;
@@ -49,132 +49,152 @@ V2.1 blijft bevatten:
 - duplicate-tap/idempotency guards;
 - verse Action Inbox-sessie hydrateert Cleaning uitsluitend on-demand en doet daarna teardown.
 
-### V2.1 UX
+Samenwerken is geen apart menu onder Kamers. Het blijft contextueel bij de concrete beurt in dezelfde bestaande Cleaning-sheet. Incoming beslissingen blijven in Action Inbox.
 
-Samenwerken is geen apart menu onder Kamers. `Overdragen`, `Hulp vragen`, status en `Intrekken` staan contextueel in de bestaande concrete beurt-detail-sheet. Incoming beslissingen blijven in Action Inbox. Een tegenvoorstel routeert terug naar de concrete occurrence. De bestaande V2-sheet blijft de enige popup owner.
-
-### Nog later multi-user verifiëren
-
-- transfer request op account A → zichtbaar op verse sessie account B;
-- accept/decline;
-- Task/Agenda assignee consistency na acceptatie;
-- counter persoon/dag/tijd;
-- derde-persoon counter vraagt apart akkoord;
-- help accept/decline;
-- withdraw flows;
-- rapid repeat taps zonder duplicates;
-- geen achtergrondperformance-regressie na beide accounts/flows.
+Open latere multi-user gate: A/B/C transfer/help/counter/withdraw, projection consistency, rapid taps en lifecycle/performance over meerdere accounts.
 
 ## 3. Cleaning V2.2 — historie / Activity / nuttige aandacht
 
 Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST NOG OPEN**.
 
-Laatste functionele/testcheckpoint:
+Functioneel runtimecheckpoint:
 `ffb0552bad734309e02361de87bde7a3e96a3464`
+
+Laatste V2.2 docs/testcheckpoint vóór de detailvisualrework:
+`28fd9fb6832ef369ee084723b4a71736fb4e662d`
 
 GitHub Actions:
 - workflow: `Household Rebuild Contract Tests`;
-- run: `34537327502`;
-- volledige `scripts/test-*.js` suite: **PASS**;
+- run: `34537817885`;
 - conclusion: **SUCCESS**.
 
-### Gebouwd
+V2.2 bevat:
+- pure `cleaningHistoryContract.js` over canonical `completionLogs`;
+- lichte `cleaningHistoryV22.js` companion;
+- vierde Cleaning-tab `Historie`;
+- history per kamer/routine;
+- laatste moment + uitvoerend gezinslid;
+- 30-dagen activity counts;
+- current-week count/minuten/mensen summary;
+- rustige in-module aandacht voor eigen today/overdue beurten;
+- best-effort `cleaning.completed` naar bestaande Household Activity;
+- deterministic dedupe key;
+- geen historische feed flood;
+- REOPENED publiceert geen tweede completed Activity.
 
-Nieuwe pure read-model laag:
-`src/modules/cleaning/cleaningHistoryContract.js`
+V2.2 voegt geen tweede Firebase-listener, history database, MutationObserver, polling, NotificationStore/pushprojector of popup owner toe. De oude history/activity/notification runtimes blijven disconnected.
 
-Nieuwe lichte Cleaning-only presentatie:
-`src/modules/cleaning/cleaningHistoryV22.js`
+De functionele V2.2 real-device gate blijft open. De zichtbare beurt-/Benodigdheden-test gebeurt vanaf nu via V2.2.1 hieronder.
 
-De bestaande `cleaningPremiumFeedback.js` lazy bridge laadt nu zowel de V2.1 collaboration companion als de V2.2 history companion uitsluitend wanneer Cleaning zelf wordt geopend.
+## 4. Cleaning V2.2.1 — Calm Premium detail visual rework
 
-### Historie-tab
+Status: **IMPLEMENTATIE GEREED — CONTRACT/CI + REAL-DEVICE GATE OPEN**.
 
-Cleaning krijgt een vierde tab `Historie` naast Vandaag, Kamers en Weekplan.
+Implementatiecheckpoint vóór milestone-documentatie:
+`c32eb2dac2be9d40912cdb4c6f68c7566e935e06`
 
-Historie wordt rechtstreeks uit `cleaning/completionLogs` afgeleid en toont:
-- afgeronde beurten gegroepeerd per kamer;
-- per kamer wanneer die voor het laatst is bijgewerkt en door wie;
-- aantallen afgeronde beurten in de laatste 30 dagen;
-- routinehistorie uit de opgeslagen checklist;
-- per routine laatste uitvoermoment, uitvoerder en activiteit in 30 dagen;
-- compacte weekstatistiek: aantal afgeronde beurten, minuten en aantal actieve uitvoerders in de historie.
+### Productbesluit
 
-Er is **geen tweede history-store/database**.
+Op 11-09-2026 is besloten de concrete schoonmaakbeurt en Benodigdheden eerst naar de nieuw vastgezette FamilyApp-designrichting te brengen vóór V2.3 wordt uitgebreid.
 
-### Nuttige aandacht op Vandaag
+Canonieke gedeelde visuele bron:
+`docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md`
 
-Op Vandaag verschijnt alleen wanneer relevant een compacte, rustige aandachtregel voor de huidige ingelogde assignee:
-- aantal eigen beurten vandaag + geschatte minuten;
-- aantal eigen achterstallige beurten + geschatte minuten.
+Richting: **Calm Premium Home**.
 
-Dit is bewust **geen pushmelding en geen NotificationStore-projector**. Er is geen reminder polling-loop. Zodra er niets relevants is, wordt de aandachtregel niet getoond.
+Schoonmaken wordt hierbij nadrukkelijk **geen tweede Taken-module**. De Cleaning-mental model blijft:
 
-### Household Activity
+**kamer → routine → planning → uitvoering → benodigdheden → historie.**
 
-Nieuwe echte completionLogs die tijdens de actieve Cleaning-clientlifecycle worden waargenomen kunnen best-effort naar de bestaande `HouseholdActivity` feed worden geprojecteerd als `cleaning.completed`.
+Taken wordt later visueel geharmoniseerd, maar blijft de algemene uitvoerlaag.
 
-Eigenschappen:
-- deterministic occurrenceKey `cleaning:completion:<completionLogId>`;
-- bestaande Activity `appendOnce`-dedupe blijft authority;
-- de eerste bestaande completionLog-snapshot wordt als baseline genomen om geen historische feed-flood te veroorzaken;
-- REOPENED logs publiceren geen nieuw `cleaning.completed` event;
-- Activity failure maakt een succesvolle Cleaning completion niet ongedaan.
+### Nieuwe detailpresentatie
 
-De oude `cleaningActivityProjector.js` wordt **niet** gereactiveerd.
+Nieuw:
+- `src/modules/cleaning/cleaningDetailVisualV221.js`;
+- `src/styles/cleaning-detail-v221.css`;
+- `scripts/test-cleaning-detail-visual-v221.js`.
 
-### Performancekeuzes V2.2
+`cleaningPremiumFeedback.js` laadt deze visual companion uitsluitend lazy wanneer Cleaning zelf wordt geopend.
 
-V2.2:
-- verandert de accepted primaire `cleaningScreen.js` kern niet;
-- hergebruikt dezelfde `CleaningHouseholdRepository.subscribe` snapshot;
-- creëert geen tweede raw Firebase listener;
-- creëert geen MutationObserver;
-- creëert geen `setInterval`/pollingloop;
-- creëert geen tweede popup owner;
-- creëert geen NotificationStore/push projector;
-- gebruikt twee deferred animation frames alleen na bestaande repository/screen-updates om na de primaire V2-render lichtgewicht UI aan te vullen;
-- blijft buiten normale app-startup.
+### Concrete schoonmaakbeurt
 
-De oude pre-reset bestanden `cleaningHistoryExperience.js`, `cleaningActivityProjector.js` en `cleaningNotificationProjector.js` blijven disconnected historical reference.
+Nieuwe vaste volgorde:
+1. native rustige header;
+2. kamerhero + status;
+3. prominente titel;
+4. dag / moment / onderdelen / duur;
+5. toegewezen persoon;
+6. routineprogressie;
+7. checklist;
+8. `Start schoonmaken` / `Verder schoonmaken`;
+9. `Bewerken`;
+10. `Bekijk beurt` + `Benodigdheden`;
+11. collaboration contextueel binnen dezelfde bestaande sheet.
 
-## 4. Nieuwe testdekking V2.2
+De visual companion gebruikt de bestaande `data-cv2-check` en complete-all controls; `cleaningScreen.js` blijft de write authority.
 
-`scripts/test-cleaning-history-v22.js` dekt onder andere:
-- completion history komt alleen uit canonical `completionLogs`;
-- completed versus reopened status;
-- room grouping;
-- routine history;
-- weeksummary;
-- wie/wat/wanneer data;
-- reminders alleen voor de actuele assignee;
-- completed occurrences tellen niet mee als reminder;
-- deterministic Activity dedupe key;
-- geen Activity-event voor reopened log;
-- geen tweede Firebase listener/database owner;
-- geen MutationObserver;
-- geen pollingtimers;
-- geen NotificationStore/pushprojector;
-- geen oude Cleaning runtime owners;
-- V2.2 blijft lazy achter de Cleaning-route.
+### Benodigdheden
 
-De bestaande V2.0/V2.1 performance-, collaboration-, lifecycle-, permissions- en Action Inbox-contracten blijven eveneens groen.
+Nieuwe vaste volgorde:
+1. contextheader;
+2. `Voor deze beurt / Alle kameritems`;
+3. beurt-/kamerintro;
+4. rustige supply rows;
+5. 46px minimalistische gekleurde line-icon tiles;
+6. tekst + indicator voor `Op voorraad / Bijna op / Ontbreekt`;
+7. `Ontbreekt iets?` callout;
+8. kamer-voorraadsamenvatting;
+9. beheer van kameritem waar capability dit toestaat;
+10. `Bekijk alle kameritems` + `Boodschappen`.
 
-## 5. Real-device testgate V2.2 — open
+LOW/OUT-handoff gebruikt de bestaande `ShoppingListStore.addItems(...,{dedupe:true})`; er is geen nieuwe shopping writer.
 
-Te testen op echte iPhone:
-1. Cleaning openen: vier tabs moeten netjes op één rij staan — Vandaag, Kamers, Weekplan, Historie.
-2. Vandaag blijft soepel; alleen bij eigen today/overdue werk verschijnt de compacte aandachtregel.
-3. Historie openen: geen freeze/jank.
-4. Bestaande completion logs moeten per kamer zichtbaar zijn.
-5. Kamer uitklappen: routines tonen laatste moment + gezinslid.
-6. Een nieuwe beurt afronden; Historie moet na de repository-update bijwerken.
-7. Controleer de household Activity-feed op één `cleaning.completed` item, niet meerdere.
-8. Heropen een afgeronde beurt en controleer dat dit geen tweede completion-activity veroorzaakt.
-9. Wissel Vandaag/Kamers/Weekplan/Historie herhaaldelijk; geen dubbele tabs/secties of layout-jank.
-10. Verlaat Cleaning en gebruik andere modules; geen achterblijvende Cleaning listener/pollingperformance.
+### Performance / architectuur
 
-V2.2 wordt pas als real-device geaccepteerd gemarkeerd na expliciete product-ownerbevestiging.
+V2.2.1:
+- laat `cleaningScreen.js` op v2.0.0;
+- hergebruikt exact `#cleaning-v2-sheet`;
+- maakt geen tweede modal/popup owner;
+- maakt geen tweede raw Firebase listener;
+- gebruikt geen MutationObserver;
+- gebruikt geen document-wide click owner;
+- gebruikt geen polling/setInterval/setTimeout in de visual companion;
+- gebruikt geen backdrop-filter of continue animatie in de nieuwe detail-CSS;
+- gebruikt bestaande repositorymethodes voor supply/inventory mutations;
+- verandert production Firebase Rules niet.
+
+### Real-device gate V2.2.1 — OPEN
+
+Te testen op iPhone, light én dark:
+- hero/header/titel/meta/assignee/progress/checklist hiërarchie;
+- checklist/percentage blijven direct en soepel reageren;
+- Start/Verder + afronden blijft werken;
+- `Bewerken` blijft via bestaande beheerflow werken;
+- collaboration blijft in dezelfde sheet;
+- segmented supplies switch;
+- icoonstijl, kleur, dimensies en voorraadstatus;
+- kameritem toevoegen en status wijzigen;
+- LOW/OUT naar Boodschappen zonder duplicates;
+- veel open/dicht/switch interacties zonder freeze/jank;
+- Historie/Vandaag/Weekplan blijven intact.
+
+Niet als real-device geaccepteerd markeren tot de product owner het exacte candidate-checkpoint expliciet bevestigt.
+
+## 5. Testdekking
+
+Naast de bestaande V2.0/V2.1/V2.2 tests bewaakt `scripts/test-cleaning-detail-visual-v221.js` onder andere:
+- exact één bestaande Cleaning-sheet;
+- geen nieuwe Firebase owner/listener;
+- geen MutationObserver/timerpolling/document-wide click owner;
+- behoud van canonical execution controls;
+- vaste beurt- en supplies-hiërarchie;
+- ShoppingListStore handoff met dedupe;
+- existing repository ownership van inventory/supply writes;
+- warm light / deep navy dark tokens;
+- 46px supply icon tiles en mobiele rowmaten;
+- geen zware backdrop blur of continue animatie;
+- expliciete Cleaning-vs-Taken productgrens.
 
 ## 6. Daarna
 
@@ -187,12 +207,12 @@ V2.2 wordt pas als real-device geaccepteerd gemarkeerd na expliciete product-own
 - lifecycle/account-household switch;
 - soft-delete/cache/versioning hardening.
 
-### V2.4 — definitieve premium visual polish
-- light/dark polish;
-- premium room assets/atlassen;
-- duidelijke hiërarchie;
-- lichte native-iOS microinteracties;
-- geen repaint-zware effecten.
+### V2.4 — brede premium consistency pass
+- resterende Cleaning cards/tabs/states harmoniseren;
+- volledige light/dark consistency;
+- kamerassets/atlassen verder finetunen;
+- native-iOS microinteracties zonder repaint-zware effecten;
+- voorbereiding van dezelfde shared visual primitives voor Taken.
 
 ## 7. Expliciet niet opnieuw bouwen
 
