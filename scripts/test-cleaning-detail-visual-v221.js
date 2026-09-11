@@ -7,6 +7,7 @@ function read(rel){return fs.readFileSync(path.join(__dirname,'..',rel),'utf8');
 
 const visual=read('src/modules/cleaning/cleaningDetailVisualV221.js');
 const css=read('src/styles/cleaning-detail-v221.css');
+const cssRuntime=css.replace(/\/\*[\s\S]*?\*\//g,'');
 const premium=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const screen=read('src/modules/cleaning/cleaningScreen.js');
 const design=read('docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md');
@@ -52,7 +53,7 @@ assert.match(css,/--fav-bg:#08111b/,'dark theme must use deep navy foundation');
 assert.match(css,/\.fav-supply-icon\{width:46px;height:46px/,'supply icons must use the locked 44–48px tile language');
 assert.match(css,/min-height:76px;display:grid;grid-template-columns:48px/,'supply rows must preserve premium mobile dimensions');
 assert.match(css,/\.fav-turn-hero\{[\s\S]*min-height:194px/,'turn detail must keep a strong room hero');
-assert.doesNotMatch(css,/backdrop-filter|filter:\s*blur|animation:\s*[^;]*(infinite)/,'visual milestone must avoid paint-heavy glass/continuous animation');
+assert.doesNotMatch(cssRuntime,/backdrop-filter|filter:\s*blur|animation:\s*[^;]*(infinite)/,'visual runtime CSS must avoid paint-heavy glass/continuous animation');
 
 assert.match(design,/Calm Premium Home/,'shared FamilyApp design system must be canonical');
 assert.match(design,/Schoonmaken mag \*\*niet\*\* uitgroeien tot een tweede Taken-module/,'Cleaning/Tasks product boundary must stay explicit');
