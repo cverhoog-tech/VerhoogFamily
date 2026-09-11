@@ -9,6 +9,7 @@ Laatst bijgewerkt: 11-09-2026
 - Vervolgwerk gebeurt uitsluitend op `agent/household-rebuild-v2`.
 - Main, production Firebase Rules en fallback/lock branches blijven onaangeraakt totdat de product owner een exact checkpoint real-device accepteert en daarna apart promotie toestaat.
 - Oude TODO’s/statusdocumenten zijn historische referentie als ze botsen met deze roadmap of de huidige code.
+- Gedeelde visuele bron voor nieuw/refactored FamilyApp-werk: `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md` — **Calm Premium Home**.
 
 # STEP 14 — Schoonmaken v2
 
@@ -34,13 +35,16 @@ Status: **VAST**
 
 Niet opnieuw bouwen: member availability, vakanties, ziekte/afwezigheid, drukke-week/capaciteitsengine, automatische planning op persoonlijke beschikbaarheid en complexe tijdelijke planning-pauzes/exception engines.
 
-Kern: **wat moet gebeuren → wanneer → door wie → uitvoeren / overdragen / handmatig aanpassen → terugzien wat gedaan is.**
+Nieuwe expliciete productgrens:
+- **Schoonmaken** = kamer → routine → planning → uitvoering → benodigdheden → historie.
+- **Taken** = algemene uitvoerlaag voor losse/algemene taken.
+- Een concrete schoonmaakbeurt mag naar Taken/Agenda projecteren, maar Cleaning blijft authority over de schoonmaakroutine en occurrence.
+- Schoonmaken mag visueel aansluiten op Taken maar wordt functioneel geen tweede Taken-module.
 
 ## V2.1 Samenwerking / overdracht / hulp
 Status: **CODECANDIDATE GEREED — SINGLE-DEVICE LIJKT GOED — MULTI-USER VERIFICATIE UITGESTELD**
 
 Laatste volledig geteste V2.1 checkpoint: `7e34cb60b78cf45664fdb82202e9673bb2ae9672`.
-
 CI `Household Rebuild Contract Tests` run `34534350216`: **SUCCESS**.
 
 Gebouwd:
@@ -59,65 +63,97 @@ Gebouwd:
 
 UX:
 - geen zelfstandig `Samenwerken` menu onder Kamers;
-- `Overdragen`, `Hulp vragen`, status en `Intrekken` staan in de bestaande concrete beurt-detail-sheet;
-- incoming decisions blijven in Action Inbox;
-- counter routeert terug naar die concrete beurt.
+- collaboration blijft contextueel in de bestaande concrete beurt-detail-sheet;
+- incoming decisions blijven in Action Inbox.
 
-Verificatie 11-09-2026:
-- product owner meldt dat de flow op het beschikbare toestel **lijkt te werken**;
-- multi-user testen was op dat moment niet mogelijk;
-- daarom V2.1 niet als volledig accepted markeren;
-- multi-user A/B/C flows later alsnog verifiëren voor finale acceptatie/promotie.
+Verificatie:
+- beschikbare single-device flow lijkt goed;
+- multi-user A/B/C verificatie blijft open;
+- daarom V2.1 niet als volledig accepted markeren.
 
 ## V2.2 Historie / Activity / nuttige aandacht
 Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**
 
-Functioneel/testcheckpoint: `ffb0552bad734309e02361de87bde7a3e96a3464`.
-
-CI `Household Rebuild Contract Tests` run `34537327502`: **SUCCESS**.
+Functioneel runtimecheckpoint: `ffb0552bad734309e02361de87bde7a3e96a3464`.
+Laatste V2.2 docs/testcheckpoint vóór visual rework: `28fd9fb6832ef369ee084723b4a71736fb4e662d`.
+CI `Household Rebuild Contract Tests` run `34537817885`: **SUCCESS**.
 
 Gebouwd:
-- pure `cleaningHistoryContract.js` over canonical `completionLogs`;
-- lichte Cleaning-only `cleaningHistoryV22.js` companion;
-- vierde Cleaning-tab `Historie`;
-- completion history per kamer;
-- routinehistorie uit opgeslagen completion checklists;
-- laatste moment + uitvoerend gezinslid;
-- 30-dagen activity counts per kamer/routine;
-- huidige-week summary: count/minuten/mensen;
-- op Vandaag alleen waar relevant compacte aandacht voor eigen today/overdue beurten + minuten;
-- nieuw waargenomen COMPLETED completionLogs kunnen best-effort `cleaning.completed` naar bestaande Household Activity projecteren;
-- deterministic `cleaning:completion:<completionLogId>` dedupe key;
-- eerste bestaande completion snapshot is baseline, dus geen historische feed flood;
-- REOPENED log maakt geen nieuw completed Activity event.
+- pure history contractlaag over canonical completionLogs;
+- vierde `Historie` tab;
+- historie per kamer/routine;
+- current-week summary;
+- rustige current-assignee today/overdue aandacht;
+- best-effort `cleaning.completed` Activity projection met deterministic dedupe;
+- geen history database, extra raw Firebase listener, MutationObserver, polling of NotificationStore-projector.
 
-Performance/safety:
-- accepted primaire `cleaningScreen.js` kern blijft intact;
-- dezelfde CleaningHouseholdRepository snapshot/subscription;
-- geen tweede raw Firebase listener;
-- geen tweede history database;
+V2.2 functionele real-device verificatie blijft open. Voor beurt-/Benodigdheden-detail wordt vanaf nu de V2.2.1 visual candidate getest.
+
+## V2.2.1 Calm Premium detail visual rework
+Status: **IMPLEMENTATIE GEREED — CONTRACT/CI + REAL-DEVICE TEST OPEN**
+
+Implementatiecheckpoint vóór milestone-documentatie: `c32eb2dac2be9d40912cdb4c6f68c7566e935e06`.
+
+Waarom nu:
+- product owner heeft op 11-09-2026 de detail-/Benodigdhedenreferenties opnieuw exact vastgezet;
+- besloten vóór V2.3 eerst deze kernflows naar de definitieve FamilyApp-designrichting te brengen;
+- voorkomt dat nieuwe V2.3-functionaliteit in een tijdelijke layout wordt gebouwd en daarna opnieuw moet worden verplaatst.
+
+Nieuwe visuele basis:
+- `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md`;
+- Calm Premium Home;
+- warm off-white light mode;
+- deep navy dark mode;
+- FamilyApp-violet als identity-accent;
+- semantisch groen/amber/rood;
+- 44–48px gekleurde minimalistische line-icon tiles;
+- ruime iPhone-first cards en touch targets;
+- geen zware glass/blur/repaint styling.
+
+Concrete beurt — vast:
+- header;
+- grote kamerhero + status;
+- titel + dag/moment/onderdelen/duur;
+- assignee;
+- routineprogressie;
+- checklist;
+- Start/Verder schoonmaken;
+- Bewerken;
+- Bekijk beurt + Benodigdheden;
+- collaboration contextueel in dezelfde sheet.
+
+Benodigdheden — vast:
+- header;
+- Voor deze beurt / Alle kameritems;
+- supply rows met objecticoon + tekststatus + statusindicator;
+- Ontbreekt iets?-CTA;
+- voorraadsummary;
+- kameritembeheer waar capability dit toestaat;
+- Bekijk alle kameritems + Boodschappen;
+- LOW/OUT handoff via canonical ShoppingListStore met dedupe.
+
+Nieuwe code/tests:
+- `src/modules/cleaning/cleaningDetailVisualV221.js`;
+- `src/styles/cleaning-detail-v221.css`;
+- `scripts/test-cleaning-detail-visual-v221.js`;
+- `cleaningPremiumFeedback.js` laadt visual companion uitsluitend lazy in Cleaning;
+- functional closeout uitgebreid naar V2.2.1.
+
+Hard behouden:
+- primaire `cleaningScreen.js` blijft v2.0.0;
+- dezelfde bestaande Cleaning-sheet is enige popup owner;
+- geen nieuwe Firebase listener/writer;
 - geen MutationObserver;
-- geen polling/setInterval;
-- geen NotificationStore/push projector;
-- geen tweede popup owner;
-- oude `cleaningHistoryExperience.js`, `cleaningActivityProjector.js`, `cleaningNotificationProjector.js` blijven disconnected.
+- geen document-wide click owner;
+- geen pollingtimer;
+- geen production Firebase Rules wijziging.
 
-Nog vereist voor V2.2 acceptance:
-- vier tabs netjes op één rij op echte iPhone;
-- Vandaag blijft soepel;
-- attention row alleen bij eigen relevante work;
-- Historie opent zonder jank;
-- bestaande/new completion logs correct per kamer/routine;
-- wie/wat/wanneer klopt;
-- nieuwe completion → maximaal één `cleaning.completed` Feed item;
-- reopen → geen tweede completed event;
-- repeated tab switches → geen duplicate History UI;
-- verlaten Cleaning → geen achtergrondperformance-regressie.
+Real-device acceptance vereist light + dark iPhone test van layout, checklist/progress, start/complete, edit, collaboration, segmented supplies, statuswijziging, kameritem toevoegen, Shopping handoff, History en herhaald open/dicht zonder jank.
 
-**Niet als real-device geaccepteerd markeren totdat de product owner dit expliciet bevestigt.**
+**Niet als accepted markeren totdat product owner exacte candidate expliciet bevestigt.**
 
 ## V2.3 Functionele gaten + hardening
-Status: **VOLGENDE NA V2.2 TEST**
+Status: **VOLGENDE NA V2.2.1 REAL-DEVICE CHECK**
 
 - onvolledige beurt: doorschuiven / later deze week / overslaan;
 - handmatig ander moment/persoon;
@@ -129,14 +165,14 @@ Status: **VOLGENDE NA V2.2 TEST**
 - cache/versioning;
 - extra contracttests.
 
-## V2.4 Definitieve premium visual polish
+## V2.4 Brede premium consistency pass
 Status: **OPEN NA FUNCTIONELE STABILITEIT**
 
-- premium FamilyApp-look;
-- light + dark;
-- kameratlassen/assets;
-- duidelijke kaart-hiërarchie;
+- resterende Schoonmaken cards/tabs/states harmoniseren;
+- volledige light + dark consistency;
+- kameratlassen/assets verder verfijnen;
 - lichte native-iOS microinteracties;
+- shared primitives voorbereiden voor visuele Taken-harmonisatie;
 - geen zware blur/glass/repaint-effecten.
 
 # STEP 15 — Branding / PWA / Login & Auth
