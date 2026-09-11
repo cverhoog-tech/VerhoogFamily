@@ -2,7 +2,7 @@
 // FamilyApp Login Brand v6 — presentation + existing auth entrypoints only.
 (function(){
   if(window.FamilyAppLoginBrandV6)return;
-  var VERSION='6.0.0';
+  var VERSION='6.0.1';
   var screen=null,sheet=null,title=null;
 
   function providers(){return window.FamilyAppAuthProviders||{};}
@@ -31,12 +31,22 @@
     showError('Apple-login staat visueel klaar, maar is nog niet geactiveerd in Firebase/Apple Developer.');
   }
   function button(cls,label,fn){var b=document.createElement('button');b.type='button';b.className='flv6-hotspot '+cls;b.setAttribute('aria-label',label);b.textContent=label;b.addEventListener('click',fn);return b;}
+  function hideLegacyDuplicates(step){
+    var googleButton=step&&step.querySelector('#google-btn');
+    if(googleButton){
+      googleButton.style.display='none';
+      var divider=googleButton.nextElementSibling;if(divider)divider.style.display='none';
+    }
+    var offline=step&&step.querySelector('button[onclick*="useOfflineMode"]');
+    if(offline&&offline.parentElement)offline.parentElement.style.display='none';
+  }
   function build(){
     screen=document.getElementById('login-screen');if(!screen||screen.dataset.brandV6==='1')return;
     screen.dataset.brandV6='1';screen.classList.add('familyapp-login-v6');
     var legacyStep1=document.getElementById('login-step-1');
     var legacyStep2=document.getElementById('login-step-2');
     if(!legacyStep1)return;
+    hideLegacyDuplicates(legacyStep1);
 
     var visual=document.createElement('img');visual.className='flv6-reference';visual.src='/src/assets/brand/v6/login-reference.jpg?v=6';visual.alt='';visual.setAttribute('aria-hidden','true');visual.decoding='async';visual.fetchPriority='high';
     var actions=document.createElement('div');actions.className='flv6-actions';
@@ -61,10 +71,7 @@
     var logo=document.getElementById('login-logo');if(logo)logo.style.display='none';
     Array.prototype.slice.call(screen.children).forEach(function(node){
       if(node===visual||node===actions||node===sheet||node===legacyStep2||node.id==='fb-config-panel-wrap')return;
-      if(node.id==='login-card'){
-        var step=node.querySelector('#login-step-1');if(step&&step.parentNode===node&&sheet.contains(step))node.style.display='none';
-        return;
-      }
+      if(node.id==='login-card'){node.style.display='none';return;}
       if(node.tagName==='DIV'&&node!==legacyStep1&&node!==legacyStep2&&node.id!=='auth-error'){
         var txt=(node.textContent||'').trim();if(txt==='FamilieApp'||txt==='Jouw gezins-app')node.style.display='none';
       }
