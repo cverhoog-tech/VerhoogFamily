@@ -88,10 +88,20 @@ De functionele V2.2 real-device gate blijft open. De zichtbare beurt-/Benodigdhe
 
 ## 4. Cleaning V2.2.1 — Calm Premium detail visual rework
 
-Status: **IMPLEMENTATIE GEREED — CONTRACT/CI + REAL-DEVICE GATE OPEN**.
+Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**.
 
-Implementatiecheckpoint vóór milestone-documentatie:
-`c32eb2dac2be9d40912cdb4c6f68c7566e935e06`
+Exacte groene runtime/testcandidate:
+`7867946641cb588d84ea075e08c4c54a3e60cfc5`
+
+GitHub Actions:
+- workflow: `Household Rebuild Contract Tests`;
+- run: `34572194287`;
+- conclusion: **SUCCESS**.
+
+Vercel:
+- deployment: `dpl_45GFm7ugk8BkKBQPRLgBQHrdJtRA`;
+- state: **READY**;
+- immutable preview: `https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`.
 
 ### Productbesluit
 
@@ -150,6 +160,10 @@ Nieuwe vaste volgorde:
 
 LOW/OUT-handoff gebruikt de bestaande `ShoppingListStore.addItems(...,{dedupe:true})`; er is geen nieuwe shopping writer.
 
+### CI-correctie tijdens de milestone
+
+De eerste run op `c32eb2dac2be9d40912cdb4c6f68c7566e935e06` was rood door drie testmetadata-issues: twee oudere companion-version asserts stonden nog op `2.2.0`, en een CSS-guard matchte het woord `backdrop-filter` in een comment waarin juist stond dat dit effect níet werd gebruikt. De functional closeout was daar al groen. Na correctie is de volledige contractsuite op `7867946641cb588d84ea075e08c4c54a3e60cfc5` groen.
+
 ### Performance / architectuur
 
 V2.2.1:
@@ -179,7 +193,7 @@ Te testen op iPhone, light én dark:
 - veel open/dicht/switch interacties zonder freeze/jank;
 - Historie/Vandaag/Weekplan blijven intact.
 
-Niet als real-device geaccepteerd markeren tot de product owner het exacte candidate-checkpoint expliciet bevestigt.
+Niet als real-device geaccepteerd markeren tot de product owner exact `7867946641cb588d84ea075e08c4c54a3e60cfc5` expliciet bevestigt.
 
 ## 5. Testdekking
 
