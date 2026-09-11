@@ -3,14 +3,15 @@ const fs=require('fs');
 const assert=require('assert');
 const commands=fs.readFileSync('src/modules/cleaning/cleaningOccurrenceCommandsV23.js','utf8');
 const controls=fs.readFileSync('src/modules/cleaning/cleaningOccurrenceControlsV23.js','utf8');
-const loader=fs.readFileSync('src/modules/cleaning/cleaningPremiumFeedback.js','utf8');
+const loader=fs.readFileSync('src/modules/cleaning/cleaningCompanionLoader.js','utf8');
+const premium=fs.readFileSync('src/modules/cleaning/cleaningPremiumFeedback.js','utf8');
 const screen=fs.readFileSync('src/modules/cleaning/cleaningScreen.js','utf8');
 
 assert.ok(commands.includes("VERSION='2.3.0'"));
 assert.ok(controls.includes("VERSION='2.3.0'"));
 assert.ok(loader.includes("cleaningOccurrenceCommandsV23.js?v=1"));
 assert.ok(loader.includes("cleaningOccurrenceControlsV23.js?v=1"));
-assert.ok(loader.includes("version:'2.2.1'"),'accepted visual bridge marker must remain v2.2.1');
+assert.ok(premium.includes("version:'2.2.1'"),'accepted visual bridge marker must remain v2.2.1');
 
 // Architecture: no second raw Firebase listener, popup owner or observer.
 [commands,controls].forEach(source=>{
