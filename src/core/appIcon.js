@@ -4,11 +4,11 @@
 // and do not reliably support per-user runtime icon changes.
 
 var FAMILYAPP_APP_ICONS = Object.freeze({
-  version: '6',
-  favicon: '/src/assets/brand/v6/familyapp-icon-192.png?v=6',
-  appleTouch: '/src/assets/brand/v6/familyapp-icon-192.png?v=6',
-  preview: '/src/assets/brand/v6/familyapp-icon-192.png?v=6',
-  login: '/src/assets/brand/v6/familyapp-icon-192.png?v=6'
+  version: '7',
+  favicon: '/src/assets/brand/v6/familyapp-icon-192.png?v=7',
+  appleTouch: '/src/assets/brand/v6/familyapp-icon-192.png?v=7',
+  preview: '/src/assets/brand/v6/familyapp-icon-192.png?v=7',
+  login: '/src/assets/brand/v6/familyapp-icon-192.png?v=7'
 });
 
 function ensureHeadLink(id, rel, href, sizes) {
@@ -24,29 +24,29 @@ function ensureHeadLink(id, rel, href, sizes) {
   return el;
 }
 
-function ensureBrandV6Shell() {
+function ensureBrandV7Shell() {
   var manifest = document.querySelector('link[rel="manifest"]');
-  if (manifest) manifest.href = '/manifest.json?v=6';
+  if (manifest) manifest.href = '/manifest.json?v=7';
   var theme = document.querySelector('meta[name="theme-color"]');
   if (theme) theme.setAttribute('content', '#0b3428');
   var status = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
   if (status) status.setAttribute('content', 'black-translucent');
 }
 
-function ensureLoginBrandV6() {
-  if (!document.getElementById('familyapp-login-brand-v6-style')) {
+function ensureLoginBrandV7() {
+  if (!document.getElementById('familyapp-login-brand-v7-style')) {
     var style = document.createElement('link');
-    style.id = 'familyapp-login-brand-v6-style';
+    style.id = 'familyapp-login-brand-v7-style';
     style.rel = 'stylesheet';
-    style.href = '/src/styles/loginBrandV6.css?v=2';
+    style.href = '/src/styles/loginBrandV7.css?v=1';
     document.head.appendChild(style);
   }
-  if (!window.FamilyAppLoginBrandV6 && !document.querySelector('script[data-familyapp-login-brand-v6]')) {
+  if (!window.FamilyAppLoginBrandV7 && !document.querySelector('script[data-familyapp-login-brand-v7]')) {
     var script = document.createElement('script');
-    script.src = '/src/core/loginBrandV6.js?v=2';
+    script.src = '/src/core/loginBrandV7.js?v=1';
     script.async = false;
-    script.setAttribute('data-familyapp-login-brand-v6', '1');
-    script.onerror = function(){ console.error('[FamilyApp] login brand v6 kon niet worden geladen'); };
+    script.setAttribute('data-familyapp-login-brand-v7', '1');
+    script.onerror = function(){ console.error('[FamilyApp] login brand v7 kon niet worden geladen'); };
     document.head.appendChild(script);
   }
 }
@@ -232,7 +232,7 @@ function ensureFeedbackRound5Styles() {
 }
 
 function applyAppIcon() {
-  ensureBrandV6Shell();
+  ensureBrandV7Shell();
   ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '192x192');
   ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '192x192');
 
@@ -268,8 +268,8 @@ function saveAppIconToLink() {
     localStorage.removeItem('familie_icon_photo');
   } catch (e) {}
   prepareReturningSessionSurface();
-  ensureBrandV6Shell();
-  ensureLoginBrandV6();
+  ensureBrandV7Shell();
+  ensureLoginBrandV7();
   ensureScaleFix();
   ensureCloudinaryPreconnect();
   ensureFeedbackStyleCascade();
