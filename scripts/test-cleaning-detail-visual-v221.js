@@ -8,12 +8,13 @@ function read(rel){return fs.readFileSync(path.join(__dirname,'..',rel),'utf8');
 const visual=read('src/modules/cleaning/cleaningDetailVisualV221.js');
 const css=read('src/styles/cleaning-detail-v221.css');
 const cssRuntime=css.replace(/\/\*[\s\S]*?\*\//g,'');
+const companion=read('src/modules/cleaning/cleaningCompanionLoader.js');
 const premium=read('src/modules/cleaning/cleaningPremiumFeedback.js');
 const screen=read('src/modules/cleaning/cleaningScreen.js');
 const design=read('docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md');
 
 assert.match(visual,/VERSION='2\.2\.1'/,'visual companion version must be v2.2.1');
-assert.match(premium,/cleaningDetailVisualV221\.js\?v=1/,'visual rework must remain Cleaning-route lazy');
+assert.match(companion,/cleaningDetailVisualV221\.js\?v=1/,'visual rework must remain Cleaning-route lazy');
 assert.match(premium,/version:'2\.2\.1'/,'premium bridge must expose the visual milestone version');
 
 assert.match(visual,/CleaningHouseholdRepository\|\|window\.CleaningV2Repository/,'visual layer must reuse canonical Cleaning repository');
