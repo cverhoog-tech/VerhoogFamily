@@ -21,7 +21,7 @@ assert(manifest.includes('familyapp-icon-192.png?v=7'),'manifest must expose the
 assert(appIcon.includes("manifest.href = '/manifest.json?v=7'"),'runtime identity must move manifest link to v7');
 assert(appIcon.includes("theme.setAttribute('content', '#0b3428')"),'runtime identity must use pine brand theme color');
 assert(baseShell.includes('src/core/appIcon.js?v=6'),'base runtime shell must retain its canonical identity hook for wrapper replacement');
-assert(shell.includes("replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=8')"),'brand v7 shell must serve the current canonical identity generation');
+assert(shell.includes("replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=9')"),'brand v7 shell must serve the current canonical identity generation');
 assert(routes.includes('"dest": "/api/app-v7"'),'root must be served by the native v7 shell');
 
 [endpoint,appIcon,manifest].forEach((content,index)=>{
@@ -33,10 +33,10 @@ assert(routes.includes('"dest": "/api/app-v7"'),'root must be served by the nati
 });
 
 assert(appIcon.includes('/src/assets/brand/v6/familyapp-icon-192.png?v=7'),'runtime icon identity must use the approved literal icon asset');
-assert(appIcon.includes('/src/styles/loginBrandV7.css?v=1'),'runtime identity must load native v7 login styles');
-assert(appIcon.includes('/src/core/loginBrandV7.js?v=1'),'runtime identity must load native v7 login controller');
+assert(appIcon.includes('/src/styles/loginBrandV7.css?v=2'),'runtime identity must load polished v7.1 login styles');
+assert(appIcon.includes('/src/core/loginBrandV7.js?v=2'),'runtime identity must load polished v7.1 login controller');
 assert(!appIcon.includes('loginBrandV6'),'canonical runtime must not load screenshot-based v6 login');
-assert(login.includes("VERSION='7.0.1'"),'native login controller version must match current v7 patch');
+assert(login.includes("VERSION='7.1.0'"),'native login controller version must match current v7.1 polish');
 assert(login.includes('Doorgaan met Google'),'native login must retain Google action');
 assert(login.includes('Doorgaan met Apple'),'native login must retain Apple action');
 assert(login.includes('window.submitAuth'),'email login/register must retain existing auth entrypoint');
@@ -44,4 +44,4 @@ assert(!login.includes('login-reference.jpg'),'native login must not render the 
 assert(!/firebase\.auth|onAuthStateChanged|signInWithEmailAndPassword/.test(login),'v7 presentation must not become a second auth owner');
 assert(!/backdrop-filter|setInterval|requestAnimationFrame/.test(loginCss),'native login styles must stay repaint-light');
 
-console.log('FamilyApp icon + native brand v7 contract OK');
+console.log('FamilyApp icon + native brand v7.1 contract OK');
