@@ -28,9 +28,14 @@ assert.match(visual,/data-cv2-check/,'turn checklist must preserve the accepted 
 assert.match(visual,/data-cv2-complete-all/,'turn completion must continue through the accepted execution writer');
 assert.match(visual,/data-cv2-supplies/,'turn must retain contextual supplies navigation');
 assert.match(visual,/CleaningCollaborationV21/,'collaboration must remain contextual to the concrete turn');
+assert.match(visual,/>Bewerken<\/button>/,'turn must keep the agreed secondary edit action');
+assert.match(visual,/>Bekijk beurt<\/span>/,'turn must keep the agreed utility-pair hierarchy');
+assert.match(visual,/function syncTurnProgressUi\(/,'visual percentage/copy must update after existing checklist interactions');
+assert.match(visual,/body\.scrollTop=0/,'Bekijk beurt must stay a lightweight in-sheet action');
 
 assert.match(visual,/Voor deze beurt/,'supplies must expose concrete-turn scope');
 assert.match(visual,/Alle kameritems/,'supplies must expose room scope');
+assert.match(visual,/Bekijk alle kameritems/,'supplies must keep the agreed bottom utility wording');
 assert.match(visual,/Op voorraad/,'supplies must expose stock state');
 assert.match(visual,/Bijna op/,'supplies must expose low-stock state');
 assert.match(visual,/Ontbreekt/,'supplies must expose missing state');
@@ -38,6 +43,8 @@ assert.match(visual,/ShoppingListStore/,'missing or low supplies must route thro
 assert.match(visual,/store\.addItems\(null,items,\{dedupe:true\}\)/,'shopping handoff must dedupe through the shopping facade');
 assert.match(visual,/setInventoryStatus/,'supply state updates must use the existing Cleaning repository method');
 assert.match(visual,/addRoomSupply/,'room supply creation must use the existing Cleaning repository method');
+assert.match(visual,/refreshRows:false/,'optimistic supply interactions must preserve immediate local visual state');
+assert.match(visual,/function leaveDetailMode\(preserveCurrentTitle\)/,'navigation to existing generic forms must preserve their freshly rendered title');
 
 assert.match(css,/--fav-violet:#6d3fea/,'light theme must carry FamilyApp violet identity');
 assert.match(css,/--fav-bg:#f8f6f2/,'light theme must use warm off-white rather than clinical white');
