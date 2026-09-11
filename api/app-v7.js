@@ -33,14 +33,14 @@ module.exports = async function handler(req, res) {
     .replaceAll('/api/brand-icon?variant=32&v=5', '/api/brand-icon?variant=32&v=7')
     .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=7-login1')
     .replaceAll('manifest.json?v=5', 'manifest.json?v=7')
-    .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=8')
+    .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=9')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
-  if (!body.includes('loginBrandV7.css?v=1')) {
-    body = body.replace('</head>', '  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>\n  <link rel="stylesheet" href="/src/styles/loginBrandV7.css?v=1">\n</head>');
+  if (!body.includes('loginBrandV7.css?v=2')) {
+    body = body.replace('</head>', '  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>\n  <link rel="stylesheet" href="/src/styles/loginBrandV7.css?v=2">\n</head>');
   }
-  if (!body.includes('loginBrandV7.js?v=1')) {
-    body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=1"></script>\n</body>');
+  if (!body.includes('loginBrandV7.js?v=2')) {
+    body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
