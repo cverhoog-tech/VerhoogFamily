@@ -90,9 +90,12 @@ Gebouwd:
 V2.2 functionele real-device verificatie blijft open. Voor beurt-/Benodigdheden-detail wordt vanaf nu de V2.2.1 visual candidate getest.
 
 ## V2.2.1 Calm Premium detail visual rework
-Status: **IMPLEMENTATIE GEREED — CONTRACT/CI + REAL-DEVICE TEST OPEN**
+Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**
 
-Implementatiecheckpoint vóór milestone-documentatie: `c32eb2dac2be9d40912cdb4c6f68c7566e935e06`.
+Exacte groene runtime/testcandidate: `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
+CI `Household Rebuild Contract Tests` run `34572194287`: **SUCCESS**.
+Vercel deployment `dpl_45GFm7ugk8BkKBQPRLgBQHrdJtRA`: **READY**.
+Immutable preview: `https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`.
 
 Waarom nu:
 - product owner heeft op 11-09-2026 de detail-/Benodigdhedenreferenties opnieuw exact vastgezet;
@@ -148,9 +151,11 @@ Hard behouden:
 - geen pollingtimer;
 - geen production Firebase Rules wijziging.
 
+CI-notitie: de eerste V2.2.1-run was alleen rood door twee stale `2.2.0` companion-marker asserts en een CSS-guard die het woord `backdrop-filter` in een “no backdrop-filter” comment matchte. De runtime-closeout was daar al groen. De volledige suite is daarna groen op exact `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
+
 Real-device acceptance vereist light + dark iPhone test van layout, checklist/progress, start/complete, edit, collaboration, segmented supplies, statuswijziging, kameritem toevoegen, Shopping handoff, History en herhaald open/dicht zonder jank.
 
-**Niet als accepted markeren totdat product owner exacte candidate expliciet bevestigt.**
+**Niet als accepted markeren totdat product owner exact `7867946641cb588d84ea075e08c4c54a3e60cfc5` expliciet bevestigt.**
 
 ## V2.3 Functionele gaten + hardening
 Status: **VOLGENDE NA V2.2.1 REAL-DEVICE CHECK**
