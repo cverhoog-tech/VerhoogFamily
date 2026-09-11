@@ -4,13 +4,16 @@ const assert=require('assert');
 const src=fs.readFileSync('src/modules/feed/feedActivityPresentation.js','utf8');
 const feed=fs.readFileSync('src/modules/feed/feed.js','utf8');
 
-assert.ok(src.includes("version:'1.2.1'"),'STEP 13.3 presentation version must be served');
+assert.ok(src.includes("version:'1.2.2'"),'STEP 13.3 presentation version must be served');
 assert.ok(src.includes("'shopping.completed'"),'canonical shopping.completed must render');
 assert.ok(src.includes("'partyQuest.completed'"),'partyQuest.completed must render');
 assert.ok(src.includes("tone-task")&&src.includes("tone-meal")&&src.includes("tone-shopping")&&src.includes("tone-agenda")&&src.includes("tone-progression"),'all approved pastel families must exist');
 assert.ok(src.includes('[data-theme=\\"dark\\"]')||src.includes('[data-theme="dark"]'),'explicit dark-mode variants must exist');
-assert.ok(src.includes("social.concat(activity).sort"),'social posts and activity must merge chronologically at presentation time');
+assert.ok(src.includes("social.concat(activity,providerItems()).sort"),'social posts, activity and workflow cards must merge chronologically at presentation time');
+assert.ok(src.includes('function registerTimelineProvider(provider)'),'workflow cards must register with the unified presentation timeline');
+assert.ok(src.includes("kind:'provider'"),'registered workflow cards must keep a distinct presentation identity');
 assert.ok(src.includes("window.renderPostHTML(item.value)"),'manual posts must keep the existing social renderer');
+assert.ok(src.includes("item.provider.render(item.value)"),'workflow cards must keep their own renderer');
 assert.ok(src.includes("function stats()"),'real activity stats must be projected');
 assert.ok(src.includes('function pick(event,values)'),'cozy copy variants must be deterministic per event');
 assert.ok(src.includes('Weer eentje van de lijst')&&src.includes('De voorraad is weer aangevuld'),'task and shopping cards must use non-repetitive contextual copy');
