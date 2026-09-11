@@ -1,13 +1,12 @@
 'use strict';
 // ============================================================
-// FEED ACTIVITY PRESENTATION v1.2.1 — STEP 13.3
-// Social posts keep their existing card style. Immutable household activity
-// events are merged only for presentation and receive a stable semantic pastel
-// family with explicit dark-mode counterparts. Copy is contextual/cozy rather
-// than repeating the same event label in eyebrow, title and body.
+// FEED ACTIVITY PRESENTATION v1.2.2 — STEP 13.3
+// Social posts, immutable household activity and registered workflow cards
+// are merged into one chronological presentation timeline. Each domain keeps
+// its own mutation authority; this module only owns Feed ordering/rendering.
 // ============================================================
 (function(){
-  if(window.FeedActivityPresentation&&window.FeedActivityPresentation.version==='1.2.1')return;
+  if(window.FeedActivityPresentation&&window.FeedActivityPresentation.version==='1.2.2')return;
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function actorMember(event){try{return window.HouseholdActivity&&HouseholdActivity.resolveMember?HouseholdActivity.resolveMember(event.actorUid):null;}catch(e){return null;}}
@@ -16,6 +15,25 @@
   function postTime(p){return Number(p&&p.createdAt||0);}
   function eventTime(e){return Number(e&&e.occurredAt||e&&e.createdAt||0);}
   function events(){try{return window.HouseholdActivity&&HouseholdActivity.getEvents?HouseholdActivity.getEvents().filter(function(e){return HouseholdActivity.shouldPublishToFeed(e);}):[];}catch(e){return[];}}
+  var timelineProviders=[];
+  function registerTimelineProvider(provider){
+    if(!provider||!provider.id||typeof provider.list!=='function'||typeof provider.render!=='function')return function(){};
+    var id=String(provider.id);
+    timelineProviders=timelineProviders.filter(function(p){return String(p.id)!==id;});
+    timelineProviders.push(provider);
+    return function(){timelineProviders=timelineProviders.filter(function(p){return String(p.id)!==id;});};
+  }
+  function providerItems(){
+    var out=[];
+    timelineProviders.forEach(function(provider){
+      var rows=[];try{rows=provider.list()||[];}catch(e){rows=[];}
+      rows.forEach(function(value){
+        var at=0;try{at=Number(typeof provider.time==='function'?provider.time(value):(value&&value.createdAt)||0)||0;}catch(e){at=0;}
+        out.push({kind:'provider',at:at,value:value,provider:provider});
+      });
+    });
+    return out;
+  }
   function pick(event,values){var seed=String(event&&event.id||event&&event.occurrenceKey||event&&event.type||'family');var hash=0;for(var i=0;i<seed.length;i++)hash=((hash<<5)-hash+seed.charCodeAt(i))|0;return values[Math.abs(hash)%values.length];}
   function taskDoneTitle(e){return pick(e,['Weer eentje van de lijst ✓','Dat is geregeld ✨','Lekker afgevinkt','Een taak minder aan je hoofd','Klaar is klaar 🙌']);}
   function taskCreatedTitle(e){return pick(e,['Er staat iets nieuws klaar','Nieuwe missie voor thuis','Iets om straks af te vinken','Op de planning ✨']);}
@@ -42,11 +60,12 @@
       +(vm.detail?'<div class="fs-activity-detail"><b>'+esc(vm.detail)+'</b>'+(vm.meta?'<span>'+esc(vm.meta)+'</span>':'')+'</div>':'')
       +'</article>';}
 
-  function merged(){var social=(window.feedData||[]).map(function(p){return{kind:'post',at:postTime(p),value:p};});var activity=events().map(function(e){return{kind:'activity',at:eventTime(e),value:e};});return social.concat(activity).sort(function(a,b){return b.at-a.at;});}
-  function matchesFilter(item){if(window.feedFilter==='tasks')return (item.kind==='activity'&&/^task\./.test(item.value.type))||(item.kind==='post'&&item.value.type==='task');if(window.feedFilter==='agenda')return (item.kind==='activity'&&/^agenda\./.test(item.value.type))||(item.kind==='post'&&item.value.type==='agenda');return true;}
-  function feedBody(){var st=null;try{st=window.FeedSharedData&&FeedSharedData.status?FeedSharedData.status():null;}catch(e){}if(!st||!st.hasSnapshot)return '<div class="fs-feed-loading" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)"><div style="font-size:28px;margin-bottom:8px">⏳</div><div style="font-size:14px;font-weight:600">Feed wordt verbonden...</div></div>';var items=merged().filter(matchesFilter);if(!items.length)return '<div class="fs-feed-empty" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)"><div style="font-size:28px;margin-bottom:8px">💬</div><div style="font-size:14px;font-weight:600">Nog geen berichten</div><div style="font-size:12px;margin-top:4px">Deel iets met het gezin hierboven</div></div>';return items.map(function(item){if(item.kind==='activity')return card(item.value);return typeof window.renderPostHTML==='function'?window.renderPostHTML(item.value):'';}).join('');}
+  function merged(){var social=(window.feedData||[]).map(function(p){return{kind:'post',at:postTime(p),value:p};});var activity=events().map(function(e){return{kind:'activity',at:eventTime(e),value:e};});return social.concat(activity,providerItems()).sort(function(a,b){return b.at-a.at;});}
+  function matchesFilter(item){if(item.kind==='provider'){if(item.provider&&typeof item.provider.matchesFilter==='function'){try{return !!item.provider.matchesFilter(window.feedFilter,item.value);}catch(e){return false;}}return window.feedFilter==='all';}if(window.feedFilter==='tasks')return (item.kind==='activity'&&/^task\./.test(item.value.type))||(item.kind==='post'&&item.value.type==='task');if(window.feedFilter==='agenda')return (item.kind==='activity'&&/^agenda\./.test(item.value.type))||(item.kind==='post'&&item.value.type==='agenda');return true;}
+  function renderTimelineItem(item){if(item.kind==='activity')return card(item.value);if(item.kind==='provider'){try{return item.provider.render(item.value)||'';}catch(e){return'';}}return typeof window.renderPostHTML==='function'?window.renderPostHTML(item.value):'';}
+  function feedBody(){var st=null;try{st=window.FeedSharedData&&FeedSharedData.status?FeedSharedData.status():null;}catch(e){}if(!st||!st.hasSnapshot)return '<div class="fs-feed-loading" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)"><div style="font-size:28px;margin-bottom:8px">⏳</div><div style="font-size:14px;font-weight:600">Feed wordt verbonden...</div></div>';var items=merged().filter(matchesFilter);if(!items.length)return '<div class="fs-feed-empty" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)"><div style="font-size:28px;margin-bottom:8px">💬</div><div style="font-size:14px;font-weight:600">Nog geen berichten</div><div style="font-size:12px;margin-top:4px">Deel iets met het gezin hierboven</div></div>';return items.map(renderTimelineItem).join('');}
 
-  function stats(){var es=events(),social=window.feedData||[];return{tasks:es.filter(function(e){return e.type==='task.completed';}).length,agenda:es.filter(function(e){return /^agenda\./.test(e.type);}).length+social.filter(function(p){return p.type==='agenda';}).length,shopping:es.filter(function(e){return e.type==='shopping.completed'||e.type==='grocery.receipt_uploaded';}).length,updates:es.length+social.length};}
+  function stats(){var es=events(),social=window.feedData||[],providers=providerItems();return{tasks:es.filter(function(e){return e.type==='task.completed';}).length,agenda:es.filter(function(e){return /^agenda\./.test(e.type);}).length+social.filter(function(p){return p.type==='agenda';}).length,shopping:es.filter(function(e){return e.type==='shopping.completed'||e.type==='grocery.receipt_uploaded';}).length,updates:es.length+social.length+providers.length};}
   function statLabel(type,value){if(type==='task')return value+' afgerond';if(type==='agenda')return value+' gepland';if(type==='shop')return value+' afgerond';return value+' totaal';}
   function decorateStats(){var root=document.querySelector('#screen-feed .fs-stats');if(!root)return;var s=stats(),map={task:s.tasks,agenda:s.agenda,shop:s.shopping,updates:s.updates};Object.keys(map).forEach(function(type){var node=root.querySelector('.fs-stat.'+type+' .fs-stat-copy span');if(node)node.textContent=statLabel(type,map[type]);});}
 
@@ -62,5 +81,5 @@
   if(typeof previousRender==='function'&&!previousRender.__activityStatsWrapped){var wrapped=function(){var out=previousRender.apply(this,arguments);setTimeout(decorateStats,0);return out;};wrapped.__activityStatsWrapped=true;window.renderFeed=wrapped;}
   window.feedListBodyHTML=function(){css();return feedBody();};window.openHouseholdActivitySource=openSource;
   window.addEventListener('familyapp:activity-updated',function(){try{var screen=document.getElementById('screen-feed');if(screen&&screen.classList.contains('active')&&typeof window.renderFeed==='function')window.renderFeed();}catch(e){}});
-  window.FeedActivityPresentation={version:'1.2.1',presentations:PRESENTATIONS,presentation:presentation,merged:merged,stats:stats,renderCard:card,openSource:openSource};
+  window.FeedActivityPresentation={version:'1.2.2',presentations:PRESENTATIONS,presentation:presentation,merged:merged,stats:stats,renderCard:card,openSource:openSource,registerTimelineProvider:registerTimelineProvider};
 })();
