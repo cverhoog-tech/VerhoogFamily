@@ -1,13 +1,6 @@
 'use strict';
-import './cleaningCollaborationExperience.js?v=2';
-import './cleaningHistoryV22.js?v=1';
-import './cleaningDetailVisualV221.js?v=1';
-import './cleaningDetailVisualV221Refinement.js?v=1';
-import './cleaningOccurrenceCommandsV23.js?v=1';
-import './cleaningOccurrenceControlsV23.js?v=1';
-
-// Cleaning V2.4 presentation layer. This only loads static CSS and deliberately
-// owns no persistent data state, listeners, observers, timers or popup lifecycle.
+// Cleaning V2.4 presentation-only compatibility bridge.
+// Functional V2.1-V2.3 companions are loaded separately by the Cleaning lifecycle.
 (function(){
   if(document.getElementById('cleaning-v24-css'))return;
   var link=document.createElement('link');
@@ -17,7 +10,7 @@ import './cleaningOccurrenceControlsV23.js?v=1';
   document.head.appendChild(link);
 })();
 
-// Keep the compatibility bridge marker on the accepted V2.2.1 visual milestone;
+// Keep the compatibility marker on the accepted V2.2.1 visual milestone;
 // V2.3 and V2.4 expose their own version markers independently.
 window.CleaningPremiumFeedback=Object.freeze({version:'2.2.1',disabledForCleaningV2:true});
 window.CleaningV24Visual=Object.freeze({version:'2.4.0',presentationOnly:true});
