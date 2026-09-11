@@ -1,0 +1,259 @@
+/* FamilyApp Cleaning V2.4 — broad Calm Premium consistency.
+   Presentation-only. Performance rule: no backdrop-filter, blur, continuous animation or observer-driven styling. */
+
+#screen-cleaning{
+  --cv24-bg:#f8f6f2;
+  --cv24-surface:#fffefa;
+  --cv24-surface-2:#f1eee9;
+  --cv24-text:#1b1a1f;
+  --cv24-muted:#77737e;
+  --cv24-border:rgba(39,34,45,.10);
+  --cv24-violet:#6d3fea;
+  --cv24-violet-soft:#f2edff;
+  --cv24-green:#34a95a;
+  --cv24-green-soft:#edf8f0;
+  --cv2-bg:var(--cv24-bg);
+  --cv2-surface:var(--cv24-surface);
+  --cv2-surface-2:var(--cv24-surface-2);
+  --cv2-text:var(--cv24-text);
+  --cv2-muted:var(--cv24-muted);
+  --cv2-border:var(--cv24-border);
+  --cv2-accent:var(--cv24-green);
+  --cv2-accent-soft:var(--cv24-green-soft);
+  background:var(--cv24-bg);
+}
+[data-theme*="dark"] #screen-cleaning{
+  --cv24-bg:#08111b;
+  --cv24-surface:#101a25;
+  --cv24-surface-2:#16212d;
+  --cv24-text:#f7f5f0;
+  --cv24-muted:#9ca4af;
+  --cv24-border:rgba(255,255,255,.085);
+  --cv24-violet:#9a72ff;
+  --cv24-violet-soft:#18152b;
+  --cv24-green:#5acb7b;
+  --cv24-green-soft:rgba(90,203,123,.12);
+}
+
+#screen-cleaning .cv2-shell{
+  max-width:760px;
+  padding:10px 16px calc(104px + env(safe-area-inset-bottom));
+}
+
+/* Native-feeling segmented navigation, visually aligned with supplies detail. */
+#screen-cleaning .cv2-tabs{
+  position:sticky;
+  top:0;
+  z-index:4;
+  gap:3px;
+  padding:4px;
+  margin:2px 0 18px;
+  border:1px solid var(--cv24-border);
+  border-radius:18px;
+  background:var(--cv24-surface-2);
+  box-shadow:0 5px 18px rgba(37,28,48,.045);
+}
+[data-theme*="dark"] #screen-cleaning .cv2-tabs{box-shadow:0 7px 20px rgba(0,0,0,.18)}
+#screen-cleaning .cv2-tabs button{
+  min-height:44px;
+  border-radius:14px;
+  color:var(--cv24-muted);
+  font-size:12px;
+  font-weight:820;
+  letter-spacing:-.005em;
+  transition:transform .12s ease,background-color .12s ease,color .12s ease;
+}
+#screen-cleaning .cv2-tabs button.is-active{
+  color:var(--cv24-violet);
+  background:var(--cv24-surface);
+  box-shadow:0 2px 8px rgba(37,28,48,.065);
+}
+#screen-cleaning .cv2-tabs button:active{transform:scale(.985)}
+
+/* Overview / plan hero: warm, calm and visually related to the detail sheets. */
+#screen-cleaning .cv2-hero,
+#screen-cleaning .cv2-plan-hero{
+  min-height:176px;
+  padding:22px;
+  border:1px solid var(--cv24-border);
+  border-radius:26px;
+  background:
+    radial-gradient(circle at 92% 12%,rgba(109,63,234,.12),transparent 38%),
+    linear-gradient(135deg,#fffefa 0%,#faf6ef 60%,#f1ecff 100%);
+  box-shadow:0 14px 34px rgba(38,28,48,.075);
+}
+[data-theme*="dark"] #screen-cleaning .cv2-hero,
+[data-theme*="dark"] #screen-cleaning .cv2-plan-hero{
+  background:
+    radial-gradient(circle at 92% 12%,rgba(154,114,255,.15),transparent 38%),
+    linear-gradient(135deg,#101a25 0%,#0d1721 62%,#18152b 100%);
+  box-shadow:0 16px 34px rgba(0,0,0,.25);
+}
+#screen-cleaning .cv2-kicker{
+  color:var(--cv24-violet);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.115em;
+}
+#screen-cleaning .cv2-hero h2,
+#screen-cleaning .cv2-plan-hero h2{
+  max-width:420px;
+  margin:7px 0 8px;
+  color:var(--cv24-text);
+  font-size:28px;
+  line-height:1.05;
+  letter-spacing:-.04em;
+}
+#screen-cleaning .cv2-hero p,
+#screen-cleaning .cv2-plan-hero p{color:var(--cv24-muted);font-size:11.5px;line-height:1.45}
+#screen-cleaning .cv2-hero-stat{
+  min-width:82px;
+  padding:14px 11px;
+  border:1px solid color-mix(in srgb,var(--cv24-violet) 16%,var(--cv24-border));
+  border-radius:20px;
+  background:color-mix(in srgb,var(--cv24-surface) 94%,var(--cv24-violet-soft));
+  box-shadow:0 6px 18px rgba(37,28,48,.05);
+}
+#screen-cleaning .cv2-hero-stat strong{color:var(--cv24-violet);font-size:29px;letter-spacing:-.035em}
+#screen-cleaning .cv2-hero-stat span{color:var(--cv24-muted)}
+
+#screen-cleaning .cv2-section{margin-top:22px}
+#screen-cleaning .cv2-section-head{margin:0 3px 11px}
+#screen-cleaning .cv2-section-head span{color:var(--cv24-violet);font-size:9px;font-weight:900;letter-spacing:.08em}
+#screen-cleaning .cv2-section-head h3{margin-top:3px;color:var(--cv24-text);font-size:19px;letter-spacing:-.02em}
+#screen-cleaning .cv2-section-head>span{color:var(--cv24-muted);font-size:10px;font-weight:750;letter-spacing:0}
+
+/* Concrete turns stay execution-oriented and compact — Cleaning does not become Tasks. */
+#screen-cleaning .cv2-turn-list{gap:10px}
+#screen-cleaning .cv2-turn-card{
+  min-height:102px;
+  border:1px solid var(--cv24-border);
+  border-radius:21px;
+  background:var(--cv24-surface);
+  box-shadow:0 6px 20px rgba(38,28,48,.045);
+  transition:transform .12s ease,border-color .12s ease;
+}
+[data-theme*="dark"] #screen-cleaning .cv2-turn-card{box-shadow:0 8px 22px rgba(0,0,0,.17)}
+#screen-cleaning .cv2-turn-card:active{transform:scale(.993)}
+#screen-cleaning .cv2-turn-photo{
+  width:104px;
+  flex-basis:104px;
+  background-image:linear-gradient(90deg,rgba(5,6,8,.02),rgba(5,6,8,.22)),url('/src/assets/cleaning-rooms/room-atlas-light.webp');
+}
+[data-theme*="dark"] #screen-cleaning .cv2-turn-photo{
+  background-image:linear-gradient(90deg,rgba(2,5,8,.03),rgba(2,5,8,.30)),url('/src/assets/cleaning-rooms/room-atlas-dark.webp');
+}
+#screen-cleaning .cv2-turn-copy{padding:13px 12px}
+#screen-cleaning .cv2-turn-copy>span{color:var(--cv24-violet);font-size:9px;font-weight:820}
+#screen-cleaning .cv2-turn-copy>strong{margin:3px 0 9px;color:var(--cv24-text);font-size:15px;letter-spacing:-.012em}
+#screen-cleaning .cv2-turn-copy small{color:var(--cv24-muted);font-size:9.5px}
+#screen-cleaning .cv2-progress{height:6px;margin-bottom:6px;background:var(--cv24-surface-2)}
+#screen-cleaning .cv2-progress i{background:var(--cv24-green)}
+#screen-cleaning .cv2-chevron{color:color-mix(in srgb,var(--cv24-violet) 62%,var(--cv24-muted));font-size:25px}
+
+/* Rooms become visually identifiable setup cards, not task cards. */
+#screen-cleaning .cv2-room-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+#screen-cleaning .cv2-room-card{
+  position:relative;
+  display:block;
+  min-height:176px;
+  border:1px solid var(--cv24-border);
+  border-radius:22px;
+  background:var(--cv24-surface);
+  box-shadow:0 7px 22px rgba(38,28,48,.05);
+  transition:transform .12s ease;
+}
+[data-theme*="dark"] #screen-cleaning .cv2-room-card{box-shadow:0 9px 24px rgba(0,0,0,.18)}
+#screen-cleaning .cv2-room-card:active{transform:scale(.989)}
+#screen-cleaning .cv2-room-photo{
+  width:100%;
+  height:112px;
+  display:block;
+  background-image:linear-gradient(180deg,rgba(5,6,8,.01),rgba(5,6,8,.20)),url('/src/assets/cleaning-rooms/room-atlas-light.webp');
+}
+[data-theme*="dark"] #screen-cleaning .cv2-room-photo{
+  background-image:linear-gradient(180deg,rgba(2,5,8,.02),rgba(2,5,8,.27)),url('/src/assets/cleaning-rooms/room-atlas-dark.webp');
+}
+#screen-cleaning .cv2-room-copy{padding:11px 12px 13px}
+#screen-cleaning .cv2-room-copy>strong{margin:0 22px 3px 0;color:var(--cv24-text);font-size:14px;letter-spacing:-.012em}
+#screen-cleaning .cv2-room-copy>span{color:var(--cv24-muted);font-size:9px}
+#screen-cleaning .cv2-room-card>span:last-child{
+  position:absolute;
+  right:11px;
+  bottom:17px;
+  padding:0;
+  color:var(--cv24-violet);
+  font-size:21px;
+}
+#screen-cleaning .cv2-mini-primary{
+  min-height:38px;
+  padding:0 13px;
+  border-radius:999px;
+  background:var(--cv24-violet);
+  color:#fff;
+  font-size:10px;
+  box-shadow:none;
+}
+
+#screen-cleaning .cv2-plan-hero .cv2-primary{
+  min-height:50px;
+  margin-top:18px;
+  border-radius:16px;
+  background:var(--cv24-violet);
+  font-size:12px;
+}
+#screen-cleaning .cv2-filter-chips{gap:7px;margin:14px 0 2px;overflow-x:auto;scrollbar-width:none}
+#screen-cleaning .cv2-filter-chips::-webkit-scrollbar{display:none}
+#screen-cleaning .cv2-filter-chips button{
+  flex:0 0 auto;
+  min-height:38px;
+  padding:0 13px;
+  border:1px solid var(--cv24-border);
+  border-radius:999px;
+  background:var(--cv24-surface);
+  color:var(--cv24-muted);
+  font-size:10px;
+  font-weight:780;
+}
+#screen-cleaning .cv2-filter-chips button.is-active{border-color:color-mix(in srgb,var(--cv24-violet) 36%,transparent);background:var(--cv24-violet-soft);color:var(--cv24-violet)}
+
+#screen-cleaning .cv2-empty{
+  padding:24px 18px;
+  border:1px solid var(--cv24-border);
+  border-radius:21px;
+  background:var(--cv24-surface);
+  box-shadow:0 5px 18px rgba(38,28,48,.035);
+}
+#screen-cleaning .cv2-empty strong{color:var(--cv24-text);font-size:14px}
+#screen-cleaning .cv2-empty span{color:var(--cv24-muted)}
+
+/* Keep forms/lightweight management visually in the same family without changing ownership. */
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet{background:var(--cv24-bg,#f8f6f2)}
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head{background:var(--cv24-surface,#fffefa)}
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-form input,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-form select,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-supply,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-routines>button{
+  border-radius:16px;
+}
+
+@media(max-width:520px){
+  #screen-cleaning .cv2-shell{padding-left:13px;padding-right:13px}
+  #screen-cleaning .cv2-hero,#screen-cleaning .cv2-plan-hero{min-height:164px;padding:19px;border-radius:23px}
+  #screen-cleaning .cv2-hero h2,#screen-cleaning .cv2-plan-hero h2{font-size:25px}
+  #screen-cleaning .cv2-turn-photo{width:94px;flex-basis:94px}
+  #screen-cleaning .cv2-room-card{min-height:164px}
+  #screen-cleaning .cv2-room-photo{height:102px}
+}
+
+@media(max-width:350px){
+  #screen-cleaning .cv2-room-grid{grid-template-columns:1fr}
+  #screen-cleaning .cv2-room-card{min-height:154px}
+  #screen-cleaning .cv2-room-photo{height:94px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  #screen-cleaning .cv2-tabs button,
+  #screen-cleaning .cv2-turn-card,
+  #screen-cleaning .cv2-room-card{transition:none}
+}
