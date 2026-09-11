@@ -13,6 +13,7 @@ const collaboration=read('src/modules/cleaning/cleaningCollaborationExperience.j
 const contract=read('src/modules/cleaning/cleaningCollaborationContract.js');
 const history=read('src/modules/cleaning/cleaningHistoryV22.js');
 const historyContract=read('src/modules/cleaning/cleaningHistoryContract.js');
+const detailVisual=read('src/modules/cleaning/cleaningDetailVisualV221.js');
 const inbox=read('src/platform/inbox/actionInboxRegistry.js');
 const inboxBoot=read('src/platform/inbox/actionInboxBootstrap.js');
 const workflow=read('src/modules/cleaning/cleaningRoomWorkflowUx.js');
@@ -64,9 +65,18 @@ forbid(history,/new\s+MutationObserver|MutationObserver\s*\(|setInterval\s*\(|se
 forbid(history,/NotificationStore|publishSelf|publishToUids|CleaningNotificationProjector/,'v2.2 reminders must not create notification noise');
 forbid(history,/TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.2 must not reactivate legacy freeze-prone owners');
 
+need(detailVisual,/VERSION='2\.2\.1'/,'v2.2.1 premium detail visual companion must exist');
+need(detailVisual,/CleaningHouseholdRepository/,'v2.2.1 visual companion must reuse the v2 repository');
+need(detailVisual,/document\.getElementById\('cleaning-v2-sheet'\)/,'v2.2.1 must reuse the existing Cleaning sheet');
+need(detailVisual,/Voor deze beurt/,'v2.2.1 supplies must preserve concrete-turn scope');
+need(detailVisual,/Alle kameritems/,'v2.2.1 supplies must preserve room scope');
+need(detailVisual,/ShoppingListStore/,'v2.2.1 low/out supplies may hand off to canonical Shopping');
+forbid(detailVisual,/\.on\(\s*['"]value['"]|firebase\.database|fbDb|new\s+MutationObserver|MutationObserver\s*\(|setInterval\s*\(|setTimeout\s*\(|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.2.1 visual companion must stay lightweight and non-authoritative');
+
 need(premium,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
 need(premium,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
-need(premium,/version:'2\.2\.0'/,'Cleaning companion marker must be v2.2');
+need(premium,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'v2.2.1 detail visual must lazy-load only with Cleaning');
+need(premium,/version:'2\.2\.1'/,'Cleaning companion marker must be v2.2.1');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
 forbid(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work itself');
 forbid(premium,/cleaningHistoryExperience|cleaningActivityProjector|cleaningNotificationProjector/,'old pre-reset v2.2 runtimes must remain disconnected');
@@ -86,6 +96,6 @@ forbid(screen,/new\s+MutationObserver|MutationObserver\s*\(/,'primary v2 must no
 forbid(inboxBoot,/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience|cleaningCollaboration/,'Cleaning must stay off the global startup path');
 need(workflow,/var VERSION='0\.2\.0'/,'locked historical room workflow rollback file must remain unchanged');
 [
- 'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js','scripts/test-cleaning-history-v22.js'
+ 'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js','scripts/test-cleaning-history-v22.js','scripts/test-cleaning-detail-visual-v221.js'
 ].forEach(read);
-if(failed){console.error('\nCleaning v2.2 functional closeout FAILED.');process.exitCode=1;}else console.log('Cleaning v2.2 functional closeout: PASS');
+if(failed){console.error('\nCleaning v2.2.1 functional closeout FAILED.');process.exitCode=1;}else console.log('Cleaning v2.2.1 functional closeout: PASS');
