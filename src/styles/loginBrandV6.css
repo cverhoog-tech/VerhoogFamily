@@ -5,14 +5,14 @@
   z-index:9999!important;padding:0!important;margin:0!important;display:flex!important;align-items:stretch!important;justify-content:stretch!important;
   overflow:hidden!important;background:#0b3428!important;color:#fff!important;font-family:var(--font-display,Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif)!important;
 }
-.familyapp-login-v6 .flv6-reference{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.familyapp-login-v6 .flv6-reference{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none;-webkit-user-drag:none}
 .familyapp-login-v6 .flv6-actions{position:absolute;inset:0;z-index:2;pointer-events:none}
-.familyapp-login-v6 .flv6-hotspot{position:absolute;left:12.8%;width:74.4%;border:0;background:transparent;color:transparent;appearance:none;-webkit-appearance:none;cursor:pointer;pointer-events:auto;border-radius:999px;outline:none;-webkit-tap-highlight-color:transparent}
+.familyapp-login-v6 .flv6-hotspot{position:absolute;left:12.6%;width:74.8%;border:0;background:transparent;color:transparent;appearance:none;-webkit-appearance:none;cursor:pointer;pointer-events:auto;border-radius:999px;outline:none;-webkit-tap-highlight-color:transparent}
 .familyapp-login-v6 .flv6-hotspot:focus-visible{box-shadow:0 0 0 3px rgba(255,248,231,.92),0 0 0 6px rgba(10,54,42,.9)}
-.familyapp-login-v6 .flv6-login{top:57.1%;height:5.8%}
-.familyapp-login-v6 .flv6-register{top:63.5%;height:5.2%}
-.familyapp-login-v6 .flv6-google{top:72.2%;height:5.2%}
-.familyapp-login-v6 .flv6-apple{top:78.8%;height:5.2%}
+.familyapp-login-v6 .flv6-login{top:59.7%;height:5.5%}
+.familyapp-login-v6 .flv6-register{top:66.2%;height:5.1%}
+.familyapp-login-v6 .flv6-google{top:75.1%;height:5.1%}
+.familyapp-login-v6 .flv6-apple{top:80.8%;height:5.1%}
 .familyapp-login-v6 .flv6-auth-sheet{position:absolute;inset:0;z-index:5;display:none;align-items:flex-end;justify-content:center;background:rgba(3,22,16,.46);padding:max(18px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom));}
 .familyapp-login-v6 .flv6-auth-sheet.is-open{display:flex}
 .familyapp-login-v6 .flv6-sheet-card{width:min(100%,430px);max-height:min(88dvh,760px);overflow:auto;border-radius:32px 32px 24px 24px;padding:10px 20px 24px;background:linear-gradient(180deg,rgba(12,55,43,.98),rgba(6,39,30,.99));border:1px solid rgba(255,242,213,.2);box-shadow:0 -24px 70px rgba(0,0,0,.32);color:#fff}
@@ -30,6 +30,5 @@
 .familyapp-login-v6 .flv6-back{margin-top:12px;width:100%;border:0;background:transparent;color:rgba(255,247,232,.72);font-size:13px;padding:8px}
 .familyapp-login-v6 #login-step-2{display:none;width:min(100%,430px);margin:auto;padding:22px;border-radius:28px;background:#0a3a2c;color:#fff}
 .familyapp-login-v6 #login-step-2 input{box-sizing:border-box;width:100%;height:50px;border:1px solid rgba(255,255,255,.24);border-radius:15px;background:rgba(255,255,255,.08);color:#fff;padding:0 14px;margin-bottom:10px}
-@media (max-aspect-ratio:9/18){.familyapp-login-v6 .flv6-reference{object-position:50% 50%}.familyapp-login-v6 .flv6-hotspot{left:8.5%;width:83%}.familyapp-login-v6 .flv6-login{top:57.4%}.familyapp-login-v6 .flv6-register{top:64.1%}.familyapp-login-v6 .flv6-google{top:72.9%}.familyapp-login-v6 .flv6-apple{top:79.5%}}
 @media (min-width:700px){.familyapp-login-v6 .flv6-reference{object-fit:contain;background:#0b3428}.familyapp-login-v6 .flv6-actions{left:50%;width:min(100%,432px);transform:translateX(-50%)}.familyapp-login-v6 .flv6-auth-sheet{align-items:center}.familyapp-login-v6 .flv6-sheet-card{border-radius:30px}}
 @media (prefers-reduced-motion:reduce){.familyapp-login-v6 *{scroll-behavior:auto!important;transition:none!important}}
