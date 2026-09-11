@@ -148,8 +148,11 @@ Automatisch bewaakt:
 
 ## Cleaning V2.2.1 — Calm Premium detail visual rework
 
-Status: **IMPLEMENTATIE GEREED — CONTRACT/CI + REAL-DEVICE GATE OPEN**  
-Implementatiecheckpoint vóór milestone-documentatie: `c32eb2dac2be9d40912cdb4c6f68c7566e935e06`
+Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**  
+Exacte groene runtime/testcandidate: `7867946641cb588d84ea075e08c4c54a3e60cfc5`  
+CI: `Household Rebuild Contract Tests` run `34572194287` — **SUCCESS**  
+Immutable Vercel preview: `https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`  
+Vercel deployment: `dpl_45GFm7ugk8BkKBQPRLgBQHrdJtRA` — **READY**
 
 ### Waarom deze milestone vóór V2.3 is ingevoegd
 
@@ -206,7 +209,16 @@ Nieuw:
 
 Gewijzigd:
 - `src/modules/cleaning/cleaningPremiumFeedback.js` laadt de visual companion alleen lazy wanneer Cleaning zelf geopend wordt;
-- `scripts/test-cleaning-functional-closeout.js` neemt de V2.2.1-contracten mee.
+- `scripts/test-cleaning-functional-closeout.js` neemt de V2.2.1-contracten mee;
+- V2.1/V2.2 tests accepteren de nieuwe downstream companion marker zonder de onderliggende V2.1/V2.2 contractversies te veranderen.
+
+### CI-notitie
+
+Een eerdere run op `c32eb2dac2be9d40912cdb4c6f68c7566e935e06` (`34571880626`) was rood door uitsluitend testmetadata:
+- twee oudere tests verwachtten nog companion marker `2.2.0`;
+- de nieuwe CSS-guard zag het woord `backdrop-filter` in de comment **“no backdrop-filter”** als runtime-declaratie.
+
+De runtime-closeout zelf was in die run al groen. De stale version assertions zijn naar de actuele downstream marker gebracht en de CSS-guard scant nu daadwerkelijke declarations in plaats van comments. Op de exacte kandidaat `7867946641cb588d84ea075e08c4c54a3e60cfc5` is de volledige contractsuite groen.
 
 ### Architectuur/performanceguards
 
@@ -239,7 +251,7 @@ Te verifiëren op echte iPhone, light én dark:
 11. herhaald openen/sluiten/schakelen veroorzaakt geen freeze/jank;
 12. Historie/Vandaag/Weekplan blijven intact na de visual rework.
 
-**Niet markeren als REAL-DEVICE GEACCEPTEERD totdat de product owner het exacte candidate-checkpoint expliciet bevestigt.**
+**Niet markeren als REAL-DEVICE GEACCEPTEERD totdat de product owner exact `7867946641cb588d84ea075e08c4c54a3e60cfc5` expliciet bevestigt.**
 
 ---
 
