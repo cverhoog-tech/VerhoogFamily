@@ -1,5 +1,5 @@
 'use strict';
-/* STEP 10 + PWA CACHE HARDENING v1.3.0
+/* STEP 10 + PWA CACHE HARDENING v1.4.0
  *
  * One service worker owns both FCM background messaging and FamilyApp's
  * static-asset cache. This avoids competing scope='/' workers.
@@ -14,7 +14,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-var FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v3';
+var FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v4';
 var FAMILYAPP_STATIC_CACHE_PREFIX='familyapp-static-';
 var FAMILYAPP_STATIC_EXT_RE=/\.(?:css|js|mjs|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf|otf|json)$/i;
 var FAMILYAPP_SENSITIVE_QUERY_RE=/(?:^|_)(?:token|auth|session|code|secret|key|credential)(?:$|_)/i;
@@ -70,70 +70,42 @@ function familyAppPut(cache,request,response){
   return cache.put(request,response.clone()).then(function(){return familyAppTrimCache(cache);}).then(function(){return response;});
 }
 
-function familyAppCacheFirstVersioned(request){
-  return caches.open(FAMILYAPP_STATIC_CACHE_VERSION).then(function(cache){
-    return cache.match(request).then(function(cached){
-      if(cached)return cached;
-      return fetch(request).then(function(response){return familyAppPut(cache,request,response);});
-    });
-  });
-}
-
-function familyAppNetworkFirstStatic(request){
-  return caches.open(FAMILYAPP_STATIC_CACHE_VERSION).then(function(cache){
-    return fetch(request).then(function(response){return familyAppPut(cache,request,response);}).catch(function(){
-      return cache.match(request).then(function(cached){if(cached)return cached;throw new Error('FAMILYAPP_STATIC_OFFLINE_MISS');});
-    });
-  });
-}
-
 self.addEventListener('install',function(event){
-  event.waitUntil(self.skipWaiting());
+  self.skipWaiting();
 });
 
 self.addEventListener('activate',function(event){
-  event.waitUntil(caches.keys().then(function(keys){
-    return Promise.all(keys.filter(function(key){
-      return key.indexOf(FAMILYAPP_STATIC_CACHE_PREFIX)===0&&key!==FAMILYAPP_STATIC_CACHE_VERSION;
-    }).map(function(key){return caches.delete(key);}));
-  }).then(function(){return self.clients.claim();}));
+  event.waitUntil(
+    caches.keys().then(function(keys){
+      return Promise.all(keys.filter(function(key){
+        return key.indexOf(FAMILYAPP_STATIC_CACHE_PREFIX)===0&&key!==FAMILYAPP_STATIC_CACHE_VERSION;
+      }).map(function(key){return caches.delete(key);}));
+    }).then(function(){return self.clients.claim();})
+  );
 });
 
 self.addEventListener('fetch',function(event){
   var request=event.request;
   if(!familyAppIsSafeStaticRequest(request))return;
-  var url=new URL(request.url);
-  // Versioned assets are immutable by URL and can be served cache-first.
-  // Unversioned static files go network-first so a deploy cannot pin stale UI.
-  if(url.searchParams.has('v'))event.respondWith(familyAppCacheFirstVersioned(request));
-  else event.respondWith(familyAppNetworkFirstStatic(request));
-});
-
-self.addEventListener('message',function(event){
-  var data=event&&event.data||{};
-  if(data.type==='familyapp:clear-static-cache'){
-    event.waitUntil(caches.delete(FAMILYAPP_STATIC_CACHE_VERSION));
-  }
+  event.respondWith(
+    caches.open(FAMILYAPP_STATIC_CACHE_VERSION).then(function(cache){
+      return cache.match(request).then(function(cached){
+        if(cached)return cached;
+        return fetch(request).then(function(response){return familyAppPut(cache,request,response);});
+      });
+    })
+  );
 });
 
 messaging.onBackgroundMessage(function(payload){
-  // Notification payloads are automatically displayed by FCM. FamilyApp's
-  // trusted sender is intended to use data-only payloads so the canonical
-  // notification id can be carried without a second inbox authority.
-  if(payload&&payload.notification)return;
+  var notification=payload&&payload.notification||{};
   var data=payload&&payload.data||{};
-  var title=String(data.title||'FamilyApp');
+  var title=notification.title||data.title||'FamilyApp';
   var options={
-    body:String(data.body||'Je hebt een nieuwe melding.'),
-    icon:'/src/assets/brand/v6/familyapp-icon-192.png?v=6',
-    badge:'/src/assets/brand/v6/familyapp-icon-192.png?v=6',
-    tag:String(data.notificationId||data.eventKey||'familyapp-notification'),
-    renotify:false,
-    data:{
-      notificationId:String(data.notificationId||''),
-      eventKey:String(data.eventKey||''),
-      url:String(data.url||'/?screen=notif')
-    }
+    body:notification.body||data.body||'',
+    icon:data.icon||'/api/brand-icon?variant=192&v=7',
+    badge:data.badge||'/api/brand-icon?variant=32&v=7',
+    data:data
   };
   return self.registration.showNotification(title,options);
 });
@@ -141,15 +113,16 @@ messaging.onBackgroundMessage(function(payload){
 self.addEventListener('notificationclick',function(event){
   event.notification.close();
   var data=event.notification&&event.notification.data||{};
-  var target=String(data.url||'/?screen=notif');
-  var notificationId=String(data.notificationId||'');
-  event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(function(list){
-    var existing=list&&list.length?list[0]:null;
-    if(existing){
-      try{existing.postMessage({type:'familyapp:push-open',notificationId:notificationId,url:target});}catch(e){}
-      if(existing.focus)return existing.focus();
-      return existing;
-    }
-    return clients.openWindow(target);
-  }));
+  var target=data.url||data.click_action||'/';
+  event.waitUntil(
+    self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(clients){
+      for(var i=0;i<clients.length;i++){
+        if('focus' in clients[i]){
+          clients[i].navigate(target);
+          return clients[i].focus();
+        }
+      }
+      if(self.clients.openWindow)return self.clients.openWindow(target);
+    })
+  );
 });
