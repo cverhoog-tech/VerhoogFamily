@@ -64,7 +64,7 @@ Geen zelfstandig `Samenwerken`-blok onder Kamers. Samenwerken hoort bij de concr
 
 ### Verificatiestatus 11-09-2026
 
-De product owner meldt dat de flow op het beschikbare toestel **lijkt te werken**, maar kon op dat moment geen multi-user test uitvoeren. Op verzoek wordt verdergegaan met V2.2 zonder V2.1 ten onrechte als volledig geaccepteerd te markeren.
+De product owner meldt dat de flow op het beschikbare toestel **lijkt te werken**, maar kon op dat moment geen multi-user test uitvoeren. Op verzoek wordt verdergegaan zonder V2.1 ten onrechte als volledig geaccepteerd te markeren.
 
 Open latere multi-user gate:
 - account A → transfer/help request;
@@ -80,8 +80,9 @@ Open latere multi-user gate:
 ## Cleaning V2.2 — Historie / Activity / nuttige aandacht
 
 Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**  
-Functioneel/testcheckpoint: `ffb0552bad734309e02361de87bde7a3e96a3464`  
-CI: `Household Rebuild Contract Tests` run `34537327502` — **SUCCESS**
+Functioneel runtimecheckpoint: `ffb0552bad734309e02361de87bde7a3e96a3464`  
+Laatste V2.2 docs/testcheckpoint vóór visual rework: `28fd9fb6832ef369ee084723b4a71736fb4e662d`  
+CI op dat checkpoint: `Household Rebuild Contract Tests` run `34537817885` — **SUCCESS**
 
 ### Productdoel
 
@@ -141,42 +142,120 @@ Automatisch bewaakt:
 - geen oude `cleaningNotificationProjector.js` activation;
 - geen Cleaning startup path.
 
-Nieuwe test:
-`scripts/test-cleaning-history-v22.js`
+**V2.2 blijft functioneel nog real-device te verifiëren; de nieuwe V2.2.1 visual candidate hieronder is vanaf nu de bedoelde zichtbare testoppervlakte voor beurt- en benodigdhedendetail.**
 
-Bestaande V2.0/V2.1 tests blijven groen.
+---
+
+## Cleaning V2.2.1 — Calm Premium detail visual rework
+
+Status: **IMPLEMENTATIE GEREED — CONTRACT/CI + REAL-DEVICE GATE OPEN**  
+Implementatiecheckpoint vóór milestone-documentatie: `c32eb2dac2be9d40912cdb4c6f68c7566e935e06`
+
+### Waarom deze milestone vóór V2.3 is ingevoegd
+
+Op 11-09-2026 heeft de product owner de definitieve visuele referentie voor de concrete schoonmaakbeurt en Benodigdheden opnieuw bevestigd. Besloten is deze detailflows **vóór** verdere V2.3-functionaliteit te harmoniseren, zodat nieuwe functionele acties straks niet eerst in een tijdelijke UI worden gebouwd en daarna opnieuw moeten worden verplaatst.
+
+De gedeelde visuele bron is:
+`docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md`
+
+Art direction: **Calm Premium Home** — warm, clean, rustig, premium, minimalistisch zonder kaal te worden, met FamilyApp-violet, zachte surfaces, semantische statuskleuren en compacte kleurrijke line-icon tiles.
+
+### Productgrens vastgezet
+
+Schoonmaken wordt nadrukkelijk **geen tweede Taken-module**.
+
+Schoonmaken blijft primair:
+**kamer → routine → planning → uitvoering → benodigdheden → historie.**
+
+Taken blijft later de algemene uitvoerlaag en mag dezelfde designprimitives gebruiken zonder Cleaning-routines/voorraad/room-context over te nemen.
+
+### Concrete schoonmaakbeurt — nieuwe vaste visuele hiërarchie
+
+1. rustige native header met back, contexttitel en overflow;
+2. grote kamerhero met statuschip;
+3. prominente schoonmaakbeurttitel;
+4. dag / moment / onderdelen / geschatte duur;
+5. toegewezen persoon met avatar;
+6. routinevoortgang met percentage en progressbar;
+7. concrete routinechecklist;
+8. primaire `Start schoonmaken` / `Verder schoonmaken` flow;
+9. secundaire `Bewerken` actie;
+10. utility pair `Bekijk beurt` + `Benodigdheden` met countbadge;
+11. samenwerking blijft contextueel in dezelfde bestaande Cleaning-sheet en wordt visueel ondergeschikt aan de uitvoerflow.
+
+### Benodigdheden — nieuwe vaste visuele hiërarchie
+
+1. header `Kamer — Benodigdheden` context;
+2. segmented control `Voor deze beurt / Alle kameritems`;
+3. intro met concrete beurtcontext of kamercontext;
+4. 76px supply rows met 46px gekleurde line-icon tiles;
+5. tekststatus `Op voorraad / Bijna op / Ontbreekt` plus compacte semantische indicator;
+6. `Ontbreekt iets?` callout;
+7. kamer-voorraadsamenvatting;
+8. beheeractie om kameritem toe te voegen waar permissies dit toestaan;
+9. utility pair `Bekijk alle kameritems` + `Boodschappen`.
+
+LOW/OUT-items gaan via de bestaande canonical `ShoppingListStore` naar Boodschappen met dedupe; de visual rework maakt geen tweede shopping writer.
+
+### Implementatie
+
+Nieuw:
+- `src/modules/cleaning/cleaningDetailVisualV221.js`;
+- `src/styles/cleaning-detail-v221.css`;
+- `scripts/test-cleaning-detail-visual-v221.js`.
+
+Gewijzigd:
+- `src/modules/cleaning/cleaningPremiumFeedback.js` laadt de visual companion alleen lazy wanneer Cleaning zelf geopend wordt;
+- `scripts/test-cleaning-functional-closeout.js` neemt de V2.2.1-contracten mee.
+
+### Architectuur/performanceguards
+
+Bewust behouden:
+- primaire `cleaningScreen.js` blijft version `2.0.0` en write authority;
+- dezelfde bestaande `cleaning-v2-sheet` blijft de enige popup owner;
+- bestaande `data-cv2-check` / complete-all flow blijft de uitvoering schrijven;
+- bestaande repositorymethodes blijven supply/inventory writes doen;
+- geen tweede raw Firebase listener;
+- geen MutationObserver;
+- geen document-wide click owner;
+- geen polling/setInterval/setTimeout in de visual companion;
+- geen backdrop-filter of continue animatie in de nieuwe detail-CSS;
+- geen oude Cleaning execution/projection runtime;
+- geen production Firebase Rules wijziging.
 
 ### Real-device gate — OPEN
 
-Te verifiëren op echte iPhone:
-1. vier tabs netjes op één rij: Vandaag / Kamers / Weekplan / Historie;
-2. Vandaag blijft soepel en toont aandacht alleen waar relevant;
-3. Historie opent zonder jank;
-4. completion logs verschijnen per kamer;
-5. kamer uitklappen toont routine + moment + gezinslid;
-6. nieuwe beurt afronden → historie ververst;
-7. Activity-feed krijgt maximaal één `cleaning.completed` item voor die completion;
-8. reopen maakt geen tweede completed activity;
-9. veel tabwissels maken geen dubbele Historie-tab/sectie;
-10. verlaten Cleaning laat geen nieuwe runtime/polling achter.
+Te verifiëren op echte iPhone, light én dark:
+1. beurt opent met nieuwe hero/header zonder layout-jump;
+2. titel/meta/assignee/progress/checklist hebben de afgesproken hiërarchie;
+3. checklist blijft snel en percentage/bar lopen direct mee;
+4. `Start schoonmaken` → uitvoering en complete-all blijven werken;
+5. `Bewerken` blijft in de bestaande beheerflow functioneren;
+6. collaboration blijft onder dezelfde beurt zichtbaar zonder tweede popup;
+7. Benodigdheden opent direct en segmented switch werkt soepel;
+8. supply-iconen, kleuren, dimensies en statusindicatoren voelen als de referenties;
+9. voorraadstatus wisselen en kameritem toevoegen blijven werken;
+10. LOW/OUT → Boodschappen voegt geen duplicates toe;
+11. herhaald openen/sluiten/schakelen veroorzaakt geen freeze/jank;
+12. Historie/Vandaag/Weekplan blijven intact na de visual rework.
 
-**Niet markeren als REAL-DEVICE GEACCEPTEERD totdat de product owner dit expliciet bevestigt.**
+**Niet markeren als REAL-DEVICE GEACCEPTEERD totdat de product owner het exacte candidate-checkpoint expliciet bevestigt.**
 
 ---
 
 ## Cleaning V2.3 — Functionele gaten + hardening
 
-Status: **GEPLAND NA V2.2 TEST**
+Status: **VOLGENDE NA V2.2.1 REAL-DEVICE CHECK**
 
-Onvolledige beurt (doorschuiven/later/overslaan), handmatige persoon/moment-wijziging, projection consistency, household-key safety, idempotency/double submit, account/household lifecycle, soft-delete en cache/versioning.
+Onvolledige beurt (doorschuiven/later/overslaan), handmatige persoon/datum/tijd-wijziging, projection consistency, household-key safety, idempotency/double submit, account/household lifecycle, soft-delete en cache/versioning.
 
 ---
 
-## Cleaning V2.4 — Definitieve premium visual polish
+## Cleaning V2.4 — Brede premium consistency pass
 
 Status: **GEPLAND NA FUNCTIONELE STABILITEIT**
 
-Premium FamilyApp-look, light/dark, kamerassets/atlassen, duidelijke hiërarchie en lichte native-iOS microinteracties zonder repaint-zware effecten.
+Brede Schoonmaken-polish buiten de nu vastgezette detailflows plus cross-module voorbereiding richting Taken: resterende cards/tabs/states, full light/dark consistency, kamerassets/atlassen, native-iOS microinteracties en design-tokenharmonisatie zonder repaint-zware effecten.
 
 ---
 
