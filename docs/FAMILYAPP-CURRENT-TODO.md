@@ -9,6 +9,7 @@ Read together with:
 - `FamilyApp-TODO-updated.txt`
 - `docs/FAMILYAPP-FIX-LIST.md`
 - `docs/household-rebuild-v2-progress.md`
+- `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md`
 - `FamilyApp-Schoonmaken-current-status.md`
 - `FamilyApp-Schoonmaken-milestone-log.md`
 - `FamilyApp-Schoonmaken-module-architectuur.md`
@@ -16,6 +17,16 @@ Read together with:
 ## Hard branch rule
 
 `main` stays read-only until the product owner real-device accepts an exact milestone checkpoint and separately asks to promote it. Production Firebase Rules and fallback/lock branches are also read-only without explicit permission.
+
+## Fixed product/design boundary
+
+Shared FamilyApp visual direction: **Calm Premium Home**.
+
+Cleaning and Tasks will use the same visual family, but not the same product model:
+- Cleaning = room → routine → planning → execution → supplies → history;
+- Tasks = general task execution;
+- concrete Cleaning occurrences may project to Tasks/Agenda, but Cleaning remains the authority for the routine/occurrence;
+- Cleaning must not become a second Tasks module.
 
 ## Deferred gate — Cleaning V2.1 collaboration
 
@@ -26,7 +37,7 @@ Last fully tested V2.1 checkpoint:
 
 GitHub Actions run `34534350216`: **SUCCESS**.
 
-Built and retained:
+Retained:
 - occurrence transfer / accept / decline / withdraw;
 - counter proposal for person/date/time;
 - explicit third-person consent;
@@ -34,64 +45,111 @@ Built and retained:
 - no implicit multi-person assignment;
 - contextual collaboration controls inside existing turn detail sheet;
 - no standalone `Samenwerken` menu below Kamers;
-- Action Inbox fresh-session hydration on demand;
 - accepted transfer updates existing Task/Agenda projections;
 - idempotency/double-tap guards;
 - no extra long-lived Firebase listener, popup owner, MutationObserver or notification projector.
 
-The product owner reported on 2026-09-11 that the available-device flow appears to work, but multi-user testing was not possible at that moment. Therefore V2.1 remains **NOT fully real-device/multi-user accepted**. Test later with two/three accounts before final acceptance/promotion.
+V2.1 remains **NOT fully real-device/multi-user accepted**. Test later with two/three accounts before final acceptance/promotion.
 
-## CURRENT GATE — Cleaning V2.2 history / Activity / useful attention
+## Cleaning V2.2 — history / Activity / useful attention
 
-Status: **implementation candidate complete; full contract suite green; real-device iPhone verification pending**.
+Status: **implementation candidate complete; contract suite green; functional real-device verification pending**.
 
-Functional/test checkpoint:
+Functional runtime checkpoint:
 `ffb0552bad734309e02361de87bde7a3e96a3464`
 
-GitHub Actions `Household Rebuild Contract Tests` run `34537327502`: **SUCCESS**.
+Last V2.2 docs/test checkpoint before visual rework:
+`28fd9fb6832ef369ee084723b4a71736fb4e662d`
+
+GitHub Actions `Household Rebuild Contract Tests` run `34537817885`: **SUCCESS**.
 
 Built:
-- pure `cleaningHistoryContract.js` read model over canonical `completionLogs`;
-- lightweight `cleaningHistoryV22.js` companion, lazy behind Cleaning navigation;
-- fourth `Historie` tab next to Vandaag / Kamers / Weekplan;
-- completion history grouped by room;
-- routine history from stored completion checklists;
-- last execution time and member;
-- 30-day activity counts per room/routine;
-- current-week count/minutes/people summary;
-- compact current-assignee attention on Vandaag for own today/overdue work;
-- best-effort projection of newly observed completed logs to existing Household Activity as `cleaning.completed`;
-- deterministic Activity occurrence key for append-once dedupe;
-- first existing history snapshot is baseline, preventing historical feed flood;
-- REOPENED logs do not emit a new completed Activity event.
+- pure read model over canonical completionLogs;
+- lightweight History companion;
+- fourth `Historie` tab;
+- room/routine history;
+- current-week summary;
+- current-assignee today/overdue attention;
+- best-effort `cleaning.completed` Activity projection with deterministic dedupe;
+- no second history DB/raw Firebase listener/MutationObserver/polling/notification projector/popup owner.
 
-Performance/safety:
-- primary accepted `cleaningScreen.js` remains unchanged;
-- same CleaningHouseholdRepository snapshot/subscription;
-- no second raw Firebase listener;
-- no second history database;
+The V2.2 functional gate remains open. Turn/Supplies visual verification now uses the V2.2.1 candidate below.
+
+## CURRENT GATE — Cleaning V2.2.1 Calm Premium detail visual rework
+
+Status: **implementation complete; contract/CI and real-device iPhone verification pending**.
+
+Implementation checkpoint before milestone documentation:
+`c32eb2dac2be9d40912cdb4c6f68c7566e935e06`
+
+Why this was inserted before V2.3:
+- product owner re-confirmed the exact Cleaning turn and Supplies visual reference on 2026-09-11;
+- building V2.3 first would add new actions into a temporary detail hierarchy and create avoidable rework;
+- the detail visual shell is therefore fixed first, while accepted canonical state/writers remain untouched.
+
+New visual implementation:
+- `src/modules/cleaning/cleaningDetailVisualV221.js`;
+- `src/styles/cleaning-detail-v221.css`;
+- `scripts/test-cleaning-detail-visual-v221.js`;
+- lazy import through existing `cleaningPremiumFeedback.js`.
+
+### Fixed turn hierarchy
+
+1. native-feeling header;
+2. strong room hero + semantic status;
+3. prominent cleaning title;
+4. day / moment / parts / estimate;
+5. assignee card;
+6. routine progress;
+7. checklist;
+8. Start/Continue Cleaning;
+9. Edit;
+10. View turn + Supplies;
+11. collaboration remains contextual in the same existing sheet.
+
+### Fixed supplies hierarchy
+
+1. room-context header;
+2. `Voor deze beurt / Alle kameritems` segmented control;
+3. turn/room intro;
+4. 76px supply rows with 46px coloured minimal line-icon tiles;
+5. text + indicator for `Op voorraad / Bijna op / Ontbreekt`;
+6. `Ontbreekt iets?` callout;
+7. room inventory summary;
+8. room-item management when capability allows;
+9. `Bekijk alle kameritems / Boodschappen` utility pair;
+10. LOW/OUT handoff goes through canonical `ShoppingListStore` with dedupe.
+
+### Safety/performance
+
+- primary `cleaningScreen.js` stays v2.0.0 and remains execution/write authority;
+- existing `#cleaning-v2-sheet` stays the sole popup owner;
+- no additional raw Firebase listener;
+- no visual-layer Firebase writer;
 - no MutationObserver;
-- no polling/setInterval;
-- no notification/push projector;
-- no second popup owner;
-- old `cleaningHistoryExperience.js`, `cleaningActivityProjector.js` and `cleaningNotificationProjector.js` remain disconnected historical reference.
+- no document-wide click interception;
+- no visual polling/timer loop;
+- no backdrop-filter or continuous animation in the new CSS;
+- production Firebase Rules unchanged.
 
-### Real-device tests required for V2.2
+### Real-device checks required
 
-1. Four Cleaning tabs fit cleanly on one row on iPhone.
-2. Vandaag remains responsive; attention row only appears for current user's today/overdue work.
-3. Historie opens/closes without jank.
-4. Existing completionLogs display by room.
-5. Expanded room shows routine, last moment and household member.
-6. Complete a new turn; Historie updates from canonical completionLogs.
-7. Household Activity gets at most one matching `cleaning.completed` event.
-8. Reopen a completed turn; no duplicate completed Activity event.
-9. Repeated tab switching creates no duplicate Historie tab/sections.
-10. Leave Cleaning and use other modules; no background Cleaning performance regression.
+1. Light and dark mode turn sheet matches the new hierarchy and feels calm/premium.
+2. Hero/header/spacing do not jump during open/close.
+3. Checklist taps remain instant; progress count/bar/percentage follow immediately.
+4. Start/Continue and complete-all still work through the existing writer.
+5. Edit still routes into existing management flow.
+6. Collaboration remains in the same turn sheet and does not dominate it.
+7. Supplies segmented switch is smooth and correct.
+8. Supply icon style/size/colour and stock indicators match the reference direction.
+9. Inventory status changes and room-item creation work.
+10. LOW/OUT → Boodschappen does not create duplicates.
+11. Repeated open/close/scope switching does not freeze or jank.
+12. Vandaag / Kamers / Weekplan / Historie still work after the detail rework.
 
-Do not mark V2.2 REAL-DEVICE ACCEPTED until the product owner explicitly confirms it.
+Do not mark V2.2.1 REAL-DEVICE ACCEPTED until the product owner explicitly confirms the exact candidate checkpoint.
 
-## NEXT AFTER V2.2 TEST
+## NEXT AFTER V2.2.1 TEST
 
 ### Cleaning V2.3 — Function gaps + hardening
 - incomplete occurrence: move / later this week / skip;
@@ -104,11 +162,12 @@ Do not mark V2.2 REAL-DEVICE ACCEPTED until the product owner explicitly confirm
 - cache/versioning;
 - extra contracts.
 
-### Cleaning V2.4 — final premium polish
-- light/dark visual finish;
-- room atlas/assets;
-- clear hierarchy;
+### Cleaning V2.4 — broad premium consistency pass
+- harmonize remaining Cleaning cards/tabs/states;
+- full light/dark consistency;
+- refine room atlases/assets;
 - lightweight iOS-feeling microinteractions;
+- prepare the same shared visual primitives for later Tasks harmonisation;
 - no heavy glass/blur/repaint regressions.
 
 ## Explicitly NOT in Cleaning roadmap
