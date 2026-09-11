@@ -1,5 +1,5 @@
 'use strict';
-/* STEP 10 + PWA CACHE HARDENING v1.2.0
+/* STEP 10 + PWA CACHE HARDENING v1.3.0
  *
  * One service worker owns both FCM background messaging and FamilyApp's
  * static-asset cache. This avoids competing scope='/' workers.
@@ -14,7 +14,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-var FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v2';
+var FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v3';
 var FAMILYAPP_STATIC_CACHE_PREFIX='familyapp-static-';
 var FAMILYAPP_STATIC_EXT_RE=/\.(?:css|js|mjs|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf|otf|json)$/i;
 var FAMILYAPP_SENSITIVE_QUERY_RE=/(?:^|_)(?:token|auth|session|code|secret|key|credential)(?:$|_)/i;
@@ -125,8 +125,8 @@ messaging.onBackgroundMessage(function(payload){
   var title=String(data.title||'FamilyApp');
   var options={
     body:String(data.body||'Je hebt een nieuwe melding.'),
-    icon:'/api/brand-icon?variant=192&v=5',
-    badge:'/api/brand-icon?variant=192&v=5',
+    icon:'/src/assets/brand/v6/familyapp-icon-192.png?v=6',
+    badge:'/src/assets/brand/v6/familyapp-icon-192.png?v=6',
     tag:String(data.notificationId||data.eventKey||'familyapp-notification'),
     renotify:false,
     data:{
