@@ -34,13 +34,14 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   };
   const registration={
     scope:'https://app.test/',
+    update(){return Promise.resolve();},
     pushManager:{getSubscription(){return Promise.resolve({unsubscribe(){unsubscribeCalls++;return Promise.resolve(true);}});}}
   };
   const serviceWorkerListeners={};
   const navigator={
     userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',platform:'Win32',maxTouchPoints:0,
     serviceWorker:{
-      register(path,opts){assert.strictEqual(path,'/firebase-messaging-sw.js');assert.strictEqual(opts.scope,'/');return Promise.resolve(registration);},
+      register(path,opts){assert.strictEqual(path,'/firebase-messaging-sw.js');assert.strictEqual(opts.scope,'/');assert.strictEqual(opts.updateViaCache,'none');return Promise.resolve(registration);},
       getRegistration(){return Promise.resolve(registration);},
       addEventListener(type,fn){serviceWorkerListeners[type]=fn;}
     },
@@ -73,11 +74,11 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
 
   const service=window.PushRegistrationService;
   assert.ok(service);
-  assert.strictEqual(service.version,'1.1.0');
+  assert.strictEqual(service.version,'1.2.0');
   assert.strictEqual(typeof window.setupPushNotifications,'function');
 
   // Legacy startup entrypoint is safe: it may initialize/configure the service,
-  // but it may NEVER prompt for notification permission.
+  // and now also registers the shared push/cache worker, but it may NEVER prompt.
   window.setupPushNotifications();
   await tick();await tick();
   assert.strictEqual(permissionRequests,0,'startup must not request Notification permission');
@@ -143,5 +144,5 @@ function tick(){return new Promise(resolve=>setTimeout(resolve,0));}
   assert.ok(source.includes('PUSH_SENDER_NOT_CONFIGURED'));
   assert.ok(source.indexOf('assertDeliveryConfig();')<source.indexOf('Notification.requestPermission()'));
 
-  console.log('STEP 10 Web Push readiness/explicit opt-in/account-switch contract: PASS');
+  console.log('STEP 10 Web Push + shared cache worker readiness/explicit opt-in/account-switch contract: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});
