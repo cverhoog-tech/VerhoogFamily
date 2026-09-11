@@ -5,18 +5,24 @@ function assert(ok,msg){if(!ok)throw new Error(msg);}
 const endpoint=read('api/brand-icon.js');
 const appIcon=read('src/core/appIcon.js');
 const manifest=read('manifest.json');
-const shell=read('api/app.js');
-const login=read('src/core/loginBrandV6.js');
-const loginCss=read('src/styles/loginBrandV6.css');
+const baseShell=read('api/app.js');
+const shell=read('api/app-v7.js');
+const routes=read('vercel.json');
+const login=read('src/core/loginBrandV7.js');
+const loginCss=read('src/styles/loginBrandV7.css');
 
-assert(endpoint.includes('familyapp/brand/v6/icon-master.png'),'brand endpoint must use v6 icon source');
-assert(endpoint.includes('familyapp-brand-v6.png'),'brand endpoint filename must identify v6');
-assert(appIcon.includes("version: '6'"),'canonical app identity must be v6');
-assert(manifest.includes('/?brand=v6'),'PWA start URL must cache-bust brand v6');
-assert(manifest.includes('familyapp-icon-192.png?v=6'),'manifest must expose the literal supplied 192 icon asset');
-assert(appIcon.includes("manifest.href = '/manifest.json?v=6'"),'runtime identity must move manifest link to v6');
+// The product-owner supplied PWA icon remains the exact v6 master. Brand v7
+// advances only the served app/login shell, not the approved icon artwork.
+assert(endpoint.includes('familyapp/brand/v6/icon-master.png'),'brand endpoint must keep the approved literal icon master');
+assert(endpoint.includes('familyapp-brand-v6.png'),'icon endpoint filename must keep the approved source generation');
+assert(appIcon.includes("version: '7'"),'canonical app identity must be v7');
+assert(manifest.includes('/?brand=v7'),'PWA start URL must cache-bust brand v7');
+assert(manifest.includes('familyapp-icon-192.png?v=7'),'manifest must expose the literal supplied 192 icon asset with v7 cache generation');
+assert(appIcon.includes("manifest.href = '/manifest.json?v=7'"),'runtime identity must move manifest link to v7');
 assert(appIcon.includes("theme.setAttribute('content', '#0b3428')"),'runtime identity must use pine brand theme color');
-assert(shell.includes('src/core/appIcon.js?v=6'),'runtime shell must still load canonical app identity');
+assert(baseShell.includes('src/core/appIcon.js?v=6'),'base runtime shell must retain its canonical identity hook for wrapper replacement');
+assert(shell.includes("replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=8')"),'brand v7 shell must serve the current canonical identity generation');
+assert(routes.includes('"dest": "/api/app-v7"'),'root must be served by the native v7 shell');
 
 [endpoint,appIcon,manifest].forEach((content,index)=>{
   assert(!/brand\/v4|brand=v4/.test(content),'legacy v4 brand reference remains in branding file '+index);
@@ -26,14 +32,16 @@ assert(shell.includes('src/core/appIcon.js?v=6'),'runtime shell must still load 
   assert(endpoint.includes("'"+variant+"':"),'brand endpoint missing '+variant+' compatibility variant');
 });
 
-assert(appIcon.includes('/src/assets/brand/v6/familyapp-icon-192.png?v=6'),'runtime icon identity must use supplied v6 asset');
-assert(appIcon.includes('/src/styles/loginBrandV6.css?v=2'),'runtime identity must load literal login styles');
-assert(appIcon.includes('/src/core/loginBrandV6.js?v=2'),'runtime identity must load literal login controller');
-assert(login.includes('/src/assets/brand/v6/login-reference.jpg?v=6'),'login must render the product-owner reference asset');
-assert(login.includes("button('flv6-google','Doorgaan met Google',google)"),'literal login must retain Google action');
-assert(login.includes("button('flv6-apple','Doorgaan met Apple',apple)"),'literal login must retain Apple action');
-assert(login.includes("showLoginTab(isRegister?'register':'login')"),'email login/register must retain existing auth entrypoint');
-assert(!/firebase\.auth|onAuthStateChanged|signInWithEmailAndPassword/.test(login),'v6 presentation must not become a second auth owner');
-assert(!/backdrop-filter|setInterval|requestAnimationFrame/.test(loginCss),'literal login styles must stay repaint-light');
+assert(appIcon.includes('/src/assets/brand/v6/familyapp-icon-192.png?v=7'),'runtime icon identity must use the approved literal icon asset');
+assert(appIcon.includes('/src/styles/loginBrandV7.css?v=1'),'runtime identity must load native v7 login styles');
+assert(appIcon.includes('/src/core/loginBrandV7.js?v=1'),'runtime identity must load native v7 login controller');
+assert(!appIcon.includes('loginBrandV6'),'canonical runtime must not load screenshot-based v6 login');
+assert(login.includes("VERSION='7.0.1'"),'native login controller version must match current v7 patch');
+assert(login.includes('Doorgaan met Google'),'native login must retain Google action');
+assert(login.includes('Doorgaan met Apple'),'native login must retain Apple action');
+assert(login.includes('window.submitAuth'),'email login/register must retain existing auth entrypoint');
+assert(!login.includes('login-reference.jpg'),'native login must not render the old screenshot reference');
+assert(!/firebase\.auth|onAuthStateChanged|signInWithEmailAndPassword/.test(login),'v7 presentation must not become a second auth owner');
+assert(!/backdrop-filter|setInterval|requestAnimationFrame/.test(loginCss),'native login styles must stay repaint-light');
 
-console.log('FamilyApp brand v6 contract OK');
+console.log('FamilyApp icon + native brand v7 contract OK');
