@@ -11,7 +11,7 @@ const provider=read('src/core/authProviderConfig.js');
 const session=read('src/core/authenticatedSessionController.js');
 const manifest=read('manifest.json');
 
-assert(ui.includes("VERSION='7.0.0'"),'native login controller must be brand v7');
+assert(ui.includes("VERSION='7.0.1'"),'native login controller must be brand v7.0.1');
 assert(ui.includes("screen.innerHTML=nativeMarkup()"),'brand v7 must rebuild the login DOM natively');
 assert(ui.includes('flv7-photo')&&ui.includes('flv7-panel')&&ui.includes('flv7-values'),'native hero, auth panel and brand values must exist');
 assert(ui.includes('SAMEN RUST EN OVERZICHT'),'approved login subtitle must remain present');
@@ -29,6 +29,7 @@ assert(ui.includes('window.submitAuth'),'email login/register must delegate to t
 assert(ui.includes("showLoginTab(mode)"),'email login/register must retain existing mode handling');
 assert(ui.includes('id="login-step-1"')&&ui.includes('id="login-step-2"'),'session controller compatibility login nodes must remain available');
 assert(ui.includes('id="auth-email"')&&ui.includes('id="auth-password"')&&ui.includes('id="auth-submit-btn"'),'existing auth field ids must remain available');
+assert(ui.includes("window.showAuthError=showError")&&ui.includes("!sheet||!sheet.classList.contains('is-open')"),'provider errors must remain visible on the native login surface');
 assert(!/firebase\.auth|onAuthStateChanged|createUserWithEmailAndPassword|signInWithEmailAndPassword/.test(ui),'presentation controller must not own Firebase auth');
 assert(session.includes('onAuthStateChanged'),'authenticated session controller must remain auth lifecycle owner');
 assert(!ui.includes('login-reference.jpg')&&!ui.includes('flv6-reference'),'full-screen screenshot UI must not return');
