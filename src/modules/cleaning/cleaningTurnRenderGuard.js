@@ -53,7 +53,7 @@
     if(state.pending||state.suspended)return;
     var target=event&&event.target;
     if(!target||!target.closest)return;
-    var trigger=target.closest('#screen-cleaning [data-cleaning-room-primary-action]');
+    var trigger=target.closest('[data-cleaning-room-primary-action]');
     if(!trigger)return;
 
     // The dedicated turn popup owns this same capture click and calls
@@ -101,11 +101,14 @@
       .finally(function(){state.restorePromise=null;});
   }
 
-  document.addEventListener('click',scheduleSuspend,true);
+  // This module is loaded only after the Cleaning V2 shell exists. Keep the
+  // capture boundary scoped to that screen instead of owning document clicks.
+  var screen=document.getElementById('screen-cleaning');
+  if(screen)screen.addEventListener('click',scheduleSuspend,true);
   window.addEventListener('familyapp:cleaning-turn-closed',restore);
 
   window.CleaningTurnRenderGuard={
-    version:'1.0.0',
+    version:'1.0.1',
     isSuspended:function(){return state.suspended;},
     restore:restore
   };
