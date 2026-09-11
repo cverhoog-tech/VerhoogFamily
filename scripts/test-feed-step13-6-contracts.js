@@ -42,10 +42,16 @@ assert(proposalSvc.includes('ShoppingListStore.appendRecipeIngredients'),'shoppi
 assert(proposalSvc.includes("transition(id,'accepting',finalPatch)"),'proposal must finalize only after canonical writes');
 assert(proposalSvc.includes('releaseClaim(id,actor,error)'),'failed canonical mutation must release the accepting claim');
 
-// Proposal cards remain workflow UI, not fake social posts.
+// Proposal cards remain workflow UI, not fake social posts, but share the chronological Feed timeline.
 assert(proposalUi.includes('data-meal-proposal'),'proposal cards need their own identity');
 assert(!proposalUi.includes('FeedSharedData.createPost'),'proposal UI must not create shadow social posts');
 assert(!proposalUi.includes('FeedSharedData.addComment'),'proposal UI must not reuse comment mutation authority');
+assert(activity.includes('registerTimelineProvider'),'Feed presentation must expose a workflow timeline registration point');
+assert(proposalUi.includes("id:'meal-proposals'"),'meal proposals must register as their own workflow timeline provider');
+assert(proposalUi.includes('feed.registerTimelineProvider'),'meal proposals must join the unified Feed timeline');
+assert(proposalUi.includes('Number(p&&p.createdAt||0)'),'meal proposal ordering must use canonical createdAt');
+assert(activity.includes('social.concat(activity,providerItems()).sort'),'workflow cards must be sorted with posts and activity, not pinned above them');
+assert(!proposalUi.includes('proposals+normal'),'meal proposals must never be prepended ahead of newer Feed content');
 
 // Immutable activity producers keep deterministic occurrence identity.
 assert(producers.includes('occurrenceKey:'),'activity producers must provide deterministic occurrence keys');
