@@ -7,7 +7,7 @@ import './cleaningOccurrenceCommandsV23.js?v=1';
 import './cleaningOccurrenceControlsV23.js?v=1';
 
 // Cleaning V2.4 presentation layer. This only loads static CSS and deliberately
-// owns no Firebase state, listeners, observers, timers or popup lifecycle.
+// owns no persistent data state, listeners, observers, timers or popup lifecycle.
 (function(){
   if(document.getElementById('cleaning-v24-css'))return;
   var link=document.createElement('link');
