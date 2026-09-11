@@ -5,10 +5,10 @@
 
 var FAMILYAPP_APP_ICONS = Object.freeze({
   version: '7',
-  favicon: '/src/assets/brand/v6/familyapp-icon-192.png?v=7',
-  appleTouch: '/src/assets/brand/v6/familyapp-icon-192.png?v=7',
-  preview: '/src/assets/brand/v6/familyapp-icon-192.png?v=7',
-  login: '/src/assets/brand/v6/familyapp-icon-192.png?v=7'
+  favicon: '/src/assets/brand/v6/familyapp-icon-192.png?v=8',
+  appleTouch: '/src/assets/brand/v6/familyapp-icon-192.png?v=8',
+  preview: '/src/assets/brand/v6/familyapp-icon-192.png?v=8',
+  login: '/src/assets/brand/v6/familyapp-icon-192.png?v=8'
 });
 
 function ensureHeadLink(id, rel, href, sizes) {
@@ -26,7 +26,7 @@ function ensureHeadLink(id, rel, href, sizes) {
 
 function ensureBrandV7Shell() {
   var manifest = document.querySelector('link[rel="manifest"]');
-  if (manifest) manifest.href = '/manifest.json?v=7';
+  if (manifest) manifest.href = '/manifest.json?v=8';
   var theme = document.querySelector('meta[name="theme-color"]');
   if (theme) theme.setAttribute('content', '#0b3428');
   var status = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
@@ -233,6 +233,9 @@ function ensureFeedbackRound5Styles() {
 
 function applyAppIcon() {
   ensureBrandV7Shell();
+  // Use the known-opaque local master for iOS. Safari reads this link when the
+  // app is added to the Home Screen; routing it through a transparent proxy can
+  // render as a black tile on some iOS versions.
   ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '192x192');
   ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '192x192');
 
