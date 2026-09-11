@@ -16,5 +16,5 @@ ok(!/backdrop-filter\s*:|filter\s*:|will-change\s*:/.test(css),'V2.4 must not ad
 ok(!/animation\s*:/.test(css),'V2.4 must not add continuous CSS animation');
 ok(!/MutationObserver|setInterval\s*\(|setTimeout\s*\(/.test(bridge),'V2.4 bridge must not add observers/timers');
 ok(!/firebase|\.subscribe\s*\(/i.test(bridge),'V2.4 bridge must not own Firebase/subscriptions');
-ok(screen.includes("var VERSION='2.0.0'"),'Primary Cleaning V2.0 owner version changed unexpectedly');
+ok(screen.includes("const VERSION='2.0.0'"),'Primary Cleaning V2.0 owner version changed unexpectedly');
 console.log('Cleaning V2.4 visual performance contract OK');
