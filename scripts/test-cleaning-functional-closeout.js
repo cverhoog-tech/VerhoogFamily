@@ -9,6 +9,7 @@ function need(source,re,label){if(!re.test(source)){failed=true;console.error('F
 function forbid(source,re,label){if(re.test(source)){failed=true;console.error('FAIL: '+label);}}
 const screen=read('src/modules/cleaning/cleaningScreen.js');
 const premium=read('src/modules/cleaning/cleaningPremiumFeedback.js');
+const companions=read('src/modules/cleaning/cleaningCompanionLoader.js');
 const collaboration=read('src/modules/cleaning/cleaningCollaborationExperience.js');
 const contract=read('src/modules/cleaning/cleaningCollaborationContract.js');
 const history=read('src/modules/cleaning/cleaningHistoryV22.js');
@@ -73,9 +74,11 @@ need(detailVisual,/Alle kameritems/,'v2.2.1 supplies must preserve room scope');
 need(detailVisual,/ShoppingListStore/,'v2.2.1 low/out supplies may hand off to canonical Shopping');
 forbid(detailVisual,/\.on\(\s*['"]value['"]|firebase\.database|fbDb|new\s+MutationObserver|MutationObserver\s*\(|setInterval\s*\(|setTimeout\s*\(|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.2.1 visual companion must stay lightweight and non-authoritative');
 
-need(premium,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
-need(premium,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
-need(premium,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'v2.2.1 detail visual must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
+need(companions,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'v2.2.1 detail visual must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningOccurrenceCommandsV23\.js\?v=1'/,'v2.3 commands must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningOccurrenceControlsV23\.js\?v=1'/,'v2.3 controls must lazy-load only with Cleaning');
 need(premium,/version:'2\.2\.1'/,'Cleaning companion marker must be v2.2.1');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
 forbid(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work itself');
@@ -93,7 +96,7 @@ need(screen,/requireCap\(CAP\.PLANNING\)/,'planning remains permission guarded')
 need(screen,/requireCap\(CAP\.EXECUTION\)/,'execution remains permission guarded');
 forbid(screen,/TaskDetailPopup|TaskSharedData|CleaningExecutionWriteRuntime|CleaningProjectionService/,'primary v2 must not reactivate legacy popup/write cascade');
 forbid(screen,/new\s+MutationObserver|MutationObserver\s*\(/,'primary v2 must not create MutationObservers');
-forbid(inboxBoot,/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience|cleaningCollaboration/,'Cleaning must stay off the global startup path');
+forbid(inboxBoot,/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience|cleaningHelpRequestUi|cleaningPermissions/,'Cleaning must stay off the global startup path');
 need(workflow,/var VERSION='0\.2\.0'/,'locked historical room workflow rollback file must remain unchanged');
 [
  'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js','scripts/test-cleaning-history-v22.js','scripts/test-cleaning-detail-visual-v221.js'
