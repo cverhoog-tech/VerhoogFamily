@@ -2,7 +2,7 @@
 // FamilyApp Login Brand v7 — native DOM/CSS surface. No screenshot-as-UI.
 (function(){
   if(window.FamilyAppLoginBrandV7)return;
-  var VERSION='7.0.0';
+  var VERSION='7.0.1';
   var screen=null,sheet=null,mode='login',messageTimer=null;
 
   function providers(){return window.FamilyAppAuthProviders||{};}
@@ -18,7 +18,7 @@
   function showError(message){
     var err=q('#auth-error');
     if(err){err.textContent=message||'';err.style.display=message?'block':'none';}
-    if(message&&!sheet.classList.contains('is-open'))setMessage(message);
+    if(message&&(!sheet||!sheet.classList.contains('is-open')))setMessage(message);
   }
   function logoSvg(){
     return '<svg viewBox="0 0 180 160" role="img" aria-label="FamilyApp">'
@@ -142,11 +142,13 @@
     screen.removeAttribute('style');
     screen.className='familyapp-login-v7';
     screen.innerHTML=nativeMarkup();
+    sheet=q('#flv7-auth-sheet');
     bind();
     setMode('login');
+    if(typeof window.showAuthError!=='function')window.showAuthError=showError;
     window.dispatchEvent(new CustomEvent('familyapp:login-brand-ready',{detail:{version:VERSION}}));
   }
   function boot(){build();}
-  window.FamilyAppLoginBrandV7={version:VERSION,boot:boot,openLogin:function(){openSheet('login');},openRegister:function(){openSheet('register');},close:closeSheet};
+  window.FamilyAppLoginBrandV7={version:VERSION,boot:boot,openLogin:function(){openSheet('login');},openRegister:function(){openSheet('register');},close:closeSheet,showError:showError};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
