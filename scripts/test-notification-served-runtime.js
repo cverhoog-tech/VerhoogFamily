@@ -102,7 +102,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.strictEqual((pushService.match(/Notification\.requestPermission\(\)/g)||[]).length,1,'only explicit requestEnable flow may request permission');
   assert.ok(pushService.indexOf('assertDeliveryConfig();')<pushService.indexOf('Notification.requestPermission()'),'delivery readiness must be checked before permission');
   assert.ok(pushService.includes('PUSH_SENDER_NOT_CONFIGURED'));
-  assert.ok(pushService.includes("register(path,{scope:'/',updateViaCache:'none'})"),'push service must register the shared worker with cache-bypass updates');
+  assert.ok(pushService.includes("serviceWorker.register('/firebase-messaging-sw.js',{scope:'/',updateViaCache:'none'})"),'push service must register the shared worker with cache-bypass updates');
   assert.ok(pushSettings.includes('st.senderConfigured===false'));
   assert.ok(pushSettings.includes('st.vapidConfigured===false'));
   assert.ok(pushSettings.includes('svc.requestEnable()'),'notification settings button must own explicit push opt-in');
