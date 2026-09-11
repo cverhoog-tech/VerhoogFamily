@@ -89,7 +89,8 @@ assert.doesNotMatch(historySource,/TaskDetailPopup|CleaningExecutionWriteRuntime
 assert.doesNotMatch(contractSource,/\.ref\s*\(|firebase|document\.|MutationObserver|setInterval|setTimeout/,'history contract must remain pure');
 assert.match(premiumSource,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'V2.2 history must stay lazy behind Cleaning navigation');
 assert.match(premiumSource,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'V2.1 collaboration must remain present while V2.2 is added');
-assert.match(premiumSource,/version:'2\.2\.0'/,'Cleaning companion marker must advance to V2.2');
+assert.match(premiumSource,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'V2.2.1 visual companion may extend the same Cleaning-only graph without replacing V2.2');
+assert.match(premiumSource,/version:'2\.2\.1'/,'Cleaning companion marker must reflect the current downstream visual milestone');
 assert.doesNotMatch(premiumSource,/cleaningHistoryExperience|cleaningActivityProjector|cleaningNotificationProjector/,'old pre-reset history/activity/notification runtimes must stay disconnected');
 assert.doesNotMatch(navigationSource,/cleaningHistoryV22|cleaningHistoryContract/,'V2.2 must not move onto global app startup/navigation bootstrap');
 
