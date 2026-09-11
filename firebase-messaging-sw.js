@@ -1,5 +1,5 @@
 'use strict';
-/* STEP 10 + PWA CACHE HARDENING v1.1.0
+/* STEP 10 + PWA CACHE HARDENING v1.2.0
  *
  * One service worker owns both FCM background messaging and FamilyApp's
  * static-asset cache. This avoids competing scope='/' workers.
@@ -14,7 +14,7 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-var FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v1';
+var FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v2';
 var FAMILYAPP_STATIC_CACHE_PREFIX='familyapp-static-';
 var FAMILYAPP_STATIC_EXT_RE=/\.(?:css|js|mjs|png|jpg|jpeg|webp|svg|gif|ico|woff|woff2|ttf|otf|json)$/i;
 var FAMILYAPP_SENSITIVE_QUERY_RE=/(?:^|_)(?:token|auth|session|code|secret|key|credential)(?:$|_)/i;
