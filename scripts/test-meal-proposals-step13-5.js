@@ -20,7 +20,8 @@ assert(producers.includes("occurrenceKey:'meal:'+id+':planned:'+version"),'meal 
 assert(ui.includes('Afwijzen')&&ui.includes('Tegenvoorstel')&&ui.includes('Accepteren'),'feed card must expose all proposal actions');
 assert(ui.includes('Ingrediënten ook naar de boodschappenlijst'),'acceptance UI must offer shopping handoff');
 assert(ui.includes("className='mp-propose-recipe'"),'recipe detail must expose proposal entrypoint');
+assert(ui.includes('feed.registerTimelineProvider'),'proposal cards must join the chronological Feed presentation timeline');
 assert(loader.includes('mealProposalRepository.js?v=2'),'loader must serve race-safe repository');
 assert(loader.includes('mealProposalService.js?v=2'),'loader must serve race-safe service');
-assert(loader.includes('mealProposalUi.js?v=1'),'loader must serve proposal UI');
+assert(loader.includes('mealProposalUi.js?v=2'),'loader must serve chronological proposal UI');
 console.log('STEP 13.5 meal proposal contracts: OK');
