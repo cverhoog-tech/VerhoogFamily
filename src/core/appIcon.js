@@ -38,12 +38,12 @@ function ensureLoginBrandV7() {
     var style = document.createElement('link');
     style.id = 'familyapp-login-brand-v7-style';
     style.rel = 'stylesheet';
-    style.href = '/src/styles/loginBrandV7.css?v=1';
+    style.href = '/src/styles/loginBrandV7.css?v=2';
     document.head.appendChild(style);
   }
   if (!window.FamilyAppLoginBrandV7 && !document.querySelector('script[data-familyapp-login-brand-v7]')) {
     var script = document.createElement('script');
-    script.src = '/src/core/loginBrandV7.js?v=1';
+    script.src = '/src/core/loginBrandV7.js?v=2';
     script.async = false;
     script.setAttribute('data-familyapp-login-brand-v7', '1');
     script.onerror = function(){ console.error('[FamilyApp] login brand v7 kon niet worden geladen'); };
