@@ -77,10 +77,18 @@ The V2.2 functional gate remains open. Turn/Supplies visual verification now use
 
 ## CURRENT GATE — Cleaning V2.2.1 Calm Premium detail visual rework
 
-Status: **implementation complete; contract/CI and real-device iPhone verification pending**.
+Status: **CODECANDIDATE READY — CI GREEN — REAL-DEVICE IPHONE VERIFICATION PENDING**.
 
-Implementation checkpoint before milestone documentation:
-`c32eb2dac2be9d40912cdb4c6f68c7566e935e06`
+Exact green runtime/test candidate:
+`7867946641cb588d84ea075e08c4c54a3e60cfc5`
+
+GitHub Actions `Household Rebuild Contract Tests` run `34572194287`: **SUCCESS**.
+
+Exact immutable preview:
+`https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`
+
+Vercel deployment:
+`dpl_45GFm7ugk8BkKBQPRLgBQHrdJtRA` — **READY**.
 
 Why this was inserted before V2.3:
 - product owner re-confirmed the exact Cleaning turn and Supplies visual reference on 2026-09-11;
@@ -120,6 +128,10 @@ New visual implementation:
 9. `Bekijk alle kameritems / Boodschappen` utility pair;
 10. LOW/OUT handoff goes through canonical `ShoppingListStore` with dedupe.
 
+### CI note
+
+The first V2.2.1 run was red only because two older tests still expected the `2.2.0` companion marker and the new CSS guard matched the text `backdrop-filter` inside a comment saying the effect was not used. Functional closeout was already green there. Those stale test assertions were corrected without relaxing runtime guards; the full suite is green on exact candidate `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
+
 ### Safety/performance
 
 - primary `cleaningScreen.js` stays v2.0.0 and remains execution/write authority;
@@ -147,7 +159,7 @@ New visual implementation:
 11. Repeated open/close/scope switching does not freeze or jank.
 12. Vandaag / Kamers / Weekplan / Historie still work after the detail rework.
 
-Do not mark V2.2.1 REAL-DEVICE ACCEPTED until the product owner explicitly confirms the exact candidate checkpoint.
+Do not mark V2.2.1 REAL-DEVICE ACCEPTED until the product owner explicitly confirms exact candidate `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
 
 ## NEXT AFTER V2.2.1 TEST
 
