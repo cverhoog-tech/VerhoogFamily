@@ -2,14 +2,13 @@
 // Canonical FamilyApp app identity + compatibility layer.
 // The installed PWA icon is fixed deliberately: iOS/Android cache install icons
 // and do not reliably support per-user runtime icon changes.
-// Login uses a transparent presentation variant so the crest blends into the page.
 
 var FAMILYAPP_APP_ICONS = Object.freeze({
-  version: '5',
-  favicon: '/api/brand-icon?variant=32&v=5',
-  appleTouch: '/api/brand-icon?variant=180&v=5',
-  preview: '/api/brand-icon?variant=192&v=5',
-  login: '/api/brand-icon?variant=login&v=5-login1'
+  version: '6',
+  favicon: '/src/assets/brand/v6/familyapp-icon-192.png?v=6',
+  appleTouch: '/src/assets/brand/v6/familyapp-icon-192.png?v=6',
+  preview: '/src/assets/brand/v6/familyapp-icon-192.png?v=6',
+  login: '/src/assets/brand/v6/familyapp-icon-192.png?v=6'
 });
 
 function ensureHeadLink(id, rel, href, sizes) {
@@ -18,11 +17,38 @@ function ensureHeadLink(id, rel, href, sizes) {
     el = document.createElement('link');
     el.id = id;
     el.rel = rel;
-    if (sizes) el.setAttribute('sizes', sizes);
     document.head.appendChild(el);
   }
+  if (sizes) el.setAttribute('sizes', sizes);
   el.href = href;
   return el;
+}
+
+function ensureBrandV6Shell() {
+  var manifest = document.querySelector('link[rel="manifest"]');
+  if (manifest) manifest.href = '/manifest.json?v=6';
+  var theme = document.querySelector('meta[name="theme-color"]');
+  if (theme) theme.setAttribute('content', '#0b3428');
+  var status = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (status) status.setAttribute('content', 'black-translucent');
+}
+
+function ensureLoginBrandV6() {
+  if (!document.getElementById('familyapp-login-brand-v6-style')) {
+    var style = document.createElement('link');
+    style.id = 'familyapp-login-brand-v6-style';
+    style.rel = 'stylesheet';
+    style.href = '/src/styles/loginBrandV6.css?v=2';
+    document.head.appendChild(style);
+  }
+  if (!window.FamilyAppLoginBrandV6 && !document.querySelector('script[data-familyapp-login-brand-v6]')) {
+    var script = document.createElement('script');
+    script.src = '/src/core/loginBrandV6.js?v=2';
+    script.async = false;
+    script.setAttribute('data-familyapp-login-brand-v6', '1');
+    script.onerror = function(){ console.error('[FamilyApp] login brand v6 kon niet worden geladen'); };
+    document.head.appendChild(script);
+  }
 }
 
 function ensureScaleFix() {
@@ -206,12 +232,13 @@ function ensureFeedbackRound5Styles() {
 }
 
 function applyAppIcon() {
-  ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '180x180');
-  ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '32x32');
+  ensureBrandV6Shell();
+  ensureHeadLink('apple-touch-icon', 'apple-touch-icon', FAMILYAPP_APP_ICONS.appleTouch, '192x192');
+  ensureHeadLink('favicon', 'icon', FAMILYAPP_APP_ICONS.favicon, '192x192');
 
   var prev = document.getElementById('icon-preview');
   if (prev) {
-    prev.innerHTML = '<img src="' + FAMILYAPP_APP_ICONS.preview + '" alt="FamilyApp familiewapen" style="width:100%;height:100%;display:block;object-fit:cover">';
+    prev.innerHTML = '<img src="' + FAMILYAPP_APP_ICONS.preview + '" alt="FamilyApp app-icoon" style="width:100%;height:100%;display:block;object-fit:cover">';
   }
 
   var loginLogo = document.getElementById('login-logo');
@@ -220,7 +247,7 @@ function applyAppIcon() {
     loginLogo.style.border = '0';
     loginLogo.style.boxShadow = 'none';
     loginLogo.style.overflow = 'visible';
-    loginLogo.innerHTML = '<img src="' + FAMILYAPP_APP_ICONS.login + '" alt="FamilyApp" style="width:100%;height:100%;display:block;object-fit:contain;background:transparent;border:0;border-radius:0;box-shadow:none;filter:drop-shadow(0 10px 18px rgba(72,22,126,.16)) drop-shadow(0 2px 5px rgba(214,160,55,.16))">';
+    loginLogo.innerHTML = '<img src="' + FAMILYAPP_APP_ICONS.login + '" alt="FamilyApp" style="width:100%;height:100%;display:block;object-fit:cover;background:transparent;border:0;border-radius:22%;box-shadow:none">';
   }
 }
 
@@ -230,8 +257,8 @@ function setIconColor() { applyAppIcon(); }
 function saveAppIconToLink() {
   applyAppIcon();
   var st = document.getElementById('icon-save-status');
-  if (st) st.innerHTML = '<span style="color:#16a34a">✓ FamilieApp gebruikt nu het vaste familiewapen.</span>';
-  if (typeof showToast === 'function') showToast('FamilieApp familiewapen actief ✓');
+  if (st) st.innerHTML = '<span style="color:#16a34a">✓ FamilyApp gebruikt nu het vaste app-icoon.</span>';
+  if (typeof showToast === 'function') showToast('FamilyApp app-icoon actief ✓');
 }
 
 (function initCanonicalAppIdentity() {
@@ -241,6 +268,8 @@ function saveAppIconToLink() {
     localStorage.removeItem('familie_icon_photo');
   } catch (e) {}
   prepareReturningSessionSurface();
+  ensureBrandV6Shell();
+  ensureLoginBrandV6();
   ensureScaleFix();
   ensureCloudinaryPreconnect();
   ensureFeedbackStyleCascade();
