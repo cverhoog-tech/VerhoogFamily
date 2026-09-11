@@ -5,7 +5,7 @@ function ok(condition,message){if(!condition){console.error('FAIL:',message);pro
 const sw=read('firebase-messaging-sw.js');
 const push=read('src/core/pushRegistrationService.js');
 
-ok(sw.includes("FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v1'"),'versioned FamilyApp static cache exists');
+ok(sw.includes("FAMILYAPP_STATIC_CACHE_VERSION='familyapp-static-v2'"),'versioned FamilyApp static cache exists at the current generation');
 ok(sw.includes("url.origin!==self.location.origin"),'cross-origin requests are excluded');
 ok(sw.includes("url.pathname.indexOf('/api/')===0"),'API responses are excluded');
 ok(sw.includes("request.mode==='navigate'")&&sw.includes("request.destination==='document'"),'documents/navigation are excluded');
