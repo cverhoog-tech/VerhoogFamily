@@ -8,11 +8,13 @@ const css=read('src/styles/contextBackNavigationV1.css');
 const shell=read('api/app-v7.js');
 const navigation=read('src/core/navigation.js');
 
-assert(js.includes("VERSION='1.0.0'"),'contextual back controller version missing');
+assert(js.includes("VERSION='1.0.1'"),'contextual back controller version missing');
 assert(js.includes('var stack=[]'),'app-level screen history stack missing');
 assert(js.includes('MAX_DEPTH=12'),'history stack must remain bounded');
 assert(js.includes('rawShowScreen=window.showScreen'),'contextual history must wrap the canonical router rather than own screen rendering');
 assert(js.includes("#bottom-nav [data-goto],#bottom-nav #nav-feed-btn,#more-grid [data-goto-more]"),'root navigation affordances must clear contextual history');
+assert(js.includes("document.addEventListener('pointerdown',markRootNavigation,true)"),'touch/mouse root intent guard missing');
+assert(js.includes("document.addEventListener('click',markRootNavigation,true)"),'keyboard/synthetic root intent guard missing');
 assert(js.includes('rawShowScreen(target.id)'),'back action must delegate to the canonical router');
 assert(js.includes('restoreScroll(target.scrollY)'),'back action must restore prior scroll context');
 assert(js.includes("#screen-tasks .tv3-brand"),'Tasks V3 custom header must receive the contextual back affordance');
