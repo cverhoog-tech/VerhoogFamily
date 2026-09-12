@@ -7,6 +7,7 @@ const model=read('src/modules/tasks/v3/taskPresentationModelV3.js');
 const overview=read('src/modules/tasks/v3/taskOverviewV3.js');
 const detail=read('src/modules/tasks/v3/taskDetailV3.js');
 const css=read('src/styles/tasksV3.css');
+const polish=read('src/styles/tasksV3Polish.css');
 const shell=read('api/app-v7.js');
 const canonicalRouter=read('src/modules/tasks/taskOverviewCanonical.js');
 const shared=read('src/modules/tasks/taskSharedData.js');
@@ -18,6 +19,8 @@ assert(model.includes('Array.isArray(window.taskData)?window.taskData:[]'),'V3 m
 assert(model.includes('CleaningTaskSupplyUi'),'V3 must reuse exact Cleaning supply context');
 assert(model.includes('/src/assets/cleaning-rooms/kids-room-light.webp'),'room photo resolver missing');
 assert(model.includes('/src/assets/task-heroes/market.webp'),'grocery photo resolver missing');
+assert(model.includes('isCleaningTask'),'Cleaning tasks must prioritize room photography');
+assert(model.includes('displayTitle'),'Cleaning task titles must have a presentation title');
 assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(model),'V3 presentation model must remain read-only');
 
 assert(overview.includes('window.TaskCompactHome=api'),'V3 overview must replace the active visual overview implementation');
@@ -52,9 +55,13 @@ assert(css.includes('.tv3e-sheet'),'V3 editor stylesheet missing');
 assert(css.includes('aspect-ratio:16/8.3'),'photo-first detail hero contract missing');
 assert(css.includes('[data-theme*="dark"]'),'dark mode contract missing');
 assert(!css.includes('#tdp-overlay'),'V3 stylesheet must not depend on legacy popup DOM');
+assert(polish.includes('tv3-task-check'),'compact checkbox polish missing');
+assert(polish.includes('Nog openstaande stappen'),'stable disabled completion CTA polish missing');
+assert(polish.includes('content:"Beheren"'),'compact Cleaning management affordance missing');
 
 assert(shell.includes('/src/styles/tasksV3.css?v=2'),'shell must serve V3 stylesheet');
-assert(shell.indexOf('taskPresentationModelV3.js?v=2')<shell.indexOf('taskOverviewV3.js?v=2'),'model must load before overview');
+assert(shell.includes('/src/styles/tasksV3Polish.css?v=1'),'shell must serve V3 compact polish after base styling');
+assert(shell.indexOf('taskPresentationModelV3.js?v=3')<shell.indexOf('taskOverviewV3.js?v=2'),'model must load before overview');
 assert(shell.indexOf('taskOverviewV3.js?v=2')<shell.indexOf('taskDetailV3.js?v=2'),'overview must load before detail');
 assert(!shell.includes('tasksPremiumModernV1'),'legacy modern decorator must not be active');
 assert(!shell.includes('tasksPremiumWarmV2'),'legacy warm decorator must not be active');
@@ -64,4 +71,4 @@ assert(canonicalRouter.includes('TaskCompactHome.render'),'canonical router must
 assert(canonicalRouter.includes('PersonTabV2.render'),'PersonTabV2 ownership must stay intact');
 assert(shared.includes('TaskHouseholdRepository is the only task persistence/listener owner'),'TaskHouseholdRepository ownership contract must remain intact');
 
-console.log('Tasks V3 rebuilt UI + canonical ownership contract: PASS');
+console.log('Tasks V3 rebuilt UI + compact reference polish + canonical ownership contract: PASS');
