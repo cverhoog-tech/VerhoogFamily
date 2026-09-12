@@ -46,3 +46,14 @@
   window.addEventListener('familyapp:tasks-updated',refresh);
   window.addEventListener('familyapp:task-detail-opened',refresh);
 })();
+
+// Load the centralized auth facade after all legacy modules have finished loading.
+// This keeps auth overrides isolated while the app is incrementally modularized.
+window.addEventListener('load', function(){
+  if(window.FamilyAuth || document.getElementById('family-auth-service-script')) return;
+  var script=document.createElement('script');
+  script.id='family-auth-service-script';
+  script.src='src/core/authService.js?v=1';
+  script.async=false;
+  document.body.appendChild(script);
+});
