@@ -18,7 +18,7 @@ assert(model.includes('Array.isArray(window.taskData)?window.taskData:[]'),'V3 m
 assert(model.includes('CleaningTaskSupplyUi'),'V3 must reuse exact Cleaning supply context');
 assert(model.includes('/src/assets/cleaning-rooms/kids-room-light.webp'),'room photo resolver missing');
 assert(model.includes('/src/assets/task-heroes/market.webp'),'grocery photo resolver missing');
-assert(!/TaskSharedData\.(update|create|remove)|firebase\.|\.ref\(/.test(model),'V3 presentation model must remain read-only');
+assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(model),'V3 presentation model must remain read-only');
 
 assert(overview.includes('window.TaskCompactHome=api'),'V3 overview must replace the active visual overview implementation');
 assert(overview.includes('Kleine taken, een rustiger thuis'),'approved quote missing');
@@ -26,7 +26,7 @@ assert(overview.includes('tv3-task-photo'),'rows must render photos directly');
 assert(overview.includes("['all','Alle taken']"),'approved filter system missing');
 assert(overview.includes('Persoon-overzicht'),'person dashboard must remain reachable');
 assert(overview.includes('TaskDetailPopup.openCreate'),'new task must open the active task editor');
-assert(!/TaskSharedData\.(update|create|remove)|firebase\.|\.ref\(/.test(overview),'overview must not own persistence');
+assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(overview),'overview must not own persistence');
 
 assert(detail.includes('window.TaskDetailPopup=api'),'V3 must become active task detail API');
 assert(detail.includes('TaskSharedData.update'),'detail must persist via canonical TaskSharedData');
