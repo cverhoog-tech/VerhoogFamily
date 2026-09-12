@@ -2,7 +2,7 @@
   "routes": [
     {
       "src": "^/$",
-      "dest": "/api/app-v8"
+      "dest": "/api/app-v7"
     },
     {
       "src": "/(.*)",
