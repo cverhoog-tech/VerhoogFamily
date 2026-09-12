@@ -58,23 +58,35 @@
     try{if(window.TaskModel&&typeof TaskModel.getImage==='function'){var img=TaskModel.getImage(task);if(img)return String(img);}}catch(e){}
     return text(task.heroImage||task.img||task.imageUrl||task.image||task.photo||task.cover||'');
   }
+  function identityText(task){
+    if(!task)return'';
+    return [task.cleaningRoomName,task.roomName,task.room,task.title,task.category,task.type].map(text).filter(Boolean).join(' · ').toLowerCase();
+  }
   function photoKey(task){
-    var raw=text(task&&(task.cleaningRoomName||task.roomName||task.category||task.type||task.title)||'').toLowerCase();
+    var raw=identityText(task);
     if(/badkamer|bathroom|douche/.test(raw))return'bathroom';
     if(/toilet|\bwc\b/.test(raw))return'toilet';
     if(/kinderkamer|kids|speelgoed|kind|toy/.test(raw))return'kids';
     if(/woonkamer|living/.test(raw))return'living';
     if(/slaapkamer|bedroom/.test(raw))return'bedroom';
-    if(/hal|entree|hall/.test(raw))return'hall';
-    if(/was|laundry|vouw|kleding/.test(raw))return'laundry';
+    if(/\bhal\b|entree|hall/.test(raw))return'hall';
+    if(/wasruimte|laundry|was vouwen|wasgoed|kleding/.test(raw))return'laundry';
     if(/bood|supermarkt|grocer|market/.test(raw))return'groceries';
     if(/keuken|kitchen|koken|vaat/.test(raw))return'kitchen';
-    if(/tuin|garden|buiten|outside/.test(raw))return'garden';
+    if(/tuin|garden|buiten|outside|outdoor/.test(raw))return'garden';
     if(/reis|travel|vakantie/.test(raw))return'travel';
     if(/admin|rekening|factuur|bank|contract/.test(raw))return'admin';
     return'generic';
   }
   function photo(task){return ownImage(task)||PHOTO[photoKey(task)]||PHOTO.generic;}
+  function displayTitle(task){
+    var title=text(task&&task.title)||'Taak';
+    var match=title.match(/^schoonmaken\s*[·\-:]\s*(.+)$/i);
+    if(match&&match[1])return text(match[1])+' schoonmaken';
+    var room=text(task&&(task.cleaningRoomName||task.roomName));
+    if(room&&/^schoonmaken$/i.test(title))return room+' schoonmaken';
+    return title;
+  }
   function statusSummary(){var out={open:0,important:0,overdue:0,done:0};tasks().forEach(function(t){if(!t)return;if(t.done){out.done++;return;}out.open++;if(important(t))out.important++;if(group(t)==='Verlopen')out.overdue++;});return out;}
   function isHydrated(){try{return !!(window.TaskSharedData&&TaskSharedData.status&&TaskSharedData.status().sharedSnapshot);}catch(e){return tasks().length>0;}}
   function supplies(task){
@@ -88,8 +100,8 @@
   }
   function view(task){
     var ps=people(task),subs=Array.isArray(task&&task.subtasks)?task.subtasks:[],done=subs.filter(function(s){return s&&s.done;}).length;
-    return{id:String(task&&(task.id||task._key)||''),raw:task,title:text(task&&task.title)||'Taak',description:text(task&&(task.desc||task.description)),group:group(task),dateLabel:dateLabel(task),recurrenceLabel:recurrenceLabel(task),priorityLabel:priorityLabel(task),xp:xp(task),important:important(task),photo:photo(task),people:ps,primaryPerson:ps[0]||null,subtasks:subs,subDone:done,supplies:supplies(task)};
+    return{id:String(task&&(task.id||task._key)||''),raw:task,title:displayTitle(task),sourceTitle:text(task&&task.title)||'Taak',description:text(task&&(task.desc||task.description)),group:group(task),dateLabel:dateLabel(task),recurrenceLabel:recurrenceLabel(task),priorityLabel:priorityLabel(task),xp:xp(task),important:important(task),photo:photo(task),people:ps,primaryPerson:ps[0]||null,subtasks:subs,subDone:done,supplies:supplies(task)};
   }
 
-  window.TaskPresentationModelV3={version:'3.0.0',tasks:tasks,members:members,member:member,avatar:avatar,initials:initials,currentUid:currentUid,getTask:getTask,assignees:assignees,people:people,group:group,dayDiff:dayDiff,dateLabel:dateLabel,recurrenceLabel:recurrenceLabel,priorityLabel:priorityLabel,xp:xp,photo:photo,statusSummary:statusSummary,isHydrated:isHydrated,supplies:supplies,view:view};
+  window.TaskPresentationModelV3={version:'3.1.0',tasks:tasks,members:members,member:member,avatar:avatar,initials:initials,currentUid:currentUid,getTask:getTask,assignees:assignees,people:people,group:group,dayDiff:dayDiff,dateLabel:dateLabel,recurrenceLabel:recurrenceLabel,priorityLabel:priorityLabel,xp:xp,photo:photo,displayTitle:displayTitle,statusSummary:statusSummary,isHydrated:isHydrated,supplies:supplies,view:view};
 })();
