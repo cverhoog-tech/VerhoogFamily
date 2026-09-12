@@ -35,6 +35,7 @@ assert(ui.includes('id="auth-email"')&&ui.includes('id="auth-password"')&&ui.inc
 assert(ui.includes("window.showAuthError=showError")&&ui.includes("!sheet||!sheet.classList.contains('is-open')"),'provider errors must remain visible on the native login surface');
 assert(!/firebase\.auth|onAuthStateChanged|createUserWithEmailAndPassword|signInWithEmailAndPassword/.test(ui),'presentation controller must not own Firebase auth');
 assert(session.includes('onAuthStateChanged'),'authenticated session controller must remain auth lifecycle owner');
+assert(session.includes('familyapp-auth-prepaint'),'session controller must retain the first-paint auth guard');
 assert(!ui.includes('login-reference.jpg')&&!ui.includes('flv6-reference'),'full-screen screenshot UI must not return');
 assert(!css.includes('object-fit:fill'),'login must never stretch a screenshot to fit the viewport');
 assert(css.includes('.flv7-photo')&&css.includes('.flv7-panel')&&css.includes('.flv7-btn'),'native visual components must be styled directly');
@@ -48,8 +49,9 @@ assert(!/animation\s*:/.test(css),'login surface must not run continuous animati
 assert(appIcon.includes('/src/styles/loginBrandV7.css?v=2')&&appIcon.includes('/src/core/loginBrandV7.js?v=2'),'canonical startup must load polished v7.1 login assets');
 assert(!appIcon.includes('loginBrandV6'),'canonical startup must no longer load the screenshot-based v6 login');
 assert(shell.includes('/src/styles/loginBrandV7.css?v=2')&&shell.includes('/src/core/loginBrandV7.js?v=2'),'served root shell must explicitly include polished v7.1 assets');
-assert(shell.includes('src/core/appIcon.js?v=9'),'served root shell must bust the app identity loader cache for v7.1');
+assert(shell.includes("replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')"),'served root shell must bust the current app identity loader cache');
+assert(shell.includes("authenticatedSessionController.js?v=4"),'served root shell must bust the guarded session controller cache');
 assert(routes.includes('"dest": "/api/app-v7"'),'Vercel root must route through the native v7 shell');
 assert(manifest.includes('"theme_color": "#0b3428"'),'PWA theme must match deep-pine brand');
-assert(manifest.includes('/?brand=v7'),'PWA start URL must identify brand v7');
-console.log('FamilyApp native login brand v7.1 polish contract OK');
+assert(manifest.includes('/?brand=v8'),'PWA start URL must identify the current v8 icon/cache generation');
+console.log('FamilyApp native login brand v7.1 + first-paint guard contract OK');
