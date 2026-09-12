@@ -1,5 +1,5 @@
 'use strict';
-// FamilyApp Tasks Premium Warm v2
+// FamilyApp Tasks Premium Warm v2.2
 // Presentation-only redesign matching the approved warm premium mock-up.
 // Canonical task state, persistence and mutations remain owned by TaskCompactHome / TaskDetailPopup.
 (function(){
@@ -10,6 +10,8 @@
   var popupObserver=null;
   var queued=false;
   var groupFilter='all';
+  var TASK_HERO_DEFAULT='https://res.cloudinary.com/rg86slp4/image/upload/v1788808948/familyapp-home-tasks-hero-v3.webp';
+  var TASK_HERO_CLEANING='https://res.cloudinary.com/rg86slp4/image/upload/v1788809095/familyapp-home-cleaning-hero-v3.webp';
 
   function esc(value){
     return String(value==null?'':value)
@@ -188,10 +190,38 @@
     if(/laag|low/.test(p))return'Lage prioriteit';
     return'Normale prioriteit';
   }
+  function taskHeroSource(task){
+    if(!task)return'';
+    try{
+      if(window.TaskModel&&typeof TaskModel.getImage==='function'){
+        var modelImage=TaskModel.getImage(task);
+        if(modelImage)return String(modelImage);
+      }
+    }catch(e){}
+    return String(task.heroImage||task.img||task.imageUrl||task.image||task.photo||task.cover||'');
+  }
+  function cleaningLikeTask(task){
+    var raw=String(task&&(task.category||task.type||task.title)||'').toLowerCase();
+    return /schoon|clean|badkamer|toilet|dweil|stof|poets/.test(raw);
+  }
+  function applyDetailHero(card,task){
+    if(!card||!task)return;
+    var hero=card.querySelector('.tdp-hero');
+    if(!hero)return;
+    if(taskHeroSource(task)){
+      hero.classList.remove('tpw2-fallback-photo');
+      return;
+    }
+    var cleaning=cleaningLikeTask(task);
+    hero.classList.add('tpw2-fallback-photo');
+    hero.style.backgroundImage='url("'+(cleaning?TASK_HERO_CLEANING:TASK_HERO_DEFAULT)+'")';
+    hero.style.backgroundPosition=cleaning?'center 57%':'center 62%';
+  }
   function detailEnhancements(card){
     if(card.querySelector('.tdp-title-input')){card.classList.add('tpw2-create-card');return;}
     card.classList.add('tpw2-detail-card');
     var task=findTaskForDetail(card);
+    applyDetailHero(card,task);
     var person=card.querySelector('.tdp-person');
     if(person&&!person.querySelector('.tpw2-assignee-label')){
       var copy=person.querySelector('.tdp-person-name');
@@ -273,6 +303,6 @@
     });
   }
 
-  window.TasksPremiumWarmV2={version:'2.0.0',decorateOverview:decorateOverview,decoratePopup:decoratePopup,summary:summary};
+  window.TasksPremiumWarmV2={version:'2.2.0',decorateOverview:decorateOverview,decoratePopup:decoratePopup,summary:summary};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
