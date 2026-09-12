@@ -22,7 +22,7 @@ assert(ui.includes('Uitstellen'),'postpone action presentation missing');
 assert(ui.includes('Bewerken'),'edit action presentation missing');
 assert(!/firebase\.|TaskSharedData\.(update|create|remove)|taskData\.push|taskData\.splice/.test(ui),'warm presentation layer must remain presentation-only');
 
-assert(shell.includes('/src/modules/tasks/tasksPremiumWarmV2.js?v=2'),'canonical v7 shell must serve warm task decorator');
+assert(shell.includes('/src/modules/tasks/tasksPremiumWarmV2.js?v=3'),'canonical v7 shell must serve cache-busted warm task decorator');
 assert(vercel.includes('"dest": "/api/app-v7"'),'root route must remain on canonical v7 shell');
 assert(canonical.includes('TaskSharedData.update'),'canonical TaskDetailPopup must retain mutation ownership');
 assert(canonical.includes('tdp-postpone-btn'),'canonical popup must retain the additive postpone control');
