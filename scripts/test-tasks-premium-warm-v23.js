@@ -10,10 +10,10 @@ const overview=read('src/modules/tasks/v3/taskOverviewV3.js');
 const detail=read('src/modules/tasks/v3/taskDetailV3.js');
 
 assert(vercel.includes('"dest": "/api/app-v7"'),'root route must remain on canonical v7 shell');
-assert(shell.includes('/src/styles/tasksV3.css?v=1'),'canonical v7 shell must serve V3 stylesheet');
-assert(shell.includes('/src/modules/tasks/v3/taskPresentationModelV3.js?v=1'),'canonical v7 shell must serve V3 model first');
-assert(shell.includes('/src/modules/tasks/v3/taskOverviewV3.js?v=1'),'canonical v7 shell must serve V3 overview');
-assert(shell.includes('/src/modules/tasks/v3/taskDetailV3.js?v=1'),'canonical v7 shell must serve V3 detail');
+assert(shell.includes('/src/styles/tasksV3.css?v=2'),'canonical v7 shell must serve V3 stylesheet');
+assert(shell.includes('/src/modules/tasks/v3/taskPresentationModelV3.js?v=2'),'canonical v7 shell must serve V3 model first');
+assert(shell.includes('/src/modules/tasks/v3/taskOverviewV3.js?v=2'),'canonical v7 shell must serve V3 overview');
+assert(shell.includes('/src/modules/tasks/v3/taskDetailV3.js?v=2'),'canonical v7 shell must serve V3 detail');
 assert(!shell.includes('tasksPremiumWarmV2.js'),'legacy warm decorator must be de-wired');
 assert(!shell.includes('tasksPremiumModernV1.js'),'legacy modern decorator must be de-wired');
 
