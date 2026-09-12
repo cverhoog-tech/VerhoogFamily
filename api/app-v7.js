@@ -72,8 +72,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('tasksPremiumModernV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumModernV1.js?v=1"></script>\n</body>');
   }
-  if (!body.includes('tasksPremiumWarmV2.js?v=2')) {
-    body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumWarmV2.js?v=2"></script>\n</body>');
+  if (!body.includes('tasksPremiumWarmV2.js?v=3')) {
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumWarmV2.js?v=3"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
