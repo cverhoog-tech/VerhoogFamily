@@ -51,6 +51,9 @@ module.exports = async function handler(req, res) {
   if (!body.includes('loginBrandV7.css?v=2')) {
     body = body.replace('</head>', '  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>\n  <link rel="stylesheet" href="/src/styles/loginBrandV7.css?v=2">\n</head>');
   }
+  if (!body.includes('tasksPremiumModernV1.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksPremiumModernV1.css?v=1">\n  <link rel="stylesheet" href="/src/styles/tasksPremiumModernV1Components.css?v=1">\n</head>');
+  }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
@@ -59,6 +62,9 @@ module.exports = async function handler(req, res) {
   }
   if (!body.includes('cleaningMoreMenuIcon.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/cleaningMoreMenuIcon.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('tasksPremiumModernV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumModernV1.js?v=1"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
