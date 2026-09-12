@@ -8,8 +8,8 @@
 (function(){
   if(window.TaskDetailV3)return;
 
-  var VERSION='3.0.1';
-  var state={mode:null,taskId:null,draft:null,helpPicker:false,iconPicker:null,scrollOverflow:null};
+  var VERSION='3.1.0';
+  var state={mode:null,taskId:null,draft:null,helpPicker:false,iconPicker:null,scrollOverflow:null,subtaskPending:0,optimisticUntil:0};
   var SUB_ICONS=['','⭐','✅','📌','✨','🧹','🧽','🧴','🧼','🪣','🚿','🛒','🥦','🍎','🛏️','🚪','🪑','📦','📅','🌱','🐾','💻','🚗'];
 
   function M(){return window.TaskPresentationModelV3;}
@@ -41,13 +41,13 @@
   function close(){
     var el=document.getElementById('tasks-v3-detail');
     if(el){el.classList.remove('open');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},180);}
-    state.mode=null;state.taskId=null;state.draft=null;state.helpPicker=false;state.iconPicker=null;unlock();
+    state.mode=null;state.taskId=null;state.draft=null;state.helpPicker=false;state.iconPicker=null;state.subtaskPending=0;state.optimisticUntil=0;unlock();
   }
   function repositoryReady(){return !!(window.TaskSharedData&&typeof TaskSharedData.update==='function');}
   function patch(id,changes,callback){
     var row=M()&&M().getTask(id),key=idOf(row)||id;
-    if(!key||!repositoryReady()){toast('Taken worden nog gesynchroniseerd');return;}
-    TaskSharedData.update(key,changes).then(function(saved){if(callback)callback(saved||Object.assign({},row,changes));}).catch(function(error){toast((error&&error.message)||'Kon niet opslaan');});
+    if(!key||!repositoryReady()){toast('Taken worden nog gesynchroniseerd');return Promise.resolve(null);}
+    return TaskSharedData.update(key,changes).then(function(saved){var value=saved||Object.assign({},row,changes);if(callback)callback(value);return value;}).catch(function(error){toast((error&&error.message)||'Kon niet opslaan');return null;});
   }
   function removeTask(row){
     var key=idOf(row);
@@ -71,6 +71,26 @@
   function chip(icon,label){return '<span class="tv3d-chip">'+icon+'<span>'+esc(label)+'</span></span>';}
   function managedCleaning(row){try{return !!(window.CleaningTaskSupplyUi&&CleaningTaskSupplyUi._isManaged&&CleaningTaskSupplyUi._isManaged(row));}catch(e){return false;}}
   function completeAllowed(vm){return !vm.subtasks.length||vm.subtasks.every(function(sub){return sub&&sub.done;});}
+  function applySubtaskState(el,id,done){
+    var btn=el.querySelector('[data-tv3-sub-toggle="'+String(id).replace(/"/g,'\\"')+'"]');
+    if(!btn)return;
+    var sub=btn.closest('.tv3d-sub');
+    if(sub)sub.classList.toggle('is-done',!!done);
+    btn.innerHTML=done?ICON.check:'';
+    btn.setAttribute('aria-pressed',done?'true':'false');
+  }
+  function refreshSubtaskSummary(el,subtasks,taskDone){
+    var total=subtasks.length,doneCount=subtasks.filter(function(sub){return sub&&sub.done;}).length;
+    var counter=el.querySelector('[data-tv3-sub-count]');if(counter)counter.textContent=doneCount+' van '+total+' voltooid';
+    var complete=el.querySelector('[data-tv3-complete]');if(!complete)return;
+    var allowed=!total||doneCount===total,copy=complete.querySelector('span');
+    if(taskDone){complete.disabled=false;complete.classList.add('is-done');if(copy)copy.textContent='Heropenen';return;}
+    complete.classList.remove('is-done');complete.disabled=!allowed;if(copy)copy.textContent=allowed?'Markeer als klaar':'Voltooi eerst alle stappen';
+  }
+  function syncSubtaskDom(el,subtasks,taskDone){
+    subtasks.forEach(function(sub){applySubtaskState(el,sub.id,!!sub.done);});
+    refreshSubtaskSummary(el,subtasks,taskDone);
+  }
 
   function collaboration(row){
     var me=M().currentUid(),assigned=M().assignees(row),helpers=Array.isArray(row.helpers)?row.helpers:[];
@@ -94,7 +114,7 @@
 
   function subtaskHtml(vm){
     if(!vm.subtasks.length)return '<div class="tv3d-supply-empty">Nog geen subtaken.</div><button class="tv3d-sub-add" data-tv3-sub-add="1">+ Subtaak toevoegen</button>';
-    return '<div class="tv3d-sublist">'+vm.subtasks.map(function(sub){return '<div class="tv3d-sub'+(sub.done?' is-done':'')+'"><button class="tv3d-sub-check" data-tv3-sub-toggle="'+esc(sub.id)+'">'+(sub.done?ICON.check:'')+'</button><span class="tv3d-sub-title">'+(sub.icon?'<span aria-hidden="true">'+esc(sub.icon)+'</span> ':'')+esc(sub.title||'Subtaak')+'</span><button class="tv3d-sub-more" data-tv3-sub-edit="'+esc(sub.id)+'" aria-label="Subtaak bewerken">⋮</button></div>';}).join('')+'</div><button class="tv3d-sub-add" data-tv3-sub-add="1">+ Subtaak toevoegen</button>';
+    return '<div class="tv3d-sublist">'+vm.subtasks.map(function(sub){return '<div class="tv3d-sub'+(sub.done?' is-done':'')+'"><button class="tv3d-sub-check" data-tv3-sub-toggle="'+esc(sub.id)+'" aria-pressed="'+(sub.done?'true':'false')+'">'+(sub.done?ICON.check:'')+'</button><span class="tv3d-sub-title">'+(sub.icon?'<span aria-hidden="true">'+esc(sub.icon)+'</span> ':'')+esc(sub.title||'Subtaak')+'</span><button class="tv3d-sub-more" data-tv3-sub-edit="'+esc(sub.id)+'" aria-label="Subtaak bewerken">⋮</button></div>';}).join('')+'</div><button class="tv3d-sub-add" data-tv3-sub-add="1">+ Subtaak toevoegen</button>';
   }
   function suppliesHtml(vm){
     var list=vm.supplies||[],managed=managedCleaning(vm.raw);
@@ -108,7 +128,7 @@
       +'<div class="tv3d-person">'+avatarHtml(person)+'<span><strong>'+esc(person?person.name:'Niet toegewezen')+'</strong><small>Toegewezen aan</small></span></div>'
       +'<div class="tv3d-chips">'+chip(ICON.calendar,vm.dateLabel)+chip(ICON.repeat,vm.recurrenceLabel)+chip(ICON.priority,vm.priorityLabel)+'</div>'
       +(vm.description?'<p class="tv3d-description">'+esc(vm.description)+'</p>':'')+'<div class="tv3d-divider"></div>'
-      +'<section class="tv3d-section"><div class="tv3d-section-head"><strong>Subtaken</strong><small>'+vm.subDone+' van '+vm.subtasks.length+' voltooid</small></div>'+subtaskHtml(vm)+'</section>'
+      +'<section class="tv3d-section"><div class="tv3d-section-head"><strong>Subtaken</strong><small data-tv3-sub-count="1">'+vm.subDone+' van '+vm.subtasks.length+' voltooid</small></div>'+subtaskHtml(vm)+'</section>'
       +suppliesHtml(vm)+helpHtml(row)
       +'<button class="tv3d-complete'+(done?' is-done':'')+'" data-tv3-complete="1" '+(!allowed&&!done?'disabled':'')+'>'+ICON.check+'<span>'+(done?'Heropenen':allowed?'Markeer als klaar':'Voltooi eerst alle stappen')+'</span></button>'
       +'<div class="tv3d-secondary"><button data-tv3-edit="1">'+ICON.edit+'<span>Bewerken</span></button><button data-tv3-postpone="1">'+ICON.clock+'<span>Uitstellen</span></button></div></div></article>';
@@ -116,7 +136,7 @@
 
   function open(id){
     var row=M()&&M().getTask(id);if(!row)return;
-    state.mode='detail';state.taskId=String(idOf(row));state.draft=null;state.helpPicker=false;state.iconPicker=null;lock();render();
+    state.mode='detail';state.taskId=String(idOf(row));state.draft=null;state.helpPicker=false;state.iconPicker=null;state.subtaskPending=0;state.optimisticUntil=0;lock();render();
   }
   function render(){
     var row=currentTask();if(!row){close();return;}
@@ -130,13 +150,21 @@
   }
 
   function bindDetail(el,row){
-    var key=idOf(row);
+    var key=idOf(row),localSubs=clone(Array.isArray(row.subtasks)?row.subtasks:[]),writeChain=Promise.resolve();
     el.onclick=function(event){if(event.target===el)close();};
     var closeBtn=el.querySelector('[data-tv3-close]');if(closeBtn)closeBtn.onclick=close;
-    el.querySelectorAll('[data-tv3-sub-toggle]').forEach(function(btn){btn.onclick=function(){var id=btn.getAttribute('data-tv3-sub-toggle'),next=(Array.isArray(row.subtasks)?row.subtasks:[]).map(function(sub){return String(sub.id)===String(id)?Object.assign({},sub,{done:!sub.done}):sub;});patch(key,{subtasks:next},render);};});
+    el.querySelectorAll('[data-tv3-sub-toggle]').forEach(function(btn){btn.onclick=function(){
+      var id=btn.getAttribute('data-tv3-sub-toggle'),found=localSubs.find(function(sub){return String(sub.id)===String(id);});if(!found)return;
+      localSubs=localSubs.map(function(sub){return String(sub.id)===String(id)?Object.assign({},sub,{done:!sub.done}):sub;});
+      var changed=localSubs.find(function(sub){return String(sub.id)===String(id);});
+      applySubtaskState(el,id,!!(changed&&changed.done));refreshSubtaskSummary(el,localSubs,!!row.done);
+      btn.classList.add('is-pending');state.subtaskPending++;state.optimisticUntil=Date.now()+1600;
+      var snapshot=clone(localSubs);
+      writeChain=writeChain.then(function(){return TaskSharedData.update(key,{subtasks:snapshot});}).then(function(){btn.classList.remove('is-pending');state.subtaskPending=Math.max(0,state.subtaskPending-1);state.optimisticUntil=Date.now()+500;}).catch(function(error){btn.classList.remove('is-pending');state.subtaskPending=Math.max(0,state.subtaskPending-1);toast((error&&error.message)||'Kon subtaak niet opslaan');var current=M().getTask(key);localSubs=clone(current&&Array.isArray(current.subtasks)?current.subtasks:[]);syncSubtaskDom(el,localSubs,!!(current&&current.done));});
+    };});
     el.querySelectorAll('[data-tv3-sub-edit]').forEach(function(btn){btn.onclick=function(){state.iconPicker=btn.getAttribute('data-tv3-sub-edit');enterEditor(row,false);};});
     var add=el.querySelector('[data-tv3-sub-add]');if(add)add.onclick=function(){enterEditor(row,true);};
-    var complete=el.querySelector('[data-tv3-complete]');if(complete)complete.onclick=function(){var current=M().getTask(key);if(!current)return;var vm=M().view(current);if(!current.done&&!completeAllowed(vm)){toast('Voltooi eerst alle stappen');return;}if(typeof window.toggleTask==='function'){window.toggleTask(idOf(current));setTimeout(render,90);}else toast('Taak wordt nog gesynchroniseerd');};
+    var complete=el.querySelector('[data-tv3-complete]');if(complete)complete.onclick=function(){var current=M().getTask(key);if(!current)return;if(!current.done&&!completeAllowed({subtasks:localSubs})){toast('Voltooi eerst alle stappen');return;}if(typeof window.toggleTask==='function'){window.toggleTask(idOf(current));setTimeout(render,90);}else toast('Taak wordt nog gesynchroniseerd');};
     var edit=el.querySelector('[data-tv3-edit]');if(edit)edit.onclick=function(){enterEditor(row,false);};
     var postpone=el.querySelector('[data-tv3-postpone]');if(postpone)postpone.onclick=function(){var base=row.date?new Date(row.date+'T00:00:00'):new Date();base.setDate(base.getDate()+1);var iso=base.getFullYear()+'-'+String(base.getMonth()+1).padStart(2,'0')+'-'+String(base.getDate()).padStart(2,'0');patch(key,{date:iso},function(){toast('Taak één dag uitgesteld');render();});};
     var help=el.querySelector('[data-tv3-help]');if(help)help.onclick=function(){var role=help.getAttribute('data-tv3-help');if(!window.TaskSharedData)return;if(role==='owner'){state.helpPicker=!state.helpPicker;render();return;}var action=role==='owner-pending'?TaskSharedData.retractHelp(key):role==='invitee'?TaskSharedData.joinHelp(key):role==='helper'?TaskSharedData.leaveHelp(key):Promise.resolve();Promise.resolve(action).then(function(){state.helpPicker=false;render();}).catch(function(error){toast((error&&error.message)||'Actie mislukt');});};
@@ -210,12 +238,16 @@
     patch(idOf(row),payload,function(saved){toast('Wijzigingen opgeslagen');state.mode='detail';state.draft=null;state.iconPicker=null;state.taskId=String(idOf(saved)||idOf(row));render();});
   }
 
-  function openCreate(){state.mode='create';state.taskId=null;state.draft=newDraft();state.helpPicker=false;state.iconPicker=null;lock();renderEditor(null,true);}
+  function openCreate(){state.mode='create';state.taskId=null;state.draft=newDraft();state.helpPicker=false;state.iconPicker=null;state.subtaskPending=0;state.optimisticUntil=0;lock();renderEditor(null,true);}
 
   var legacy=window.TaskDetailPopup;
   var api={version:VERSION,open:open,close:close,openCreate:openCreate,isOpen:function(){return !!state.mode;},legacy:legacy};
   window.TaskDetailV3=api;
   window.TaskDetailPopup=api;
 
-  window.addEventListener('familyapp:tasks-updated',function(){if(state.mode==='detail'&&state.taskId&&document.getElementById('tasks-v3-detail'))render();});
+  window.addEventListener('familyapp:tasks-updated',function(){
+    if(state.mode!=='detail'||!state.taskId||!document.getElementById('tasks-v3-detail'))return;
+    if(state.subtaskPending>0||Date.now()<state.optimisticUntil)return;
+    render();
+  });
 })();
