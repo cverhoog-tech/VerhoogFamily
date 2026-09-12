@@ -3,7 +3,9 @@
   if(window.__familyAppPwaIconV8)return;
   window.__familyAppPwaIconV8=true;
 
-  var V='8';
+  // File name is kept for compatibility with the existing shell contract;
+  // the runtime now serves the v9 Home Screen artwork.
+  var V='9';
   var icons={
     apple:'/api/brand-icon?variant=180&v='+V,
     favicon:'/api/brand-icon?variant=32&v='+V,
