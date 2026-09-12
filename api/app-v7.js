@@ -77,6 +77,9 @@ module.exports = async function handler(req, res) {
   if (!body.includes('contextBackNavigationV1.css?v=1')) {
     body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/contextBackNavigationV1.css?v=1">\n</head>');
   }
+  if (!body.includes('calendarCleaningPremiumV1.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/calendarCleaningPremiumV1.css?v=1">\n</head>');
+  }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
@@ -91,6 +94,9 @@ module.exports = async function handler(req, res) {
   }
   if (!body.includes('contextBackNavigationV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/contextBackNavigationV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('calendarCleaningPresentationV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/calendar/calendarCleaningPresentationV1.js?v=1"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
