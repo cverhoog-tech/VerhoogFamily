@@ -1,0 +1,220 @@
+/* ============================================================
+   FAMILYAPP TASKS V3 — PREMIUM DARK OVERVIEW
+   Literal dark-mode translation of the approved premium mockup.
+   Overview only: task detail/editor keep their current dark styling.
+   ============================================================ */
+
+/* Page canvas — blue/charcoal depth instead of a flat green wash. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] #screen-tasks,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] #task-content{
+  background:
+    radial-gradient(circle at 84% 4%,rgba(28,87,67,.13),transparent 32%),
+    radial-gradient(circle at 4% 26%,rgba(22,57,72,.11),transparent 27%),
+    linear-gradient(180deg,#071115 0%,#071316 48%,#061014 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-page{
+  color:#f2eee7;
+}
+
+/* Brand/header */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup strong,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-titlebar h1{
+  color:#f5f0e7!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.02);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup small{
+  color:#899591!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-leaf{
+  color:#8fc9a7!important;
+  filter:drop-shadow(0 0 9px rgba(111,194,148,.12));
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-icon-btn{
+  color:#83918d!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-family-avatar{
+  border-color:#071216!important;
+  box-shadow:0 0 0 1px rgba(235,240,236,.14),0 4px 10px rgba(0,0,0,.28);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-new{
+  border:1px solid rgba(82,190,132,.42)!important;
+  background:linear-gradient(180deg,#277956 0%,#18553f 100%)!important;
+  color:#f5f8f5!important;
+  box-shadow:0 7px 20px rgba(20,106,71,.22),inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+
+/* Three differentiated stat cards. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat{
+  box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--open{
+  border-color:rgba(45,130,96,.55)!important;
+  background:linear-gradient(145deg,#0d211b 0%,#0a1917 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--important{
+  border-color:rgba(173,125,45,.56)!important;
+  background:linear-gradient(145deg,#272117 0%,#1c1913 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--overdue{
+  border-color:rgba(176,71,65,.62)!important;
+  background:linear-gradient(145deg,#2b1719 0%,#201416 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat strong{
+  color:#f4efe6!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat small{
+  color:#9aa39f!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--open .tv3-stat-icon{
+  color:#7bb594!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--important .tv3-stat-icon{
+  color:#dda849!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--important small{
+  color:#aaa394!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--overdue .tv3-stat-icon,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--overdue small{
+  color:#d66f65!important;
+}
+
+/* Quote/photo banner — richer photo, cleaner dark fade. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote{
+  border-color:#2a4143!important;
+  background:#0d1b1e!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.14)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote:after{
+  inset:0 0 0 43%!important;
+  background:
+    linear-gradient(90deg,#0d1b1e 0%,rgba(13,27,30,.91) 20%,rgba(13,27,30,.35) 61%,rgba(13,27,30,.08) 100%),
+    url('/src/assets/task-heroes/cozy-home.webp') center 56%/cover no-repeat!important;
+  opacity:.96!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote-icon{
+  color:#95caaa!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote strong{
+  color:#f1ece3!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote small{
+  color:#adb5b1!important;
+}
+
+/* Filters — selected gold, inactive glass/charcoal. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button{
+  border-color:#304548!important;
+  background:linear-gradient(180deg,#0d1c1f,#0a1719)!important;
+  color:#b9c1be!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button.active{
+  border-color:#e1c06a!important;
+  background:linear-gradient(180deg,#ecd58f 0%,#dfbf68 100%)!important;
+  color:#1c211d!important;
+  box-shadow:0 5px 15px rgba(199,153,49,.19),inset 0 1px 0 rgba(255,255,255,.42)!important;
+}
+
+/* Section hierarchy */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head strong{
+  color:#f1ede6!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head small{
+  color:#8e9995!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group--verlopen .tv3-group-head strong{
+  color:#d56e65!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group-arrow{
+  color:#9ba7a4!important;
+}
+
+/* Task cards — neutral blue/charcoal surfaces with restrained pine undertone. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row{
+  border-color:#2d4144!important;
+  background:linear-gradient(135deg,#0d1a1e 0%,#0d201d 100%)!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.018)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group--verlopen .tv3-task-row{
+  border-color:rgba(148,75,69,.48)!important;
+  background:linear-gradient(135deg,#111b1e 0%,#181b19 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row:active{
+  transform:translateY(1px);
+  border-color:#456064!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check{
+  border-color:#c0cbca!important;
+  background:#0a1518!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.015)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row.is-done .tv3-task-check{
+  border-color:#63b77d!important;
+  background:#276c48!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-photo{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.20)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-copy>strong{
+  color:#f4f1eb!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-meta{
+  color:#9ba6a2!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-meta i{
+  background:#4c5c5b!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-row-avatar{
+  box-shadow:0 0 0 1px rgba(235,240,236,.17)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-xp{
+  border:1px solid rgba(164,111,37,.25)!important;
+  background:linear-gradient(180deg,#44331f 0%,#342819 100%)!important;
+  color:#dca149!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-row-chevron{
+  color:#c5cfcc!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-empty{
+  border-color:#293d40!important;
+  background:#0c191c!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-empty strong{
+  color:#ece8e0!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-empty span,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-loading>span{
+  color:#8e9995!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-loading i{
+  background:linear-gradient(100deg,#0d1a1d 8%,#142427 18%,#0d1a1d 33%)!important;
+  background-size:200% 100%!important;
+}
+
+/* Family member popover follows the same charcoal/glass palette. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu{
+  border-color:#314448!important;
+  background:rgba(9,20,23,.98)!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.38)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu button{
+  color:#c0c8c5!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu button.active{
+  background:#183126!important;
+  color:#d7e8dd!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu .tv3-member-dashboard{
+  border-color:#2a3b3d!important;
+}
+
+/* Preserve the accepted compact geometry on small iPhones. */
+@media(max-width:390px){
+  [data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat{
+    box-shadow:0 6px 18px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.02)!important;
+  }
+  [data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row{
+    box-shadow:0 5px 14px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.018)!important;
+  }
+}
