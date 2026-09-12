@@ -29,6 +29,8 @@ assert(overview.includes('TaskDetailPopup.openCreate'),'new task must open the a
 assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(overview),'overview must not own persistence');
 
 assert(detail.includes('window.TaskDetailPopup=api'),'V3 must become active task detail API');
+assert(detail.includes("var VERSION='3.0.1'"),'hardened V3 detail identity missing');
+assert(detail.includes('draftFromTask'),'legacy assignee edit safety missing');
 assert(detail.includes('TaskSharedData.update'),'detail must persist via canonical TaskSharedData');
 assert(detail.includes('TaskSharedData.create'),'create flow must persist via canonical TaskSharedData');
 assert(detail.includes('window.toggleTask'),'completion must preserve existing completion/reward bridge');
@@ -51,9 +53,9 @@ assert(css.includes('aspect-ratio:16/8.3'),'photo-first detail hero contract mis
 assert(css.includes('[data-theme*="dark"]'),'dark mode contract missing');
 assert(!css.includes('#tdp-overlay'),'V3 stylesheet must not depend on legacy popup DOM');
 
-assert(shell.includes('/src/styles/tasksV3.css?v=1'),'shell must serve V3 stylesheet');
-assert(shell.indexOf('taskPresentationModelV3.js?v=1')<shell.indexOf('taskOverviewV3.js?v=1'),'model must load before overview');
-assert(shell.indexOf('taskOverviewV3.js?v=1')<shell.indexOf('taskDetailV3.js?v=1'),'overview must load before detail');
+assert(shell.includes('/src/styles/tasksV3.css?v=2'),'shell must serve V3 stylesheet');
+assert(shell.indexOf('taskPresentationModelV3.js?v=2')<shell.indexOf('taskOverviewV3.js?v=2'),'model must load before overview');
+assert(shell.indexOf('taskOverviewV3.js?v=2')<shell.indexOf('taskDetailV3.js?v=2'),'overview must load before detail');
 assert(!shell.includes('tasksPremiumModernV1'),'legacy modern decorator must not be active');
 assert(!shell.includes('tasksPremiumWarmV2'),'legacy warm decorator must not be active');
 assert(!shell.includes('tasksCleaningDetailV3'),'legacy detail override must not be active');
