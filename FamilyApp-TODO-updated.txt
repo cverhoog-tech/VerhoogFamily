@@ -1,15 +1,111 @@
 ## FamilyApp - actuele TODO / roadmap
 
-Laatst bijgewerkt: 11-09-2026
+Laatst bijgewerkt: 13-09-2026
 
 # Branch- en baseline-regels
 
-- Productie/main blijft `b7f233ebfe1fbb20ecdf426003f332528562ab0f`.
+- Huidige productie/main: `f57101b314b292ddb14ceab61710c7eeb1c1c322`.
+- Huidig real-device geaccepteerd Taken V3 + premium dark overview + verwijderde zwevende AI/Gemini-knop: `772f7a96fb92976d6eac8ad476517bb56e4de16d`.
 - Stabiele Cleaning-v2 performancebasis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a` — real-device geaccepteerd op iPhone.
 - Vervolgwerk gebeurt uitsluitend op `agent/household-rebuild-v2`.
 - Main, production Firebase Rules en fallback/lock branches blijven onaangeraakt totdat de product owner een exact checkpoint real-device accepteert en daarna apart promotie toestaat.
 - Oude TODO’s/statusdocumenten zijn historische referentie als ze botsen met deze roadmap of de huidige code.
 - Gedeelde visuele bron voor nieuw/refactored FamilyApp-werk: `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md` — **Calm Premium Home**.
+
+# Feedbackronde 13-09-2026 — app-breed
+Status: **OPEN / OPGENOMEN IN ROADMAP**
+
+Deze punten komen uit actuele real-device screenshots en worden vanaf nu als echte resterende app-feedback behandeld. Ze vervangen geen bestaande authorities of canonical dataflows; het gaat primair om navigatie-UX, presentatie en branding-fixes.
+
+## 1. Contextuele terugnavigatie tussen modules
+Type: **UX / NAVIGATIE**
+Prioriteit: **HOOG — APP-BREED**
+
+Probleem:
+- bij navigeren vanuit de ene module naar een andere module ontbreekt soms een duidelijke manier om terug te keren naar het vorige appscherm;
+- bottom-nav alleen is hiervoor niet altijd logisch, vooral bij deep-links / handoffs vanuit Feed, Agenda, Taken, Schoonmaken, Boodschappen enz.
+
+Gewenst gedrag:
+- linksboven een rustige back-chevron wanneer het huidige scherm via een andere module / detailflow is geopend;
+- geen back-arrow op primaire root-tabs wanneer de gebruiker daar direct via bottom-nav binnenkomt;
+- terugactie gebruikt een **app-level navigation stack**, niet browser-history als authority;
+- vorige module + relevante context zo goed mogelijk herstellen, inclusief geselecteerde tab/filter/scrollpositie waar haalbaar;
+- veilige fallback naar logische parent/root als de stack leeg is;
+- moet compatibel blijven met bestaande `showScreen`/navigation authority en geen tweede router introduceren.
+
+Acceptatie:
+- cross-module flows zoals Feed → taak, Agenda → schoonmaak, Schoonmaken → Boodschappen en andere detailhandoffs kunnen in één tik terug;
+- geen dubbele headers, vastlopende history of onverwachte Safari-back navigatie.
+
+## 2. Agenda / Kalender — premium schoonmaakafspraakkaart
+Type: **UI / CALENDAR + CLEANING PROJECTION**
+Prioriteit: **HOOG**
+
+Probleem:
+- geplande maaltijden krijgen in Agenda een rijke, herkenbare kaart;
+- geprojecteerde schoonmaaktaken verschijnen nog als generieke witte afspraakkaart met paars kalendericoon en voelen visueel duidelijk zwakker.
+
+Gewenst:
+- een eigen **Geplande schoonmaak** presentatielaag in Agenda, qua kwaliteit en hiërarchie vergelijkbaar met `GEPLANDE MAALTIJD`, maar duidelijk eigen;
+- Cleaning-specifieke kleurvariant: pine/mint/teal of andere rustige FamilyApp-cleaning palette, geen fantasy-paars;
+- waar mogelijk echte kamerfoto/room visual gebruiken, dezelfde kameridentiteit als in Taken/Cleaning;
+- duidelijke titel, kamer, tijd/dagdeel, duur, assignee/status en relevante routine-samenvatting;
+- tap opent de bestaande Cleaning/occurrence-detailflow;
+- Agenda blijft alleen projectie: **CleaningOccurrence blijft authority**, geen tweede schoonmaak-eventdatabase of writer;
+- light + dark mode beide premium en consistent.
+
+Acceptatie:
+- geplande maaltijd en geplande schoonmaak voelen als twee familieleden uit hetzelfde design system;
+- schoonmaakkaart is direct herkenbaar zonder generiek purple calendar tile.
+
+## 3. Feed — dark-mode consistency rework
+Type: **BUG + UI-POLISH**
+Prioriteit: **ZEER HOOG / ZICHTBARE REGRESSIE**
+
+Actuele regressie op screenshot:
+- globale header/nav staat donker, maar de Feed-body/composer/summary-cards blijven grotendeels wit;
+- hierdoor ontstaat een harde dark/light breuk binnen één scherm;
+- filterbuttons (`Alle updates`, `Taken`, `Agenda`) zijn te groot/pompeus en nemen te veel verticale/visuele ruimte in.
+
+Gewenst:
+- volledige Feed dark mode op één consistente donkere canvas;
+- composer, summary tiles, filterzone en feed cards krijgen duidelijke maar rustige layered dark surfaces;
+- behouden van bestaande feed functionaliteit, tagging, composer actions, activity projecties en canonical dataflows;
+- filterbuttons aanzienlijk compacter: kleinere height/padding/radius, duidelijke actieve state, geen oversized segmented look;
+- goede contrastverhouding voor tekst, iconen en metadata;
+- verschillende activity-types mogen semantische accenten houden, maar geen willekeurige grote witte vlakken;
+- light mode mag niet regressieren.
+
+Acceptatie:
+- bij schakelen naar dark mode is nergens meer een onbedoelde witte Feed-canvas;
+- filters voelen compact/premium en passen bij Taken V3 / Calm Premium Home.
+
+## 4. PWA / Home Screen icon — geglitchte padgeometrie
+Type: **BRANDING BUG**
+Prioriteit: **ZEER HOOG / VOOR RELEASE**
+
+Actuele regressie op screenshot:
+- huis-silhouet is grotendeels goed;
+- het lichte pad/weggetje onder de gouden deur is zichtbaar vervormd/geknikt en oogt als een rendering- of assetgeometriebug op iOS Home Screen.
+
+Gewenst:
+- PWA-bronasset opnieuw valideren en zo nodig opnieuw exporteren/redrawen;
+- cream house + gouden doorway/path behouden;
+- pad als één schone, symmetrische vorm zonder kruising/scherpe glitch;
+- maskable safe-zone controleren zodat geen deel door iOS/Android crop vervormt;
+- dezelfde correcte geometrie voor Apple Touch 180, 192, 512 en maskable variant;
+- manifest/icon links + cache bust/version bump na fix;
+- real-device controle op iPhone Home Screen na opnieuw toevoegen van de PWA.
+
+Acceptatie:
+- icoon ziet er op Home Screen exact schoon en symmetrisch uit;
+- geen gekruiste of afgesneden padvorm meer op enige iconvariant.
+
+## Voorgestelde volgorde voor deze feedbackronde
+1. Feed dark-mode bug + compacte filters.
+2. PWA-icon geometrie herstellen en real-device icon cache/verversing testen.
+3. Contextuele app-level backnavigatie.
+4. Agenda premium schoonmaakprojectiekaart.
 
 # STEP 14 — Schoonmaken v2
 
@@ -185,6 +281,7 @@ Status: **OPEN NA CLEANING**
 
 - nieuw FamilyApp-logo en icon family;
 - PWA/maskable/Apple Touch/favicon;
+- **actuele bug:** pad/weggetje onder gouden doorway vervormt op iOS Home Screen; icon geometrie + maskable safe-zone + alle exportmaten opnieuw controleren;
 - premium login screen;
 - Google, Apple en normale accountlogin/registratie behouden en testen;
 - Apple-loginactie ook via Home onder dezelfde auth authority;
@@ -192,6 +289,21 @@ Status: **OPEN NA CLEANING**
 - Google post-auth freeze alleen opnieuw openen als reproduceerbaar.
 
 # Overige werkelijk open hoofdlijnen
+
+## Feed dark-mode consistency
+Status: **OPEN — ACTUELE REPRODUCEERBARE UI-REGRESSIE**
+- valt buiten de eerder als afgerond beschouwde Activity/Feed functionaliteit: de dataflow blijft gesloten, maar de actuele dark-mode presentatie is aantoonbaar inconsistent;
+- zie feedbackronde 13-09-2026 voor scope en acceptatie.
+
+## Contextuele module-navigatie
+Status: **OPEN — APP-BREED UX**
+- app-level back-stack/back-chevron bij cross-module handoffs;
+- geen tweede router en geen browser-history als canonical navigation authority.
+
+## Agenda cleaning presentation
+Status: **OPEN — PREMIUM UI / PROJECTIE**
+- geprojecteerde CleaningOccurrences visueel gelijkwaardig maken aan geplande maaltijden, met eigen Cleaning-identiteit;
+- Cleaning blijft canonical authority.
 
 ## Internationalisatie
 Status: **LATER**
@@ -211,4 +323,6 @@ Status: **LATER RICHTING PUBLIEKE RELEASE**
 
 # Afgerond — niet automatisch heropenen
 
-Reeds gebouwde/geaccepteerde delen zoals STEP 12 Profiel/presence/avatar, STEP 13 Activity/Feed, maaltijdfollow-up, Action Inbox basis, UI-schaal, safe-area/dark-mode gates, notificatie/push basis, boodschappenarchitectuur, Taken create-card en bestaande Apple Sign-In clientbasis worden alleen heropend bij een actuele reproduceerbare regressie.
+Reeds gebouwde/geaccepteerde delen zoals STEP 12 Profiel/presence/avatar, maaltijdfollow-up, Action Inbox basis, UI-schaal, safe-area/dark-mode gates, notificatie/push basis, boodschappenarchitectuur, bestaande Apple Sign-In clientbasis en Taken V3 (overview/detail/create-edit + premium dark overview, optimistic checkboxes en verwijderde zwevende AI/Gemini-knop) worden alleen heropend bij een actuele reproduceerbare regressie.
+
+STEP 13 Activity/Feed-functionele architectuur blijft eveneens gesloten; alleen de hierboven expliciet vastgelegde actuele **Feed dark-mode presentatie-regressie** is opnieuw open.
