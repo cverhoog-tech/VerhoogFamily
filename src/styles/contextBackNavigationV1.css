@@ -1,0 +1,58 @@
+/* ============================================================
+   FAMILYAPP — CONTEXTUAL BACK NAVIGATION V1
+   ============================================================ */
+.familyapp-context-back{
+  width:34px!important;
+  min-width:34px!important;
+  max-width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  padding:0!important;
+  margin:0 1px 0 0!important;
+  border:1px solid rgba(79,91,85,.13)!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.72)!important;
+  color:#425149!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 34px!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+  touch-action:manipulation!important;
+  box-shadow:0 3px 10px rgba(20,31,25,.055)!important;
+}
+.familyapp-context-back[hidden]{display:none!important}
+.familyapp-context-back:active{transform:scale(.94)!important}
+.familyapp-context-back svg{display:block;width:18px;height:18px}
+
+/* Tasks V3 owns its own premium header. Keep its contextual action quieter. */
+#screen-tasks .tv3-brand>.familyapp-context-back--tasks{
+  align-self:center!important;
+  margin-right:2px!important;
+  background:rgba(248,245,237,.82)!important;
+  border-color:rgba(54,74,63,.14)!important;
+  color:#375846!important;
+  box-shadow:none!important;
+}
+
+[data-theme*="dark"] .familyapp-context-back{
+  border-color:#314348!important;
+  background:#0c171b!important;
+  color:#d4ddda!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.17)!important;
+}
+[data-theme*="dark"] #screen-tasks .tv3-brand>.familyapp-context-back--tasks{
+  border-color:#30464a!important;
+  background:#091417!important;
+  color:#e3e9e6!important;
+}
+
+@media(max-width:390px){
+  .familyapp-context-back{
+    width:32px!important;min-width:32px!important;max-width:32px!important;
+    height:32px!important;min-height:32px!important;max-height:32px!important;
+    flex-basis:32px!important;
+  }
+}
