@@ -149,7 +149,14 @@ body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check,
   line-height:1!important;
   -webkit-appearance:none!important;
   appearance:none!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+  transition:background-color .08s ease,border-color .08s ease,transform .08s ease!important;
+  will-change:transform;
 }
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check:active,
+.tv3d-overlay .tv3d-sub-check:active{transform:scale(.88)!important}
+.tv3d-overlay .tv3d-sub-check.is-pending{box-shadow:0 0 0 3px rgba(56,95,73,.08)!important}
 
 /* DETAIL — preserve the photo-first identity but compress the management UI. */
 .tv3d-overlay{padding:8px 8px calc(7px + env(safe-area-inset-bottom))}
@@ -161,6 +168,9 @@ body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check,
   aspect-ratio:16/7.35;
   min-height:142px;
   border-radius:22px 22px 0 0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  transform:translateZ(0);
 }
 .tv3d-close{width:33px;height:33px;right:11px;top:11px}
 .tv3d-sheet{
