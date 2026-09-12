@@ -3,28 +3,28 @@ const assert=require('assert');
 const fs=require('fs');
 function read(p){return fs.readFileSync(p,'utf8');}
 
-const ui=read('src/modules/tasks/tasksPremiumWarmV2.js');
 const shell=read('api/app-v7.js');
 const vercel=read('vercel.json');
-const canonical=read('src/modules/tasks/taskDetailPopup.js');
+const model=read('src/modules/tasks/v3/taskPresentationModelV3.js');
+const overview=read('src/modules/tasks/v3/taskOverviewV3.js');
+const detail=read('src/modules/tasks/v3/taskDetailV3.js');
 
-assert(ui.includes("window.__tasksPremiumWarmV2=true"),'warm decorator guard missing');
-assert(ui.includes("version:'2.3.0'"),'integrated v2.3 presentation version missing');
-assert(ui.includes('Kleine taken, een rustiger thuis'),'approved banner quote missing');
-assert(ui.includes('tpw2-photo-thumb'),'photographic task thumbnail treatment missing');
-assert(ui.includes('/src/assets/cleaning-rooms/bathroom-light.webp'),'bathroom thumbnail mapping missing');
-assert(ui.includes('/src/assets/cleaning-rooms/kids-room-light.webp'),'kids-room thumbnail mapping missing');
-assert(ui.includes('/src/assets/task-heroes/market.webp'),'groceries thumbnail mapping missing');
-assert(ui.includes('/src/assets/cleaning-rooms/laundry-light.webp'),'laundry thumbnail mapping missing');
-assert(ui.includes('/src/assets/cleaning-rooms/outdoor-light.webp'),'outdoor thumbnail mapping missing');
-assert(ui.includes('Markeer als klaar'),'approved primary CTA copy missing');
-assert(ui.includes('Uitstellen'),'postpone action presentation missing');
-assert(ui.includes('Bewerken'),'edit action presentation missing');
-assert(!/firebase\.|TaskSharedData\.(update|create|remove)|taskData\.push|taskData\.splice/.test(ui),'warm presentation layer must remain presentation-only');
-
-assert(shell.includes('/src/modules/tasks/tasksPremiumWarmV2.js?v=3'),'canonical v7 shell must serve cache-busted warm task decorator');
 assert(vercel.includes('"dest": "/api/app-v7"'),'root route must remain on canonical v7 shell');
-assert(canonical.includes('TaskSharedData.update'),'canonical TaskDetailPopup must retain mutation ownership');
-assert(canonical.includes('tdp-postpone-btn'),'canonical popup must retain the additive postpone control');
+assert(shell.includes('/src/styles/tasksV3.css?v=1'),'canonical v7 shell must serve V3 stylesheet');
+assert(shell.includes('/src/modules/tasks/v3/taskPresentationModelV3.js?v=1'),'canonical v7 shell must serve V3 model first');
+assert(shell.includes('/src/modules/tasks/v3/taskOverviewV3.js?v=1'),'canonical v7 shell must serve V3 overview');
+assert(shell.includes('/src/modules/tasks/v3/taskDetailV3.js?v=1'),'canonical v7 shell must serve V3 detail');
+assert(!shell.includes('tasksPremiumWarmV2.js'),'legacy warm decorator must be de-wired');
+assert(!shell.includes('tasksPremiumModernV1.js'),'legacy modern decorator must be de-wired');
 
-console.log('Tasks premium warm v2.3 integrated presentation contract: PASS');
+assert(model.includes('/src/assets/cleaning-rooms/bathroom-light.webp'),'bathroom photo mapping missing');
+assert(model.includes('/src/assets/cleaning-rooms/kids-room-light.webp'),'kids-room photo mapping missing');
+assert(model.includes('/src/assets/task-heroes/market.webp'),'grocery photo mapping missing');
+assert(model.includes('/src/assets/cleaning-rooms/laundry-light.webp'),'laundry photo mapping missing');
+assert(model.includes('/src/assets/cleaning-rooms/outdoor-light.webp'),'outdoor photo mapping missing');
+assert(overview.includes("version:'3.0.0'"),'overview V3 identity missing');
+assert(detail.includes("version:'3.0.0'"),'detail V3 identity missing');
+assert(!/firebase\.|\.ref\(|\.set\(/.test(overview),'V3 overview must remain presentation-only');
+assert(!/firebase\.|\.ref\(|\.set\(/.test(model),'V3 model must remain read-only');
+
+console.log('Tasks V3 canonical shell / photo mapping contract: PASS');
