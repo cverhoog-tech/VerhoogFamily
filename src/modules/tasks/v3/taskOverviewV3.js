@@ -51,7 +51,6 @@
   function optimisticOverviewCheck(btn,task){
     if(!btn||!task)return;
     var next=!task.done,rowEl=btn.closest('.tv3-task-row');
-    task.done=next;
     btn.innerHTML=next?ICON.check:'';
     btn.setAttribute('aria-pressed',next?'true':'false');
     btn.setAttribute('aria-label',next?'Heropen taak':'Voltooi taak');
