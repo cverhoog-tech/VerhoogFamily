@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- FamilyApp grocery special icons v1. Safari-safe solid-fill symbols. -->
+  <symbol id="utility-spices" viewBox="0 0 32 32">
+    <ellipse cx="16" cy="26.2" rx="8.4" ry="1.7" fill="#2d1d12" opacity=".16"/>
+    <path d="M10 9h12l-1.2 16H11.2Z" fill="#d59449" stroke="#68401f" stroke-width="1.25"/>
+    <path d="M9.5 7.2h13V11h-13Z" fill="#6f4a2c" stroke="#49301f" stroke-width="1.1"/>
+    <rect x="12" y="14" width="8" height="6.5" rx="1.6" fill="#fff0cc"/>
+    <path d="M14 17.1h4" stroke="#9a6330" stroke-width="1.1" stroke-linecap="round"/>
+    <circle cx="13" cy="22.8" r=".8" fill="#7f4d24"/><circle cx="16" cy="23.5" r=".8" fill="#7f4d24"/><circle cx="19" cy="22.6" r=".8" fill="#7f4d24"/>
+    <path d="M13 6h1.3M15.4 6h1.3M17.8 6h1.3" stroke="#e8bb68" stroke-width="1" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="utility-sauce" viewBox="0 0 32 32">
+    <ellipse cx="16" cy="26.4" rx="7.5" ry="1.5" fill="#30141a" opacity=".16"/>
+    <path d="M13 5h6v4.2l2.7 3.2-1.4 13H11.7l-1.4-13L13 9.2Z" fill="#d94e51" stroke="#6c2628" stroke-width="1.25"/>
+    <path d="M13.2 5h5.6v3.2h-5.6Z" fill="#f0c253" stroke="#76511e" stroke-width="1"/>
+    <path d="M12.3 14.1h7.4l-.6 6.2h-6.2Z" fill="#fff1da"/>
+    <path d="M14 16.7h4" stroke="#d94e51" stroke-width="1.15" stroke-linecap="round"/>
+    <path d="M12 11.6h8" stroke="#ff9b89" stroke-width="1" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="utility-fryer" viewBox="0 0 32 32">
+    <ellipse cx="16" cy="27" rx="9" ry="1.6" fill="#291b11" opacity=".15"/>
+    <path d="M8 14h16l-2 11H10Z" fill="#7d57c6" stroke="#3e285f" stroke-width="1.2"/>
+    <path d="M10 15.5h12l-1.2 7.5h-9.6Z" fill="#9b77d6"/>
+    <path d="M11 13.8 9.5 6.5M14.2 13.8 13 5.3M17.4 13.8 17 5M20.5 13.8 21.7 6" stroke="#f2c34e" stroke-width="2.1" stroke-linecap="round"/>
+    <path d="M21.7 17h5.2v2.4h-5.7" fill="none" stroke="#4b326e" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M11 18h10M12 21h8" stroke="#e9ddff" stroke-width="1" stroke-linecap="round"/>
+  </symbol>
+</svg>
