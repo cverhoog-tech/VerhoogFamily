@@ -28,14 +28,24 @@ module.exports = async function handler(req, res) {
   }
 
   body = body
+    .replace('<html lang="nl">', '<html lang="nl" class="familyapp-auth-prepaint">')
     .replaceAll('/api/brand-icon?variant=192&v=5', '/api/brand-icon?variant=192&v=8')
     .replaceAll('/api/brand-icon?variant=180&v=5', '/api/brand-icon?variant=180&v=8')
     .replaceAll('/api/brand-icon?variant=32&v=5', '/api/brand-icon?variant=32&v=8')
     .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=8-login1')
     .replaceAll('manifest.json?v=5', 'manifest.json?v=8')
     .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')
+    .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=4')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
+  if (!body.includes('familyapp-auth-first-paint')) {
+    body = body.replace('</head>', '  <style id="familyapp-auth-first-paint">\n'
+      + 'html.familyapp-auth-prepaint,html.familyapp-auth-prepaint body{background:#0b3428!important}\n'
+      + 'html.familyapp-auth-prepaint body:before{content:"";position:fixed;inset:0;z-index:9998;background:#0b3428;pointer-events:none}\n'
+      + 'html.familyapp-auth-prepaint #login-screen{z-index:9999!important;background:#0b3428!important}\n'
+      + 'html.familyapp-auth-prepaint #login-screen>*{visibility:hidden!important}\n'
+      + '</style>\n</head>');
+  }
   if (!body.includes('loginBrandV7.css?v=2')) {
     body = body.replace('</head>', '  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>\n  <link rel="stylesheet" href="/src/styles/loginBrandV7.css?v=2">\n</head>');
   }
