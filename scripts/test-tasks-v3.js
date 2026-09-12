@@ -11,6 +11,8 @@ const shell=read('api/app-v7.js');
 const canonicalRouter=read('src/modules/tasks/taskOverviewCanonical.js');
 const shared=read('src/modules/tasks/taskSharedData.js');
 
+[model,overview,detail].forEach(function(source,index){assert.doesNotThrow(function(){new Function(source);},'Tasks V3 runtime '+index+' must be valid JavaScript');});
+
 assert(model.includes("window.TaskPresentationModelV3"),'V3 presentation model missing');
 assert(model.includes('Array.isArray(window.taskData)?window.taskData:[]'),'V3 model must read canonical taskData');
 assert(model.includes('CleaningTaskSupplyUi'),'V3 must reuse exact Cleaning supply context');
