@@ -62,6 +62,12 @@
     if(!task)return'';
     return [task.cleaningRoomName,task.roomName,task.room,task.title,task.category,task.type].map(text).filter(Boolean).join(' · ').toLowerCase();
   }
+  function isCleaningTask(task){
+    if(!task)return false;
+    if(task.cleaningRoomId||task.cleaningRoutineId||task.cleaningPlanId)return true;
+    var raw=identityText(task);
+    return /(^|\s|[·\-:])schoonmaken($|\s|[·\-:])|\bcleaning\b/.test(raw);
+  }
   function photoKey(task){
     var raw=identityText(task);
     if(/badkamer|bathroom|douche/.test(raw))return'bathroom';
@@ -78,7 +84,11 @@
     if(/admin|rekening|factuur|bank|contract/.test(raw))return'admin';
     return'generic';
   }
-  function photo(task){return ownImage(task)||PHOTO[photoKey(task)]||PHOTO.generic;}
+  function photo(task){
+    var key=photoKey(task),roomPhoto=PHOTO[key]||PHOTO.generic;
+    if(isCleaningTask(task)&&key!=='generic')return roomPhoto;
+    return ownImage(task)||roomPhoto;
+  }
   function displayTitle(task){
     var title=text(task&&task.title)||'Taak';
     var match=title.match(/^schoonmaken\s*[·\-:]\s*(.+)$/i);
@@ -103,5 +113,5 @@
     return{id:String(task&&(task.id||task._key)||''),raw:task,title:displayTitle(task),sourceTitle:text(task&&task.title)||'Taak',description:text(task&&(task.desc||task.description)),group:group(task),dateLabel:dateLabel(task),recurrenceLabel:recurrenceLabel(task),priorityLabel:priorityLabel(task),xp:xp(task),important:important(task),photo:photo(task),people:ps,primaryPerson:ps[0]||null,subtasks:subs,subDone:done,supplies:supplies(task)};
   }
 
-  window.TaskPresentationModelV3={version:'3.1.0',tasks:tasks,members:members,member:member,avatar:avatar,initials:initials,currentUid:currentUid,getTask:getTask,assignees:assignees,people:people,group:group,dayDiff:dayDiff,dateLabel:dateLabel,recurrenceLabel:recurrenceLabel,priorityLabel:priorityLabel,xp:xp,photo:photo,displayTitle:displayTitle,statusSummary:statusSummary,isHydrated:isHydrated,supplies:supplies,view:view};
+  window.TaskPresentationModelV3={version:'3.1.1',tasks:tasks,members:members,member:member,avatar:avatar,initials:initials,currentUid:currentUid,getTask:getTask,assignees:assignees,people:people,group:group,dayDiff:dayDiff,dateLabel:dateLabel,recurrenceLabel:recurrenceLabel,priorityLabel:priorityLabel,xp:xp,photo:photo,displayTitle:displayTitle,statusSummary:statusSummary,isHydrated:isHydrated,supplies:supplies,view:view};
 })();
