@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
     .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=8-login1')
     .replaceAll('manifest.json?v=5', 'manifest.json?v=8')
     .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')
-    .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=4')
+    .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=5')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
   if (!body.includes('familyapp-auth-first-paint')) {
@@ -44,6 +44,8 @@ module.exports = async function handler(req, res) {
       + 'html.familyapp-auth-prepaint body:before{content:"";position:fixed;inset:0;z-index:9998;background:#0b3428;pointer-events:none}\n'
       + 'html.familyapp-auth-prepaint #login-screen{z-index:9999!important;background:#0b3428!important}\n'
       + 'html.familyapp-auth-prepaint #login-screen>*{visibility:hidden!important}\n'
+      + 'html.familyapp-auth-locked .app-header,html.familyapp-auth-locked .bottom-nav,html.familyapp-auth-locked .screen{visibility:hidden!important;pointer-events:none!important}\n'
+      + 'html.familyapp-auth-locked #login-screen,html.familyapp-auth-locked #household-onboarding{visibility:visible!important;pointer-events:auto!important}\n'
       + '</style>\n</head>');
   }
   if (!body.includes('loginBrandV7.css?v=2')) {
