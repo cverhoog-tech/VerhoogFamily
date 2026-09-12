@@ -2,14 +2,17 @@
 
 const https = require('https');
 
-const SOURCE = 'https://res.cloudinary.com/rg86slp4/image/upload/v1789163499/familyapp/brand/v6/icon-master.png';
+// Opaque full-bleed PWA master. The previous approved mark was visually fine in
+// the browser but could render as a dark/black Home Screen tile on iOS. This
+// master has a real forest-green background and no transparency.
+const SOURCE = 'https://res.cloudinary.com/rg86slp4/image/upload/v1789171320/familyapp/brand/v8/pwa-master.svg';
 const VARIANTS = Object.freeze({
-  '32': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_32,h_32,q_auto:best,f_png/v1789163499/familyapp/brand/v6/icon-master.png',
-  '180': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1789163499/familyapp/brand/v6/icon-master.png',
-  '192': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_192,h_192,q_auto:best,f_png/v1789163499/familyapp/brand/v6/icon-master.png',
-  '512': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1789163499/familyapp/brand/v6/icon-master.png',
-  'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_scale,w_392,h_392,q_auto:best/c_pad,w_512,h_512,b_rgb:0b3428,f_png/v1789163499/familyapp/brand/v6/icon-master.png',
-  'login': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1789163499/familyapp/brand/v6/icon-master.png'
+  '32': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_32,h_32,q_auto:best,f_png/v1789171320/familyapp/brand/v8/pwa-master.svg',
+  '180': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_180,h_180,q_auto:best,f_png/v1789171320/familyapp/brand/v8/pwa-master.svg',
+  '192': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_192,h_192,q_auto:best,f_png/v1789171320/familyapp/brand/v8/pwa-master.svg',
+  '512': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1789171320/familyapp/brand/v8/pwa-master.svg',
+  'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1789171320/familyapp/brand/v8/pwa-master.svg',
+  'login': 'https://res.cloudinary.com/rg86slp4/image/upload/c_fill,w_512,h_512,q_auto:best,f_png/v1789171320/familyapp/brand/v8/pwa-master.svg'
 });
 
 function pipeImage(url, res, redirectsLeft) {
@@ -29,7 +32,7 @@ function pipeImage(url, res, redirectsLeft) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('CDN-Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Disposition', 'inline; filename="familyapp-brand-v6.png"');
+    res.setHeader('Content-Disposition', 'inline; filename="familyapp-brand-v8.png"');
     upstream.pipe(res);
   }).on('error', function() {
     if (!res.headersSent) res.status(502).send('FamilyApp brand asset unavailable');
