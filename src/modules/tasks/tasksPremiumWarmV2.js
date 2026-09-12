@@ -1,5 +1,5 @@
 'use strict';
-// FamilyApp Tasks Premium Warm v2.2
+// FamilyApp Tasks Premium Warm v2.3
 // Presentation-only redesign matching the approved warm premium mock-up.
 // Canonical task state, persistence and mutations remain owned by TaskCompactHome / TaskDetailPopup.
 (function(){
@@ -12,6 +12,22 @@
   var groupFilter='all';
   var TASK_HERO_DEFAULT='https://res.cloudinary.com/rg86slp4/image/upload/v1788808948/familyapp-home-tasks-hero-v3.webp';
   var TASK_HERO_CLEANING='https://res.cloudinary.com/rg86slp4/image/upload/v1788809095/familyapp-home-cleaning-hero-v3.webp';
+  var TASK_PHOTO={
+    bathroom:'/src/assets/cleaning-rooms/bathroom-light.webp',
+    bedroom:'/src/assets/cleaning-rooms/bedroom-light.webp',
+    hall:'/src/assets/cleaning-rooms/hall-light.webp',
+    kids:'/src/assets/cleaning-rooms/kids-room-light.webp',
+    kitchen:'/src/assets/cleaning-rooms/kitchen-light.webp',
+    laundry:'/src/assets/cleaning-rooms/laundry-light.webp',
+    living:'/src/assets/cleaning-rooms/living-room-light.webp',
+    toilet:'/src/assets/cleaning-rooms/toilet-light.webp',
+    outside:'/src/assets/cleaning-rooms/outdoor-light.webp',
+    groceries:'/src/assets/task-heroes/market.webp',
+    garden:'/src/assets/task-heroes/garden.webp',
+    travel:'/src/assets/task-heroes/travel.webp',
+    home:'/src/assets/task-heroes/cozy-home.webp',
+    generic:'/src/assets/task-heroes/cozy-home.webp'
+  };
 
   function esc(value){
     return String(value==null?'':value)
@@ -29,10 +45,52 @@
     leaf:svg('<path d="M19.5 4.5C11 4.8 6.1 8.7 6.1 15.1c4.9.6 10.4-2.4 13.4-10.6Z"/><path d="M5 20c2.1-4.8 5.4-8 10.8-10.4"/>',20)
   };
 
+  function ensureFinishStyle(){
+    if(document.getElementById('tasks-premium-warm-v23-style'))return;
+    var style=document.createElement('style');
+    style.id='tasks-premium-warm-v23-style';
+    style.textContent='\n'
+      +'body[data-task-view="overview"] .tpw2-head h1{font-family:Georgia,"Times New Roman",serif!important;font-size:31px!important;font-weight:700!important;letter-spacing:-.025em!important}\n'
+      +'body[data-task-view="overview"] .tpw2-stats{gap:7px!important;border:0!important;border-radius:0!important;overflow:visible!important;background:transparent!important}\n'
+      +'body[data-task-view="overview"] .tpw2-stat{min-height:67px!important;padding:10px 11px!important;border:1px solid rgba(82,88,82,.10)!important;border-radius:13px!important;background:#fbfcf8!important;box-shadow:0 4px 14px rgba(43,52,47,.035)!important}\n'
+      +'body[data-task-view="overview"] .tpw2-stat--important{background:#fbf7ee!important}\n'
+      +'body[data-task-view="overview"] .tpw2-stat--overdue{background:#fbf1ef!important}\n'
+      +'body[data-task-view="overview"] .tpw2-quote{position:relative;display:grid;grid-template-columns:27px minmax(0,1fr);align-items:center;gap:9px;min-height:58px;margin:0 0 11px;padding:10px 13px;overflow:hidden;border:1px solid rgba(70,78,73,.10);border-radius:13px;background:#f0eee5;box-shadow:none}\n'
+      +'body[data-task-view="overview"] .tpw2-quote:after{content:"";position:absolute;inset:0 0 0 44%;pointer-events:none;background:linear-gradient(90deg,#f0eee5 0%,rgba(240,238,229,.78) 38%,rgba(240,238,229,.34) 100%),url("/src/assets/task-heroes/cozy-home.webp") center 58%/cover no-repeat;opacity:.64}\n'
+      +'body[data-task-view="overview"] .tpw2-quote-mark,body[data-task-view="overview"] .tpw2-quote-copy{position:relative;z-index:1}\n'
+      +'body[data-task-view="overview"] .tpw2-quote-mark{width:27px;height:27px;display:grid;place-items:center;color:#456653}\n'
+      +'body[data-task-view="overview"] .tpw2-quote-mark svg{width:23px;height:23px}\n'
+      +'body[data-task-view="overview"] .tpw2-quote-copy strong{display:block;color:#2e3b34;font:700 12px/1.15 Georgia,"Times New Roman",serif;letter-spacing:-.01em}\n'
+      +'body[data-task-view="overview"] .tpw2-quote-copy small{display:block;margin-top:3px;color:#717b75;font-size:8.5px;font-weight:550}\n'
+      +'body[data-task-view="overview"] .tpw2-filters{gap:0!important;padding:3px!important;border:1px solid rgba(76,84,79,.08)!important;border-radius:12px!important;background:#ece8df!important;overflow:visible!important}\n'
+      +'body[data-task-view="overview"] .tpw2-filter{flex:1 1 0!important;height:29px!important;padding:0 6px!important;border:0!important;border-radius:9px!important;background:transparent!important;color:#59645e!important;font-size:8.5px!important}\n'
+      +'body[data-task-view="overview"] .tpw2-filter.active{background:#3f604b!important;color:#fff!important;box-shadow:0 2px 7px rgba(47,82,62,.12)!important}\n'
+      +'body[data-task-view="overview"] .tch-group-head b{font-family:Georgia,"Times New Roman",serif!important;font-size:15.5px!important;font-weight:700!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row{min-height:64px!important;padding:7px 8px!important;grid-template-columns:21px 52px minmax(0,1fr) auto auto 10px!important;gap:6px!important;border-radius:13px!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row .tch-icon.tpw2-photo-thumb{width:52px!important;height:44px!important;min-width:52px!important;border:0!important;border-radius:9px!important;background-color:#ebe8e0!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;box-shadow:inset 0 0 0 1px rgba(44,54,48,.06)!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row .tch-icon.tpw2-photo-thumb svg,body[data-task-view="overview"] .tpw2-task-row .tch-icon.tpw2-photo-thumb>span{display:none!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row .tch-name{font-size:11.5px!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row .tch-chevron{display:block!important;grid-column:6!important;color:#9ca39f!important;font-size:12px!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row .tch-reward{grid-column:5!important}\n'
+      +'body[data-task-view="overview"] .tpw2-task-row .tch-avatars{grid-column:4!important}\n'
+      +'body[data-task-view="overview"] .tch-group.tpw2-empty-group{display:none!important}\n'
+      +'#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-title{font-family:Georgia,"Times New Roman",serif!important;font-size:22px!important;font-weight:700!important;letter-spacing:-.02em!important}\n'
+      +'#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-label,#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-head strong{font-family:Georgia,"Times New Roman",serif!important;font-size:12.5px!important;font-weight:700!important}\n'
+      +'#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-more-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;margin:8px 0 0!important}\n'
+      +'#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-more-row .tdp-more{width:100%!important;min-height:38px!important;margin:0!important;padding:0 10px!important;border:1px solid rgba(62,75,68,.22)!important;border-radius:11px!important;background:rgba(255,255,255,.72)!important;color:#2c3932!important;font-size:9.5px!important;font-weight:650!important}\n'
+      +'@media(max-width:390px){body[data-task-view="overview"] .tpw2-task-row{grid-template-columns:20px 46px minmax(0,1fr) auto auto 9px!important;gap:5px!important}body[data-task-view="overview"] .tpw2-task-row .tch-icon.tpw2-photo-thumb{width:46px!important;height:40px!important;min-width:46px!important}body[data-task-view="overview"] .tpw2-task-row .tch-avatars{display:none!important}}\n'
+      +'[data-theme*="dark"] body[data-task-view="overview"] .tpw2-stat{background:#14231d!important;border-color:#304039!important}[data-theme*="dark"] body[data-task-view="overview"] .tpw2-stat--important{background:#1c241d!important}[data-theme*="dark"] body[data-task-view="overview"] .tpw2-stat--overdue{background:#281d1b!important}\n'
+      +'[data-theme*="dark"] body[data-task-view="overview"] .tpw2-quote{background:#15231d!important;border-color:#304039!important}[data-theme*="dark"] body[data-task-view="overview"] .tpw2-quote:after{background:linear-gradient(90deg,#15231d 0%,rgba(21,35,29,.82) 44%,rgba(21,35,29,.34) 100%),url("/src/assets/task-heroes/cozy-home.webp") center 58%/cover no-repeat!important;opacity:.48}[data-theme*="dark"] body[data-task-view="overview"] .tpw2-quote-copy strong{color:#eef3f0!important}[data-theme*="dark"] body[data-task-view="overview"] .tpw2-quote-copy small{color:#aab5ae!important}\n';
+    document.head.appendChild(style);
+  }
+
   function overviewActive(){
     return !!(document.body&&document.body.getAttribute('data-task-view')==='overview');
   }
   function canonicalTasks(){return Array.isArray(window.taskData)?window.taskData:[];}
+  function taskById(id){
+    return canonicalTasks().find(function(task){return String(task&&task.id||'')===String(id||'');})||null;
+  }
   function localDay(value){
     if(!value)return null;
     var d=new Date(String(value)+'T00:00:00');
@@ -72,6 +130,12 @@
       +statCard('open','open taken',data.open,ICON.list)
       +statCard('important','belangrijk',data.important,ICON.star)
       +statCard('overdue','verlopen',data.overdue,ICON.clock)
+      +'</section>';
+  }
+  function quoteHtml(){
+    return '<section class="tpw2-quote" aria-label="FamilyApp gedachte">'
+      +'<span class="tpw2-quote-mark">'+ICON.leaf+'</span>'
+      +'<span class="tpw2-quote-copy"><strong>Kleine taken, een rustiger thuis</strong><small>Samen maken we tijd voor wat echt telt.</small></span>'
       +'</section>';
   }
   function filterHtml(){
@@ -116,7 +180,9 @@
     var any=false;
     groups.forEach(function(group){
       var name=group.getAttribute('data-life-group')||'';
-      var show=groupFilter==='all'||name===groupFilter;
+      var hasTasks=!!group.querySelector('.tch-row,.tch-party-card');
+      group.classList.toggle('tpw2-empty-group',!hasTasks);
+      var show=hasTasks&&(groupFilter==='all'||name===groupFilter);
       group.classList.toggle('tpw2-filter-hidden',!show);
       if(show)any=true;
     });
@@ -130,6 +196,36 @@
     }
     empty.hidden=any;
   }
+  function taskHeroSource(task){
+    if(!task)return'';
+    try{
+      if(window.TaskModel&&typeof TaskModel.getImage==='function'){
+        var modelImage=TaskModel.getImage(task);
+        if(modelImage)return String(modelImage);
+      }
+    }catch(e){}
+    return String(task.heroImage||task.img||task.imageUrl||task.image||task.photo||task.cover||'');
+  }
+  function taskPhotoKey(task){
+    var raw=String(task&&(task.category||task.type||task.title)||'').toLowerCase();
+    if(/badkamer|bathroom|douche/.test(raw))return'bathroom';
+    if(/toilet|wc/.test(raw))return'toilet';
+    if(/kinderkamer|kids|speelgoed|kind|toy/.test(raw))return'kids';
+    if(/woonkamer|living/.test(raw))return'living';
+    if(/slaapkamer|bedroom/.test(raw))return'bedroom';
+    if(/hal|entree|hall/.test(raw))return'hall';
+    if(/was|laundry|vouw|kleding/.test(raw))return'laundry';
+    if(/bood|supermarkt|grocer|market/.test(raw))return'groceries';
+    if(/keuken|kitchen|koken|vaat/.test(raw))return'kitchen';
+    if(/tuin|garden/.test(raw))return'garden';
+    if(/buiten|outside/.test(raw))return'outside';
+    if(/reis|travel|vakantie/.test(raw))return'travel';
+    if(/schoon|clean|dweil|stof|poets/.test(raw))return'home';
+    return'generic';
+  }
+  function taskPhotoSource(task){
+    return taskHeroSource(task)||TASK_PHOTO[taskPhotoKey(task)]||TASK_PHOTO.generic;
+  }
   function decorateRows(page){
     page.querySelectorAll('.tch-row').forEach(function(row){
       row.classList.add('tpw2-task-row');
@@ -137,11 +233,27 @@
       if(reward&&!reward.getAttribute('aria-label'))reward.setAttribute('aria-label','Taakbeloning');
       var name=row.querySelector('.tch-name');
       if(name)name.setAttribute('title',name.textContent.trim());
+
+      var task=taskById(row.getAttribute('data-task-id'));
+      var thumb=row.querySelector('.tch-icon');
+      if(thumb&&task){
+        var src=taskPhotoSource(task);
+        thumb.classList.add('tpw2-photo-thumb');
+        if(thumb.dataset.tpw2Photo!==src){
+          thumb.dataset.tpw2Photo=src;
+          thumb.style.backgroundImage='url("'+src.replace(/"/g,'%22')+'")';
+          thumb.setAttribute('aria-hidden','true');
+        }
+      }
+      row.querySelectorAll('.tch-meta span').forEach(function(meta){
+        if(/\b(stap|stappen)\b/i.test(meta.textContent||''))meta.style.display='none';
+      });
     });
   }
   function decorateOverview(){
     queued=false;
     if(!overviewActive())return;
+    ensureFinishStyle();
     var content=document.getElementById('task-content');
     var page=content&&content.querySelector('.tch-page');
     if(!page)return;
@@ -158,10 +270,19 @@
       var currentHead=page.querySelector('.tpw2-head');
       if(currentHead)currentHead.insertAdjacentHTML('afterend',summaryHtml(data));
     }
+    var quote=page.querySelector('.tpw2-quote');
+    if(!quote){
+      var currentStats=page.querySelector('.tpw2-stats');
+      if(currentStats)currentStats.insertAdjacentHTML('afterend',quoteHtml());
+    }
     var filters=page.querySelector('.tpw2-filters');
     if(!filters){
-      var currentStats=page.querySelector('.tpw2-stats');
-      if(currentStats)currentStats.insertAdjacentHTML('afterend',filterHtml());
+      var currentQuote=page.querySelector('.tpw2-quote');
+      if(currentQuote)currentQuote.insertAdjacentHTML('afterend',filterHtml());
+      else{
+        var currentStats2=page.querySelector('.tpw2-stats');
+        if(currentStats2)currentStats2.insertAdjacentHTML('afterend',filterHtml());
+      }
     }
     bindOverview(page);
     decorateRows(page);
@@ -190,16 +311,6 @@
     if(/laag|low/.test(p))return'Lage prioriteit';
     return'Normale prioriteit';
   }
-  function taskHeroSource(task){
-    if(!task)return'';
-    try{
-      if(window.TaskModel&&typeof TaskModel.getImage==='function'){
-        var modelImage=TaskModel.getImage(task);
-        if(modelImage)return String(modelImage);
-      }
-    }catch(e){}
-    return String(task.heroImage||task.img||task.imageUrl||task.image||task.photo||task.cover||'');
-  }
   function cleaningLikeTask(task){
     var raw=String(task&&(task.category||task.type||task.title)||'').toLowerCase();
     return /schoon|clean|badkamer|toilet|dweil|stof|poets/.test(raw);
@@ -212,12 +323,14 @@
       hero.classList.remove('tpw2-fallback-photo');
       return;
     }
-    var cleaning=cleaningLikeTask(task);
+    var src=taskPhotoSource(task);
+    if(!src)src=cleaningLikeTask(task)?TASK_HERO_CLEANING:TASK_HERO_DEFAULT;
     hero.classList.add('tpw2-fallback-photo');
-    hero.style.backgroundImage='url("'+(cleaning?TASK_HERO_CLEANING:TASK_HERO_DEFAULT)+'")';
-    hero.style.backgroundPosition=cleaning?'center 57%':'center 62%';
+    hero.style.backgroundImage='url("'+src.replace(/"/g,'%22')+'")';
+    hero.style.backgroundPosition='center 56%';
   }
   function detailEnhancements(card){
+    ensureFinishStyle();
     if(card.querySelector('.tdp-title-input')){card.classList.add('tpw2-create-card');return;}
     card.classList.add('tpw2-detail-card');
     var task=findTaskForDetail(card);
@@ -268,6 +381,8 @@
 
     var more=card.querySelector('#tdp-more-btn');
     if(more){more.textContent=more.textContent.indexOf('Minder')===0?'Bewerken sluiten':'Bewerken';more.classList.add('tpw2-edit-action');}
+    var postpone=card.querySelector('#tdp-postpone-btn');
+    if(postpone){postpone.textContent='Uitstellen';postpone.classList.add('tpw2-postpone-action');}
     var cta=card.querySelector('#tdp-complete-btn');
     if(cta&&cta.classList.contains('active')&&!cta.classList.contains('done-state'))cta.textContent='Markeer als klaar';
   }
@@ -295,6 +410,7 @@
     queueOverview();
   }
   function boot(){
+    ensureFinishStyle();
     observeOverview();
     observePopup();
     ['familyapp:tasks-updated','familyapp:household-identity-synced','familyapp:session-state'].forEach(function(name){window.addEventListener(name,queueOverview);});
@@ -303,6 +419,6 @@
     });
   }
 
-  window.TasksPremiumWarmV2={version:'2.2.0',decorateOverview:decorateOverview,decoratePopup:decoratePopup,summary:summary};
+  window.TasksPremiumWarmV2={version:'2.3.0',decorateOverview:decorateOverview,decoratePopup:decoratePopup,summary:summary};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
