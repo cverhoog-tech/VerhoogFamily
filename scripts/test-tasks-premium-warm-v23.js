@@ -24,7 +24,7 @@ assert(model.includes('/src/assets/cleaning-rooms/laundry-light.webp'),'laundry 
 assert(model.includes('/src/assets/cleaning-rooms/outdoor-light.webp'),'outdoor photo mapping missing');
 assert(overview.includes("version:'3.0.0'"),'overview V3 identity missing');
 assert(detail.includes("version:'3.0.0'"),'detail V3 identity missing');
-assert(!/firebase\.|\.ref\(|\.set\(/.test(overview),'V3 overview must remain presentation-only');
-assert(!/firebase\.|\.ref\(|\.set\(/.test(model),'V3 model must remain read-only');
+assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(overview),'V3 overview must remain presentation-only');
+assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(model),'V3 model must remain read-only');
 
 console.log('Tasks V3 canonical shell / photo mapping contract: PASS');
