@@ -23,7 +23,7 @@ assert(model.includes('/src/assets/task-heroes/market.webp'),'grocery photo mapp
 assert(model.includes('/src/assets/cleaning-rooms/laundry-light.webp'),'laundry photo mapping missing');
 assert(model.includes('/src/assets/cleaning-rooms/outdoor-light.webp'),'outdoor photo mapping missing');
 assert(overview.includes("version:'3.0.0'"),'overview V3 identity missing');
-assert(detail.includes("version:'3.0.0'"),'detail V3 identity missing');
+assert(detail.includes("var VERSION='3.0.1'"),'hardened detail V3 identity missing');
 assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(overview),'V3 overview must remain presentation-only');
 assert(!/TaskSharedData\.(update|create|remove)|\.set\(|\.ref\([^)]*\)\.(set|update|remove)/.test(model),'V3 model must remain read-only');
 
