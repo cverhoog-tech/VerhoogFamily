@@ -37,6 +37,13 @@
     }catch(e){}
   }
   function sessionRoot(){return document&&document.documentElement||null;}
+  function releaseFirstPaintGuard(){
+    var root=sessionRoot();
+    if(root&&root.classList){
+      root.classList.remove('familyapp-session-pending');
+      root.classList.remove('familyapp-auth-prepaint');
+    }
+  }
   function claimStartupReveal(){
     // The old index fallback checks only _appStarted. Claim it immediately so
     // it cannot reveal Home from stale localStorage before Firebase + household
@@ -47,6 +54,10 @@
     var returning=false;
     try{returning=!!localStorage.getItem('familyapp-profile-name-v1');}catch(e){}
     var root=sessionRoot();
+    // Keep the underlying app shell guarded until Firebase has definitively
+    // resolved either signed-out or ready. The server shell applies this class
+    // before first paint; adding it here also protects direct/dev entrypoints.
+    if(root&&root.classList)root.classList.add('familyapp-auth-prepaint');
     if(returning&&root&&root.classList)root.classList.add('familyapp-session-pending');
     var el=document.getElementById('login-screen');
     if(el){
@@ -55,7 +66,7 @@
     }
   }
   function loginScreen(show){
-    var root=sessionRoot();if(root&&root.classList)root.classList.remove('familyapp-session-pending');
+    releaseFirstPaintGuard();
     var el=document.getElementById('login-screen');
     if(el){
       el.style.opacity='1';
@@ -81,6 +92,9 @@
     if(typeof window.startFirebaseSync==='function')window.startFirebaseSync();
     if(window.NotificationStore&&typeof window.NotificationStore.ensureSubscription==='function')window.NotificationStore.ensureSubscription();
     if(typeof window.setupPushNotifications==='function')window.setupPushNotifications();
+    // Keep the first-paint guard in place while Home is being rendered. Release
+    // it on the next frame together with the login overlay so no private/app UI
+    // can appear for a frame before auth readiness is established.
     var finish=function(){if(!isCurrent(generation,user))return;loginScreen(false);setState('ready');};
     if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(finish);else finish();
   }
@@ -182,7 +196,7 @@
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
-  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;var root=sessionRoot();if(root&&root.classList)root.classList.remove('familyapp-session-pending');setState('stopped');}
+  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;releaseFirstPaintGuard();setState('stopped');}
 
   window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};
