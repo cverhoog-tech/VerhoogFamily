@@ -54,5 +54,5 @@ assert(shell.includes("replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.j
 assert(shell.includes("authenticatedSessionController.js?v=5"),'served root shell must bust the lifecycle-safe session controller cache');
 assert(routes.includes('"dest": "/api/app-v7"'),'Vercel root must route through the native v7 shell');
 assert(manifest.includes('"theme_color": "#0b3428"'),'PWA theme must match deep-pine brand');
-assert(manifest.includes('/?brand=v8'),'PWA start URL must identify the current v8 icon/cache generation');
+assert(manifest.includes('/?brand=v9'),'PWA start URL must identify the current v9 icon/cache generation');
 console.log('FamilyApp native login brand v7.1 + signed-out resume guard contract OK');
