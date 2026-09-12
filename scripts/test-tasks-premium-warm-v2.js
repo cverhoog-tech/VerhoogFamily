@@ -11,11 +11,15 @@ const detail=read('src/modules/tasks/taskDetailPopup.js');
 assert(css.includes('--tpw2-bg:#f7f3ea'),'approved warm ivory token missing');
 assert(css.includes('--tpw2-pine:#244f3e'),'approved pine token missing');
 assert(css.includes('.tpw2-head'),'v2 task overview header styling missing');
-assert(css.includes('.tpw2-stats'),'v2 summary cards styling missing');
+assert(css.includes('.tpw2-stats'),'v2 summary strip styling missing');
 assert(css.includes('.tpw2-task-row'),'v2 task row styling missing');
 assert(css.includes('#tdp-overlay.tpw2-overlay'),'v2 task detail sheet styling missing');
 assert(css.includes('.tpw2-create-card'),'create/edit styling must remain in the same family');
 assert(css.includes('[data-theme*="dark"]'),'dark mode fallback missing');
+assert(css.includes('min-height:58px'),'overview must stay compact rather than card-heavy');
+assert(css.includes('box-shadow:none'),'quiet premium treatment should avoid decorative shadow stacking');
+assert(css.includes('.tdp-icon-ring{display:none'),'detail sheet must remove legacy fantasy badge chrome');
+assert(css.includes('.tdp-hero:after{display:none'),'detail sheet must remove legacy hero overlay');
 
 assert(ui.includes('window.__tasksPremiumWarmV2=true'),'v2 decorator guard missing');
 assert(ui.includes('Array.isArray(window.taskData)?window.taskData:[]'),'v2 must read canonical taskData');
@@ -28,7 +32,7 @@ assert(!/firebase\.|\.set\(|TaskSharedData\.update|TaskSharedData\.create|taskDa
 
 assert(compact.includes('data-task-id'),'TaskCompactHome must remain the canonical overview owner');
 assert(detail.includes('TaskSharedData.update'),'TaskDetailPopup must remain the mutation owner');
-assert(shell.includes('/src/styles/tasksPremiumWarmV2.css?v=1'),'served shell must include warm v2 stylesheet');
+assert(shell.includes('/src/styles/tasksPremiumWarmV2.css?v=2'),'served shell must include quiet premium v2.1 stylesheet');
 assert(shell.includes('/src/modules/tasks/tasksPremiumWarmV2.js?v=1'),'served shell must include warm v2 decorator');
 
-console.log('Tasks premium warm v2 presentation contract: PASS');
+console.log('Tasks premium warm v2.1 presentation contract: PASS');
