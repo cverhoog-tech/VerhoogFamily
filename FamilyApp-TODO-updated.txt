@@ -1,6 +1,6 @@
 ## FamilyApp - actuele TODO / roadmap
 
-Laatst bijgewerkt: 13-09-2026 01:30
+Laatst bijgewerkt: 13-09-2026 — feedbackronde 2 toegevoegd
 
 # Branch- en baseline-regels
 
@@ -144,6 +144,86 @@ Status: **AFGEROND / GEACCEPTEERD**
 - tap opent bestaande Cleaning-flow;
 - Agenda blijft read/projectielaag;
 - `CleaningOccurrence` blijft canonical authority.
+
+## MILESTONE H — Feedbackronde recepten / boodschappen / Meer-menu
+Status: **OPEN — NIEUWE ACTUELE FEEDBACK 13-09-2026**
+
+### H1 — Receptfoto uit fotobibliotheek wordt niet zichtbaar
+Type: **FUNCTIONELE BUG / RECEPTEN**
+Prioriteit: **ZEER HOOG**
+
+Actuele observatie:
+- in Recepten kan een foto uit de iPhone-fotobibliotheek worden geselecteerd;
+- na selectie verschijnt de gekozen foto niet zichtbaar in de receptkaart/editor, waardoor niet duidelijk is of de upload daadwerkelijk is verwerkt.
+
+Bestaande architectuur die behouden moet blijven:
+- `RecipeStore` blijft canonical write facade;
+- `RecipeHouseholdRepository` blijft persistence/listener owner;
+- geen tweede recipe writer of lokale parallelle recipe database introduceren.
+
+Te onderzoeken / oplossen:
+- photo picker → FileReader/preview flow op iPhone/Safari/PWA;
+- onmiddellijke lokale preview na selectie moet altijd zichtbaar zijn;
+- bestandstype/HEIC/JPEG/PNG gedrag controleren;
+- grote iPhone-foto's vóór persistence client-side resizen/comprimeren zodat ze binnen de bestaande recipe photo-limiet passen of een expliciete duurzame opslagroute krijgen;
+- duidelijke foutmelding wanneer een bestand niet kan worden verwerkt in plaats van stil niets te tonen;
+- na opslaan + opnieuw openen moet exact dezelfde foto terugkomen in grid, detail en editor;
+- create én edit flow testen.
+
+Acceptatie:
+- foto kiezen uit bibliotheek → direct preview zichtbaar;
+- recept opslaan → foto blijft behouden;
+- recept sluiten/heropenen → foto nog zichtbaar;
+- geen silent failure bij grote of afwijkende afbeeldingen.
+
+### H2 — Boodschappen: onderscheidende automatische producticonen
+Type: **UX / PRODUCTHERKENNING / ICONOGRAFIE**
+Prioriteit: **HOOG**
+
+Doel:
+- productherkenning moet niet alleen een brede categorie opleveren, maar visueel duidelijk onderscheidende iconen tonen voor veelgebruikte productfamilies.
+
+Minimaal expliciet toevoegen/verfijnen:
+- **Kruiden/specerijen** → herkenbaar kruidenpotje / spice icon;
+- **Drinken** → fles/beker; waar mogelijk water/fris/sap/koffie/thee verder onderscheiden;
+- **Sauzen** → saus-/knijpflesicon;
+- **Diepvries** → duidelijke freezer/sneeuwvlok-identiteit;
+- **Frituur** → friet/frituurmand-identiteit, niet generieke voorraad;
+- **Vlees** → duidelijke steak/meat-identiteit;
+- **Zuivel** → melkpak/fles-identiteit, met kaas/eieren waar al specifiek herkend.
+
+Technische richting:
+- `FamilyAppProductLexicon` blijft centrale naamherkenning;
+- `GroceryProductClassifier` blijft category/classification facade;
+- `FamilyAppUtilityIconResolver` blijft presentation resolver;
+- liever nieuwe product-family icon keys en lexiconregels dan categorieën kunstmatig opsplitsen wanneer de canonical categorie gelijk kan blijven;
+- bestaande specifieke herkenning voor groente/fruit/kip/vis/kaas/eieren/etc. niet regressieren;
+- Nederlandse productnamen, meervouden en gangbare supermarktbenamingen meenemen.
+
+Acceptatie:
+- testset met minimaal kruiden, drinken, saus, diepvries, frituur, vlees en zuivel levert duidelijk verschillende iconen op;
+- handmatig toegevoegde en uit recepten overgenomen boodschappen gebruiken dezelfde resolver;
+- onbekende producten behouden nette generieke fallback.
+
+### H3 — Meer-menu sluit niet bij tik buiten menu
+Type: **INTERACTIEBUG / NAVIGATIE**
+Prioriteit: **HOOG**
+
+Actuele observatie:
+- wanneer het `Meer`-menu/lint geopend is, blijft het open staan als buiten het menu wordt getikt.
+
+Gewenst gedrag:
+- tik op backdrop / ieder punt buiten het menu sluit het menu direct;
+- tik binnen het menu activeert de gekozen optie en mag niet doorlekken naar backdrop-close vóór de actie;
+- opnieuw op `Meer` tikken mag togglen/sluiten;
+- scherm-/modulewisseling sluit een nog open Meer-menu;
+- Escape op desktop mag eveneens sluiten;
+- geen document-wide click owner toevoegen die andere modules of popupflows stoort; event ownership scopebaar houden.
+
+Acceptatie:
+- open Meer → tik buiten → direct dicht;
+- open Meer → kies item → item opent één keer en menu verdwijnt;
+- geen ghost taps/dubbele navigatie op iPhone.
 
 # STEP 14 — Schoonmaken v2
 
@@ -348,30 +428,40 @@ Status: **LATER RICHTING PUBLIEKE RELEASE**
 
 # Nu daadwerkelijk nog te doen — geprioriteerde volgorde
 
-1. **Cleaning V2.1 multi-user verificatie**
+1. **Receptfoto upload/preview bug oplossen**
+   - iPhone library-selectie moet direct previewen én na opslaan blijven staan;
+   - size/type handling robuust maken.
+
+2. **Meer-menu outside-tap bug oplossen**
+   - backdrop/outside tap sluit direct zonder ghost taps of dubbele navigatie.
+
+3. **Boodschappen producticonen uitbreiden**
+   - specifieke automatische herkenning/iconen voor kruiden, drinken, sauzen, diepvries, frituur, vlees en zuivel.
+
+4. **Cleaning V2.1 multi-user verificatie**
    - A/B/C flows echt op meerdere accounts/apparaten testen.
 
-2. **Cleaning V2.2 + V2.2.1 real-device acceptatie**
+5. **Cleaning V2.2 + V2.2.1 real-device acceptatie**
    - Historie, aandachtstates, premium detail, Benodigdheden en Shopping handoff volledig doorlopen in light + dark.
 
-3. **Cleaning V2.3 functionele hardening**
+6. **Cleaning V2.3 functionele hardening**
    - incomplete beurt, verplaatsen, ander persoon/moment, lifecycle/idempotency/projection safety.
 
-4. **Cleaning V2.4 brede premium consistency**
+7. **Cleaning V2.4 brede premium consistency**
    - laatste Cleaning-states visueel gelijk trekken en assets verfijnen.
 
-5. **STEP 15 release/auth afronding**
+8. **STEP 15 release/auth afronding**
    - Apple provider/config;
    - auth E2E;
    - PWA/App Store/native releasechecks.
 
-6. **Party Quest actuele status verifiëren**
+9. **Party Quest actuele status verifiëren**
    - alleen fixen wanneer nog reproduceerbaar.
 
-7. **Internationalisatie**
+10. **Internationalisatie**
    - centrale i18n na functionele stabiliteit.
 
-8. **Release/security hardening**
+11. **Release/security hardening**
    - rules/rollen, release smoke tests en store-readiness.
 
 # Afgerond — niet automatisch heropenen
