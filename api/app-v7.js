@@ -28,12 +28,12 @@ module.exports = async function handler(req, res) {
   }
 
   body = body
-    .replaceAll('/api/brand-icon?variant=192&v=5', '/api/brand-icon?variant=192&v=7')
-    .replaceAll('/api/brand-icon?variant=180&v=5', '/api/brand-icon?variant=180&v=7')
-    .replaceAll('/api/brand-icon?variant=32&v=5', '/api/brand-icon?variant=32&v=7')
-    .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=7-login1')
-    .replaceAll('manifest.json?v=5', 'manifest.json?v=7')
-    .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=9')
+    .replaceAll('/api/brand-icon?variant=192&v=5', '/api/brand-icon?variant=192&v=8')
+    .replaceAll('/api/brand-icon?variant=180&v=5', '/api/brand-icon?variant=180&v=8')
+    .replaceAll('/api/brand-icon?variant=32&v=5', '/api/brand-icon?variant=32&v=8')
+    .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=8-login1')
+    .replaceAll('manifest.json?v=5', 'manifest.json?v=8')
+    .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
   if (!body.includes('loginBrandV7.css?v=2')) {
@@ -41,6 +41,12 @@ module.exports = async function handler(req, res) {
   }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
+  }
+  if (!body.includes('pwaIconV8.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/pwaIconV8.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('cleaningMoreMenuIcon.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/cleaningMoreMenuIcon.js?v=1"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
