@@ -57,6 +57,9 @@ module.exports = async function handler(req, res) {
   if (!body.includes('tasksV3Polish.css?v=2')) {
     body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3Polish.css?v=2">\n</head>');
   }
+  if (!body.includes('tasksV3InteractionPolish.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3InteractionPolish.css?v=1">\n</head>');
+  }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
