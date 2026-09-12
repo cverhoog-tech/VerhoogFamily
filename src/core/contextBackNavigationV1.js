@@ -7,7 +7,7 @@
 (function(){
   if(window.ContextBackNavigationV1)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.0.1';
   var stack=[];
   var MAX_DEPTH=12;
   var rootIntent=false;
@@ -119,7 +119,10 @@
   }
 
   function start(){
+    // pointerdown covers touch/mouse immediately; click also covers keyboard,
+    // assistive-tech and synthetic activations without relying on event timing.
     document.addEventListener('pointerdown',markRootNavigation,true);
+    document.addEventListener('click',markRootNavigation,true);
     if(wrapRouter())return;
     var attempts=0,timer=window.setInterval(function(){attempts++;if(wrapRouter()||attempts>120)window.clearInterval(timer);},50);
   }
