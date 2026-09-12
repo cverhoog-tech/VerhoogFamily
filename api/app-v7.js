@@ -51,14 +51,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('loginBrandV7.css?v=2')) {
     body = body.replace('</head>', '  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>\n  <link rel="stylesheet" href="/src/styles/loginBrandV7.css?v=2">\n</head>');
   }
-  if (!body.includes('tasksPremiumModernV1.css?v=1')) {
-    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksPremiumModernV1.css?v=1">\n  <link rel="stylesheet" href="/src/styles/tasksPremiumModernV1Components.css?v=1">\n</head>');
-  }
-  if (!body.includes('tasksPremiumWarmV2.css?v=2')) {
-    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksPremiumWarmV2.css?v=2">\n</head>');
-  }
-  if (!body.includes('tasksCleaningDetailV3.css?v=1')) {
-    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksCleaningDetailV3.css?v=1">\n</head>');
+  if (!body.includes('tasksV3.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3.css?v=1">\n</head>');
   }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
@@ -69,11 +63,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('cleaningMoreMenuIcon.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/cleaningMoreMenuIcon.js?v=1"></script>\n</body>');
   }
-  if (!body.includes('tasksPremiumModernV1.js?v=1')) {
-    body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumModernV1.js?v=1"></script>\n</body>');
-  }
-  if (!body.includes('tasksPremiumWarmV2.js?v=3')) {
-    body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumWarmV2.js?v=3"></script>\n</body>');
+  if (!body.includes('taskPresentationModelV3.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskPresentationModelV3.js?v=1"></script>\n  <script src="/src/modules/tasks/v3/taskOverviewV3.js?v=1"></script>\n  <script src="/src/modules/tasks/v3/taskDetailV3.js?v=1"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
