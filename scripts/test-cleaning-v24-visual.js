@@ -9,7 +9,7 @@ const lifecycle=read('src/core/familyappFeedbackRound4.js');
 const css=read('src/styles/cleaning-v24.css');
 const screen=read('src/modules/cleaning/cleaningScreen.js');
 ok(bridge.includes("CleaningV24Visual=Object.freeze({version:'2.4.0',presentationOnly:true})"),'V2.4 presentation marker missing');
-ok(bridge.includes("cleaning-v24.css?v=1"),'V2.4 stylesheet is not lazy-loaded by the presentation bridge');
+ok(bridge.includes("cleaning-v24.css?v=2"),'V2.4 stylesheet is not lazy-loaded by the presentation bridge');
 ok(bridge.includes("CleaningPremiumFeedback=Object.freeze({version:'2.2.1'"),'Accepted V2.2.1 compatibility marker changed');
 ok(!/import\s*(?:\(|['"])/.test(bridge),'V2.4 presentation bridge must not import Cleaning runtime companions');
 ok(lifecycle.includes("cleaningCompanionLoader.js?v=1"),'Functional Cleaning companions must load separately from V2.4 presentation');

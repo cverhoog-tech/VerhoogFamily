@@ -118,7 +118,7 @@
   function primeAssets(){
     preloadLink('modulepreload','/src/modules/cleaning/cleaningScreen.js?v=1');
     preloadLink('modulepreload','/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');
-    preloadLink('preload','/src/styles/cleaning.css?v=1','style');
+    preloadLink('preload','/src/styles/cleaning.css?v=2','style');
     Object.keys(HERO).forEach(function(key){try{var img=new Image();img.decoding='async';img.src=HERO[key].url;}catch(error){}});
   }
   function warmCleaning(){

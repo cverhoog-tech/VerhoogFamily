@@ -6,7 +6,7 @@
   var link=document.createElement('link');
   link.id='cleaning-v24-css';
   link.rel='stylesheet';
-  link.href='/src/styles/cleaning-v24.css?v=1';
+  link.href='/src/styles/cleaning-v24.css?v=2';
   document.head.appendChild(link);
 })();
 

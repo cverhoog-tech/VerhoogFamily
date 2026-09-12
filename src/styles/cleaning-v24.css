@@ -138,10 +138,10 @@
 #screen-cleaning .cv2-turn-photo{
   width:104px;
   flex-basis:104px;
-  background-image:linear-gradient(90deg,rgba(5,6,8,.02),rgba(5,6,8,.22)),url('/src/assets/cleaning-rooms/room-atlas-light.webp');
+  background-image:linear-gradient(90deg,rgba(5,6,8,.02),rgba(5,6,8,.22)),var(--cv2-room-photo);
 }
 [data-theme*="dark"] #screen-cleaning .cv2-turn-photo{
-  background-image:linear-gradient(90deg,rgba(2,5,8,.03),rgba(2,5,8,.30)),url('/src/assets/cleaning-rooms/room-atlas-dark.webp');
+  background-image:linear-gradient(90deg,rgba(2,5,8,.03),rgba(2,5,8,.30)),var(--cv2-room-photo);
 }
 #screen-cleaning .cv2-turn-copy{padding:13px 12px}
 #screen-cleaning .cv2-turn-copy>span{color:var(--cv24-violet);font-size:9px;font-weight:820}
@@ -169,10 +169,10 @@
   width:100%;
   height:112px;
   display:block;
-  background-image:linear-gradient(180deg,rgba(5,6,8,.01),rgba(5,6,8,.20)),url('/src/assets/cleaning-rooms/room-atlas-light.webp');
+  background-image:linear-gradient(180deg,rgba(5,6,8,.01),rgba(5,6,8,.20)),var(--cv2-room-photo);
 }
 [data-theme*="dark"] #screen-cleaning .cv2-room-photo{
-  background-image:linear-gradient(180deg,rgba(2,5,8,.02),rgba(2,5,8,.27)),url('/src/assets/cleaning-rooms/room-atlas-dark.webp');
+  background-image:linear-gradient(180deg,rgba(2,5,8,.02),rgba(2,5,8,.27)),var(--cv2-room-photo);
 }
 #screen-cleaning .cv2-room-copy{padding:11px 12px 13px}
 #screen-cleaning .cv2-room-copy>strong{margin:0 22px 3px 0;color:var(--cv24-text);font-size:14px;letter-spacing:-.012em}

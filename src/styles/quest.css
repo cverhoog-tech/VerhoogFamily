@@ -1,6 +1,6 @@
 /* FamilyApp stylesheet entrypoint. Keep legacy quest styling intact, then layer Cleaning premium visuals. */
 @import url('./quest.legacy.css');
-@import url('./cleaning-room-premium.css?v=20260906-1');
+@import url('./cleaning-room-premium.css?v=20260912-1');
 @import url('./familyapp-feedback-round2.css?v=20260907-1');
 
 /* Returning signed-in users should not see the login screen flash while Firebase restores the session. */
