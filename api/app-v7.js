@@ -38,6 +38,14 @@ module.exports = async function handler(req, res) {
     .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=5')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
+  // Remove the old global Gemini/AI floating panel from the served app shell.
+  // It was a legacy experiment and should not appear on any screen anymore.
+  const aiPanelStart = body.indexOf('<!-- AI PANEL (floating, per screen) -->');
+  const aiPanelEnd = body.indexOf('<!-- ACHIEVEMENTS -->', aiPanelStart);
+  if (aiPanelStart !== -1 && aiPanelEnd !== -1) {
+    body = body.slice(0, aiPanelStart) + body.slice(aiPanelEnd);
+  }
+
   if (!body.includes('familyapp-auth-first-paint')) {
     body = body.replace('</head>', '  <style id="familyapp-auth-first-paint">\n'
       + 'html.familyapp-auth-prepaint,html.familyapp-auth-prepaint body{background:#0b3428!important}\n'
@@ -60,8 +68,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('tasksV3InteractionPolish.css?v=1')) {
     body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3InteractionPolish.css?v=1">\n</head>');
   }
-  if (!body.includes('tasksV3DarkPremium.css?v=1')) {
-    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3DarkPremium.css?v=1">\n</head>');
+  if (!body.includes('tasksV3DarkPremium.css?v=2')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3DarkPremium.css?v=2">\n</head>');
   }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
