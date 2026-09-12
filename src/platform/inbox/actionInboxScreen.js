@@ -1,32 +1,69 @@
 'use strict';
 // ============================================================
-// ACTION INBOX SCREEN v1.0.0
-// Functional premium basis (Fase 5): compact cards, clear primary/secondary
-// actions, dark/light aware, 44x44 targets, loading/error/empty states.
-// Definitive visual polish is deliberately deferred to a later pass.
-//
-// This screen only renders ActionInboxStore output and calls
-// ActionInboxStore.runAction(id, actionId) — it never talks to a domain
-// runtime directly and never stores its own request state.
+// ACTION INBOX SCREEN v1.1.1
+// Compact decision cards. This screen only renders ActionInboxStore output and
+// calls ActionInboxStore.runAction(); it never owns domain request state.
+// Cleaning decisions are hydrated on demand when Inbox opens, never at app
+// startup, and the temporary Cleaning repository listener is torn down after
+// the first fresh household snapshot.
 // ============================================================
 (function(){
   if(window.ActionInboxScreen)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.1';
   var busyId=null;
   var errorMessage='';
+  var cleaningHydratePromise=null;
 
   var DOMAIN_LABEL={
     'task.help':{icon:'✅',label:'Taken'},
     'task.swap':{icon:'✅',label:'Taken — ruilen'},
     'partyQuest.invite':{icon:'⚔️',label:'Party Quest'},
-    'cleaning.help':{icon:'🧹',label:'Schoonmaken'},
-    'cleaning.routine.transfer':{icon:'🧹',label:'Schoonmaken'},
-    'cleaning.routine.counter':{icon:'🧹',label:'Schoonmaken'}
+    'cleaning.help':{icon:'🧹',label:'Schoonmaken — hulp'},
+    'cleaning.occurrence.transfer':{icon:'🧹',label:'Schoonmaken — overdracht'},
+    'cleaning.occurrence.counter':{icon:'🧹',label:'Schoonmaken — tegenvoorstel'}
   };
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
+
+  function refreshStore(){try{if(window.ActionInboxStore&&typeof ActionInboxStore.refresh==='function')ActionInboxStore.refresh();}catch(e){}}
+
+  function hydrateCleaningDecisions(){
+    var ctx=context();
+    if(!ctx||ctx.ready!==true||!ctx.uid||!ctx.householdId)return Promise.resolve(false);
+    if(cleaningHydratePromise)return cleaningHydratePromise;
+    cleaningHydratePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1').then(function(){
+      var repo=window.CleaningHouseholdRepository;
+      if(!repo||typeof repo.snapshot!=='function'||typeof repo.subscribe!=='function'||typeof repo.start!=='function'||typeof repo.stop!=='function')return false;
+      var snap=repo.snapshot();
+      // When Inbox is opened directly from Cleaning, the existing snapshot is
+      // already live/current. Navigation will perform the normal teardown.
+      if(window._currentScreen==='cleaning'&&snap&&snap.ready===true&&String(snap.uid||'')===String(ctx.uid)&&String(snap.householdId||'')===String(ctx.householdId))return true;
+      // Outside Cleaning, force one fresh canonical read. subscribe() emits the
+      // retained snapshot synchronously, so ignore callbacks until start() has
+      // been called; then stop immediately after the first fresh result/error.
+      try{repo.stop();}catch(e){}
+      return new Promise(function(resolve){
+        var settled=false,started=false,unsubscribe=function(){};
+        function finish(ok){
+          if(settled)return;settled=true;
+          try{unsubscribe();}catch(e){}
+          try{repo.stop();}catch(e){}
+          resolve(!!ok);
+        }
+        unsubscribe=repo.subscribe(function(next){
+          if(!started||!next)return;
+          var same=String(next.uid||'')===String(ctx.uid)&&String(next.householdId||'')===String(ctx.householdId);
+          if(same&&next.ready===true){finish(true);return;}
+          if(same&&next.error){finish(false);}
+        });
+        started=true;
+        try{repo.start();}catch(e){finish(false);}
+      });
+    }).then(function(ok){refreshStore();return ok;}).catch(function(error){try{console.warn('[ActionInbox] Cleaning hydration failed',error);}catch(e){}return false;}).finally(function(){cleaningHydratePromise=null;});
+    return cleaningHydratePromise;
+  }
 
   function ensureStyle(){
     if(document.getElementById('action-inbox-screen-style'))return;
@@ -55,7 +92,7 @@
   function ensure(){
     ensureStyle();
     var existing=document.getElementById('screen-inbox');
-    if(existing)return existing;
+    if(existing){hydrateCleaningDecisions();return existing;}
     var screen=document.createElement('div');
     screen.className='screen';
     screen.id='screen-inbox';
@@ -69,6 +106,7 @@
       ActionInboxStore.subscribe(function(items){render(items);});
     }
     render(window.ActionInboxStore&&ActionInboxStore.list?ActionInboxStore.list():[]);
+    hydrateCleaningDecisions();
     return screen;
   }
 
@@ -111,10 +149,18 @@
     if(!list.length){
       content.innerHTML=stateHtml();
       var retry=document.getElementById('aib-retry-btn');
-      if(retry)retry.onclick=function(){errorMessage='';if(window.ActionInboxStore)ActionInboxStore.refresh();render();};
+      if(retry)retry.onclick=function(){errorMessage='';refreshStore();hydrateCleaningDecisions();render();};
       return;
     }
     content.innerHTML=list.map(cardHtml).join('');
+  }
+
+  function successMessage(actionId){
+    if(actionId==='decline'||actionId==='decline-help'||actionId==='decline-counter')return'Afgewezen';
+    if(actionId==='counter')return'Tegenvoorstel geopend';
+    if(actionId==='accept-help')return'Hulp geaccepteerd ✓';
+    if(actionId==='accept-counter')return'Tegenvoorstel geaccepteerd ✓';
+    return'Geaccepteerd ✓';
   }
 
   function onClick(event){
@@ -132,7 +178,7 @@
     if(!window.ActionInboxStore||typeof ActionInboxStore.runAction!=='function'){busyId=null;return;}
     ActionInboxStore.runAction(itemId,actionId).then(function(){
       busyId=null;render();
-      if(typeof window.showToast==='function')window.showToast(actionId==='decline'?'Afgewezen':actionId==='detail'?'Geopend in Schoonmaken':'Geaccepteerd ✓');
+      if(typeof window.showToast==='function')window.showToast(successMessage(actionId));
     }).catch(function(error){
       busyId=null;
       errorMessage=(error&&error.message)||'Actie kon niet worden uitgevoerd.';
@@ -142,5 +188,5 @@
 
   document.addEventListener('click',onClick,true);
 
-  window.ActionInboxScreen={version:VERSION,ensure:ensure,render:render};
+  window.ActionInboxScreen={version:VERSION,ensure:ensure,render:render,hydrateCleaningDecisions:hydrateCleaningDecisions};
 })();

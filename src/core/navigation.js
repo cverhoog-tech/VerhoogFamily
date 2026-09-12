@@ -195,7 +195,7 @@ function ensureCleaningStyles(){
     }
     var link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='/src/styles/cleaning.css?v=1';
+    link.href='/src/styles/cleaning.css?v=2';
     link.setAttribute('data-familyapp-cleaning-style','1');
     link.addEventListener('load',resolve,{once:true});
     link.addEventListener('error',reject,{once:true});

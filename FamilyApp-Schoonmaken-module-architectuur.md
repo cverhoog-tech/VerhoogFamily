@@ -1,737 +1,297 @@
-# FamilyApp - Module-architectuur Schoonmaken
+# FamilyApp — Module-architectuur Schoonmaken v2
 
-Status: kernmodule real-device geaccepteerd t/m Milestone 7 (Planning persoonsfilter); zie sectie 26 en `FamilyApp-Schoonmaken-milestone-log.md` / `FamilyApp-Schoonmaken-current-status.md` voor de actuele status per fase.
+Laatst bijgewerkt: **11-09-2026**  
+Branch: `agent/household-rebuild-v2`
 
-## 1. Doel van de module
+Dit document beschrijft de **actieve Cleaning-v2 architectuur**. Pre-performance-reset availability/approval/exception/history/notification-engines blijven historische referentie en zijn geen runtimewaarheid.
 
-Schoonmaken is de huishoudelijke routine- en planningsengine van FamilyApp. De module helpt een huishouden om kamers en schoonmaakroutines vast te leggen, periodiek te bepalen wat aan de beurt is, het werk eerlijk voor te stellen en na goedkeuring door te zetten naar de bestaande Taken- en Agenda-modules.
+## 1. Productdoel
 
-Belangrijk uitgangspunt: Schoonmaken wordt geen tweede Taken-module.
+Cleaning helpt het huishouden snel antwoord geven op:
 
-- Schoonmaken beheert kamers, routines, intervallen, benodigdheden en de schoonmaakplanning.
-- Taken beheert concrete uitvoerbare opdrachten.
-- Agenda beheert wanneer geaccepteerde schoonmaakbeurten plaatsvinden.
-- Boodschappen beheert producten die moeten worden aangeschaft.
-- Notificaties beheert voorstellen, overdrachten, tegenvoorstellen en reminders.
+**Wat moet er gebeuren → wanneer → door wie → uitvoeren / overdragen / handmatig aanpassen → terugzien wat gedaan is.**
 
-Een concrete schoonmaakbeurt is één gedeeld object dat vanuit meerdere modules wordt weergegeven; er mogen geen losse kopieën per module ontstaan.
+Cleaning is geen tweede Taken-module. Cleaning beheert structurele schoonmaakcontext en concrete CleaningOccurrences; Taken en Agenda zijn afgeleide projecties.
 
-## 2. Hoofdnavigatie
+## 2. Canonical model
 
-De module krijgt drie primaire tabs:
+### CleaningOccurrence is de concrete authority
 
-1. Overzicht
-2. Planning
-3. Kamers
+`CleaningOccurrence` is de canonical concrete execution state.
 
-Binnen Kamers staat de subtoggle Kamers / Gepland per kamer.
+Een occurrence bevat onder andere:
+- household identity;
+- room/routine context;
+- schedule/date/time;
+- assignment;
+- checklist/execution state;
+- completion state;
+- projection metadata;
+- V2.1 collaboration request state.
 
-Voorraad, historie en instellingen zijn contextueel bereikbaar en krijgen in eerste instantie geen eigen hoofdtab.
+Tasks en Calendar/Agenda zijn **projecties**, nooit een tweede Cleaning authority.
 
-## 3. Overzicht
+### Completion history
 
-Doel: antwoord geven op de vraag: "Hoe staat ons huis ervoor en wat moet er binnenkort gebeuren?"
+`families/{householdId}/cleaning/completionLogs` is de canonical bron voor uitgevoerde Cleaning-historie.
 
-### Hero / huisstatus
+V2.2 introduceert bewust **geen tweede history-store**. Kamer-/routinehistorie en weekstatistieken worden als read model rechtstreeks uit deze completionLogs afgeleid.
 
-- Huisstatus: Op schema / Binnenkort aandacht / Aandacht nodig
-- Weekprogressie
-- Aantal ruimtes of schoonmaakbeurten die nog aandacht vragen
-- Primaire actie: Weekplan bekijken
+### Structurele data
 
-### Deze week
-
-Compact overzicht van eerstvolgende schoonmaakbeurten met:
-
-- kamer
-- toegewezen persoon/personen
-- geplande dag of flexibel tijdvak
-- geschatte duur en/of aantal beurten volgens persoonlijke weergavevoorkeur
-- goedkeuringsstatus
-
-### Kamers
-
-Visuele kamerkaarten met:
-
-- naam + icoon/illustratie
-- status
-- aantal routineonderdelen op schema
-- eerstvolgende beurt
-
-### Benodigdheden
-
-Alleen zichtbaar wanneer actie nodig is, bijvoorbeeld producten met status Bijna op of Op die nodig zijn voor komende schoonmaakbeurten.
-
-### Gezamenlijke progressie
-
-Subtiele huishoudprogressie, bijvoorbeeld weekpercentage, aantal afgeronde schoonmaakbeurten en gezamenlijke streaks. Geen competitief leaderboard tussen gezinsleden.
-
-## 4. Kamers en routines
-
-### Kamer
-
-Een kamer/zone bevat:
-
-- naam
-- type
-- icoon/illustratie
-- actieve schoonmaakroutine-items
-- optioneel voorkeursmoment
-- verdelingsmethode
-- status
-- historie
-
-Voorbeelden: woonkamer, keuken, badkamer, toilet, slaapkamer, kinderkamer, hal, wasruimte, balkon/tuin en eigen ruimte.
-
-Algemene huishoudtaken die niet logisch aan een schoonmaakzone hangen, zoals vuilnis buitenzetten, blijven in de bestaande Taken-module.
-
-### Routine-item
-
-Elk schoonmaakonderdeel is zelfstandig configureerbaar:
-
-- titel
-- interval/frequentie
-- geschatte duur
-- prioriteit: Basis / Normaal / Extra
-- gekoppelde benodigdheden
-- laatst uitgevoerd
-- volgende vervaldatum
-- actief/gepauzeerd
-
-Voorbeeld Badkamer:
-
-- wastafel reinigen - wekelijks
-- spiegel schoonmaken - wekelijks
-- toilet reinigen - wekelijks
-- douche ontkalken - iedere 2 weken
-- putje reinigen - maandelijks
-
-De kamer heeft dus niet één vaste frequentie. FamilyApp verzamelt alleen de routine-items die in een bepaalde cyclus aan de beurt zijn.
-
-## 5. Concrete schoonmaakbeurt
-
-Wanneer meerdere routine-items uit dezelfde kamer aan de beurt zijn, worden ze gebundeld tot één schoonmaakbeurt.
-
-Voorbeeld:
-
-Badkamer schoonmaken - 4 onderdelen - circa 25 minuten.
-
-In Taken verschijnt één taak met een interne checklist, niet vier losse microtaken.
-
-Dezelfde beurt is zichtbaar in:
-
-- Schoonmaken: kamercontext, routine en voortgang
-- Taken: uitvoerbare taak + checklist
-- Agenda: dag/tijd/flexibel blok
-
-Afronden of wijzigen synchroniseert tussen deze weergaven.
-
-## 6. Nieuwe kamer aanmaken
-
-Setup in maximaal drie stappen:
-
-### Stap 1 - Kamer
-
-Kies kamertype of maak een eigen ruimte.
-
-### Stap 2 - Routine
-
-FamilyApp stelt per kamertype een template voor. Gebruiker kan:
-
-- onderdelen in-/uitschakelen
-- frequentie wijzigen
-- tijd aanpassen
-- eigen onderdeel toevoegen
-- voorgestelde benodigdheden aanpassen
-
-Templates zijn alleen een startpunt en nooit verplicht.
-
-### Stap 3 - Planning
-
-Instellen van:
-
-- voorkeursmoment: geen voorkeur / doordeweeks / weekend / specifieke dag
-- verdelingsmethode: eerlijk / om de beurt / vaste persoon / handmatig
-
-## 7. Weekplanner
-
-De weekplanner maakt eerst een concept en nooit direct definitieve taken.
-
-### Canonieke due-semantiek (Weekplanner Foundation checkpoint 1)
-
-Due-bepaling is pure domeinlogica en schrijft niets naar Firebase, Taken of Agenda.
-
-- Een planningsvenster is halfopen: `[startAt, endAt)`. Een routine exact op `endAt` hoort dus bij het volgende venster en kan niet dubbel in twee weken vallen.
-- Een inactieve of gepauzeerde routine wordt uitgesloten.
-- Een routine zonder canonieke `roomId` wordt uitgesloten; routine-naar-kamer blijft uitsluitend via `CleaningRoutineItem.roomId` lopen.
-- De due-datum komt eerst uit expliciete `nextDueAt`.
-- Ontbreekt `nextDueAt`, dan geldt `lastCompletedAt + intervalDays` als backward-compatible afleiding.
-- Een nooit uitgevoerde routine gebruikt `createdAt` als eerste due-moment. Ontbreekt ook `createdAt`, dan wordt deze bij de start van het gevraagde planvenster voor het eerst due; er wordt daarbij geen synthetische datum opgeslagen.
-- `dueAt < startAt` is `OVERDUE`; `startAt <= dueAt < endAt` is `DUE_IN_WINDOW`; `dueAt >= endAt` is `FUTURE`.
-- Alleen `OVERDUE` en `DUE_IN_WINDOW` zijn kandidaten voor die week. Bundeling, bestaande-occurrence-deduplicatie en verdeling volgen in afzonderlijke checkpoints.
-
-Dit contract staat geïsoleerd in `src/modules/cleaning/cleaningPlannerContract.js`. De toekomstige completion-write moet `nextDueAt` volgens de lokale kalenderdag van het huishouden berekenen; de huidige milliseconde-afleiding vanuit `lastCompletedAt` is uitsluitend de fallback voor bestaande records zonder expliciete `nextDueAt`.
-
-### Weekkandidaten (Weekplanner Foundation checkpoint 2)
-
-De planner selecteert weekkandidaten rechtstreeks uit de canonieke `rooms`- en `routines`-snapshot van `CleaningHouseholdRepository`.
-
-- Alleen `OVERDUE` en `DUE_IN_WINDOW` worden kandidaat.
-- De gekoppelde kamer moet bestaan en actief zijn. Routines van een soft-deleted kamer worden expliciet uitgesloten.
-- De selector maakt geen tweede routine- of kamerautoriteit en muteert de repository-snapshot niet.
-- Bij Firebase-map snapshots is de database-key canoniek; een eventueel afwijkend embedded `id`-veld mag de relatie niet omleiden.
-- Iedere kandidaat bevat alleen de plannerdata die de volgende stap nodig heeft: `routineId`, `roomId`, titel, due-informatie, geschatte minuten en prioriteit.
-- De uitkomst is deterministisch gesorteerd op due-moment, daarna Basis / Normaal / Extra en daarna routine-ID.
-- Uitgesloten routines blijven met een expliciete reden in de pure selectoruitkomst beschikbaar voor tests en diagnose.
-- Bundeling per kamer, occurrence-deduplicatie en verdeling zijn bewust nog niet onderdeel van deze checkpoint.
-
-### Kamerbundels en belasting (Weekplanner Foundation checkpoint 3)
-
-De pure planner bundelt alle geselecteerde routine-items met dezelfde `roomId` tot precies één conceptuele schoonmaakbeurt.
-
-- Iedere bundel bevat één checklistregel per unieke `CleaningRoutineItem`.
-- Dubbele routinekandidaten zijn een contractfout en worden niet stil gededupliceerd.
-- Alleen reeds geselecteerde due-kandidaten uit een nog actieve kamer worden geaccepteerd; snapshotdrift faalt expliciet.
-- `estimatedMinutes` van de bundel is exact de som van de checklistonderdelen.
-- `earliestDueAt` en `latestDueAt` blijven beide beschikbaar; er wordt nog geen kunstmatige geplande datum gekozen.
-- Zodra één onderdeel overdue is, krijgt de conceptuele bundel eveneens de toestand `OVERDUE`.
-- Checklist en bundels zijn deterministisch en immutable zodat dezelfde snapshot op iedere client hetzelfde concept oplevert.
-- De bundel heeft nog geen occurrence-ID, assignment, goedkeuringsstatus of projectiereferentie. Dat ontstaat pas bij de latere conceptplan-/writegrens.
-
-### Householdleden en FAIR_TIME (Weekplanner Foundation checkpoint 4)
-
-De standaardverdeling gebruikt uitsluitend actieve leden uit `HouseholdIdentityFirebaseBridge.getMembers()` en hun canonieke Firebase `uid`.
-
-- Legacy profiel-ID's, namen en lokale members zijn geen identity fallback voor plannertoewijzingen.
-- Inactieve/verwijderde leden worden uitgesloten; dubbele canonieke UIDs zijn een contractfout.
-- Alle actieve rollen kunnen in deze foundation deelnemen; beschikbaarheidsuitzonderingen volgen later afzonderlijk.
-- De standaardmethode is `FAIR_TIME`: geschatte minuten, niet het aantal kamerbundels, bepalen de belasting.
-- Kamerbundels blijven ondeelbaar en krijgen in deze standaardflow precies één voorgestelde UID.
-- De verdeler verwerkt grootste bundels eerst en kiest telkens deterministisch het actieve lid met de laagste minutenbelasting, daarna het laagste bundelaantal en daarna de stabiele membervolgorde.
-- Deze verdeling is een schaalbare, deterministische balancer en nog geen historie-/Agenda-optimalisatie.
-- Niet-`FAIR_TIME` methodes worden niet stil als eerlijk behandeld; die volgen in een eigen contractstap.
-- De uitkomst is uitsluitend een immutable voorstel in geheugen. Er wordt nog geen `CleaningPlan`, assignment of occurrence opgeslagen.
-
-### Conceptweekplan (Weekplanner Foundation checkpoint 5)
-
-`generateConceptPlan()` vormt de reeds vastgelegde due-, selectie-, bundel- en `FAIR_TIME`-contracten tot één canoniek conceptweekplan.
-
-- De functie consumeert uitsluitend het expliciete halfopen weekvenster en de canonieke rooms-, routines- en householdmembers-snapshots.
-- De uitkomst is deterministisch, volledig immutable en heeft `kind: CLEANING_PLAN_CONCEPT`, `status: DRAFT`, `persisted: false` en nog geen plan-ID of write-metadata.
-- Iedere kamerbundel wordt één tijdelijke `occurrenceDraft` met `occurrenceId: null`, de canonieke `roomId`, checklist, routine-item-ID's, due-informatie, totale minuten en precies één voorgestelde UID.
-- Een conceptdraft heeft nog geen gepland tijdstip, flexibel tijdvak, goedkeuringsrecord of Task-/Agenda-projectie.
-- De plansamenvatting bevat aantallen, totale geschatte minuten, overdue/binnen-vensterverdeling en de voorgestelde minutenbelasting per householdlid.
-- Uitgesloten routines en householdleden blijven als diagnose beschikbaar, zonder een tweede data-autoriteit te vormen.
-- Een venster zonder due werk levert een geldig leeg `DRAFT`-concept op; due werk zonder actief canoniek householdlid faalt expliciet.
-- Bij de latere persistente writegrens worden pas stabiele plan- en occurrence-ID's toegekend. De checklist wordt dan canoniek eigendom van `CleaningOccurrence`; een opgeslagen `CleaningPlan` mag daarvan geen tweede mutable kopie worden.
-- Deze checkpoint doet geen Firebase-, repository-, UI-, Taken-, Agenda- of approval-writes.
-
-### Persistente conceptplanning + realtime Planning (Weekplanner Foundation checkpoint 6)
-
-`CleaningPlanPersistenceContract` materialiseert uitsluitend een geldig immutable concept tot persistente `DRAFT`-records. `CleaningHouseholdRepository.saveDraftPlan()` is de enige writegrens voor deze flow.
-
-- Een plan krijgt een stabiele ID uit het exacte halfopen weekvenster; iedere kamerbundel krijgt een stabiele occurrence-ID uit plan-ID + canonieke `roomId`.
-- Plan en alle actieve/geannuleerde occurrences worden in één Firebase-transactie op `families/{householdId}/cleaning` geschreven. Bestaande rooms, routines en andere cleaning-subcollecties blijven daarbij behouden.
-- De write start alleen wanneer de actuele HouseholdContext en de realtime repository-snapshot exact dezelfde UID, household-ID en revision hebben; contextdrift wordt vóór de Firebase-transactie geweigerd.
-- `CleaningPlan` bevat `occurrenceIds`, afgeleide totalen, verdelingssamenvatting en generatiemetadata. Het bevat geen checklist of tweede mutable kopie van occurrence-inhoud.
-- `CleaningOccurrence` bezit de concrete checklist, routine-itemreferenties, due-samenvatting, totale minuten en voorgestelde canonieke assignment-UID.
-- De persistence-grens herberekent en valideert checklistminuten, due-grenzen en member loads voordat er geschreven wordt; een intern tegenstrijdig concept faalt expliciet.
-- Herhalen of opnieuw berekenen gebruikt dezelfde IDs, bewaart creation-metadata en verhoogt alleen de generatie-revisie. Niet langer geselecteerde occurrences worden binnen dezelfde transactie `CANCELLED`.
-- Regeneratie mag uitsluitend zolang bestaand plan en betrokken occurrences `DRAFT`/`CANCELLED` zijn; een later geaccepteerd plan wordt niet stil overschreven.
-- Het bestaande household-scoped aggregate listenerpad projecteert plans en occurrences realtime naar de Planning-tab. De UI schrijft niet direct naar Firebase en gebruikt geen localStorage-autoriteit.
-- De Planning-tab toont conceptstatus, weektotalen, verdeling op geschatte tijd en de occurrence-checklists. Deze functionele layout is nog niet de definitieve premium visual-spec-uitwerking.
-- De huidige weekgrens gebruikt de lokale kalender van het device. Een expliciet household-timezonecontract is vereist vóór automatische scheduling en completion-writes.
-- Er ontstaan in deze checkpoint geen approval-, Task- of Calendar-records; de projectiereferenties op occurrences blijven `null`.
-
-### Generatie
-
-FamilyApp kijkt naar:
-
-- vervallen of binnenkort vervallende routine-items
-- geschatte duur
-- prioriteit
-- kamer- en gebruikersvoorkeuren
-- eerdere verdeling
-- tijdelijke beschikbaarheid
-- relevante Agenda-beschikbaarheid
-
-### Verdelingsmethodes
-
-- Eerlijk verdelen - standaard
-- Om de beurt
-- Vaste persoon
-- Handmatig
-
-Standaard eerlijk verdelen gebruikt geschatte tijd als maatstaf, niet alleen aantallen.
-
-### Planning
-
-Een beurt kan zijn:
-
-- Gepland: concrete dag en optioneel tijdstip
-- Flexibel: bijvoorbeeld deze week of dit weekend
-
-FamilyApp mag geschikte momenten uit Agenda voorstellen, maar zet nooit zonder toestemming automatisch harde tijden vast.
-
-## 8. Persoonlijke weergavevoorkeur
-
-Iedere gebruiker kiest zelf hoe werkbelasting wordt weergegeven:
-
-- Tijd
-- Aantal taken/schoonmaakbeurten
-- Beide
-
-Deze voorkeur geldt in Schoonmaken en relevante schoonmaakweergaven in Taken/Agenda.
-
-Belangrijk: deze presentatievoorkeur staat los van de verdelingslogica. De planner gebruikt standaard geschatte tijd voor een eerlijke verdeling.
-
-## 9. Goedkeuring en samenwerking
-
-Een gegenereerd weekplan is eerst een voorstel.
-
-Iedere gebruiker beoordeelt zijn/haar eigen deel in één keer:
-
-- Alles accepteren
-- Individuele beurt aanpassen
-- Overdracht aanvragen
-- Tegenvoorstel doen
-- Afwijzen waar relevant
-
-Regel: ieder verzoek dat geaccepteerd kan worden, moet ook geweigerd kunnen worden.
-
-Na acceptatie wordt de schoonmaakbeurt actief in Taken en, indien gepland, Agenda.
-
-### Wijzigingen
-
-- Eigen dag/tijd wijzigen: geen nieuwe goedkeuring nodig.
-- Verantwoordelijke wijzigen: ontvanger moet accepteren.
-- Tegenvoorstel: oorspronkelijke partij kan accepteren of afwijzen.
-- Bij afwijzing blijft de bestaande verantwoordelijkheid intact totdat een nieuwe afspraak is gemaakt.
-
-## 10. Agenda-integratie
-
-Schoonmaken beheert de routine; Agenda beheert het moment.
-
-Na goedkeuring kan een beurt in Agenda verschijnen als:
-
-- concreet tijdsblok
-- flexibel schoonmaakitem zonder vast tijdstip
-
-Agenda kan conflicten signaleren en alternatieve momenten voorstellen.
-
-Bij verplaatsen vanuit Agenda moet onderscheid worden gemaakt tussen:
-
-- Alleen deze beurt wijzigen
-- Vaste voorkeursdag van de routine aanpassen
-
-## 11. Taken-integratie
-
-Na goedkeuring verschijnt een schoonmaakbeurt als één concrete taak in Taken.
-
-Vanuit Taken mag de gebruiker:
-
-- checklist openen en afvinken
-- datum/tijd van de eigen beurt aanpassen
-- hulp vragen
-- overname aanvragen
-- taak afronden
-
-Structurele wijzigingen aan frequentie, routine, benodigdheden of kamersettings worden in Schoonmaken beheerd.
-
-## 12. Benodigdheden en Boodschappen
-
-Benodigdheden horen primair bij een routine-item.
-
-Voorraadstatus blijft bewust eenvoudig:
-
-- Op voorraad
-- Bijna op
-- Op
-
-Wanneer een weekplan producten nodig heeft die Bijna op of Op staan, bundelt FamilyApp dit tot één actie:
-
-"2 benodigdheden aanvullen" -> Toevoegen aan boodschappenlijst.
-
-Na aankoop kan Boodschappen voorstellen de voorraadstatus terug op Op voorraad te zetten.
-
-Geen automatische toevoeging aan boodschappen zonder bevestiging.
-
-## 13. Uitvoeren en afronden
-
-Tijdens een schoonmaakbeurt wordt de checklist realtime bijgewerkt.
-
-Als niet alles is voltooid bij afronden:
-
-- Doorschuiven naar volgende beurt
-- Deze week opnieuw plannen als kleine vervolgtaak
-- Deze cyclus overslaan / toch afronden
-
-Een eenmalige keuze mag de vaste routine niet stilzwijgend wijzigen.
-
-## 14. Historie en voortgang
-
-Per kamer/routine wordt vastgelegd:
-
-- datum
-- geplande persoon/personen
-- feitelijke uitvoerder(s)
-- uitgevoerde checklist-items
-- overgeslagen/doorgeschoven items
-- werkelijke afrondstatus
-
-Historie is bedoeld voor inzicht en slimmere planning, niet voor controle of competitie.
-
-## 15. Rechten
-
-Rollen:
-
-### Beheerder
-
-Mag kamers, routines, intervallen, benodigdheden, verdelingsregels en structurele instellingen beheren.
-
-### Gezinslid
-
-Mag eigen voorstellen beoordelen, eigen beurten verplaatsen, overdrachten aanvragen, uitvoeren en voorraadstatus bijwerken binnen toegestane grenzen.
-
-### Beperkt profiel
-
-Kan toegewezen schoonmaaktaken zien, accepteren, uitvoeren en hulp vragen, maar geen structurele routines of planning van anderen wijzigen.
-
-Een schoonmaakbeurt kan aan één of meerdere personen worden toegewezen. Gezamenlijke taken blijven één gedeelde taak met realtime checklist.
-
-## 16. Tijdelijke uitzonderingen
-
-### Huishoudniveau
-
-- Vakantie
-- Drukke week
-- Schoonmaakplanning pauzeren
-
-### Persoonsniveau
-
-- Tijdelijk niet beschikbaar
-- Ziek / minder beschikbaar
-
-### Routineniveau
-
-- Individuele routine pauzeren
-- Kamer tijdelijk pauzeren
-
-### Losse beurt
-
-- Uitstellen
-- Overslaan
-- Deze week opnieuw plannen
-
-Een vakantie of pauze mag nooit leiden tot een enorme backlog. Bij hervatten genereert FamilyApp een passend herstartvoorstel.
-
-Bij een drukke week kan FamilyApp op basis van Basis / Normaal / Extra een lichte schoonmaakweek voorstellen.
-
-## 17. Notificaties
-
-### Push + notificatiecentrum
-
-Alleen wanneer actie nodig is:
-
-- nieuw schoonmaakvoorstel
-- overdracht
-- tegenvoorstel
-- relevante reminder voor geaccepteerde beurt
-
-### Alleen notificatiecentrum/feed
-
-- plan geaccepteerd
-- planning gewijzigd
-- beurt afgerond
-
-### Alleen in Schoonmaken
-
-- voortgang
-- historie
-- volgende vervaldatum
-- lichte voorraadstatus
-
-Reminderbeleid: maximaal één normale reminder per geplande schoonmaakbeurt, tenzij gebruiker dit later zelf anders instelt.
-
-## 18. Slimme inzichten - latere fase
-
-Pas na voldoende historie kan FamilyApp voorstellen doen zoals:
-
-- frequentie lijkt te hoog/laag
-- taak wordt structureel doorgeschoven
-- betere verdeling op basis van werkelijke belasting
-- gunstiger moment op basis van Agenda
-
-AI of assistent mag voorstellen doen, maar nooit zelfstandig structurele routines wijzigen.
-
-## 19. Technische kernobjecten
-
-Canonieke conceptuele objecten:
-
-- CleaningRoom
-- CleaningRoutineItem
-- CleaningSupply
-- CleaningInventoryState
-- CleaningPlan
-- CleaningOccurrence
-- CleaningAssignment
-- CleaningApprovalRequest
-- CleaningCompletionLog
-- CleaningAvailabilityOverride
-- CleaningUserPreferences
-
-Belangrijk: `CleaningOccurrence` is de enige bron van waarheid voor één concrete schoonmaakbeurt en krijgt vaste referenties naar eventuele Task- en Calendar-projecties.
-
-Canonieke Firebase-root:
-
-`families/{householdId}/cleaning`
-
-Subcollecties/paden:
-
+Onder `families/{householdId}/cleaning` blijven onder meer:
 - `rooms`
 - `routines`
 - `supplies`
 - `inventory`
 - `plans`
 - `occurrences`
-- `approvals`
 - `completionLogs`
-- `availability`
 - `preferences`
 
-Deze contracten zijn vastgelegd in `src/modules/cleaning/cleaningDomain.js` en `src/modules/cleaning/cleaningRepositoryContract.js`.
+Historische velden mogen in oude data bestaan zonder dat bijbehorende oude engines actief worden.
 
-## 20. Statusmodellen
+## 3. Household scope
 
-### Weekplan
+Alle actieve Cleaning writes gebruiken actuele `HouseholdContext` onder:
 
-DRAFT -> PROPOSED -> PARTIALLY_ACCEPTED -> ACTIVE -> COMPLETED / EXPIRED
+`families/{householdId}/cleaning/...`
 
-### Toewijzing
+Voor writes wordt context/token gevalideerd zodat stale account-/household-context niet naar het vorige huishouden schrijft.
 
-PROPOSED -> ACCEPTED -> ACTIVE -> COMPLETED
+Production Firebase Rules worden niet gewijzigd zonder expliciete toestemming.
 
-Alternatieve paden:
+## 4. Runtime lifecycle
 
-- PROPOSED -> DECLINED
-- PROPOSED -> COUNTER_PROPOSED
-- ACTIVE -> SKIPPED
-- ACTIVE -> CARRIED_FORWARD
-- ACTIVE -> RESCHEDULED
+De primaire runtime is `src/modules/cleaning/cleaningScreen.js`.
 
-### Concrete schoonmaakbeurt
+Regels:
+- Cleaning wordt lazy geladen bij navigatie naar Schoonmaken;
+- geen Cleaning-repository/listener tijdens app startup;
+- `CleaningV2Repository` heeft één actieve household-scoped Firebase `value` listener;
+- verlaten van Cleaning stopt die Firebase/context binding;
+- V2-companions mogen uitsluitend dezelfde repositorysnapshot/subscription hergebruiken;
+- een companion-subscription mag nooit een tweede raw Firebase listener starten.
 
-DRAFT -> PROPOSED -> SCHEDULED / FLEXIBLE -> IN_PROGRESS -> COMPLETED
+De primaire accepted V2.0 screen/runtime blijft in V2.2 inhoudelijk intact.
 
-Alternatieve paden:
+## 5. UI ownership
 
-- IN_PROGRESS / SCHEDULED / FLEXIBLE -> SKIPPED
-- IN_PROGRESS / SCHEDULED / FLEXIBLE -> CARRIED_FORWARD
-- DRAFT / PROPOSED -> CANCELLED
+Primaire Cleaning-v2:
+- één screen render owner;
+- één eigen Cleaning detail-sheet owner;
+- root-scoped interacties;
+- geen generieke `TaskDetailPopup`;
+- geen document-wide Cleaning click owner;
+- geen MutationObserver-architectuur;
+- geen meerdere popup owners.
 
-## 21. Gefaseerd bouwplan
+### V2.1 collaboration UI
 
-### Fase 0 - Architectuurfundament
+V2.1 Collaboration gebruikt **geen zelfstandig Samenwerken-menu onder Kamers** en geen nieuwe modal/popup. `cleaningCollaborationExperience.js` voegt alleen contextuele controls toe binnen de bestaande concrete beurt-detail-sheet.
 
-- Datamodel en Firebase-paden definiëren.
-- Eén source-of-truth voor CleaningOccurrence vastleggen.
-- Integratiecontracten met Tasks, Calendar, Grocery en Notifications bepalen.
-- Rollen/rechten controleren tegen bestaand household/member-model.
-- Feature flag voor Schoonmaken toevoegen.
+### V2.2 history UI
 
-### Fase 1 - Kamers + routines (MVP-basis)
+`cleaningHistoryV22.js` is eveneens geen tweede screen owner. Het is een lichte Cleaning-only companion die na de primaire render:
+- een vierde `Historie` tab toevoegt;
+- bij Historie de native primaire content tijdelijk visueel vervangt door een read-only history projection;
+- op Vandaag alleen indien relevant één kleine attention row toevoegt.
 
-- Kamers CRUD.
-- Kamertemplates.
-- Routine-items met interval, duur en prioriteit.
-- Benodigdheden koppelen.
-- Kamerdetail en routinebeheer.
-- Persoonlijke weergavevoorkeur Tijd / Aantal / Beide.
+De history companion gebruikt geen MutationObserver. Omdat de primaire V2-root op repository updates via `innerHTML` opnieuw wordt opgebouwd, plant V2.2 uitsluitend na zo’n bestaande update twee `requestAnimationFrame` callbacks om **na** de primaire render de kleine presentatie opnieuw aan te brengen. Dit is event-driven en geen voortdurende animation/polling-loop.
 
-### Fase 2 - Weekplanner + voorstellen
+## 6. Execution writes
 
-- Bepalen wat per week aan de beurt is.
-- Bundelen per kamer tot schoonmaakbeurt.
-- Eerlijke verdeling op geschatte tijd.
-- Verdelingsmethodes toevoegen.
-- Conceptweekplan en persoonlijke beoordeling.
+Checklist-uitvoering blijft uitsluitend in de primaire Cleaning-v2 runtime:
+- optimistic UI;
+- korte coalescing/bundling;
+- canonical occurrence transaction/write;
+- completionLog creation in Cleaning;
+- bounded update van bestaande Task/Calendar-projecties.
 
-### Fase 3 - Taken-integratie
+V2.1 collaboration heeft alleen zijn smalle occurrence-level collaboration command writer.
 
-- Geaccepteerde CleaningOccurrence als taak tonen.
-- Gedeelde checklist synchroniseren.
-- Afronden, overslaan, doorschuiven en vervolgtaak ondersteunen.
-- Hulp/overname aansluiten op bestaand Taken-patroon.
+V2.2 History is **read-only ten opzichte van Cleaning**. Het schrijft geen rooms/routines/occurrences/completionLogs en bezit geen execution authority.
 
-### Fase 4 - Agenda-integratie
+## 7. Weekplanning
 
-- Geplande en flexibele schoonmaakbeurten tonen.
-- Dag/tijd wijzigen vanuit beide modules.
-- Agenda-conflicten signaleren.
-- Optionele voorgestelde momenten op basis van beschikbaarheid.
+V2.0 gebruikt de accepted pure planner/persistence-contracten om lichtgewicht weekplanning en concrete occurrences te materialiseren.
 
-### Fase 5 - Boodschappen + lichte voorraad
+V2.1/V2.2 voegen geen weekplan approval engine toe.
 
-- Voorraadstatus Op voorraad / Bijna op / Op.
-- Benodigdheden van komende week bundelen.
-- Bevestigde toevoeging aan boodschappenlijst.
-- Na aankoop voorraad bijwerken.
+## 8. Roles/capabilities
 
-### Fase 6 - Goedkeuringen + notificaties
+Bestaande Cleaning-v2 capabilitybasis blijft leidend voor structure/planning/supplies/execution/destructive acties.
 
-- Weekvoorstelmeldingen.
-- Overdracht en tegenvoorstel.
-- Accepteren + afwijzen verplicht als paar.
-- Gebundelde reminders zonder spam.
+V2.1 collaboration valideert daarnaast actuele actor, active household target, recipient ownership en manager capability waar relevant.
 
-### Fase 7 - Historie + uitzonderingen
+V2.2 history is read-only. De attention row telt alleen open occurrences die aan de huidige UID zijn toegewezen.
 
-- Completion logs.
-- Vakantie, drukke week, ziek/niet beschikbaar.
-- Pauzeren en herstartplan.
-- Gezamenlijke voortgang en subtiele achievements.
+Server-side rolhandhaving is release/securitywerk en wordt niet stil in production Rules gewijzigd.
 
-### Fase 8 - Visuele polish + slimme inzichten
+## 9. Cleaning V2.1 collaboration model
 
-- Premium FamilyApp-design.
-- Animaties/microinteracties.
-- Feed-events waar relevant.
-- Data-gedreven frequentie- en planningsvoorstellen.
-- Eventuele Family Assistant-inzichten.
+### 9.1 Pure state machine
 
-## 22. MVP-afbakening
+`src/modules/cleaning/cleaningCollaborationContract.js`
 
-Voor de eerste bruikbare release hoeven nog niet alle slimme functies mee.
+Commands:
+- `REQUEST_TRANSFER`
+- `WITHDRAW_TRANSFER`
+- `ACCEPT_TRANSFER`
+- `DECLINE_TRANSFER`
+- `COUNTER_TRANSFER`
+- `ACCEPT_COUNTER`
+- `DECLINE_COUNTER`
+- `REQUEST_HELP`
+- `WITHDRAW_HELP`
+- `ACCEPT_HELP`
+- `DECLINE_HELP`
 
-Minimaal nodig:
+### 9.2 Transfer
 
-1. Kamers.
-2. Routine-items met eigen interval.
-3. Benodigdheden koppelen.
-4. Weekplan genereren.
-5. Verdeling + goedkeuring.
-6. Eén CleaningOccurrence zichtbaar in Schoonmaken + Taken.
-7. Agenda-koppeling voor geaccepteerde beurten.
-8. Afronden + historie.
-9. Persoonlijke Tijd / Aantal / Beide-weergave.
+State leeft op `CleaningOccurrence.transferRequest`.
 
-Daarna: voorraad, vakantie/drukke week, slimme inzichten en uitgebreidere gamification.
+Request verandert current assignee niet. Acceptatie wijzigt de bestaande occurrence. Decline/withdraw laat assignment staan. Identieke PENDING request naar dezelfde persoon is idempotent.
 
-## 23. Engineering guardrails / schaalbaarheid
+### 9.3 Third-person counter safety
 
-Deze module wordt alleen gebouwd op duurzame integratiepunten. Tijdelijke monkeypatches of parallelle bronnen van waarheid zijn niet toegestaan.
+Als een counter een derde household member voorstelt, mag acceptatie door de oorspronkelijke requester die derde persoon niet stil toewijzen.
 
-### Verplicht
+Flow:
+1. recipient doet counter met derde persoon;
+2. requester accepteert counter;
+3. er ontstaat nieuw `PENDING` transferrequest aan derde persoon;
+4. derde persoon beslist zelf;
+5. assignment wijzigt pas na diens acceptatie.
 
-- Gebruik bestaande FamilyApp household-, member-, task-, calendar-, grocery-, notification- en activity-contracten waar die canoniek zijn.
-- Gebruik één duidelijke `CleaningHouseholdRepository`-grens in plaats van Firebase-reads/writes verspreid door UI-code of meerdere overlappende repositories.
-- Houd `CleaningOccurrence` canoniek; Taken en Agenda zijn projecties/weergaven, geen tweede opslagautoriteit.
-- Schrijf mutaties idempotent waar retries of meerdere clients mogelijk zijn.
-- Gebruik stabiele IDs en expliciete foreign-key/referencevelden tussen Cleaning, Tasks, Calendar, Grocery en Activity.
-- Houd businesslogica uit view/CSS-lagen; UI consumeert services/state en bezit niet de domeinwaarheid.
-- Realtime listeners moeten een expliciete lifecycle hebben: bind, unbind en opnieuw binden bij household/account-wissel.
-- Rechten en household-scoping moeten server/Firebase-regels en repositorycontracten volgen; geen client-only beveiliging.
-- Nieuwe velden en statusmodellen moeten backward-compatible/migreerbaar worden ontworpen.
-- Integraties krijgen contracttests voor idempotentie, cross-module synchronisatie en account/household-isolatie.
-- Tijdens de huidige rebuild wordt in kleine, afzonderlijk te accepteren commits op `agent/household-rebuild-v2` gebouwd. `main` blijft onaangeraakt totdat de gebruiker expliciet accepteert.
-- Vercel/CI en relevante real-device tests vormen gates voordat een fase als afgerond wordt gemarkeerd.
+### 9.4 Help
 
-### Niet toegestaan
+State leeft op `CleaningOccurrence.helpRequest`.
 
-- Geen inline JavaScript-overrides om bestaande handlers achteraf te vervangen.
-- Geen dubbele event listeners als workaround voor lifecycleproblemen.
-- Geen dubbele Firebase-paden of localStorage-state als tijdelijke tweede source of truth.
-- Geen CSS `!important`-stapels of duplicate selectors als structurele fix.
-- Geen hardcoded gebruikersnamen, UIDs, householdIds of demo-data in productiecode.
-- Geen silent fallback naar oude data wanneer de canonieke repository faalt.
-- Geen directe cross-module DOM-manipulatie om Taken/Agenda/Boodschappen te synchroniseren.
-- Geen globale state-mutaties buiten de daarvoor bedoelde service/repository.
+Accepted help noteert de helper maar wijzigt **niet** `assignmentUids`. Multi-person assignment is geen impliciete V2.1-feature.
 
-### Definition of Done per onderdeel
+## 10. Collaboration writer / concurrency
 
-Een TODO-item mag pas van open naar afgerond wanneer:
+`src/modules/cleaning/cleaningCollaborationExperience.js`
 
-1. de canonieke implementatie op de ontwikkelbranch staat;
-2. relevante contract/unit-tests groen zijn;
-3. bestaande modules geen regressie tonen;
-4. cross-module synchronisatie aantoonbaar werkt waar van toepassing;
-5. iPhone/PWA-test is uitgevoerd voor gebruikersflow-impact;
-6. architectuur- en TODO-documenten dezelfde status tonen;
-7. tijdelijke debugcode, adapters of compatibiliteitscode expliciet is verwijderd of als technische schuld is gedocumenteerd.
+- transaction op bestaande occurrence;
+- HouseholdContext token validation;
+- active-member allow-list;
+- occurrence-level busy guard;
+- idempotente pure state-machine;
+- geen `.push()` voor collaboration records;
+- geen aparte requeststore;
+- accepted assignment/schedulewijziging synchroniseert bestaande Task/Calendar-projecties bounded.
 
-## 24. Documentatie als levende bron
+## 11. Action Inbox
 
-`FamilyApp-Schoonmaken-module-architectuur.md` is de functionele en technische bron voor de Schoonmaken-module. `FamilyApp-TODO-updated.txt` is de uitvoeringsstatus.
+Action Inbox blijft de beslissingslaag voor incoming V2.1 collaboration requests:
+- `cleaning.help`
+- `cleaning.occurrence.transfer`
+- `cleaning.occurrence.counter`
 
-Bij iedere geaccepteerde implementatiestap worden beide documenten bijgewerkt met:
+Inbox deriveert uit occurrence-state, blijft writer-free en routeert acties naar `CleaningCollaborationV21.handleInboxAction`.
 
-- huidige fase/status;
-- afgeronde onderdelen;
-- resterende acceptatiechecks;
-- eventuele bewuste afwijkingen van het ontwerp;
-- nieuw ontdekte technische schuld;
-- relevante branch/PR of checkpoint wanneer nuttig.
+Op een verse ontvanger-sessie mag Action Inbox Cleaning uitsluitend on-demand hydrateren voor één verse snapshot en daarna teardown uitvoeren.
 
-Een ontwerpwijziging wordt eerst in deze architectuur verwerkt voordat een volgende fase daarop voortbouwt.
+## 12. Cleaning V2.2 pure history contract
 
-## 25. Implementatiestatus 01-09-2026
+`src/modules/cleaning/cleaningHistoryContract.js`
 
-### Geaccepteerde Fase A / veilige module-shell
+Pure module zonder Firebase, DOM, notifications of persistence.
 
-Real-device geaccepteerd op iPhone:
+Deriveert uit bestaande data:
+- `logs(data)` — completion logs newest-first;
+- `roomRows(data)` — geschiedenis gegroepeerd per kamer;
+- `routineTouches(...)` — routinehistorie uit opgeslagen completion checklists;
+- `summary(...)` — completion count/minuten/uitvoerders in huidige week;
+- `reminders(...)` — today/overdue read model voor één UID;
+- `activityEvent(...)` — deterministic Household Activity event voor echte COMPLETED logs.
 
-- Schoonmaken-entry in Meer;
-- leeg navigabel `#screen-cleaning`;
-- module-shell met primaire tabs Overzicht / Planning / Kamers;
-- subtoggle Kamers / Gepland per kamer;
-- dark/light shell via uitsluitend onder `#screen-cleaning` gescopete CSS;
-- lazy loading: Schoonmaken-code/styles worden pas geladen bij openen van de module;
-- geen wijziging aan login/auth, app-shell, UI-scale of globale CSS.
+REOPENED/PARTIAL/SKIPPED/CARRIED_FORWARD worden niet als nieuwe completed Activity gezien.
 
-Geaccepteerde checkpoints lopen vanaf de stabiele STEP 13.6-baseline via de commits `774d464`, `567df025` en `a11a785`.
+## 13. Cleaning V2.2 presentation lifecycle
 
-### Fase 0 - BEZIG
+`src/modules/cleaning/cleaningHistoryV22.js`
 
-Afgerond in het architectuurfundament:
+Regels:
+- geladen via `cleaningPremiumFeedback.js` en dus uitsluitend achter de Cleaning-route;
+- gebruikt `CleaningHouseholdRepository.subscribe`, niet `.on('value')`;
+- bewaart alleen lokale presentation state (`historyActive`, seen completion ids, in-flight activity ids);
+- geen Firebase database owner;
+- geen `MutationObserver`;
+- geen `setInterval` of polling;
+- geen notification projector;
+- geen popup/modal;
+- root click listener is scoped aan `#screen-cleaning`.
 
-- canonieke cleaning-root `families/{householdId}/cleaning` vastgelegd;
-- vaste subpaden voor rooms, routines, supplies, inventory, plans, occurrences, approvals, completion logs, availability en preferences;
-- `CleaningOccurrence` expliciet als source of truth vastgelegd;
-- domeinstatussen en normalizers vastgelegd in `cleaningDomain.js`;
-- één `CleaningHouseholdRepository` met HouseholdContext bind/unbind/revision-lifecycle en realtime aggregate read;
-- actieve household-member read/write-afscherming gecontroleerd tegen de bestaande Firebase rules;
-- localStorage alleen toegestaan als disposable UID+household read-cache, nooit als tweede bron van waarheid.
+## 14. Household Activity projection V2.2
 
-Nog open binnen Fase 0:
+Household Activity ondersteunt reeds `cleaning.completed` en dedupliceert via `ActivityHouseholdRepository.appendOnce`.
 
-- household-key-validatie in `CleaningDomain.basePath()` afzonderlijk en regressieveilig verharden;
-- create-idempotentie voor kamer/routine zonder Firebase `push()` afzonderlijk ontwerpen;
-- expliciete integratiecontracten voor Tasks, Calendar, Grocery en Notifications toevoegen;
-- brede contracttests voor household-isolatie, lifecycle en create-idempotentie van kamer/routine toevoegen; de persistente planner-write heeft al gerichte contracttests.
+V2.2 gebruikt daarom geen oude scan-projector. In plaats daarvan:
+1. bij eerste ready Cleaning snapshot worden bestaande completionLog IDs alleen als baseline gemarkeerd;
+2. bij latere snapshots worden alleen nieuw waargenomen IDs bekeken;
+3. alleen echte COMPLETED logs leveren een `cleaning.completed` event;
+4. occurrenceKey is `cleaning:completion:<completionLogId>`;
+5. Activity publish is best-effort en mag Cleaning nooit terugrollen.
 
-### Fase 1 - KAMERS + ROUTINES FOUNDATION GEACCEPTEERD
+Hiermee ontstaat geen historische feed-flood bij het activeren van V2.2.
 
-- Kamer- en routine-CRUD, soft-delete, meerdere routines per kamer en editable kamertypepresets zijn real-device geaccepteerd op iPhone.
-- Laatste herstelcheckpoint van deze milestone: `ea843a64f46899d63a7bb64d4adf2b5b7160e2da`.
-- Benodigdheden en persoonlijke Tijd / Aantal / Beide-weergave blijven open.
+`cleaningActivityProjector.js` blijft disconnected historical reference.
 
-### Fase 2 - WEEKPLANNER FOUNDATION BEZIG
+## 15. Reminders / aandacht
 
-- Due-semantiek, weekselectie, kamerbundeling, minutenbelasting, householdleden en `FAIR_TIME` zijn real-device geaccepteerd.
-- Pure conceptplangeneratie is real-device geaccepteerd op checkpoint `bd282e8b8a48929e296b982d10fb99955b0eec62`.
-- Atomaire persistente `DRAFT`-planning met canonieke occurrences en realtime Planning-UI is geïmplementeerd en wacht op real-device acceptatie.
-- Goedkeuring, scheduling en Taken-/Agenda-projecties blijven expliciet buiten deze checkpoint.
+V2.2 gebruikt het woord reminder alleen als **read-only attention projection in Cleaning zelf**.
 
-## 26. Statusnotitie 05-09-2026
+Er is geen:
+- NotificationStore write;
+- push notification;
+- daily timer;
+- pollingloop;
+- global reminder listener.
 
-Sectie 25 hierboven is een historische snapshot van 01-09-2026 en is inmiddels sterk achterhaald. Sindsdien zijn Milestones 2 t/m 7 real-device geaccepteerd (Weekplanner, Taken/Agenda-projecties, uitvoering/pauzes, Boodschappen/Weekvoorraad, routine-overdracht/tegenvoorstellen en de Planning-persoonsfilter).
+De Vandaag-tab kan compact tonen hoeveel aan de huidige gebruiker toegewezen beurten vandaag of achterstallig zijn en hoeveel geschatte minuten dat betreft.
 
-Voor de actuele status en het laatst geaccepteerde functionele checkpoint zijn leidend, in deze volgorde:
+`cleaningNotificationProjector.js` blijft disconnected historical reference.
 
-1. `FamilyApp-Schoonmaken-milestone-log.md`
-2. `FamilyApp-Schoonmaken-current-status.md`
-3. de actuele implementatie + contracttests
+## 16. V2.1 verificatie tijdens V2.2
 
-Sectie 25 blijft staan als historisch referentiepunt maar mag niet als actuele status worden gelezen. De functionele/technische ontwerpbeslissingen in secties 1-24 van dit document blijven wel leidend.
+De V2.1 single-device flow lijkt volgens de product owner correct, maar multi-user verificatie is uitgesteld. Dit verandert niets aan de architectuur: V2.1 wordt niet als volledig accepted gemarkeerd totdat die multi-user gate later expliciet is uitgevoerd.
 
-Laatst geaccepteerde functionele checkpoint: `d81623d1051d766aaa42683e880faed9f3fd2abe`.
+V2.2 mag op product-ownerinstructie vooruitlopen zonder V2.1 naar main te promoveren.
+
+## 17. Expliciet uitgesloten engines
+
+Niet opnieuw bouwen zonder expliciete productbeslissing:
+- availability per member;
+- vacations;
+- sickness/absence;
+- busy-week/capacity planning;
+- automatic scheduling rond personal availability;
+- complexe pause/exception engines.
+
+## 18. Testcontracten
+
+Actieve guards omvatten onder andere:
+- `scripts/test-cleaning-runtime-reachability.js`
+- `scripts/test-cleaning-modal-performance-guards.js`
+- `scripts/test-cleaning-functional-closeout.js`
+- `scripts/test-cleaning-permissions.js`
+- `scripts/test-cleaning-planning-member-filter.js`
+- `scripts/test-cleaning-module-identity.js`
+- `scripts/test-action-inbox.js`
+- `scripts/test-cleaning-collaboration-v21.js`
+- `scripts/test-cleaning-history-v22.js`
+
+V2.2-contracts bewaken expliciet: canonical completionLogs, room/routine history, current-assignee attention, deterministic Activity key, geen observer/poller/extra Firebase owner en geen reactivatie van de oude history/activity/notification runtimes.
+
+## 19. Milestone order
+
+- V2.0 — accepted performance base.
+- V2.1 — collaboration codecandidate; multi-user verification deferred/open.
+- V2.2 — history/activity/attention codecandidate; real-device test open.
+- V2.3 — incomplete occurrence/manual adjustment/hardening.
+- V2.4 — final premium visual polish.
+
+Main blijft read-only totdat een exact milestonecheckpoint expliciet is geaccepteerd én apart voor promotie is vrijgegeven.

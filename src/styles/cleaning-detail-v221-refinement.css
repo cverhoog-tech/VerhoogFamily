@@ -1,0 +1,63 @@
+/* Cleaning V2.2.1 visual refinement — supply icon/status fidelity.
+   Loaded only inside the existing lazy Cleaning visual companion. */
+
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-row{
+  grid-template-columns:50px minmax(0,1fr) 40px;
+  column-gap:12px;
+}
+
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon{
+  inline-size:48px;block-size:48px;min-inline-size:48px;min-block-size:48px;max-inline-size:48px;max-block-size:48px;box-sizing:border-box;place-self:center;border-radius:15px;border:1px solid color-mix(in srgb,currentColor 8%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.42);
+}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon svg{inline-size:27px;block-size:27px;stroke-width:1.75;vector-effect:non-scaling-stroke;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-spray,#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-cleaner{color:#7046e8;background:#f1ebff;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-cloth{color:#2486bb;background:#e8f6fc;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-sponge{color:#d08b11;background:#fff5dc;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-glove{color:#2f9660;background:#e9f8ef;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-brush{color:#bd6542;background:#faeee8;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-bucket{color:#347fab;background:#e9f3fb;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-bag{color:#69737d;background:#eef1f4;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-icon.is-wiper{color:#6564b9;background:#efeffd;}
+[data-theme*="dark"] #cleaning-v2-sheet.fav-detail-mode .fav-supply-icon{border-color:rgba(255,255,255,.055);box-shadow:inset 0 1px 0 rgba(255,255,255,.035);}
+
+/* Status control: true 1:1 circle with CSS-drawn glyphs.
+   No font glyphs or SVG masks: every mark is positioned from the exact circle center. */
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state{
+  -webkit-appearance:none;appearance:none;position:relative;inline-size:38px;block-size:38px;min-inline-size:38px;min-block-size:38px;max-inline-size:38px;max-block-size:38px;width:38px;height:38px;min-width:38px;min-height:38px;max-width:38px;max-height:38px;aspect-ratio:1 / 1;box-sizing:border-box;place-self:center;display:block;overflow:hidden;padding:0;margin:0;border-radius:50%;line-height:0;font-size:0;flex:0 0 38px;transform:none;text-align:center;
+}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state::before,
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state::after{
+  content:"";position:absolute;display:block;box-sizing:border-box;pointer-events:none;
+}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-stock{border:1.5px solid color-mix(in srgb,var(--fav-green) 34%,transparent);background:color-mix(in srgb,var(--fav-green-soft) 92%,var(--fav-surface));color:var(--fav-green);}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-stock::before{
+  left:50%;top:50%;width:15px;height:8px;border-left:3px solid currentColor;border-bottom:3px solid currentColor;border-radius:1px;transform:translate(-50%,-58%) rotate(-45deg);transform-origin:center;
+}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-stock::after{display:none;}
+
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-low{border:1.5px solid color-mix(in srgb,var(--fav-amber) 42%,transparent);background:color-mix(in srgb,var(--fav-amber-soft) 92%,var(--fav-surface));color:var(--fav-amber);}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-low::before{
+  left:50%;top:50%;width:3px;height:11px;border-radius:999px;background:currentColor;transform:translate(-50%,-72%);
+}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-low::after{
+  left:50%;top:50%;width:3.4px;height:3.4px;border-radius:50%;background:currentColor;transform:translate(-50%,155%);
+}
+
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out{border:1.5px solid color-mix(in srgb,var(--fav-red) 38%,transparent);background:color-mix(in srgb,var(--fav-red-soft) 92%,var(--fav-surface));color:var(--fav-red);}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out::before,
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out::after{
+  left:50%;top:50%;width:16px;height:3px;border-radius:999px;background:currentColor;transform-origin:center;
+}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out::before{transform:translate(-50%,-50%) rotate(45deg);}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out::after{transform:translate(-50%,-50%) rotate(-45deg);}
+
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state:disabled{opacity:1;cursor:default;}
+#cleaning-v2-sheet.fav-detail-mode .fav-supply-state:not(:disabled):active{transform:scale(.94);}
+
+@media(max-width:390px){
+  #cleaning-v2-sheet.fav-detail-mode .fav-supply-row{grid-template-columns:48px minmax(0,1fr) 38px;column-gap:10px;}
+  #cleaning-v2-sheet.fav-detail-mode .fav-supply-icon{inline-size:46px;block-size:46px;min-inline-size:46px;min-block-size:46px;max-inline-size:46px;max-block-size:46px;}
+  #cleaning-v2-sheet.fav-detail-mode .fav-supply-state{inline-size:36px;block-size:36px;min-inline-size:36px;min-block-size:36px;max-inline-size:36px;max-block-size:36px;width:36px;height:36px;min-width:36px;min-height:36px;max-width:36px;max-height:36px;flex-basis:36px;}
+  #cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-stock::before{width:14px;height:7px;border-left-width:2.8px;border-bottom-width:2.8px;}
+  #cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out::before,#cleaning-v2-sheet.fav-detail-mode .fav-supply-state.is-out::after{width:15px;height:2.8px;}
+}

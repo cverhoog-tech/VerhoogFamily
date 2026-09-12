@@ -6,11 +6,12 @@
   if(window.__familyAppFeedbackRound4)return;
   window.__familyAppFeedbackRound4=true;
 
-  var VERSION='0.4.0';
+  var VERSION='0.4.1';
   var state={
     hookTimer:null,
     coreModulePromise:null,
     coreStylePromise:null,
+    companionPromise:null,
     premiumPromise:null,
     turnPromise:null,
     adapterPromise:null,
@@ -56,7 +57,7 @@
       }
       var link=document.createElement('link');
       link.rel='stylesheet';
-      link.href='/src/styles/cleaning.css?v=1';
+      link.href='/src/styles/cleaning.css?v=2';
       link.setAttribute('data-familyapp-cleaning-style','1');
       link.addEventListener('load',resolve,{once:true});
       link.addEventListener('error',reject,{once:true});
@@ -134,6 +135,17 @@
     return state.turnPromise;
   }
 
+  function loadCleaningCompanions(){
+    if(window.CleaningV23Companions)return Promise.resolve(true);
+    if(state.companionPromise)return state.companionPromise;
+    if(window._cleaningCompanionLoaderPromise){state.companionPromise=window._cleaningCompanionLoaderPromise;return state.companionPromise;}
+    state.companionPromise=import('/src/modules/cleaning/cleaningCompanionLoader.js?v=1')
+      .then(function(){return !!window.CleaningV23Companions;})
+      .catch(function(error){state.companionPromise=null;window._cleaningCompanionLoaderPromise=null;throw error;});
+    window._cleaningCompanionLoaderPromise=state.companionPromise;
+    return state.companionPromise;
+  }
+
   function loadPremiumFeedback(){
     if(window.CleaningPremiumFeedback)return Promise.resolve(true);
     if(state.premiumPromise)return state.premiumPromise;
@@ -179,17 +191,18 @@
     if(state.presentationScheduled)return;
     state.presentationScheduled=true;
     var run=function(){
-      // The dedicated turn popup is deliberately registered before PremiumFeedback
-      // and Round2. It therefore owns the primary room action before any visual
-      // decorator can observe or reinterpret that click.
+      // Register the dedicated turn owner first. Functional V2.1-V2.3 companions
+      // then extend that accepted route, while V2.4 remains presentation-only.
       loadCleaningTurnExperience()
         .catch(function(error){console.warn('[Cleaning] beurt-popup kon niet worden geladen',error);})
+        .then(function(){return loadCleaningCompanions();})
+        .catch(function(error){console.warn('[Cleaning] companions konden niet worden geladen',error);})
         .then(function(){return loadPremiumFeedback();})
         .catch(function(error){console.warn('[Cleaning] premium feedback kon niet worden geladen',error);})
         .then(function(){return loadCleaningAdapters();});
     };
-    // Core content has already rendered. Presentation-only decorators may now
-    // arrive during idle time without sitting on the critical first-open path.
+    // Core content has already rendered. Companions and presentation-only layers
+    // may now arrive during idle time without sitting on the critical first-open path.
     if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(run,{timeout:800});
     else window.setTimeout(run,180);
   }
@@ -300,6 +313,7 @@
     refreshHome:refreshHome,
     prepareCleaningCore:prepareCleaningCore,
     loadCleaningTurnExperience:loadCleaningTurnExperience,
+    loadCleaningCompanions:loadCleaningCompanions,
     loadCleaningAdapters:loadCleaningAdapters
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

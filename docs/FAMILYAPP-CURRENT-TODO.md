@@ -1,121 +1,209 @@
 # FamilyApp — Current TODO / Execution State
 
-Branch: `agent/household-rebuild-v2`
-Roadmap: `docs/household-rebuild-v2-roadmap.md`
-Phase tracker: `docs/household-rebuild-v2-progress.md`
-Update history: `docs/FAMILYAPP-UPDATE-LOG.md`
-Running product/fix backlog: `docs/FAMILYAPP-FIX-LIST.md`
-Cleaning current status: `FamilyApp-Schoonmaken-current-status.md`
-Cleaning milestone log: `FamilyApp-Schoonmaken-milestone-log.md`
+Last updated: 2026-09-11  
+Branch: `agent/household-rebuild-v2`  
+Production/main baseline: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`  
+Accepted Cleaning-v2 rollback basis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a`
 
-New chats/agents should read these files before changing the rebuild branch.
+Read together with:
+- `FamilyApp-TODO-updated.txt`
+- `docs/FAMILYAPP-FIX-LIST.md`
+- `docs/household-rebuild-v2-progress.md`
+- `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md`
+- `FamilyApp-Schoonmaken-current-status.md`
+- `FamilyApp-Schoonmaken-milestone-log.md`
+- `FamilyApp-Schoonmaken-module-architectuur.md`
 
-## Current phase
+## Hard branch rule
 
-**STEP 14 — Schoonmaken is the active roadmap phase and is now a FUNCTIONAL CLOSE-OUT CANDIDATE.**
+`main` stays read-only until the product owner real-device accepts an exact milestone checkpoint and separately asks to promote it. Production Firebase Rules and fallback/lock branches are also read-only without explicit permission.
 
-The earlier STEP 13 Activity / Feed work is already part of the rebuild branch baseline. Do not reopen it unless a concrete regression requires that.
+## Fixed product/design boundary
 
-`main`, production Firebase Rules and production deployment remain untouched. Firebase remains on Spark.
+Shared FamilyApp visual direction: **Calm Premium Home**.
 
-## Action Inbox — REAL-DEVICE ACCEPTED (06-09-2026)
+Cleaning and Tasks will use the same visual family, but not the same product model:
+- Cleaning = room → routine → planning → execution → supplies → history;
+- Tasks = general task execution;
+- concrete Cleaning occurrences may project to Tasks/Agenda, but Cleaning remains the authority for the routine/occurrence;
+- Cleaning must not become a second Tasks module.
 
-The cross-module Action Inbox is accepted on iPhone as the central decision surface:
+## Deferred gate — Cleaning V2.1 collaboration
 
-- ✉️ Inbox = open requests requiring a decision.
-- 🔔 Meldingen = informational updates.
-- Presence in Inbox is derived from canonical domain state, never from NotificationStore delivery.
-- Task help, Task swap, Party Quest invites, Cleaning help, Cleaning routine transfer and Cleaning counterproposals route to the existing domain runtimes.
-- `ActionInboxStore` is the single owner of `openActionCount`.
-- No `/inboxRequests` canonical database and no second domain writer were introduced.
-- Functional Action Inbox contract commit: `6fd4c0cefceca0e957800a71ca5614a983ec1ae3`.
-- Real-device accepted preview: `https://verhoog-family-ks84yij7s-cverhoog-techs-projects.vercel.app`.
-- Household Rebuild Contracts and Vercel were green.
+Status: **codecandidate complete; single-device path appears good; multi-user verification deferred by product owner**.
 
-## STEP 14 — Cleaning functional close-out candidate
+Last fully tested V2.1 checkpoint:
+`7e34cb60b78cf45664fdb82202e9673bb2ae9672`
 
-Latest functional candidate before documentation-only commits:
-`cabf639382be4f0bd5a8a2c540855b914dbedffa`
+GitHub Actions run `34534350216`: **SUCCESS**.
 
-CI for this candidate:
-- Household Rebuild Contracts: **SUCCESS** — run `34000853880`.
-- Vercel: **SUCCESS**.
-- `main`: untouched.
+Retained:
+- occurrence transfer / accept / decline / withdraw;
+- counter proposal for person/date/time;
+- explicit third-person consent;
+- help request / accept / decline / withdraw;
+- no implicit multi-person assignment;
+- contextual collaboration controls inside existing turn detail sheet;
+- no standalone `Samenwerken` menu below Kamers;
+- accepted transfer updates existing Task/Agenda projections;
+- idempotency/double-tap guards;
+- no extra long-lived Firebase listener, popup owner, MutationObserver or notification projector.
 
-### Functional scope now implemented
+V2.1 remains **NOT fully real-device/multi-user accepted**. Test later with two/three accounts before final acceptance/promotion.
 
-- [x] Rooms + routines CRUD, templates, ordering and safe soft-delete.
-- [x] Weekplanner, personal approval, rolling horizon and member display filter.
-- [x] Task + Agenda projections and controlled reverse sync to CleaningOccurrence.
-- [x] Explicit incomplete-work flow: later this week, next occurrence, skip, ask for help.
-- [x] Cleaning help request accept/decline routed through Action Inbox and existing Cleaning runtime.
-- [x] Personal display preference: Tijd / Aantal / Beide.
-- [x] Temporary availability: sick, temporarily unavailable, busy week, vacation and planning pause without backlog.
-- [x] Richer room/routine history from canonical completionLogs.
-- [x] Bundled Cleaning collaboration notifications + daily reminder.
-- [x] Supplies / inventory / Weekvoorraad / explicit Shopping handoff.
-- [x] New Cleaning Shopping items preserve stable Cleaning IDs (`cleaningSupplyId`, occurrence/room/routine IDs).
-- [x] Conservative lifecycle cleanup for open derived Task/Agenda/Shopping projections while completed/manual history stays protected.
-- [x] Shared household activity projection for completed Cleaning work.
-- [x] Household-key safety and create-retry idempotency hardening.
-- [x] Runtime reachability contract now covers the full Cleaning runtime including role policy.
-- [x] Central client role/capability policy: Beheerder / Gezinslid / Beperkt profiel.
+## Cleaning V2.2 — history / Activity / useful attention
 
-### Role/capability product contract
+Status: **implementation candidate complete; contract suite green; functional real-device verification pending**.
 
-Existing household roles are mapped without a new account model:
+Functional runtime checkpoint:
+`ffb0552bad734309e02361de87bde7a3e96a3464`
 
-- `owner` / `admin` → **Beheerder**.
-- `adult` / `member` → **Gezinslid**.
-- `child` / `limited` / `restricted` → **Beperkt profiel**.
+Last V2.2 docs/test checkpoint before visual rework:
+`28fd9fb6832ef369ee084723b4a71736fb4e662d`
 
-Current Cleaning behavior:
+GitHub Actions `Household Rebuild Contract Tests` run `34537817885`: **SUCCESS**.
 
-- Beheerder: full structural rooms/routines, household planning, assignments, household availability, supplies and execution.
-- Gezinslid: may plan, initiate routine transfers/counterproposals, manage Cleaning supplies, manage own availability, execute work and respond to requests; structural room/routine changes remain manager-only.
-- Beperkt profiel: assigned work execution, request responses/help and personal display preference; no structural, plan-generation, supply or availability initiation.
+Built:
+- pure read model over canonical completionLogs;
+- lightweight History companion;
+- fourth `Historie` tab;
+- room/routine history;
+- current-week summary;
+- current-assignee today/overdue attention;
+- best-effort `cleaning.completed` Activity projection with deterministic dedupe;
+- no second history DB/raw Firebase listener/MutationObserver/polling/notification projector/popup owner.
 
-`scripts/test-cleaning-permissions.js` executes this matrix as behavior, not only string assertions.
+The V2.2 functional gate remains open. Turn/Supplies visual verification now uses the V2.2.1 candidate below.
 
-### Release-security boundary — intentionally not changed in this milestone
+## CURRENT GATE — Cleaning V2.2.1 Calm Premium detail visual rework
 
-`database.rules.json` still grants active household members broad write access under the generic household `$sharedData` boundary. The new client policy provides the intended product behavior, but **true server-side role enforcement requires a deliberate Firebase Rules migration before public release**.
+Status: **CODECANDIDATE READY — CI GREEN — REAL-DEVICE IPHONE VERIFICATION PENDING**.
 
-That migration is a separate release-security gate because production Firebase Rules must not be changed/deployed from this branch without explicit approval.
+Exact green runtime/test candidate:
+`7867946641cb588d84ea075e08c4c54a3e60cfc5`
 
-## Remaining before STEP 14 functional acceptance
+GitHub Actions `Household Rebuild Contract Tests` run `34572194287`: **SUCCESS**.
 
-- [ ] Real-device smoke on the new role/capability layer.
-- [ ] Confirm existing owner/manager Cleaning flows did not regress.
-- [ ] Preferably check one adult/member account: structural controls blocked/hidden while planning/transfer/supplies/own availability still work.
-- [ ] If a child/limited account is available, check execution + accept/decline/help remain available while management actions are absent.
-- [ ] Mark the close-out checkpoint accepted only after explicit user confirmation.
+Exact immutable preview:
+`https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`
 
-## After functional acceptance
+Vercel deployment:
+`dpl_45GFm7ugk8BkKBQPRLgBQHrdJtRA` — **READY**.
 
-### STEP 14 visual/polish phase
-- [ ] Apply definitive premium Cleaning visual specification in light and dark mode.
-- [ ] Final hierarchy, hero/background assets, spacing, motion/microinteractions and 44×44 touch targets.
-- [ ] Final per-room scheduled-work presentation and supplies affordance.
-- [ ] Final empty/loading/error states.
+Why this was inserted before V2.3:
+- product owner re-confirmed the exact Cleaning turn and Supplies visual reference on 2026-09-11;
+- building V2.3 first would add new actions into a temporary detail hierarchy and create avoidable rework;
+- the detail visual shell is therefore fixed first, while accepted canonical state/writers remain untouched.
 
-### Optional advisory scope
-- [ ] Data-driven frequency/planning suggestions only if they remain advisory and do not become a second planning authority.
-- [ ] Optional Cleaning assistant insights only after visual/function baseline is stable.
+New visual implementation:
+- `src/modules/cleaning/cleaningDetailVisualV221.js`;
+- `src/styles/cleaning-detail-v221.css`;
+- `scripts/test-cleaning-detail-visual-v221.js`;
+- lazy import through existing `cleaningPremiumFeedback.js`.
 
-### Public-release security gate
-- [ ] Design/test Firebase Rules role enforcement for Cleaning/shared household writes in a safe non-production rules workflow.
-- [ ] Deploy production rules only after explicit approval and regression testing.
+### Fixed turn hierarchy
 
-## Standing guardrails
+1. native-feeling header;
+2. strong room hero + semantic status;
+3. prominent cleaning title;
+4. day / moment / parts / estimate;
+5. assignee card;
+6. routine progress;
+7. checklist;
+8. Start/Continue Cleaning;
+9. Edit;
+10. View turn + Supplies;
+11. collaboration remains contextual in the same existing sheet.
 
-- Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
-- `main` stays untouched until explicit approval.
-- No production deploy or production Firebase Rules change without explicit approval.
-- `CleaningOccurrence` remains the only canonical source of truth for a concrete Cleaning occurrence.
-- Tasks and Agenda remain derived projections.
-- Action Inbox remains a read/projection/action-routing layer and never becomes request truth.
-- Shopping add and stock replenishment remain explicit user actions.
-- Pause/availability must never create a backlog of missed occurrences.
-- Realtime subscriptions require exact cleanup and stale HouseholdContext protection.
-- New real-device checkpoints require green relevant CI and a unique Vercel preview.
+### Fixed supplies hierarchy
+
+1. room-context header;
+2. `Voor deze beurt / Alle kameritems` segmented control;
+3. turn/room intro;
+4. 76px supply rows with 46px coloured minimal line-icon tiles;
+5. text + indicator for `Op voorraad / Bijna op / Ontbreekt`;
+6. `Ontbreekt iets?` callout;
+7. room inventory summary;
+8. room-item management when capability allows;
+9. `Bekijk alle kameritems / Boodschappen` utility pair;
+10. LOW/OUT handoff goes through canonical `ShoppingListStore` with dedupe.
+
+### CI note
+
+The first V2.2.1 run was red only because two older tests still expected the `2.2.0` companion marker and the new CSS guard matched the text `backdrop-filter` inside a comment saying the effect was not used. Functional closeout was already green there. Those stale test assertions were corrected without relaxing runtime guards; the full suite is green on exact candidate `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
+
+### Safety/performance
+
+- primary `cleaningScreen.js` stays v2.0.0 and remains execution/write authority;
+- existing `#cleaning-v2-sheet` stays the sole popup owner;
+- no additional raw Firebase listener;
+- no visual-layer Firebase writer;
+- no MutationObserver;
+- no document-wide click interception;
+- no visual polling/timer loop;
+- no backdrop-filter or continuous animation in the new CSS;
+- production Firebase Rules unchanged.
+
+### Real-device checks required
+
+1. Light and dark mode turn sheet matches the new hierarchy and feels calm/premium.
+2. Hero/header/spacing do not jump during open/close.
+3. Checklist taps remain instant; progress count/bar/percentage follow immediately.
+4. Start/Continue and complete-all still work through the existing writer.
+5. Edit still routes into existing management flow.
+6. Collaboration remains in the same turn sheet and does not dominate it.
+7. Supplies segmented switch is smooth and correct.
+8. Supply icon style/size/colour and stock indicators match the reference direction.
+9. Inventory status changes and room-item creation work.
+10. LOW/OUT → Boodschappen does not create duplicates.
+11. Repeated open/close/scope switching does not freeze or jank.
+12. Vandaag / Kamers / Weekplan / Historie still work after the detail rework.
+
+Do not mark V2.2.1 REAL-DEVICE ACCEPTED until the product owner explicitly confirms exact candidate `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
+
+## NEXT AFTER V2.2.1 TEST
+
+### Cleaning V2.3 — Function gaps + hardening
+- incomplete occurrence: move / later this week / skip;
+- manual assignee/date/time change;
+- projection consistency hardening;
+- household key safety;
+- idempotency/double submit;
+- listener lifecycle/account-household switch;
+- soft-delete cases;
+- cache/versioning;
+- extra contracts.
+
+### Cleaning V2.4 — broad premium consistency pass
+- harmonize remaining Cleaning cards/tabs/states;
+- full light/dark consistency;
+- refine room atlases/assets;
+- lightweight iOS-feeling microinteractions;
+- prepare the same shared visual primitives for later Tasks harmonisation;
+- no heavy glass/blur/repaint regressions.
+
+## Explicitly NOT in Cleaning roadmap
+
+Do not rebuild availability per member, vacations, sickness/absence, busy-week capacity logic, automatic availability scheduling, or complex pause/exception engines unless the product owner explicitly reverses that decision.
+
+## STEP 15 after Cleaning
+
+Branding / PWA / Login & Auth:
+- final FamilyApp logo/icon family;
+- PWA/maskable/Apple Touch/favicon assets;
+- premium new login screen;
+- Google, Apple and normal account login/registration preserved;
+- normal-account onboarding/session lifecycle explicitly tested;
+- Apple action also reachable from Home via the same auth authority;
+- manifest/theme/background/caching/Home Screen icon real-device verification;
+- only reopen Google post-auth freeze if currently reproducible.
+
+## Other genuinely open items
+
+- Internationalisation: NL/EN/TR/DE/FR with central i18n and saved user choice.
+- Party Quest toast: verify current real-device candidate before writing new code.
+- Release/security later: server-side role rules, Apple provider/release config, App Store/native/PWA decisions. No production Rules change without permission.
+
+## Historical status rule
+
+Historical code can remain for rollback/product reference but must never be treated as permission to reactivate the pre-performance-reset Cleaning runtime.

@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// ACTION INBOX REGISTRY v1.0.0
+// ACTION INBOX REGISTRY v1.1.0
 //
 // This file is the ONLY place that knows how to (a) find open, actionable
 // requests for the current user in a domain's canonical source, and
@@ -9,21 +9,15 @@
 // Hard rules this file must never break:
 // - Presence in the Inbox is ALWAYS computed from the canonical domain
 //   state (taskData, TaskSwapRequests, PartyQuestInvites,
-//   CleaningHouseholdRepository) — never from NotificationStore. A
-//   notification that was never created/delivered must not hide an open
-//   request, and a stale/resolved notification must never resurrect one.
+//   CleaningHouseholdRepository) — never from NotificationStore.
 // - No adapter ever writes directly to Firebase. Every action() call
-//   delegates to an existing, already-accepted domain runtime function.
+//   delegates to an existing domain runtime function.
 // - No new canonical request state is stored anywhere by this file.
-//
-// Adding a future module to the Inbox means adding one adapter here with
-// {domain, type, findById, list, toItem, action} — nothing else in the
-// platform/inbox layer needs to change.
 // ============================================================
 (function(){
   if(window.ActionInboxRegistry)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
 
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
@@ -34,7 +28,7 @@
     if(found)return String(found.displayName||found.name||'Gezinslid');
     try{
       var bridge=window.HouseholdIdentityFirebaseBridge,rows=bridge&&bridge.getMembers?bridge.getMembers():[];
-      var row=(Array.isArray(rows)?rows:[]).find(function(r){return String(r&&r.uid)===String(uid);});
+      var row=(Array.isArray(rows)?rows:[]).find(function(r){return String(r&&(r.uid||r.id))===String(uid);});
       if(row)return String(row.displayName||row.name)||'Gezinslid';
     }catch(e){}
     return'Gezinslid';
@@ -49,8 +43,6 @@
 
   // ---------------------------------------------------------
   // Adapter: Task-hulp (targeted + household), read from taskData.
-  // Shared status/action semantics are reused from NotificationActions,
-  // which itself reads taskData live — no notification-record dependency.
   // ---------------------------------------------------------
   function taskId(t){return String(t&&(t.id||t._key)||'');}
   function taskHelpEvent(t,notifId){return{id:notifId||undefined,type:'task.help.requested',data:{taskId:taskId(t),occurrence:String(t&&t.helpRequestedAt||'')}};}
@@ -92,8 +84,7 @@
   };
 
   // ---------------------------------------------------------
-  // Adapter: Task-overdracht (swap), read from TaskSwapRequests' own
-  // canonical list (already filtered to "pending, targeted at me").
+  // Adapter: Task-overdracht (swap), canonical TaskSwapRequests.
   // ---------------------------------------------------------
   var taskSwapAdapter={
     domain:'tasks',type:'task.swap',
@@ -117,8 +108,7 @@
   };
 
   // ---------------------------------------------------------
-  // Adapter: Party Quest invite, read from PartyQuestInvites' own
-  // canonical pending list (already filtered to "pending, invited me").
+  // Adapter: Party Quest invite.
   // ---------------------------------------------------------
   var partyQuestAdapter={
     domain:'quests',type:'partyQuest.invite',
@@ -142,99 +132,44 @@
   };
 
   // ---------------------------------------------------------
-  // Cleaning adapters — all read straight from
-  // CleaningHouseholdRepository.snapshot().data, the single canonical
-  // Cleaning source, exactly like CleaningHelpRequestUi already does for
-  // occurrence help requests.
+  // Cleaning V2.1 adapters. These derive decisions straight from
+  // CleaningOccurrence transferRequest/helpRequest state. They never write;
+  // all decisions route to CleaningCollaborationV21, which owns the one
+  // occurrence-level collaboration transaction path.
   // ---------------------------------------------------------
   function cleaningData(){try{var repo=window.CleaningHouseholdRepository,snap=repo&&repo.snapshot?repo.snapshot():null;return (snap&&snap.data)||null;}catch(e){return null;}}
+  function cleaningEntries(){var data=cleaningData(),occ=data&&data.occurrences||{};return Object.keys(occ).map(function(id){return{occurrence:Object.assign({id:id},occ[id]||{}),data:data};});}
   function cleaningRoomName(data,roomId){var room=data&&data.rooms&&data.rooms[roomId];return room&&room.name?String(room.name):'Ruimte';}
-  function cleaningRoutines(){var data=cleaningData();return (data&&data.routines)||{};}
+  function cleaningAction(occurrenceId,actionId){
+    if(!window.CleaningCollaborationV21||typeof CleaningCollaborationV21.handleInboxAction!=='function')return Promise.reject(new Error('Schoonmaken is nog niet beschikbaar'));
+    return CleaningCollaborationV21.handleInboxAction(occurrenceId,actionId);
+  }
 
   var cleaningHelpAdapter={
     domain:'cleaning',type:'cleaning.help',
-    findById:function(id){var entries=this.list();return entries.find(function(e){return String(e.occurrence.id)===String(id);})||null;},
-    list:function(){
-      try{
-        if(!window.CleaningHelpRequestUi||typeof CleaningHelpRequestUi._pendingRequestsForMe!=='function')return[];
-        return CleaningHelpRequestUi._pendingRequestsForMe();
-      }catch(e){return[];}
-    },
-    toItem:function(entry){
-      var occurrence=entry.occurrence,data=entry.data,request=occurrence.helpRequest||{};
-      var fromName=memberName(request.fromUid);
-      return{
-        rawId:String(occurrence.id),
-        title:'Hulp bij '+cleaningRoomName(data,occurrence.roomId),
-        body:fromName+' vraagt jouw hulp bij deze schoonmaakbeurt.',
-        actorName:fromName,
-        createdAt:Number(request.requestedAt)||Number(occurrence.updatedAt)||0,
-        actions:[{id:'accept',label:'Accepteren'},{id:'decline',label:'Afwijzen'}]
-      };
-    },
-    action:function(entry,actionId){
-      if(!window.CleaningExceptionRuntime||typeof CleaningExceptionRuntime.respondToHelpRequest!=='function')return Promise.reject(new Error('Schoonmaken is nog niet beschikbaar'));
-      return CleaningExceptionRuntime.respondToHelpRequest(entry.occurrence.id,actionId==='decline'?'DECLINE_HELP':'ACCEPT_HELP');
-    }
+    findById:function(id){return this.list().find(function(e){return String(e.occurrence.id)===String(id);})||null;},
+    list:function(){var me=currentUid();if(!me)return[];return cleaningEntries().filter(function(entry){var req=entry.occurrence.helpRequest||{};return String(req.status||'').toUpperCase()==='PENDING'&&String(req.toUid||'')===String(me);});},
+    toItem:function(entry){var occurrence=entry.occurrence,request=occurrence.helpRequest||{},fromName=memberName(request.fromUid);return{rawId:String(occurrence.id),title:'Hulp bij '+cleaningRoomName(entry.data,occurrence.roomId),body:fromName+' vraagt jouw hulp bij deze schoonmaakbeurt.',actorName:fromName,createdAt:Number(request.requestedAt)||Number(occurrence.updatedAt)||0,actions:[{id:'accept-help',label:'Helpen'},{id:'decline-help',label:'Afwijzen'}]};},
+    action:function(entry,actionId){return cleaningAction(entry.occurrence.id,actionId);}
   };
 
-  var cleaningRoutineTransferAdapter={
-    domain:'cleaning',type:'cleaning.routine.transfer',
-    findById:function(id){var row=cleaningRoutines()[id];return row?Object.assign({id:id},row):null;},
-    list:function(){
-      var me=currentUid();if(!me)return[];
-      var routines=cleaningRoutines();
-      return Object.keys(routines).map(function(id){return Object.assign({id:id},routines[id]||{});}).filter(function(routine){
-        return routine&&routine.active!==false&&routine.assignmentRequestStatus==='PENDING'&&String(routine.preferredAssigneeUid||'')===String(me);
-      });
-    },
-    toItem:function(routine){
-      var requesterName=memberName(routine.assignmentRequestedByUid);
-      return{
-        rawId:String(routine.id),
-        title:String(routine.title||'Schoonmaakroutine'),
-        body:requesterName+' vraagt of jij deze routine overneemt.',
-        actorName:requesterName,
-        createdAt:Number(routine.assignmentRequestedAt)||0,
-        actions:[{id:'accept',label:'Accepteren'},{id:'decline',label:'Afwijzen'}]
-      };
-    },
-    action:function(routine,actionId){
-      if(!window.CleaningRoutineExperience||typeof CleaningRoutineExperience.resolveRequest!=='function')return Promise.reject(new Error('Schoonmaken is nog niet beschikbaar'));
-      return CleaningRoutineExperience.resolveRequest(routine.id,actionId!=='decline');
-    }
+  var cleaningTransferAdapter={
+    domain:'cleaning',type:'cleaning.occurrence.transfer',
+    findById:function(id){return this.list().find(function(e){return String(e.occurrence.id)===String(id);})||null;},
+    list:function(){var me=currentUid();if(!me)return[];return cleaningEntries().filter(function(entry){var req=entry.occurrence.transferRequest||{};return String(req.status||'').toUpperCase()==='PENDING'&&String(req.toUid||'')===String(me);});},
+    toItem:function(entry){var occurrence=entry.occurrence,request=occurrence.transferRequest||{},fromName=memberName(request.fromUid);return{rawId:String(occurrence.id),title:'Overdracht · '+cleaningRoomName(entry.data,occurrence.roomId),body:fromName+' vraagt of jij deze schoonmaakbeurt overneemt.',actorName:fromName,createdAt:Number(request.requestedAt)||Number(occurrence.updatedAt)||0,actions:[{id:'accept',label:'Accepteren'},{id:'decline',label:'Weigeren'},{id:'counter',label:'Ander voorstel',secondary:true}]};},
+    action:function(entry,actionId){return cleaningAction(entry.occurrence.id,actionId);}
   };
 
-  var cleaningRoutineCounterAdapter={
-    domain:'cleaning',type:'cleaning.routine.counter',
-    findById:function(id){var row=cleaningRoutines()[id];return row?Object.assign({id:id},row):null;},
-    list:function(){
-      var me=currentUid();if(!me)return[];
-      var routines=cleaningRoutines();
-      return Object.keys(routines).map(function(id){return Object.assign({id:id},routines[id]||{});}).filter(function(routine){
-        return routine&&routine.active!==false&&routine.assignmentRequestStatus==='COUNTER_PROPOSED'&&String(routine.assignmentRequestedByUid||'')===String(me);
-      });
-    },
-    toItem:function(routine){
-      var counterByName=memberName(routine.assignmentCounterProposedByUid);
-      var counterTargetName=memberName(routine.assignmentCounterProposedUid);
-      return{
-        rawId:String(routine.id),
-        title:String(routine.title||'Schoonmaakroutine'),
-        body:counterByName+' stelt voor dat '+counterTargetName+' deze routine overneemt.',
-        actorName:counterByName,
-        createdAt:Number(routine.assignmentCounterProposedAt)||0,
-        actions:[{id:'accept',label:'Accepteren'},{id:'decline',label:'Afwijzen'},{id:'detail',label:'Ander voorstel',secondary:true}]
-      };
-    },
-    action:function(routine,actionId){
-      if(actionId==='detail'){if(typeof window.showScreen==='function')window.showScreen('cleaning');return Promise.resolve(true);}
-      if(!window.CleaningRoutineExperience||typeof CleaningRoutineExperience.resolveCounter!=='function')return Promise.reject(new Error('Schoonmaken is nog niet beschikbaar'));
-      return CleaningRoutineExperience.resolveCounter(routine.id,actionId!=='decline');
-    }
+  var cleaningCounterAdapter={
+    domain:'cleaning',type:'cleaning.occurrence.counter',
+    findById:function(id){return this.list().find(function(e){return String(e.occurrence.id)===String(id);})||null;},
+    list:function(){var me=currentUid();if(!me)return[];return cleaningEntries().filter(function(entry){var req=entry.occurrence.transferRequest||{},counter=req.counterProposal||{};return String(req.status||'').toUpperCase()==='COUNTER_PROPOSED'&&String(counter.status||'').toUpperCase()==='PENDING'&&String(req.fromUid||'')===String(me);});},
+    toItem:function(entry){var occurrence=entry.occurrence,request=occurrence.transferRequest||{},counter=request.counterProposal||{},fromName=memberName(counter.fromUid),targetName=memberName(counter.assigneeUid),when=counter.scheduledDate?(' op '+counter.scheduledDate+(counter.scheduledTime?' om '+counter.scheduledTime:'')):'';return{rawId:String(occurrence.id),title:'Tegenvoorstel · '+cleaningRoomName(entry.data,occurrence.roomId),body:fromName+' stelt '+targetName+when+' voor.',actorName:fromName,createdAt:Number(counter.proposedAt)||Number(occurrence.updatedAt)||0,actions:[{id:'accept-counter',label:'Accepteren'},{id:'decline-counter',label:'Weigeren'}]};},
+    action:function(entry,actionId){return cleaningAction(entry.occurrence.id,actionId);}
   };
 
-  var ADAPTERS=[taskHelpAdapter,taskSwapAdapter,partyQuestAdapter,cleaningHelpAdapter,cleaningRoutineTransferAdapter,cleaningRoutineCounterAdapter];
+  var ADAPTERS=[taskHelpAdapter,taskSwapAdapter,partyQuestAdapter,cleaningHelpAdapter,cleaningTransferAdapter,cleaningCounterAdapter];
   var SEP='::';
 
   function itemId(adapter,rawId){return adapter.type+SEP+rawId;}
@@ -251,16 +186,7 @@
         var projected;
         try{projected=adapter.toItem(raw);}catch(e){console.warn('[ActionInboxRegistry] toItem() failed for '+adapter.type,e);return;}
         if(!projected||!projected.actions||!projected.actions.length)return;
-        items.push({
-          id:itemId(adapter,projected.rawId),
-          type:adapter.type,
-          domain:adapter.domain,
-          title:projected.title,
-          body:projected.body,
-          actor:projected.actorName,
-          createdAt:projected.createdAt||0,
-          actions:projected.actions
-        });
+        items.push({id:itemId(adapter,projected.rawId),type:adapter.type,domain:adapter.domain,title:projected.title,body:projected.body,actor:projected.actorName,createdAt:projected.createdAt||0,actions:projected.actions});
       });
     });
     items.sort(function(a,b){return(Number(b.createdAt)||0)-(Number(a.createdAt)||0);});
@@ -268,12 +194,8 @@
   }
 
   function runAction(id,actionId){
-    var parsed=parseItemId(id);
-    var adapter=parsed&&adapterForType(parsed.type);
-    if(!adapter)return Promise.reject(new Error('Onbekend inbox-item'));
-    var raw;
-    try{raw=adapter.findById(parsed.rawId);}catch(e){raw=null;}
-    if(!raw)return Promise.reject(new Error('Dit verzoek is niet meer actief'));
+    var parsed=parseItemId(id),adapter=parsed&&adapterForType(parsed.type);if(!adapter)return Promise.reject(new Error('Onbekend inbox-item'));
+    var raw;try{raw=adapter.findById(parsed.rawId);}catch(e){raw=null;}if(!raw)return Promise.reject(new Error('Dit verzoek is niet meer actief'));
     return Promise.resolve().then(function(){return adapter.action(raw,actionId);});
   }
 

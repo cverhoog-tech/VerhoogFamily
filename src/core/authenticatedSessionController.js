@@ -37,16 +37,30 @@
     }catch(e){}
   }
   function sessionRoot(){return document&&document.documentElement||null;}
+  function setAppShellLocked(locked){
+    var root=sessionRoot();
+    if(!root||!root.classList)return;
+    if(locked)root.classList.add('familyapp-auth-locked');
+    else root.classList.remove('familyapp-auth-locked');
+  }
+  function releaseFirstPaintGuard(){
+    var root=sessionRoot();
+    if(root&&root.classList){
+      root.classList.remove('familyapp-session-pending');
+      root.classList.remove('familyapp-auth-prepaint');
+    }
+  }
   function claimStartupReveal(){
-    // The old index fallback checks only _appStarted. Claim it immediately so
-    // it cannot reveal Home from stale localStorage before Firebase + household
-    // resolution has completed. Session state below remains the real readiness source.
     window.__familyAppSessionBootOwner=true;
     window._appStarted=true;
     applyCachedTheme();
     var returning=false;
     try{returning=!!localStorage.getItem('familyapp-profile-name-v1');}catch(e){}
     var root=sessionRoot();
+    if(root&&root.classList){
+      root.classList.add('familyapp-auth-prepaint');
+      root.classList.add('familyapp-auth-locked');
+    }
     if(returning&&root&&root.classList)root.classList.add('familyapp-session-pending');
     var el=document.getElementById('login-screen');
     if(el){
@@ -55,15 +69,28 @@
     }
   }
   function loginScreen(show){
-    var root=sessionRoot();if(root&&root.classList)root.classList.remove('familyapp-session-pending');
     var el=document.getElementById('login-screen');
+    if(show){
+      setAppShellLocked(true);
+      if(el){
+        el.style.opacity='1';
+        el.style.transition='none';
+        el.style.display='flex';
+        el.style.visibility='visible';
+        el.style.pointerEvents='auto';
+      }
+      releaseFirstPaintGuard();
+      return;
+    }
     if(el){
       el.style.opacity='1';
       el.style.transition='none';
-      el.style.display=show?'flex':'none';
-      el.style.visibility=show?'visible':'hidden';
-      el.style.pointerEvents=show?'auto':'none';
+      el.style.display='none';
+      el.style.visibility='hidden';
+      el.style.pointerEvents='none';
     }
+    setAppShellLocked(false);
+    releaseFirstPaintGuard();
   }
   function resetLoginUi(){
     var s1=document.getElementById('login-step-1'),s2=document.getElementById('login-step-2');
@@ -98,10 +125,6 @@
   }
   function bootstrap(user){
     var uid=user&&user.uid||null;
-
-    // signInWithPopup and onAuthStateChanged can resolve in either order on iOS/PWA.
-    // Reuse the same in-flight bootstrap for the same UID so a late observer callback
-    // cannot cancel/restart household resolution that was already started by the popup.
     if(uid&&bootstrapPromise&&bootstrapUid===uid&&currentUser&&currentUser.uid===uid){
       assignUser(user);
       return bootstrapPromise;
@@ -117,8 +140,6 @@
     if(!user){
       bootstrapPromise=null;bootstrapUid=null;
       startedUid=null;
-      // Keep the compatibility guard claimed. Readiness is represented by this
-      // controller's state, not by the legacy _appStarted flag.
       window._appStarted=true;
       try{window.fbFamilyId=null;fbFamilyId=null;}catch(e){}
       resetLoginUi();loginScreen(true);setState('signedOut');return Promise.resolve();
@@ -165,10 +186,15 @@
   }
   function bindLifecycle(){
     if(lifecycleBound)return;lifecycleBound=true;
-    if(typeof window.addEventListener==='function')window.addEventListener('pageshow',function(event){
-      if(event&&event.persisted&&state!=='ready'&&currentUser)resume();
-    });
+    if(typeof window.addEventListener==='function'){
+      window.addEventListener('pagehide',function(){if(state!=='ready')setAppShellLocked(true);});
+      window.addEventListener('pageshow',function(event){
+        if(state!=='ready')setAppShellLocked(true);
+        if(event&&event.persisted&&state!=='ready'&&currentUser)resume();
+      });
+    }
     if(document&&typeof document.addEventListener==='function')document.addEventListener('visibilitychange',function(){
+      if(state!=='ready')setAppShellLocked(true);
       if(document.visibilityState==='visible'&&state!=='ready'&&currentUser&&!bootstrapPromise)resume();
     });
   }
@@ -182,7 +208,12 @@
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
-  function stop(){generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}currentUser=null;startedUid=null;window._appStarted=true;var root=sessionRoot();if(root&&root.classList)root.classList.remove('familyapp-session-pending');setState('stopped');}
+  function stop(){
+    generation++;runCleanup();bootstrapPromise=null;bootstrapUid=null;
+    if(authUnsubscribe){try{authUnsubscribe();}catch(e){}authUnsubscribe=null;}
+    currentUser=null;startedUid=null;window._appStarted=true;
+    setAppShellLocked(false);releaseFirstPaintGuard();setState('stopped');
+  }
 
   window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};

@@ -71,7 +71,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(center.includes("VERSION='2.0.0'"));
   assert.ok(delivery.includes("VERSION='2.0.0'"));
   assert.ok(pushRegistry.includes("VERSION='1.0.0'"));
-  assert.ok(pushService.includes("VERSION='1.1.0'"));
+  assert.ok(pushService.includes("VERSION='1.2.0'"));
   assert.ok(pushBridge.includes("VERSION='1.0.0'"));
   assert.ok(pushSettings.includes("VERSION='1.1.1'"));
   assert.ok(taskProjector.includes("VERSION='2.0.0'"));
@@ -96,11 +96,13 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(!/families\/.*fcmTokens/.test(pushRegistry),'new push registry must not restore household-shared token storage');
 
   // Startup remains prompt-free and readiness is checked before the only
-  // Notification.requestPermission call.
+  // Notification.requestPermission call. The same service registers the shared
+  // push/static-cache worker without creating a second scope='/' owner.
   assert.ok(pushService.includes('window.setupPushNotifications=function(){return api.start();};'),'legacy startup push entrypoint must be neutralized');
   assert.strictEqual((pushService.match(/Notification\.requestPermission\(\)/g)||[]).length,1,'only explicit requestEnable flow may request permission');
   assert.ok(pushService.indexOf('assertDeliveryConfig();')<pushService.indexOf('Notification.requestPermission()'),'delivery readiness must be checked before permission');
   assert.ok(pushService.includes('PUSH_SENDER_NOT_CONFIGURED'));
+  assert.ok(pushService.includes("serviceWorker.register('/firebase-messaging-sw.js',{scope:'/',updateViaCache:'none'})"),'push service must register the shared worker with cache-bypass updates');
   assert.ok(pushSettings.includes('st.senderConfigured===false'));
   assert.ok(pushSettings.includes('st.vapidConfigured===false'));
   assert.ok(pushSettings.includes('svc.requestEnable()'),'notification settings button must own explicit push opt-in');
@@ -115,6 +117,7 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushSw.includes('firebase-messaging-compat.js'));
   assert.ok(pushSw.includes('onBackgroundMessage'));
   assert.ok(pushSw.includes("self.addEventListener('notificationclick'"));
+  assert.ok(pushSw.includes("self.addEventListener('fetch'"),'shared worker must own static cache fetch handling');
   assert.ok(pushConfig.includes('FAMILYAPP_WEB_PUSH_VAPID_KEY'));
   assert.ok(pushConfig.includes('vapidConfigured:vapidConfigured'));
   assert.ok(pushConfig.includes('senderConfigured:senderConfigured'));
@@ -132,5 +135,5 @@ function indexOfScript(list,prefix){return list.findIndex(x=>String(x).startsWit
   assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_CLIENT_EMAIL'));
   assert.ok(pushSender.includes('FAMILYAPP_FIREBASE_SERVICE_PRIVATE_KEY'));
 
-  console.log('STEP 10 served notification + readiness-aware Web Push sender audit: PASS');
+  console.log('STEP 10 served notification + shared cache worker + readiness-aware Web Push sender audit: PASS');
 })().catch(error=>{console.error(error);process.exit(1);});

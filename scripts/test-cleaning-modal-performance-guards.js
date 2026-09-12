@@ -5,6 +5,7 @@ const path=require('path');
 function read(rel){return fs.readFileSync(path.join(__dirname,'..',rel),'utf8');}
 const screen=read('src/modules/cleaning/cleaningScreen.js');
 const premium=read('src/modules/cleaning/cleaningPremiumFeedback.js');
+const turnGuard=read('src/modules/cleaning/cleaningTurnRenderGuard.js');
 const inbox=read('src/platform/inbox/actionInboxBootstrap.js');
 const navigation=read('src/core/navigation.js');
 
@@ -15,6 +16,8 @@ assert.doesNotMatch(screen,/TaskSharedData|CleaningExecutionWriteRuntime|Cleanin
 assert.match(screen,/root\.addEventListener\('click',onRootClick\)/,'one Cleaning root owns screen clicks');
 assert.match(screen,/sheet\.addEventListener\('click',onSheetClick\)/,'one Cleaning sheet owns modal clicks');
 assert.doesNotMatch(screen,/document\.addEventListener\('click'/,'v2 must not intercept clicks document-wide');
+assert.match(turnGuard,/screen\.addEventListener\('click',scheduleSuspend,true\)/,'turn render guard must stay scoped to the Cleaning screen');
+assert.doesNotMatch(turnGuard,/document\.addEventListener\('click'/,'turn render guard must not own document-wide clicks');
 assert.match(screen,/write\.timer=setTimeout\(flushTurnWrite,120\)/,'rapid checkbox taps must coalesce before persistence');
 assert.match(screen,/write\.db\.ref\(write\.cleaningPath\+'\/occurrences\/'\+safeKey\(occurrenceId\)\)/,'turn writes must target one canonical occurrence');
 assert.match(screen,/return Object\.keys\(updates\)\.length\?write\.db\.ref\(write\.familyPath\)\.update\(updates\)/,'derived Task/Agenda sync must use one bounded multi-location update');

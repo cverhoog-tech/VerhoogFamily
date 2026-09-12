@@ -1,11 +1,13 @@
 'use strict';
 // ============================================================
-// MEAL PROPOSAL UI v1.0.0 — STEP 13.5
+// MEAL PROPOSAL UI v1.0.1 — STEP 13.5
 // Presentation only. Workflow writes go through MealProposalService.
+// Proposal cards register with the unified Feed timeline and are ordered by
+// createdAt alongside social posts/activity instead of being pinned on top.
 // ============================================================
 (function(){
   if(window.MealProposalUi)return;
-  var VERSION='1.0.0',sub=null,baseFeedBody=null,recipeWrapped=false;
+  var VERSION='1.0.1',sub=null,timelineRegistered=false,recipeWrapped=false;
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function toast(v){if(typeof window.showToast==='function')window.showToast(v);}
@@ -31,13 +33,21 @@
       +'</article>';
   }
 
-  function proposalHtml(){var s=svc();if(!s||typeof s.list!=='function')return'';return s.list().slice(0,12).map(card).join('');}
-  function installFeedBridge(){
-    if(window.feedListBodyHTML&&window.feedListBodyHTML.__mealProposalWrapped)return;
-    if(typeof window.feedListBodyHTML!=='function')return false;
-    baseFeedBody=window.feedListBodyHTML;
-    var wrapped=function(){var normal=baseFeedBody.apply(this,arguments),proposals=proposalHtml();return proposals+normal;};
-    wrapped.__mealProposalWrapped=true;window.feedListBodyHTML=wrapped;return true;
+  function proposalRows(){var s=svc();if(!s||typeof s.list!=='function')return[];return s.list().slice(0,12);}
+  function proposalHtml(){return proposalRows().map(card).join('');}
+  function installFeedTimeline(){
+    if(timelineRegistered)return true;
+    var feed=window.FeedActivityPresentation;
+    if(!feed||typeof feed.registerTimelineProvider!=='function')return false;
+    feed.registerTimelineProvider({
+      id:'meal-proposals',
+      list:proposalRows,
+      time:function(p){return Number(p&&p.createdAt||0);},
+      render:card,
+      matchesFilter:function(filter){return filter==='all';}
+    });
+    timelineRegistered=true;
+    return true;
   }
   function rerender(){try{var screen=document.getElementById('screen-feed');if(screen&&screen.classList.contains('active')&&typeof window.renderFeed==='function')window.renderFeed();}catch(e){}}
 
@@ -61,7 +71,7 @@
     +'.mp-card{background:linear-gradient(145deg,#fff7ef,#fffaf5)!important;border:1px solid #efdccc!important;overflow:hidden}.mp-head{display:flex;align-items:center;gap:10px}.mp-author{width:38px;height:38px;border-radius:50%;object-fit:cover}.mp-author-fallback{display:grid;place-items:center;background:#f0dfd3;color:#8a5a42;font-weight:950}.mp-head-copy span{display:block;font-size:9px;letter-spacing:.12em;font-weight:950;color:#b56e4b}.mp-head-copy strong{display:block;font-size:13px;margin-top:2px}.mp-recipe{display:grid;grid-template-columns:76px 1fr;gap:12px;margin-top:12px}.mp-photo{width:76px;height:76px;border-radius:16px;object-fit:cover}.mp-photo-fallback{display:grid;place-items:center;background:#f8e7db;font-size:28px}.mp-recipe h3{margin:1px 0 7px;font-size:17px}.mp-meta{display:flex;gap:6px;flex-wrap:wrap}.mp-meta span{font-size:10px;font-weight:850;background:rgba(181,110,75,.09);padding:5px 7px;border-radius:999px}.mp-recipe p{margin:8px 0 0;font-size:12px;color:var(--c-text2,#6b7280)}.mp-recipe small{display:block;margin-top:5px;color:#a25f40;font-weight:800}.mp-actions{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:7px;margin-top:13px}.mp-actions button{height:36px;border:1px solid #e6d6cb;border-radius:11px;background:#fff;color:var(--c-text,#111827);font-size:11px;font-weight:900}.mp-actions .primary{border-color:#4f8d58;background:#4f8d58;color:#fff}.mp-result{margin-top:12px;padding:10px;border-radius:12px;background:rgba(79,141,88,.09);font-size:11px;font-weight:850}.mp-rejected{opacity:.72}.mp-compose-preview{display:flex;align-items:center;gap:10px;margin-bottom:12px}.mp-compose-preview img,.mp-compose-preview>div{width:54px;height:54px;border-radius:13px;object-fit:cover;background:#f8e7db;display:grid;place-items:center}.mp-compose-preview b,.mp-compose-preview small{display:block}.mp-compose-preview small{color:var(--c-text2,#777);margin-top:3px}.mp-accept-copy b,.mp-accept-copy span{display:block}.mp-accept-copy span{margin-top:4px;color:var(--c-text2,#777);font-size:12px}.mp-shop-choice{display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px;border:1px solid var(--c-border,#e5e7eb);border-radius:14px;font-size:13px;font-weight:800}.mp-propose-recipe{background:#fff1e8!important;color:#9b5b3e!important}'
     +'[data-theme="dark"] .mp-card,.dark .mp-card,body.dark-mode .mp-card{background:linear-gradient(145deg,#33241f,#2b211d)!important;border-color:#50372d!important}.dark .mp-actions button,body.dark-mode .mp-actions button{background:#2b2522;border-color:#4b3b33;color:#eee}';document.head.appendChild(s);}
 
-  function boot(){css();installFeedBridge();wrapRecipeDetail();var tries=0,t=setInterval(function(){tries++;installFeedBridge();wrapRecipeDetail();if(tries>80)clearInterval(t);},100);if(svc()&&typeof svc().subscribe==='function')sub=svc().subscribe(function(){rerender();});window.addEventListener('familyapp:meal-proposals',rerender);}
+  function boot(){css();installFeedTimeline();wrapRecipeDetail();var tries=0,t=setInterval(function(){tries++;installFeedTimeline();wrapRecipeDetail();if(tries>80)clearInterval(t);},100);if(svc()&&typeof svc().subscribe==='function')sub=svc().subscribe(function(){rerender();});window.addEventListener('familyapp:meal-proposals',rerender);}
 
   window.mealProposalAccept=openAccept;window.mealProposalReject=openReject;window.mealProposalCounter=openCounter;window.openMealProposalComposer=openComposer;
   window.MealProposalUi={version:VERSION,boot:boot,renderCards:proposalHtml,openComposer:openComposer};

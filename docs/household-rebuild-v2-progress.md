@@ -1,157 +1,141 @@
 # Household Rebuild v2 — Progress Tracker
 
-Roadmap: `docs/household-rebuild-v2-roadmap.md`  
+Last synced: 2026-09-11  
 Working branch: `agent/household-rebuild-v2`  
-Day-to-day execution: `docs/FAMILYAPP-CURRENT-TODO.md`  
-Cleaning current truth: `FamilyApp-Schoonmaken-current-status.md`  
-Cross-chat history: `docs/FAMILYAPP-UPDATE-LOG.md`
+Production/main baseline: `b7f233ebfe1fbb20ecdf426003f332528562ab0f`  
+Accepted Cleaning-v2 rollback basis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a`
 
-## Current position — synced 2026-09-06
+Read with `docs/FAMILYAPP-CURRENT-TODO.md` and `FamilyApp-Schoonmaken-current-status.md` for current execution truth.
+
+## Completed rebuild milestones
 
 - [x] STEP 0 — Stable baseline.
-- [x] STEP 1 — Authenticated session / startup ownership.
+- [x] STEP 1 — Authenticated session/startup ownership.
 - [x] STEP 2 — HouseholdContext / UID identity / lifecycle.
 - [x] STEP 2A — Platform-admin identity foundation.
-- [x] STEP 2B — Person/UI identity modernization and Brand/PWA/icon scope.
+- [x] STEP 2B — Person/UI identity modernization foundation.
 - [x] STEP 3 — Tasks core.
 - [x] STEP 4 — Recipes.
 - [x] STEP 5 — Meals.
 - [x] STEP 6 — Agenda.
 - [x] STEP 7 — Shopping.
-- [x] STEP 8 — Finance — accepted/frozen.
-- [x] STEP 9 — Progression — accepted/frozen.
-- [x] STEP 10 — Notifications — accepted/frozen.
-- [x] STEP 11 — Party Quests — real-device accepted.
-- [x] STEP 12 — Profile / presence / avatars — real-device accepted.
-- [-] STEP 13 — Activity / Feed baseline is implemented and part of the rebuild branch; do not reopen without a concrete regression.
-- [-] STEP 14 / Cleaning workstream — **FUNCTIONAL CLOSE-OUT CANDIDATE; role smoke pending, visual polish next**.
-- [ ] Privacy-safe platform operations/admin dashboard follow-up.
-- [ ] Firebase Rules/release-security hardening.
-- [ ] Legacy cleanup.
-- [ ] Multi-family broader-beta acceptance gate.
-- [ ] Store distribution readiness.
+- [x] STEP 8 — Finance.
+- [x] STEP 9 — Progression.
+- [x] STEP 10 — Notifications / push foundation.
+- [x] STEP 11 — Party Quest lifecycle.
+- [x] STEP 12 — Profile / presence / avatars.
+- [x] STEP 13 — Household Activity / Feed.
 
-## Action Inbox — COMPLETE / REAL-DEVICE ACCEPTED 2026-09-06
+## STEP 14 — Cleaning
 
-The Action Inbox is the app-wide central decision surface for actionable requests.
+### Historical pre-reset Cleaning
 
-Architecture:
-- `src/platform/inbox/` is read/projection/action-routing only.
-- Presence comes from canonical Task / TaskSwap / PartyQuest / Cleaning state, never Notification delivery.
-- Existing domain runtimes remain the only mutation authorities.
-- No `/inboxRequests` truth and no second writer.
-- `ActionInboxStore.openActionCount` is the single Inbox badge owner.
+Heavy availability/approval/pause/exception/history/projector runtimes remain **historical reference only**. They caused serious real-device freezes and are not permission to reactivate those owners.
 
-Accepted product split:
-- ✉️ Inbox = requests that need a decision.
-- 🔔 Meldingen = informational updates.
+### Cleaning V2.0 — performance-first rebuild
 
-Coverage includes:
-- Task help;
-- Task swap;
-- Party Quest invites;
-- Cleaning help;
-- Cleaning routine transfer;
-- Cleaning counterproposals.
+- [x] Real-device accepted on iPhone at `b4511561f0885023e5ca6649a1eecd8f4a611d6a`.
+- [x] Lazy module loading and teardown.
+- [x] One household-scoped Cleaning repository.
+- [x] CleaningOccurrence canonical execution state.
+- [x] Rooms/routines/presets/supplies/inventory.
+- [x] Week planning + member filter.
+- [x] Lightweight own detail sheet.
+- [x] Optimistic/coalesced checklists and completion logs.
+- [x] Task/Calendar projections.
+- [x] Roles/capabilities.
+- [x] Legacy TaskDetailPopup / execution/projection cascade / MutationObserver stack inactive.
 
-Validation:
-- `scripts/test-action-inbox.js` green in the full contract suite.
-- Household Rebuild Contracts green.
-- Vercel READY.
-- Real-device accepted preview: `https://verhoog-family-ks84yij7s-cverhoog-techs-projects.vercel.app`.
-- Functional Action Inbox contract commit: `6fd4c0cefceca0e957800a71ca5614a983ec1ae3`.
+### Cleaning V2.1 — collaboration / handoff / help
 
-## STEP 14 / Schoonmaken — FUNCTIONAL CLOSE-OUT CANDIDATE
+Status: **codecandidate complete; single-device path appears good; multi-user verification deferred**.
 
-Latest functional candidate before documentation-only commits:
-`cabf639382be4f0bd5a8a2c540855b914dbedffa`
+Test checkpoint: `7e34cb60b78cf45664fdb82202e9673bb2ae9672`  
+CI run `34534350216`: **SUCCESS**
 
-Validation:
-- Household Rebuild Contracts: **SUCCESS**, run `34000853880`.
-- Vercel: **SUCCESS**.
-- Functional close-out regression contract added.
-- Runtime reachability now guards 42 required Cleaning modules including the role policy.
+- [x] Transfer concrete occurrence.
+- [x] Recipient accept/decline.
+- [x] Counterproposal person/date/time.
+- [x] Third-person explicit opt-in; no silent assignment.
+- [x] Ask/accept/decline/withdraw help.
+- [x] Withdraw pending/counter-proposed transfer.
+- [x] Action Inbox occurrence decisions and fresh-session on-demand hydration.
+- [x] Collaboration state stays on CleaningOccurrence.
+- [x] Help does not create multi-person assignment.
+- [x] Accepted transfer updates existing Task/Calendar projections.
+- [x] Idempotency / double-tap guard.
+- [x] No standalone `Samenwerken` menu; controls live in existing turn detail sheet.
+- [x] No extra long-lived Firebase listener / popup owner / observer / notification projector.
+- [x] Full contract suite green.
+- [x] Product-owner single-device observation: “lijkt te werken”.
+- [ ] Multi-user account A/B/C verification — explicitly deferred until later.
+- [ ] Only after explicit complete acceptance: record exact V2.1 accepted rollback SHA.
 
-### Complete functional areas
-- [x] Rooms / routines / templates / ordering / safe lifecycle.
-- [x] Week planning / approvals / rolling horizon / member display filter.
-- [x] Task + Agenda projections and reverse sync.
-- [x] Explicit execution exceptions and Cleaning help.
-- [x] Tijd / Aantal / Beide preference.
-- [x] Temporary availability / sick / busy week / vacation / planning pause.
-- [x] Cadence-preserving pause/resume with no missed-work backlog.
-- [x] Supplies / inventory / Weekvoorraad / explicit Shopping handoff.
-- [x] Stable Cleaning metadata on new Shopping items.
-- [x] Richer history from completion logs.
-- [x] Collaboration notifications + daily reminder.
-- [x] Shared household activity events for completed Cleaning work.
-- [x] Conservative derived Task/Agenda/Shopping cleanup.
-- [x] Household key safety.
-- [x] Room/routine create retry idempotency.
-- [x] Action Inbox routing for Cleaning requests.
-- [x] Central Cleaning role/capability client policy + behavioral tests.
+### Cleaning V2.2 — history / Activity / useful attention
 
-### Role/capability close-out
+Status: **codecandidate complete; automated contracts green; real-device verification pending**.
 
-Existing roles are mapped without introducing a second account model:
-- owner/admin → Beheerder;
-- adult/member → Gezinslid;
-- child/limited/restricted → Beperkt profiel.
+Functional/test checkpoint: `ffb0552bad734309e02361de87bde7a3e96a3464`  
+CI run `34537327502`: **SUCCESS**
 
-Policy intent:
-- Beheerder: full structural + household management.
-- Gezinslid: planning, transfers, supplies, own availability and execution; no structural room/routine changes.
-- Beperkt profiel: assigned execution, accept/decline/help and personal preference; no management initiation.
+- [x] Pure `cleaningHistoryContract.js` over canonical completionLogs.
+- [x] Lazy Cleaning-only `cleaningHistoryV22.js` companion.
+- [x] Fourth `Historie` tab.
+- [x] History grouped by room.
+- [x] Routine history from stored completion checklists.
+- [x] Last completion moment + household member.
+- [x] 30-day room/routine activity counts.
+- [x] Current-week count/minutes/people summary.
+- [x] Current-user Today attention for own today/overdue work.
+- [x] Newly observed completed logs can publish `cleaning.completed` to existing Household Activity.
+- [x] Deterministic append-once Activity key.
+- [x] Existing history baseline prevents historical feed flood.
+- [x] REOPENED logs do not emit a new completed Activity event.
+- [x] No second history database.
+- [x] No second raw Firebase listener.
+- [x] No MutationObserver or polling timer.
+- [x] No NotificationStore/push projector.
+- [x] Old history/activity/notification projector files remain disconnected.
+- [x] Full repository contract suite green on the functional checkpoint.
+- [ ] Real-device iPhone layout/performance/history/activity test.
+- [ ] Only after explicit acceptance: record exact accepted V2.2 SHA as rollback candidate.
+- [ ] Only after separate promotion permission: promote an exact accepted state to main.
 
-Implementation:
-- `src/modules/cleaning/cleaningPermissions.js` owns policy only, never Cleaning data.
-- Public mutation APIs and matching UI capabilities are guarded centrally.
-- `scripts/test-cleaning-permissions.js` executes the role matrix with mocked real mutation APIs.
-- Action Inbox eager-loading path loads permission policy before Cleaning runtimes.
+### Product decision retained for Cleaning V2
 
-### Remaining before functional acceptance
-- [ ] Real-device owner/manager smoke: existing Cleaning management flows unchanged.
-- [ ] Real-device adult/member smoke if available: structure hidden/blocked; planning/transfer/supplies/own availability still available.
-- [ ] Limited/child smoke if available: assigned execution + accept/decline/help remain; management actions absent.
-- [ ] Confirm Action Inbox and Task/Agenda reverse sync still behave normally.
-- [ ] Only then mark STEP 14 functionally accepted.
+Do not rebuild unless explicitly reversed:
+- member availability engine;
+- vacations;
+- sickness/absence;
+- busy-week/capacity model;
+- automatic scheduling around personal availability;
+- complex temporary pause/exception engine.
 
-### Next after acceptance — visual polish
-- [ ] Definitive premium Cleaning visual spec, light + dark.
-- [ ] Final hero/background assets.
-- [ ] Premium hierarchy/cards/spacing/motion/microinteractions.
-- [ ] Remaining 44×44 touch targets.
-- [ ] Final room-planning/supplies presentation.
-- [ ] Final loading/empty/error states.
-- [ ] Optional advisory insights only after the stable visual baseline.
+### Next
 
-## Public-release security gate
+- [ ] V2.3 — incomplete occurrence choices, manual moment/person, projection consistency and hardening.
+- [ ] V2.4 — final premium visual polish, light/dark and room assets without repaint-heavy effects.
 
-The current Firebase Rules still give active household members broad write access under the generic `$sharedData` branch. The Cleaning role policy therefore provides intended product/client behavior, but server-side role enforcement is a separate release-security task.
+## STEP 15 — Branding / PWA / Login & Auth
 
-Before public release:
-- [ ] design/test role-aware Firebase Rules in a safe rules workflow;
-- [ ] verify no cross-role bypass for Cleaning/shared-data mutations;
-- [ ] deploy production rules only after explicit approval.
+- [ ] Final premium FamilyApp logo and icon family.
+- [ ] PWA icon + maskable + Apple Touch + favicon.
+- [ ] New premium login screen.
+- [ ] Preserve Google / Apple / normal login and registration.
+- [ ] Explicit normal-account lifecycle tests.
+- [ ] Apple action reachable from Home through the same auth authority.
+- [ ] Verify manifest, colors, launch appearance, caching and sharp iPhone Home Screen icon.
+- [ ] Re-test historical Google post-auth freeze only if currently reproducible.
 
-Production Firebase Rules are intentionally untouched in the current STEP 14 branch work.
+## Later/open platform work
 
-## Validation cadence
+- [ ] i18n: NL / EN / TR / DE / FR with central architecture and saved per-user choice.
+- [ ] Party Quest toast: real-device verification of existing candidate before new code.
+- [ ] Release/security: server-side role rules, Apple provider/release setup, App Store/native/PWA decisions.
 
-Bundle low/medium-risk device smokes into meaningful acceptance sweeps. Keep security/auth/cross-household/finance/idempotency/release-blocking behavior explicit.
+## Safety rails
 
-## Separate lifecycle / product regressions
-- [ ] Owner-transfer **Gezin verlaten** real smoke test.
-- [-] Google login post-auth handoff/startup follow-up remains open.
-- [-] Non-blocking Party Quest acceptance-toast visual recheck remains deferred.
-
-## Standing guardrails
-- Work only on `agent/household-rebuild-v2` unless explicitly approved otherwise.
-- `main` untouched until explicit approval.
-- No production deploy or production Firebase Rules change without explicit approval.
-- Firebase remains on Spark unless explicitly changed.
-- Accepted domain authorities stay canonical.
-- `CleaningOccurrence` remains Cleaning SOT.
-- UID/household identity is HouseholdContext/Firebase Auth based.
-- Realtime subscriptions require exact cleanup/stale-context protection.
-- Every meaningful update synchronizes current TODO, this tracker and update log.
+- Main is read-only until explicit post-acceptance promotion permission.
+- Production Firebase Rules are read-only without explicit permission.
+- Fallback/lock branches are read-only.
+- Performance on real iPhone is a hard acceptance criterion.
