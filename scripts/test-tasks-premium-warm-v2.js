@@ -2,63 +2,36 @@
 const assert=require('assert');
 const fs=require('fs');
 function read(p){return fs.readFileSync(p,'utf8');}
-const css=read('src/styles/tasksPremiumWarmV2.css');
-const detailCss=read('src/styles/tasksCleaningDetailV3.css');
-const ui=read('src/modules/tasks/tasksPremiumWarmV2.js');
+
 const shell=read('api/app-v7.js');
-const compact=read('src/modules/tasks/taskCompactHome.js');
-const detail=read('src/modules/tasks/taskDetailPopup.js');
+const css=read('src/styles/tasksV3.css');
+const overview=read('src/modules/tasks/v3/taskOverviewV3.js');
+const detail=read('src/modules/tasks/v3/taskDetailV3.js');
+const model=read('src/modules/tasks/v3/taskPresentationModelV3.js');
+const shared=read('src/modules/tasks/taskSharedData.js');
 
-assert(css.includes('--tpw2-bg:#f7f3ea'),'approved warm ivory token missing');
-assert(css.includes('--tpw2-pine:#244f3e'),'approved pine token missing');
-assert(css.includes('.tpw2-head'),'v2 task overview header styling missing');
-assert(css.includes('.tpw2-stats'),'v2 summary strip styling missing');
-assert(css.includes('.tpw2-task-row'),'v2 task row styling missing');
-assert(css.includes('#tdp-overlay.tpw2-overlay'),'v2 popup base styling missing');
-assert(css.includes('.tpw2-create-card'),'create/edit styling must remain in the same family');
-assert(css.includes('[data-theme*="dark"]'),'dark mode fallback missing');
-assert(css.includes('min-height:58px'),'overview must stay compact rather than card-heavy');
-assert(css.includes('box-shadow:none'),'quiet premium overview should avoid decorative shadow stacking');
+// V2 visual layers are deliberately retired from the live shell.
+assert(!shell.includes('/src/styles/tasksPremiumWarmV2.css'),'warm v2 stylesheet must not remain active');
+assert(!shell.includes('/src/styles/tasksCleaningDetailV3.css'),'Cleaning-detail override must not remain active');
+assert(!shell.includes('/src/modules/tasks/tasksPremiumWarmV2.js'),'warm v2 decorator must not remain active');
 
-assert(detailCss.includes('.tdp-card.tpw2-detail-card'),'Cleaning-style task detail card selector missing');
-assert(detailCss.includes('aspect-ratio:16 / 9'),'task detail hero must use Cleaning-like 16:9 photography');
-assert(detailCss.includes('linear-gradient(180deg'),'task detail must fade photography into the content surface');
-assert(detailCss.includes('background:rgba(255,255,255,.64)'),'subtasks must use the Cleaning-like translucent routine surface');
-assert(detailCss.includes('.tpw2-supplies'),'supplies surface must remain available');
-assert(detailCss.includes('.tdp-help-box'),'collaboration surface must remain available');
-assert(detailCss.includes('position:sticky'),'completion action must remain reachable on long task cards');
-assert(detailCss.includes('[data-theme*="dark"]'),'Cleaning-style task detail must keep dark mode');
-assert(!detailCss.includes('.tpw2-create-card'),'Cleaning photo treatment must not accidentally restyle create mode');
+assert(css.includes('--tv3-bg:#f6f1e6'),'V3 warm ivory background token missing');
+assert(css.includes('--tv3-green:#385f49'),'V3 FamilyApp green token missing');
+assert(css.includes('.tv3-task-photo'),'V3 photographic task rows missing');
+assert(css.includes('.tv3d-hero'),'V3 photo-first task detail missing');
+assert(css.includes('.tv3e-sheet'),'V3 create/edit styling missing');
+assert(css.includes('[data-theme*="dark"]'),'V3 dark mode support missing');
 
-assert(ui.includes('window.__tasksPremiumWarmV2=true'),'v2 decorator guard missing');
-assert(ui.includes('Array.isArray(window.taskData)?window.taskData:[]'),'v2 must read canonical taskData');
-assert(ui.includes('TaskDetailPopup.openCreate()'),'new task action must delegate to canonical popup');
-assert(ui.includes('data-range="all"'),'v2 should ask canonical overview to render all groups before presentation filtering');
-assert(ui.includes('data-tpw2-filter'),'approved grouped filter controls missing');
-assert(ui.includes('MutationObserver'),'v2 must survive canonical rerenders');
-assert(ui.includes('tpw2-detail-card'),'task detail decorator missing');
-assert(ui.includes('TASK_HERO_CLEANING'),'Cleaning tasks need a photo fallback without mutating task data');
-assert(ui.includes('TASK_HERO_DEFAULT'),'non-image tasks need a premium photo fallback');
-assert(ui.includes("version:'2.3.0'"),'presentation version must identify approved mockup round');
-assert(ui.includes('Kleine taken, een rustiger thuis'),'approved quote banner must be integrated');
-assert(ui.includes('tpw2-photo-thumb'),'photographic task rows must be integrated');
-assert(!/firebase\.|\.set\(|TaskSharedData\.update|TaskSharedData\.create|taskData\.push|taskData\.splice/.test(ui),'presentation layer must not own persistence or task mutations');
+assert(overview.includes('Kleine taken, een rustiger thuis'),'approved quote banner missing');
+assert(overview.includes('Nieuwe taak'),'approved create CTA missing');
+assert(overview.includes('Alle taken'),'approved segmented filter missing');
+assert(overview.includes('tv3-task-photo'),'overview must render photographic rows directly, not decorate legacy icons');
+assert(detail.includes('Markeer als klaar'),'approved detail CTA missing');
+assert(detail.includes('Uitstellen'),'approved postpone action missing');
+assert(detail.includes('Bewerken'),'approved edit action missing');
+assert(detail.includes('TaskSharedData.update'),'V3 detail must mutate through canonical TaskSharedData');
+assert(detail.includes('window.toggleTask'),'V3 completion must preserve legacy reward/progression bridges');
+assert(model.includes('CleaningTaskSupplyUi'),'V3 model must reuse Cleaning supply context without becoming Cleaning authority');
+assert(shared.includes('window.TaskSharedData={'),'canonical task data facade must remain present');
 
-assert(compact.includes('data-task-id'),'TaskCompactHome must remain the canonical overview owner');
-assert(detail.includes('TaskSharedData.update'),'TaskDetailPopup must remain the mutation owner');
-assert(detail.includes('data-sub-toggle'),'subtask completion interaction must remain intact');
-assert(detail.includes('data-sub-icon-toggle'),'subtask icon picker must remain intact');
-assert(detail.includes('tdp-help-btn'),'help/collaboration interaction must remain intact');
-assert(detail.includes('tdp-note-input'),'notes must remain intact');
-assert(detail.includes('tdp-delete-btn'),'delete action must remain intact');
-assert(detail.includes('tdp-bookmark-btn'),'bookmark action must remain intact');
-assert(detail.includes('tdp-complete-btn'),'complete/reopen action must remain intact');
-assert(detail.includes('tdp-more-btn'),'edit/details action must remain intact');
-assert(detail.includes('tdp-postpone-btn'),'postpone action must remain intact');
-assert(detail.includes('openCreate'),'create task flow must remain intact');
-
-assert(shell.includes('/src/styles/tasksPremiumWarmV2.css?v=2'),'served shell must retain compact overview stylesheet');
-assert(shell.includes('/src/styles/tasksCleaningDetailV3.css?v=1'),'served shell must include Cleaning-style task detail stylesheet');
-assert(shell.includes('/src/modules/tasks/tasksPremiumWarmV2.js?v=3'),'served shell must cache-bust the v2.3 presentation decorator');
-
-console.log('Tasks premium warm v2.3 + Cleaning detail v3 contract: PASS');
+console.log('Tasks warm v2 retirement / V3 visual contract: PASS');
