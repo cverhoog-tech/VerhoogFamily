@@ -90,7 +90,7 @@ need(occurrenceControls,/data\.getAll\('assigneeUids'\)/,'turn assignment submit
 need(occurrenceControls,/avatarUrl/,'turn assignee picker must render household avatars where available');
 forbid(occurrenceControls,/\.on\(\s*['"]value['"]|new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'/,'turn assignment controls must stay scoped to the Cleaning sheet');
 
-need(assignmentExperience,/VERSION='2\.5\.0'/,'v2.5 assignment experience must exist');
+need(assignmentExperience,/VERSION='2\.5\.1'/,'v2.5 assignment experience must exist at the current hardened version');
 need(assignmentExperience,/HouseholdIdentityFirebaseBridge/,'v2.5 must use the canonical household identity source');
 need(assignmentExperience,/data-ca25-member-filter/,'Weekplan must expose all-household member filters');
 need(assignmentExperience,/ca25RoutineAssignee/,'routine editor must support explicit one-or-many assignees');
@@ -104,8 +104,8 @@ need(companions,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 co
 need(companions,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
 need(companions,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'v2.2.1 detail visual must lazy-load only with Cleaning');
 need(companions,/import '\.\/cleaningOccurrenceCommandsV23\.js\?v=2'/,'v2.3\/v2.5 commands must lazy-load only with Cleaning');
-need(companions,/import '\.\/cleaningOccurrenceControlsV23\.js\?v=2'/,'v2.3\/v2.5 controls must lazy-load only with Cleaning');
-need(companions,/import '\.\/cleaningAssignmentExperienceV25\.js\?v=1'/,'v2.5 assignment experience must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningOccurrenceControlsV23\.js\?v=3'/,'v2.3\/v2.5 controls must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningAssignmentExperienceV25\.js\?v=2'/,'v2.5 assignment experience must lazy-load only with Cleaning');
 need(premium,/version:'2\.2\.1'/,'Cleaning companion marker must be v2.2.1');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
 forbid(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work itself');
