@@ -3,6 +3,7 @@ name: Household Rebuild Contract Tests
 on:
   push:
     branches:
+      - main
       - agent/household-rebuild-v2
     paths:
       - 'src/**'
