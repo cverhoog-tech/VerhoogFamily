@@ -9,12 +9,12 @@ const premium=fs.readFileSync('src/modules/cleaning/cleaningPremiumFeedback.js',
 const screen=fs.readFileSync('src/modules/cleaning/cleaningScreen.js','utf8');
 
 assert.ok(commands.includes("VERSION='2.3.0'"));
-assert.ok(controls.includes("VERSION='2.3.0'"));
-assert.ok(assignments.includes("VERSION='2.5.0'"));
+assert.ok(controls.includes("VERSION='2.3.1'"));
+assert.ok(assignments.includes("VERSION='2.5.1'"));
 assert.ok(loader.includes("cleaningOccurrenceCommandsV23.js?v=2"));
-assert.ok(loader.includes("cleaningOccurrenceControlsV23.js?v=2"));
-assert.ok(loader.includes("cleaningAssignmentExperienceV25.js?v=1"));
-assert.ok(loader.includes("version:'2.5.0'"));
+assert.ok(loader.includes("cleaningOccurrenceControlsV23.js?v=3"));
+assert.ok(loader.includes("cleaningAssignmentExperienceV25.js?v=2"));
+assert.ok(loader.includes("version:'2.5.1'"));
 assert.ok(premium.includes("version:'2.2.1'"),'accepted visual bridge marker must remain v2.2.1');
 
 // Architecture: no second raw Firebase listener, popup owner or executable observer.
@@ -67,12 +67,13 @@ assert.ok(assignments.includes('data-ca25-member-filter'));
 assert.ok(assignments.includes('ca25-routine-assignment'));
 assert.ok(assignments.includes('ca25RoutineAssignee'));
 assert.ok(assignments.includes('HouseholdIdentityFirebaseBridge'));
-assert.ok(assignments.includes('avatarUrl'));
+assert.ok(assignments.includes('FamilyAvatarIdentity'));
 assert.ok(assignments.includes('setRoutineAssigneesV25'));
 assert.ok(assignments.includes('applyRoutineDefaultsV25'));
+assert.ok(assignments.includes("closest('[data-ca25-routine-assignment]')"),'routine checkbox interaction must not be rerendered on click');
 
 // Primary accepted V2 screen remains the canonical core and is not replaced.
 assert.ok(screen.includes("const VERSION='2.0.0'"));
 assert.ok(!screen.includes('CleaningOccurrenceCommandsV23'));
 
-console.log('Cleaning V2.3 + V2.5 assignment/hardening architecture contract: PASS');
+console.log('Cleaning V2.3 + V2.5.1 assignment/hardening architecture contract: PASS');
