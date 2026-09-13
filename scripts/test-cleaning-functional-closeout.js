@@ -15,6 +15,9 @@ const contract=read('src/modules/cleaning/cleaningCollaborationContract.js');
 const history=read('src/modules/cleaning/cleaningHistoryV22.js');
 const historyContract=read('src/modules/cleaning/cleaningHistoryContract.js');
 const detailVisual=read('src/modules/cleaning/cleaningDetailVisualV221.js');
+const occurrenceCommands=read('src/modules/cleaning/cleaningOccurrenceCommandsV23.js');
+const occurrenceControls=read('src/modules/cleaning/cleaningOccurrenceControlsV23.js');
+const assignmentExperience=read('src/modules/cleaning/cleaningAssignmentExperienceV25.js');
 const inbox=read('src/platform/inbox/actionInboxRegistry.js');
 const inboxBoot=read('src/platform/inbox/actionInboxBootstrap.js');
 const workflow=read('src/modules/cleaning/cleaningRoomWorkflowUx.js');
@@ -71,14 +74,38 @@ need(detailVisual,/CleaningHouseholdRepository/,'v2.2.1 visual companion must re
 need(detailVisual,/document\.getElementById\('cleaning-v2-sheet'\)/,'v2.2.1 must reuse the existing Cleaning sheet');
 need(detailVisual,/Voor deze beurt/,'v2.2.1 supplies must preserve concrete-turn scope');
 need(detailVisual,/Alle kameritems/,'v2.2.1 supplies must preserve room scope');
-need(detailVisual,/ShoppingListStore/,'v2.2.1 low/out supplies may hand off to canonical Shopping');
+need(detailVisual,/ShoppingListStore/,'v2.2.1 low\/out supplies may hand off to canonical Shopping');
 forbid(detailVisual,/\.on\(\s*['"]value['"]|firebase\.database|fbDb|new\s+MutationObserver|MutationObserver\s*\(|setInterval\s*\(|setTimeout\s*\(|TaskDetailPopup|CleaningExecutionWriteRuntime|CleaningProjectionService/,'v2.2.1 visual companion must stay lightweight and non-authoritative');
+
+need(occurrenceCommands,/VERSION='2\.3\.0'/,'v2.3 occurrence commands must remain present');
+need(occurrenceCommands,/setOccurrenceAssigneesV25/,'v2.5 must expose explicit occurrence multi-assignment through the existing repository');
+need(occurrenceCommands,/setRoutineAssigneesV25/,'v2.5 must persist routine assignment defaults through the existing repository');
+need(occurrenceCommands,/applyRoutineDefaultsV25/,'v2.5 routine defaults must be applicable to active week-plan occurrences');
+need(occurrenceCommands,/assignedToUids/,'v2.5 projection sync must preserve all assigned people');
+forbid(occurrenceCommands,/\.on\(\s*['"]value['"]|MutationObserver|document\.addEventListener\('click'/,'v2.5 commands must not own another listener or global UI owner');
+
+need(occurrenceControls,/name="assigneeUids"/,'turn editor must support selecting multiple household members');
+need(occurrenceControls,/data-cv23-assignees-open/,'assigned-person card must be interactive');
+need(occurrenceControls,/data\.getAll\('assigneeUids'\)/,'turn assignment submit must persist all selected people');
+need(occurrenceControls,/avatarUrl/,'turn assignee picker must render household avatars where available');
+forbid(occurrenceControls,/\.on\(\s*['"]value['"]|MutationObserver|document\.addEventListener\('click'/,'turn assignment controls must stay scoped to the Cleaning sheet');
+
+need(assignmentExperience,/VERSION='2\.5\.0'/,'v2.5 assignment experience must exist');
+need(assignmentExperience,/HouseholdIdentityFirebaseBridge/,'v2.5 must use the canonical household identity source');
+need(assignmentExperience,/data-ca25-member-filter/,'Weekplan must expose all-household member filters');
+need(assignmentExperience,/ca25RoutineAssignee/,'routine editor must support explicit one-or-many assignees');
+need(assignmentExperience,/avatarUrl/,'Weekplan and routines must use chosen avatars where available');
+need(assignmentExperience,/setRoutineAssigneesV25/,'routine UI must delegate writes to the repository extension');
+need(assignmentExperience,/applyRoutineDefaultsV25/,'routine defaults must be applied to generated\/active plan occurrences without another planner');
+need(assignmentExperience,/r\.subscribe\(onRepo\)/,'v2.5 presentation must reuse the existing repository subscription');
+forbid(assignmentExperience,/\.on\(\s*['"]value['"]|firebase\.database|fbDb|MutationObserver|document\.addEventListener\('click'|TaskDetailPopup/,'v2.5 assignment experience must not add a second raw data owner or popup');
 
 need(companions,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
 need(companions,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
 need(companions,/import '\.\/cleaningDetailVisualV221\.js\?v=1'/,'v2.2.1 detail visual must lazy-load only with Cleaning');
-need(companions,/import '\.\/cleaningOccurrenceCommandsV23\.js\?v=1'/,'v2.3 commands must lazy-load only with Cleaning');
-need(companions,/import '\.\/cleaningOccurrenceControlsV23\.js\?v=1'/,'v2.3 controls must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningOccurrenceCommandsV23\.js\?v=2'/,'v2.3\/v2.5 commands must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningOccurrenceControlsV23\.js\?v=2'/,'v2.3\/v2.5 controls must lazy-load only with Cleaning');
+need(companions,/import '\.\/cleaningAssignmentExperienceV25\.js\?v=1'/,'v2.5 assignment experience must lazy-load only with Cleaning');
 need(premium,/version:'2\.2\.1'/,'Cleaning companion marker must be v2.2.1');
 need(premium,/disabledForCleaningV2:true/,'legacy premium runtime must stay inert');
 forbid(premium,/MutationObserver|addEventListener|setTimeout|setInterval/,'premium shim must create no runtime work itself');
@@ -99,6 +126,6 @@ forbid(screen,/new\s+MutationObserver|MutationObserver\s*\(/,'primary v2 must no
 forbid(inboxBoot,/modules\/cleaning|cleaningHouseholdRepository|cleaningRoutineExperience|cleaningHelpRequestUi|cleaningPermissions/,'Cleaning must stay off the global startup path');
 need(workflow,/var VERSION='0\.2\.0'/,'locked historical room workflow rollback file must remain unchanged');
 [
- 'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js','scripts/test-cleaning-history-v22.js','scripts/test-cleaning-detail-visual-v221.js'
+ 'scripts/test-cleaning-runtime-reachability.js','scripts/test-cleaning-modal-performance-guards.js','scripts/test-cleaning-permissions.js','scripts/test-cleaning-planning-member-filter.js','scripts/test-cleaning-module-identity.js','scripts/test-action-inbox.js','scripts/test-cleaning-collaboration-v21.js','scripts/test-cleaning-collaboration-multiuser-v21.js','scripts/test-cleaning-history-v22.js','scripts/test-cleaning-detail-visual-v221.js','scripts/test-cleaning-v23.js'
 ].forEach(read);
-if(failed){console.error('\nCleaning v2.2.1 functional closeout FAILED.');process.exitCode=1;}else console.log('Cleaning v2.2.1 functional closeout: PASS');
+if(failed){console.error('\nCleaning v2.5 functional closeout FAILED.');process.exitCode=1;}else console.log('Cleaning v2.5 functional closeout: PASS');
