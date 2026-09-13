@@ -44,9 +44,11 @@ jobs:
         shell: bash
         run: |
           failed=0
+          : > contract-failures.txt
           for test_file in scripts/test-*.js; do
             echo "Running ${test_file}"
             if ! node "${test_file}"; then
+              echo "${test_file}" >> contract-failures.txt
               failed=1
             fi
           done
@@ -62,4 +64,8 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context='Household Rebuild Contracts' -f description='Rebuild contract tests failed' -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        shell: bash
+        run: |
+          first_failure="$(head -n 1 contract-failures.txt 2>/dev/null || true)"
+          if [ -z "${first_failure}" ]; then first_failure="unknown contract"; fi
+          gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" -f state=failure -f context='Household Rebuild Contracts' -f description="Contract failure: ${first_failure}" -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
