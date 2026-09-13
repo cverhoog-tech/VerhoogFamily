@@ -21,12 +21,28 @@
 
   function createHousehold(opts){
     opts=opts||{};var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));
-    var hid=householdId(),name=safe(opts.name)||displayName(u)+' Family',member=memberRecord(u,'owner'),updates={};
-    updates['families/'+hid+'/meta']={id:hid,name:name,ownerUid:u.uid,version:VERSION,createdAt:now(),updatedAt:now()};
-    updates['families/'+hid+'/members/'+u.uid]=member;
-    updates['users/'+u.uid]={familyId:hid,activeHouseholdId:hid,name:member.name,households:{}};
-    updates['users/'+u.uid+'/households/'+hid]={role:'owner',status:'active',joinedAt:member.joinedAt};
-    return d.ref().update(updates).then(function(){setGlobals(hid,member.name);startPresence(hid);return{id:hid,name:name,role:'owner'};});
+    var hid=householdId(),name=safe(opts.name)||displayName(u)+' Family',member=memberRecord(u,'owner');
+    if(!hid)return Promise.reject(new Error('Kon geen gezins-ID maken'));
+    var meta={id:hid,name:name,ownerUid:u.uid,version:VERSION,createdAt:now(),updatedAt:now()},memberCreated=false;
+    function rollbackCreatedHousehold(){
+      if(!memberCreated)return Promise.resolve();
+      var cleanup={};cleanup['families/'+hid+'/meta']=null;cleanup['families/'+hid+'/members/'+u.uid]=null;
+      return d.ref().update(cleanup).catch(function(){});
+    }
+    return d.ref('families/'+hid+'/meta').set(meta).then(function(){
+      return d.ref('families/'+hid+'/members/'+u.uid).set(member);
+    }).then(function(){
+      memberCreated=true;
+      var userUpdates={familyId:hid,activeHouseholdId:hid,name:member.name};
+      userUpdates['households/'+hid]={role:'owner',status:'active',joinedAt:member.joinedAt};
+      return d.ref('users/'+u.uid).update(userUpdates).catch(function(err){
+        return rollbackCreatedHousehold().then(function(){throw err;});
+      });
+    }).then(function(){
+      setGlobals(hid,member.name);
+      try{startPresence(hid);}catch(e){try{console.warn('FamilyApp presence start failed after household create',e);}catch(ignore){}}
+      return{id:hid,name:name,role:'owner'};
+    });
   }
 
   function ensureLegacyMembership(hid,userData){
@@ -139,7 +155,7 @@
   function overlay(html){css();var old=document.getElementById('household-onboarding');if(old)old.remove();var el=document.createElement('div');el.id='household-onboarding';el.className='hh-overlay';el.innerHTML='<div class="hh-card">'+html+'</div>';document.body.appendChild(el);return el;}
   function closeOverlay(){var el=document.getElementById('household-onboarding');if(el)el.remove();}
   function showChooser(){var name=displayName(user()),el=overlay('<div class="hh-mark">🏰</div><h2>Welkom, '+name+'</h2><p>Maak een nieuw huishouden of sluit veilig aan bij een bestaand gezin.</p><button class="hh-choice" data-hh="create"><b>✨ Nieuw gezin maken</b><span>Word beheerder en nodig gezinsleden uit</span></button><button class="hh-choice" data-hh="join"><b>🔗 Deelnemen aan gezin</b><span>Gebruik een persoonlijke uitnodigingscode</span></button>');el.querySelector('[data-hh="create"]').onclick=showCreate;el.querySelector('[data-hh="join"]').onclick=showJoin;}
-  function showCreate(){var def=displayName(user())+' Family',el=overlay('<div class="hh-mark">✨</div><h2>Maak jullie gezin</h2><p>Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.</p><input class="hh-input" id="hh-name" maxlength="50" value="'+def.replace(/"/g,'&quot;')+'"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-create">Gezin aanmaken</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-create').onclick=function(){var b=this;b.disabled=true;createHousehold({name:el.querySelector('#hh-name').value}).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();setTimeout(showInviteManager,350);}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
+  function showCreate(){var def=displayName(user())+' Family',el=overlay('<div class="hh-mark">✨</div><h2>Maak jullie gezin</h2><p>Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.</p><input class="hh-input" id="hh-name" maxlength="50" value="'+def.replace(/"/g,'&quot;')+'"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-create">Gezin aanmaken</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-create').onclick=function(){var b=this,err=el.querySelector('#hh-err');if(b.disabled)return;b.disabled=true;err.textContent='';var name=el.querySelector('#hh-name').value;Promise.resolve().then(function(){return createHousehold({name:name});}).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();setTimeout(showInviteManager,350);}).catch(function(e){b.disabled=false;err.textContent=(e&&e.message)?e.message:'Aanmaken mislukt.';});};}
   function showJoin(){var el=overlay('<div class="hh-mark">🔗</div><h2>Deelnemen aan gezin</h2><p>Vul de persoonlijke uitnodigingscode in.</p><input class="hh-input" id="hh-code" maxlength="9" placeholder="ABCD-EFGH" style="text-transform:uppercase;text-align:center"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-join">Deelnemen</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-join').onclick=function(){var b=this;b.disabled=true;joinHousehold(el.querySelector('#hh-code').value).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
   function fmtDate(ts){try{return new Date(Number(ts)).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return'';}}
   function renderInviteRows(el,hid){
