@@ -1,13 +1,13 @@
 'use strict';
 // ============================================================
-// GROCERY ADD SHEET v1.2.0
+// GROCERY ADD SHEET v1.3.0
 // UI/controller only — owns no shopping state. Parses free text via
 // GroceryInputParser, classifies via GroceryProductClassifier, and writes
 // through ShoppingListStore, which is the only module allowed to mutate
 // shopping data.
 // ============================================================
 (function(){
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   var STYLE_ID = 'grocery-add-sheet-style';
 
   function store(){ return window.ShoppingListStore || null; }
@@ -32,7 +32,13 @@
   function attachLiveRecognition(modal){var refs={name:modal.querySelector('#grocery-name'),amount:modal.querySelector('#grocery-amount'),unit:modal.querySelector('#grocery-unit'),cat:modal.querySelector('#grocery-cat'),icon:modal.querySelector('#grocery-auto-icon'),preview:modal.querySelector('#grocery-icon-preview'),meta:modal.querySelector('#grocery-auto-meta')};refs.amount.oninput=function(){refs.amount.dataset.auto='0';};refs.unit.onchange=function(){refs.unit.dataset.auto='0';};refs.cat.onchange=function(){refs.cat.dataset.manual='1';var m=guess(refs.name.value);m.category=refs.cat.value;var html=utility(m.category,m.icon,'lg',m.productName);if(refs.icon)refs.icon.innerHTML=html;if(refs.preview)refs.preview.innerHTML=html;};refs.name.oninput=function(){if(!refs.name.value.trim())return;applyGuessToFields(guess(refs.name.value),refs,false);};setTimeout(function(){refs.name.focus();},80);return refs;}
   function showError(modal,message){var el=modal.querySelector('#grocery-sheet-error');if(!el)return;el.textContent=message;el.style.display='block';}
   function clearError(modal){var el=modal.querySelector('#grocery-sheet-error');if(el){el.style.display='none';el.textContent='';}}
-  function saveFromModal(modal,close){clearError(modal);var name=(modal.querySelector('#grocery-name').value||'').trim();if(!name){showError(modal,'Vul eerst een productnaam in');return false;}var m=guess(name);var amount=parseFloat((modal.querySelector('#grocery-amount').value||'').replace(',','.'))||m.amount;var unit=modal.querySelector('#grocery-unit').value||m.unit;var cat=modal.querySelector('#grocery-cat').value||m.category;var item={name:m.productName||name,amount:amount,unit:unit,qty:amount+' '+unit,cat:cat,photo:m.icon||null,who:window.myName||'Gezin'};var s=store();if(!s){showError(modal,'Boodschappenlijst is nog niet beschikbaar. Probeer opnieuw.');return false;}var submitBtn=modal.querySelector('.fam-modal-primary');if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Toevoegen…';}s.addItem(item).then(function(record){toast('Toegevoegd aan '+activeListLabel()+' ✓');if(typeof window.addActivity==='function')window.addActivity('🛒','#fff3dc',(window.myName||'Gezin')+' voegde "'+item.name+'" toe');if(typeof close==='function')close();if(record&&typeof window.highlightShopItem==='function')setTimeout(function(){window.highlightShopItem(record._key||record.id);},40);}).catch(function(err){console.error('[GroceryAddSheet] add failed',err);if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Toevoegen';}showError(modal,err&&err.confirmed===false?'Opslaan niet gelukt (nog niet bevestigd door Firebase). Probeer opnieuw.':'Toevoegen mislukt. Probeer opnieuw.');});return false;}
+  function addWithDefaultFallback(s,item){
+    var active=s&&typeof s.active==='function'?s.active():null;
+    if(active)return s.addItem(item);
+    if(!s||typeof s.createList!=='function'||typeof s.addItem!=='function')return Promise.reject(new Error('Boodschappenlijst is nog niet beschikbaar'));
+    return s.createList({id:'household_default',name:'Gezinslijst',icon:'🛒',visibility:'household'}).then(function(){return s.addItem(item);});
+  }
+  function saveFromModal(modal,close){clearError(modal);var name=(modal.querySelector('#grocery-name').value||'').trim();if(!name){showError(modal,'Vul eerst een productnaam in');return false;}var m=guess(name);var amount=parseFloat((modal.querySelector('#grocery-amount').value||'').replace(',','.'))||m.amount;var unit=modal.querySelector('#grocery-unit').value||m.unit;var cat=modal.querySelector('#grocery-cat').value||m.category;var item={name:m.productName||name,amount:amount,unit:unit,qty:amount+' '+unit,cat:cat,photo:m.icon||null,who:window.myName||'Gezin'};var s=store();if(!s){showError(modal,'Boodschappenlijst is nog niet beschikbaar. Probeer opnieuw.');return false;}var submitBtn=modal.querySelector('.fam-modal-primary');if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Toevoegen…';}addWithDefaultFallback(s,item).then(function(record){toast('Toegevoegd aan '+activeListLabel()+' ✓');if(typeof window.addActivity==='function')window.addActivity('🛒','#fff3dc',(window.myName||'Gezin')+' voegde "'+item.name+'" toe');if(typeof close==='function')close();if(record&&typeof window.highlightShopItem==='function')setTimeout(function(){window.highlightShopItem(record._key||record.id);},40);}).catch(function(err){console.error('[GroceryAddSheet] add failed',err);if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Toevoegen';}showError(modal,err&&err.confirmed===false?'Opslaan niet gelukt (nog niet bevestigd door Firebase). Probeer opnieuw.':'Toevoegen mislukt. Probeer opnieuw.');});return false;}
   function open(){ensureStyles();if(!window.BottomSheet){toast('Boodschappenlijst is nog niet beschikbaar');return;}window.BottomSheet.open({title:'Item toevoegen',html:sheetHtml(),onOpen:function(ctx){attachLiveRecognition(ctx.modal);},actions:[{label:'Annuleren'},{label:'Toevoegen',primary:true,keepOpen:true,onClick:function(ctx){return saveFromModal(ctx.modal,ctx.close);}}]});}
   function installButton(){if(typeof window.wireShopAddButton==='function')window.wireShopAddButton();}
   window.GroceryAddSheet={version:VERSION,open:open,installButton:installButton,guess:guess};
