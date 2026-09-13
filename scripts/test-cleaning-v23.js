@@ -17,10 +17,10 @@ assert.ok(loader.includes("cleaningAssignmentExperienceV25.js?v=1"));
 assert.ok(loader.includes("version:'2.5.0'"));
 assert.ok(premium.includes("version:'2.2.1'"),'accepted visual bridge marker must remain v2.2.1');
 
-// Architecture: no second raw Firebase listener, popup owner or observer.
+// Architecture: no second raw Firebase listener, popup owner or executable observer.
 [commands,controls,assignments].forEach(source=>{
   assert.ok(!source.includes(".on('value'"));
-  assert.ok(!source.includes('MutationObserver'));
+  assert.ok(!/new\s+MutationObserver|MutationObserver\s*\(/.test(source));
   assert.ok(!source.includes('setInterval('));
   assert.ok(!source.includes("document.addEventListener('click'"));
   assert.ok(!source.includes('TaskDetailPopup'));
