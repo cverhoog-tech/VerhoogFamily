@@ -106,8 +106,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('groceryProductLexiconEnhanceV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/modules/shop/groceryProductLexiconEnhanceV1.js?v=1"></script>\n</body>');
   }
-  if (!body.includes('recipePhotoUploadFixV1.js?v=1')) {
-    body = body.replace('</body>', '  <script src="/src/modules/recipes/recipePhotoUploadFixV1.js?v=1"></script>\n</body>');
+  if (!body.includes('recipePhotoUploadFixV1.js?v=2')) {
+    body = body.replace('</body>', '  <script src="/src/modules/recipes/recipePhotoUploadFixV1.js?v=2"></script>\n</body>');
   }
   if (!body.includes('moreMenuDismissV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/moreMenuDismissV1.js?v=1"></script>\n</body>');
