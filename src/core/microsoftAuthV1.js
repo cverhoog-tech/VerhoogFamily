@@ -1,12 +1,13 @@
 'use strict';
 // FamilyApp Microsoft authentication companion v1.
 // Keeps the accepted Login Brand V7 presentation intact and swaps only the
-// visible Apple social control for Microsoft while Apple remains available for
-// a later App Store phase.
+// visible Apple social control for a disabled Microsoft "Coming soon" placeholder.
+// The OAuth implementation stays available behind the central provider flag so
+// it can be enabled later without rebuilding the login surface.
 (function(){
   if(window.FamilyAppMicrosoftAuth)return;
 
-  var VERSION='1.1.0';
+  var VERSION='1.2.0';
   var MICROSOFT_ID='flv7-microsoft';
   var LEGACY_APPLE_ID='flv7-apple';
 
@@ -32,7 +33,13 @@
   }
   function setBusy(busy){
     var b=button(),l=label();
-    if(b)b.disabled=!!busy;
+    if(!b)return;
+    if(!enabled()){
+      b.disabled=true;
+      if(l)l.innerHTML='Microsoft <small style="display:block;margin-top:3px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#d9bd82">Coming soon</small>';
+      return;
+    }
+    b.disabled=!!busy;
     if(l)l.textContent=busy?'Microsoft openen…':'Doorgaan met Microsoft';
   }
   function clearError(){
@@ -80,34 +87,25 @@
     }).catch(function(error){showError(error);return null;});
   }
   function signIn(){
-    if(!enabled()){
-      showError({code:'auth/operation-not-allowed'});
-      return Promise.resolve(null);
-    }
+    // Disabled means intentionally inert: no error and no OAuth attempt.
+    if(!enabled())return Promise.resolve(null);
     var a=auth();
     if(!a){showError(new Error('Firebase is nog niet klaar. Probeer opnieuw.'));return Promise.resolve(null);}
     clearError();setBusy(true);
     var p;
     try{
       var pr=provider();
-      if(isMobile()&&typeof a.signInWithRedirect==='function'){
-        p=a.signInWithRedirect(pr);
-      }else{
-        p=a.signInWithPopup(pr);
-      }
+      if(isMobile()&&typeof a.signInWithRedirect==='function')p=a.signInWithRedirect(pr);
+      else p=a.signInWithPopup(pr);
     }catch(error){showError(error);return Promise.resolve(null);}
     return Promise.resolve(p).then(function(result){
       if(result&&result.user)return handoff(result);
       return result||null;
-    }).catch(function(error){showError(error);return null;}).finally(function(){
-      // On redirect-capable mobile browsers navigation normally happens first;
-      // this reset matters for popup flows and cancelled/failed redirects.
-      setBusy(false);
-    });
+    }).catch(function(error){showError(error);return null;}).finally(function(){setBusy(false);});
   }
   function installButton(){
     var existing=button();
-    if(existing)return existing;
+    if(existing){setBusy(false);return existing;}
     var apple=document.getElementById(LEGACY_APPLE_ID);
     if(!apple||!apple.parentNode)return null;
 
@@ -116,13 +114,20 @@
     var b=apple.cloneNode(true);
     b.id=MICROSOFT_ID;
     b.type='button';
-    b.setAttribute('aria-label','Doorgaan met Microsoft');
+    b.setAttribute('aria-label',enabled()?'Doorgaan met Microsoft':'Microsoft-login — Coming soon');
     var icon=b.querySelector('.flv7-provider-icon');
     if(icon){icon.classList.remove('flv7-apple-icon');icon.classList.add('flv7-microsoft-icon');icon.innerHTML=microsoftSvg();}
     var text=b.querySelector('.flv7-provider-label');
-    if(text)text.textContent='Doorgaan met Microsoft';
+    if(text)text.textContent='Microsoft';
     b.addEventListener('click',signIn);
     apple.parentNode.replaceChild(b,apple);
+    if(!enabled()){
+      b.disabled=true;
+      b.setAttribute('aria-disabled','true');
+      b.style.opacity='.58';
+      b.style.cursor='not-allowed';
+    }
+    setBusy(false);
     return b;
   }
   function readiness(){
@@ -130,6 +135,7 @@
     return {
       version:VERSION,
       enabled:enabled(),
+      comingSoon:!enabled(),
       firebaseReady:!!(window.firebase&&firebase.auth&&firebase.auth.OAuthProvider),
       authReady:!!a,
       buttonVisible:!!button(),
