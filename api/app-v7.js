@@ -99,6 +99,23 @@ module.exports = async function handler(req, res) {
     body = body.replace('</body>', '  <script src="/src/modules/calendar/calendarCleaningPresentationV1.js?v=1"></script>\n</body>');
   }
 
+  // Feedback round 2 — keep these as small companions around existing canonical owners.
+  if (!body.includes('familyAppGroceryIconRegistryV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/ui/icons/familyAppGroceryIconRegistryV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('groceryProductLexiconEnhanceV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/shop/groceryProductLexiconEnhanceV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('recipePhotoUploadFixV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/recipes/recipePhotoUploadFixV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('moreMenuDismissV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/moreMenuDismissV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('taskCompletionFeedbackV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskCompletionFeedbackV1.js?v=1"></script>\n</body>');
+  }
+
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.status(statusCode).send(body);
