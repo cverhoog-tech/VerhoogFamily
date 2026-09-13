@@ -4,6 +4,7 @@ const assert=require('assert');
 const commands=fs.readFileSync('src/modules/cleaning/cleaningOccurrenceCommandsV23.js','utf8');
 const controls=fs.readFileSync('src/modules/cleaning/cleaningOccurrenceControlsV23.js','utf8');
 const assignments=fs.readFileSync('src/modules/cleaning/cleaningAssignmentExperienceV25.js','utf8');
+const detailFix=fs.readFileSync('src/modules/cleaning/cleaningDetailEscapeAvatarFixV1.js','utf8');
 const loader=fs.readFileSync('src/modules/cleaning/cleaningCompanionLoader.js','utf8');
 const premium=fs.readFileSync('src/modules/cleaning/cleaningPremiumFeedback.js','utf8');
 const screen=fs.readFileSync('src/modules/cleaning/cleaningScreen.js','utf8');
@@ -11,14 +12,16 @@ const screen=fs.readFileSync('src/modules/cleaning/cleaningScreen.js','utf8');
 assert.ok(commands.includes("VERSION='2.3.0'"));
 assert.ok(controls.includes("VERSION='2.3.1'"));
 assert.ok(assignments.includes("VERSION='2.5.1'"));
+assert.ok(detailFix.includes("VERSION='1.0.0'"));
 assert.ok(loader.includes("cleaningOccurrenceCommandsV23.js?v=2"));
 assert.ok(loader.includes("cleaningOccurrenceControlsV23.js?v=3"));
 assert.ok(loader.includes("cleaningAssignmentExperienceV25.js?v=2"));
-assert.ok(loader.includes("version:'2.5.1'"));
+assert.ok(loader.includes("cleaningDetailEscapeAvatarFixV1.js?v=1"));
+assert.ok(loader.includes("version:'2.5.2'"));
 assert.ok(premium.includes("version:'2.2.1'"),'accepted visual bridge marker must remain v2.2.1');
 
 // Architecture: no second raw Firebase listener, popup owner or executable observer.
-[commands,controls,assignments].forEach(source=>{
+[commands,controls,assignments,detailFix].forEach(source=>{
   assert.ok(!source.includes(".on('value'"));
   assert.ok(!/new\s+MutationObserver|MutationObserver\s*\(/.test(source));
   assert.ok(!source.includes('setInterval('));
@@ -30,6 +33,10 @@ assert.ok(controls.includes("document.getElementById('cleaning-v2-sheet')"));
 assert.ok(controls.includes("sheet.addEventListener('click',click)"));
 assert.ok(assignments.includes("screen.addEventListener('click',onScreenClick,true)"));
 assert.ok(assignments.includes("r.subscribe(onRepo)"));
+assert.ok(detailFix.includes("document.getElementById('cleaning-v2-sheet')"));
+assert.ok(detailFix.includes("data-cv2-close"));
+assert.ok(detailFix.includes('FamilyAvatarIdentity'));
+assert.ok(!detailFix.includes('document.body.appendChild'));
 
 // Canonical occurrence safety.
 assert.ok(commands.includes('HOUSEHOLD_CONTEXT_CHANGED'));
@@ -76,4 +83,4 @@ assert.ok(assignments.includes("closest('[data-ca25-routine-assignment]')"),'rou
 assert.ok(screen.includes("const VERSION='2.0.0'"));
 assert.ok(!screen.includes('CleaningOccurrenceCommandsV23'));
 
-console.log('Cleaning V2.3 + V2.5.1 assignment/hardening architecture contract: PASS');
+console.log('Cleaning V2.3 + V2.5.2 detail/assignment hardening contract: PASS');
