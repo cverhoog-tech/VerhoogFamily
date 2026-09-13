@@ -86,6 +86,9 @@ module.exports = async function handler(req, res) {
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
+  if (!body.includes('microsoftAuthV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/microsoftAuthV1.js?v=1"></script>\n</body>');
+  }
   if (!body.includes('manualAuthRecoveryV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/manualAuthRecoveryV1.js?v=1"></script>\n</body>');
   }
