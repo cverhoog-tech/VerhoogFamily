@@ -89,6 +89,9 @@ module.exports = async function handler(req, res) {
   if (!body.includes('manualAuthRecoveryV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/manualAuthRecoveryV1.js?v=1"></script>\n</body>');
   }
+  if (!body.includes('manualRegistrationBetaV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/manualRegistrationBetaV1.js?v=1"></script>\n</body>');
+  }
   if (!body.includes('pwaIconV8.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/pwaIconV8.js?v=2"></script>\n</body>');
   }
