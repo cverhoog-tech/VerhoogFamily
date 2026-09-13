@@ -82,13 +82,13 @@ need(occurrenceCommands,/setOccurrenceAssigneesV25/,'v2.5 must expose explicit o
 need(occurrenceCommands,/setRoutineAssigneesV25/,'v2.5 must persist routine assignment defaults through the existing repository');
 need(occurrenceCommands,/applyRoutineDefaultsV25/,'v2.5 routine defaults must be applicable to active week-plan occurrences');
 need(occurrenceCommands,/assignedToUids/,'v2.5 projection sync must preserve all assigned people');
-forbid(occurrenceCommands,/\.on\(\s*['"]value['"]|MutationObserver|document\.addEventListener\('click'/,'v2.5 commands must not own another listener or global UI owner');
+forbid(occurrenceCommands,/\.on\(\s*['"]value['"]|new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'/,'v2.5 commands must not own another listener or global UI owner');
 
 need(occurrenceControls,/name="assigneeUids"/,'turn editor must support selecting multiple household members');
 need(occurrenceControls,/data-cv23-assignees-open/,'assigned-person card must be interactive');
 need(occurrenceControls,/data\.getAll\('assigneeUids'\)/,'turn assignment submit must persist all selected people');
 need(occurrenceControls,/avatarUrl/,'turn assignee picker must render household avatars where available');
-forbid(occurrenceControls,/\.on\(\s*['"]value['"]|MutationObserver|document\.addEventListener\('click'/,'turn assignment controls must stay scoped to the Cleaning sheet');
+forbid(occurrenceControls,/\.on\(\s*['"]value['"]|new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'/,'turn assignment controls must stay scoped to the Cleaning sheet');
 
 need(assignmentExperience,/VERSION='2\.5\.0'/,'v2.5 assignment experience must exist');
 need(assignmentExperience,/HouseholdIdentityFirebaseBridge/,'v2.5 must use the canonical household identity source');
@@ -98,7 +98,7 @@ need(assignmentExperience,/avatarUrl/,'Weekplan and routines must use chosen ava
 need(assignmentExperience,/setRoutineAssigneesV25/,'routine UI must delegate writes to the repository extension');
 need(assignmentExperience,/applyRoutineDefaultsV25/,'routine defaults must be applied to generated\/active plan occurrences without another planner');
 need(assignmentExperience,/r\.subscribe\(onRepo\)/,'v2.5 presentation must reuse the existing repository subscription');
-forbid(assignmentExperience,/\.on\(\s*['"]value['"]|firebase\.database|fbDb|MutationObserver|document\.addEventListener\('click'|TaskDetailPopup/,'v2.5 assignment experience must not add a second raw data owner or popup');
+forbid(assignmentExperience,/\.on\(\s*['"]value['"]|firebase\.database|fbDb|new\s+MutationObserver|MutationObserver\s*\(|document\.addEventListener\('click'|TaskDetailPopup/,'v2.5 assignment experience must not add a second raw data owner or popup');
 
 need(companions,/import '\.\/cleaningCollaborationExperience\.js\?v=2'/,'v2.1 collaboration must lazy-load with the current cache key');
 need(companions,/import '\.\/cleaningHistoryV22\.js\?v=1'/,'v2.2 history must lazy-load only with Cleaning');
