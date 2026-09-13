@@ -2,11 +2,12 @@
 (function(){
   if(window.FamilyAppAuthProviders)return;
   // Central provider availability. Apple remains disabled until the
-  // Firebase Authentication + Apple Developer configuration is complete.
-  // Do not expose a non-working login button to users.
+  // Apple Developer + Firebase configuration is complete. Microsoft is the
+  // second social provider for the Family & Friends beta.
   window.FamilyAppAuthProviders=Object.freeze({
     google:true,
     email:true,
+    microsoft:true,
     apple:false
   });
 })();
