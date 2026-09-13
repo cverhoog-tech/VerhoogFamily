@@ -80,6 +80,9 @@ module.exports = async function handler(req, res) {
   if (!body.includes('calendarCleaningPremiumV1.css?v=1')) {
     body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/calendarCleaningPremiumV1.css?v=1">\n</head>');
   }
+  if (!body.includes('cleaning-sheet-consistency-v1.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/cleaning-sheet-consistency-v1.css?v=1">\n</head>');
+  }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
