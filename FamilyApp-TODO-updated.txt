@@ -1,214 +1,482 @@
 ## FamilyApp - actuele TODO / roadmap
 
-Laatst bijgewerkt: 11-09-2026
+Laatst bijgewerkt: 13-09-2026 — feedbackronde 2 toegevoegd
 
 # Branch- en baseline-regels
 
-- Productie/main blijft `b7f233ebfe1fbb20ecdf426003f332528562ab0f`.
-- Stabiele Cleaning-v2 performancebasis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a` — real-device geaccepteerd op iPhone.
+- Huidige productie/main: `f57101b314b292ddb14ceab61710c7eeb1c1c322`.
 - Vervolgwerk gebeurt uitsluitend op `agent/household-rebuild-v2`.
-- Main, production Firebase Rules en fallback/lock branches blijven onaangeraakt totdat de product owner een exact checkpoint real-device accepteert en daarna apart promotie toestaat.
-- Oude TODO’s/statusdocumenten zijn historische referentie als ze botsen met deze roadmap of de huidige code.
+- Laatste door product owner real-device geaccepteerde runtimecheckpoint: `573d84b8e922121691058e50b8a95fe8255ab303`.
+- Geaccepteerde preview van dit checkpoint: `https://verhoog-family-gues9dy1l-cverhoog-techs-projects.vercel.app/`.
+- Household Rebuild Contracts voor dit checkpoint: **SUCCESS**, run `34725153022`.
+- Vercel voor dit checkpoint: **READY**.
+- Documentatiecommits na een geaccepteerd runtimecheckpoint veranderen de geaccepteerde runtimebasis niet.
+- Main, production Firebase Rules en fallback/lock branches blijven onaangeraakt totdat de product owner apart promotie naar main toestaat.
+- Oude TODO/statusdocumenten zijn historische referentie als ze botsen met deze roadmap of de huidige code.
 - Gedeelde visuele bron voor nieuw/refactored FamilyApp-werk: `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md` — **Calm Premium Home**.
+
+# Milestone-register
+
+## MILESTONE A — Household / gedeelde basis
+Status: **AFGEROND / NIET HEROPENEN ZONDER REPRODUCEERBARE REGRESSIE**
+
+Reeds aanwezig en als stabiele basis behandelen:
+- household-scoped dataflows;
+- leden/presence/avatarbasis;
+- boodschappenarchitectuur + realtime sync;
+- notification/push basis;
+- Action Inbox basis;
+- maaltijd-/receptbasis;
+- finance foundations;
+- safe-area/UI-scale/dark-mode basis.
+
+## MILESTONE B — STEP 12 Profiel / presence / identity
+Status: **AFGEROND**
+
+- profiel/persoonsweergave;
+- household identity bridge;
+- presence/avatarbasis;
+- alleen heropenen bij actuele reproduceerbare regressie.
+
+## MILESTONE C — STEP 13 Activity / Feed functionele architectuur
+Status: **AFGEROND**
+
+- Feed-dataflow en activity-projecties blijven gesloten;
+- composer, tagging en household activity blijven canonical volgens bestaande owners;
+- chronologische Feed-fix is eerder real-device geaccepteerd;
+- alleen presentatiebugs mogen afzonderlijk heropend worden.
+
+## MILESTONE D — Auth / Login lifecycle-safe basis
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
+
+Checkpoint: `2c90a211d209572fbd1870a1f78397b7f3dd1a46`.
+
+Vast:
+- native login Brand V7.1;
+- auth first-paint guard;
+- app-shell blijft verborgen zolang login actief is;
+- Google/email flows blijven onder bestaande auth authority;
+- geen terugkeer van screenshot-login of signed-out Home-flash.
+
+Open binnen auth/release blijft alleen externe provider/releaseconfiguratie, zie STEP 15.
+
+## MILESTONE E — Cleaning V2.0 performance-first kern
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
+
+Stabiele performancebasis: `b4511561f0885023e5ca6649a1eecd8f4a611d6a`.
+
+Geaccepteerd:
+- Cleaning lazy geladen;
+- geen Cleaning-work tijdens app-startup;
+- repository/listeners stoppen bij verlaten module;
+- household-scoped Cleaning repository;
+- `CleaningOccurrence` canonical concrete execution state;
+- kamers/routines CRUD;
+- presets;
+- supplies/voorraad;
+- weekplanning + persoonsfilter;
+- eigen Cleaning-detailflow;
+- optimistic checklist + gebundelde writes;
+- complete-all + completion logs;
+- Tasks en Agenda blijven afgeleide projecties.
+
+## MILESTONE F — Taken V3
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
+
+Checkpoint: `772f7a96fb92976d6eac8ad476517bb56e4de16d`.
+
+Geaccepteerd:
+- Taken V3 overview;
+- Taken detail;
+- create/edit;
+- premium dark overview;
+- optimistic checkboxgedrag;
+- verwijderde zwevende AI/Gemini-knop;
+- canonical task-data/mutation authorities blijven behouden.
+
+## MILESTONE G — App-brede feedbackronde 13-09-2026
+Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
+
+Exact geaccepteerd checkpoint: `573d84b8e922121691058e50b8a95fe8255ab303`.
+Preview: `https://verhoog-family-gues9dy1l-cverhoog-techs-projects.vercel.app/`.
+CI: `Household Rebuild Contracts` run `34725153022` — **SUCCESS**.
+
+Product owner bevestiging: **“Super dit werkt allemaal”**.
+
+### G1 — Feed dark-mode consistency
+Status: **AFGEROND / GEACCEPTEERD**
+
+- volledige donkere Feed-canvas;
+- composer, summary cards, filters, feedcards, comments en inputs consistente dark surfaces;
+- compacte filters;
+- semantische activity-accenten behouden;
+- light mode niet functioneel gewijzigd;
+- bestaande Feed-dataflow/tagging/composer ownership behouden.
+
+### G2 — PWA / Home Screen icon v9
+Status: **AFGEROND / GEACCEPTEERD**
+
+- geglitchte padgeometrie opnieuw getekend;
+- cream house + golden doorway/path behouden;
+- één schone symmetrische padvorm;
+- dezelfde brongeometrie voor Apple Touch / 192 / 512 / maskable;
+- manifest/icon cache-bust naar v9;
+- geen oude vervormde path meer als actieve bron.
+
+### G3 — Contextuele app-level terugnavigatie
+Status: **AFGEROND / GEACCEPTEERD**
+
+- app-level navigation stack rond bestaande `showScreen` authority;
+- rustige back-chevron bij cross-module handoffs;
+- root navigatie wist context history;
+- vorige scrollcontext wordt best-effort hersteld;
+- geen browser-history als canonical router;
+- geen tweede router.
+
+### G4 — Agenda premium Cleaning presentation
+Status: **AFGEROND / GEACCEPTEERD**
+
+- geprojecteerde schoonmaakbeurten krijgen eigen premium `Geplande schoonmaak` presentatie;
+- pine/mint Cleaning-identiteit;
+- kamerfoto/room visual;
+- titel, moment, duur/persoon/status duidelijker;
+- light + dark consistent;
+- tap opent bestaande Cleaning-flow;
+- Agenda blijft read/projectielaag;
+- `CleaningOccurrence` blijft canonical authority.
+
+## MILESTONE H — Feedbackronde recepten / boodschappen / Meer-menu
+Status: **OPEN — NIEUWE ACTUELE FEEDBACK 13-09-2026**
+
+### H1 — Receptfoto uit fotobibliotheek wordt niet zichtbaar
+Type: **FUNCTIONELE BUG / RECEPTEN**
+Prioriteit: **ZEER HOOG**
+
+Actuele observatie:
+- in Recepten kan een foto uit de iPhone-fotobibliotheek worden geselecteerd;
+- na selectie verschijnt de gekozen foto niet zichtbaar in de receptkaart/editor, waardoor niet duidelijk is of de upload daadwerkelijk is verwerkt.
+
+Bestaande architectuur die behouden moet blijven:
+- `RecipeStore` blijft canonical write facade;
+- `RecipeHouseholdRepository` blijft persistence/listener owner;
+- geen tweede recipe writer of lokale parallelle recipe database introduceren.
+
+Te onderzoeken / oplossen:
+- photo picker → FileReader/preview flow op iPhone/Safari/PWA;
+- onmiddellijke lokale preview na selectie moet altijd zichtbaar zijn;
+- bestandstype/HEIC/JPEG/PNG gedrag controleren;
+- grote iPhone-foto's vóór persistence client-side resizen/comprimeren zodat ze binnen de bestaande recipe photo-limiet passen of een expliciete duurzame opslagroute krijgen;
+- duidelijke foutmelding wanneer een bestand niet kan worden verwerkt in plaats van stil niets te tonen;
+- na opslaan + opnieuw openen moet exact dezelfde foto terugkomen in grid, detail en editor;
+- create én edit flow testen.
+
+Acceptatie:
+- foto kiezen uit bibliotheek → direct preview zichtbaar;
+- recept opslaan → foto blijft behouden;
+- recept sluiten/heropenen → foto nog zichtbaar;
+- geen silent failure bij grote of afwijkende afbeeldingen.
+
+### H2 — Boodschappen: onderscheidende automatische producticonen
+Type: **UX / PRODUCTHERKENNING / ICONOGRAFIE**
+Prioriteit: **HOOG**
+
+Doel:
+- productherkenning moet niet alleen een brede categorie opleveren, maar visueel duidelijk onderscheidende iconen tonen voor veelgebruikte productfamilies.
+
+Minimaal expliciet toevoegen/verfijnen:
+- **Kruiden/specerijen** → herkenbaar kruidenpotje / spice icon;
+- **Drinken** → fles/beker; waar mogelijk water/fris/sap/koffie/thee verder onderscheiden;
+- **Sauzen** → saus-/knijpflesicon;
+- **Diepvries** → duidelijke freezer/sneeuwvlok-identiteit;
+- **Frituur** → friet/frituurmand-identiteit, niet generieke voorraad;
+- **Vlees** → duidelijke steak/meat-identiteit;
+- **Zuivel** → melkpak/fles-identiteit, met kaas/eieren waar al specifiek herkend.
+
+Technische richting:
+- `FamilyAppProductLexicon` blijft centrale naamherkenning;
+- `GroceryProductClassifier` blijft category/classification facade;
+- `FamilyAppUtilityIconResolver` blijft presentation resolver;
+- liever nieuwe product-family icon keys en lexiconregels dan categorieën kunstmatig opsplitsen wanneer de canonical categorie gelijk kan blijven;
+- bestaande specifieke herkenning voor groente/fruit/kip/vis/kaas/eieren/etc. niet regressieren;
+- Nederlandse productnamen, meervouden en gangbare supermarktbenamingen meenemen.
+
+Acceptatie:
+- testset met minimaal kruiden, drinken, saus, diepvries, frituur, vlees en zuivel levert duidelijk verschillende iconen op;
+- handmatig toegevoegde en uit recepten overgenomen boodschappen gebruiken dezelfde resolver;
+- onbekende producten behouden nette generieke fallback.
+
+### H3 — Meer-menu sluit niet bij tik buiten menu
+Type: **INTERACTIEBUG / NAVIGATIE**
+Prioriteit: **HOOG**
+
+Actuele observatie:
+- wanneer het `Meer`-menu/lint geopend is, blijft het open staan als buiten het menu wordt getikt.
+
+Gewenst gedrag:
+- tik op backdrop / ieder punt buiten het menu sluit het menu direct;
+- tik binnen het menu activeert de gekozen optie en mag niet doorlekken naar backdrop-close vóór de actie;
+- opnieuw op `Meer` tikken mag togglen/sluiten;
+- scherm-/modulewisseling sluit een nog open Meer-menu;
+- Escape op desktop mag eveneens sluiten;
+- geen document-wide click owner toevoegen die andere modules of popupflows stoort; event ownership scopebaar houden.
+
+Acceptatie:
+- open Meer → tik buiten → direct dicht;
+- open Meer → kies item → item opent één keer en menu verdwijnt;
+- geen ghost taps/dubbele navigatie op iPhone.
 
 # STEP 14 — Schoonmaken v2
 
 ## V2.0 Performance-first kern
 Status: **AFGEROND / REAL-DEVICE GEACCEPTEERD**
 
-Actieve basis:
-- Cleaning lazy geladen; geen Cleaning-work tijdens app-startup.
-- Repository/listeners stoppen bij verlaten van de module.
-- Household-scoped Firebase onder `families/{householdId}/cleaning`.
-- `CleaningOccurrence` is canonical concrete execution state.
-- Kamers/routines CRUD, presets, supplies/voorraad, weekplanning + persoonsfilter.
-- Lichte eigen Cleaning-detail-sheet.
-- Optimistic checklist + coalescing + gebundelde writes.
-- Complete-all + completion logs.
-- Tasks en Calendar/Agenda blijven afgeleide projecties.
-- Household role/capability basis.
+Zie Milestone E.
 
-Blijvend verboden: oude `CleaningExecutionWriteRuntime`, oude `CleaningProjectionService`, generieke `TaskDetailPopup` voor Cleaning, oude experience-stack, MutationObserver-architectuur, document-wide Cleaning click owners, meerdere popup owners, zware reconcile-cascade, Cleaning startupwerk en parallelle canonical Cleaning writers.
+Blijvend verboden:
+- oude `CleaningExecutionWriteRuntime` als parallelle authority;
+- oude parallelle `CleaningProjectionService`-architectuur buiten de huidige canonical flow;
+- generieke `TaskDetailPopup` als eigenaar van Cleaning;
+- meerdere Cleaning-popup owners;
+- MutationObserver-architectuur voor core Cleaning lifecycle;
+- document-wide Cleaning click owners;
+- zware reconcile-cascades;
+- Cleaning startupwerk;
+- parallelle canonical Cleaning writers.
 
 ## Vast productbesluit — Cleaning simpel houden
 Status: **VAST**
 
-Niet opnieuw bouwen: member availability, vakanties, ziekte/afwezigheid, drukke-week/capaciteitsengine, automatische planning op persoonlijke beschikbaarheid en complexe tijdelijke planning-pauzes/exception engines.
+Niet opnieuw bouwen:
+- member availability engine;
+- vakanties/ziekte/afwezigheid engine;
+- drukke-week/capaciteitsengine;
+- automatische planning op persoonlijke beschikbaarheid;
+- complexe tijdelijke planning-pauzes/exception engines.
 
-Nieuwe expliciete productgrens:
+Productgrens:
 - **Schoonmaken** = kamer → routine → planning → uitvoering → benodigdheden → historie.
 - **Taken** = algemene uitvoerlaag voor losse/algemene taken.
-- Een concrete schoonmaakbeurt mag naar Taken/Agenda projecteren, maar Cleaning blijft authority over de schoonmaakroutine en occurrence.
-- Schoonmaken mag visueel aansluiten op Taken maar wordt functioneel geen tweede Taken-module.
+- Concrete schoonmaakbeurten mogen naar Taken/Agenda projecteren, maar Cleaning blijft authority.
 
 ## V2.1 Samenwerking / overdracht / hulp
-Status: **CODECANDIDATE GEREED — SINGLE-DEVICE LIJKT GOED — MULTI-USER VERIFICATIE UITGESTELD**
+Status: **CODECANDIDATE GEREED — SINGLE-DEVICE LIJKT GOED — MULTI-USER VERIFICATIE OPEN**
 
 Laatste volledig geteste V2.1 checkpoint: `7e34cb60b78cf45664fdb82202e9673bb2ae9672`.
-CI `Household Rebuild Contract Tests` run `34534350216`: **SUCCESS**.
+CI run `34534350216`: **SUCCESS**.
 
 Gebouwd:
 - occurrence transfer naar actief gezinslid;
 - accept/decline via Action Inbox;
 - counter persoon/dag/tijd;
-- derde-persoon counter vraagt altijd apart akkoord;
+- derde-persoon counter vraagt apart akkoord;
 - help request accept/decline/withdraw;
 - transfer withdraw;
 - geen impliciet multi-person assignment;
 - request-state blijft op CleaningOccurrence;
-- accepted transfer synchroniseert bestaande Task/Agenda-projecties;
+- accepted transfer synchroniseert Task/Agenda-projecties;
 - duplicate-tap/idempotency guards;
-- verse Action Inbox hydrateert Cleaning alleen on-demand;
-- geen extra long-lived Firebase listener, popup owner, MutationObserver of notification projector.
+- verse Action Inbox hydrateert Cleaning on-demand.
 
-UX:
-- geen zelfstandig `Samenwerken` menu onder Kamers;
-- collaboration blijft contextueel in de bestaande concrete beurt-detail-sheet;
-- incoming decisions blijven in Action Inbox.
-
-Verificatie:
-- beschikbare single-device flow lijkt goed;
-- multi-user A/B/C verificatie blijft open;
-- daarom V2.1 niet als volledig accepted markeren.
+Nog te doen voor acceptatie:
+- echte multi-user A/B/C test op meerdere apparaten/accounts;
+- transfer request van A → B;
+- accept/decline/counter door B;
+- derde-persoon counterflow;
+- help request/withdraw;
+- controleren dat Task/Agenda projecties op beide clients gelijk blijven.
 
 ## V2.2 Historie / Activity / nuttige aandacht
-Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**
+Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE VERIFICATIE OPEN**
 
 Functioneel runtimecheckpoint: `ffb0552bad734309e02361de87bde7a3e96a3464`.
-Laatste V2.2 docs/testcheckpoint vóór visual rework: `28fd9fb6832ef369ee084723b4a71736fb4e662d`.
-CI `Household Rebuild Contract Tests` run `34537817885`: **SUCCESS**.
+Docs/testcheckpoint vóór visual rework: `28fd9fb6832ef369ee084723b4a71736fb4e662d`.
+CI run `34537817885`: **SUCCESS**.
 
 Gebouwd:
-- pure history contractlaag over canonical completionLogs;
-- vierde `Historie` tab;
+- history contract over canonical completionLogs;
+- `Historie` tab;
 - historie per kamer/routine;
 - current-week summary;
-- rustige current-assignee today/overdue aandacht;
-- best-effort `cleaning.completed` Activity projection met deterministic dedupe;
-- geen history database, extra raw Firebase listener, MutationObserver, polling of NotificationStore-projector.
+- rustige today/overdue aandacht;
+- best-effort `cleaning.completed` Activity projection met dedupe;
+- geen aparte history database/listener.
 
-V2.2 functionele real-device verificatie blijft open. Voor beurt-/Benodigdheden-detail wordt vanaf nu de V2.2.1 visual candidate getest.
+Nog te doen:
+- real-device check van Historie;
+- meerdere afgeronde beurten controleren;
+- weeksummary controleren;
+- overdue/today states controleren;
+- Feed activity-projectie na completion controleren.
 
 ## V2.2.1 Calm Premium detail visual rework
-Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE TEST OPEN**
+Status: **CODECANDIDATE GEREED — CI GROEN — REAL-DEVICE ACCEPTATIE NOG OPEN**
 
-Exacte groene runtime/testcandidate: `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
-CI `Household Rebuild Contract Tests` run `34572194287`: **SUCCESS**.
+Exact groene candidate: `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
+CI run `34572194287`: **SUCCESS**.
 Vercel deployment `dpl_45GFm7ugk8BkKBQPRLgBQHrdJtRA`: **READY**.
-Immutable preview: `https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`.
+Preview: `https://verhoog-family-7xhfyvsbn-cverhoog-techs-projects.vercel.app`.
 
-Waarom nu:
-- product owner heeft op 11-09-2026 de detail-/Benodigdhedenreferenties opnieuw exact vastgezet;
-- besloten vóór V2.3 eerst deze kernflows naar de definitieve FamilyApp-designrichting te brengen;
-- voorkomt dat nieuwe V2.3-functionaliteit in een tijdelijke layout wordt gebouwd en daarna opnieuw moet worden verplaatst.
-
-Nieuwe visuele basis:
-- `docs/FAMILYAPP-VISUAL-DESIGN-SYSTEM.md`;
+Basis:
 - Calm Premium Home;
 - warm off-white light mode;
 - deep navy dark mode;
-- FamilyApp-violet als identity-accent;
 - semantisch groen/amber/rood;
-- 44–48px gekleurde minimalistische line-icon tiles;
-- ruime iPhone-first cards en touch targets;
-- geen zware glass/blur/repaint styling.
-
-Concrete beurt — vast:
-- header;
-- grote kamerhero + status;
-- titel + dag/moment/onderdelen/duur;
-- assignee;
-- routineprogressie;
-- checklist;
+- premium kamerhero;
+- progress/checklist;
 - Start/Verder schoonmaken;
 - Bewerken;
-- Bekijk beurt + Benodigdheden;
-- collaboration contextueel in dezelfde sheet.
+- Benodigdheden-context;
+- supplies status + Shopping handoff;
+- collaboration contextueel in dezelfde Cleaning-flow.
 
-Benodigdheden — vast:
-- header;
-- Voor deze beurt / Alle kameritems;
-- supply rows met objecticoon + tekststatus + statusindicator;
-- Ontbreekt iets?-CTA;
-- voorraadsummary;
-- kameritembeheer waar capability dit toestaat;
-- Bekijk alle kameritems + Boodschappen;
-- LOW/OUT handoff via canonical ShoppingListStore met dedupe.
+Nog te doen voor acceptatie:
+- light + dark iPhone test;
+- checklist/progress;
+- start/complete;
+- edit;
+- collaboration;
+- segmented supplies;
+- statuswijziging;
+- kameritem toevoegen;
+- Shopping handoff;
+- History;
+- herhaald open/dicht zonder performanceproblemen.
 
-Nieuwe code/tests:
-- `src/modules/cleaning/cleaningDetailVisualV221.js`;
-- `src/styles/cleaning-detail-v221.css`;
-- `scripts/test-cleaning-detail-visual-v221.js`;
-- `cleaningPremiumFeedback.js` laadt visual companion uitsluitend lazy in Cleaning;
-- functional closeout uitgebreid naar V2.2.1.
-
-Hard behouden:
-- primaire `cleaningScreen.js` blijft v2.0.0;
-- dezelfde bestaande Cleaning-sheet is enige popup owner;
-- geen nieuwe Firebase listener/writer;
-- geen MutationObserver;
-- geen document-wide click owner;
-- geen pollingtimer;
-- geen production Firebase Rules wijziging.
-
-CI-notitie: de eerste V2.2.1-run was alleen rood door twee stale `2.2.0` companion-marker asserts en een CSS-guard die het woord `backdrop-filter` in een “no backdrop-filter” comment matchte. De runtime-closeout was daar al groen. De volledige suite is daarna groen op exact `7867946641cb588d84ea075e08c4c54a3e60cfc5`.
-
-Real-device acceptance vereist light + dark iPhone test van layout, checklist/progress, start/complete, edit, collaboration, segmented supplies, statuswijziging, kameritem toevoegen, Shopping handoff, History en herhaald open/dicht zonder jank.
-
-**Niet als accepted markeren totdat product owner exact `7867946641cb588d84ea075e08c4c54a3e60cfc5` expliciet bevestigt.**
+**Niet automatisch als accepted behandelen totdat product owner deze Cleaning-candidate expliciet real-device bevestigt.**
 
 ## V2.3 Functionele gaten + hardening
-Status: **VOLGENDE NA V2.2.1 REAL-DEVICE CHECK**
+Status: **VOLGENDE FUNCTIONELE CLEANING-FASE**
 
+Open:
 - onvolledige beurt: doorschuiven / later deze week / overslaan;
 - handmatig ander moment/persoon;
-- projection consistency;
+- projection consistency hardening;
 - household-key safety;
 - create/submit/tap idempotency;
 - account/household switch lifecycle;
-- soft-delete;
+- soft-delete waar nodig;
 - cache/versioning;
 - extra contracttests.
+
+Voorwaarde:
+- eerst V2.1 multi-user en V2.2/V2.2.1 real-device status duidelijk hebben zodat V2.3 niet bovenop onzekere flows wordt gebouwd.
 
 ## V2.4 Brede premium consistency pass
 Status: **OPEN NA FUNCTIONELE STABILITEIT**
 
-- resterende Schoonmaken cards/tabs/states harmoniseren;
+- resterende Cleaning cards/tabs/states harmoniseren;
 - volledige light + dark consistency;
 - kameratlassen/assets verder verfijnen;
-- lichte native-iOS microinteracties;
-- shared primitives voorbereiden voor visuele Taken-harmonisatie;
+- subtiele native-iOS microinteracties;
+- shared primitives voor verdere app-brede harmonisatie;
 - geen zware blur/glass/repaint-effecten.
 
 # STEP 15 — Branding / PWA / Login & Auth
-Status: **OPEN NA CLEANING**
+Status: **GROTENDEELS BASIS GEREED — RELEASE/APPLE-CONFIG NOG OPEN**
 
-- nieuw FamilyApp-logo en icon family;
-- PWA/maskable/Apple Touch/favicon;
-- premium login screen;
-- Google, Apple en normale accountlogin/registratie behouden en testen;
-- Apple-loginactie ook via Home onder dezelfde auth authority;
-- manifest/theme/background/caching/Home Screen icon real-device verificatie;
-- Google post-auth freeze alleen opnieuw openen als reproduceerbaar.
+Afgerond/geaccepteerd:
+- premium native login Brand V7.1;
+- auth first-paint/signed-out shell guard;
+- deep-pine FamilyApp identity;
+- PWA icon v9 zonder padglitch;
+- Apple Touch/192/512/maskable generation actief;
+- manifest/cache-bust bijgewerkt.
+
+Nog open:
+- Apple provider daadwerkelijk extern/configuratie-technisch activeren;
+- Apple-login end-to-end testen zodra provider/config klaar is;
+- Google/email auth regressietest voor release;
+- manifest/theme/background/PWA install final release-check;
+- App Store/native releasevereisten;
+- eventuele native wrapper/bundling-keuze.
+
+Belangrijk:
+- Apple clientbasis bestaat al, maar provider mag niet stilzwijgend worden aangezet zonder externe Firebase/Apple configuratie.
 
 # Overige werkelijk open hoofdlijnen
 
 ## Internationalisatie
 Status: **LATER**
-- NL / EN / TR / DE / FR via centrale i18n en opgeslagen taalkeuze.
+
+- NL / EN / TR / DE / FR;
+- centrale i18n laag;
+- opgeslagen taalkeuze;
+- eerst huidige Nederlandse UI/flows functioneel stabiliseren.
 
 ## Party Quest toast
-Status: **ALLEEN HUIDIGE REAL-DEVICE STATUS VERIFIËREN**
-- bestaande fixcandidate eerst testen, geen nieuwe code zonder actuele regressie.
+Status: **ALLEEN ACTUELE REAL-DEVICE STATUS VERIFIËREN**
 
-## Release/security
+- bestaande fixcandidate eerst testen;
+- geen nieuwe code zonder actuele reproduceerbare regressie.
+
+## App-brede visual consistency na Cleaning
+Status: **LATER / NA CLEANING V2.3-V2.4**
+
+- overige oudere modules langs Calm Premium Home leggen;
+- legacy emoji/unstyled cards alleen vervangen waar ze nog zichtbaar afwijken;
+- geen wholesale rewrite van stabiele modules zonder gebruikerswaarde.
+
+## Release / security
 Status: **LATER RICHTING PUBLIEKE RELEASE**
+
 - server-side Firebase Rules voor rollen ontwerpen/testen;
 - Apple provider/configuratie;
 - App Store requirements;
 - native/PWA releasekeuzes;
+- release smoke tests op echte household accounts;
 - production Firebase Rules nooit wijzigen zonder expliciete toestemming.
+
+# Nu daadwerkelijk nog te doen — geprioriteerde volgorde
+
+1. **Receptfoto upload/preview bug oplossen**
+   - iPhone library-selectie moet direct previewen én na opslaan blijven staan;
+   - size/type handling robuust maken.
+
+2. **Meer-menu outside-tap bug oplossen**
+   - backdrop/outside tap sluit direct zonder ghost taps of dubbele navigatie.
+
+3. **Boodschappen producticonen uitbreiden**
+   - specifieke automatische herkenning/iconen voor kruiden, drinken, sauzen, diepvries, frituur, vlees en zuivel.
+
+4. **Cleaning V2.1 multi-user verificatie**
+   - A/B/C flows echt op meerdere accounts/apparaten testen.
+
+5. **Cleaning V2.2 + V2.2.1 real-device acceptatie**
+   - Historie, aandachtstates, premium detail, Benodigdheden en Shopping handoff volledig doorlopen in light + dark.
+
+6. **Cleaning V2.3 functionele hardening**
+   - incomplete beurt, verplaatsen, ander persoon/moment, lifecycle/idempotency/projection safety.
+
+7. **Cleaning V2.4 brede premium consistency**
+   - laatste Cleaning-states visueel gelijk trekken en assets verfijnen.
+
+8. **STEP 15 release/auth afronding**
+   - Apple provider/config;
+   - auth E2E;
+   - PWA/App Store/native releasechecks.
+
+9. **Party Quest actuele status verifiëren**
+   - alleen fixen wanneer nog reproduceerbaar.
+
+10. **Internationalisatie**
+   - centrale i18n na functionele stabiliteit.
+
+11. **Release/security hardening**
+   - rules/rollen, release smoke tests en store-readiness.
 
 # Afgerond — niet automatisch heropenen
 
-Reeds gebouwde/geaccepteerde delen zoals STEP 12 Profiel/presence/avatar, STEP 13 Activity/Feed, maaltijdfollow-up, Action Inbox basis, UI-schaal, safe-area/dark-mode gates, notificatie/push basis, boodschappenarchitectuur, Taken create-card en bestaande Apple Sign-In clientbasis worden alleen heropend bij een actuele reproduceerbare regressie.
+Niet heropenen zonder actuele reproduceerbare regressie:
+- STEP 12 Profiel/presence/avatar;
+- STEP 13 Activity/Feed functionele architectuur;
+- Feed dark-mode feedbackronde 13-09;
+- contextuele module-navigatie;
+- Agenda premium Cleaning presentation;
+- PWA icon v9 path fix;
+- Taken V3 overview/detail/create-edit + premium dark overview;
+- auth first-paint / signed-out Home-flash fix;
+- maaltijdfollow-up;
+- Action Inbox basis;
+- UI-schaal/safe-area basis;
+- notification/push basis;
+- boodschappenarchitectuur.

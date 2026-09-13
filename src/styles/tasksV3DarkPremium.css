@@ -1,0 +1,250 @@
+/* ============================================================
+   FAMILYAPP TASKS V3 — PREMIUM DARK OVERVIEW
+   Literal dark-mode translation of the approved premium mockup.
+   Overview only: task detail/editor keep their current dark styling.
+   ============================================================ */
+
+/* Page canvas — noticeably darker and more cinematic than the old green wash. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] #screen-tasks,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] #task-content{
+  background:
+    radial-gradient(circle at 88% 2%,rgba(29,95,72,.11),transparent 30%),
+    radial-gradient(circle at 4% 26%,rgba(19,53,66,.10),transparent 28%),
+    linear-gradient(180deg,#040a0d 0%,#061013 42%,#050d10 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-page{
+  color:#f5f0e8;
+}
+
+/* Brand/header */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup strong,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-titlebar h1{
+  color:#f8f3eb!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.025),0 8px 24px rgba(0,0,0,.18);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup small{
+  color:#8e9996!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-leaf{
+  color:#97cfad!important;
+  filter:drop-shadow(0 0 11px rgba(105,201,147,.16));
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-icon-btn{
+  color:#879693!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-family-avatar{
+  border-color:#040b0e!important;
+  box-shadow:0 0 0 1px rgba(235,240,236,.17),0 5px 14px rgba(0,0,0,.34);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-new{
+  border:1px solid rgba(83,211,143,.50)!important;
+  background:
+    radial-gradient(circle at 24% 0%,rgba(106,227,157,.18),transparent 46%),
+    linear-gradient(180deg,#27845d 0%,#15563e 100%)!important;
+  color:#f7faf8!important;
+  box-shadow:0 9px 24px rgba(20,115,76,.28),0 0 18px rgba(60,178,119,.08),inset 0 1px 0 rgba(255,255,255,.14)!important;
+}
+
+/* Three differentiated stat cards — deeper blacks, richer color, brighter rims. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat{
+  box-shadow:0 10px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--open{
+  border-color:rgba(49,159,112,.68)!important;
+  background:
+    radial-gradient(circle at 16% 0%,rgba(48,170,113,.20),transparent 56%),
+    linear-gradient(145deg,#0b211a 0%,#071410 100%)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.24),0 0 18px rgba(39,141,98,.06),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--important{
+  border-color:rgba(207,153,61,.68)!important;
+  background:
+    radial-gradient(circle at 18% 0%,rgba(205,148,53,.20),transparent 56%),
+    linear-gradient(145deg,#2b2214 0%,#18130e 100%)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.24),0 0 19px rgba(185,128,37,.055),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--overdue{
+  border-color:rgba(211,84,77,.72)!important;
+  background:
+    radial-gradient(circle at 18% 0%,rgba(215,74,69,.19),transparent 56%),
+    linear-gradient(145deg,#32181b 0%,#1c1012 100%)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.24),0 0 19px rgba(187,56,53,.055),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat strong{
+  color:#faf5ec!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat small{
+  color:#9fa9a5!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--open .tv3-stat-icon{
+  color:#8ad0a6!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--important .tv3-stat-icon{
+  color:#efb84f!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--important small{
+  color:#b4ad9d!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--overdue .tv3-stat-icon,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat--overdue small{
+  color:#e67b70!important;
+}
+
+/* Quote/photo banner — make the photo and warm light read more like the approved mockup. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote{
+  border-color:#2b4649!important;
+  background:#0a1518!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote:after{
+  inset:0 0 0 39%!important;
+  background:
+    linear-gradient(90deg,#0a1518 0%,rgba(10,21,24,.92) 21%,rgba(10,21,24,.45) 53%,rgba(5,12,13,.05) 100%),
+    url('/src/assets/task-heroes/cozy-home.webp') center 56%/cover no-repeat!important;
+  opacity:1!important;
+  filter:saturate(1.08) contrast(1.04);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote-icon{
+  color:#9dd4b2!important;
+  filter:drop-shadow(0 0 8px rgba(91,193,137,.11));
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote strong{
+  color:#f7f1e8!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-quote small{
+  color:#b0bbb7!important;
+}
+
+/* Filters — selected gold gets the mockup's luminous premium treatment. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button{
+  border-color:#30474a!important;
+  background:linear-gradient(180deg,#0b181b 0%,#071315 100%)!important;
+  color:#c1c9c6!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 5px 14px rgba(0,0,0,.10)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button.active{
+  border-color:#f0d172!important;
+  background:linear-gradient(180deg,#f3dd9a 0%,#e7c76c 100%)!important;
+  color:#171c19!important;
+  box-shadow:0 7px 18px rgba(221,175,60,.28),0 0 18px rgba(237,196,91,.10),inset 0 1px 0 rgba(255,255,255,.56)!important;
+}
+
+/* Section hierarchy */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head strong{
+  color:#f4f0e8!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head small{
+  color:#919c98!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group--verlopen .tv3-group-head strong{
+  color:#df756b!important;
+  text-shadow:0 4px 16px rgba(186,61,58,.09);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group-arrow{
+  color:#a1adab!important;
+}
+
+/* Task cards — neutral dark graphite/teal, visibly lifted from the canvas. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row{
+  border-color:#334c50!important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(33,73,71,.10),transparent 42%),
+    linear-gradient(135deg,#0b171b 0%,#0a1c1b 100%)!important;
+  box-shadow:0 9px 24px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.026),inset 0 -1px 0 rgba(0,0,0,.22)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-group--verlopen .tv3-task-row{
+  border-color:rgba(165,79,72,.58)!important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(116,49,46,.10),transparent 42%),
+    linear-gradient(135deg,#10171a 0%,#171615 100%)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row:active{
+  transform:translateY(1px);
+  border-color:#4b696d!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check{
+  border-color:#d0d9d7!important;
+  background:#071114!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.02),0 2px 8px rgba(0,0,0,.14)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row.is-done .tv3-task-check{
+  border-color:#6bc38a!important;
+  background:#276f4b!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-photo{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.11),0 5px 15px rgba(0,0,0,.28)!important;
+  filter:saturate(1.05) contrast(1.03);
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-copy>strong{
+  color:#faf6ef!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-meta{
+  color:#a3adaa!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-meta i{
+  background:#556764!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-row-avatar{
+  box-shadow:0 0 0 1px rgba(235,240,236,.21),0 3px 10px rgba(0,0,0,.18)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-xp{
+  border:1px solid rgba(185,127,42,.34)!important;
+  background:linear-gradient(180deg,#4a361e 0%,#352614 100%)!important;
+  color:#ecad4b!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 4px 11px rgba(0,0,0,.10)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-row-chevron{
+  color:#d0d8d6!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-empty{
+  border-color:#2d4549!important;
+  background:#091619!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.18)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-empty strong{
+  color:#f1ece4!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-empty span,
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-loading>span{
+  color:#919c98!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-loading i{
+  background:linear-gradient(100deg,#0b171a 8%,#13272a 18%,#0b171a 33%)!important;
+  background-size:200% 100%!important;
+}
+
+/* Family member popover follows the same charcoal/glass palette. */
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu{
+  border-color:#33494d!important;
+  background:rgba(6,15,18,.985)!important;
+  box-shadow:0 20px 48px rgba(0,0,0,.46)!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu button{
+  color:#c6cecb!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu button.active{
+  background:#153126!important;
+  color:#dcece2!important;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-member-menu .tv3-member-dashboard{
+  border-color:#2d4043!important;
+}
+
+/* Defensive kill-switch: the removed legacy Gemini/AI floating affordance must never leak through. */
+#ai-fab,
+#ai-panel{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* Preserve the accepted compact geometry on small iPhones. */
+@media(max-width:390px){
+  [data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-stat{
+    box-shadow:0 8px 22px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.028)!important;
+  }
+  [data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row{
+    box-shadow:0 7px 18px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.022)!important;
+  }
+}

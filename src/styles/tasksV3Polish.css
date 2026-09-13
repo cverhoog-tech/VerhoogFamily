@@ -1,0 +1,296 @@
+/* ============================================================
+   FAMILYAPP TASKS V3.1 — REFERENCE POLISH
+   Compactness, hierarchy and interaction sizing only.
+   Keeps the V3 component model intact; no legacy selectors.
+   ============================================================ */
+
+/* OVERVIEW — fit substantially more real task content above the fold. */
+body[data-task-view="overview"][data-task-v3="1"] .tv3-page{
+  padding-top:8px;
+  padding-left:14px;
+  padding-right:14px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-brand{
+  margin-bottom:11px;
+  padding-top:2px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-leaf{width:24px;height:24px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup{gap:7px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup strong{font-size:18px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-brand-lockup small{font-size:8px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-family-avatar{width:25px;height:25px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-family-stack{height:31px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-icon-btn{width:31px;height:31px}
+
+body[data-task-view="overview"][data-task-v3="1"] .tv3-titlebar{
+  margin-bottom:10px;
+  align-items:center;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-titlebar h1{font-size:32px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-new{
+  height:34px;
+  padding:0 11px;
+  font-size:9.5px;
+  box-shadow:0 3px 9px rgba(49,84,63,.11);
+}
+
+body[data-task-view="overview"][data-task-v3="1"] .tv3-stats{
+  gap:6px;
+  margin-bottom:8px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-stat{
+  min-height:68px;
+  padding:8px 10px;
+  border-radius:12px;
+  grid-template-rows:17px auto auto;
+  box-shadow:none;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-stat-icon{width:17px;height:17px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-stat-icon svg{width:15px;height:15px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-stat strong{
+  margin-top:3px;
+  font-size:19px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-stat small{
+  margin-top:2px;
+  font-size:8px;
+}
+
+body[data-task-view="overview"][data-task-v3="1"] .tv3-quote{
+  min-height:50px;
+  margin-bottom:9px;
+  padding:7px 11px;
+  grid-template-columns:25px minmax(0,1fr);
+  gap:7px;
+  border-radius:12px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-quote strong{font-size:11px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-quote small{font-size:7.5px;margin-top:2px}
+
+/* The reference reads as five light pills, not a heavy segmented control tray. */
+body[data-task-view="overview"][data-task-v3="1"] .tv3-filters{
+  display:flex;
+  gap:5px;
+  margin-bottom:11px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button{
+  flex:1 1 0;
+  height:28px;
+  padding:0 5px;
+  border:1px solid rgba(73,82,76,.10);
+  border-radius:999px;
+  background:rgba(255,253,248,.68);
+  color:#606b65;
+  font-size:8px;
+  box-shadow:none;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button.active{
+  border-color:#3c6049;
+  background:#3c6049;
+  color:#fff;
+  box-shadow:none;
+}
+
+body[data-task-view="overview"][data-task-v3="1"] .tv3-group{margin-bottom:10px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head{
+  min-height:26px;
+  padding:0 1px 4px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head strong{font-size:15.5px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-group-head small{font-size:8px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-list{gap:5px}
+
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row{
+  min-height:58px;
+  padding:6px 7px;
+  border-radius:12px;
+  grid-template-columns:22px 47px minmax(0,1fr) auto 11px;
+  gap:6px;
+  box-shadow:0 2px 9px rgba(36,47,41,.035);
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-photo{
+  width:47px;
+  height:42px;
+  border-radius:8px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-copy>strong{
+  font-size:10.5px;
+  line-height:1.16;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-meta{
+  margin-top:4px;
+  gap:4px;
+  font-size:7.6px;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-row-avatar{width:17px;height:17px}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-xp{
+  min-width:39px;
+  padding:5px 6px;
+  font-size:7.5px;
+}
+
+/* Defeat inherited global button min-height rules: these must stay circles. */
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check,
+.tv3d-overlay .tv3d-sub-check{
+  width:22px!important;
+  min-width:22px!important;
+  max-width:22px!important;
+  height:22px!important;
+  min-height:22px!important;
+  max-height:22px!important;
+  aspect-ratio:1/1!important;
+  padding:0!important;
+  flex:0 0 22px!important;
+  border-radius:50%!important;
+  line-height:1!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+  transition:background-color .08s ease,border-color .08s ease,transform .08s ease!important;
+  will-change:transform;
+}
+body[data-task-view="overview"][data-task-v3="1"] .tv3-task-check:active,
+.tv3d-overlay .tv3d-sub-check:active{transform:scale(.88)!important}
+.tv3d-overlay .tv3d-sub-check.is-pending{box-shadow:0 0 0 3px rgba(56,95,73,.08)!important}
+
+/* DETAIL — preserve the photo-first identity but compress the management UI. */
+.tv3d-overlay{padding:8px 8px calc(7px + env(safe-area-inset-bottom))}
+.tv3d-card{
+  max-height:calc(100dvh - 18px - env(safe-area-inset-bottom));
+  border-radius:23px;
+}
+.tv3d-hero{
+  aspect-ratio:16/7.35;
+  min-height:142px;
+  border-radius:22px 22px 0 0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  transform:translateZ(0);
+}
+.tv3d-close{width:33px;height:33px;right:11px;top:11px}
+.tv3d-sheet{
+  margin-top:-18px;
+  padding-left:14px;
+  padding-right:14px;
+  border-radius:18px 18px 22px 22px;
+}
+.tv3d-title{
+  padding-top:12px;
+  padding-bottom:5px;
+  font-size:21px;
+}
+.tv3d-person{margin-bottom:7px;gap:6px}
+.tv3d-person-avatar{width:26px;height:26px}
+.tv3d-person strong{font-size:9.5px}
+.tv3d-person small{font-size:6.8px}
+.tv3d-chips{gap:4px;margin-bottom:8px}
+.tv3d-chip{
+  min-height:25px;
+  padding:0 8px;
+  font-size:8px;
+  background:#f3f0e8;
+}
+.tv3d-description{margin-bottom:9px;font-size:9.5px;line-height:1.4}
+.tv3d-divider{margin-bottom:9px}
+.tv3d-section{margin-bottom:9px;position:relative}
+.tv3d-section-head{margin-bottom:5px}
+.tv3d-section-head strong{font-size:13.5px}
+.tv3d-section-head small{font-size:7.6px}
+.tv3d-sub{min-height:35px;gap:7px}
+.tv3d-sub-title{font-size:9.5px}
+.tv3d-sub-more{width:22px;height:22px;font-size:15px}
+.tv3d-sub-add{min-height:27px;margin-top:2px;font-size:8px}
+.tv3d-supplies{gap:5px;padding-right:42px}
+.tv3d-supply{min-height:26px;padding:0 8px;font-size:8px}
+.tv3d-supply-empty{font-size:8.5px;padding-right:44px}
+
+/* 'Manage in Cleaning' is a secondary affordance, not a second CTA. */
+.tv3d-cleaning-manage{
+  position:absolute;
+  top:-2px;
+  right:1px;
+  margin:0;
+  min-height:24px;
+  padding:0 3px;
+  font-size:0;
+  font-weight:700;
+}
+.tv3d-cleaning-manage:after{
+  content:"Beheren";
+  font-size:7.8px;
+}
+
+/* Collaboration stays functional but becomes one quiet row until invoked. */
+.tv3d-help{
+  gap:7px;
+  min-height:39px;
+  padding:6px 0;
+}
+.tv3d-help-icon{width:26px;height:26px;border-radius:8px}
+.tv3d-help-icon svg{width:14px;height:14px}
+.tv3d-help-copy strong{font-size:8.8px}
+.tv3d-help-copy small{display:none}
+.tv3d-help-btn{
+  min-height:27px;
+  padding:0 8px;
+  border-radius:999px;
+  font-size:7.8px;
+}
+
+.tv3d-complete{
+  min-height:42px;
+  margin:3px 0 6px;
+  border-radius:11px;
+  font-size:10px;
+  box-shadow:none;
+}
+.tv3d-complete[disabled]{
+  border:1px solid #dce5dd;
+  background:#eef2ed;
+  color:#7f8d84;
+}
+.tv3d-complete[disabled] span{font-size:0}
+.tv3d-complete[disabled] span:after{
+  content:"Nog openstaande stappen";
+  font-size:9.5px;
+}
+.tv3d-secondary{gap:6px}
+.tv3d-secondary button{
+  min-height:35px;
+  border-radius:10px;
+  font-size:9px;
+}
+
+@media(max-width:390px){
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-page{padding-left:11px;padding-right:11px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-titlebar h1{font-size:30px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-new{height:32px;padding:0 10px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-stat{min-height:64px;padding:7px 8px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-quote{min-height:47px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-task-row{grid-template-columns:21px 44px minmax(0,1fr) auto 10px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-task-photo{width:44px;height:39px}
+  body[data-task-view="overview"][data-task-v3="1"] .tv3-row-avatar{display:grid}
+  .tv3d-hero{min-height:135px}
+  .tv3d-title{font-size:20px}
+}
+
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button{
+  border-color:#34443d;
+  background:#14231c;
+  color:#abb5af;
+}
+[data-theme*="dark"] body[data-task-view="overview"][data-task-v3="1"] .tv3-filters button.active{
+  border-color:#d8c58c;
+  background:#d8c58c;
+  color:#1c3027;
+}
+[data-theme*="dark"] .tv3d-complete[disabled]{
+  border-color:#2f4138;
+  background:#18251f;
+  color:#94a198;
+}

@@ -12,20 +12,23 @@ const routes=read('vercel.json');
 const login=read('src/core/loginBrandV7.js');
 const loginCss=read('src/styles/loginBrandV7.css');
 
-assert(endpoint.includes('familyapp/brand/v8/pwa-master.svg'),'brand endpoint must use the opaque forest PWA v8 master');
-assert(endpoint.includes('familyapp-brand-v8.png'),'icon endpoint filename must identify v8 output');
+assert(endpoint.includes('familyapp/brand/v9/pwa-master.svg'),'brand endpoint must use the clean forest PWA v9 master');
+assert(endpoint.includes('familyapp-brand-v9.png'),'icon endpoint filename must identify v9 output');
+assert(endpoint.includes('no self-intersection'),'v9 endpoint documentation must preserve the clean-path geometry contract');
 assert(endpoint.includes('f_png'),'all served Home Screen icon variants must render as PNG');
+assert(endpoint.includes("'maskable': 'https://res.cloudinary.com/rg86slp4/image/upload/c_pad"),'maskable icon must preserve a safe padded zone');
 assert(appIcon.includes("version: '7'"),'app/login brand identity remains v7 while PWA icon advances independently');
-assert(manifest.includes('/?brand=v8'),'PWA start URL must cache-bust the Home Screen icon generation');
-assert(manifest.includes('/api/brand-icon?variant=192&v=8'),'manifest must expose the opaque 192 icon');
-assert(manifest.includes('/api/brand-icon?variant=512&v=8'),'manifest must expose the opaque 512 icon');
-assert(manifest.includes('/api/brand-icon?variant=maskable&v=8'),'manifest must expose the opaque maskable icon');
+assert(manifest.includes('/?brand=v9'),'PWA start URL must cache-bust the Home Screen icon generation');
+assert(manifest.includes('/api/brand-icon?variant=192&v=9'),'manifest must expose the clean 192 icon');
+assert(manifest.includes('/api/brand-icon?variant=512&v=9'),'manifest must expose the clean 512 icon');
+assert(manifest.includes('/api/brand-icon?variant=maskable&v=9'),'manifest must expose the clean maskable icon');
+assert(pwaIcon.includes("var V='9'"),'runtime PWA controller must select icon generation v9');
 assert(pwaIcon.includes("apple:'/api/brand-icon?variant=180&v='+V"),'runtime must force the dedicated iOS apple-touch icon');
-assert(pwaIcon.includes("manifest.href='/manifest.json?v='+V"),'runtime must keep manifest at PWA v8');
+assert(pwaIcon.includes("manifest.href='/manifest.json?v='+V"),'runtime must keep manifest aligned with the PWA icon generation');
 assert(baseShell.includes('src/core/appIcon.js?v=6'),'base runtime shell must retain its canonical identity hook for wrapper replacement');
 assert(shell.includes("replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')"),'brand shell must bust the canonical identity hook after PWA repair');
-assert(shell.includes('/api/brand-icon?variant=180&v=8'),'served HTML must expose the opaque iOS icon before runtime JS');
-assert(shell.includes('pwaIconV8.js?v=1'),'served shell must enforce the v8 PWA icon after app startup');
+assert(shell.includes('/api/brand-icon?variant=180&v=9'),'served HTML must expose the clean iOS icon before runtime JS');
+assert(shell.includes('pwaIconV8.js?v=2'),'served shell must enforce the cache-busted v9 artwork controller after app startup');
 assert(routes.includes('"dest": "/api/app-v7"'),'root must still be served by the native v7 shell');
 
 ['32','180','192','512','maskable','login'].forEach(variant=>{
@@ -43,4 +46,4 @@ assert(!login.includes('login-reference.jpg'),'native login must not render the 
 assert(!/firebase\.auth|onAuthStateChanged|signInWithEmailAndPassword/.test(login),'v7 presentation must not become a second auth owner');
 assert(!/backdrop-filter|setInterval|requestAnimationFrame/.test(loginCss),'native login styles must stay repaint-light');
 
-console.log('FamilyApp PWA v8 + native login v7.1 contract OK');
+console.log('FamilyApp PWA v9 clean-path icon + native login v7.1 contract OK');

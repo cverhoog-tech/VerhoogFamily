@@ -29,14 +29,22 @@ module.exports = async function handler(req, res) {
 
   body = body
     .replace('<html lang="nl">', '<html lang="nl" class="familyapp-auth-prepaint">')
-    .replaceAll('/api/brand-icon?variant=192&v=5', '/api/brand-icon?variant=192&v=8')
-    .replaceAll('/api/brand-icon?variant=180&v=5', '/api/brand-icon?variant=180&v=8')
-    .replaceAll('/api/brand-icon?variant=32&v=5', '/api/brand-icon?variant=32&v=8')
-    .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=8-login1')
-    .replaceAll('manifest.json?v=5', 'manifest.json?v=8')
+    .replaceAll('/api/brand-icon?variant=192&v=5', '/api/brand-icon?variant=192&v=9')
+    .replaceAll('/api/brand-icon?variant=180&v=5', '/api/brand-icon?variant=180&v=9')
+    .replaceAll('/api/brand-icon?variant=32&v=5', '/api/brand-icon?variant=32&v=9')
+    .replaceAll('/api/brand-icon?variant=login&v=5-login1', '/api/brand-icon?variant=login&v=9-login1')
+    .replaceAll('manifest.json?v=5', 'manifest.json?v=9')
     .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')
     .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=5')
     .replaceAll('content="#140724"', 'content="#0b3428"');
+
+  // Remove the old global Gemini/AI floating panel from the served app shell.
+  // It was a legacy experiment and should not appear on any screen anymore.
+  const aiPanelStart = body.indexOf('<!-- AI PANEL (floating, per screen) -->');
+  const aiPanelEnd = body.indexOf('<!-- ACHIEVEMENTS -->', aiPanelStart);
+  if (aiPanelStart !== -1 && aiPanelEnd !== -1) {
+    body = body.slice(0, aiPanelStart) + body.slice(aiPanelEnd);
+  }
 
   if (!body.includes('familyapp-auth-first-paint')) {
     body = body.replace('</head>', '  <style id="familyapp-auth-first-paint">\n'
@@ -51,20 +59,61 @@ module.exports = async function handler(req, res) {
   if (!body.includes('loginBrandV7.css?v=2')) {
     body = body.replace('</head>', '  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>\n  <link rel="stylesheet" href="/src/styles/loginBrandV7.css?v=2">\n</head>');
   }
-  if (!body.includes('tasksPremiumModernV1.css?v=1')) {
-    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksPremiumModernV1.css?v=1">\n  <link rel="stylesheet" href="/src/styles/tasksPremiumModernV1Components.css?v=1">\n</head>');
+  if (!body.includes('tasksV3.css?v=2')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3.css?v=2">\n</head>');
+  }
+  if (!body.includes('tasksV3Polish.css?v=2')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3Polish.css?v=2">\n</head>');
+  }
+  if (!body.includes('tasksV3InteractionPolish.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3InteractionPolish.css?v=1">\n</head>');
+  }
+  if (!body.includes('tasksV3DarkPremium.css?v=2')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/tasksV3DarkPremium.css?v=2">\n</head>');
+  }
+  if (!body.includes('feedDarkPremiumV1.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/feedDarkPremiumV1.css?v=1">\n</head>');
+  }
+  if (!body.includes('contextBackNavigationV1.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/contextBackNavigationV1.css?v=1">\n</head>');
+  }
+  if (!body.includes('calendarCleaningPremiumV1.css?v=1')) {
+    body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/calendarCleaningPremiumV1.css?v=1">\n</head>');
   }
   if (!body.includes('loginBrandV7.js?v=2')) {
     body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
   }
-  if (!body.includes('pwaIconV8.js?v=1')) {
-    body = body.replace('</body>', '  <script src="/src/core/pwaIconV8.js?v=1"></script>\n</body>');
+  if (!body.includes('pwaIconV8.js?v=2')) {
+    body = body.replace('</body>', '  <script src="/src/core/pwaIconV8.js?v=2"></script>\n</body>');
   }
   if (!body.includes('cleaningMoreMenuIcon.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/cleaningMoreMenuIcon.js?v=1"></script>\n</body>');
   }
-  if (!body.includes('tasksPremiumModernV1.js?v=1')) {
-    body = body.replace('</body>', '  <script src="/src/modules/tasks/tasksPremiumModernV1.js?v=1"></script>\n</body>');
+  if (!body.includes('taskPresentationModelV3.js?v=3')) {
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskPresentationModelV3.js?v=3"></script>\n  <script src="/src/modules/tasks/v3/taskOverviewV3.js?v=3"></script>\n  <script src="/src/modules/tasks/v3/taskDetailV3.js?v=3"></script>\n</body>');
+  }
+  if (!body.includes('contextBackNavigationV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/contextBackNavigationV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('calendarCleaningPresentationV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/calendar/calendarCleaningPresentationV1.js?v=1"></script>\n</body>');
+  }
+
+  // Feedback round 2 — keep these as small companions around existing canonical owners.
+  if (!body.includes('familyAppGroceryIconRegistryV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/ui/icons/familyAppGroceryIconRegistryV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('groceryProductLexiconEnhanceV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/shop/groceryProductLexiconEnhanceV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('recipePhotoUploadFixV1.js?v=2')) {
+    body = body.replace('</body>', '  <script src="/src/modules/recipes/recipePhotoUploadFixV1.js?v=2"></script>\n</body>');
+  }
+  if (!body.includes('moreMenuDismissV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/core/moreMenuDismissV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('taskCompletionFeedbackV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskCompletionFeedbackV1.js?v=1"></script>\n</body>');
   }
 
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));

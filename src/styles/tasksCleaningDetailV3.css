@@ -1,0 +1,392 @@
+/* FamilyApp Tasks detail v3 — Cleaning-card visual language.
+   Detail presentation only. The canonical TaskDetailPopup keeps every handler,
+   id, collaboration control, subtask mutation and create/edit flow. */
+
+/* Floating room-card silhouette instead of a generic bottom sheet. */
+#tdp-overlay.tpw2-overlay{
+  align-items:flex-end!important;
+  justify-content:center!important;
+  padding:12px 12px calc(10px + env(safe-area-inset-bottom))!important;
+  background:rgba(18,25,22,.42)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+  backdrop-filter:blur(3px)!important;
+}
+#tdp-overlay.tpw2-overlay .tdp-card.tpw2-detail-card{
+  width:min(100%,430px)!important;
+  max-width:430px!important;
+  max-height:calc(100dvh - 28px - env(safe-area-inset-bottom))!important;
+  margin:0!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  border:1px solid rgba(55,65,60,.12)!important;
+  border-radius:25px!important;
+  background:#fff!important;
+  box-shadow:0 18px 48px rgba(19,29,24,.18)!important;
+  transform:translateY(16px) scale(.995)!important;
+  isolation:isolate!important;
+  scrollbar-width:none!important;
+}
+#tdp-overlay.tpw2-overlay .tdp-card.tpw2-detail-card::-webkit-scrollbar{display:none!important}
+#tdp-overlay.tpw2-overlay.open .tdp-card.tpw2-detail-card{transform:translateY(0) scale(1)!important}
+#tdp-overlay.tpw2-overlay .tdp-card.tpw2-detail-card:before{display:none!important}
+
+/* Same photo-first idea as an expanded Cleaning room: full-width 16:9 image,
+   then a long fade into the actual content surface. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-hero{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:16 / 9!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  border-radius:24px 24px 0 0!important;
+  background-color:#d8dfda!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-hero:after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  pointer-events:none!important;
+  background:linear-gradient(180deg,
+    rgba(255,255,255,.01) 0%,
+    rgba(255,255,255,.02) 38%,
+    rgba(255,255,255,.12) 55%,
+    rgba(255,255,255,.48) 72%,
+    rgba(255,255,255,.88) 90%,
+    #fff 100%)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-close{
+  top:12px!important;
+  left:12px!important;
+  right:auto!important;
+  z-index:3!important;
+  width:36px!important;
+  height:36px!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.82)!important;
+  color:#25342c!important;
+  box-shadow:0 5px 16px rgba(17,27,22,.12)!important;
+  -webkit-backdrop-filter:blur(11px)!important;
+  backdrop-filter:blur(11px)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-xp-ribbon{
+  top:13px!important;
+  right:13px!important;
+  z-index:3!important;
+  min-width:0!important;
+  padding:7px 10px!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:999px!important;
+  clip-path:none!important;
+  background:rgba(255,250,236,.84)!important;
+  box-shadow:0 5px 16px rgba(17,27,22,.10)!important;
+  -webkit-backdrop-filter:blur(11px)!important;
+  backdrop-filter:blur(11px)!important;
+  display:flex!important;
+  align-items:baseline!important;
+  gap:2px!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-xp-num{
+  display:inline!important;
+  color:#735a2a!important;
+  font:750 10px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-xp-lbl{
+  display:inline!important;
+  color:#876f43!important;
+  font-size:6.5px!important;
+  font-weight:750!important;
+}
+
+/* Pull task identity into the photographed/faded zone, just like Cleaning's
+   expanded card content sits above the photo fade. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-body{
+  position:relative!important;
+  z-index:2!important;
+  margin-top:-78px!important;
+  padding:0 15px calc(14px + env(safe-area-inset-bottom))!important;
+  background:transparent!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-icon-ring{
+  display:flex!important;
+  width:43px!important;
+  height:43px!important;
+  margin:0 0 7px!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  border-radius:14px!important;
+  background:rgba(255,255,255,.72)!important;
+  box-shadow:0 6px 18px rgba(26,35,30,.08)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  backdrop-filter:blur(12px)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-icon-ring>i{display:none!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-icon-inner{
+  width:31px!important;
+  height:31px!important;
+  border-radius:10px!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-title{
+  margin:0 56px 7px 0!important;
+  color:#1e2c25!important;
+  font:750 22px/1.08 -apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif!important;
+  letter-spacing:-.035em!important;
+  text-shadow:0 1px 10px rgba(255,255,255,.9)!important;
+}
+
+/* Compact identity/meta, not another card. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-person{
+  display:grid!important;
+  grid-template-columns:29px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:8px!important;
+  margin:0 0 11px!important;
+  padding:0!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-person-avatar,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-party-avatar{
+  width:29px!important;
+  height:29px!important;
+  border:2px solid rgba(255,255,255,.92)!important;
+  background:#54715f!important;
+  box-shadow:0 0 0 1px rgba(48,66,56,.12)!important;
+  font-size:8px!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-assignee-label{
+  display:block!important;
+  margin:0 0 1px!important;
+  color:#7e8882!important;
+  font-size:7.5px!important;
+  font-weight:650!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-person-name{
+  color:#27362e!important;
+  font-size:11px!important;
+  font-weight:720!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-party-stack{display:none!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-meta-chips{
+  grid-column:1/-1!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:5px!important;
+  margin:5px 0 0!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-meta-chips>span{
+  min-height:27px!important;
+  padding:0 9px!important;
+  border:1px solid rgba(64,77,70,.13)!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.56)!important;
+  color:#526159!important;
+  font-size:8.5px!important;
+  font-weight:620!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+  backdrop-filter:blur(10px)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-meta-chips svg{width:11px!important;height:11px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-description{
+  margin:0 0 11px!important;
+  padding:0!important;
+  border:0!important;
+  color:#5f6a64!important;
+  font-size:10.5px!important;
+  line-height:1.45!important;
+  font-weight:470!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-divider{display:none!important}
+
+/* Cleaning-like translucent routine block for subtasks. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-head{
+  margin:0 1px 7px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-label{
+  color:#26352d!important;
+  font:720 12.5px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif!important;
+  letter-spacing:-.01em!important;
+  text-transform:none!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-value{
+  color:#858e89!important;
+  font-size:8.5px!important;
+  font-weight:600!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-row{margin:0 1px 7px!important;gap:0!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-track{gap:3px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-seg{height:3px!important;background:#e6e2dc!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-seg.done{background:#3b6550!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-xp-shield,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-hint{display:none!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-box{
+  margin:0 0 10px!important;
+  padding:3px 11px!important;
+  border:1px solid rgba(63,56,75,.10)!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.64)!important;
+  box-shadow:0 10px 26px rgba(34,30,42,.045)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+  backdrop-filter:blur(14px)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-row{border-bottom:1px solid rgba(55,64,59,.08)!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-row:last-child{border-bottom:0!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub{
+  min-height:44px!important;
+  padding:7px 0!important;
+  gap:8px!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-chk{
+  width:21px!important;
+  height:21px!important;
+  min-width:21px!important;
+  border:1.35px solid #a8b1ac!important;
+  background:rgba(255,255,255,.44)!important;
+  box-shadow:none!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-chk.done{background:#315f4b!important;border-color:#315f4b!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-icon,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-icon-btn{
+  width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;font-size:12px!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-text{
+  color:#334139!important;
+  font-size:10.5px!important;
+  font-weight:620!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-add,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-empty-add{
+  min-height:34px!important;
+  margin:3px 0 5px!important;
+  padding:0 4px!important;
+  border:0!important;
+  background:transparent!important;
+  color:#315f4b!important;
+  font-size:9px!important;
+  font-weight:680!important;
+  text-align:left!important;
+}
+
+/* Supplies and collaboration use the same glass-on-photo language as Cleaning's
+   expanded routine sections instead of stacked opaque boxes. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-box{
+  margin:0 0 10px!important;
+  padding:10px 11px!important;
+  border:1px solid rgba(63,56,75,.10)!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.58)!important;
+  box-shadow:0 10px 26px rgba(34,30,42,.04)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+  backdrop-filter:blur(14px)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-head{display:flex!important;align-items:center!important;justify-content:space-between!important;margin-bottom:7px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-head strong{color:#2d3a33!important;font-size:10.5px!important;font-weight:720!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-head span{color:#8b938e!important;font-size:8px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-list{display:flex!important;flex-wrap:wrap!important;gap:5px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-list>span{
+  padding:5px 7px!important;border:1px solid rgba(64,77,70,.12)!important;border-radius:9px!important;background:rgba(255,255,255,.48)!important;color:#5d6963!important;font-size:8.5px!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-row{gap:8px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-crest{width:28px!important;height:28px!important;opacity:.74!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-crest svg{width:28px!important;height:28px!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-title{color:#344139!important;font:700 9.5px/1.15 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif!important;letter-spacing:0!important;text-transform:none!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-sub{margin-top:2px!important;color:#7f8983!important;font-size:8.5px!important;line-height:1.3!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-btn{
+  min-height:30px!important;padding:0 9px!important;border:1px solid rgba(49,95,75,.3)!important;border-radius:10px!important;background:rgba(255,255,255,.44)!important;color:#315f4b!important;font-size:8.5px!important;font-weight:680!important;
+}
+
+/* Existing details/notes/delete UI remains available; only its surface matches. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-edit-input,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-edit-select,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-edit-textarea,
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-note-input{
+  border:1px solid rgba(63,76,68,.14)!important;
+  border-radius:10px!important;
+  background:rgba(255,255,255,.68)!important;
+  color:#2b3831!important;
+  box-shadow:none!important;
+}
+
+/* Sticky action shelf with the same quiet surface as the card. */
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-footer{
+  position:sticky!important;
+  bottom:calc(-14px - env(safe-area-inset-bottom))!important;
+  z-index:5!important;
+  display:grid!important;
+  grid-template-columns:38px minmax(0,1fr)!important;
+  gap:7px!important;
+  margin:7px -15px 0!important;
+  padding:9px 15px calc(12px + env(safe-area-inset-bottom))!important;
+  border-top:1px solid rgba(63,76,68,.10)!important;
+  background:rgba(255,255,255,.91)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+  backdrop-filter:blur(14px)!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-save{
+  width:38px!important;height:40px!important;border:1px solid rgba(63,76,68,.13)!important;border-radius:11px!important;background:transparent!important;color:#65736b!important;box-shadow:none!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-cta{
+  min-height:40px!important;border:0!important;border-radius:11px!important;background:#e9e6e0!important;color:#8b918e!important;box-shadow:none!important;font-size:10px!important;font-weight:720!important;
+}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-cta.active{background:#315f4b!important;color:#fff!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-cta.done-state{border:1px solid #b9c9c0!important;background:#eef4f0!important;color:#315f4b!important}
+#tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-more.tpw2-edit-action{
+  width:auto!important;margin:4px auto 0!important;padding:6px 9px!important;border:0!important;background:transparent!important;color:#75817a!important;font-size:9px!important;font-weight:620!important;
+}
+
+/* Create/edit mode deliberately keeps the quiet v2.1 form; only the detail card
+   gets the Cleaning photo treatment requested in this round. */
+
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tdp-card.tpw2-detail-card{
+  background:#080d16!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:0 20px 52px rgba(0,0,0,.42)!important;
+}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-hero:after{
+  background:linear-gradient(180deg,
+    rgba(8,13,22,.01) 0%,
+    rgba(8,13,22,.04) 38%,
+    rgba(8,13,22,.18) 55%,
+    rgba(8,13,22,.50) 72%,
+    rgba(8,13,22,.88) 90%,
+    #080d16 100%)!important;
+}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-title{color:#f4f7f5!important;text-shadow:0 2px 12px rgba(0,0,0,.6)!important}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-person-name,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-label,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-sub-text,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies-head strong{color:#eef4f0!important}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-assignee-label,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-description,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-progress-value,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-sub{color:#aeb9b3!important}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-icon-ring,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-meta-chips>span,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-box,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tpw2-supplies,
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-help-box{
+  background:rgba(8,14,24,.55)!important;
+  border-color:rgba(255,255,255,.09)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.16)!important;
+}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-footer{
+  background:rgba(8,13,22,.94)!important;
+  border-color:rgba(255,255,255,.08)!important;
+}
+[data-theme*="dark"] #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-cta.active{background:#d7c185!important;color:#193026!important}
+
+@media(max-width:390px){
+  #tdp-overlay.tpw2-overlay{padding-left:8px!important;padding-right:8px!important;padding-bottom:calc(7px + env(safe-area-inset-bottom))!important}
+  #tdp-overlay.tpw2-overlay .tdp-card.tpw2-detail-card{border-radius:22px!important}
+  #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-hero{border-radius:21px 21px 0 0!important}
+  #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-body{margin-top:-70px!important;padding-left:12px!important;padding-right:12px!important}
+  #tdp-overlay.tpw2-overlay .tpw2-detail-card .tdp-footer{margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important}
+}
