@@ -12,12 +12,12 @@ const screen=fs.readFileSync('src/modules/cleaning/cleaningScreen.js','utf8');
 assert.ok(commands.includes("VERSION='2.3.0'"));
 assert.ok(controls.includes("VERSION='2.3.1'"));
 assert.ok(assignments.includes("VERSION='2.5.1'"));
-assert.ok(detailFix.includes("VERSION='1.0.0'"));
+assert.ok(detailFix.includes("VERSION='1.1.0'"));
 assert.ok(loader.includes("cleaningOccurrenceCommandsV23.js?v=2"));
 assert.ok(loader.includes("cleaningOccurrenceControlsV23.js?v=3"));
 assert.ok(loader.includes("cleaningAssignmentExperienceV25.js?v=2"));
-assert.ok(loader.includes("cleaningDetailEscapeAvatarFixV1.js?v=1"));
-assert.ok(loader.includes("version:'2.5.2'"));
+assert.ok(loader.includes("cleaningDetailEscapeAvatarFixV1.js?v=2"));
+assert.ok(loader.includes("version:'2.5.3'"));
 assert.ok(premium.includes("version:'2.2.1'"),'accepted visual bridge marker must remain v2.2.1');
 
 // Architecture: no second raw Firebase listener, popup owner or executable observer.
@@ -36,6 +36,8 @@ assert.ok(assignments.includes("r.subscribe(onRepo)"));
 assert.ok(detailFix.includes("document.getElementById('cleaning-v2-sheet')"));
 assert.ok(detailFix.includes("data-cv2-close"));
 assert.ok(detailFix.includes('FamilyAvatarIdentity'));
+assert.ok(detailFix.includes('requestAnimationFrame'));
+assert.ok(detailFix.includes('setTimeout(refresh,60)'));
 assert.ok(!detailFix.includes('document.body.appendChild'));
 
 // Canonical occurrence safety.
@@ -83,4 +85,4 @@ assert.ok(assignments.includes("closest('[data-ca25-routine-assignment]')"),'rou
 assert.ok(screen.includes("const VERSION='2.0.0'"));
 assert.ok(!screen.includes('CleaningOccurrenceCommandsV23'));
 
-console.log('Cleaning V2.3 + V2.5.2 detail/assignment hardening contract: PASS');
+console.log('Cleaning V2.3 + V2.5.3 detail/assignment hardening contract: PASS');
