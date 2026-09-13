@@ -1,0 +1,165 @@
+/* FamilyApp Cleaning sheet consistency v1
+   Presentation-only repair for the canonical #cleaning-v2-sheet.
+   The sheet lives under <body>, outside #screen-cleaning, so screen-scoped
+   room photography/theme tokens do not inherit into modal content. */
+
+/* Keep every non-premium-management sheet on the canonical light/dark surface
+   instead of falling back to V2.4 light constants outside #screen-cleaning. */
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-scroll{
+  background:var(--cv2-bg)!important;
+  color:var(--cv2-text)!important;
+}
+
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head{
+  position:relative;
+  z-index:8;
+  display:flex!important;
+  align-items:center;
+  gap:11px;
+  min-height:64px;
+  flex:0 0 auto;
+  background:var(--cv2-surface)!important;
+  color:var(--cv2-text)!important;
+  border-bottom:1px solid var(--cv2-border)!important;
+}
+
+/* The canonical close control already exists in cleaningScreen.js. Keep it
+   unmistakably visible and place it where mobile sheets conventionally close. */
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head>[data-cv2-sheet-title]{
+  order:1;
+  flex:1 1 auto;
+  min-width:0;
+}
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head>[data-cv2-close]{
+  order:2;
+  flex:0 0 42px;
+  margin-left:auto;
+  display:grid!important;
+  place-items:center;
+  visibility:visible!important;
+  opacity:1!important;
+  width:42px;
+  height:42px;
+  padding:0;
+  border:1px solid var(--cv2-border)!important;
+  border-radius:50%;
+  background:var(--cv2-surface-2)!important;
+  color:var(--cv2-text)!important;
+  font-size:25px;
+  line-height:1;
+  font-weight:500;
+}
+
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head span{
+  color:var(--cv2-muted)!important;
+}
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head strong,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-section-head h3{
+  color:var(--cv2-text)!important;
+}
+
+/* Room media contract for modal/sheet cards. The same assets as the Rooms and
+   Weekplan screen are deliberately reused here. */
+#cleaning-v2-sheet [data-room-type]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/living-room-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/living-room-dark.webp?v=20260912-1');
+  --cv2-room-photo:var(--cv2-room-photo-light);
+}
+[data-theme*="dark"] #cleaning-v2-sheet [data-room-type]{
+  --cv2-room-photo:var(--cv2-room-photo-dark);
+}
+#cleaning-v2-sheet [data-room-type="living-room"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/living-room-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/living-room-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="kitchen"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/kitchen-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/kitchen-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="bathroom"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/bathroom-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/bathroom-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="toilet"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/toilet-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/toilet-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="kids-room"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/kids-room-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/kids-room-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="bedroom"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/bedroom-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/bedroom-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="laundry"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/laundry-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/laundry-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="hall"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/hall-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/hall-dark.webp?v=20260912-1');
+}
+#cleaning-v2-sheet [data-room-type="outdoor"]{
+  --cv2-room-photo-light:url('/src/assets/cleaning-rooms/outdoor-light.webp?v=20260912-1');
+  --cv2-room-photo-dark:url('/src/assets/cleaning-rooms/outdoor-dark.webp?v=20260912-1');
+}
+
+/* Full-bleed room identities inside management/turn sheets. */
+#cleaning-v2-sheet .cv2-room-manage-hero,
+#cleaning-v2-sheet .cv2-sheet-hero{
+  background:#20252b;
+  border:1px solid var(--cv2-border);
+  box-shadow:0 10px 26px rgba(28,33,40,.08);
+}
+#cleaning-v2-sheet .cv2-room-manage-hero>div,
+#cleaning-v2-sheet .cv2-sheet-hero>div{
+  background-image:
+    linear-gradient(180deg,rgba(3,6,10,.03) 28%,rgba(3,6,10,.68) 100%),
+    var(--cv2-room-photo)!important;
+  background-size:100% 100%,cover!important;
+  background-position:center,center!important;
+  background-repeat:no-repeat!important;
+}
+[data-theme*="dark"] #cleaning-v2-sheet .cv2-room-manage-hero,
+[data-theme*="dark"] #cleaning-v2-sheet .cv2-sheet-hero{
+  box-shadow:0 12px 28px rgba(0,0,0,.28);
+}
+[data-theme*="dark"] #cleaning-v2-sheet .cv2-room-manage-hero>div,
+[data-theme*="dark"] #cleaning-v2-sheet .cv2-sheet-hero>div{
+  background-image:
+    linear-gradient(180deg,rgba(2,5,8,.05) 26%,rgba(2,5,8,.72) 100%),
+    var(--cv2-room-photo)!important;
+}
+
+/* Management cards must use one coherent theme. This avoids the former
+   dark-card/light-sheet combination and keeps hierarchy readable. */
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-routines>button,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-secondary,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-chips button,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-form input,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-form select,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-supply{
+  background:var(--cv2-surface)!important;
+  color:var(--cv2-text)!important;
+  border-color:var(--cv2-border)!important;
+}
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-secondary{
+  background:var(--cv2-surface-2)!important;
+}
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-routines small,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-form label>span,
+#cleaning-v2-sheet:not(.fav-detail-mode) .cv2-supply>small{
+  color:var(--cv2-muted)!important;
+}
+
+@media(max-width:520px){
+  #cleaning-v2-sheet:not(.fav-detail-mode) .cv2-sheet-head{
+    padding-left:16px;
+    padding-right:16px;
+  }
+  #cleaning-v2-sheet .cv2-room-manage-hero{
+    min-height:158px;
+  }
+}
