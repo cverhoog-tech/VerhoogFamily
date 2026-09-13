@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// FAMILYAPP SESSION ACTIONS v1.3.0
+// FAMILYAPP SESSION ACTIONS v1.3.1
 // Explicit account actions plus lightweight first-household UI defaults.
 // Firebase Auth remains the sole auth authority.
 // ============================================================
@@ -73,7 +73,7 @@
     var key=ctx.uid+'|'+ctx.householdId,status=repo.status(),rows=store.all();
     if(rows.length){shoppingEnsured[key]='ready';return;}
     if(shoppingEnsured[key]==='creating'||shoppingEnsured[key]==='ready')return;
-    if(!status.ready||status.householdId!==ctx.householdId||status.migration!=='complete')return;
+    if(!status.ready||status.householdId!==ctx.householdId)return;
     shoppingEnsured[key]='creating';
     store.createList({id:'household_default',name:'Gezinslijst',icon:'🛒',visibility:'household'}).then(function(){shoppingEnsured[key]='ready';}).catch(function(error){
       delete shoppingEnsured[key];console.warn('[FamilySessionActions] default shopping list creation failed',error);
@@ -87,7 +87,7 @@
 
   function installSessionUi(){installMoreLogout();installOnboardingCancel();installDefaultShoppingList();}
 
-  window.FamilySessionActions={version:'1.3.0',signOut:signOut,isBusy:function(){return busy;},ensureMoreLogout:addMoreLogoutButton,ensureOnboardingCancel:ensureOnboardingCancel,ensureDefaultShoppingList:ensureDefaultShoppingList};
+  window.FamilySessionActions={version:'1.3.1',signOut:signOut,isBusy:function(){return busy;},ensureMoreLogout:addMoreLogoutButton,ensureOnboardingCancel:ensureOnboardingCancel,ensureDefaultShoppingList:ensureDefaultShoppingList};
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSessionUi,{once:true});else installSessionUi();
 })();
