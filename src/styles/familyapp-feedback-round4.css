@@ -113,31 +113,41 @@ html body #screen-cleaning .cleaning-room-card-copy .cleaning-room-card-meta{
   background-image:linear-gradient(180deg,rgba(3,6,8,.07) 0%,rgba(3,6,8,.19) 42%,rgba(3,6,8,.69) 100%),url("https://res.cloudinary.com/rg86slp4/image/upload/v1788809095/familyapp-home-cleaning-hero-v3.webp")!important;
 }
 
-/* Keep all three Home hero metrics on one visual baseline. Long labels such as
-   Boodschappen and Schoonmaken must never wrap inside their narrow third. */
+/* Home hero metric stack: number first, label directly underneath. Keep the
+   three cards on the same vertical rhythm while long Dutch labels remain legible. */
 #screen-home .home-epic-cards .card-metrics{
   width:100%!important;
   min-width:0!important;
-  min-height:28px!important;
+  min-height:54px!important;
   margin-top:auto!important;
   display:flex!important;
-  align-items:baseline!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-end!important;
   flex-wrap:nowrap!important;
-  gap:3px!important;
-  white-space:nowrap!important;
+  gap:2px!important;
+  white-space:normal!important;
 }
 #screen-home .home-epic-cards .card-number{
   flex:0 0 auto!important;
-  line-height:1!important;
+  display:block!important;
+  line-height:.95!important;
 }
 #screen-home .home-epic-cards .card-label{
   display:block!important;
+  width:100%!important;
   min-width:0!important;
-  font-size:clamp(10px,2.65vw,13px)!important;
-  line-height:1!important;
+  font-size:clamp(10px,2.7vw,13px)!important;
+  line-height:1.05!important;
   white-space:nowrap!important;
-  overflow:visible!important;
+  overflow:hidden!important;
   text-overflow:clip!important;
+}
+@media(max-width:390px){
+  #screen-home .home-epic-cards .card-label{
+    font-size:clamp(9px,2.55vw,11.5px)!important;
+    letter-spacing:-.15px!important;
+  }
 }
 
 /* Fast first-open placeholder: visible immediately while the already-started
