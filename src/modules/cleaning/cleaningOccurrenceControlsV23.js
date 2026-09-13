@@ -2,16 +2,17 @@
 // CLEANING V2.3 — contextual controls inside the existing Cleaning turn sheet.
 // This module does not create a popup, listener, observer or canonical writer.
 (function(){
-  var VERSION='2.3.0',bound=false,busy=false,screenBound=false;
+  var VERSION='2.3.1',bound=false,busy=false,screenBound=false;
   function text(v){return String(v==null?'':v).trim();}
-  function esc(v){return text(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  function esc(v){return text(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');}
   function repo(){return window.CleaningHouseholdRepository||window.CleaningV2Repository||null;}
   function snap(){var r=repo();try{return r&&r.snapshot?r.snapshot():null;}catch(e){return null;}}
   function occurrence(id){var s=snap(),row=s&&s.data&&s.data.occurrences&&s.data.occurrences[id];return row?Object.assign({id:id},row):null;}
   function members(){try{var b=window.HouseholdIdentityFirebaseBridge,rows=b&&b.getMembers?b.getMembers():[];return(Array.isArray(rows)?rows:[]).filter(function(x){return x&&text(x.uid||x.id)&&text(x.status||'active').toLowerCase()==='active';});}catch(e){return[];}}
   function memberUid(row){return text(row&&(row.uid||row.id));}
   function memberName(row){return text(row&&(row.displayName||row.name))||'Gezinslid';}
-  function avatarUrl(row){var raw=text(row&&(row.avatar||row.avatarUrl||row.photoURL||row.photoUrl||row.profilePhoto||row.image));return /^(https?:\/\/|\/|data:image\/)/i.test(raw)?raw:'';}
+  function isAvatarValue(value){return /^(https?:\/\/|\/|\.\/|blob:|data:image\/)/i.test(text(value));}
+  function avatarUrl(row){var resolved='';try{var identity=window.FamilyAvatarIdentity;if(identity&&typeof identity.resolveAvatar==='function')resolved=text(identity.resolveAvatar(row));}catch(e){}if(isAvatarValue(resolved))return resolved;var raw=text(row&&(row.avatar||row.avatarUrl||row.photoURL||row.photoUrl||row.profilePhoto||row.image));return isAvatarValue(raw)?raw:'';}
   function initials(row){var parts=memberName(row).split(/\s+/).filter(Boolean);return((parts[0]||'G').charAt(0)+(parts.length>1?parts[parts.length-1].charAt(0):'')).toUpperCase();}
   function avatar(row){var url=avatarUrl(row);return url?'<img src="'+esc(url)+'" alt="">':'<span>'+esc(initials(row))+'</span>';}
   function toast(m){if(window.showToast)window.showToast(m);}
@@ -71,4 +72,4 @@
   function boot(){bind();if(!bound&&document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});}
   window.CleaningOccurrenceControlsV23=Object.freeze({version:VERSION,render:render,bind:bind});boot();
 })();
-export const CLEANING_OCCURRENCE_CONTROLS_V23_VERSION='2.3.0';
+export const CLEANING_OCCURRENCE_CONTROLS_V23_VERSION='2.3.1';
