@@ -137,16 +137,18 @@ html body #screen-cleaning .cleaning-room-card-copy .cleaning-room-card-meta{
   display:block!important;
   width:100%!important;
   min-width:0!important;
-  font-size:clamp(10px,2.7vw,13px)!important;
+  font-size:10px!important;
+  font-weight:700!important;
   line-height:1.05!important;
+  letter-spacing:-.18px!important;
   white-space:nowrap!important;
-  overflow:hidden!important;
+  overflow:visible!important;
   text-overflow:clip!important;
 }
 @media(max-width:390px){
   #screen-home .home-epic-cards .card-label{
-    font-size:clamp(9px,2.55vw,11.5px)!important;
-    letter-spacing:-.15px!important;
+    font-size:9.5px!important;
+    letter-spacing:-.22px!important;
   }
 }
 
