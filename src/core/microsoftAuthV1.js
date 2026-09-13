@@ -6,7 +6,7 @@
 (function(){
   if(window.FamilyAppMicrosoftAuth)return;
 
-  var VERSION='1.0.0';
+  var VERSION='1.1.0';
   var MICROSOFT_ID='flv7-microsoft';
   var LEGACY_APPLE_ID='flv7-apple';
 
@@ -15,6 +15,10 @@
   function auth(){
     try{return window.fbAuth||(window.firebase&&firebase.auth&&firebase.auth());}
     catch(error){return null;}
+  }
+  function isMobile(){
+    var ua=(navigator&&navigator.userAgent)||'';
+    return /iPhone|iPad|iPod|Android/i.test(ua)||!!(window.matchMedia&&window.matchMedia('(max-width: 820px)').matches);
   }
   function button(){return document.getElementById(MICROSOFT_ID);}
   function label(){var b=button();return b&&b.querySelector('.flv7-provider-label');}
@@ -65,6 +69,16 @@
     if(!user||!controller||typeof controller.acceptAuthenticatedUser!=='function')return Promise.resolve(result||null);
     return Promise.resolve(controller.acceptAuthenticatedUser(user)).then(function(){return result||null;});
   }
+  function handleRedirectResult(){
+    if(!enabled())return Promise.resolve(null);
+    var a=auth();
+    if(!a||typeof a.getRedirectResult!=='function')return Promise.resolve(null);
+    return Promise.resolve(a.getRedirectResult()).then(function(result){
+      if(!result||!result.user)return null;
+      setBusy(true);
+      return handoff(result).then(function(){setBusy(false);return result;});
+    }).catch(function(error){showError(error);return null;});
+  }
   function signIn(){
     if(!enabled()){
       showError({code:'auth/operation-not-allowed'});
@@ -74,9 +88,22 @@
     if(!a){showError(new Error('Firebase is nog niet klaar. Probeer opnieuw.'));return Promise.resolve(null);}
     clearError();setBusy(true);
     var p;
-    try{p=a.signInWithPopup(provider());}
-    catch(error){showError(error);return Promise.resolve(null);}
-    return Promise.resolve(p).then(function(result){return handoff(result);}).catch(function(error){showError(error);return null;}).finally(function(){setBusy(false);});
+    try{
+      var pr=provider();
+      if(isMobile()&&typeof a.signInWithRedirect==='function'){
+        p=a.signInWithRedirect(pr);
+      }else{
+        p=a.signInWithPopup(pr);
+      }
+    }catch(error){showError(error);return Promise.resolve(null);}
+    return Promise.resolve(p).then(function(result){
+      if(result&&result.user)return handoff(result);
+      return result||null;
+    }).catch(function(error){showError(error);return null;}).finally(function(){
+      // On redirect-capable mobile browsers navigation normally happens first;
+      // this reset matters for popup flows and cancelled/failed redirects.
+      setBusy(false);
+    });
   }
   function installButton(){
     var existing=button();
@@ -106,13 +133,14 @@
       firebaseReady:!!(window.firebase&&firebase.auth&&firebase.auth.OAuthProvider),
       authReady:!!a,
       buttonVisible:!!button(),
-      providerId:'microsoft.com'
+      providerId:'microsoft.com',
+      mobileRedirect:isMobile()
     };
   }
-  function boot(){installButton();}
+  function boot(){installButton();handleRedirectResult();}
 
-  window.addEventListener('familyapp:login-brand-ready',function(){window.setTimeout(installButton,0);});
-  window.FamilyAppMicrosoftAuth=Object.freeze({version:VERSION,signIn:signIn,installButton:installButton,readiness:readiness});
+  window.addEventListener('familyapp:login-brand-ready',function(){window.setTimeout(function(){installButton();handleRedirectResult();},0);});
+  window.FamilyAppMicrosoftAuth=Object.freeze({version:VERSION,signIn:signIn,installButton:installButton,readiness:readiness,handleRedirectResult:handleRedirectResult});
   window.signInWithMicrosoft=signIn;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
