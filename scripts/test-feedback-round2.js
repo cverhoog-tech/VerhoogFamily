@@ -13,25 +13,28 @@ const lexEnhance=read('src/modules/shop/groceryProductLexiconEnhanceV1.js');
 const iconRegistryEnhance=read('src/ui/icons/familyAppGroceryIconRegistryV1.js');
 const iconSprite=read('src/ui/icons/assets/familyapp-grocery-special-icons.svg');
 
-// Recipe photo selection: intercept raw library file, preview immediately and normalize before canonical editor handler.
-assert(recipeFix.includes("input.id!=='rep-photo-file'"),'recipe fix must scope itself to recipe photo input');
-assert(recipeFix.includes('showImmediatePreview(file)'),'recipe fix must show immediate photo feedback');
+// Recipe photo selection: both editor and recipe-detail upload path normalize before canonical handlers.
+assert(recipeFix.includes("'rep-photo-file':'editor'"),'recipe fix must cover premium editor photo input');
+assert(recipeFix.includes("'rp-file':'detail'"),'recipe fix must cover detail photo-sheet input');
+assert(recipeFix.includes('showImmediatePreview(file,input)'),'recipe fix must show immediate photo feedback');
+assert(recipeFix.includes('previewDetail(file)'),'detail photo sheet must show a visible chosen-photo preview');
 assert(recipeFix.includes('stopImmediatePropagation'),'recipe fix must stop the old raw handler before async normalization');
-assert(recipeFix.includes("canvas.toBlob"),'recipe fix must compress oversized iPhone photos client-side');
+assert(recipeFix.includes('canvas.toBlob'),'recipe fix must compress oversized iPhone photos client-side');
 assert(recipeFix.includes("'image/jpeg'"),'recipe fix must normalize photos to a persistable JPEG');
 assert(recipeFix.includes('TARGET_BYTES=112000'),'recipe output must stay safely under RecipeStore inline limit after base64 encoding');
+assert(recipeFix.includes("version:'1.1.0'"),'recipe photo fix must expose upgraded v1.1 behavior');
 
 // More menu: scoped backdrop dismissal, no document-wide generic click owner.
 assert(moreFix.includes("BACKDROP_ID='more-menu-backdrop-v1'"),'More menu must use a dedicated backdrop');
 assert(moreFix.includes("addEventListener('pointerdown'"),'More menu backdrop must close on immediate pointer/touch down');
-assert(moreFix.includes("event.stopPropagation()"),'outside dismissal must not leak ghost taps through to content');
+assert(moreFix.includes('event.stopPropagation()'),'outside dismissal must not leak ghost taps through to content');
 assert(moreFix.includes("event.key==='Escape'"),'desktop Escape dismissal must remain available');
 assert(!moreFix.includes("document.addEventListener('click'"),'More menu fix must not introduce a generic document click owner');
 
 // Task completion: presentation-only immediate feedback; canonical toggleTask remains owner.
-assert(taskFeedback.includes("[data-tv3-complete]"),'task completion feedback must target only V3 completion CTA');
-assert(taskFeedback.includes("pointerdown"),'completion CTA must respond immediately on touch down');
-assert(taskFeedback.includes("Klaar ✓"),'completion CTA must acknowledge completion immediately');
+assert(taskFeedback.includes('[data-tv3-complete]'),'task completion feedback must target only V3 completion CTA');
+assert(taskFeedback.includes('pointerdown'),'completion CTA must respond immediately on touch down');
+assert(taskFeedback.includes('Klaar ✓'),'completion CTA must acknowledge completion immediately');
 assert(taskFeedback.includes('canonical toggleTask handler fully in charge'),'completion companion must preserve canonical completion ownership');
 assert(!taskFeedback.includes('TaskSharedData.update'),'completion feedback companion must not become a second task writer');
 
@@ -62,7 +65,7 @@ expectations.forEach(([name,key])=>assert.strictEqual(match(name).iconKey,key,na
 [
   'familyAppGroceryIconRegistryV1.js?v=1',
   'groceryProductLexiconEnhanceV1.js?v=1',
-  'recipePhotoUploadFixV1.js?v=1',
+  'recipePhotoUploadFixV1.js?v=2',
   'moreMenuDismissV1.js?v=1',
   'taskCompletionFeedbackV1.js?v=1'
 ].forEach(asset=>assert(shell.includes(asset),'V7 shell missing '+asset));
