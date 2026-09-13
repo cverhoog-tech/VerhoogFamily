@@ -17,8 +17,9 @@ ok(lifecycle.includes("cleaningPremiumFeedback.js?v=2"),'V2.4 presentation must 
 ok(companions.includes("cleaningCollaborationExperience.js?v=2"),'V2.1 companion missing from functional loader');
 ok(companions.includes("cleaningHistoryV22.js?v=1"),'V2.2 companion missing from functional loader');
 ok(companions.includes("cleaningDetailVisualV221.js?v=1"),'V2.2.1 companion missing from functional loader');
-ok(companions.includes("cleaningOccurrenceCommandsV23.js?v=1"),'V2.3 commands missing from functional loader');
-ok(companions.includes("cleaningOccurrenceControlsV23.js?v=1"),'V2.3 controls missing from functional loader');
+ok(companions.includes("cleaningOccurrenceCommandsV23.js?v=2"),'V2.3 commands missing from functional loader');
+ok(companions.includes("cleaningOccurrenceControlsV23.js?v=2"),'V2.3 controls missing from functional loader');
+ok(companions.includes("cleaningAssignmentExperienceV25.js?v=1"),'V2.5 assignment companion missing from functional loader');
 ok(css.includes('#screen-cleaning .cv2-room-grid'),'V2.4 room-grid polish missing');
 ok(css.includes('#screen-cleaning .cv2-turn-card'),'V2.4 turn-card polish missing');
 ok(css.includes('[data-theme*="dark"] #screen-cleaning'),'V2.4 dark-mode contract missing');
