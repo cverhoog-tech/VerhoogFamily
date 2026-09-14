@@ -1,6 +1,14 @@
 {
   "routes": [
     {
+      "src": "^/__/auth$",
+      "dest": "https://verhoog-family.firebaseapp.com/__/auth"
+    },
+    {
+      "src": "^/__/auth/(.*)$",
+      "dest": "https://verhoog-family.firebaseapp.com/__/auth/$1"
+    },
+    {
       "src": "^/$",
       "dest": "/api/app-v7"
     },
