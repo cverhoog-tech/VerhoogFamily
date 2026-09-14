@@ -9,6 +9,10 @@
       "dest": "https://verhoog-family.firebaseapp.com/__/auth/$1"
     },
     {
+      "src": "^/__/firebase/init.json$",
+      "dest": "https://verhoog-family.firebaseapp.com/__/firebase/init.json"
+    },
+    {
       "src": "^/$",
       "dest": "/api/app-v7"
     },
