@@ -36,6 +36,7 @@ module.exports = async function handler(req, res) {
     .replaceAll('manifest.json?v=5', 'manifest.json?v=9')
     .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')
     .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=5')
+    .replaceAll('src/modules/tasks/v3/taskOverviewV3.js?v=3', 'src/modules/tasks/v3/taskOverviewV3.js?v=4')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
   // Remove the old global Gemini/AI floating panel from the served app shell.
@@ -102,13 +103,16 @@ module.exports = async function handler(req, res) {
     body = body.replace('</body>', '  <script src="/src/core/cleaningMoreMenuIcon.js?v=1"></script>\n</body>');
   }
   if (!body.includes('taskPresentationModelV3.js?v=3')) {
-    body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskPresentationModelV3.js?v=3"></script>\n  <script src="/src/modules/tasks/v3/taskOverviewV3.js?v=3"></script>\n  <script src="/src/modules/tasks/v3/taskDetailV3.js?v=3"></script>\n</body>');
+    body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskPresentationModelV3.js?v=3"></script>\n  <script src="/src/modules/tasks/v3/taskOverviewV3.js?v=4"></script>\n  <script src="/src/modules/tasks/v3/taskDetailV3.js?v=3"></script>\n</body>');
   }
   if (!body.includes('contextBackNavigationV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/contextBackNavigationV1.js?v=1"></script>\n</body>');
   }
   if (!body.includes('calendarCleaningPresentationV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/modules/calendar/calendarCleaningPresentationV1.js?v=1"></script>\n</body>');
+  }
+  if (!body.includes('cleaningPlanRefreshV1.js?v=1')) {
+    body = body.replace('</body>', '  <script src="/src/modules/cleaning/cleaningPlanRefreshV1.js?v=1"></script>\n</body>');
   }
 
   // Feedback round 2 — keep these as small companions around existing canonical owners.
