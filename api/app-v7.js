@@ -111,8 +111,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('calendarCleaningPresentationV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/modules/calendar/calendarCleaningPresentationV1.js?v=1"></script>\n</body>');
   }
-  if (!body.includes('cleaningPlanRefreshV1.js?v=1')) {
-    body = body.replace('</body>', '  <script src="/src/modules/cleaning/cleaningPlanRefreshV1.js?v=1"></script>\n</body>');
+  if (!body.includes('cleaningPlanRefreshV1.js?v=2')) {
+    body = body.replace('</body>', '  <script src="/src/modules/cleaning/cleaningPlanRefreshV1.js?v=2"></script>\n</body>');
   }
 
   // Feedback round 2 — keep these as small companions around existing canonical owners.
