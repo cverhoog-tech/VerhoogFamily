@@ -50,7 +50,7 @@ function initApp(){renderNav();attachNavDelegation();renderHome();renderFeed();r
 (function ensureAuthenticatedSessionController(){
   if(window.AuthenticatedSessionController||document.querySelector('script[data-familyapp-session-controller]'))return;
   var script=document.createElement('script');
-  script.src='src/core/authenticatedSessionController.js?v=2';
+  script.src='src/core/authenticatedSessionController.js?v=3';
   script.async=false;
   script.setAttribute('data-familyapp-session-controller','1');
   script.onerror=function(){console.error('[SessionController] script kon niet worden geladen');};
