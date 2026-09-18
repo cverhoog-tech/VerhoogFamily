@@ -1010,10 +1010,10 @@ function completeSetup() {
   <div class="add-backdrop" onclick="closeNavConfig()"></div>
   <div class="nav-config-sheet">
     <div class="sheet-handle"></div>
-    <div class="nav-config-title">📱 Navigatiebalk aanpassen</div>
-    <div class="nav-config-sub">Tik op een vakje om te wijzigen. Midden is altijd Feed.</div>
+    <div class="nav-config-title" data-i18n="nav.config.title">📱 Navigatiebalk aanpassen</div>
+    <div class="nav-config-sub" data-i18n="nav.config.subtitle">Tik op een vakje om te wijzigen. Midden is altijd Feed.</div>
     <div class="nav-config-slots" id="nav-config-slots"></div>
-    <div style="font-size:11px;font-weight:700;color:var(--c-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Kies een scherm</div>
+    <div style="font-size:11px;font-weight:700;color:var(--c-text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px" data-i18n="nav.config.chooseScreen">Kies een scherm</div>
     <div class="nav-options-grid" id="nav-options-grid"></div>
   </div>
 </div>
@@ -1028,6 +1028,7 @@ function completeSetup() {
 
 <script src="task-image-hashtags.js"></script>
 
+  <script src="src/core/i18n.js?v=beta1"></script>
   <script src="src/core/data.js"></script>
   <script src="src/core/store.js"></script>
   <script src="src/core/utils.js"></script>
