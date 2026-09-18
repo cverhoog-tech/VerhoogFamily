@@ -19,7 +19,19 @@
     listeners.slice().forEach(function(fn){try{fn(snap);}catch(e){console.error('[SessionController] listener',e);}});
     try{window.dispatchEvent(new CustomEvent('familyapp:session-state',{detail:snap}));}catch(e){}
   }
-  function setState(next,error){state=next;lastError=error||null;emit();}
+  function updateStartupLoader(next){
+    var loader=window.FamilyAppStartupLoader;
+    if(!loader)return;
+    if(next==='initializing')loader.step(50,'Account controleren…');
+    else if(next==='authResolved')loader.step(62,'Account gevonden…');
+    else if(next==='resolvingHousehold')loader.step(76,'Je gezin wordt geladen…');
+    else if(next==='preparingApp')loader.step(91,'FamilyApp wordt klaargezet…');
+    else if(next==='ready')loader.finish('Klaar!');
+    else if(next==='signedOut')loader.finish('Klaar om in te loggen');
+    else if(next==='awaitingSetup')loader.finish('Nog één stap…');
+    else if(next==='recoverableError')loader.fail('Opstarten kon niet worden voltooid');
+  }
+  function setState(next,error){state=next;lastError=error||null;updateStartupLoader(next);emit();}
   function status(){return{state:state,generation:generation,user:currentUser||null,uid:currentUser&&currentUser.uid||null,householdId:window.fbFamilyId||null,error:lastError||null,ready:state==='ready'};}
   function isCurrent(token,user){return token===generation&&currentUser&&user&&currentUser.uid===user.uid;}
   function addCleanup(fn){if(typeof fn==='function')cleanup.push(fn);return fn;}
@@ -105,6 +117,7 @@
     if(typeof window.renderNav==='function')window.renderNav();
     if(typeof window.showScreen==='function')window.showScreen('home');
     else if(typeof window.renderHome==='function')window.renderHome();
+    if(window.FamilyAppStartupLoader)window.FamilyAppStartupLoader.step(97,'Home wordt geopend…');
     if(typeof window.startFirebaseSync==='function')window.startFirebaseSync();
     if(window.NotificationStore&&typeof window.NotificationStore.ensureSubscription==='function')window.NotificationStore.ensureSubscription();
     if(typeof window.setupPushNotifications==='function')window.setupPushNotifications();
