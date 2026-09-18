@@ -162,7 +162,7 @@ function completeSetup() {
   var fill=document.getElementById('familyapp-startup-fill');
   var pct=document.getElementById('familyapp-startup-percent');
   var status=document.getElementById('familyapp-startup-status');
-  var current=8,hidden=false,started=Date.now(),finishTimer=null;
+  var current=8,hidden=false,started=Date.now(),finishTimer=null,styleTimer=null,pendingFinish=null;
   try{if(localStorage.getItem('familie_theme_dark')==='1')root.classList.add('is-dark');}catch(e){}
   function step(value,label){
     if(hidden)return;
@@ -178,16 +178,37 @@ function completeSetup() {
     root.classList.add('is-leaving');
     setTimeout(function(){if(root&&root.parentNode)root.parentNode.removeChild(root);},380);
   }
-  function finish(label){
+  function stylesReady(){
+    var links=document.querySelectorAll('link[data-familyapp-nonblocking-style]');
+    if(!links.length)return true;
+    for(var i=0;i<links.length;i++){
+      if(links[i].dataset.familyappStyleReady!=='1')return false;
+    }
+    return true;
+  }
+  function completeFinish(label){
     if(hidden)return;
+    pendingFinish=null;
+    clearTimeout(styleTimer);
     current=100;
     if(fill)fill.style.width='100%';
     if(pct)pct.textContent='100%';
     if(status&&label)status.textContent=label;
     clearTimeout(finishTimer);
-    var minWait=Math.max(220,520-(Date.now()-started));
+    var minWait=Math.max(180,420-(Date.now()-started));
     finishTimer=setTimeout(hide,minWait);
   }
+  function finish(label){
+    if(hidden)return;
+    pendingFinish=label||'Klaar!';
+    if(stylesReady()){completeFinish(pendingFinish);return;}
+    step(97,'Interface afronden…');
+    clearTimeout(styleTimer);
+    styleTimer=setTimeout(function(){completeFinish(pendingFinish||label);},2500);
+  }
+  window.addEventListener('familyapp:style-ready',function(){
+    if(pendingFinish&&stylesReady())completeFinish(pendingFinish);
+  });
   function fail(label){
     if(status&&label)status.textContent=label;
     finishTimer=setTimeout(hide,180);
