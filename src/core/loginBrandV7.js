@@ -2,7 +2,7 @@
 // FamilyApp Login Brand v7 — native DOM/CSS surface. No screenshot-as-UI.
 (function(){
   if(window.FamilyAppLoginBrandV7)return;
-  var VERSION='7.1.0';
+  var VERSION='7.2.0';
   var screen=null,sheet=null,mode='login',messageTimer=null;
 
   function providers(){return window.FamilyAppAuthProviders||{};}
@@ -15,7 +15,21 @@
     if(messageTimer)clearTimeout(messageTimer);
     if(text)messageTimer=setTimeout(function(){el.hidden=true;el.textContent='';},4200);
   }
+  function normalizeError(message){
+    var raw=String(message||'');
+    if(!raw)return '';
+    if(raw.indexOf('auth/popup-closed-by-user')>=0||raw.indexOf('auth/cancelled-popup-request')>=0){
+      if(window._loginTab==='register')return '';
+      return 'Inloggen is geannuleerd. Probeer opnieuw.';
+    }
+    if(raw.indexOf('auth/popup-blocked')>=0){
+      if(window._loginTab==='register')return '';
+      return 'De browser kon het inlogvenster niet openen. Probeer opnieuw.';
+    }
+    return raw;
+  }
   function showError(message){
+    message=normalizeError(message);
     var err=q('#auth-error');
     if(err){err.textContent=message||'';err.style.display=message?'block':'none';}
     if(message&&(!sheet||!sheet.classList.contains('is-open')))setMessage(message);
@@ -96,6 +110,7 @@
     if(title)title.textContent=mode==='register'?'Account maken':'Inloggen';
     if(copy)copy.textContent=mode==='register'?'Maak je FamilyApp-account aan. Daarna stel je je huishouden in.':'Log in met je e-mailadres en wachtwoord.';
     if(pass)pass.setAttribute('autocomplete',mode==='register'?'new-password':'current-password');
+    window.dispatchEvent(new CustomEvent('familyapp:auth-mode-change',{detail:{mode:mode}}));
   }
   function openSheet(next){
     setMode(next);
@@ -148,7 +163,7 @@
     sheet=q('#flv7-auth-sheet');
     bind();
     setMode('login');
-    if(typeof window.showAuthError!=='function')window.showAuthError=showError;
+    window.showAuthError=showError;
     window.dispatchEvent(new CustomEvent('familyapp:login-brand-ready',{detail:{version:VERSION}}));
   }
   function boot(){build();}

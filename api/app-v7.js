@@ -36,6 +36,8 @@ module.exports = async function handler(req, res) {
     .replaceAll('manifest.json?v=5', 'manifest.json?v=9')
     .replaceAll('src/core/appIcon.js?v=6', 'src/core/appIcon.js?v=10')
     .replaceAll('src/core/authenticatedSessionController.js?v=3', 'src/core/authenticatedSessionController.js?v=5')
+    .replaceAll('src/core/googleAuthMobileFix.js?v=2', 'src/core/googleAuthMobileFix.js?v=3')
+    .replaceAll('/src/core/loginBrandV7.js?v=2', '/src/core/loginBrandV7.js?v=3')
     .replaceAll('src/modules/tasks/v3/taskOverviewV3.js?v=3', 'src/modules/tasks/v3/taskOverviewV3.js?v=4')
     .replaceAll('content="#140724"', 'content="#0b3428"');
 
@@ -84,8 +86,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('cleaning-sheet-consistency-v1.css?v=1')) {
     body = body.replace('</head>', '  <link rel="stylesheet" href="/src/styles/cleaning-sheet-consistency-v1.css?v=1">\n</head>');
   }
-  if (!body.includes('loginBrandV7.js?v=2')) {
-    body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=2"></script>\n</body>');
+  if (!body.includes('loginBrandV7.js?v=3')) {
+    body = body.replace('</body>', '  <script src="/src/core/loginBrandV7.js?v=3"></script>\n</body>');
   }
   if (!body.includes('microsoftAuthV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/core/microsoftAuthV1.js?v=1"></script>\n</body>');
