@@ -7,16 +7,39 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#f6faf7">
   <title>FamilieApp</title>
+  <style id="familyapp-startup-critical">
+    #familyapp-startup{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:calc(28px + env(safe-area-inset-top)) 28px calc(28px + env(safe-area-inset-bottom));background:
+      radial-gradient(circle at 50% 30%,rgba(109,169,79,.18),transparent 34%),
+      linear-gradient(180deg,#fbfdf9 0%,#f4f8f1 54%,#eef5eb 100%);
+      color:#1f2933;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;opacity:1;visibility:visible;transition:opacity .34s ease,visibility .34s ease}
+    #familyapp-startup.is-dark{background:
+      radial-gradient(circle at 50% 28%,rgba(109,169,79,.17),transparent 34%),
+      linear-gradient(180deg,#151815 0%,#101210 58%,#0c0e0c 100%);color:#f5f7f4}
+    #familyapp-startup.is-leaving{opacity:0;visibility:hidden;pointer-events:none}
+    .familyapp-startup-inner{width:min(100%,340px);display:flex;flex-direction:column;align-items:center;text-align:center}
+    .familyapp-startup-logo{width:92px;height:92px;border-radius:28px;display:grid;place-items:center;background:linear-gradient(145deg,#5f9650,#326629);box-shadow:0 20px 48px rgba(47,99,35,.24),inset 0 1px 0 rgba(255,255,255,.24);margin-bottom:22px;position:relative;overflow:hidden}
+    .familyapp-startup-logo:before{content:"";position:absolute;width:66px;height:66px;border-radius:50%;background:rgba(255,255,255,.08);top:-26px;right:-18px}
+    .familyapp-startup-logo svg{width:52px;height:52px;position:relative;filter:drop-shadow(0 3px 8px rgba(0,0,0,.12))}
+    .familyapp-startup-title{font-size:27px;line-height:1.05;font-weight:850;letter-spacing:-.7px;margin:0}
+    .familyapp-startup-tagline{font-size:13px;line-height:1.4;color:#74806f;margin-top:7px;font-weight:560}
+    .is-dark .familyapp-startup-tagline{color:#9ca69a}
+    .familyapp-startup-progress-wrap{width:100%;margin-top:42px}
+    .familyapp-startup-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
+    .familyapp-startup-status{font-size:12px;line-height:1.25;color:#687164;font-weight:650;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .is-dark .familyapp-startup-status{color:#a5afa2}
+    .familyapp-startup-percent{font-size:12px;line-height:1;color:#3f7f2f;font-weight:800;font-variant-numeric:tabular-nums}
+    .is-dark .familyapp-startup-percent{color:#85bd72}
+    .familyapp-startup-track{height:7px;width:100%;overflow:hidden;border-radius:999px;background:rgba(63,127,47,.13);box-shadow:inset 0 1px 2px rgba(39,72,31,.05)}
+    .is-dark .familyapp-startup-track{background:rgba(133,189,114,.15)}
+    .familyapp-startup-fill{height:100%;width:8%;border-radius:inherit;background:linear-gradient(90deg,#6ca456 0%,#3f7f2f 70%,#2f6323 100%);box-shadow:0 0 18px rgba(63,127,47,.22);transition:width .42s cubic-bezier(.2,.72,.22,1)}
+    @media (prefers-reduced-motion:reduce){#familyapp-startup,.familyapp-startup-fill{transition:none}}
+  </style>
   <link rel="manifest" href="manifest.json">
   <!-- Cache-busting query param: bump this on every app.css change, otherwise
        browsers (especially mobile Safari) can keep serving a stale cached copy
        indefinitely after a deploy, since the file path itself never changes. -->
   <link rel="stylesheet" href="src/styles/app.css?v=3">
   <link rel="stylesheet" href="src/styles/quest.css">
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
 
 <script>
 // ── LOGIN FUNCTIES ──
@@ -108,6 +131,76 @@ function completeSetup() {
 </script>
 </head>
 <body>
+<!-- STARTUP LOADER: rendered before Firebase network requests so cold starts never show a blank screen -->
+<div id="familyapp-startup" role="status" aria-live="polite" aria-label="FamilyApp wordt geladen">
+  <div class="familyapp-startup-inner">
+    <div class="familyapp-startup-logo" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none">
+        <path d="M10 30.5 32 12l22 18.5" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16.5 27.5V51h31V27.5" fill="rgba(255,255,255,.95)" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M26.5 51V37.5h11V51" fill="#4c813d"/>
+        <path d="M32 31.2c-3.5-4.6-10.5-1.9-9 3.4 1.1 3.8 5.4 6.4 9 9.1 3.6-2.7 7.9-5.3 9-9.1 1.5-5.3-5.5-8-9-3.4Z" fill="#4c813d"/>
+      </svg>
+    </div>
+    <h1 class="familyapp-startup-title">FamilyApp</h1>
+    <div class="familyapp-startup-tagline">Samen begint hier.</div>
+    <div class="familyapp-startup-progress-wrap">
+      <div class="familyapp-startup-progress-meta">
+        <div id="familyapp-startup-status" class="familyapp-startup-status">FamilyApp starten…</div>
+        <div id="familyapp-startup-percent" class="familyapp-startup-percent">8%</div>
+      </div>
+      <div class="familyapp-startup-track" aria-hidden="true">
+        <div id="familyapp-startup-fill" class="familyapp-startup-fill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var root=document.getElementById('familyapp-startup');
+  if(!root)return;
+  var fill=document.getElementById('familyapp-startup-fill');
+  var pct=document.getElementById('familyapp-startup-percent');
+  var status=document.getElementById('familyapp-startup-status');
+  var current=8,hidden=false,started=Date.now(),finishTimer=null;
+  try{if(localStorage.getItem('familie_theme_dark')==='1')root.classList.add('is-dark');}catch(e){}
+  function step(value,label){
+    if(hidden)return;
+    value=Math.max(current,Math.min(99,Math.round(Number(value)||current)));
+    current=value;
+    if(fill)fill.style.width=value+'%';
+    if(pct)pct.textContent=value+'%';
+    if(status&&label)status.textContent=label;
+  }
+  function hide(){
+    if(hidden)return;
+    hidden=true;
+    root.classList.add('is-leaving');
+    setTimeout(function(){if(root&&root.parentNode)root.parentNode.removeChild(root);},380);
+  }
+  function finish(label){
+    if(hidden)return;
+    current=100;
+    if(fill)fill.style.width='100%';
+    if(pct)pct.textContent='100%';
+    if(status&&label)status.textContent=label;
+    clearTimeout(finishTimer);
+    var minWait=Math.max(220,520-(Date.now()-started));
+    finishTimer=setTimeout(hide,minWait);
+  }
+  function fail(label){
+    if(status&&label)status.textContent=label;
+    finishTimer=setTimeout(hide,180);
+  }
+  window.FamilyAppStartupLoader={step:step,finish:finish,hide:hide,fail:fail};
+  setTimeout(function(){if(!hidden&&current<90&&status)status.textContent='Dit duurt iets langer dan normaal…';},7000);
+})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" onload="FamilyAppStartupLoader.step(16,'Basis wordt geladen…')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" onload="FamilyAppStartupLoader.step(26,'Accountbeveiliging laden…')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js" onload="FamilyAppStartupLoader.step(36,'Gezinsdata voorbereiden…')"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js" onload="FamilyAppStartupLoader.step(42,'Meldingen voorbereiden…')"></script>
+
 
 
 
