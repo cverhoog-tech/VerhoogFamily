@@ -134,6 +134,17 @@ module.exports = async function handler(req, res) {
     body = body.replace('</body>', '  <script src="/src/modules/tasks/v3/taskCompletionFeedbackV1.js?v=1"></script>\n</body>');
   }
 
+  // Startup performance: the branded loader has its own inline critical CSS.
+  // Load all regular application styles without blocking the browser's first paint.
+  // The startup loader waits for these links before revealing the app shell.
+  body = body.replace(/<link\b([^>]*\brel=["']stylesheet["'][^>]*)>/gi, function (match) {
+    if (match.includes('data-familyapp-nonblocking-style')) return match;
+    return match.slice(0, -1)
+      + ' media="print" data-familyapp-nonblocking-style="1"'
+      + ' onload="this.media=\'all\';this.dataset.familyappStyleReady=\'1\';window.dispatchEvent(new Event(\'familyapp:style-ready\'))"'
+      + ' onerror="this.media=\'all\';this.dataset.familyappStyleReady=\'1\';window.dispatchEvent(new Event(\'familyapp:style-ready\'))">';
+  });
+
   Object.keys(headers).forEach((name) => res.setHeader(name, headers[name]));
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.status(statusCode).send(body);
