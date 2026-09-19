@@ -5,6 +5,7 @@
   var VERSION='7.2.0';
   var screen=null,sheet=null,mode='login',messageTimer=null;
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function providers(){return window.FamilyAppAuthProviders||{};}
   function q(sel){return screen?screen.querySelector(sel):null;}
   function setMessage(text){
@@ -20,11 +21,11 @@
     if(!raw)return '';
     if(raw.indexOf('auth/popup-closed-by-user')>=0||raw.indexOf('auth/cancelled-popup-request')>=0){
       if(window._loginTab==='register')return '';
-      return 'Inloggen is geannuleerd. Probeer opnieuw.';
+      return tr('auth.loginCancelled','Inloggen is geannuleerd. Probeer opnieuw.');
     }
     if(raw.indexOf('auth/popup-blocked')>=0){
       if(window._loginTab==='register')return '';
-      return 'De browser kon het inlogvenster niet openen. Probeer opnieuw.';
+      return tr('auth.popupBlocked','De browser kon het inlogvenster niet openen. Probeer opnieuw.');
     }
     return raw;
   }
@@ -63,21 +64,21 @@
       +'<div class="flv7-shade" aria-hidden="true"></div>'
       +'<main class="flv7-layout">'
       +'<section class="flv7-hero">'
-      +'<div class="flv7-brand"><div class="flv7-mark">'+logoSvg()+'</div><div class="flv7-wordmark">FamilyApp</div><div class="flv7-subtitle">SAMEN RUST EN OVERZICHT</div></div>'
-      +'<div class="flv7-tagline"><span>SAMEN</span><span>RUST</span><span>EN</span><span>OVERZICHT</span><i></i></div>'
+      +'<div class="flv7-brand"><div class="flv7-mark">'+logoSvg()+'</div><div class="flv7-wordmark">FamilyApp</div><div class="flv7-subtitle">'+tr('auth.brandTagline','SAMEN RUST EN OVERZICHT')+'</div></div>'
+      +'<div class="flv7-tagline"><span>'+tr('auth.brandTagline','SAMEN RUST EN OVERZICHT')+'</span><i></i></div>'
       +'</section>'
-      +'<section class="flv7-panel" aria-label="Inloggen bij FamilyApp">'
+      +'<section class="flv7-panel" aria-label="'+tr('auth.loginAria','Inloggen bij FamilyApp')+'">'
       +'<div id="flv7-message" class="flv7-message" hidden></div>'
-      +'<button type="button" id="flv7-login" class="flv7-btn flv7-primary"><span>Inloggen</span><b aria-hidden="true">→</b></button>'
-      +'<button type="button" id="flv7-register" class="flv7-btn flv7-secondary">Account maken</button>'
-      +'<div class="flv7-divider"><span></span><em>OF</em><span></span></div>'
-      +'<button type="button" id="flv7-google" class="flv7-btn flv7-social"><i class="flv7-provider-icon">'+googleSvg()+'</i><span class="flv7-provider-label">Doorgaan met Google</span><i class="flv7-provider-spacer" aria-hidden="true"></i></button>'
-      +'<button type="button" id="flv7-apple" class="flv7-btn flv7-social"><i class="flv7-provider-icon flv7-apple-icon">'+appleSvg()+'</i><span class="flv7-provider-label">Doorgaan met Apple</span><i class="flv7-provider-spacer" aria-hidden="true"></i></button>'
-      +'<div class="flv7-values" aria-label="FamilyApp waarden">'
-      +'<div><i>'+featureSvg('family')+'</i><span>FAMILIE</span></div>'
-      +'<div><i>'+featureSvg('home')+'</i><span>THUIS</span></div>'
-      +'<div><i>'+featureSvg('broom')+'</i><span>TAKEN</span></div>'
-      +'<div><i>'+featureSvg('bed')+'</i><span>RUST</span></div>'
+      +'<button type="button" id="flv7-login" class="flv7-btn flv7-primary"><span>'+tr('auth.login','Inloggen')+'</span><b aria-hidden="true">→</b></button>'
+      +'<button type="button" id="flv7-register" class="flv7-btn flv7-secondary">'+tr('auth.register','Account maken')+'</button>'
+      +'<div class="flv7-divider"><span></span><em>'+tr('auth.or','OF')+'</em><span></span></div>'
+      +'<button type="button" id="flv7-google" class="flv7-btn flv7-social"><i class="flv7-provider-icon">'+googleSvg()+'</i><span class="flv7-provider-label">'+tr('auth.google','Doorgaan met Google')+'</span><i class="flv7-provider-spacer" aria-hidden="true"></i></button>'
+      +'<button type="button" id="flv7-apple" class="flv7-btn flv7-social"><i class="flv7-provider-icon flv7-apple-icon">'+appleSvg()+'</i><span class="flv7-provider-label">'+tr('auth.apple','Doorgaan met Apple')+'</span><i class="flv7-provider-spacer" aria-hidden="true"></i></button>'
+      +'<div class="flv7-values" aria-label="'+tr('auth.values','FamilyApp waarden')+'">'
+      +'<div><i>'+featureSvg('family')+'</i><span>'+tr('auth.family','FAMILIE')+'</span></div>'
+      +'<div><i>'+featureSvg('home')+'</i><span>'+tr('auth.home','THUIS')+'</span></div>'
+      +'<div><i>'+featureSvg('broom')+'</i><span>'+tr('auth.tasks','TAKEN')+'</span></div>'
+      +'<div><i>'+featureSvg('bed')+'</i><span>'+tr('auth.calm','RUST')+'</span></div>'
       +'</div>'
       +'</section>'
       +'</main>'
@@ -85,19 +86,19 @@
       +'<div class="flv7-sheet-backdrop" data-flv7-close="1"></div>'
       +'<section class="flv7-sheet-card" role="dialog" aria-modal="true" aria-labelledby="flv7-sheet-title">'
       +'<div class="flv7-sheet-handle"></div>'
-      +'<header><div><p>FAMILYAPP</p><h2 id="flv7-sheet-title">Inloggen</h2></div><button type="button" id="flv7-close" aria-label="Sluiten">×</button></header>'
-      +'<p id="flv7-sheet-copy" class="flv7-sheet-copy">Log in met je e-mailadres en wachtwoord.</p>'
+      +'<header><div><p>FAMILYAPP</p><h2 id="flv7-sheet-title">'+tr('auth.login','Inloggen')+'</h2></div><button type="button" id="flv7-close" aria-label="'+tr('common.close','Sluiten')+'">×</button></header>'
+      +'<p id="flv7-sheet-copy" class="flv7-sheet-copy">'+tr('auth.loginCopy','Log in met je e-mailadres en wachtwoord.')+'</p>'
       +'<div id="login-step-1" class="flv7-auth-form">'
       +'<div id="login-tabs" hidden></div>'
       +'<div id="login-form">'
-      +'<label for="auth-email">E-mailadres</label><input id="auth-email" type="email" autocomplete="email" placeholder="naam@voorbeeld.nl">'
-      +'<label for="auth-password">Wachtwoord</label><input id="auth-password" type="password" autocomplete="current-password" placeholder="Wachtwoord">'
+      +'<label for="auth-email">'+tr('auth.email','E-mailadres')+'</label><input id="auth-email" type="email" autocomplete="email" placeholder="'+tr('auth.emailPlaceholder','naam@voorbeeld.nl')+'">'
+      +'<label for="auth-password">'+tr('auth.password','Wachtwoord')+'</label><input id="auth-password" type="password" autocomplete="current-password" placeholder="'+tr('auth.password','Wachtwoord')+'">'
       +'<div id="register-extra" class="flv7-register-extra" style="display:none">'
-      +'<label for="auth-name">Jouw naam</label><input id="auth-name" autocomplete="name" placeholder="Jouw voornaam">'
-      +'<label for="auth-partner">Naam gezinslid</label><input id="auth-partner" placeholder="Bijv. partner of gezinslid">'
+      +'<label for="auth-name">'+tr('auth.yourName','Jouw naam')+'</label><input id="auth-name" autocomplete="name" placeholder="'+tr('auth.firstNamePlaceholder','Jouw voornaam')+'">'
+      +'<label for="auth-partner">'+tr('auth.familyMemberName','Naam gezinslid')+'</label><input id="auth-partner" placeholder="'+tr('auth.familyMemberPlaceholder','Bijv. partner of gezinslid')+'">'
       +'</div>'
       +'<div id="auth-error" role="alert"></div>'
-      +'<button id="auth-submit-btn" type="button">Inloggen</button>'
+      +'<button id="auth-submit-btn" type="button">'+tr('auth.login','Inloggen')+'</button>'
       +'</div></div>'
       +'<div id="login-step-2" style="display:none"></div>'
       +'</section></div>';
@@ -107,8 +108,8 @@
     if(typeof window.showLoginTab==='function')window.showLoginTab(mode);
     else window._loginTab=mode;
     var title=q('#flv7-sheet-title'),copy=q('#flv7-sheet-copy'),pass=q('#auth-password');
-    if(title)title.textContent=mode==='register'?'Account maken':'Inloggen';
-    if(copy)copy.textContent=mode==='register'?'Maak je FamilyApp-account aan. Daarna stel je je huishouden in.':'Log in met je e-mailadres en wachtwoord.';
+    if(title)title.textContent=mode==='register'?tr('auth.register','Account maken'):tr('auth.login','Inloggen');
+    if(copy)copy.textContent=mode==='register'?tr('auth.registerCopy','Maak je FamilyApp-account aan. Daarna stel je je huishouden in.'):tr('auth.loginCopy','Log in met je e-mailadres en wachtwoord.');
     if(pass)pass.setAttribute('autocomplete',mode==='register'?'new-password':'current-password');
     window.dispatchEvent(new CustomEvent('familyapp:auth-mode-change',{detail:{mode:mode}}));
   }
@@ -130,17 +131,17 @@
   function google(){
     showError('');
     if(typeof window.signInWithGoogle==='function')window.signInWithGoogle();
-    else setMessage('Google-login is nog niet beschikbaar.');
+    else setMessage(tr('auth.googleUnavailable','Google-login is nog niet beschikbaar.'));
   }
   function apple(){
     if(providers().apple===true&&window.FamilyAppAppleAuth&&typeof window.FamilyAppAppleAuth.signIn==='function'){
       window.FamilyAppAppleAuth.signIn();return;
     }
-    setMessage('Apple-login staat klaar, maar moet nog worden geactiveerd.');
+    setMessage(tr('auth.appleUnavailable','Apple-login staat klaar, maar moet nog worden geactiveerd.'));
   }
   function submit(){
     if(typeof window.submitAuth==='function')window.submitAuth();
-    else showError('Inloggen is nog niet beschikbaar.');
+    else showError(tr('auth.loginUnavailable','Inloggen is nog niet beschikbaar.'));
   }
   function bind(){
     q('#flv7-login').addEventListener('click',function(){openSheet('login');});
@@ -167,6 +168,7 @@
     window.dispatchEvent(new CustomEvent('familyapp:login-brand-ready',{detail:{version:VERSION}}));
   }
   function boot(){build();}
+  window.addEventListener('familyapp:language-changed',function(){var wasOpen=sheet&&sheet.classList.contains('is-open'),current=mode;screen=document.getElementById('login-screen');if(!screen)return;screen.dataset.brandV7='';screen.innerHTML='';build();if(wasOpen)openSheet(current);});
   window.FamilyAppLoginBrandV7={version:VERSION,boot:boot,openLogin:function(){openSheet('login');},openRegister:function(){openSheet('register');},close:closeSheet,showError:showError};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
