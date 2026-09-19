@@ -2208,7 +2208,38 @@
     ['household.inviteWriteDenied','De uitnodiging is nog geldig, maar de database weigerde de schrijfactie.','The invitation is still valid, but the database rejected the write action.','Davet hâlâ geçerli ancak veritabanı yazma işlemini reddetti.','Zaproszenie jest nadal ważne, ale baza danych odrzuciła zapis.','Invitația este încă validă, dar baza de date a refuzat scrierea.'],
     ['household.inviteProcessFailed','Kon de uitnodiging niet verwerken.','Could not process the invitation.','Davet işlenemedi.','Nie udało się przetworzyć zaproszenia.','Invitația nu a putut fi procesată.'],
     ['household.activeUntil','actief · geldig tot','active · valid until','aktif · geçerli olduğu tarih','aktywne · ważne do','activ · valabil până la'],
-    ['household.inviteFailed','Kon geen uitnodiging maken','Could not create an invitation','Davet oluşturulamadı','Nie udało się utworzyć zaproszenia','Nu s-a putut crea invitația']
+    ['household.inviteFailed','Kon geen uitnodiging maken','Could not create an invitation','Davet oluşturulamadı','Nie udało się utworzyć zaproszenia','Nu s-a putut crea invitația'],
+    ['session.preparing','FamilyApp wordt klaargezet…','FamilyApp is getting ready…','FamilyApp hazırlanıyor…','FamilyApp jest przygotowywana…','FamilyApp se pregătește…'],
+    ['session.openingHome','Home wordt geopend…','Opening Home…','Ana sayfa açılıyor…','Otwieranie strony głównej…','Se deschide Acasă…'],
+    ['session.failedShort','Opstarten kon niet worden voltooid','Startup could not be completed','Başlatma tamamlanamadı','Nie udało się ukończyć uruchamiania','Pornirea nu a putut fi finalizată'],
+    ['session.authUserMissing','Authenticated Firebase gebruiker ontbreekt','Authenticated Firebase user is missing','Kimliği doğrulanmış Firebase kullanıcısı eksik','Brakuje uwierzytelnionego użytkownika Firebase','Lipsește utilizatorul Firebase autentificat'],
+
+    ['household.notLoggedIn','Niet ingelogd','Not signed in','Oturum açılmadı','Brak zalogowania','Neautentificat'],
+    ['household.adminOnly','Alleen een beheerder kan uitnodigen','Only an administrator can invite','Yalnızca bir yönetici davet edebilir','Tylko administrator może zapraszać','Doar un administrator poate invita'],
+    ['household.codeRequired','Vul een uitnodigingscode in','Enter an invitation code','Bir davet kodu gir','Wpisz kod zaproszenia','Introdu un cod de invitație'],
+    ['household.invalidInvite','Deze uitnodiging is ongeldig of verlopen','This invitation is invalid or expired','Bu davet geçersiz veya süresi dolmuş','To zaproszenie jest nieprawidłowe lub wygasło','Această invitație este invalidă sau expirată'],
+    ['household.codeUsed','Deze code is al gebruikt','This code has already been used','Bu kod zaten kullanıldı','Ten kod został już użyty','Acest cod a fost deja folosit'],
+    ['household.defaultSuffix','Family','Family','Aile','Rodzina','Familie'],
+    ['household.welcome','Welkom, {{name}}','Welcome, {{name}}','Hoş geldin, {{name}}','Witaj, {{name}}','Bine ai venit, {{name}}'],
+    ['household.chooseHint','Maak een nieuw huishouden of sluit veilig aan bij een bestaand gezin.','Create a new household or securely join an existing family.','Yeni bir hane oluştur veya mevcut bir aileye güvenle katıl.','Utwórz nowe gospodarstwo domowe lub bezpiecznie dołącz do istniejącej rodziny.','Creează o gospodărie nouă sau alătură-te în siguranță unei familii existente.'],
+    ['household.createChoice','✨ Nieuw gezin maken','✨ Create new family','✨ Yeni aile oluştur','✨ Utwórz nową rodzinę','✨ Creează familie nouă'],
+    ['household.createChoiceHint','Word beheerder en nodig gezinsleden uit','Become the administrator and invite family members','Yönetici ol ve aile üyelerini davet et','Zostań administratorem i zaproś członków rodziny','Devino administrator și invită membri ai familiei'],
+    ['household.joinChoice','🔗 Deelnemen aan gezin','🔗 Join family','🔗 Aileye katıl','🔗 Dołącz do rodziny','🔗 Alătură-te familiei'],
+    ['household.joinChoiceHint','Gebruik een persoonlijke uitnodigingscode','Use a personal invitation code','Kişisel bir davet kodu kullan','Użyj osobistego kodu zaproszenia','Folosește un cod personal de invitație'],
+    ['household.createTitle','Maak jullie gezin','Create your family','Ailenizi oluşturun','Utwórzcie swoją rodzinę','Creați familia voastră'],
+    ['household.createHint','Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.','This will be the shared space for tasks, groceries, calendar, feed and progress.','Burası görevler, alışveriş, takvim, akış ve ilerleme için ortak alan olacak.','To będzie wspólna przestrzeń na zadania, zakupy, kalendarz, aktualności i postępy.','Acesta va fi spațiul comun pentru sarcini, cumpărături, calendar, activitate și progres.'],
+    ['household.createButton','Gezin aanmaken','Create family','Aile oluştur','Utwórz rodzinę','Creează familia'],
+    ['household.createFailed','Aanmaken mislukt.','Creation failed.','Oluşturma başarısız.','Tworzenie nie powiodło się.','Crearea a eșuat.'],
+    ['household.joinTitle','Deelnemen aan gezin','Join family','Aileye katıl','Dołącz do rodziny','Alătură-te familiei'],
+    ['household.joinHint','Vul de persoonlijke uitnodigingscode in.','Enter the personal invitation code.','Kişisel davet kodunu gir.','Wpisz osobisty kod zaproszenia.','Introdu codul personal de invitație.'],
+    ['household.joinButton','Deelnemen','Join','Katıl','Dołącz','Alătură-te'],
+    ['household.inviteManagerTitle','Nodig iemand uit','Invite someone','Birini davet et','Zaproś kogoś','Invită pe cineva'],
+    ['household.inviteManagerHint','Maak voor ieder gezinslid een eigen code. Elke code is 7 dagen geldig en kan één keer gebruikt worden.','Create a separate code for each family member. Each code is valid for 7 days and can be used once.','Her aile üyesi için ayrı bir kod oluştur. Her kod 7 gün geçerlidir ve bir kez kullanılabilir.','Utwórz osobny kod dla każdego członka rodziny. Każdy kod jest ważny 7 dni i można go użyć raz.','Creează un cod separat pentru fiecare membru al familiei. Fiecare cod este valabil 7 zile și poate fi folosit o singură dată.'],
+    ['household.newInvite','Nieuwe uitnodigingscode maken','Create new invitation code','Yeni davet kodu oluştur','Utwórz nowy kod zaproszenia','Creează un cod de invitație nou'],
+    ['household.noActiveInvites','Nog geen actieve uitnodigingscodes.','No active invitation codes yet.','Henüz aktif davet kodu yok.','Brak aktywnych kodów zaproszeń.','Încă nu există coduri de invitație active.'],
+    ['household.multipleInvites','Je kunt meerdere uitnodigingen tegelijk actief hebben.','You can have multiple invitations active at the same time.','Aynı anda birden fazla aktif davetin olabilir.','Możesz mieć kilka aktywnych zaproszeń jednocześnie.','Poți avea mai multe invitații active în același timp.'],
+    ['household.technical','Technische melding: {{message}}','Technical message: {{message}}','Teknik mesaj: {{message}}','Komunikat techniczny: {{message}}','Mesaj tehnic: {{message}}']
+
 
 
 
