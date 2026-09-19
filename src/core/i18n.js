@@ -844,6 +844,9 @@
     ['common.tomorrow','Morgen','Tomorrow','Yarın','Jutro','Mâine'],
     ['common.later','Later','Later','Daha sonra','Później','Mai târziu'],
     ['common.family','Gezin','Family','Aile','Rodzina','Familie'],
+    ['common.loading','Laden...','Loading...','Yükleniyor...','Ładowanie...','Se încarcă...'],
+    ['tasks.singular','Taak','Task','Görev','Zadanie','Sarcină']
+,
     ['common.pause','Pauzeren','Pause','Duraklat','Wstrzymaj','Pauză'],
     ['common.resume','Hervatten','Resume','Devam et','Wznów','Reia']
 
