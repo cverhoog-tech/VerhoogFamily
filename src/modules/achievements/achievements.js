@@ -1,4 +1,69 @@
 'use strict';
+function achTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+function achLanguage(){try{return window.FamilyI18n&&FamilyI18n.getLanguage?FamilyI18n.getLanguage():'nl';}catch(error){return'nl';}}
+function achLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
+function achievementLevelCopy(row){
+  row=row||{};var lv=Number(row.lv)||1;
+  return{title:achTr('ach.level.'+lv+'.title',row.title||achTr('ach.level','Level')+' '+lv),desc:achTr('ach.level.'+lv+'.desc',row.desc||'')};
+}
+var ACH_BADGE_SPECIAL={
+  first_task:['ach.badge.firstTaskName','ach.badge.firstTaskDesc'],
+  shopper:['ach.badge.shopperName','ach.badge.shopperDesc'],
+  noter:['ach.badge.noterName','ach.badge.noterDesc'],
+  poster:['ach.badge.posterName','ach.badge.posterDesc'],
+  liker:['ach.badge.likerName','ach.badge.likerDesc'],
+  theme:['ach.badge.themeName','ach.badge.themeDesc'],
+  darkmode:['ach.badge.darkmodeName','ach.badge.darkmodeDesc'],
+  first_recipe:['ach.badge.firstRecipeName','ach.badge.firstRecipeDesc'],
+  first_skill:['ach.badge.firstSkillName','ach.badge.firstSkillDesc'],
+  income_edit:['ach.badge.incomeName','ach.badge.incomeDesc'],
+  first_quest:['ach.badge.firstQuestName','ach.badge.firstQuestDesc'],
+  routine:['ach.badge.routineName','ach.badge.routineDesc'],
+  budget:['ach.badge.budgetName','ach.badge.budgetDesc'],
+  negotiator:['ach.badge.negotiatorName','ach.badge.negotiatorDesc'],
+  accepted:['ach.badge.acceptedName','ach.badge.acceptedDesc'],
+  finance_king:['ach.badge.financeName','ach.badge.financeDesc'],
+  ability_used:['ach.badge.firstAbilityName','ach.badge.firstAbilityDesc'],
+  allscreens:['ach.badge.allScreensName','ach.badge.allScreensDesc'],
+  perfectionist:['ach.badge.perfectionistName','ach.badge.perfectionistDesc'],
+  millionaire:['ach.badge.millionaireName','ach.badge.millionaireDesc'],
+  landscape:['ach.badge.landscapeName','ach.badge.landscapeDesc'],
+  darkswitch:['ach.badge.darkSwitchName','ach.badge.darkSwitchDesc'],
+  goal_reached:['ach.badge.goalReachedName','ach.badge.goalReachedDesc'],
+  savings_1:['ach.badge.savingsFirstName','ach.badge.savingsFirstDesc'],
+  savings_5k:['ach.badge.savings5kName','ach.badge.savings5kDesc'],
+  savings_all:['ach.badge.savingsAllName','ach.badge.savingsAllDesc'],
+  skill_all:['ach.badge.skillAllName','ach.badge.skillAllDesc'],
+  skill_max:['ach.badge.skillMaxName','ach.badge.skillMaxDesc']
+};
+function achievementBadgeCopy(badge){
+  badge=badge||{};var id=String(badge.id||''),lang=achLanguage(),name=badge.name||achTr('ach.badge.genericName','Achievement'),desc=badge.desc||achTr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.');
+  if(lang==='nl')return{name:name,desc:desc,funny:badge.funny||desc};
+  var special=ACH_BADGE_SPECIAL[id];
+  if(special)return{name:achTr(special[0],name),desc:achTr(special[1],desc),funny:achTr(special[1],desc)};
+  var m;
+  if((m=id.match(/^task_(\d+)$/)))return{name:achTr('ach.badge.tasksName',m[1]+' taken',{count:m[1]}),desc:achTr('ach.badge.tasksDesc',m[1]+' taken afgevinkt',{count:m[1]}),funny:achTr('ach.badge.tasksDesc',desc,{count:m[1]})};
+  if((m=id.match(/^notes_(\d+)$/)))return{name:achTr('ach.badge.notesName',m[1]+' notities',{count:m[1]}),desc:achTr('ach.badge.notesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.notesDesc',desc,{count:m[1]})};
+  if((m=id.match(/^recipe_(\d+)$/)))return{name:achTr('ach.badge.recipesName',m[1]+' recepten',{count:m[1]}),desc:achTr('ach.badge.recipesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.recipesDesc',desc,{count:m[1]})};
+  if((m=id.match(/^feed_(\d+)$/)))return{name:achTr('ach.badge.postsName',m[1]+' posts',{count:m[1]}),desc:achTr('ach.badge.postsDesc',desc,{count:m[1]}),funny:achTr('ach.badge.postsDesc',desc,{count:m[1]})};
+  if((m=id.match(/^shop_(\d+)$/)))return{name:achTr('ach.badge.shopName',m[1]+' boodschappen',{count:m[1]}),desc:achTr('ach.badge.shopDesc',desc,{count:m[1]}),funny:achTr('ach.badge.shopDesc',desc,{count:m[1]})};
+  if((m=id.match(/^cal_(\d+)$/)))return{name:achTr('ach.badge.calendarName',m[1]+' afspraken',{count:m[1]}),desc:achTr('ach.badge.calendarDesc',desc,{count:m[1]}),funny:achTr('ach.badge.calendarDesc',desc,{count:m[1]})};
+  if((m=id.match(/^trade_(\d+)$/)))return{name:achTr('ach.badge.tradesName',m[1]+' taakruilen',{count:m[1]}),desc:achTr('ach.badge.tradesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.tradesDesc',desc,{count:m[1]})};
+  if(id==='master_trader')return{name:achTr('ach.badge.tradesName','10 taakruilen',{count:10}),desc:achTr('ach.badge.tradesDesc',desc,{count:10}),funny:achTr('ach.badge.tradesDesc',desc,{count:10})};
+  if((m=id.match(/^quests?_(\d+)$/)))return{name:achTr('ach.badge.questsName',m[1]+' quests',{count:m[1]}),desc:achTr('ach.badge.questsDesc',desc,{count:m[1]}),funny:achTr('ach.badge.questsDesc',desc,{count:m[1]})};
+  if((m=id.match(/^abilities?_(\d+)$/)))return{name:achTr('ach.badge.abilitiesName',m[1]+' abilities',{count:m[1]}),desc:achTr('ach.badge.abilitiesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.abilitiesDesc',desc,{count:m[1]})};
+  if((m=id.match(/^streak_(\d+)$/)))return{name:achTr('ach.badge.streakName','Streak '+m[1],{count:m[1]}),desc:achTr('ach.badge.streakDesc',desc,{count:m[1]}),funny:achTr('ach.badge.streakDesc',desc,{count:m[1]})};
+  if((m=id.match(/^level(\d+)/)))return{name:achTr('ach.badge.levelName','Level '+m[1],{count:m[1]}),desc:achTr('ach.badge.levelDesc',desc,{count:m[1]}),funny:achTr('ach.badge.levelDesc',desc,{count:m[1]})};
+  if(id==='hero')return{name:achTr('ach.badge.heroName',name),desc:achTr('ach.badge.levelDesc',desc,{count:10}),funny:achTr('ach.badge.levelDesc',desc,{count:10})};
+  if(id==='superstar')return{name:achTr('ach.badge.superstarName',name),desc:achTr('ach.badge.levelDesc',desc,{count:15}),funny:achTr('ach.badge.levelDesc',desc,{count:15})};
+  if(id==='legend')return{name:achTr('ach.badge.legendName',name),desc:achTr('ach.badge.levelDesc',desc,{count:20}),funny:achTr('ach.badge.levelDesc',desc,{count:20})};
+  if(id==='godmode')return{name:achTr('ach.badge.godName',name),desc:achTr('ach.badge.levelDesc',desc,{count:25}),funny:achTr('ach.badge.levelDesc',desc,{count:25})};
+  if((m=id.match(/^skill_lv(\d+)$/)))return{name:achTr('ach.badge.skillLevelName','Skill level '+m[1],{count:m[1]}),desc:achTr('ach.badge.skillLevelDesc',desc,{count:m[1]}),funny:achTr('ach.badge.skillLevelDesc',desc,{count:m[1]})};
+  if((m=id.match(/^skill_(\d+)_(?:lv)?(\d+)$/)))return{name:achTr('ach.badge.multiSkillName',m[1]+' skills op level '+m[2],{skills:m[1],level:m[2]}),desc:achTr('ach.badge.multiSkillDesc',desc,{skills:m[1],level:m[2]}),funny:achTr('ach.badge.multiSkillDesc',desc,{skills:m[1],level:m[2]})};
+  return{name:achTr('ach.badge.genericName','Achievement'),desc:achTr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.'),funny:achTr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.')};
+}
+window.getLocalizedBadgeCopy=achievementBadgeCopy;
+window.getLocalizedAchievementLevel=achievementLevelCopy;
 // ============================================================
 // ACHIEVEMENTS
 // ============================================================
