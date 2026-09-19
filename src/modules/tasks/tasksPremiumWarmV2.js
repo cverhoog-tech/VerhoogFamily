@@ -29,6 +29,7 @@
     generic:'/src/assets/task-heroes/cozy-home.webp'
   };
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function esc(value){
     return String(value==null?'':value)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -116,9 +117,9 @@
     return data;
   }
   function moduleHead(){
-    return '<section class="tpw2-head" aria-label="Taken">'
-      +'<div class="tpw2-title-wrap"><span class="tpw2-brand-kicker">'+ICON.leaf+'<span>Samen rust en overzicht</span></span><h1>Taken</h1></div>'
-      +'<button type="button" class="tpw2-new-task" data-tpw2-create="1">'+ICON.plus+'<span>Nieuwe taak</span></button>'
+    return '<section class="tpw2-head" aria-label="'+esc(tr('nav.tasks','Taken'))+'">'
+      +'<div class="tpw2-title-wrap"><span class="tpw2-brand-kicker">'+ICON.leaf+'<span>'+esc(tr('tasks.brand','Samen rust en overzicht'))+'</span></span><h1>'+esc(tr('nav.tasks','Taken'))+'</h1></div>'
+      +'<button type="button" class="tpw2-new-task" data-tpw2-create="1">'+ICON.plus+'<span>'+esc(tr('tasks.new','Nieuwe taak'))+'</span></button>'
       +'</section>';
   }
   function statCard(type,label,value,icon){
@@ -126,21 +127,21 @@
       +'<span class="tpw2-stat-icon">'+icon+'</span><strong>'+value+'</strong><span>'+label+'</span></button>';
   }
   function summaryHtml(data){
-    return '<section class="tpw2-stats" aria-label="Taaksamenvatting" data-tpw2-summary="'+[data.open,data.important,data.overdue,data.done].join(':')+'">'
-      +statCard('open','open taken',data.open,ICON.list)
-      +statCard('important','belangrijk',data.important,ICON.star)
-      +statCard('overdue','verlopen',data.overdue,ICON.clock)
+    return '<section class="tpw2-stats" aria-label="'+esc(tr('tasks.summaryAria','Taaksamenvatting'))+'" data-tpw2-summary="'+[data.open,data.important,data.overdue,data.done].join(':')+'">'
+      +statCard('open',tr('tasks.open','open taken'),data.open,ICON.list)
+      +statCard('important',tr('tasks.important','belangrijk'),data.important,ICON.star)
+      +statCard('overdue',tr('tasks.overdue','verlopen'),data.overdue,ICON.clock)
       +'</section>';
   }
   function quoteHtml(){
-    return '<section class="tpw2-quote" aria-label="FamilyApp gedachte">'
+    return '<section class="tpw2-quote" aria-label="FamilyApp">'
       +'<span class="tpw2-quote-mark">'+ICON.leaf+'</span>'
-      +'<span class="tpw2-quote-copy"><strong>Kleine taken, een rustiger thuis</strong><small>Samen maken we tijd voor wat echt telt.</small></span>'
+      +'<span class="tpw2-quote-copy"><strong>'+esc(tr('tasks.quote.title','Kleine taken, een rustiger thuis'))+'</strong><small>'+esc(tr('tasks.quote.subtitle','Samen maken we tijd voor wat echt telt.'))+'</small></span>'
       +'</section>';
   }
   function filterHtml(){
-    var items=[['all','Alle taken'],['Vandaag','Vandaag'],['Morgen','Morgen'],['Later','Later'],['Voltooid','Voltooid']];
-    return '<nav class="tpw2-filters" aria-label="Taken filter">'+items.map(function(item){
+    var items=[['all',tr('tasks.all','Alle taken')],['Vandaag',tr('common.today','Vandaag')],['Morgen',tr('common.tomorrow','Morgen')],['Later',tr('common.later','Later')],['Voltooid',tr('tasks.section.completed','Voltooid')]];
+    return '<nav class="tpw2-filters" aria-label="'+esc(tr('tasks.filterAria','Taken filter'))+'">'+items.map(function(item){
       return '<button type="button" class="tpw2-filter'+(groupFilter===item[0]?' active':'')+'" data-tpw2-filter="'+item[0]+'">'+item[1]+'</button>';
     }).join('')+'</nav>';
   }
@@ -190,7 +191,7 @@
     if(!empty){
       empty=document.createElement('div');
       empty.className='tpw2-filter-empty';
-      empty.textContent='Geen taken in deze categorie.';
+      empty.textContent=tr('tasks.noCategory','Geen taken in deze categorie.');
       var filters=page.querySelector('.tpw2-filters');
       if(filters)filters.insertAdjacentElement('afterend',empty);
     }
@@ -230,7 +231,7 @@
     page.querySelectorAll('.tch-row').forEach(function(row){
       row.classList.add('tpw2-task-row');
       var reward=row.querySelector('.tch-reward');
-      if(reward&&!reward.getAttribute('aria-label'))reward.setAttribute('aria-label','Taakbeloning');
+      if(reward&&!reward.getAttribute('aria-label'))reward.setAttribute('aria-label',tr('tasks.rewardAria','Taakbeloning'));
       var name=row.querySelector('.tch-name');
       if(name)name.setAttribute('title',name.textContent.trim());
 
@@ -284,6 +285,15 @@
         if(currentStats2)currentStats2.insertAdjacentHTML('afterend',filterHtml());
       }
     }
+    page.querySelectorAll('.tch-group[data-life-group]').forEach(function(group){
+      var name=group.getAttribute('data-life-group')||'',head=group.querySelector('.tch-group-head b');
+      if(!head)return;
+      if(name==='Verlopen')head.textContent=tr('tasks.overdueTitle','Verlopen');
+      else if(name==='Voltooid')head.textContent=tr('tasks.section.completed','Voltooid');
+      else if(name==='Vandaag')head.textContent=tr('common.today','Vandaag');
+      else if(name==='Morgen')head.textContent=tr('common.tomorrow','Morgen');
+      else if(name==='Later')head.textContent=tr('common.later','Later');
+    });
     bindOverview(page);
     decorateRows(page);
     applyGroupFilter(page);
@@ -303,13 +313,13 @@
   }
   function recurrenceLabel(task){
     var r=String(task&&task.recurrence||'once').toLowerCase();
-    return {once:'Eenmalig',daily:'Dagelijks',weekly:'Wekelijks',monthly:'Maandelijks'}[r]||'Eenmalig';
+    return {once:tr('tasks.once','Eenmalig'),daily:tr('tasks.daily','Dagelijks'),weekly:tr('tasks.weekly','Wekelijks'),monthly:tr('tasks.monthly','Maandelijks')}[r]||tr('tasks.once','Eenmalig');
   }
   function priorityLabel(task){
     var p=String(task&&(task.prio||task.priority)||'normaal').toLowerCase();
-    if(/hoog|high|urgent/.test(p))return'Hoge prioriteit';
-    if(/laag|low/.test(p))return'Lage prioriteit';
-    return'Normale prioriteit';
+    if(/hoog|high|urgent/.test(p))return tr('tasks.priorityHigh','Hoge prioriteit');
+    if(/laag|low/.test(p))return tr('tasks.priorityLow','Lage prioriteit');
+    return tr('tasks.priorityNormal','Normale prioriteit');
   }
   function cleaningLikeTask(task){
     var raw=String(task&&(task.category||task.type||task.title)||'').toLowerCase();
@@ -338,7 +348,7 @@
     var person=card.querySelector('.tdp-person');
     if(person&&!person.querySelector('.tpw2-assignee-label')){
       var copy=person.querySelector('.tdp-person-name');
-      if(copy)copy.insertAdjacentHTML('beforebegin','<span class="tpw2-assignee-label">Toegewezen aan</span>');
+      if(copy)copy.insertAdjacentHTML('beforebegin','<span class="tpw2-assignee-label">'+esc(tr('tasks.assignedTo','Toegewezen aan'))+'</span>');
     }
     var meta=card.querySelector('.tdp-person-meta');
     if(meta){
@@ -365,7 +375,7 @@
       }
     }
     var label=card.querySelector('.tdp-progress-label');
-    if(label)label.textContent='Subtaken';
+    if(label)label.textContent=tr('tasks.subtasks','Subtaken');
     var value=card.querySelector('.tdp-progress-value');
     if(value)value.classList.add('tpw2-subtask-count');
 
@@ -373,18 +383,18 @@
       var help=card.querySelector('.tdp-help-box');
       var supplies=document.createElement('section');
       supplies.className='tpw2-supplies';
-      supplies.innerHTML='<div class="tpw2-supplies-head"><strong>Benodigdheden</strong><span>'+task.supplies.length+' items</span></div><div class="tpw2-supplies-list">'
+      supplies.innerHTML='<div class="tpw2-supplies-head"><strong>'+esc(tr('tasks.supplies','Benodigdheden'))+'</strong><span>'+task.supplies.length+' '+esc(tr('common.items','items'))+'</span></div><div class="tpw2-supplies-list">'
         +task.supplies.map(function(item){var name=typeof item==='string'?item:(item&&item.name)||'';return name?'<span>'+esc(name)+'</span>':'';}).join('')+'</div>';
       if(help)help.insertAdjacentElement('beforebegin',supplies);
       else{var box=card.querySelector('.tdp-box');if(box)box.insertAdjacentElement('afterend',supplies);}
     }
 
     var more=card.querySelector('#tdp-more-btn');
-    if(more){more.textContent=more.textContent.indexOf('Minder')===0?'Bewerken sluiten':'Bewerken';more.classList.add('tpw2-edit-action');}
+    if(more){more.textContent=more.textContent.indexOf('Minder')===0?tr('tasks.editClose','Bewerken sluiten'):tr('common.edit','Bewerken');more.classList.add('tpw2-edit-action');}
     var postpone=card.querySelector('#tdp-postpone-btn');
-    if(postpone){postpone.textContent='Uitstellen';postpone.classList.add('tpw2-postpone-action');}
+    if(postpone){postpone.textContent=tr('tasks.postpone','Uitstellen');postpone.classList.add('tpw2-postpone-action');}
     var cta=card.querySelector('#tdp-complete-btn');
-    if(cta&&cta.classList.contains('active')&&!cta.classList.contains('done-state'))cta.textContent='Markeer als klaar';
+    if(cta&&cta.classList.contains('active')&&!cta.classList.contains('done-state'))cta.textContent=tr('tasks.markDone','Markeer als klaar');
   }
   function decoratePopup(){
     var overlay=document.getElementById('tdp-overlay');
@@ -413,7 +423,7 @@
     ensureFinishStyle();
     observeOverview();
     observePopup();
-    ['familyapp:tasks-updated','familyapp:household-identity-synced','familyapp:session-state'].forEach(function(name){window.addEventListener(name,queueOverview);});
+    ['familyapp:tasks-updated','familyapp:household-identity-synced','familyapp:session-state','familyapp:language-changed'].forEach(function(name){window.addEventListener(name,queueOverview);});
     document.addEventListener('click',function(e){
       if(e.target&&e.target.closest&&e.target.closest('#screen-tasks .ttab'))setTimeout(queueOverview,0);
     });
