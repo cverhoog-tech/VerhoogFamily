@@ -172,9 +172,9 @@ function renderProfile(){
   var container=document.getElementById('screen-profile');
   if(!container) return;
   if(!document.querySelector('link[href*="profile.target.css"]')){
-    var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css?v=step12'; document.head.appendChild(link);
+    var link=document.createElement('link'); link.rel='stylesheet'; link.href='/src/modules/profile/profile.target.css?v=step13-profile'; document.head.appendChild(link);
   }
-  import('/src/modules/profile/ProfileScreen.target.js?v=step12').then(function(mod){
+  import('/src/modules/profile/ProfileScreen.target.js?v=step13-profile').then(function(mod){
     mod.renderProfileScreen(container); _profileMounted=true; mountHouseholdLeave(container); if(window.FamilyAvatarIdentity) window.FamilyAvatarIdentity.sync();
     try{window.dispatchEvent(new CustomEvent('familyapp:profile-rendered'));}catch(e){}
   }).catch(function(err){ console.error('[ProfileBridge] Kon nieuwe profielmodule niet laden:',err); });

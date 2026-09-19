@@ -307,7 +307,7 @@ function completeSetup() {
 
 <!-- HEADER -->
 <div class="app-header">
-  <div class="header-avatar" id="hdr-avatar">SK</div>
+  <div class="header-avatar" id="hdr-avatar" role="button" tabindex="0" aria-label="Open profiel" onclick="showScreen('profile')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showScreen('profile');}">SK</div>
   <div class="header-title" id="hdr-title">FamilieApp 🌿</div>
   <button onclick="openSearch()" style="background:none;border:none;padding:6px 4px;cursor:pointer;color:var(--c-text2)">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -329,7 +329,7 @@ function completeSetup() {
       <p id="home-sub" class="home-day">Maandag · 5 mei</p>
       <h1 id="home-greeting">Goedemorgen, Shane</h1>
     </div>
-    <div class="home-hero-avatar" id="home-xp-avatar" onclick="showScreen('achievements')">SK</div>
+    <div class="home-hero-avatar" id="home-xp-avatar" role="button" tabindex="0" aria-label="Open profiel" onclick="showScreen('profile')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showScreen('profile');}">SK</div>
   </div>
 
   <!-- XP balk -->
