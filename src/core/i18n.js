@@ -1286,7 +1286,16 @@
     ['tasks.low','Laag','Low','Düşük','Niski','Scăzută'],
     ['tasks.normal','Normaal','Normal','Normal','Normalny','Normală'],
     ['tasks.high','Hoog','High','Yüksek','Wysoki','Ridicată'],
-    ['tasks.subProgress','{{done}} van {{total}} voltooid','{{done}} of {{total}} completed','{{total}} içinden {{done}} tamamlandı','Ukończono {{done}} z {{total}}','{{done}} din {{total}} finalizate']
+    ['tasks.subProgress','{{done}} van {{total}} voltooid','{{done}} of {{total}} completed','{{total}} içinden {{done}} tamamlandı','Ukończono {{done}} z {{total}}','{{done}} din {{total}} finalizate'],
+    ['tasks.askSomeone','Vraag iemand uit je gezin om mee te helpen.','Ask someone in your family to help.','Ailenden birinden yardım iste.','Poproś kogoś z rodziny o pomoc.','Roagă pe cineva din familie să ajute.'],
+    ['tasks.joinHelp','Je kunt aansluiten bij deze taak.','You can join this task.','Bu göreve katılabilirsin.','Możesz dołączyć do tego zadania.','Te poți alătura acestei sarcini.'],
+    ['tasks.withdrawHelp','Intrekken','Withdraw','Geri çek','Wycofaj','Retrage'],
+    ['tasks.helpAlong','Meehelpen','Help','Yardım et','Pomóż','Ajută'],
+    ['tasks.together','Samen','Together','Birlikte','Razem','Împreună'],
+    ['tasks.noComments','Nog geen opmerkingen.','No comments yet.','Henüz yorum yok.','Brak komentarzy.','Încă nu există comentarii.'],
+    ['tasks.savedChanges','Wijzigingen opgeslagen','Changes saved','Değişiklikler kaydedildi','Zmiany zapisane','Modificări salvate'],
+    ['tasks.manageSupplies','Beheer benodigdheden in Schoonmaken','Manage supplies in Cleaning','Malzemeleri Temizlik bölümünde yönet','Zarządzaj materiałami w Sprzątaniu','Gestionează materialele în Curățenie']
+
 
 ,
 
