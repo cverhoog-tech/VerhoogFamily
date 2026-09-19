@@ -208,7 +208,7 @@ function renderCleaningModule(){
   var root=document.getElementById('cleaning-content');
   if(!root)return;
   if(!_cleaningModulePromise){
-    _cleaningModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1');
+    _cleaningModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=2');
   }
   if(!_cleaningPremiumFeedbackPromise){
     _cleaningPremiumFeedbackPromise=import('/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');

@@ -70,7 +70,7 @@
   function ensureCoreModule(){
     if(state.coreModulePromise)return state.coreModulePromise;
     if(window._cleaningModulePromise){state.coreModulePromise=window._cleaningModulePromise;return state.coreModulePromise;}
-    state.coreModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1');
+    state.coreModulePromise=import('/src/modules/cleaning/cleaningScreen.js?v=2');
     window._cleaningModulePromise=state.coreModulePromise;
     return state.coreModulePromise;
   }

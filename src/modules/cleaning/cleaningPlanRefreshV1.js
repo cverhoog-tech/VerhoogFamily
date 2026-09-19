@@ -14,7 +14,7 @@
 
   function text(v){return String(v==null?'':v).trim();}
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-  function repo(){return window.CleaningHouseholdRepository||window.CleaningV2Repository||null;}
+  function repo(){return window.CleaningV2Repository||window.CleaningHouseholdRepository||null;}
   function snap(){var r=repo();try{return r&&r.snapshot?r.snapshot():null;}catch(e){return null;}}
   function context(){try{return window.HouseholdContext&&window.HouseholdContext.snapshot?window.HouseholdContext.snapshot():null;}catch(e){return null;}}
   function db(){try{return window.fbDb||(window.firebase&&window.firebase.database&&window.firebase.database())||null;}catch(e){return null;}}
@@ -47,7 +47,8 @@
     if(state.busy)return Promise.resolve(null);
     state.busy=true;patchPlanButton();
     var r=repo(),s=snap(),data=s&&s.data||{},plan=currentPlan(data),work;
-    if(plan&&refreshablePlan(plan))work=canonicalRefresh(plan);
+    if(r===window.CleaningV2Repository&&r&&typeof r.generateWeekPlan==='function')work=r.generateWeekPlan().then(function(result){return{mode:plan?'updated':'generated',result:result,owner:'v2-repository'};});
+    else if(plan&&refreshablePlan(plan))work=canonicalRefresh(plan);
     else if(r&&typeof r.generateWeekPlan==='function')work=r.generateWeekPlan().then(function(result){return{mode:'generated',result:result,owner:'repository'};});
     else work=Promise.reject(new Error('Werkplan is nog niet beschikbaar.'));
 

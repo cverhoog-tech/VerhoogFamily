@@ -116,7 +116,7 @@
     var link=document.createElement('link');link.rel=rel;link.href=href;link.setAttribute('data-familyapp-r3-preload',href);if(as)link.as=as;document.head.appendChild(link);
   }
   function primeAssets(){
-    preloadLink('modulepreload','/src/modules/cleaning/cleaningScreen.js?v=1');
+    preloadLink('modulepreload','/src/modules/cleaning/cleaningScreen.js?v=2');
     preloadLink('modulepreload','/src/modules/cleaning/cleaningPremiumFeedback.js?v=2');
     preloadLink('preload','/src/styles/cleaning.css?v=2','style');
     Object.keys(HERO).forEach(function(key){try{var img=new Image();img.decoding='async';img.src=HERO[key].url;}catch(error){}});

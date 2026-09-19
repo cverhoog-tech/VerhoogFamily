@@ -33,7 +33,7 @@
     var ctx=context();
     if(!ctx||ctx.ready!==true||!ctx.uid||!ctx.householdId)return Promise.resolve(false);
     if(cleaningHydratePromise)return cleaningHydratePromise;
-    cleaningHydratePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1').then(function(){
+    cleaningHydratePromise=import('/src/modules/cleaning/cleaningScreen.js?v=2').then(function(){
       var repo=window.CleaningHouseholdRepository;
       if(!repo||typeof repo.snapshot!=='function'||typeof repo.subscribe!=='function'||typeof repo.start!=='function'||typeof repo.stop!=='function')return false;
       var snap=repo.snapshot();
