@@ -8,21 +8,23 @@
   window.__familyHouseholdPlatform=true;
 
   var VERSION=1, INVITE_TTL=7*24*60*60*1000, CLAIM_TTL=5*60*1000, presenceRef=null;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+  function locale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
   function db(){ try{return fbDb||firebase.database();}catch(e){return null;} }
   function user(){ try{return fbUser||(fbAuth&&fbAuth.currentUser)||firebase.auth().currentUser;}catch(e){return null;} }
   function now(){return Date.now();}
   function safe(s){return String(s||'').trim();}
   function slugCode(){var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',out='';if(window.crypto&&crypto.getRandomValues){var a=new Uint32Array(8);crypto.getRandomValues(a);for(var i=0;i<8;i++)out+=chars[a[i]%chars.length];}else for(var j=0;j<8;j++)out+=chars[Math.floor(Math.random()*chars.length)];return out.slice(0,4)+'-'+out.slice(4);}
   function householdId(){var d=db();return d?d.ref('families').push().key:null;}
-  function displayName(u){return safe((u&&u.displayName)||localStorage.getItem('familyapp-profile-name-v1')||(u&&u.email&&u.email.split('@')[0])||'Gezinslid');}
+  function displayName(u){return safe((u&&u.displayName)||localStorage.getItem('familyapp-profile-name-v1')||(u&&u.email&&u.email.split('@')[0])||tr('cleaning.familyMember','Gezinslid'));}
   function avatar(u){return (u&&u.photoURL)||localStorage.getItem('familyapp-current-user-avatar-v1')||'';}
   function setGlobals(hid,name){try{fbFamilyId=hid;}catch(e){}window.fbFamilyId=hid;try{myName=name;}catch(e){}window.myName=name;try{myInitials=name.substring(0,2).toUpperCase();}catch(e){}}
   function memberRecord(u,role){return {uid:u.uid,name:displayName(u),email:u.email||'',avatar:avatar(u),role:role||'adult',status:'active',joinedAt:now(),updatedAt:now()};}
 
   function createHousehold(opts){
-    opts=opts||{};var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));
-    var hid=householdId(),name=safe(opts.name)||displayName(u)+' Family',member=memberRecord(u,'owner');
-    if(!hid)return Promise.reject(new Error('Kon geen gezins-ID maken'));
+    opts=opts||{};var d=db(),u=user();if(!d||!u)return Promise.reject(new Error(tr('household.notLoggedIn','Niet ingelogd')));
+    var hid=householdId(),name=safe(opts.name)||displayName(u)+' '+tr('household.defaultSuffix','Family'),member=memberRecord(u,'owner');
+    if(!hid)return Promise.reject(new Error(tr('household.idFailed','Kon geen gezins-ID maken')));
     var meta={id:hid,name:name,ownerUid:u.uid,version:VERSION,createdAt:now(),updatedAt:now()},memberCreated=false;
     function rollbackCreatedHousehold(){
       if(!memberCreated)return Promise.resolve();
@@ -49,7 +51,7 @@
     var d=db(),u=user();if(!d||!u||!hid)return Promise.resolve(null);
     return d.ref('families/'+hid+'/meta').once('value').then(function(metaSnap){
       var meta=metaSnap.val(),name=(userData&&userData.name)||displayName(u),updates={};
-      if(!meta)updates['families/'+hid+'/meta']={id:hid,name:((userData&&userData.partner)?name+' & '+userData.partner:name+' Family'),ownerUid:u.uid,version:VERSION,createdAt:now(),updatedAt:now(),migratedFromLegacy:true};
+      if(!meta)updates['families/'+hid+'/meta']={id:hid,name:((userData&&userData.partner)?name+' & '+userData.partner:name+' '+tr('household.defaultSuffix','Family')),ownerUid:u.uid,version:VERSION,createdAt:now(),updatedAt:now(),migratedFromLegacy:true};
       return d.ref('families/'+hid+'/members/'+u.uid).once('value').then(function(ms){
         if(!ms.exists())updates['families/'+hid+'/members/'+u.uid]=memberRecord(u,(!meta||meta.ownerUid===u.uid)?'owner':'adult');
         updates['users/'+u.uid+'/activeHouseholdId']=hid;updates['users/'+u.uid+'/households/'+hid]={role:(!meta||meta.ownerUid===u.uid)?'owner':'adult',status:'active',joinedAt:now()};return d.ref().update(updates);
@@ -57,11 +59,11 @@
     });
   }
 
-  function resolveHousehold(){var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));return d.ref('users/'+u.uid).once('value').then(function(s){var data=s.val()||{},hid=data.activeHouseholdId||data.familyId;if(!hid)throw new Error('HOUSEHOLD_REQUIRED');return ensureLegacyMembership(hid,data).then(function(){setGlobals(hid,data.name||displayName(u));startPresence(hid);return{id:hid,user:data};});});}
+  function resolveHousehold(){var d=db(),u=user();if(!d||!u)return Promise.reject(new Error(tr('household.notLoggedIn','Niet ingelogd')));return d.ref('users/'+u.uid).once('value').then(function(s){var data=s.val()||{},hid=data.activeHouseholdId||data.familyId;if(!hid)throw new Error('HOUSEHOLD_REQUIRED');return ensureLegacyMembership(hid,data).then(function(){setGlobals(hid,data.name||displayName(u));startPresence(hid);return{id:hid,user:data};});});}
 
   function createInvite(role){
-    var d=db(),u=user(),hid=window.fbFamilyId||null;if(!d||!u||!hid)return Promise.reject(new Error('Geen actief gezin'));role=role==='child'?'child':'adult';
-    return d.ref('families/'+hid+'/members/'+u.uid).once('value').then(function(ms){var m=ms.val();if(!m||m.status!=='active'||(m.role!=='owner'&&m.role!=='admin'))throw new Error('Alleen een beheerder kan uitnodigen');var attempt=0;function reserve(){if(++attempt>5)throw new Error('Kon geen uitnodigingscode maken');var code=slugCode(),createdAt=now(),expiresAt=createdAt+INVITE_TTL;return d.ref('invites/'+code).transaction(function(cur){if(cur)return;return{code:code,householdId:hid,createdBy:u.uid,role:role,status:'active',createdAt:createdAt,expiresAt:expiresAt,maxUses:1,uses:0};}).then(function(r){if(!r.committed)return reserve();
+    var d=db(),u=user(),hid=window.fbFamilyId||null;if(!d||!u||!hid)return Promise.reject(new Error(tr('household.noneActive','Geen actief gezin')));role=role==='child'?'child':'adult';
+    return d.ref('families/'+hid+'/members/'+u.uid).once('value').then(function(ms){var m=ms.val();if(!m||m.status!=='active'||(m.role!=='owner'&&m.role!=='admin'))throw new Error(tr('household.adminOnly','Alleen een beheerder kan uitnodigen'));var attempt=0;function reserve(){if(++attempt>5)throw new Error(tr('household.inviteCodeFailed','Kon geen uitnodigingscode maken'));var code=slugCode(),createdAt=now(),expiresAt=createdAt+INVITE_TTL;return d.ref('invites/'+code).transaction(function(cur){if(cur)return;return{code:code,householdId:hid,createdBy:u.uid,role:role,status:'active',createdAt:createdAt,expiresAt:expiresAt,maxUses:1,uses:0};}).then(function(r){if(!r.committed)return reserve();
       // Mirror a lightweight, per-household index so the invite manager can list active codes
       // without querying the top-level invites node (which is intentionally unreadable as a list).
       return d.ref('families/'+hid+'/inviteCodes/'+code).set({code:code,createdAt:createdAt,expiresAt:expiresAt}).catch(function(){}).then(function(){return code;});
@@ -79,13 +81,13 @@
     });
   }
 
-  function inspectInvite(code){var d=db();code=safe(code).toUpperCase();if(!d||!code)return Promise.reject(new Error('Vul een uitnodigingscode in'));return d.ref('invites/'+code).once('value').then(function(s){var inv=s.val();if(!inv||inv.status!=='active'||inv.expiresAt<now()||(inv.uses||0)>=(inv.maxUses||1))throw new Error('Deze uitnodiging is ongeldig of verlopen');return {invite:inv,household:{id:inv.householdId,name:'FamilyApp gezin'}};});}
+  function inspectInvite(code){var d=db();code=safe(code).toUpperCase();if(!d||!code)return Promise.reject(new Error(tr('household.codeRequired','Vul een uitnodigingscode in')));return d.ref('invites/'+code).once('value').then(function(s){var inv=s.val();if(!inv||inv.status!=='active'||inv.expiresAt<now()||(inv.uses||0)>=(inv.maxUses||1))throw new Error(tr('household.invalidInvite','Deze uitnodiging is ongeldig of verlopen'));return {invite:inv,household:{id:inv.householdId,name:tr('household.nameDefault','FamilyApp gezin')}};});}
 
   // Finishes joining a household: writes the join claim, the member record and the user's
   // household pointers. Uses only .set()/.update() so it is safe to re-run — a retry after a
   // partial failure repeats the same writes instead of creating duplicate or inconsistent state.
   function completeMembership(hid,role,code){
-    var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));
+    var d=db(),u=user();if(!d||!u)return Promise.reject(new Error(tr('household.notLoggedIn','Niet ingelogd')));
     var member=memberRecord(u,role||'adult');
     var claim={code:code,householdId:hid,uid:u.uid,role:member.role,status:'approved',createdAt:now(),expiresAt:now()+CLAIM_TTL};
     return d.ref('joinClaims/'+hid+'/'+u.uid).set(claim).then(function(){
@@ -94,12 +96,12 @@
       var updates={};updates['users/'+u.uid+'/familyId']=hid;updates['users/'+u.uid+'/activeHouseholdId']=hid;updates['users/'+u.uid+'/name']=member.name;updates['users/'+u.uid+'/households/'+hid]={role:member.role,status:'active',joinedAt:member.joinedAt};return d.ref().update(updates);
     }).then(function(){return d.ref('joinClaims/'+hid+'/'+u.uid).remove().catch(function(){});}).then(function(){
       setGlobals(hid,member.name);startPresence(hid);
-      return {invite:{householdId:hid,role:member.role},household:{id:hid,name:'FamilyApp gezin'}};
+      return {invite:{householdId:hid,role:member.role},household:{id:hid,name:tr('household.nameDefault','FamilyApp gezin')}};
     });
   }
 
   function joinHousehold(code){
-    var d=db(),u=user();if(!d||!u)return Promise.reject(new Error('Niet ingelogd'));code=safe(code).toUpperCase();
+    var d=db(),u=user();if(!d||!u)return Promise.reject(new Error(tr('household.notLoggedIn','Niet ingelogd')));code=safe(code).toUpperCase();
     return d.ref('invites/'+code).once('value').then(function(snap){
       var existing=snap.val();
       // Idempotent resume: this exact account already consumed this code in an earlier, interrupted
@@ -131,16 +133,16 @@
             var e2;
             if(cur&&cur.status==='used'&&cur.usedBy!==u.uid){
               // Someone else genuinely won the race for this code — real "already used".
-              e2=new Error('Deze code is al gebruikt'+(cur.usedAt?(' op '+new Date(cur.usedAt).toLocaleString('nl-NL')):'')+'.');
+              var usedDate=cur.usedAt?new Date(cur.usedAt).toLocaleString(locale()):'';e2=new Error(usedDate?tr('household.codeUsedOn','Deze code is al gebruikt op '+usedDate+'.',{date:usedDate}):tr('household.codeUsed','Deze code is al gebruikt'));
             }else{
               // Code is still unclaimed but the write was denied — this is a rules/permission
               // problem, not a genuine reuse. Include the raw Firebase error so it's diagnosable.
-              e2=new Error('De uitnodiging is nog geldig, maar de database weigerde de schrijfactie (rechtenprobleem, niet "al gebruikt"). Technische melding: '+code2+(code2&&msg?' — ':'')+msg);
+              var technical=tr('household.technical','Technische melding: '+code2+(code2&&msg?' — ':'')+msg,{message:code2+(code2&&msg?' — ':'')+msg});e2=new Error(tr('household.writeDenied','De uitnodiging is nog geldig, maar de database weigerde de schrijfactie. '+technical,{technical:technical}));
             }
             e2.__familyHandled=true;throw e2;
           }).catch(function(inner){
             if(inner&&inner.__familyHandled)throw inner;
-            var e3=new Error('Kon de uitnodiging niet verwerken. Technische melding: '+code2+(code2&&msg?' — ':'')+msg);
+            var technical2=tr('household.technical','Technische melding: '+code2+(code2&&msg?' — ':'')+msg,{message:code2+(code2&&msg?' — ':'')+msg});var e3=new Error(tr('household.processFailedTechnical','Kon de uitnodiging niet verwerken. '+technical2,{technical:technical2}));
             e3.__familyHandled=true;throw e3;
           });
         });
@@ -154,10 +156,10 @@
   function css(){if(document.getElementById('household-platform-css'))return;var s=document.createElement('style');s.id='household-platform-css';s.textContent='.hh-overlay{position:fixed;inset:0;z-index:10050;background:linear-gradient(160deg,#080b17 0%,#111126 52%,#190d2d 100%);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font-family:inherit}.hh-card{width:min(440px,100%);background:rgba(20,21,39,.92);border:1px solid rgba(150,103,255,.28);border-radius:28px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.42),0 0 50px rgba(124,58,237,.12)}.hh-mark{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:28px;background:linear-gradient(145deg,#7c3aed,#a855f7);margin-bottom:20px}.hh-card h2{font-size:27px;margin:0 0 8px}.hh-card p{color:#aaa9bd;line-height:1.5;margin:0 0 22px}.hh-choice,.hh-primary{width:100%;border-radius:18px;color:#fff;padding:17px;margin:8px 0}.hh-choice{background:#17182a;border:1px solid rgba(255,255,255,.09);text-align:left}.hh-choice b,.hh-choice span{display:block}.hh-choice span{color:#9897aa;font-size:12px;margin-top:4px}.hh-input{box-sizing:border-box;width:100%;height:52px;border-radius:15px;border:1px solid rgba(255,255,255,.12);background:#10111e;color:#fff;padding:0 15px;font-size:16px}.hh-primary{border:0;background:linear-gradient(135deg,#7c3aed,#a855f7);font-weight:800}.hh-back{background:none;border:0;color:#aaa9bd;margin-top:12px;width:100%}.hh-error{color:#fb7185;font-size:13px;min-height:18px}.hh-code{font-size:26px;letter-spacing:.12em;font-weight:900;text-align:center;padding:16px;background:#0e0f1b;border-radius:16px;margin:12px 0}.hh-copy{font-size:12px;color:#a78bfa;text-align:center}.hh-invite-list{display:grid;gap:10px;margin:14px 0}.hh-invite-item{padding:14px;border-radius:15px;background:#0e0f1b;border:1px solid rgba(255,255,255,.08)}.hh-invite-code{font-size:22px;letter-spacing:.1em;font-weight:900}.hh-invite-meta{font-size:11px;color:#aaa9bd;margin-top:5px}.hh-invite-note{font-size:12px;color:#a78bfa;text-align:center;margin:10px 0 4px}';document.head.appendChild(s);}
   function overlay(html){css();var old=document.getElementById('household-onboarding');if(old)old.remove();var el=document.createElement('div');el.id='household-onboarding';el.className='hh-overlay';el.innerHTML='<div class="hh-card">'+html+'</div>';document.body.appendChild(el);return el;}
   function closeOverlay(){var el=document.getElementById('household-onboarding');if(el)el.remove();}
-  function showChooser(){var name=displayName(user()),el=overlay('<div class="hh-mark">🏰</div><h2>Welkom, '+name+'</h2><p>Maak een nieuw huishouden of sluit veilig aan bij een bestaand gezin.</p><button class="hh-choice" data-hh="create"><b>✨ Nieuw gezin maken</b><span>Word beheerder en nodig gezinsleden uit</span></button><button class="hh-choice" data-hh="join"><b>🔗 Deelnemen aan gezin</b><span>Gebruik een persoonlijke uitnodigingscode</span></button>');el.querySelector('[data-hh="create"]').onclick=showCreate;el.querySelector('[data-hh="join"]').onclick=showJoin;}
-  function showCreate(){var def=displayName(user())+' Family',el=overlay('<div class="hh-mark">✨</div><h2>Maak jullie gezin</h2><p>Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.</p><input class="hh-input" id="hh-name" maxlength="50" value="'+def.replace(/"/g,'&quot;')+'"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-create">Gezin aanmaken</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-create').onclick=function(){var b=this,err=el.querySelector('#hh-err');if(b.disabled)return;b.disabled=true;err.textContent='';var name=el.querySelector('#hh-name').value;Promise.resolve().then(function(){return createHousehold({name:name});}).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();setTimeout(showInviteManager,350);}).catch(function(e){b.disabled=false;err.textContent=(e&&e.message)?e.message:'Aanmaken mislukt.';});};}
-  function showJoin(){var el=overlay('<div class="hh-mark">🔗</div><h2>Deelnemen aan gezin</h2><p>Vul de persoonlijke uitnodigingscode in.</p><input class="hh-input" id="hh-code" maxlength="9" placeholder="ABCD-EFGH" style="text-transform:uppercase;text-align:center"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-join">Deelnemen</button><button class="hh-back" id="hh-back">Terug</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-join').onclick=function(){var b=this;b.disabled=true;joinHousehold(el.querySelector('#hh-code').value).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
-  function fmtDate(ts){try{return new Date(Number(ts)).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return'';}}
+  function showChooser(){var name=displayName(user()),el=overlay('<div class="hh-mark">🏰</div><h2>'+tr('household.welcome','Welkom, '+name,{name:name})+'</h2><p>'+tr('household.chooseHint','Maak een nieuw huishouden of sluit veilig aan bij een bestaand gezin.')+'</p><button class="hh-choice" data-hh="create"><b>'+tr('household.createChoice','✨ Nieuw gezin maken')+'</b><span>'+tr('household.createChoiceHint','Word beheerder en nodig gezinsleden uit')+'</span></button><button class="hh-choice" data-hh="join"><b>'+tr('household.joinChoice','🔗 Deelnemen aan gezin')+'</b><span>'+tr('household.joinChoiceHint','Gebruik een persoonlijke uitnodigingscode')+'</span></button>');el.querySelector('[data-hh="create"]').onclick=showCreate;el.querySelector('[data-hh="join"]').onclick=showJoin;}
+  function showCreate(){var def=displayName(user())+' '+tr('household.defaultSuffix','Family'),el=overlay('<div class="hh-mark">✨</div><h2>'+tr('household.createTitle','Maak jullie gezin')+'</h2><p>'+tr('household.createHint','Dit wordt de gedeelde ruimte voor taken, boodschappen, agenda, feed en voortgang.')+'</p><input class="hh-input" id="hh-name" maxlength="50" value="'+def.replace(/"/g,'&quot;')+'"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-create">'+tr('household.createButton','Gezin aanmaken')+'</button><button class="hh-back" id="hh-back">'+tr('common.back','Terug')+'</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-create').onclick=function(){var b=this,err=el.querySelector('#hh-err');if(b.disabled)return;b.disabled=true;err.textContent='';var name=el.querySelector('#hh-name').value;Promise.resolve().then(function(){return createHousehold({name:name});}).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();setTimeout(showInviteManager,350);}).catch(function(e){b.disabled=false;err.textContent=(e&&e.message)?e.message:tr('household.createFailed','Aanmaken mislukt.');});};}
+  function showJoin(){var el=overlay('<div class="hh-mark">🔗</div><h2>'+tr('household.joinTitle','Deelnemen aan gezin')+'</h2><p>'+tr('household.joinHint','Vul de persoonlijke uitnodigingscode in.')+'</p><input class="hh-input" id="hh-code" maxlength="9" placeholder="ABCD-EFGH" style="text-transform:uppercase;text-align:center"><div class="hh-error" id="hh-err"></div><button class="hh-primary" id="hh-join">'+tr('household.joinButton','Deelnemen')+'</button><button class="hh-back" id="hh-back">'+tr('common.back','Terug')+'</button>');el.querySelector('#hh-back').onclick=showChooser;el.querySelector('#hh-join').onclick=function(){var b=this;b.disabled=true;joinHousehold(el.querySelector('#hh-code').value).then(function(){closeOverlay();if(typeof onLoggedIn==='function')onLoggedIn();}).catch(function(e){b.disabled=false;el.querySelector('#hh-err').textContent=e.message;});};}
+  function fmtDate(ts){try{return new Date(Number(ts)).toLocaleDateString(locale(),{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return'';}}
   function renderInviteRows(el,hid){
     var list=el.querySelector('#hh-invite-list');if(!list)return;
     listActiveInvites(hid).then(function(rows){
@@ -176,7 +178,7 @@
     renderInviteRows(el,hid);
   }
 
-  function installOverrides(){if(typeof window.loadUserFamily==='function'&&!window.loadUserFamily.__householdV1){var fn=function(){return resolveHousehold();};fn.__householdV1=true;window.loadUserFamily=fn;try{loadUserFamily=fn;}catch(e){}}if(typeof window.setupNewFamily==='function'&&!window.setupNewFamily.__householdV1){var create=function(name){return createHousehold({name:(safe(name)||displayName(user()))+' Family'});};create.__householdV1=true;window.setupNewFamily=create;try{setupNewFamily=create;}catch(e){}}if(typeof window.showNameSetupStep==='function'&&!window.showNameSetupStep.__householdV1){var setup=function(){showChooser();};setup.__householdV1=true;window.showNameSetupStep=setup;try{showNameSetupStep=setup;}catch(e){}}if(typeof window.showScreen==='function'&&!window.showScreen.__householdPresence){var orig=window.showScreen,wrapped=function(name){var r=orig.apply(this,arguments);setPresenceArea(name);return r;};wrapped.__householdPresence=true;window.showScreen=wrapped;try{showScreen=wrapped;}catch(e){}}}
+  function installOverrides(){if(typeof window.loadUserFamily==='function'&&!window.loadUserFamily.__householdV1){var fn=function(){return resolveHousehold();};fn.__householdV1=true;window.loadUserFamily=fn;try{loadUserFamily=fn;}catch(e){}}if(typeof window.setupNewFamily==='function'&&!window.setupNewFamily.__householdV1){var create=function(name){return createHousehold({name:(safe(name)||displayName(user()))+' '+tr('household.defaultSuffix','Family')});};create.__householdV1=true;window.setupNewFamily=create;try{setupNewFamily=create;}catch(e){}}if(typeof window.showNameSetupStep==='function'&&!window.showNameSetupStep.__householdV1){var setup=function(){showChooser();};setup.__householdV1=true;window.showNameSetupStep=setup;try{showNameSetupStep=setup;}catch(e){}}if(typeof window.showScreen==='function'&&!window.showScreen.__householdPresence){var orig=window.showScreen,wrapped=function(name){var r=orig.apply(this,arguments);setPresenceArea(name);return r;};wrapped.__householdPresence=true;window.showScreen=wrapped;try{showScreen=wrapped;}catch(e){}}}
   function boot(){var tries=0,t=setInterval(function(){tries++;installOverrides();if(tries>60)clearInterval(t);},150);setTimeout(installOverrides,0);}
   window.FamilyHousehold={create:createHousehold,resolve:resolveHousehold,createInvite:createInvite,inspectInvite:inspectInvite,join:joinHousehold,showOnboarding:showChooser,showInviteManager:showInviteManager,setPresenceArea:setPresenceArea,startPresence:startPresence};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
