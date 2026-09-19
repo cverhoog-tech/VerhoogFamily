@@ -672,21 +672,21 @@ function showQuestComplete(quest) {
 
   if(!canEarnAbilityThisWeek()) {
     // Already earned an ability this week — show XP reward instead
-    awardXP(20, 'Quest bonus');
-    showToast('📜 Quest voltooid! Je hebt al een ability deze week — +20 XP bonus');
+    awardXP(20, skillsTr('skills.weekly.questReward','Quest beloning'));
+    showToast(skillsTr('skills.weekly.questComplete','📜 Quest voltooid! Je hebt al een ability deze week — +20 XP bonus'));
     return;
   }
 
   markAbilityEarned();
   queueUnlock({
     icon: quest.icon||'📜',
-    type: '✅ Quest voltooid!',
-    title: quest.desc,
-    desc: 'Beloning: '+(ability ? ability.icon+' '+ability.name+'\n'+ability.desc : '?'),
+    type: skillsTr('skills.weekly.completed','✅ Quest voltooid!'),
+    title: questDesc(quest),
+    desc: skillsTr('skills.weekly.reward','Beloning: '+(ability ? ability.icon+' '+abilityName(ability) : '?'),{ability:ability ? ability.icon+' '+abilityName(ability) : '?'})+(ability?'\n'+abilityDesc(ability):''),
     who: myName,
     extra: '<button onclick="claimQuestReward(weeklyQuests.find(function(q){return q.id===\''+quest.id+'\'}))" '
       +'style="background:#059669;color:#fff;border:none;border-radius:10px;padding:8px 20px;'
-      +'font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">🎁 Claim ability!</button>',
+      +'font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">'+skillsTr('skills.weekly.claimAbility','🎁 Claim ability!')+'</button>',
     confetti: true
   });
 }
@@ -698,23 +698,23 @@ function claimQuestReward(quest) {
   if(!ability) return;
   if(!myAbilities[ability.id]) myAbilities[ability.id] = 0;
   myAbilities[ability.id]++;
-  awardXP(10, 'Quest beloning');
+  awardXP(10, skillsTr('skills.weekly.questReward','Quest beloning'));
 
   // Notify partner
   addNotif('🪄', '#ede9fe',
-    myName+' verdiende een ability!',
-    ability.icon+' '+ability.name+' — verdient door extra inzet deze week');
+    skillsTr('skills.weekly.earnedNotif',myName+' verdiende een ability!',{name:myName}),
+    skillsTr('skills.weekly.earnedDetail',ability.icon+' '+abilityName(ability)+' — verdient door extra inzet deze week',{ability:ability.icon+' '+abilityName(ability)}));
 
   queueUnlock({
     icon: ability.icon,
-    type: '🪄 Ability verkregen!',
-    title: ability.name,
-    desc: ability.desc,
+    type: skillsTr('skills.weekly.abilityEarned','🪄 Ability verkregen!'),
+    title: abilityName(ability),
+    desc: abilityDesc(ability),
     who: myName,
-    extra: 'Gebruik via Achievements → 🪄 Abilities',
+    extra: skillsTr('skills.weekly.useVia','Gebruik via Achievements → 🪄 Abilities'),
     confetti: false
   });
-  addActivity('🪄', '#ede9fe', myName+' verdiende ability: '+ability.name);
+  addActivity('🪄', '#ede9fe', skillsTr('skills.weekly.earnedActivity',myName+' verdiende ability: '+abilityName(ability),{name:myName,ability:abilityName(ability)}));
 }
 
 
@@ -897,13 +897,13 @@ function renderWeeklyQuestsHtml() {
   var canEarn = canEarnAbilityThisWeek();
   var baseline = getWeeklyBaseline();
 
-  var html = '<div class="ach-section-title">📜 Weekly Quests — Week '+wk.split('-W')[1]+'</div>'
+  var html = '<div class="ach-section-title">'+skillsTr('skills.weekly.title','📜 Weekly Quests — Week '+wk.split('-W')[1],{week:wk.split('-W')[1]})+'</div>'
     +'<div style="padding:0 16px 8px">'
     +'<div style="font-size:12px;color:var(--c-text2);background:var(--c-surface2);border-radius:10px;padding:10px 12px;margin-bottom:10px;line-height:1.6">'
-    +'📌 Alleen <b style="color:var(--c-text)">extra taken</b> tellen — taken die je doet <b style="color:var(--c-text)">boven je '+baseline+' vaste taken</b>. '
+    +skillsTr('skills.weekly.onlyExtra','📌 Alleen extra taken tellen — taken die je doet boven je '+baseline+' vaste taken.',{baseline:baseline})+' '
     +(canEarn
-      ? '🏆 Je kunt nog <b style="color:#059669">1 ability</b> verdienen deze week!'
-      : '✅ Ability al verdiend deze week. Extra quests = +20 XP.')
+      ? skillsTr('skills.weekly.canEarn','🏆 Je kunt nog 1 ability verdienen deze week!')
+      : skillsTr('skills.weekly.earned','✅ Ability al verdiend deze week. Extra quests = +20 XP.'))
     +'</div></div>'
     +'<div style="padding:0 16px 12px;display:flex;flex-direction:column;gap:8px">';
 
@@ -915,12 +915,12 @@ function renderWeeklyQuestsHtml() {
     html += '<div style="background:var(--c-surface);border-radius:16px;padding:14px;box-shadow:0 1px 6px var(--c-card-shadow);border-left:4px solid '+(done?'#059669':diffColor)+'">'
       +'<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">'
       +'<div style="font-size:24px;flex-shrink:0">'+(done?'✅':(q.icon||'📜'))+'</div>'
-      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--c-text);margin-bottom:4px">'+q.desc+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--c-text);margin-bottom:4px">'+questDesc(q)+'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-      +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+diffColor+'22;color:'+diffColor+'">'+q.difficulty+'</span>'
-      +(ability?'<span style="font-size:11px;color:var(--c-text2)">'+ability.icon+' '+ability.name+'</span>':'')
+      +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+diffColor+'22;color:'+diffColor+'">'+difficultyLabel(q.difficulty)+'</span>'
+      +(ability?'<span style="font-size:11px;color:var(--c-text2)">'+ability.icon+' '+abilityName(ability)+'</span>':'')
       +'</div></div>'
-      +(done&&!q.claimed?'<button onclick="claimQuestReward(weeklyQuests.find(function(q){return q.id===\''+q.id+'\';}))" style="background:#059669;color:#fff;border:none;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">🎁 Claim!</button>'
+      +(done&&!q.claimed?'<button onclick="claimQuestReward(weeklyQuests.find(function(q){return q.id===\''+q.id+'\';}))" style="background:#059669;color:#fff;border:none;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">'+skillsTr('skills.weekly.claim','🎁 Claim!')+'</button>'
         :done&&q.claimed?'<span style="color:#059669;font-size:20px">✓</span>':'')
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px">'
@@ -937,14 +937,14 @@ function renderWeeklyQuestsHtml() {
 function renderAbilitiesHtml() {
   var total = Object.values(myAbilities).reduce(function(s,v){return s+v;},0);
   var groups = [
-    {label:'⏰ Uitstel',     ids:['postpone1','postpone2','postpone7','postpone14']},
-    {label:'🔄 Manipulatie', ids:['freetrade','reassign','split']},
-    {label:'🛡️ Bescherming', ids:['shield','freeze','bubble']},
-    {label:'⚡ XP Boosts',   ids:['double','triple','xpbomb','skillboost']},
-    {label:'🎁 Vergeven',    ids:['pardonne','amnesia']},
-    {label:'🕵️ Speciaal',    ids:['spy','copycat','streak_saver','auto_done','budget_eye','savings_boost']},
+    {label:skillsTr('skills.group.postpone','⏰ Uitstel'),ids:['postpone1','postpone2','postpone7','postpone14']},
+    {label:skillsTr('skills.group.manipulation','🔄 Manipulatie'),ids:['freetrade','reassign','split']},
+    {label:skillsTr('skills.group.protection','🛡️ Bescherming'),ids:['shield','freeze','bubble']},
+    {label:skillsTr('skills.group.xp','⚡ XP Boosts'),ids:['double','triple','xpbomb','skillboost']},
+    {label:skillsTr('skills.group.forgive','🎁 Vergeven'),ids:['pardonne','amnesia']},
+    {label:skillsTr('skills.group.special','🕵️ Speciaal'),ids:['spy','copycat','streak_saver','auto_done','budget_eye','savings_boost']},
   ];
-  var html = '<div class="ach-section-title">🪄 Abilities '+(total?'('+total+' beschikbaar)':'— verdien via quests')+'</div>';
+  var html = '<div class="ach-section-title">'+(total?skillsTr('skills.abilities.titleAvailable','🪄 Abilities ('+total+' beschikbaar)',{count:total}):skillsTr('skills.abilities.titleEarn','🪄 Abilities — verdien via quests'))+'</div>';
 
   if(total) {
     groups.forEach(function(group){
@@ -958,29 +958,31 @@ function renderAbilitiesHtml() {
         html += '<div style="background:var(--c-surface);border-radius:14px;padding:12px 14px;border:.5px solid '+ab.color+';display:flex;align-items:center;gap:12px">'
           +'<div style="width:40px;height:40px;border-radius:12px;background:'+ab.color+'22;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">'+ab.icon+'</div>'
           +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:14px;font-weight:700;color:var(--c-text)">'+ab.name
+          +'<div style="font-size:14px;font-weight:700;color:var(--c-text)">'+abilityName(ab)
           +(count>1?' <span style="background:'+ab.color+';color:#fff;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px">×'+count+'</span>':'')+'</div>'
-          +'<div style="font-size:11px;color:var(--c-text2);margin-top:2px;line-height:1.4">'+ab.desc+'</div>'
+          +'<div style="font-size:11px;color:var(--c-text2);margin-top:2px;line-height:1.4">'+abilityDesc(ab)+'</div>'
           +'</div>'
-          +'<button onclick="openAbilityTaskPicker(\''+ab.id+'\')" style="background:'+ab.color+';color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0">Inzetten →</button>'
+          +'<button onclick="openAbilityTaskPicker(\''+ab.id+'\')" style="background:'+ab.color+';color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0">'+skillsTr('skills.abilities.use','Inzetten →')+'</button>'
           +'</div>';
       });
       html += '</div></div>';
     });
   } else {
     html += '<div style="padding:0 16px 8px;text-align:center;color:var(--c-text2);font-size:13px;line-height:1.6">'
-      +'Verdien abilities door weekly quests te voltooien.<br>'
-      +'<span style="font-size:11px;opacity:.7">Maximaal 1 ability per week</span></div>'
+      +skillsTr('skills.abilities.empty','Verdien abilities door weekly quests te voltooien.')+'<br>'
+      +'<span style="font-size:11px;opacity:.7">'+skillsTr('skills.abilities.maxOne','Maximaal 1 ability per week')+'</span></div>'
       +'<div style="padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px">';
     ABILITIES.slice(0,6).forEach(function(ab){
       html += '<div style="background:var(--c-surface);border-radius:12px;padding:10px;border:.5px solid var(--c-border);opacity:.4;display:flex;align-items:center;gap:8px">'
         +'<span style="font-size:18px">'+ab.icon+'</span>'
-        +'<div><div style="font-size:11px;font-weight:700;color:var(--c-text)">'+ab.name+'</div>'
-        +'<div style="font-size:9px;color:var(--c-text2)">🔒 Vergrendeld</div></div></div>';
+        +'<div><div style="font-size:11px;font-weight:700;color:var(--c-text)">'+abilityName(ab)+'</div>'
+        +'<div style="font-size:9px;color:var(--c-text2)">'+skillsTr('skills.abilities.locked','🔒 Vergrendeld')+'</div></div></div>';
     });
-    html += '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--c-text2);padding:4px">...en nog '+(ABILITIES.length-6)+' meer</div></div>';
+    html += '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--c-text2);padding:4px">'+skillsTr('skills.abilities.more','...en nog '+(ABILITIES.length-6)+' meer',{count:ABILITIES.length-6})+'</div></div>';
   }
   return html;
 }
 
 
+
+window.addEventListener('familyapp:language-changed',function(){try{if(typeof renderSkills==='function')renderSkills();}catch(error){}});
