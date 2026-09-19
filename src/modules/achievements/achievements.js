@@ -204,22 +204,22 @@ var tradesCount = 0;
 function openTradeSheet() {
   var myTasks = taskData.filter(function(t){return !t.done && t.who && t.who.indexOf(myName)>-1;});
   var partnerTasks = taskData.filter(function(t){return !t.done && t.who && t.who.indexOf(partnerName)>-1;});
-  if(!myTasks.length){showToast('Je hebt geen open taken om aan te bieden');return;}
-  if(!partnerTasks.length){showToast(partnerName+' heeft geen taken die je kunt overnemen');return;}
+  if(!myTasks.length){showToast(achTr('ach.trade.noMine','Je hebt geen open taken om aan te bieden'));return;}
+  if(!partnerTasks.length){showToast(achTr('ach.trade.noPartner',partnerName+' heeft geen taken die je kunt overnemen',{name:partnerName}));return;}
 
   currentAddType='trade';
-  document.getElementById('sheet-title').textContent='🤝 Taak ruilen';
+  document.getElementById('sheet-title').textContent=achTr('ach.trade.title','🤝 Taak ruilen');
   document.getElementById('sheet-fields').innerHTML=
-    '<div class="field"><label>Jouw taak (aanbieden)</label>'
+    '<div class="field"><label>'+achTr('ach.trade.myTask','Jouw taak (aanbieden)')+'</label>'
     +'<select id="trade-my-task">'
     +myTasks.map(function(t){return '<option value="'+t.id+'">'+t.title+'</option>';}).join('')
     +'</select></div>'
-    +'<div class="field"><label>Taak die je wil overnemen (van '+partnerName+')</label>'
+    +'<div class="field"><label>'+achTr('ach.trade.theirTask','Taak die je wil overnemen (van '+partnerName+')',{name:partnerName})+'</label>'
     +'<select id="trade-their-task">'
     +partnerTasks.map(function(t){return '<option value="'+t.id+'">'+t.title+'</option>';}).join('')
     +'</select></div>'
-    +'<div class="field"><label>Berichtje erbij (optioneel)</label>'
-    +'<input id="trade-msg" placeholder="bijv. Ik haat stofzuigen 😅">'
+    +'<div class="field"><label>'+achTr('ach.trade.message','Berichtje erbij (optioneel)')+'</label>'
+    +'<input id="trade-msg" placeholder="'+achTr('ach.trade.messagePlaceholder','bijv. Ik haat stofzuigen 😅')+'">'
     +'</div>';
   document.getElementById('add-overlay').classList.add('open');
   setTimeout(function(){var f=document.getElementById('trade-my-task');if(f)f.focus();},200);
@@ -240,15 +240,15 @@ function submitTrade() {
     theirTask: theirTask,
     msg: msg,
     status: 'pending',
-    time: 'Zojuist'
+    time: achTr('ach.trade.justNow','Zojuist')
   });
   tradesCount++;
-  addActivity('🤝','#fff3dc',myName+' stelt taakruil voor: "'+myTask.title+'" ↔ "'+theirTask.title+'"');
-  addNotif('🤝','#fff3dc','Taakruil aangeboden!','"'+myTask.title+'" ↔ "'+theirTask.title+'"');
-  awardXP(8,'Taakruil aangeboden');
+  addActivity('🤝','#fff3dc',achTr('ach.trade.proposedActivity',myName+' stelt taakruil voor: “'+myTask.title+'” ↔ “'+theirTask.title+'”',{name:myName,mine:myTask.title,theirs:theirTask.title}));
+  addNotif('🤝','#fff3dc',achTr('ach.trade.offered','Taakruil aangeboden!'),'“'+myTask.title+'” ↔ “'+theirTask.title+'”');
+  awardXP(8,achTr('ach.badge.negotiatorDesc','Taakruil aangeboden'));
   checkAchievements();
   closeAdd();
-  showToast('Taakruil aangeboden! 🤝');
+  showToast(achTr('ach.trade.offered','Taakruil aangeboden!')+' 🤝');
   // Show trades in tasks screen
   if(document.getElementById('screen-tasks').classList.contains('active')) renderTasks();
 }
@@ -262,20 +262,20 @@ function acceptTrade(id) {
   if(myT) myT.who = [partnerName];
   if(theirT) theirT.who = [myName];
   tradesCount++;
-  addActivity('🎯','#e8f5e3',partnerName+' accepteerde taakruil!');
-  addNotif('🎯','#e8f5e3','Deal gesloten! 🎉','"'+trade.myTask.title+'" en "'+trade.theirTask.title+'" zijn gewisseld');
-  awardXP(10,'Taakruil geaccepteerd');
+  addActivity('🎯','#e8f5e3',achTr('ach.trade.acceptedActivity',partnerName+' accepteerde taakruil!',{name:partnerName}));
+  addNotif('🎯','#e8f5e3',achTr('ach.trade.closed','Deal gesloten! 🎉'),achTr('ach.trade.swapped','“'+trade.myTask.title+'” en “'+trade.theirTask.title+'” zijn gewisseld',{mine:trade.myTask.title,theirs:trade.theirTask.title}));
+  awardXP(10,achTr('ach.badge.acceptedDesc','Taakruil geaccepteerd'));
   checkAchievements();
   renderTasks();
-  showToast('Deal gesloten! Taken zijn gewisseld 🎉');
+  showToast(achTr('ach.trade.closedToast','Deal gesloten! Taken zijn gewisseld 🎉'));
 }
 
 function declineTrade(id) {
   var trade = tradeOffers.find(function(t){return t.id===id;});if(!trade)return;
   trade.status='declined';
-  addActivity('❌','#fee2e2',partnerName+' weigerde de taakruil');
+  addActivity('❌','#fee2e2',achTr('ach.trade.declinedActivity',partnerName+' weigerde de taakruil',{name:partnerName}));
   renderTasks();
-  showToast('Taakruil afgewezen 😬');
+  showToast(achTr('ach.trade.declined','Taakruil afgewezen 😬'));
 }
 
 // ── ACHIEVEMENTS ──
