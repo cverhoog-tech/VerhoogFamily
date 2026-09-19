@@ -383,7 +383,7 @@ function searchGifs(query) {
   var results = document.getElementById('gif-results');
   if(!results) return;
   if(!query || query.length < 2) return;
-  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Zoeken...</div>';
+  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">'+escHtml(tr('feed.searching','Zoeken...'))+'</div>';
 
   var apiKey = 'AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI';
   var url = 'https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+apiKey+'&limit=18&media_filter=gif';
@@ -404,12 +404,12 @@ function searchGifs(query) {
         results.appendChild(img);
       });
       if(!data.results||!data.results.length){
-        results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Geen resultaten</div>';
+        results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">'+escHtml(tr('feed.noResults','Geen resultaten'))+'</div>';
       }
     })
     .catch(function(){
       results = document.getElementById('gif-results');
-      if(results) results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Fout bij laden</div>';
+      if(results) results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">'+escHtml(tr('feed.loadError','Fout bij laden'))+'</div>';
     });
 }
 
@@ -430,3 +430,5 @@ function selectGif(gifUrl) {
 }
 
 window.addEventListener('familyapp:language-changed',function(){try{renderFeed();var send=document.getElementById('feed-send-btn');if(send)send.textContent=tr('feed.post','Posten');}catch(error){}});
+
+window.addEventListener('familyapp:language-changed',function(){try{if(typeof renderFeed==='function')renderFeed();if(typeof wireCompose==='function')wireCompose();}catch(error){}});
