@@ -1252,7 +1252,10 @@
     ['ach.badge.godName','Huishoud-God','Household God','Ev İşleri Tanrısı','Bóg Domu','Zeul Casei'],
     ['ach.toast.unlocked','🏆 Achievement ontgrendeld','🏆 Achievement unlocked','🏆 Başarım açıldı','🏆 Osiągnięcie odblokowane','🏆 Realizare deblocată'],
     ['ach.toast.epicBadge','🏆 Epische badge!','🏆 Epic badge!','🏆 Epik rozet!','🏆 Epicka odznaka!','🏆 Insignă epică!'],
-    ['ach.toast.legendaryBadge','🏆 Legendarische badge!','🏆 Legendary badge!','🏆 Efsanevi rozet!','🏆 Legendarna odznaka!','🏆 Insignă legendară!']
+    ['ach.toast.legendaryBadge','🏆 Legendarische badge!','🏆 Legendary badge!','🏆 Efsanevi rozet!','🏆 Legendarna odznaka!','🏆 Insignă legendară!'],
+    ['ach.levelUp','Level omhoog!','Level up!','Seviye atlandı!','Awans poziomu!','Nivel crescut!'],
+    ['ach.newLevel','Nieuw level bereikt!','New level reached!','Yeni seviyeye ulaşıldı!','Osiągnięto nowy poziom!','Nivel nou atins!']
+
 
 
 
