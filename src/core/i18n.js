@@ -546,6 +546,124 @@
   }
 
 
+
+  // Canonical UI copy for active FamilyApp modules. Module code should call
+  // FamilyI18n.t(key) for system copy and keep user-authored content untouched.
+  var moduleUiRows = [
+    ['tasks.all','Alle taken','All tasks','Tüm görevler','Wszystkie zadania','Toate sarcinile'],
+    ['tasks.open','open taken','open tasks','açık görev','otwarte zadania','sarcini deschise'],
+    ['tasks.important','belangrijk','important','önemli','ważne','importante'],
+    ['tasks.overdue','verlopen','overdue','gecikmiş','zaległe','întârziate'],
+    ['tasks.overdueTitle','Verlopen','Overdue','Gecikmiş','Zaległe','Întârziate'],
+    ['tasks.quote.title','Kleine taken, een rustiger thuis','Small tasks, a calmer home','Küçük görevler, daha huzurlu bir ev','Małe zadania, spokojniejszy dom','Sarcini mici, o casă mai liniștită'],
+    ['tasks.quote.subtitle','Samen maken we tijd voor wat echt telt.','Together we make time for what really matters.','Birlikte gerçekten önemli olan şeylere zaman ayırıyoruz.','Razem znajdujemy czas na to, co naprawdę ważne.','Împreună facem timp pentru ceea ce contează cu adevărat.'],
+    ['tasks.filter.cleaning','Schoonmaken','Cleaning','Temizlik','Sprzątanie','Curățenie'],
+    ['tasks.section.completed','Voltooid','Completed','Tamamlandı','Ukończone','Finalizate'],
+
+    ['meals.weekMenu','Week menu','Weekly menu','Haftalık menü','Menu tygodniowe','Meniu săptămânal'],
+    ['meals.thisWeek','Deze week','This week','Bu hafta','W tym tygodniu','Săptămâna aceasta'],
+    ['meals.nextWeek','Volgende week','Next week','Gelecek hafta','W przyszłym tygodniu','Săptămâna viitoare'],
+    ['meals.hint','Tik op een slot om een recept of maaltijd te plannen.','Tap a slot to plan a recipe or meal.','Bir tarif veya öğün planlamak için bir alana dokun.','Dotknij pola, aby zaplanować przepis lub posiłek.','Atinge un interval pentru a planifica o rețetă sau o masă.'],
+    ['meals.lunchChoose','Lunch kiezen...','Choose lunch...','Öğle yemeği seç...','Wybierz lunch...','Alege prânzul...'],
+    ['meals.dinnerChoose','Diner kiezen...','Choose dinner...','Akşam yemeği seç...','Wybierz kolację...','Alege cina...'],
+    ['meals.meal','Maaltijd','Meal','Öğün','Posiłek','Masă'],
+    ['meals.addWeekIngredients','Voeg ingrediënten van deze week toe','Add this week’s ingredients','Bu haftanın malzemelerini ekle','Dodaj składniki z tego tygodnia','Adaugă ingredientele din această săptămână'],
+    ['meals.loading','Maaltijdplanner wordt geladen','Meal planner is loading','Öğün planlayıcı yükleniyor','Planer posiłków jest ładowany','Planificatorul de mese se încarcă'],
+    ['meals.storageUnavailable','Maaltijdopslag niet beschikbaar','Meal storage is unavailable','Öğün depolama kullanılamıyor','Pamięć planu posiłków jest niedostępna','Stocarea meselor nu este disponibilă'],
+    ['meals.nonePlanned','Geen recepten gepland in deze week','No recipes planned this week','Bu hafta için tarif planlanmadı','Brak zaplanowanych przepisów na ten tydzień','Nu sunt rețete planificate în această săptămână'],
+    ['meals.openShoppingFirst','Open eerst Boodschappen om een lijst te kiezen of aan te maken','Open Groceries first to choose or create a list','Bir liste seçmek veya oluşturmak için önce Alışveriş’i aç','Najpierw otwórz Zakupy, aby wybrać lub utworzyć listę','Deschide mai întâi Cumpărături pentru a alege sau crea o listă'],
+    ['meals.ingredientsAdded','{{count}} ingrediënten toegevoegd','{{count}} ingredients added','{{count}} malzeme eklendi','Dodano {{count}} składników','Au fost adăugate {{count}} ingrediente'],
+
+    ['shop.title','Boodschappen','Groceries','Alışveriş','Zakupy','Cumpărături'],
+    ['shop.add','Toevoegen','Add','Ekle','Dodaj','Adaugă'],
+    ['shop.addPlus','+ Toevoegen','+ Add','+ Ekle','+ Dodaj','+ Adaugă'],
+    ['shop.list','Winkellijst','Shopping list','Alışveriş listesi','Lista zakupów','Listă de cumpărături'],
+    ['shop.toBuy','Te kopen','To buy','Alınacak','Do kupienia','De cumpărat'],
+    ['shop.bought','Gekocht','Bought','Alındı','Kupione','Cumpărat'],
+    ['shop.familyLive','Gezin · live','Family · live','Aile · canlı','Rodzina · na żywo','Familie · live'],
+    ['shop.onlyMe','Alleen ik','Only me','Sadece ben','Tylko ja','Doar eu'],
+    ['shop.toBuyMeta','{{count}} te kopen','{{count}} to buy','{{count}} alınacak','Do kupienia: {{count}}','De cumpărat: {{count}}'],
+    ['shop.clearBought','Gekochte items verwijderen','Remove bought items','Alınan ürünleri sil','Usuń kupione produkty','Șterge articolele cumpărate'],
+    ['shop.finishBought','Gekochte items afronden','Finish bought items','Alınan ürünleri tamamla','Zakończ kupione produkty','Finalizează articolele cumpărate'],
+    ['shop.finish','Afronden','Finish','Tamamla','Zakończ','Finalizează'],
+    ['shop.boughtReceiptOptional','{{count}} gekocht · bon opslaan is optioneel','{{count}} bought · saving the receipt is optional','{{count}} alındı · fişi kaydetmek isteğe bağlıdır','Kupiono: {{count}} · zapis paragonu jest opcjonalny','Cumpărate: {{count}} · salvarea bonului este opțională'],
+    ['shop.allAtHome','Alles in huis','Everything at home','Evde her şey var','Wszystko jest w domu','Totul este în casă'],
+    ['shop.emptyOpen','Voeg een product toe wanneer je iets nodig hebt.','Add a product when you need something.','Bir şeye ihtiyacın olduğunda ürün ekle.','Dodaj produkt, gdy czegoś potrzebujesz.','Adaugă un produs când ai nevoie de ceva.'],
+    ['shop.noneBought','Nog niets gekocht','Nothing bought yet','Henüz bir şey alınmadı','Jeszcze nic nie kupiono','Încă nu s-a cumpărat nimic'],
+    ['shop.emptyBought','Afgevinkte producten verschijnen hier direct.','Checked-off products appear here immediately.','İşaretlenen ürünler burada hemen görünür.','Odznaczone produkty pojawią się tutaj od razu.','Produsele bifate apar imediat aici.'],
+    ['shop.other','Overig','Other','Diğer','Inne','Altele'],
+    ['shop.newList','Nieuwe lijst','New list','Yeni liste','Nowa lista','Listă nouă'],
+    ['shop.chooseList','Winkellijst kiezen','Choose shopping list','Alışveriş listesi seç','Wybierz listę zakupów','Alege lista de cumpărături'],
+    ['shop.newShoppingList','Nieuwe winkellijst','New shopping list','Yeni alışveriş listesi','Nowa lista zakupów','Listă nouă de cumpărături'],
+    ['shop.name','Naam','Name','Ad','Nazwa','Nume'],
+    ['shop.visibility','Zichtbaarheid','Visibility','Görünürlük','Widoczność','Vizibilitate'],
+    ['shop.createList','Lijst maken','Create list','Liste oluştur','Utwórz listę','Creează lista'],
+
+    ['feed.post','Posten','Post','Paylaş','Opublikuj','Publică'],
+    ['feed.sharePlaceholder','Deel iets met het gezin...','Share something with the family...','Ailenle bir şey paylaş...','Podziel się czymś z rodziną...','Împărtășește ceva cu familia...'],
+    ['feed.tasks','Taken','Tasks','Görevler','Zadania','Sarcini'],
+    ['feed.appointments','Afspraken','Appointments','Randevular','Wydarzenia','Programări'],
+    ['feed.groceries','Boodschappen','Groceries','Alışveriş','Zakupy','Cumpărături'],
+    ['feed.updates','Updates','Updates','Güncellemeler','Aktualizacje','Actualizări'],
+    ['feed.allUpdates','Alle updates','All updates','Tüm güncellemeler','Wszystkie aktualizacje','Toate actualizările'],
+    ['feed.completedCount','{{count}} afgerond','{{count}} completed','{{count}} tamamlandı','Ukończono: {{count}}','Finalizate: {{count}}'],
+    ['feed.plannedCount','{{count}} gepland','{{count}} planned','{{count}} planlandı','Zaplanowano: {{count}}','Planificate: {{count}}'],
+    ['feed.totalCount','{{count}} totaal','{{count}} total','Toplam {{count}}','Łącznie: {{count}}','Total: {{count}}'],
+    ['feed.newCount','{{count}} nieuw','{{count}} new','{{count}} yeni','Nowe: {{count}}','Noi: {{count}}'],
+    ['feed.newTaskKicker','NIEUWE TAAK','NEW TASK','YENİ GÖREV','NOWE ZADANIE','SARCINĂ NOUĂ'],
+    ['feed.taskReady','Klaar om opgepakt te worden','Ready to be picked up','Üstlenilmeye hazır','Gotowe do podjęcia','Gata de preluat'],
+    ['feed.taskCreated','Iets om straks af te vinken','Something to check off later','Sonra işaretlenecek bir şey','Coś do odhaczenia później','Ceva de bifat mai târziu'],
+    ['feed.taskPlannedBy','{{name}} zette “{{task}}” op de planning','{{name}} added “{{task}}” to the plan','{{name}}, “{{task}}” görevini plana ekledi','{{name}} dodał(a) „{{task}}” do planu','{{name}} a adăugat „{{task}}” în plan'],
+
+    ['cleaning.today','Vandaag','Today','Bugün','Dzisiaj','Astăzi'],
+    ['cleaning.rooms','Kamers','Rooms','Odalar','Pokoje','Camere'],
+    ['cleaning.weekplan','Weekplan','Week plan','Haftalık plan','Plan tygodnia','Plan săptămânal'],
+    ['cleaning.history','Historie','History','Geçmiş','Historia','Istoric'],
+    ['cleaning.housekeeping','HUISHOUDEN','HOUSEHOLD','EV İŞLERİ','DOM','GOSPODĂRIE'],
+    ['cleaning.addRoom','+ Kamer','+ Room','+ Oda','+ Pokój','+ Cameră'],
+    ['cleaning.routinesCount','{{count}} routines','{{count}} routines','{{count}} rutin','Rutyny: {{count}}','Rutine: {{count}}'],
+    ['cleaning.heroKicker','SCHOONMAKEN','CLEANING','TEMİZLİK','SPRZĄTANIE','CURĂȚENIE'],
+    ['cleaning.heroTitle','Rust in huis, zonder gedoe.','A calm home, without the hassle.','Evde huzur, zahmetsiz.','Spokojny dom, bez zamieszania.','O casă liniștită, fără bătaie de cap.'],
+    ['cleaning.toDo','TE DOEN','TO DO','YAPILACAK','DO ZROBIENIA','DE FĂCUT'],
+    ['cleaning.turnsInView','{{count}} beurten in beeld · {{minutes}} min','{{count}} turns in view · {{minutes}} min','Görünümde {{count}} tur · {{minutes}} dk','Widoczne tury: {{count}} · {{minutes}} min','Ture afișate: {{count}} · {{minutes}} min'],
+    ['cleaning.noneOpen','Geen open schoonmaakbeurten','No open cleaning turns','Açık temizlik turu yok','Brak otwartych tur sprzątania','Nu există ture de curățenie deschise'],
+    ['cleaning.noneOpenHint','Maak een weekplan of voeg eerst kamers en routines toe.','Create a week plan or add rooms and routines first.','Bir haftalık plan oluştur veya önce oda ve rutin ekle.','Utwórz plan tygodnia albo najpierw dodaj pokoje i rutyny.','Creează un plan săptămânal sau adaugă mai întâi camere și rutine.'],
+    ['cleaning.planKicker','WEEKPLAN','WEEK PLAN','HAFTALIK PLAN','PLAN TYGODNIA','PLAN SĂPTĂMÂNAL'],
+    ['cleaning.updatePlan','Werkplan bijwerken','Update work plan','Çalışma planını güncelle','Aktualizuj plan pracy','Actualizează planul de lucru'],
+    ['cleaning.updatePlanBusy','Werkplan bijwerken…','Updating work plan…','Çalışma planı güncelleniyor…','Aktualizowanie planu pracy…','Se actualizează planul de lucru…'],
+    ['cleaning.makePlan','Maak werkplan','Create work plan','Çalışma planı oluştur','Utwórz plan pracy','Creează planul de lucru'],
+    ['cleaning.planning','PLANNING','PLANNING','PLANLAMA','PLANOWANIE','PLANIFICARE'],
+    ['cleaning.perRoom','Per kamer','By room','Odaya göre','Według pokoju','Pe cameră'],
+    ['cleaning.turnsMinutes','{{count}} beurten · {{minutes}} min','{{count}} turns · {{minutes}} min','{{count}} tur · {{minutes}} dk','Tury: {{count}} · {{minutes}} min','Ture: {{count}} · {{minutes}} min'],
+    ['cleaning.doneMeta','{{done}} / {{total}} klaar · {{minutes}} min','{{done}} / {{total}} done · {{minutes}} min','{{done}} / {{total}} tamam · {{minutes}} dk','{{done}} / {{total}} gotowe · {{minutes}} min','{{done}} / {{total}} gata · {{minutes}} min'],
+    ['cleaning.historyKicker','HISTORIE','HISTORY','GEÇMİŞ','HISTORIA','ISTORIC'],
+    ['cleaning.historyTitle','Wat is er gedaan?','What has been done?','Neler yapıldı?','Co zostało zrobione?','Ce s-a făcut?'],
+    ['cleaning.historySubtitle','Een rustig overzicht van afgeronde schoonmaakbeurten per kamer en routine.','A clear overview of completed cleaning turns by room and routine.','Oda ve rutine göre tamamlanan temizlik turlarının sade bir özeti.','Przejrzysty przegląd ukończonych tur sprzątania według pokoju i rutyny.','O prezentare clară a turelor de curățenie finalizate pe cameră și rutină.'],
+    ['cleaning.thisWeek','deze week','this week','bu hafta','w tym tygodniu','săptămâna aceasta'],
+    ['cleaning.minutes','minuten','minutes','dakika','minuty','minute'],
+    ['cleaning.householdMembers','gezinsleden','family members','aile üyeleri','członkowie rodziny','membri ai familiei'],
+    ['cleaning.last','Laatst','Last','Son','Ostatnio','Ultima dată'],
+    ['cleaning.room','Kamer','Room','Oda','Pokój','Cameră'],
+    ['cleaning.roomNew','Nieuwe kamer','New room','Yeni oda','Nowy pokój','Cameră nouă'],
+    ['cleaning.roomEdit','Kamer bewerken','Edit room','Odayı düzenle','Edytuj pokój','Editează camera'],
+    ['cleaning.roomDelete','Kamer verwijderen','Delete room','Odayı sil','Usuń pokój','Șterge camera'],
+    ['cleaning.routines','Routines','Routines','Rutinler','Rutyny','Rutine'],
+    ['cleaning.routineNew','Nieuwe routine','New routine','Yeni rutin','Nowa rutyna','Rutină nouă'],
+    ['cleaning.routineEdit','Routine bewerken','Edit routine','Rutini düzenle','Edytuj rutynę','Editează rutina'],
+    ['cleaning.routineDelete','Routine verwijderen','Delete routine','Rutini sil','Usuń rutynę','Șterge rutina'],
+    ['cleaning.supplies','Benodigdheden','Supplies','Malzemeler','Materiały','Materiale'],
+    ['cleaning.completeAll','Alles afronden','Complete all','Tümünü tamamla','Ukończ wszystko','Finalizează tot'],
+    ['cleaning.saved','Opgeslagen ✓','Saved ✓','Kaydedildi ✓','Zapisano ✓','Salvat ✓'],
+    ['cleaning.saving','Opslaan…','Saving…','Kaydediliyor…','Zapisywanie…','Se salvează…']
+  ];
+  var moduleLanguages = ['nl','en','tr','pl','ro'];
+  moduleUiRows.forEach(function(row){
+    for(var mi=0;mi<moduleLanguages.length;mi+=1){
+      var lang=moduleLanguages[mi];
+      if(dictionaries[lang]) dictionaries[lang][row[0]]=row[mi+1];
+    }
+  });
+
   // Legacy UI bridge: translates known FamilyApp system copy that is still
   // rendered by older modules. It deliberately uses an allow-list of exact
   // product strings so user-entered task/note/feed content is not generically
