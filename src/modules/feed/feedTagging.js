@@ -16,6 +16,9 @@
   var patchedCreate=false;
   var patchedRender=false;
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+  function locale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
+  function uiText(value){try{return window.FamilyI18n&&FamilyI18n.translateUiText?FamilyI18n.translateUiText(value):value;}catch(error){return value;}}
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function safe(v){return esc(v).replace(/`/g,'&#096;');}
@@ -26,11 +29,11 @@
   function tasks(){return Array.isArray(window.taskData)?window.taskData.filter(function(t){return t&&t.id!==undefined&&t.id!==null;}):[];}
   function memberByUid(uid){return members().find(function(m){return String(m.uid||m.id)===String(uid);})||null;}
   function memberAvatar(m){if(!m)return'';return m.avatar||m.avatarUrl||m.photoURL||m.photoUrl||m.profilePhoto||'';}
-  function memberRef(m){return{type:'member',uid:String(m.uid||m.id),displayName:String(m.displayName||m.name||'Gezinslid')};}
-  function recipeRef(r){return{type:'recipe',recipeId:String(r.id),title:String(r.name||r.title||'Recept')};}
+  function memberRef(m){return{type:'member',uid:String(m.uid||m.id),displayName:String(m.displayName||m.name||tr('feed.tag.member','Gezinslid'))};}
+  function recipeRef(r){return{type:'recipe',recipeId:String(r.id),title:String(r.name||r.title||tr('feed.tag.recipe','Recept'))};}
   function recipeById(id){return recipes().find(function(r){return String(r.id)===String(id);})||null;}
   function recipePhoto(id){var r=recipeById(id);return r&&r.photo?String(r.photo):'';}
-  function taskRef(t){return{type:'task',taskId:String(t.id||t._key),title:String(t.title||t.name||'Taak'),category:String(t.category||t.type||''),date:String(t.date||''),done:!!t.done};}
+  function taskRef(t){return{type:'task',taskId:String(t.id||t._key),title:String(t.title||t.name||tr('feed.tag.task','Taak')),category:String(t.category||t.type||''),date:String(t.date||''),done:!!t.done};}
   function taskById(id){return tasks().find(function(t){return String(t.id||t._key)===String(id);})||null;}
   function has(r){var k=key(r);return pending.some(function(x){return key(x)===k;});}
   function add(r){if(!r||has(r))return;pending.push(clone(r));renderPending();closeAllPickers();}
@@ -51,22 +54,22 @@
   function avatarMarkup(r,sizeClass){
     if(r.type==='recipe'){
       var photo=recipePhoto(r.recipeId);
-      if(photo)return'<img class="fs-tag-avatar fs-tag-recipe-photo '+(sizeClass||'')+'" src="'+safe(photo)+'" alt="'+esc(r.title||'Recept')+'">';
+      if(photo)return'<img class="fs-tag-avatar fs-tag-recipe-photo '+(sizeClass||'')+'" src="'+safe(photo)+'" alt="'+esc(r.title||tr('feed.tag.recipe','Recept'))+'">';
       return'<span class="fs-tag-avatar fs-tag-recipe-avatar">'+iconSvg('recipe',18)+'</span>';
     }
     if(r.type==='task')return'<span class="fs-tag-avatar fs-tag-task-avatar">'+iconSvg('task',18)+'</span>';
     var m=memberByUid(r.uid),url=memberAvatar(m);
-    if(url)return'<img class="fs-tag-avatar '+(sizeClass||'')+'" src="'+safe(url)+'" alt="'+esc(r.displayName||'Gezinslid')+'">';
-    var initials=String(r.displayName||'G').trim().split(/\s+/).map(function(x){return x.charAt(0);}).join('').slice(0,2).toUpperCase();
+    if(url)return'<img class="fs-tag-avatar '+(sizeClass||'')+'" src="'+safe(url)+'" alt="'+esc(r.displayName||tr('feed.tag.member','Gezinslid'))+'">';
+    var initials=String(r.displayName||tr('feed.tag.member','Gezinslid')).trim().split(/\s+/).map(function(x){return x.charAt(0);}).join('').slice(0,2).toUpperCase();
     return'<span class="fs-tag-avatar '+(sizeClass||'')+'">'+esc(initials||'@')+'</span>';
   }
 
   function chip(r,removable){
     var label,action,mini='';
-    if(r.type==='member'){label='@'+(r.displayName||'Gezinslid');action="openFeedReference('member','"+safe(r.uid)+"')";mini=avatarMarkup(r,'fs-tag-avatar-mini');}
-    else if(r.type==='task'){label=r.title||'Taak';action="openFeedReference('task','"+safe(r.taskId)+"')";mini='<span class="fs-tag-chip-icon">'+iconSvg('task',14)+'</span>';}
-    else{label=r.title||'Recept';action="openFeedReference('recipe','"+safe(r.recipeId)+"')";mini='<span class="fs-tag-chip-icon">'+iconSvg('recipe',14)+'</span>';}
-    return '<span class="fs-tag-wrap"><button type="button" class="fs-tag-chip fs-tag-'+esc(r.type)+'" onclick="event.stopPropagation();'+action+'">'+mini+'<b>'+esc(label)+'</b></button>'+(removable?'<button type="button" class="fs-tag-remove" aria-label="Tag verwijderen" onclick="event.stopPropagation();removeFeedTag(\''+safe(key(r))+'\')">×</button>':'')+'</span>';
+    if(r.type==='member'){label='@'+(r.displayName||tr('feed.tag.member','Gezinslid'));action="openFeedReference('member','"+safe(r.uid)+"')";mini=avatarMarkup(r,'fs-tag-avatar-mini');}
+    else if(r.type==='task'){label=r.title||tr('feed.tag.task','Taak');action="openFeedReference('task','"+safe(r.taskId)+"')";mini='<span class="fs-tag-chip-icon">'+iconSvg('task',14)+'</span>';}
+    else{label=r.title||tr('feed.tag.recipe','Recept');action="openFeedReference('recipe','"+safe(r.recipeId)+"')";mini='<span class="fs-tag-chip-icon">'+iconSvg('recipe',14)+'</span>';}
+    return '<span class="fs-tag-wrap"><button type="button" class="fs-tag-chip fs-tag-'+esc(r.type)+'" onclick="event.stopPropagation();'+action+'">'+mini+'<b>'+esc(label)+'</b></button>'+(removable?'<button type="button" class="fs-tag-remove" aria-label="'+esc(tr('feed.tag.remove','Tag verwijderen'))+'" onclick="event.stopPropagation();removeFeedTag(\''+safe(key(r))+'\')">×</button>':'')+'</span>';
   }
   function chipsHtml(list,task){list=refs(list);var all=list.slice();if(task&&task.type==='task'&&task.taskId)all.push(task);return all.length?'<div class="fs-post-tags">'+all.map(function(r){return chip(r,false);}).join('')+'</div>':'';}
   function renderPending(){var host=document.getElementById('feed-tag-pending');if(host)host.innerHTML=pending.length?'<div class="fs-compose-tags">'+pending.map(function(r){return chip(r,true);}).join('')+'</div>':'';}
@@ -78,7 +81,7 @@
     var m=uid?memberByUid(uid):null;
     return{uid:uid,name:m&&(m.displayName||m.name)||'',avatar:memberAvatar(m)};
   }
-  function taskDateLabel(task){if(!task||!task.date)return task&&task.done?'Afgerond':'Geen datum';var d=new Date(task.date+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);var diff=Math.round((d-today)/86400000);if(diff===0)return'Vandaag';if(diff===1)return'Morgen';if(diff===-1)return'Gisteren';return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});}
+  function taskDateLabel(task){if(!task||!task.date)return task&&task.done?tr('feed.tag.completed','Afgerond'):tr('feed.tag.noDate','Geen datum');var d=new Date(task.date+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);var diff=Math.round((d-today)/86400000);if(diff===0)return tr('common.today','Vandaag');if(diff===1)return tr('common.tomorrow','Morgen');if(diff===-1)return tr('cleaning.history.yesterday','Gisteren');return d.toLocaleDateString(locale(),{day:'numeric',month:'short'});}
   function filteredRows(type,q){
     q=String(q||'').trim().toLowerCase();
     if(type==='member')return members().filter(function(m){return !q||String(m.displayName||m.name||'').toLowerCase().indexOf(q)>-1;}).map(memberRef);
@@ -87,15 +90,15 @@
   }
   function rowHtml(r,compact){
     var id,label,sub,avatar;
-    if(r.type==='member'){id=r.uid;label=r.displayName;sub='Gezinslid';avatar=avatarMarkup(r,'');}
+    if(r.type==='member'){id=r.uid;label=r.displayName;sub=tr('feed.tag.member','Gezinslid');avatar=avatarMarkup(r,'');}
     else if(r.type==='recipe'){
       id=r.recipeId;label=r.title;
       var recipe=recipeById(id);
-      sub=[recipe&&recipe.cat,recipe&&recipe.cuisine].filter(Boolean).join(' · ')||'Recept';
+      sub=[recipe&&recipe.cat?uiText(recipe.cat):'',recipe&&recipe.cuisine].filter(Boolean).join(' · ')||tr('feed.tag.recipe','Recept');
       avatar=avatarMarkup(r,'');
     }
     else{
-      id=r.taskId;label=r.title;var task=taskById(id),ass=taskAssignee(task);sub=(r.done?'Afgerond':taskDateLabel(task))+(ass.name?' · '+ass.name:'');
+      id=r.taskId;label=r.title;var task=taskById(id),ass=taskAssignee(task);sub=(r.done?tr('feed.tag.completed','Afgerond'):taskDateLabel(task))+(ass.name?' · '+ass.name:'');
       avatar=ass.avatar?'<img class="fs-tag-avatar" src="'+safe(ass.avatar)+'" alt="'+esc(ass.name)+'">':avatarMarkup(r,'');
     }
     return '<button type="button" class="'+(compact?'fs-tag-inline-row':'fs-tag-choice')+' fs-tag-choice-'+esc(r.type)+'" onclick="selectFeedTag(\''+r.type+'\',\''+safe(id)+'\')">'+avatar+'<span><b>'+esc(label)+'</b><small>'+esc(sub)+'</small></span><i>+</i></button>';
@@ -106,7 +109,7 @@
   function closeAllPickers(){closePicker();closeInline();}
   function openPicker(type){
     closeAllPickers();
-    var title=type==='member'?'Persoon':type==='recipe'?'Recept':'Taak';
+    var title=type==='member'?tr('feed.tag.person','Persoon'):type==='recipe'?tr('feed.tag.recipe','Recept'):tr('feed.tag.task','Taak');
     var rows=filteredRows(type,'');
     var root=document.createElement('div');root.className='fs-tag-picker';
     root.innerHTML='<div class="fs-tag-backdrop" onclick="closeFeedTagPicker()"></div><section class="fs-tag-sheet"><div class="fs-tag-sheet-head"><div><small>TAG TOEVOEGEN</small><h3>'+title+' selecteren</h3></div><button type="button" onclick="closeFeedTagPicker()">×</button></div>'+(type==='task'?'<div class="fs-tag-search-wrap"><span>⌕</span><input id="feed-task-tag-search" placeholder="Zoek een taak…" autocomplete="off"></div>':'')+'<div class="fs-tag-choices" id="feed-tag-choice-list">'+(rows.length?rows.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">Geen opties beschikbaar</div>')+'</div></section>';
@@ -130,7 +133,7 @@
     window.composeLinkedTask=taskRef(t);
     var row=document.getElementById('feed-status-row'),label=document.getElementById('feed-status-task-label');
     if(row){row.style.display='block';row.classList.add('fs-task-link-status');}
-    if(label)label.textContent=t.title||t.name||'Taak';
+    if(label)label.textContent=t.title||t.name||tr('feed.tag.task','Taak');
     closeAllPickers();
   }
 
