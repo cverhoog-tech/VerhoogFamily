@@ -2136,6 +2136,18 @@
     ['party.startTileHint','Nodig beschikbare gezinsleden uit voor een quest die jij hebt gestart','Invite available family members to a quest you started','Kendi başlattığın bir göreve uygun aile üyelerini davet et','Zaproś dostępnych członków rodziny do questa rozpoczętego przez ciebie','Invită membrii disponibili ai familiei la un quest început de tine'],
     ['party.invitesSentTitle','Uitnodigingen verstuurd','Invitations sent','Davetler gönderildi','Zaproszenia wysłane','Invitații trimise'],
     ['party.acceptedToast','“{{quest}}” is geaccepteerd','“{{quest}}” was accepted','“{{quest}}” kabul edildi','„{{quest}}” zaakceptowano','„{{quest}}” a fost acceptat'],
+    ['party.allUnavailable','Alle gezinsleden doen al mee, zijn toegewezen of hebben een open uitnodiging','All family members are already participating, assigned, or have an open invitation','Tüm aile üyeleri zaten katılıyor, atanmış veya açık daveti var','Wszyscy członkowie rodziny już uczestniczą, są przypisani lub mają otwarte zaproszenie','Toți membrii familiei participă deja, sunt atribuiți sau au o invitație deschisă'],
+    ['party.participantsTitle','Deelnemers kiezen','Choose participants','Katılımcıları seç','Wybierz uczestników','Alege participanții'],
+    ['party.participantsHint','Actieve deelnemers, toegewezen gezinsleden en pending genodigden zijn uitgefilterd.','Active participants, assigned family members and pending invitees are filtered out.','Aktif katılımcılar, atanmış aile üyeleri ve bekleyen davetliler filtrelendi.','Aktywni uczestnicy, przypisani członkowie rodziny i oczekujące zaproszenia są odfiltrowane.','Participanții activi, membrii atribuiți și invitații în așteptare sunt filtrați.'],
+    ['party.inviteMember','Gezinslid uitnodigen','Invite family member','Aile üyesini davet et','Zaproś członka rodziny','Invită membrul familiei'],
+    ['party.sendSummary','{{quests}} quest(s) verstuurd naar {{members}} deelnemer(s)','{{quests}} quest(s) sent to {{members}} participant(s)','{{quests}} görev {{members}} katılımcıya gönderildi','Wysłano {{quests}} questów do {{members}} uczestników','{{quests}} questuri trimise către {{members}} participanți'],
+    ['party.sendFailed','Uitnodigingen versturen mislukt','Could not send invitations','Davetler gönderilemedi','Nie udało się wysłać zaproszeń','Invitațiile nu au putut fi trimise'],
+    ['party.respondAccepted','Party Quest “{{quest}}” geaccepteerd!','Party Quest “{{quest}}” accepted!','Party Quest “{{quest}}” kabul edildi!','Party Quest „{{quest}}” zaakceptowany!','Party Quest „{{quest}}” acceptat!'],
+    ['party.respondDeclined','Party Quest geweigerd','Party Quest declined','Party Quest reddedildi','Party Quest odrzucony','Party Quest refuzat'],
+    ['party.inviteInactive','Deze uitnodiging is niet meer actief','This invitation is no longer active','Bu davet artık aktif değil','To zaproszenie nie jest już aktywne','Această invitație nu mai este activă'],
+    ['party.revokedOne','Uitnodiging ingetrokken','Invitation revoked','Davet geri çekildi','Zaproszenie wycofane','Invitație retrasă'],
+    ['party.someMember','Een gezinslid','A family member','Bir aile üyesi','Członek rodziny','Un membru al familiei']
+,
 
     ['help.household','Heel het gezin','Whole family','Tüm aile','Cała rodzina','Toată familia'],
     ['help.householdHint','Iedereen kan deze hulpvraag zien en wie wil kan meehelpen.','Everyone can see this help request and anyone can help.','Herkes bu yardım isteğini görebilir ve isteyen yardım edebilir.','Każdy może zobaczyć tę prośbę o pomoc i pomóc.','Toată lumea poate vedea această cerere și poate ajuta.'],
