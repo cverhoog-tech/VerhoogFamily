@@ -1881,7 +1881,25 @@
     ['feed.sharePlaceholder','Deel iets met het gezin...','Share something with the family...','Ailenle bir şey paylaş...','Podziel się czymś z rodziną...','Împărtășește ceva cu familia...'],
     ['feed.searching','Zoeken...','Searching...','Aranıyor...','Wyszukiwanie...','Se caută...'],
     ['feed.noResults','Geen resultaten','No results','Sonuç yok','Brak wyników','Niciun rezultat'],
-    ['feed.loadError','Fout bij laden','Error loading','Yükleme hatası','Błąd ładowania','Eroare la încărcare']
+    ['feed.loadError','Fout bij laden','Error loading','Yükleme hatası','Błąd ładowania','Eroare la încărcare'],
+    ['feed.tag.remove','Tag verwijderen','Remove tag','Etiketi kaldır','Usuń tag','Șterge eticheta'],
+    ['feed.tag.noDate','Geen datum','No date','Tarih yok','Brak daty','Fără dată'],
+    ['feed.tag.add','TAG TOEVOEGEN','ADD TAG','ETİKET EKLE','DODAJ TAG','ADAUGĂ ETICHETĂ'],
+    ['feed.tag.person','Persoon','Person','Kişi','Osoba','Persoană'],
+    ['feed.tag.recipe','Recept','Recipe','Tarif','Przepis','Rețetă'],
+    ['feed.tag.task','Taak','Task','Görev','Zadanie','Sarcină'],
+    ['feed.tag.select','{{type}} selecteren','Select {{type}}','{{type}} seç','Wybierz: {{type}}','Selectează {{type}}'],
+    ['feed.tag.searchTask','Zoek een taak…','Search for a task…','Görev ara…','Szukaj zadania…','Caută o sarcină…'],
+    ['feed.tag.noneAvailable','Geen opties beschikbaar','No options available','Seçenek yok','Brak dostępnych opcji','Nicio opțiune disponibilă'],
+    ['feed.tag.noneTasks','Geen taken gevonden','No tasks found','Görev bulunamadı','Nie znaleziono zadań','Nu s-au găsit sarcini'],
+    ['feed.tag.member','Gezinslid','Family member','Aile üyesi','Członek rodziny','Membru al familiei'],
+    ['feed.tag.completed','Afgerond','Completed','Tamamlandı','Ukończone','Finalizat'],
+    ['feed.tag.personTag','Persoon taggen','Tag person','Kişiyi etiketle','Oznacz osobę','Etichetează persoana'],
+    ['feed.tag.recipeTag','Recept taggen','Tag recipe','Tarifi etiketle','Oznacz przepis','Etichetează rețeta'],
+    ['feed.tag.taskTag','Taak taggen','Tag task','Görevi etiketle','Oznacz zadanie','Etichetează sarcina'],
+    ['feed.tag.photoAdd','Foto toevoegen','Add photo','Fotoğraf ekle','Dodaj zdjęcie','Adaugă fotografie'],
+    ['feed.tag.choose','Kies een optie','Choose an option','Bir seçenek seç','Wybierz opcję','Alege o opțiune']
+
 
 ,
 
