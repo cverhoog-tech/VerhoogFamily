@@ -1,5 +1,6 @@
 'use strict';
 (function(){
+  function tr(key,fallback){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key);if(value&&value!==key)return value;}}catch(error){}return fallback;}
   if(window.TaskCompletionFeedbackV1)return;
   var STYLE_ID='task-completion-feedback-v1-style';
 
@@ -32,7 +33,7 @@
     btn.classList.toggle('is-completing-now',!reopening);
     btn.classList.toggle('is-reopening-now',reopening);
     var copy=textNode(btn);
-    if(copy)copy.textContent=reopening?'Heropend':'Klaar ✓';
+    if(copy)copy.textContent=reopening?'Heropend':tr('tasks.doneShort','Klaar ✓');
     // Keep the canonical toggleTask handler fully in charge. This layer only
     // removes perceived latency between the tap and the existing 90 ms rerender.
     setTimeout(function(){

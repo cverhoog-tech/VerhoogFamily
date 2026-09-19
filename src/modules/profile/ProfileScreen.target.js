@@ -13,6 +13,38 @@ import {
 
 const activeCategoryKey = 'familyapp-avatar-category-v1';
 
+function profileT(key, fallback) {
+  if (window.FamilyI18n && typeof window.FamilyI18n.t === 'function') {
+    const value = window.FamilyI18n.t(key);
+    if (value && value !== key) return value;
+  }
+  return fallback;
+}
+
+function languageCardMarkup() {
+  const i18n = window.FamilyI18n;
+  if (!i18n || typeof i18n.getOptions !== 'function') return '';
+
+  const preference = i18n.getPreference();
+  const options = [
+    { code: i18n.systemValue || 'system', nativeName: profileT('profile.language.system', 'Systeemstandaard') },
+    ...i18n.getOptions(),
+  ];
+
+  return `
+    <section class="profile-card" style="padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+        <div style="min-width:0;flex:1">
+          <h2 style="margin:0 0 4px">${profileT('profile.language.title', 'Taal')}</h2>
+          <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.language.subtitle', 'Kies de taal van FamilyApp op dit apparaat.')}</p>
+        </div>
+        <select data-language-select aria-label="${profileT('profile.language.title', 'Taal')}" style="min-width:132px;max-width:48%;min-height:42px;border:1.5px solid var(--c-border);border-radius:12px;background:var(--c-surface2);color:var(--c-text);font-size:12px;font-weight:800;padding:8px 30px 8px 10px">
+          ${options.map((item) => `<option value="${escapeAttribute(item.code)}" ${item.code === preference ? 'selected' : ''}>${escapeAttribute(item.nativeName)}</option>`).join('')}
+        </select>
+      </div>
+    </section>`;
+}
+
 function getActiveCategory() {
   return localStorage.getItem(activeCategoryKey) || 'Alle';
 }
@@ -74,8 +106,8 @@ function installCardMarkup(state) {
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
           <div style="flex:1;min-width:0">
-            <h2 style="margin:0 0 3px">FamilyApp geïnstalleerd</h2>
-            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Je gebruikt FamilyApp al vanaf je beginscherm.</p>
+            <h2 style="margin:0 0 3px">${profileT('profile.install.installedTitle', 'FamilyApp geïnstalleerd')}</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.install.installedCopy', 'Je gebruikt FamilyApp al vanaf je beginscherm.')}</p>
           </div>
           <span style="font-size:18px;color:var(--c-primary);font-weight:900">✓</span>
         </div>
@@ -83,25 +115,25 @@ function installCardMarkup(state) {
   }
 
   const copy = state.ios
-    ? 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.'
-    : 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.';
+    ? profileT('profile.install.iosCopy', 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.')
+    : profileT('profile.install.browserCopy', 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.');
 
   return `
     <section class="profile-card" style="padding:16px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
         <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,.10)">
         <div style="min-width:0">
-          <h2 style="margin:0 0 4px">FamilyApp op beginscherm</h2>
+          <h2 style="margin:0 0 4px">${profileT('profile.install.homeTitle', 'FamilyApp op beginscherm')}</h2>
           <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${copy}</p>
         </div>
       </div>
-      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? 'Hoe zet ik hem op mijn beginscherm?' : 'Installeer FamilyApp'}</button>
+      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? profileT('profile.install.how', 'Hoe zet ik hem op mijn beginscherm?') : profileT('profile.install.button', 'Installeer FamilyApp')}</button>
     </section>`;
 }
 
 function instructionModalMarkup(state) {
   const shareIcon = `
-    <span aria-label="iOS deelknop" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--c-border);background:var(--c-surface2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;vertical-align:middle">
+    <span aria-label="${profileT('profile.install.shareAria', 'iOS deelknop')}" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--c-border);background:var(--c-surface2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;vertical-align:middle">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 15V3M12 3L8.5 6.5M12 3l3.5 3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M8 9H6.5A2.5 2.5 0 0 0 4 11.5v7A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-7A2.5 2.5 0 0 0 17.5 9H16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -112,14 +144,14 @@ function instructionModalMarkup(state) {
     <div style="display:grid;gap:10px;margin-top:14px">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</strong>
-        <span style="line-height:1.5">Tik onderin Safari op de <b>deelknop</b> ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">Dit is het vierkantje met het pijltje omhoog.</small></span>
+        <span style="line-height:1.5">${profileT('profile.install.step1', 'Tik onderin Safari op de deelknop.')} ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">${profileT('profile.install.step1hint', 'Dit is het vierkantje met het pijltje omhoog.')}</small></span>
       </div>
-      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>Kies <b>Zet op beginscherm</b>.</span></div>
-      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>Tik op <b>Voeg toe</b>. Daarna opent FamilyApp als losse app.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>${profileT('profile.install.step2', 'Kies Zet op beginscherm.')}</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>${profileT('profile.install.step3', 'Tik op Voeg toe. Daarna opent FamilyApp als losse app.')}</span></div>
     </div>`;
 
   const browserSteps = `
-    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies <b>App installeren</b> of <b>Toevoegen aan beginscherm</b>.</p>`;
+    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">${profileT('profile.install.browserSteps', 'De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies App installeren of Toevoegen aan beginscherm.')}</p>`;
 
   return `
     <div class="profile-install-overlay" data-install-overlay style="position:fixed;inset:0;z-index:10020;background:rgba(15,23,42,.42);display:flex;align-items:flex-end;justify-content:center;padding:0">
@@ -127,10 +159,10 @@ function instructionModalMarkup(state) {
         <div style="width:42px;height:4px;border-radius:999px;background:var(--c-border);margin:0 auto 16px"></div>
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px">
-          <div><h2 style="margin:0 0 3px;font-size:18px">Zet FamilyApp op je beginscherm</h2><p style="margin:0;color:var(--c-text2);font-size:12px">Eenmalig instellen, daarna open je hem als app.</p></div>
+          <div><h2 style="margin:0 0 3px;font-size:18px">${profileT('profile.install.modalTitle', 'Zet FamilyApp op je beginscherm')}</h2><p style="margin:0;color:var(--c-text2);font-size:12px">${profileT('profile.install.modalSubtitle', 'Eenmalig instellen, daarna open je hem als app.')}</p></div>
         </div>
         ${state.ios ? iosSteps : browserSteps}
-        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">Begrepen</button>
+        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">${profileT('profile.install.gotIt', 'Begrepen')}</button>
       </div>
     </div>`;
 }
@@ -155,7 +187,7 @@ function bindProfileActions(container) {
     saveButton.onclick = () => {
       setProfileNames(nameInput.value.trim(), partnerInput.value.trim());
       renderProfileScreen(container);
-      toast('Profiel opgeslagen');
+      toast(profileT('profile.saved', 'Profiel opgeslagen'));
     };
   }
 
@@ -163,7 +195,7 @@ function bindProfileActions(container) {
   if (logoutButton) {
     logoutButton.onclick = async () => {
       if (!window.FamilySessionActions || typeof window.FamilySessionActions.signOut !== 'function') {
-        toast('Uitloggen is tijdelijk niet beschikbaar');
+        toast(profileT('profile.logoutUnavailable', 'Uitloggen is tijdelijk niet beschikbaar'));
         return;
       }
       logoutButton.disabled = true;
@@ -180,9 +212,19 @@ function bindProfileActions(container) {
       if (!window.FamilyUiScale) return;
       const scale = window.FamilyUiScale.set(button.dataset.uiScale);
       renderProfileScreen(container);
-      toast(`UI schaal ingesteld op ${scale}%`);
+      toast(profileT('profile.scaleChanged', 'UI schaal ingesteld op {{scale}}%', { scale }));
     };
   });
+
+  const languageSelect = container.querySelector('[data-language-select]');
+  if (languageSelect) {
+    languageSelect.onchange = () => {
+      if (!window.FamilyI18n || typeof window.FamilyI18n.setPreference !== 'function') return;
+      window.FamilyI18n.setPreference(languageSelect.value);
+      renderProfileScreen(container);
+      toast(profileT('profile.language.changed', 'Taal aangepast'));
+    };
+  }
 
   const installButton = container.querySelector('[data-install-familyapp]');
   if (installButton) {
@@ -194,8 +236,8 @@ function bindProfileActions(container) {
       }
       const result = await window.FamilyAppInstall.install();
       if (result.outcome === 'instructions') showInstallInstructions(getInstallState());
-      else if (result.outcome === 'accepted') toast('FamilyApp wordt geïnstalleerd');
-      else if (result.outcome === 'installed') toast('FamilyApp is al geïnstalleerd');
+      else if (result.outcome === 'accepted') toast(profileT('profile.install.installing', 'FamilyApp wordt geïnstalleerd'));
+      else if (result.outcome === 'installed') toast(profileT('profile.install.already', 'FamilyApp is al geïnstalleerd'));
     };
   }
 
@@ -229,7 +271,7 @@ function bindProfileActions(container) {
       reader.onload = () => {
         setUploadedAvatar(reader.result);
         renderProfileScreen(container);
-        toast('Avatar bijgewerkt');
+        toast(profileT('profile.avatar.updated', 'Avatar bijgewerkt'));
       };
       reader.readAsDataURL(file);
     };
@@ -250,7 +292,7 @@ function bindProfileActions(container) {
       event.stopPropagation();
       setPresetAvatar(button.dataset.avatarId);
       renderProfileScreen(container, { keepAvatarPopupOpen: true });
-      toast('Avatar gekozen');
+      toast(profileT('profile.avatar.chosen', 'Avatar gekozen'));
     };
   });
 
@@ -258,7 +300,7 @@ function bindProfileActions(container) {
     button.onclick = () => {
       if (button.dataset.profileRow === 'Meldingen') {
         if (typeof window.showScreen === 'function') window.showScreen('notif');
-        else toast('Meldingen openen is tijdelijk niet beschikbaar');
+        else toast(profileT('profile.notificationsUnavailable', 'Meldingen openen is tijdelijk niet beschikbaar'));
         return;
       }
       toast(button.dataset.profileRow + ' openen');
@@ -269,10 +311,10 @@ function bindProfileActions(container) {
 function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
   return `
     <div class="profile-avatar-popup-inner">
-      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="Sluiten">✕</button>
-      <h3 class="profile-avatar-popup-title">Kies een avatar</h3>
+      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="${profileT('common.close', 'Sluiten')}">✕</button>
+      <h3 class="profile-avatar-popup-title">${profileT('profile.avatar.choose', 'Kies een avatar')}</h3>
       <div class="profile-avatar-tabs">
-        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
+        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category === 'Alle' ? profileT('profile.category.all', 'Alle') : category}</button>`).join('')}
       </div>
       <div class="profile-choice-grid profile-choice-grid-exact">
         ${visibleAvatars.map((item) => {
@@ -316,7 +358,7 @@ export function renderProfileScreen(container, options = {}) {
       <section class="profile-hero-card">
         <div class="profile-avatar-wrap">
           <img class="profile-main-avatar" src="${avatar}" alt="${escapeAttribute(name)}" style="object-position:${mainObjectPosition}">
-          <button class="profile-camera-btn" data-camera-avatar aria-label="Avatar wijzigen">📷</button>
+          <button class="profile-camera-btn" data-camera-avatar aria-label="${profileT('profile.avatar.change', 'Avatar wijzigen')}">📷</button>
         </div>
         <h1>${escapeAttribute(name)}</h1>
         <div class="profile-level-pill">Level 2 · Uitgebroed</div>
@@ -328,34 +370,36 @@ export function renderProfileScreen(container, options = {}) {
         <div data-active-auth-email style="display:flex;align-items:center;gap:11px;padding:11px 12px;margin-bottom:14px;border:1px solid var(--c-border);border-radius:13px;background:var(--c-surface2)">
           <span aria-hidden="true" style="width:34px;height:34px;border-radius:10px;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">@</span>
           <div style="min-width:0;flex:1">
-            <small style="display:block;color:var(--c-text2);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">Actief account</small>
-            <strong style="display:block;color:var(--c-text);font-size:13px;line-height:1.35;overflow-wrap:anywhere">${escapeAttribute(activeEmail || 'E-mailadres niet beschikbaar')}</strong>
+            <small style="display:block;color:var(--c-text2);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">${profileT('profile.activeAccount', 'Actief account')}</small>
+            <strong style="display:block;color:var(--c-text);font-size:13px;line-height:1.35;overflow-wrap:anywhere">${escapeAttribute(activeEmail || profileT('profile.emailUnavailable', 'E-mailadres niet beschikbaar'))}</strong>
           </div>
         </div>
-        <label>Mijn naam</label>
+        <label>${profileT('profile.myName', 'Mijn naam')}</label>
         <div class="profile-input-row"><input data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
-        <label>Partner naam</label>
-        <div class="profile-input-row"><input data-partner-name value="${escapeAttribute(partner)}" placeholder="Optioneel"><span>✎</span></div>
-        <div class="profile-info-note"><span>ⓘ</span> Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.</div>
-        <button class="profile-save-btn" data-save-profile>Opslaan</button>
+        <label>${profileT('profile.partnerName', 'Partner naam')}</label>
+        <div class="profile-input-row"><input data-partner-name value="${escapeAttribute(partner)}" placeholder="${profileT('profile.optional', 'Optioneel')}"><span>✎</span></div>
+        <div class="profile-info-note"><span>ⓘ</span> ${profileT('profile.avatar.info', 'Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.')}</div>
+        <button class="profile-save-btn" data-save-profile>${profileT('common.save', 'Opslaan')}</button>
       </section>
 
       <section class="profile-card profile-avatar-card">
-        <h2>Mijn avatar</h2>
+        <h2>${profileT('profile.avatar.mine', 'Mijn avatar')}</h2>
         <div class="profile-avatar-actions">
-          <button data-open-avatar-popup>▧ Kies uit de app</button>
-          <button data-upload-avatar>⇧ Upload foto</button>
+          <button data-open-avatar-popup>▧ ${profileT('profile.avatar.chooseApp', 'Kies uit de app')}</button>
+          <button data-upload-avatar>⇧ ${profileT('profile.avatar.upload', 'Upload foto')}</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
       </section>
 
       ${installCardMarkup(installState)}
 
+      ${languageCardMarkup()}
+
       <section class="profile-card" style="padding:16px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
           <div>
-            <h2 style="margin:0 0 4px">UI schaal</h2>
-            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Vergroot of verklein de volledige app. De keuze blijft bewaard op dit apparaat.</p>
+            <h2 style="margin:0 0 4px">${profileT('profile.scale.title', 'UI schaal')}</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.scale.copy', 'Vergroot of verklein de volledige app. De keuze blijft bewaard op dit apparaat.')}</p>
           </div>
           <strong style="font-size:14px;color:var(--c-primary);white-space:nowrap">${uiScale}%</strong>
         </div>
@@ -365,10 +409,10 @@ export function renderProfileScreen(container, options = {}) {
       </section>
 
       <section class="profile-card profile-settings-card">
-        <button data-profile-row="Account instellingen"><span>♙</span><b>Account instellingen</b><em>›</em></button>
-        <button data-profile-row="Privacy"><span>▣</span><b>Privacy</b><em>›</em></button>
-        <button data-profile-row="Meldingen"><span>♧</span><b>Meldingen</b><em>›</em></button>
-        <button data-profile-logout style="color:#dc2626"><span>↪</span><b>Uitloggen</b><em>›</em></button>
+        <button data-profile-row="Account instellingen"><span>♙</span><b>${profileT('profile.settings.account', 'Account instellingen')}</b><em>›</em></button>
+        <button data-profile-row="Privacy"><span>▣</span><b>${profileT('profile.settings.privacy', 'Privacy')}</b><em>›</em></button>
+        <button data-profile-row="Meldingen"><span>♧</span><b>${profileT('profile.settings.notifications', 'Meldingen')}</b><em>›</em></button>
+        <button data-profile-logout style="color:#dc2626"><span>↪</span><b>${profileT('profile.settings.logout', 'Uitloggen')}</b><em>›</em></button>
       </section>
     </section>
     ${popupHtml}
