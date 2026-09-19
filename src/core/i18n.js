@@ -1869,7 +1869,20 @@
     ['feed.activity.lookForward','Iets om naar uit te kijken','Something to look forward to','Dört gözle beklenecek bir şey','Coś, na co warto czekać','Ceva de așteptat cu nerăbdare'],
     ['feed.activity.appointmentInCalendar','{{title}} staat in de agenda','{{title}} is in the calendar','{{title}} takvimde','{{title}} jest w kalendarzu','{{title}} este în calendar'],
     ['feed.activity.somethingNew','Er is iets nieuws thuis','There is something new at home','Evde yeni bir şey var','W domu jest coś nowego','Este ceva nou acasă'],
-    ['feed.activity.updatedBy','{{actor}} heeft iets bijgewerkt','{{actor}} updated something','{{actor}} bir şeyi güncelledi','{{actor}} coś zaktualizował(a)','{{actor}} a actualizat ceva']
+    ['feed.activity.updatedBy','{{actor}} heeft iets bijgewerkt','{{actor}} updated something','{{actor}} bir şeyi güncelledi','{{actor}} coś zaktualizował(a)','{{actor}} a actualizat ceva'],
+    ['feed.taskDone','Taak afgerond','Task completed','Görev tamamlandı','Zadanie ukończone','Sarcină finalizată'],
+    ['feed.notReady','Feed nog niet gereed, probeer zo weer','Feed is not ready yet, try again shortly','Akış henüz hazır değil, birazdan tekrar dene','Aktualności nie są jeszcze gotowe, spróbuj ponownie za chwilę','Fluxul nu este încă gata, încearcă din nou în curând'],
+    ['feed.likeFailed','Like mislukt, probeer opnieuw','Like failed, try again','Beğeni başarısız, tekrar dene','Polubienie nie powiodło się, spróbuj ponownie','Aprecierea a eșuat, încearcă din nou'],
+    ['feed.commentFailed','Reactie plaatsen mislukt, probeer opnieuw','Could not post comment, try again','Yorum gönderilemedi, tekrar dene','Nie udało się dodać komentarza, spróbuj ponownie','Comentariul nu a putut fi publicat, încearcă din nou'],
+    ['feed.deleteConfirm','Post verwijderen?','Delete post?','Gönderi silinsin mi?','Usunąć post?','Ștergi postarea?'],
+    ['feed.deleteFailed','Verwijderen mislukt, probeer opnieuw','Delete failed, try again','Silme başarısız, tekrar dene','Usuwanie nie powiodło się, spróbuj ponownie','Ștergerea a eșuat, încearcă din nou'],
+    ['feed.linkTaskSoon','Taak koppelen komt zo terug in Feed 2.0','Task linking is coming back soon in Feed 2.0','Görev bağlama Feed 2.0’da yakında geri geliyor','Łączenie zadań wkrótce wróci w Feed 2.0','Asocierea sarcinilor revine în curând în Feed 2.0'],
+    ['feed.postFailed','Post plaatsen mislukt, probeer opnieuw','Could not post, try again','Gönderi paylaşılamadı, tekrar dene','Nie udało się opublikować, spróbuj ponownie','Postarea a eșuat, încearcă din nou'],
+    ['feed.sharePlaceholder','Deel iets met het gezin...','Share something with the family...','Ailenle bir şey paylaş...','Podziel się czymś z rodziną...','Împărtășește ceva cu familia...'],
+    ['feed.searching','Zoeken...','Searching...','Aranıyor...','Wyszukiwanie...','Se caută...'],
+    ['feed.noResults','Geen resultaten','No results','Sonuç yok','Brak wyników','Niciun rezultat'],
+    ['feed.loadError','Fout bij laden','Error loading','Yükleme hatası','Błąd ładowania','Eroare la încărcare']
+
 ,
 
     ['shop.household','Gezin','Family','Aile','Rodzina','Familie'],
