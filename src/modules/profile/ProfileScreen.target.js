@@ -144,14 +144,14 @@ function instructionModalMarkup(state) {
     <div style="display:grid;gap:10px;margin-top:14px">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</strong>
-        <span style="line-height:1.5">Tik onderin Safari op de <b>deelknop</b> ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">Dit is het vierkantje met het pijltje omhoog.</small></span>
+        <span style="line-height:1.5">${profileT('profile.install.step1', 'Tik onderin Safari op de deelknop.')} ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">${profileT('profile.install.step1hint', 'Dit is het vierkantje met het pijltje omhoog.')}</small></span>
       </div>
       <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>${profileT('profile.install.step2', 'Kies Zet op beginscherm.')}</span></div>
       <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>${profileT('profile.install.step3', 'Tik op Voeg toe. Daarna opent FamilyApp als losse app.')}</span></div>
     </div>`;
 
   const browserSteps = `
-    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies <b>App installeren</b> of <b>Toevoegen aan beginscherm</b>.</p>`;
+    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">${profileT('profile.install.browserSteps', 'De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies App installeren of Toevoegen aan beginscherm.')}</p>`;
 
   return `
     <div class="profile-install-overlay" data-install-overlay style="position:fixed;inset:0;z-index:10020;background:rgba(15,23,42,.42);display:flex;align-items:flex-end;justify-content:center;padding:0">
