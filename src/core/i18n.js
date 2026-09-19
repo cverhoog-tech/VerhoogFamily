@@ -837,11 +837,16 @@
 
   ];
   var moduleLanguages = ['nl','en','tr','pl','ro'];
+  var moduleUiSourceMaps = { en:{}, tr:{}, pl:{}, ro:{} };
   moduleUiRows.forEach(function(row){
     for(var mi=0;mi<moduleLanguages.length;mi+=1){
       var lang=moduleLanguages[mi];
       if(dictionaries[lang]) dictionaries[lang][row[0]]=row[mi+1];
     }
+    moduleUiSourceMaps.en[row[1]]=row[2];
+    moduleUiSourceMaps.tr[row[1]]=row[3];
+    moduleUiSourceMaps.pl[row[1]]=row[4];
+    moduleUiSourceMaps.ro[row[1]]=row[5];
   });
 
   // Legacy UI bridge: translates known FamilyApp system copy that is still
@@ -1084,6 +1089,8 @@
     if (!normalized) return source;
     var language = getLanguage();
     if (language === 'nl') return normalized;
+    var moduleMap = moduleUiSourceMaps[language] || moduleUiSourceMaps.en;
+    if (moduleMap && moduleMap[normalized] !== undefined) return moduleMap[normalized];
     var map = legacyUiMaps[language] || legacyUiMaps.en;
     if (map[normalized] !== undefined) return map[normalized];
 
