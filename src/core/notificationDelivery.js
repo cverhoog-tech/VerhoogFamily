@@ -13,6 +13,7 @@
   var installed=false;
   var contextUnsubscribe=null;
   var activeIdentity=null;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function identity(c){return c&&c.ready&&c.uid&&c.householdId?[String(c.uid),String(c.householdId),String(c.revision||0)].join('|'):null;}
@@ -41,11 +42,11 @@
     var event=entry.event;if(!event)return next();
     ensureStyles();var isAction=actionable(event);
     var el=document.createElement('div');el.className='notif-live-banner';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
-    el.innerHTML='<div class="notif-live-icon" style="background:'+esc(event.bg||'#ede9fe')+'">'+esc(event.icon||'🔔')+'</div><div class="notif-live-copy"><div class="notif-live-title">'+esc(event.title||'Melding')+'</div><div class="notif-live-body">'+esc(event.body||'')+'</div>'+(event.actor&&event.actor.name?'<div class="notif-live-from">Van '+esc(event.actor.name)+'</div>':'')+'<div class="notif-live-actions">'+(isAction?'<button type="button" class="notif-live-accept">Accepteren</button>':'')+'<button type="button" class="notif-live-open">Meldingen</button></div></div><button class="notif-live-close" type="button" aria-label="Sluiten">✕</button>';
+    el.innerHTML='<div class="notif-live-icon" style="background:'+esc(event.bg||'#ede9fe')+'">'+esc(event.icon||'🔔')+'</div><div class="notif-live-copy"><div class="notif-live-title">'+esc(event.title||tr('notifications.default','Melding'))+'</div><div class="notif-live-body">'+esc(event.body||'')+'</div>'+(event.actor&&event.actor.name?'<div class="notif-live-from">'+esc(tr('notifications.from','Van '+event.actor.name,{name:event.actor.name}))+'</div>':'')+'<div class="notif-live-actions">'+(isAction?'<button type="button" class="notif-live-accept">'+esc(tr('notif.accept','Accepteren'))+'</button>':'')+'<button type="button" class="notif-live-open">'+esc(tr('nav.notifications','Meldingen'))+'</button></div></div><button class="notif-live-close" type="button" aria-label="'+esc(tr('common.close','Sluiten'))+'">✕</button>';
     function close(){if(el.parentNode)el.parentNode.removeChild(el);if(activeBanner===el)activeBanner=null;next();}
     el.querySelector('.notif-live-close').onclick=function(ev){ev.preventDefault();ev.stopPropagation();close();};
     var openBtn=el.querySelector('.notif-live-open');if(openBtn)openBtn.onclick=function(ev){ev.preventDefault();ev.stopPropagation();openCenter(event);close();};
-    var acceptBtn=el.querySelector('.notif-live-accept');if(acceptBtn)acceptBtn.onclick=function(ev){ev.preventDefault();ev.stopPropagation();if(entry.identity!==activeIdentity){close();return;}acceptBtn.disabled=true;NotificationActions.run(event).then(close).catch(function(err){acceptBtn.disabled=false;console.warn('[NotificationDelivery]',err);if(typeof window.showToast==='function')window.showToast('Actie uitvoeren mislukt');});};
+    var acceptBtn=el.querySelector('.notif-live-accept');if(acceptBtn)acceptBtn.onclick=function(ev){ev.preventDefault();ev.stopPropagation();if(entry.identity!==activeIdentity){close();return;}acceptBtn.disabled=true;NotificationActions.run(event).then(close).catch(function(err){acceptBtn.disabled=false;console.warn('[NotificationDelivery]',err);if(typeof window.showToast==='function')window.showToast(tr('notifications.actionFailed','Actie uitvoeren mislukt'));});};
     el.onclick=function(ev){if(ev.target&&ev.target.closest&&ev.target.closest('button'))return;if(entry.identity!==activeIdentity){close();return;}if(isAction){NotificationActions.run(event).then(close).catch(function(err){console.warn('[NotificationDelivery]',err);});}else{openCenter(event);close();}};
     document.body.appendChild(el);activeBanner=el;setTimeout(function(){if(activeBanner===el)close();},8000);
   }
@@ -55,6 +56,7 @@
     if(installed)return;installed=true;ensureStyles();
     window.addEventListener('familyapp:notification-received',function(ev){receive(ev&&ev.detail&&ev.detail.event);});
     if(window.HouseholdContext&&typeof HouseholdContext.subscribe==='function')contextUnsubscribe=HouseholdContext.subscribe(handleContext);
+    window.addEventListener('familyapp:language-changed',clearLive);
   }
   function stop(){clearLive();if(contextUnsubscribe){try{contextUnsubscribe();}catch(e){}contextUnsubscribe=null;}activeIdentity=null;}
   window.NotificationDelivery={version:VERSION,install:install,stop:stop,receive:receive,status:function(){return{version:VERSION,identity:activeIdentity,queued:queue.length,banner:!!activeBanner};}};
