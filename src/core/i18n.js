@@ -2200,6 +2200,11 @@
     ['common.backPrevious','Terug naar vorig scherm','Back to previous screen','Önceki ekrana dön','Wróć do poprzedniego ekranu','Înapoi la ecranul anterior'],
     ['bonus.welcome','Welkom terug!','Welcome back!','Tekrar hoş geldin!','Witaj ponownie!','Bine ai revenit!'],
     ['bonus.saveFailed','Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.','Daily bonus could not be saved. Try again.','Günlük bonus kaydedilemedi. Tekrar dene.','Nie udało się zapisać dziennego bonusu. Spróbuj ponownie.','Bonusul zilnic nu a putut fi salvat. Încearcă din nou.'],
+    ['bonus.streak','🔥 {{count}} dagen op rij!','🔥 {{count}} days in a row!','🔥 {{count}} gün üst üste!','🔥 {{count}} dni z rzędu!','🔥 {{count}} zile la rând!'],
+    ['bonus.rewardName','Dagelijkse bonus','Daily bonus','Günlük bonus','Bonus dzienny','Bonus zilnic'],
+    ['bonus.awarded','🎁 +{{xp}} XP dagelijkse bonus!','🎁 +{{xp}} XP daily bonus!','🎁 +{{xp}} XP günlük bonus!','🎁 +{{xp}} XP bonusu dziennego!','🎁 +{{xp}} XP bonus zilnic!'],
+    ['bonus.already','🎁 Dagelijkse bonus was al geclaimd','🎁 Daily bonus was already claimed','🎁 Günlük bonus zaten alındı','🎁 Bonus dzienny został już odebrany','🎁 Bonusul zilnic a fost deja revendicat']
+,
 
     ['household.idFailed','Kon geen gezins-ID maken','Could not create a family ID','Aile kimliği oluşturulamadı','Nie udało się utworzyć identyfikatora rodziny','Nu s-a putut crea ID-ul familiei'],
     ['household.noneActive','Geen actief gezin','No active family','Aktif aile yok','Brak aktywnej rodziny','Nicio familie activă'],
