@@ -106,8 +106,8 @@ function installCardMarkup(state) {
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
           <div style="flex:1;min-width:0">
-            <h2 style="margin:0 0 3px">FamilyApp geïnstalleerd</h2>
-            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Je gebruikt FamilyApp al vanaf je beginscherm.</p>
+            <h2 style="margin:0 0 3px">${profileT('profile.install.installedTitle', 'FamilyApp geïnstalleerd')}</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.install.installedCopy', 'Je gebruikt FamilyApp al vanaf je beginscherm.')}</p>
           </div>
           <span style="font-size:18px;color:var(--c-primary);font-weight:900">✓</span>
         </div>
@@ -115,25 +115,25 @@ function installCardMarkup(state) {
   }
 
   const copy = state.ios
-    ? 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.'
-    : 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.';
+    ? profileT('profile.install.iosCopy', 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.')
+    : profileT('profile.install.browserCopy', 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.');
 
   return `
     <section class="profile-card" style="padding:16px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
         <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,.10)">
         <div style="min-width:0">
-          <h2 style="margin:0 0 4px">FamilyApp op beginscherm</h2>
+          <h2 style="margin:0 0 4px">${profileT('profile.install.homeTitle', 'FamilyApp op beginscherm')}</h2>
           <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${copy}</p>
         </div>
       </div>
-      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? 'Hoe zet ik hem op mijn beginscherm?' : 'Installeer FamilyApp'}</button>
+      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? profileT('profile.install.how', 'Hoe zet ik hem op mijn beginscherm?') : profileT('profile.install.button', 'Installeer FamilyApp')}</button>
     </section>`;
 }
 
 function instructionModalMarkup(state) {
   const shareIcon = `
-    <span aria-label="iOS deelknop" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--c-border);background:var(--c-surface2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;vertical-align:middle">
+    <span aria-label="${profileT('profile.install.shareAria', 'iOS deelknop')}" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--c-border);background:var(--c-surface2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;vertical-align:middle">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 15V3M12 3L8.5 6.5M12 3l3.5 3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M8 9H6.5A2.5 2.5 0 0 0 4 11.5v7A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-7A2.5 2.5 0 0 0 17.5 9H16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -146,8 +146,8 @@ function instructionModalMarkup(state) {
         <strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</strong>
         <span style="line-height:1.5">Tik onderin Safari op de <b>deelknop</b> ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">Dit is het vierkantje met het pijltje omhoog.</small></span>
       </div>
-      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>Kies <b>Zet op beginscherm</b>.</span></div>
-      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>Tik op <b>Voeg toe</b>. Daarna opent FamilyApp als losse app.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>${profileT('profile.install.step2', 'Kies Zet op beginscherm.')}</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>${profileT('profile.install.step3', 'Tik op Voeg toe. Daarna opent FamilyApp als losse app.')}</span></div>
     </div>`;
 
   const browserSteps = `
@@ -159,10 +159,10 @@ function instructionModalMarkup(state) {
         <div style="width:42px;height:4px;border-radius:999px;background:var(--c-border);margin:0 auto 16px"></div>
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px">
-          <div><h2 style="margin:0 0 3px;font-size:18px">Zet FamilyApp op je beginscherm</h2><p style="margin:0;color:var(--c-text2);font-size:12px">Eenmalig instellen, daarna open je hem als app.</p></div>
+          <div><h2 style="margin:0 0 3px;font-size:18px">${profileT('profile.install.modalTitle', 'Zet FamilyApp op je beginscherm')}</h2><p style="margin:0;color:var(--c-text2);font-size:12px">${profileT('profile.install.modalSubtitle', 'Eenmalig instellen, daarna open je hem als app.')}</p></div>
         </div>
         ${state.ios ? iosSteps : browserSteps}
-        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">Begrepen</button>
+        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">${profileT('profile.install.gotIt', 'Begrepen')}</button>
       </div>
     </div>`;
 }
@@ -187,7 +187,7 @@ function bindProfileActions(container) {
     saveButton.onclick = () => {
       setProfileNames(nameInput.value.trim(), partnerInput.value.trim());
       renderProfileScreen(container);
-      toast('Profiel opgeslagen');
+      toast(profileT('profile.saved', 'Profiel opgeslagen'));
     };
   }
 
@@ -195,7 +195,7 @@ function bindProfileActions(container) {
   if (logoutButton) {
     logoutButton.onclick = async () => {
       if (!window.FamilySessionActions || typeof window.FamilySessionActions.signOut !== 'function') {
-        toast('Uitloggen is tijdelijk niet beschikbaar');
+        toast(profileT('profile.logoutUnavailable', 'Uitloggen is tijdelijk niet beschikbaar'));
         return;
       }
       logoutButton.disabled = true;
@@ -212,7 +212,7 @@ function bindProfileActions(container) {
       if (!window.FamilyUiScale) return;
       const scale = window.FamilyUiScale.set(button.dataset.uiScale);
       renderProfileScreen(container);
-      toast(`UI schaal ingesteld op ${scale}%`);
+      toast(profileT('profile.scaleChanged', 'UI schaal ingesteld op {{scale}}%', { scale }));
     };
   });
 
@@ -236,8 +236,8 @@ function bindProfileActions(container) {
       }
       const result = await window.FamilyAppInstall.install();
       if (result.outcome === 'instructions') showInstallInstructions(getInstallState());
-      else if (result.outcome === 'accepted') toast('FamilyApp wordt geïnstalleerd');
-      else if (result.outcome === 'installed') toast('FamilyApp is al geïnstalleerd');
+      else if (result.outcome === 'accepted') toast(profileT('profile.install.installing', 'FamilyApp wordt geïnstalleerd'));
+      else if (result.outcome === 'installed') toast(profileT('profile.install.already', 'FamilyApp is al geïnstalleerd'));
     };
   }
 
@@ -271,7 +271,7 @@ function bindProfileActions(container) {
       reader.onload = () => {
         setUploadedAvatar(reader.result);
         renderProfileScreen(container);
-        toast('Avatar bijgewerkt');
+        toast(profileT('profile.avatar.updated', 'Avatar bijgewerkt'));
       };
       reader.readAsDataURL(file);
     };
@@ -292,7 +292,7 @@ function bindProfileActions(container) {
       event.stopPropagation();
       setPresetAvatar(button.dataset.avatarId);
       renderProfileScreen(container, { keepAvatarPopupOpen: true });
-      toast('Avatar gekozen');
+      toast(profileT('profile.avatar.chosen', 'Avatar gekozen'));
     };
   });
 
@@ -300,7 +300,7 @@ function bindProfileActions(container) {
     button.onclick = () => {
       if (button.dataset.profileRow === 'Meldingen') {
         if (typeof window.showScreen === 'function') window.showScreen('notif');
-        else toast('Meldingen openen is tijdelijk niet beschikbaar');
+        else toast(profileT('profile.notificationsUnavailable', 'Meldingen openen is tijdelijk niet beschikbaar'));
         return;
       }
       toast(button.dataset.profileRow + ' openen');
