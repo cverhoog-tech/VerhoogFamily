@@ -622,7 +622,27 @@
     ['recipes.cat.dinner','Diner','Dinner','Akşam yemeği','Kolacja','Cină'],
     ['recipes.cat.snack','Snack','Snack','Atıştırmalık','Przekąska','Gustare'],
     ['recipes.cat.dessert','Dessert','Dessert','Tatlı','Deser','Desert'],
-    ['recipes.cat.baking','Bakken','Baking','Pişirme','Pieczenie','Copt']
+    ['recipes.cat.baking','Bakken','Baking','Pişirme','Pieczenie','Copt'],
+    ['recipes.add','+ Recept','+ Recipe','+ Tarif','+ Przepis','+ Rețetă'],
+    ['recipes.importLink','Importeren via link','Import via link','Bağlantıdan içe aktar','Importuj przez link','Importă prin link'],
+    ['recipes.all','Alle','All','Tümü','Wszystkie','Toate'],
+    ['recipes.noSteps','Geen stappen','No steps','Adım yok','Brak kroków','Niciun pas'],
+    ['recipes.back','← Terug','← Back','← Geri','← Wstecz','← Înapoi'],
+    ['recipes.toShopping','Naar boodschappenlijst','Add to shopping list','Alışveriş listesine ekle','Dodaj do listy zakupów','Adaugă în lista de cumpărături'],
+    ['recipes.confirmDelete','Verwijder “{{name}}”?','Delete “{{name}}”?','“{{name}}” silinsin mi?','Usunąć „{{name}}”?','Ștergi „{{name}}”?'],
+    ['recipes.deleted','Verwijderd','Deleted','Silindi','Usunięto','Șters'],
+    ['recipes.createShoppingFirst','Maak eerst een boodschappenlijst via Boodschappen','Create a shopping list in Groceries first','Önce Alışveriş bölümünde bir liste oluştur','Najpierw utwórz listę w Zakupach','Creează mai întâi o listă în Cumpărături'],
+    ['recipes.list','Lijst','List','Liste','Lista','Listă'],
+    ['recipes.private','Privé','Private','Özel','Prywatna','Privată'],
+    ['recipes.addedToShopping','{{added}} toegevoegd','{{added}} added','{{added}} eklendi','Dodano: {{added}}','Adăugate: {{added}}'],
+    ['recipes.alreadyExisted','{{count}} bestond al','{{count}} already existed','{{count}} zaten vardı','{{count}} już istniało','{{count}} existau deja'],
+    ['recipes.addFailed','Toevoegen mislukt','Add failed','Ekleme başarısız','Dodawanie nie powiodło się','Adăugarea a eșuat'],
+    ['recipes.image','Receptafbeelding','Recipe image','Tarif görseli','Zdjęcie przepisu','Imagine rețetă'],
+    ['recipes.photoEmptyHint','Leeg = FamilyApp Hero','Empty = FamilyApp Hero','Boş = FamilyApp Hero','Puste = FamilyApp Hero','Gol = FamilyApp Hero'],
+    ['recipes.photoHint','Laat het veld leeg om automatisch de FamilyApp {{category}} Hero te gebruiken.','Leave the field empty to automatically use the FamilyApp {{category}} Hero.','FamilyApp {{category}} Hero görselini otomatik kullanmak için alanı boş bırak.','Zostaw pole puste, aby automatycznie użyć FamilyApp {{category}} Hero.','Lasă câmpul gol pentru a folosi automat FamilyApp {{category}} Hero.'],
+    ['recipes.heroSet','FamilyApp Hero ingesteld ✓','FamilyApp Hero set ✓','FamilyApp Hero ayarlandı ✓','Ustawiono FamilyApp Hero ✓','FamilyApp Hero a fost setat ✓'],
+    ['recipes.personShort','pers','people','kişi','os.','pers.']
+
 ,
 
     ['shop.title','Boodschappen','Groceries','Alışveriş','Zakupy','Cumpărături'],
