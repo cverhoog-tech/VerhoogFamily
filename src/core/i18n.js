@@ -2243,7 +2243,11 @@
     ['household.newInvite','Nieuwe uitnodigingscode maken','Create new invitation code','Yeni davet kodu oluştur','Utwórz nowy kod zaproszenia','Creează un cod de invitație nou'],
     ['household.noActiveInvites','Nog geen actieve uitnodigingscodes.','No active invitation codes yet.','Henüz aktif davet kodu yok.','Brak aktywnych kodów zaproszeń.','Încă nu există coduri de invitație active.'],
     ['household.multipleInvites','Je kunt meerdere uitnodigingen tegelijk actief hebben.','You can have multiple invitations active at the same time.','Aynı anda birden fazla aktif davetin olabilir.','Możesz mieć kilka aktywnych zaproszeń jednocześnie.','Poți avea mai multe invitații active în același timp.'],
-    ['household.technical','Technische melding: {{message}}','Technical message: {{message}}','Teknik mesaj: {{message}}','Komunikat techniczny: {{message}}','Mesaj tehnic: {{message}}']
+    ['household.technical','Technische melding: {{message}}','Technical message: {{message}}','Teknik mesaj: {{message}}','Komunikat techniczny: {{message}}','Mesaj tehnic: {{message}}'],
+    ['household.codeUsedOn','Deze code is al gebruikt op {{date}}.','This code was already used on {{date}}.','Bu kod {{date}} tarihinde zaten kullanıldı.','Ten kod został już użyty {{date}}.','Acest cod a fost deja folosit la {{date}}.'],
+    ['household.writeDenied','De uitnodiging is nog geldig, maar de database weigerde de schrijfactie. {{technical}}','The invitation is still valid, but the database rejected the write action. {{technical}}','Davet hâlâ geçerli ancak veritabanı yazma işlemini reddetti. {{technical}}','Zaproszenie jest nadal ważne, ale baza danych odrzuciła zapis. {{technical}}','Invitația este încă validă, dar baza de date a refuzat scrierea. {{technical}}'],
+    ['household.processFailedTechnical','Kon de uitnodiging niet verwerken. {{technical}}','Could not process the invitation. {{technical}}','Davet işlenemedi. {{technical}}','Nie udało się przetworzyć zaproszenia. {{technical}}','Invitația nu a putut fi procesată. {{technical}}']
+
 
 
 
