@@ -1035,7 +1035,17 @@
     ['skills.ability.swap','Ruil taken','Swap tasks','Görevleri takas et','Zamień zadania','Schimbă sarcinile'],
     ['skills.ability.selectTwoFirst','Selecteer eerst 2 taken','Select 2 tasks first','Önce 2 görev seç','Najpierw wybierz 2 zadania','Selectează mai întâi 2 sarcini'],
     ['skills.ability.canceled','Geannuleerd','Cancelled','İptal edildi','Anulowano','Anulat'],
-    ['skills.ability.failed','Ability kon niet worden ingezet','Ability could not be used','Yetenek kullanılamadı','Nie udało się użyć umiejętności','Abilitatea nu a putut fi folosită']
+    ['skills.ability.failed','Ability kon niet worden ingezet','Ability could not be used','Yetenek kullanılamadı','Nie udało się użyć umiejętności','Abilitatea nu a putut fi folosită'],
+    ['skills.ability.chooseTaskButton','🎯 Kies taak','🎯 Choose task','🎯 Görev seç','🎯 Wybierz zadanie','🎯 Alege sarcina'],
+    ['skills.ability.noIncomplete','Geen onvoltooide taken!','No incomplete tasks!','Tamamlanmamış görev yok!','Brak nieukończonych zadań!','Nu sunt sarcini nefinalizate!'],
+    ['skills.ability.selectTask','Selecteer een taak voor {{ability}}','Select a task for {{ability}}','{{ability}} için bir görev seç','Wybierz zadanie dla {{ability}}','Selectează o sarcină pentru {{ability}}'],
+    ['skills.ability.chooseTaskInfo','Kies een taak om {{ability}} op in te zetten','Choose a task to use {{ability}} on','{{ability}} kullanmak için bir görev seç','Wybierz zadanie, na którym użyjesz {{ability}}','Alege o sarcină pe care să folosești {{ability}}'],
+    ['skills.ability.swapTasks','🔄 Ruil taken','🔄 Swap tasks','🔄 Görevleri takas et','🔄 Zamień zadania','🔄 Schimbă sarcinile'],
+    ['skills.ability.maxTwo','Selecteer maximaal 2 taken','Select at most 2 tasks','En fazla 2 görev seç','Wybierz maksymalnie 2 zadania','Selectează maximum 2 sarcini'],
+    ['skills.ability.selectExactTwo','Selecteer precies 2 taken om te ruilen','Select exactly 2 tasks to swap','Takas için tam 2 görev seç','Wybierz dokładnie 2 zadania do zamiany','Selectează exact 2 sarcini pentru schimb'],
+    ['skills.ability.swapped','Taken geruild! 🔄','Tasks swapped! 🔄','Görevler takas edildi! 🔄','Zadania zamienione! 🔄','Sarcini schimbate! 🔄'],
+    ['skills.ability.noTasksSwap','Geen onvoltooide taken om te ruilen!','No incomplete tasks to swap!','Takas edilecek tamamlanmamış görev yok!','Brak nieukończonych zadań do zamiany!','Nu sunt sarcini nefinalizate pentru schimb!']
+
 ,
     ['skills.ability.postpone1.name','Dag Uitstel','Day Postpone','Günlük Erteleme','Dzień odroczenia','Amânare o zi'],
     ['skills.ability.postpone1.desc','Stel een taak 1 dag uit, geen straf','Postpone a task by 1 day, no penalty','Bir görevi 1 gün ertele, ceza yok','Przełóż zadanie o 1 dzień bez kary','Amână o sarcină cu 1 zi, fără penalizare'],
