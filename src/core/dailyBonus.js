@@ -1,4 +1,5 @@
 'use strict';
+function bonusTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 // ============================================================
 // DAILY LOGIN BONUS
 // ============================================================
@@ -14,7 +15,7 @@ function checkDailyBonus(){
   var st=document.getElementById('daily-bonus-streak');
   var xpEl=document.getElementById('daily-bonus-xp');
   if(ov)ov.style.display='flex';
-  if(st)st.textContent=dailyBonusData.streak>1?'🔥 '+dailyBonusData.streak+' dagen op rij!':'Welkom terug!';
+  if(st)st.textContent=dailyBonusData.streak>1?bonusTr('bonus.streak','🔥 '+dailyBonusData.streak+' dagen op rij!',{count:dailyBonusData.streak}):bonusTr('bonus.welcome','Welkom terug!');
   if(xpEl)xpEl.textContent='+'+xp+' XP';
   if(ov)ov._pendingXP=xp;
 }
@@ -24,27 +25,29 @@ function claimDailyBonus(){
   var day=todayStr();
   var reward;
   try{
-    reward=awardXP(xp,'Dagelijkse bonus',{
+    reward=awardXP(xp,bonusTr('bonus.rewardName','Dagelijkse bonus'),{
       key:'daily:'+day,
       source:'daily-bonus',
       sourceId:day
     });
   }catch(error){
     console.error('[DailyBonus] reward failed',error);
-    showToast('Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.');
+    showToast(bonusTr('bonus.saveFailed','Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.'));
     return;
   }
   Promise.resolve(reward).then(function(result){
     if(result&&result.error){
-      showToast('Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.');
+      showToast(bonusTr('bonus.saveFailed','Dagelijkse bonus kon niet worden opgeslagen. Probeer opnieuw.'));
       return;
     }
     dailyBonusData.lastClaim=day;
     localStorage.setItem('familie_daily_bonus',JSON.stringify(dailyBonusData));
     ov.style.display='none';
-    if(!result||result.awarded!==false)showToast('🎁 +'+xp+' XP dagelijkse bonus!');
-    else showToast('🎁 Dagelijkse bonus was al geclaimd');
+    if(!result||result.awarded!==false)showToast(bonusTr('bonus.awarded','🎁 +'+xp+' XP dagelijkse bonus!',{xp:xp}));
+    else showToast(bonusTr('bonus.already','🎁 Dagelijkse bonus was al geclaimd'));
     spawnConfetti();
   });
 }
 
+
+window.addEventListener('familyapp:language-changed',function(){try{var ov=document.getElementById('daily-bonus-overlay');if(ov&&ov.style.display!=='none')checkDailyBonus();}catch(error){}});
