@@ -716,6 +716,19 @@
     ['cleaning.planReady','Weekplan staat klaar ✓','Week plan is ready ✓','Haftalık plan hazır ✓','Plan tygodnia jest gotowy ✓','Planul săptămânal este gata ✓'],
     ['cleaning.planExists','Er staat al een actief weekplan.','There is already an active week plan.','Zaten aktif bir haftalık plan var.','Istnieje już aktywny plan tygodnia.','Există deja un plan săptămânal activ.'],
     ['cleaning.planFailed','Weekplan kon niet worden gemaakt.','Week plan could not be created.','Haftalık plan oluşturulamadı.','Nie udało się utworzyć planu tygodnia.','Planul săptămânal nu a putut fi creat.'],
+    ['cleaning.refreshUnavailable','Workplan sync is not loaded yet.','Workplan sync is not loaded yet.','Çalışma planı senkronizasyonu henüz yüklenmedi.','Synchronizacja planu pracy nie jest jeszcze załadowana.','Sincronizarea planului de lucru nu este încă încărcată.'],
+    ['cleaning.workplanUnavailable','Werkplan is nog niet beschikbaar.','Work plan is not available yet.','Çalışma planı henüz kullanılamıyor.','Plan pracy nie jest jeszcze dostępny.','Planul de lucru nu este încă disponibil.'],
+    ['cleaning.noRoutinesToPlan','Er zijn nu geen routines om in te plannen.','There are no routines to schedule right now.','Şu anda planlanacak rutin yok.','Nie ma teraz rutyn do zaplanowania.','Nu există rutine de planificat acum.'],
+    ['cleaning.workplanRebuilt','Werkplan opnieuw opgebouwd uit je huidige kamers en routines ✓','Work plan rebuilt from your current rooms and routines ✓','Çalışma planı mevcut oda ve rutinlerinden yeniden oluşturuldu ✓','Plan pracy przebudowano na podstawie obecnych pokoi i rutyn ✓','Planul de lucru a fost reconstruit din camerele și rutinele actuale ✓'],
+    ['cleaning.workplanReady','Werkplan staat klaar ✓','Work plan is ready ✓','Çalışma planı hazır ✓','Plan pracy jest gotowy ✓','Planul de lucru este gata ✓'],
+    ['cleaning.workplanUpdateFailed','Werkplan kon niet worden bijgewerkt.','Work plan could not be updated.','Çalışma planı güncellenemedi.','Nie udało się zaktualizować planu pracy.','Planul de lucru nu a putut fi actualizat.'],
+    ['cleaning.workplanAriaRebuild','Werkplan opnieuw opbouwen uit de huidige kamers en routines','Rebuild work plan from current rooms and routines','Çalışma planını mevcut oda ve rutinlerden yeniden oluştur','Przebuduj plan pracy z obecnych pokoi i rutyn','Reconstruiește planul de lucru din camerele și rutinele actuale'],
+    ['cleaning.workplanAriaNew','Nieuw werkplan maken','Create new work plan','Yeni çalışma planı oluştur','Utwórz nowy plan pracy','Creează un plan de lucru nou'],
+    ['cleaning.routineResumeDone','Routine hervat ✓','Routine resumed ✓','Rutin devam ettirildi ✓','Rutyna wznowiona ✓','Rutina a fost reluată ✓'],
+    ['cleaning.routinePauseDone','Routine gepauzeerd ✓','Routine paused ✓','Rutin duraklatıldı ✓','Rutyna wstrzymana ✓','Rutina a fost pusă pe pauză ✓'],
+    ['cleaning.routineRemovedPlanUpdated','Routine verwijderd en werkplan bijgewerkt','Routine removed and work plan updated','Rutin silindi ve çalışma planı güncellendi','Rutyna usunięta, a plan pracy zaktualizowany','Rutina a fost ștearsă și planul de lucru actualizat'],
+    ['cleaning.confirmRoutineDeleteRefresh','Deze routine verwijderen? Het huidige werkplan wordt meteen bijgewerkt.','Delete this routine? The current work plan will be updated immediately.','Bu rutin silinsin mi? Mevcut çalışma planı hemen güncellenecek.','Usunąć tę rutynę? Bieżący plan pracy zostanie od razu zaktualizowany.','Ștergi această rutină? Planul de lucru actual va fi actualizat imediat.']
+,
     ['cleaning.roomType.living-room','Woonkamer','Living room','Oturma odası','Salon','Living'],
     ['cleaning.roomType.kitchen','Keuken','Kitchen','Mutfak','Kuchnia','Bucătărie'],
     ['cleaning.roomType.bathroom','Badkamer','Bathroom','Banyo','Łazienka','Baie'],
@@ -776,7 +789,10 @@
     ['common.today','Vandaag','Today','Bugün','Dzisiaj','Astăzi'],
     ['common.tomorrow','Morgen','Tomorrow','Yarın','Jutro','Mâine'],
     ['common.later','Later','Later','Daha sonra','Później','Mai târziu'],
-    ['common.family','Gezin','Family','Aile','Rodzina','Familie']
+    ['common.family','Gezin','Family','Aile','Rodzina','Familie'],
+    ['common.pause','Pauzeren','Pause','Duraklat','Wstrzymaj','Pauză'],
+    ['common.resume','Hervatten','Resume','Devam et','Wznów','Reia']
+
 ,
 
     ['tasks.brand','Samen rust en overzicht','Together: calm and clarity','Birlikte huzur ve düzen','Razem: spokój i porządek','Împreună: liniște și claritate'],
