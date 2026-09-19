@@ -13,6 +13,38 @@ import {
 
 const activeCategoryKey = 'familyapp-avatar-category-v1';
 
+function profileT(key, fallback) {
+  if (window.FamilyI18n && typeof window.FamilyI18n.t === 'function') {
+    const value = window.FamilyI18n.t(key);
+    if (value && value !== key) return value;
+  }
+  return fallback;
+}
+
+function languageCardMarkup() {
+  const i18n = window.FamilyI18n;
+  if (!i18n || typeof i18n.getOptions !== 'function') return '';
+
+  const preference = i18n.getPreference();
+  const options = [
+    { code: i18n.systemValue || 'system', nativeName: profileT('profile.language.system', 'Systeemstandaard') },
+    ...i18n.getOptions(),
+  ];
+
+  return `
+    <section class="profile-card" style="padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+        <div style="min-width:0;flex:1">
+          <h2 style="margin:0 0 4px">${profileT('profile.language.title', 'Taal')}</h2>
+          <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.language.subtitle', 'Kies de taal van FamilyApp op dit apparaat.')}</p>
+        </div>
+        <select data-language-select aria-label="${profileT('profile.language.title', 'Taal')}" style="min-width:132px;max-width:48%;min-height:42px;border:1.5px solid var(--c-border);border-radius:12px;background:var(--c-surface2);color:var(--c-text);font-size:12px;font-weight:800;padding:8px 30px 8px 10px">
+          ${options.map((item) => `<option value="${escapeAttribute(item.code)}" ${item.code === preference ? 'selected' : ''}>${escapeAttribute(item.nativeName)}</option>`).join('')}
+        </select>
+      </div>
+    </section>`;
+}
+
 function getActiveCategory() {
   return localStorage.getItem(activeCategoryKey) || 'Alle';
 }
@@ -184,6 +216,16 @@ function bindProfileActions(container) {
     };
   });
 
+  const languageSelect = container.querySelector('[data-language-select]');
+  if (languageSelect) {
+    languageSelect.onchange = () => {
+      if (!window.FamilyI18n || typeof window.FamilyI18n.setPreference !== 'function') return;
+      window.FamilyI18n.setPreference(languageSelect.value);
+      renderProfileScreen(container);
+      toast(profileT('profile.language.changed', 'Taal aangepast'));
+    };
+  }
+
   const installButton = container.querySelector('[data-install-familyapp]');
   if (installButton) {
     installButton.onclick = async () => {
@@ -350,6 +392,8 @@ export function renderProfileScreen(container, options = {}) {
       </section>
 
       ${installCardMarkup(installState)}
+
+      ${languageCardMarkup()}
 
       <section class="profile-card" style="padding:16px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
