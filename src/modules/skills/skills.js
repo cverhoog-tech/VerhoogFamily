@@ -290,11 +290,12 @@ function _showNextUnlock() {
 // ── LEVEL UP — uses new overlay ──
 function showLevelUp(level) {
   var titleData = LEVEL_TITLES[Math.min(level-1, LEVEL_TITLES.length-1)];
+  var levelCopy = (typeof window.getLocalizedAchievementLevel==='function') ? window.getLocalizedAchievementLevel(titleData) : {title:titleData&&titleData.title||'',desc:titleData&&titleData.desc||''};
   queueUnlock({
     icon: '🎉',
-    type: 'Level omhoog!',
-    title: 'Level '+level,
-    desc: titleData ? titleData.title+'\n"'+titleData.desc+'"' : 'Nieuw level bereikt!',
+    type: skillsTr('ach.levelUp','Level omhoog!'),
+    title: skillsTr('ach.level','Level')+' '+level,
+    desc: titleData ? levelCopy.title+'\n"'+levelCopy.desc+'"' : skillsTr('ach.newLevel','Nieuw level bereikt!'),
     who: myName,
     confetti: true
   });
@@ -305,15 +306,16 @@ function showAchievementToast(badge) {
   // Always show the slide-in toast
   var existing = document.querySelector('.ach-toast');
   if(existing) existing.remove();
-  var rarityLabel = {common:'Gewoon',rare:'Zeldzaam',epic:'Episch',legendary:'Legendarisch'}[badge.rarity]||'';
+  var rarityLabel = {common:skillsTr('ach.rarity.commonShort','Gewoon'),rare:skillsTr('ach.rarity.rareShort','Zeldzaam'),epic:skillsTr('ach.rarity.epicShort','Episch'),legendary:skillsTr('ach.rarity.legendaryShort','Legendarisch')}[badge.rarity]||'';
   var toast = document.createElement('div');
   toast.className = 'ach-toast';
+  var badgeCopy=(typeof window.getLocalizedBadgeCopy==='function')?window.getLocalizedBadgeCopy(badge):{name:badge.name,desc:badge.desc,funny:badge.funny};
   toast.innerHTML =
     '<div class="ach-toast-icon">'+badge.icon+'</div>'
     +'<div class="ach-toast-body">'
-    +'<div class="ach-toast-label">🏆 Achievement unlocked · '+rarityLabel+'</div>'
-    +'<div class="ach-toast-name">'+badge.name+'</div>'
-    +'<div class="ach-toast-desc">'+badge.funny+'</div>'
+    +'<div class="ach-toast-label">'+skillsTr('ach.toast.unlocked','🏆 Achievement ontgrendeld')+' · '+rarityLabel+'</div>'
+    +'<div class="ach-toast-name">'+badgeCopy.name+'</div>'
+    +'<div class="ach-toast-desc">'+badgeCopy.funny+'</div>'
     +'</div>'
     +'<div class="ach-toast-xp">+'+badge.xp+' XP</div>'
     +'<div class="ach-toast-close">✕</div>';
@@ -332,11 +334,11 @@ function showAchievementToast(badge) {
     setTimeout(function(){
       queueUnlock({
         icon: badge.icon,
-        type: '🏆 '+{epic:'Epische',legendary:'Legendarische'}[badge.rarity]+' Badge!',
-        title: badge.name,
-        desc: badge.desc,
+        type: badge.rarity==='legendary'?skillsTr('ach.toast.legendaryBadge','🏆 Legendarische badge!'):skillsTr('ach.toast.epicBadge','🏆 Epische badge!'),
+        title: badgeCopy.name,
+        desc: badgeCopy.desc,
         who: myName,
-        extra: '"'+badge.funny+'"',
+        extra: '"'+badgeCopy.funny+'"',
         confetti: badge.rarity === 'legendary'
       });
     }, 800);
