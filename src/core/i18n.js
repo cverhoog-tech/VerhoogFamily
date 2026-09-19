@@ -938,6 +938,12 @@
     ['shop.toggleOpen','Terug naar te kopen: {{name}}','Move back to to-buy: {{name}}','Alınacaklara geri taşı: {{name}}','Przenieś z powrotem do kupienia: {{name}}','Mută înapoi la de cumpărat: {{name}}'],
     ['shop.deleteItem','Verwijder {{name}}','Delete {{name}}','{{name}} sil','Usuń {{name}}','Șterge {{name}}'],
     ['shop.addLoading','Toevoegen wordt geladen…','Add is loading…','Ekleme yükleniyor…','Dodawanie jest ładowane…','Adăugarea se încarcă…'],
+    ['shop.updateFailed','Bijwerken mislukt. De lijst is hersteld.','Update failed. The list was restored.','Güncelleme başarısız. Liste geri yüklendi.','Aktualizacja nie powiodła się. Lista została przywrócona.','Actualizarea a eșuat. Lista a fost restaurată.'],
+    ['shop.deleteFailed','Verwijderen mislukt','Delete failed','Silme başarısız','Usuwanie nie powiodło się','Ștergerea a eșuat'],
+    ['shop.boughtRemoved','Gekochte items verwijderd','Bought items removed','Alınan ürünler silindi','Kupione produkty usunięte','Articolele cumpărate au fost șterse'],
+    ['shop.clearFailed','Legen mislukt','Clearing failed','Temizleme başarısız','Czyszczenie nie powiodło się','Golirea a eșuat'],
+    ['shop.listCreateFailed','Lijst kon niet worden aangemaakt','List could not be created','Liste oluşturulamadı','Nie udało się utworzyć listy','Lista nu a putut fi creată']
+,
     ['shop.receipt.finishTitle','Gekochte items afronden','Finish bought items','Alınan ürünleri tamamla','Zakończ kupione produkty','Finalizează articolele cumpărate'],
     ['shop.receipt.summary','{{count}} gekocht · bon opslaan is optioneel','{{count}} bought · saving the receipt is optional','{{count}} alındı · fişi kaydetmek isteğe bağlıdır','Kupiono: {{count}} · zapis paragonu jest opcjonalny','Cumpărate: {{count}} · salvarea bonului este opțională'],
     ['shop.receipt.finish','Afronden','Finish','Tamamla','Zakończ','Finalizează'],
