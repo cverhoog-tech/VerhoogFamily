@@ -895,7 +895,19 @@
     ['finance.goalDeleted','Doel verwijderd','Goal deleted','Hedef silindi','Cel usunięty','Obiectiv șters'],
     ['finance.notificationsLoading','Meldingen worden geladen…','Notifications are loading…','Bildirimler yükleniyor…','Ładowanie powiadomień…','Notificările se încarcă…'],
     ['finance.markedRead','Alles gemarkeerd als gelezen','Everything marked as read','Tümü okundu olarak işaretlendi','Wszystko oznaczono jako przeczytane','Totul a fost marcat ca citit'],
-    ['finance.seed.newBank','Nieuwe bank','New sofa','Yeni koltuk','Nowa sofa','Canapea nouă']
+    ['finance.seed.newBank','Nieuwe bank','New sofa','Yeni koltuk','Nowa sofa','Canapea nouă'],
+    ['finance.totalSaved','Totaal gespaard','Total saved','Toplam birikim','Łącznie zaoszczędzono','Total economisit'],
+    ['finance.targetTotal','van € {{amount}} doel','of € {{amount}} target','€ {{amount}} hedefinden','z celu € {{amount}}','din obiectivul de € {{amount}}'],
+    ['finance.goalsProgress','{{pct}}% van alle doelen bereikt','{{pct}}% of all goals reached','Tüm hedeflerin %{{pct}} kadarı tamamlandı','Osiągnięto {{pct}}% wszystkich celów','{{pct}}% din toate obiectivele atinse'],
+    ['finance.toGo','Nog € {{amount}}','€ {{amount}} to go','€ {{amount}} kaldı','Pozostało € {{amount}}','Mai sunt € {{amount}}'],
+    ['finance.depositDefault','Storting','Deposit','Yatırma','Wpłata','Depunere'],
+    ['finance.withdrawalDefault','Opname','Withdrawal','Çekim','Wypłata','Retragere'],
+    ['finance.goalBoth','Beiden','Both','İkiniz','Oboje','Amândoi'],
+    ['finance.depositTitle','💰 Storting — {{name}}','💰 Deposit — {{name}}','💰 Yatırma — {{name}}','💰 Wpłata — {{name}}','💰 Depunere — {{name}}'],
+    ['finance.withdrawalTitle','📤 Opname — {{name}}','📤 Withdrawal — {{name}}','📤 Çekim — {{name}}','📤 Wypłata — {{name}}','📤 Retragere — {{name}}'],
+    ['finance.registerDeposit','💰 Storting','💰 Deposit','💰 Yatırma','💰 Wpłata','💰 Depunere'],
+    ['finance.registerWithdrawal','📤 Opname','📤 Withdrawal','📤 Çekim','📤 Wypłata','📤 Retragere']
+
 
 
 ,
