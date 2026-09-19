@@ -11,6 +11,7 @@
   if(window.NotificationActions)return;
   var VERSION='3.1.0';
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function currentUid(){var c=context();return c&&c.ready&&c.uid||null;}
   function taskByEvent(event){var id=event&&event.data&&(event.data.taskId||event.data.taskKey)||(event&&event.entity&&event.entity.id)||'';return (window.taskData||[]).find(function(t){return String(t.id||t._key)===String(id);})||null;}
@@ -24,53 +25,53 @@
   function householdDeclinedForEvent(task,event,uid){var map=task&&task.helpDeclinedByUids;return !!(map&&typeof map==='object'&&eventOccurrence(event)&&String(map[String(uid||'')]||'')===eventOccurrence(event));}
   function targetedDeclinedForEvent(task,event,uid){return !!(task&&eventOccurrence(event)&&String(task.helpDeclinedByUid||'')===String(uid||'')&&String(task.helpDeclinedOccurrence||'')===eventOccurrence(event));}
   function isActionable(event){return !!(event&&(event.type==='task.help.requested'||event.type==='partyQuest.invitation.sent'||event.type==='partyQuest.created'));}
-  function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return'Hulp bieden';if(event.type==='partyQuest.invitation.sent')return'Uitnodiging intrekken';return'Openen';}
+  function actionLabel(event){if(!event)return'';if(event.type==='task.help.requested')return tr('notif.helpOffer','Hulp bieden');if(event.type==='partyQuest.invitation.sent')return tr('notif.revokeInvite','Uitnodiging intrekken');return tr('notif.open','Openen');}
   function markRead(event){return window.NotificationStore&&event&&event.id?NotificationStore.markRead(event.id):Promise.resolve();}
 
   function acceptTaskHelp(event){
     var me=currentUid(),task=taskByEvent(event);
-    if(!me)return Promise.reject(new Error('Niet ingelogd'));
-    if(!task)return Promise.reject(new Error('Taak niet gevonden'));
-    if(!sameHelpOccurrence(event,task))return Promise.reject(new Error('Deze hulpvraag is niet meer actief'));
-    if(!window.TaskSharedData||typeof TaskSharedData.joinHelp!=='function')return Promise.reject(new Error('Taakdata is nog niet klaar'));
+    if(!me)return Promise.reject(new Error(tr('notif.notLoggedIn','Niet ingelogd')));
+    if(!task)return Promise.reject(new Error(tr('notif.taskNotFound','Taak niet gevonden')));
+    if(!sameHelpOccurrence(event,task))return Promise.reject(new Error(tr('notif.helpInactive','Deze hulpvraag is niet meer actief')));
+    if(!window.TaskSharedData||typeof TaskSharedData.joinHelp!=='function')return Promise.reject(new Error(tr('notif.taskDataLoading','Taakdata is nog niet klaar')));
     var existed=isHelper(task,me);
     return TaskSharedData.joinHelp(task.id||task._key).then(function(saved){
       var requester=task.helpRequestedByUid||task.createdByUid||null;
       if(!existed&&window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,requester).catch(function(){});
-      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(existed?'Je helpt al mee ✓':'Je bent aan de quest toegevoegd 🤝');return saved;});
+      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(existed?tr('notif.alreadyHelping','Je helpt al mee ✓'):tr('notif.joinedQuest','Je bent aan de quest toegevoegd 🤝'));return saved;});
     });
   }
 
   function declineTaskHelp(event){
     var me=currentUid(),task=taskByEvent(event),household=task&&task.helpAudience==='household'&&!task.helpRequestedForUid;
-    if(!me)return Promise.reject(new Error('Niet ingelogd'));
-    if(!task)return Promise.reject(new Error('Taak niet gevonden'));
-    if(!sameHelpOccurrence(event,task))return Promise.reject(new Error('Deze hulpvraag is niet meer actief'));
-    if(!window.TaskSharedData||typeof TaskSharedData.declineHelp!=='function')return Promise.reject(new Error('Taakdata is nog niet klaar'));
+    if(!me)return Promise.reject(new Error(tr('notif.notLoggedIn','Niet ingelogd')));
+    if(!task)return Promise.reject(new Error(tr('notif.taskNotFound','Taak niet gevonden')));
+    if(!sameHelpOccurrence(event,task))return Promise.reject(new Error(tr('notif.helpInactive','Deze hulpvraag is niet meer actief')));
+    if(!window.TaskSharedData||typeof TaskSharedData.declineHelp!=='function')return Promise.reject(new Error(tr('notif.taskDataLoading','Taakdata is nog niet klaar')));
     return TaskSharedData.declineHelp(task.id||task._key).then(function(saved){
-      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(household?'Deze hulpvraag is niet meer voor jou':'Hulpvraag afgewezen');return saved;});
+      return markRead(event).then(function(){if(typeof window.showToast==='function')window.showToast(household?tr('notif.notForYou','Deze hulpvraag is niet meer voor jou'):tr('notif.helpDeclined','Hulpvraag afgewezen'));return saved;});
     });
   }
 
   function revokePartyInvitation(event){
     var questId=event&&event.data&&event.data.questId,inviteeUid=event&&event.data&&event.data.inviteeUid;
-    if(!questId||!inviteeUid)return Promise.reject(new Error('Uitnodigingsgegevens ontbreken'));
-    if(!window.PartyQuestInvites||typeof PartyQuestInvites.revokeInvite!=='function')return Promise.reject(new Error('Party Quest service is nog niet klaar'));
+    if(!questId||!inviteeUid)return Promise.reject(new Error(tr('notif.inviteDataMissing','Uitnodigingsgegevens ontbreken')));
+    if(!window.PartyQuestInvites||typeof PartyQuestInvites.revokeInvite!=='function')return Promise.reject(new Error(tr('notif.partyNotReady','Party Quest service is nog niet klaar')));
     return PartyQuestInvites.revokeInvite(questId,inviteeUid).then(function(){return markRead(event);});
   }
 
   function respondPartyQuestInvite(event,status){
     var questId=event&&event.data&&event.data.questId;
-    if(!questId)return Promise.reject(new Error('Uitnodigingsgegevens ontbreken'));
-    if(!window.PartyQuestInvites||typeof PartyQuestInvites.getById!=='function'||typeof PartyQuestInvites.respond!=='function')return Promise.reject(new Error('Party Quest service is nog niet klaar'));
+    if(!questId)return Promise.reject(new Error(tr('notif.inviteDataMissing','Uitnodigingsgegevens ontbreken')));
+    if(!window.PartyQuestInvites||typeof PartyQuestInvites.getById!=='function'||typeof PartyQuestInvites.respond!=='function')return Promise.reject(new Error(tr('notif.partyNotReady','Party Quest service is nog niet klaar')));
     var quest=PartyQuestInvites.getById(questId);
-    if(!quest)return Promise.reject(new Error('Uitnodiging is niet meer actief'));
+    if(!quest)return Promise.reject(new Error(tr('notif.inviteInactive','Uitnodiging is niet meer actief')));
     return PartyQuestInvites.respond(quest,status).then(function(){return markRead(event);});
   }
 
   function run(event,action){
     if(!event)return Promise.resolve(false);
-    if(!currentUid())return Promise.reject(new Error('Niet ingelogd'));
+    if(!currentUid())return Promise.reject(new Error(tr('notif.notLoggedIn','Niet ingelogd')));
     if(event.type==='task.help.requested')return (action==='decline'?declineTaskHelp(event):acceptTaskHelp(event)).then(function(){return true;});
     if(event.type==='partyQuest.invitation.sent')return revokePartyInvitation(event).then(function(){return true;});
     if(event.type==='partyQuest.created')return respondPartyQuestInvite(event,action==='decline'?'declined':'active').then(function(){return true;});
@@ -82,40 +83,43 @@
     if(!event)return{statusLabel:'',detail:'',actions:[]};
     if(event.type==='task.help.requested'){
       var task=taskByEvent(event),me=currentUid();
-      if(!task)return{statusLabel:'Taak niet gevonden',detail:'Deze taak bestaat niet meer.',actions:[]};
-      if(!sameHelpOccurrence(event,task))return{statusLabel:'Niet meer actief',detail:'Deze melding hoort bij een eerdere hulpvraag.',actions:[]};
-      if(isHelper(task,me))return{statusLabel:'Je helpt al mee',detail:'Je bent al toegevoegd aan “'+String(task.title||task.name||'deze taak')+'”.',actions:[]};
-      if(targetedDeclinedForEvent(task,event,me))return{statusLabel:'Afgewezen',detail:'Je hebt deze hulpvraag afgewezen.',actions:[]};
-      if(householdDeclinedForEvent(task,event,me))return{statusLabel:'Niet voor mij',detail:'Je hebt aangegeven dat deze hulpvraag niet voor jou is. Andere gezinsleden kunnen nog steeds helpen.',actions:[]};
+      if(!task)return{statusLabel:tr('notif.taskNotFound','Taak niet gevonden'),detail:tr('notif.taskGone','Deze taak bestaat niet meer.'),actions:[]};
+      if(!sameHelpOccurrence(event,task))return{statusLabel:tr('notif.noLongerActive','Niet meer actief'),detail:tr('notif.previousHelp','Deze melding hoort bij een eerdere hulpvraag.'),actions:[]};
+      if(isHelper(task,me)){
+        var taskName=String(task.title||task.name||tr('notif.thisTask','deze taak'));
+        return{statusLabel:tr('notif.helpingStatus','Je helpt al mee'),detail:tr('notif.alreadyAdded','Je bent al toegevoegd aan “'+taskName+'”.',{task:taskName}),actions:[]};
+      }
+      if(targetedDeclinedForEvent(task,event,me))return{statusLabel:tr('notif.declinedStatus','Afgewezen'),detail:tr('notif.declinedDetail','Je hebt deze hulpvraag afgewezen.'),actions:[]};
+      if(householdDeclinedForEvent(task,event,me))return{statusLabel:tr('notif.notMeStatus','Niet voor mij'),detail:tr('notif.notMeDetail','Je hebt aangegeven dat deze hulpvraag niet voor jou is. Andere gezinsleden kunnen nog steeds helpen.'),actions:[]};
       var householdOpen=!!task.helpRequested&&task.helpAudience==='household'&&!task.helpRequestedForUid;
       if(householdOpen){
-        if(isOwner(task,me)||isAssigned(task,me))return{statusLabel:'Je neemt al deel',detail:'Je bent al betrokken bij deze taak.',actions:[]};
-        return{statusLabel:'Open — voor het gezin',detail:event.body||'Het gezin is om hulp gevraagd.',actions:[{label:'Hulp geven',action:'accept',cls:''},{label:'Niet voor mij',action:'decline',cls:'is-danger'}]};
+        if(isOwner(task,me)||isAssigned(task,me))return{statusLabel:tr('notif.participating','Je neemt al deel'),detail:tr('notif.alreadyInvolved','Je bent al betrokken bij deze taak.'),actions:[]};
+        return{statusLabel:tr('notif.openHousehold','Open — voor het gezin'),detail:event.body||tr('notif.householdAsked','Het gezin is om hulp gevraagd.'),actions:[{label:tr('notif.giveHelp','Hulp geven'),action:'accept',cls:''},{label:tr('notif.notMeStatus','Niet voor mij'),action:'decline',cls:'is-danger'}]};
       }
       var targetedOpen=!!task.helpRequested&&task.helpAudience==='uid'&&String(task.helpRequestedForUid||'')===String(me);
-      if(targetedOpen)return{statusLabel:'Open — wacht op jouw reactie',detail:event.body||'Er is hulp gevraagd.',actions:[{label:'Hulp geven',action:'accept',cls:''},{label:'Afwijzen',action:'decline',cls:'is-danger'}]};
-      return{statusLabel:'Niet meer actief',detail:'Deze hulpvraag is ingetrokken, afgehandeld of niet meer voor jou bestemd.',actions:[]};
+      if(targetedOpen)return{statusLabel:tr('notif.openYourReply','Open — wacht op jouw reactie'),detail:event.body||tr('notif.helpAsked','Er is hulp gevraagd.'),actions:[{label:tr('notif.giveHelp','Hulp geven'),action:'accept',cls:''},{label:tr('notif.declinedStatus','Afwijzen'),action:'decline',cls:'is-danger'}]};
+      return{statusLabel:tr('notif.noLongerActive','Niet meer actief'),detail:tr('notif.helpClosed','Deze hulpvraag is ingetrokken, afgehandeld of niet meer voor jou bestemd.'),actions:[]};
     }
     if(event.type==='partyQuest.created'){
       var questId=event.data&&event.data.questId,me2=currentUid();
       var q=window.PartyQuestInvites&&PartyQuestInvites.getById?PartyQuestInvites.getById(questId):null;
       var inv=q&&q.invitees&&q.invitees[me2];
-      if(!q||!inv)return{statusLabel:'Niet meer beschikbaar',detail:'Deze uitnodiging bestaat niet meer.',actions:[]};
-      if(inv.status==='pending')return{statusLabel:'Open — wacht op jouw reactie',detail:event.body||'Je bent uitgenodigd voor een Party Quest.',actions:[{label:'Accepteren',action:'accept',cls:''},{label:'Weigeren',action:'decline',cls:'is-danger'}]};
-      if(inv.status==='active')return{statusLabel:'Geaccepteerd ✓',detail:'Je doet mee aan deze Party Quest.',actions:[]};
-      if(inv.status==='declined')return{statusLabel:'Geweigerd',detail:'Je hebt deze uitnodiging geweigerd.',actions:[]};
-      if(inv.status==='revoked')return{statusLabel:'Ingetrokken',detail:'De maker heeft deze uitnodiging ingetrokken.',actions:[]};
+      if(!q||!inv)return{statusLabel:tr('notif.unavailable','Niet meer beschikbaar'),detail:tr('notif.inviteGone','Deze uitnodiging bestaat niet meer.'),actions:[]};
+      if(inv.status==='pending')return{statusLabel:tr('notif.openYourReply','Open — wacht op jouw reactie'),detail:event.body||tr('notif.partyInviteBody','Je bent uitgenodigd voor een Party Quest.'),actions:[{label:tr('notif.accept','Accepteren'),action:'accept',cls:''},{label:tr('notif.decline','Weigeren'),action:'decline',cls:'is-danger'}]};
+      if(inv.status==='active')return{statusLabel:tr('notif.accepted','Geaccepteerd ✓'),detail:tr('notif.partyParticipate','Je doet mee aan deze Party Quest.'),actions:[]};
+      if(inv.status==='declined')return{statusLabel:tr('notif.refused','Geweigerd'),detail:tr('notif.partyRefused','Je hebt deze uitnodiging geweigerd.'),actions:[]};
+      if(inv.status==='revoked')return{statusLabel:tr('notif.revoked','Ingetrokken'),detail:tr('notif.partyRevoked','De maker heeft deze uitnodiging ingetrokken.'),actions:[]};
       return{statusLabel:'',detail:event.body||'',actions:[]};
     }
     if(event.type==='partyQuest.invitation.sent'){
       var questId2=event.data&&event.data.questId,targetUid=event.data&&event.data.inviteeUid;
       var q2=window.PartyQuestInvites&&PartyQuestInvites.getById?PartyQuestInvites.getById(questId2):null;
       var inv2=q2&&q2.invitees&&targetUid&&q2.invitees[targetUid];
-      if(!q2||!inv2)return{statusLabel:'Niet meer beschikbaar',detail:'Deze uitnodiging bestaat niet meer.',actions:[]};
-      if(inv2.status==='pending')return{statusLabel:'Wacht op reactie',detail:event.body||'',actions:[{label:'Uitnodiging intrekken',action:'run',cls:'is-danger'}]};
-      if(inv2.status==='active')return{statusLabel:'Geaccepteerd ✓',detail:'',actions:[]};
-      if(inv2.status==='declined')return{statusLabel:'Geweigerd',detail:'',actions:[]};
-      if(inv2.status==='revoked')return{statusLabel:'Al ingetrokken',detail:'',actions:[]};
+      if(!q2||!inv2)return{statusLabel:tr('notif.unavailable','Niet meer beschikbaar'),detail:tr('notif.inviteGone','Deze uitnodiging bestaat niet meer.'),actions:[]};
+      if(inv2.status==='pending')return{statusLabel:tr('notif.waiting','Wacht op reactie'),detail:event.body||'',actions:[{label:tr('notif.revokeInvite','Uitnodiging intrekken'),action:'run',cls:'is-danger'}]};
+      if(inv2.status==='active')return{statusLabel:tr('notif.accepted','Geaccepteerd ✓'),detail:'',actions:[]};
+      if(inv2.status==='declined')return{statusLabel:tr('notif.refused','Geweigerd'),detail:'',actions:[]};
+      if(inv2.status==='revoked')return{statusLabel:tr('notif.alreadyRevoked','Al ingetrokken'),detail:'',actions:[]};
       return{statusLabel:'',detail:'',actions:[]};
     }
     return{statusLabel:'',detail:event.body||'',actions:[]};
