@@ -163,17 +163,17 @@
   function renderInviteRows(el,hid){
     var list=el.querySelector('#hh-invite-list');if(!list)return;
     listActiveInvites(hid).then(function(rows){
-      list.innerHTML=rows.length?rows.map(function(v){return '<div class="hh-invite-item"><div class="hh-invite-code">'+v.code+'</div><div class="hh-invite-meta">actief · geldig tot '+fmtDate(v.expiresAt)+'</div></div>';}).join(''):'<div class="hh-invite-meta">Nog geen actieve uitnodigingscodes.</div>';
+      list.innerHTML=rows.length?rows.map(function(v){return '<div class="hh-invite-item"><div class="hh-invite-code">'+v.code+'</div><div class="hh-invite-meta">'+tr('household.activeUntil','actief · geldig tot')+' '+fmtDate(v.expiresAt)+'</div></div>';}).join(''):'<div class="hh-invite-meta">'+tr('household.noActiveInvites','Nog geen actieve uitnodigingscodes.')+'</div>';
     }).catch(function(){list.innerHTML='';});
   }
   function showInviteManager(){
     var hid=window.fbFamilyId;if(!hid)return;
-    var el=overlay('<div class="hh-mark">🤝</div><h2>Nodig iemand uit</h2><p>Maak voor ieder gezinslid een eigen code. Elke code is 7 dagen geldig en kan één keer gebruikt worden.</p><button class="hh-primary" id="hh-invite">Nieuwe uitnodigingscode maken</button><div class="hh-error" id="hh-invite-err"></div><div class="hh-invite-list" id="hh-invite-list"></div><div class="hh-invite-note">Je kunt meerdere uitnodigingen tegelijk actief hebben.</div><button class="hh-back" id="hh-close">Sluiten</button>');
+    var el=overlay('<div class="hh-mark">🤝</div><h2>'+tr('household.inviteManagerTitle','Nodig iemand uit')+'</h2><p>'+tr('household.inviteManagerHint','Maak voor ieder gezinslid een eigen code. Elke code is 7 dagen geldig en kan één keer gebruikt worden.')+'</p><button class="hh-primary" id="hh-invite">'+tr('household.newInvite','Nieuwe uitnodigingscode maken')+'</button><div class="hh-error" id="hh-invite-err"></div><div class="hh-invite-list" id="hh-invite-list"></div><div class="hh-invite-note">'+tr('household.multipleInvites','Je kunt meerdere uitnodigingen tegelijk actief hebben.')+'</div><button class="hh-back" id="hh-close">'+tr('common.close','Sluiten')+'</button>');
     el.querySelector('#hh-close').onclick=closeOverlay;
     var btn=el.querySelector('#hh-invite'),err=el.querySelector('#hh-invite-err');
     btn.onclick=function(){
       btn.disabled=true;err.textContent='';
-      createInvite('adult').then(function(){btn.disabled=false;renderInviteRows(el,hid);}).catch(function(e){btn.disabled=false;err.textContent=e&&e.message||'Kon geen uitnodiging maken';});
+      createInvite('adult').then(function(){btn.disabled=false;renderInviteRows(el,hid);}).catch(function(e){btn.disabled=false;err.textContent=e&&e.message||tr('household.inviteFailed','Kon geen uitnodiging maken');});
     };
     renderInviteRows(el,hid);
   }
