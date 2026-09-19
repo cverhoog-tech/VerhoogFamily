@@ -311,10 +311,10 @@ function bindProfileActions(container) {
 function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
   return `
     <div class="profile-avatar-popup-inner">
-      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="Sluiten">✕</button>
-      <h3 class="profile-avatar-popup-title">Kies een avatar</h3>
+      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="${profileT('common.close', 'Sluiten')}">✕</button>
+      <h3 class="profile-avatar-popup-title">${profileT('profile.avatar.choose', 'Kies een avatar')}</h3>
       <div class="profile-avatar-tabs">
-        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
+        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category === 'Alle' ? profileT('profile.category.all', 'Alle') : category}</button>`).join('')}
       </div>
       <div class="profile-choice-grid profile-choice-grid-exact">
         ${visibleAvatars.map((item) => {
@@ -358,7 +358,7 @@ export function renderProfileScreen(container, options = {}) {
       <section class="profile-hero-card">
         <div class="profile-avatar-wrap">
           <img class="profile-main-avatar" src="${avatar}" alt="${escapeAttribute(name)}" style="object-position:${mainObjectPosition}">
-          <button class="profile-camera-btn" data-camera-avatar aria-label="Avatar wijzigen">📷</button>
+          <button class="profile-camera-btn" data-camera-avatar aria-label="${profileT('profile.avatar.change', 'Avatar wijzigen')}">📷</button>
         </div>
         <h1>${escapeAttribute(name)}</h1>
         <div class="profile-level-pill">Level 2 · Uitgebroed</div>
@@ -370,23 +370,23 @@ export function renderProfileScreen(container, options = {}) {
         <div data-active-auth-email style="display:flex;align-items:center;gap:11px;padding:11px 12px;margin-bottom:14px;border:1px solid var(--c-border);border-radius:13px;background:var(--c-surface2)">
           <span aria-hidden="true" style="width:34px;height:34px;border-radius:10px;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">@</span>
           <div style="min-width:0;flex:1">
-            <small style="display:block;color:var(--c-text2);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">Actief account</small>
-            <strong style="display:block;color:var(--c-text);font-size:13px;line-height:1.35;overflow-wrap:anywhere">${escapeAttribute(activeEmail || 'E-mailadres niet beschikbaar')}</strong>
+            <small style="display:block;color:var(--c-text2);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">${profileT('profile.activeAccount', 'Actief account')}</small>
+            <strong style="display:block;color:var(--c-text);font-size:13px;line-height:1.35;overflow-wrap:anywhere">${escapeAttribute(activeEmail || profileT('profile.emailUnavailable', 'E-mailadres niet beschikbaar'))}</strong>
           </div>
         </div>
-        <label>Mijn naam</label>
+        <label>${profileT('profile.myName', 'Mijn naam')}</label>
         <div class="profile-input-row"><input data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
-        <label>Partner naam</label>
-        <div class="profile-input-row"><input data-partner-name value="${escapeAttribute(partner)}" placeholder="Optioneel"><span>✎</span></div>
-        <div class="profile-info-note"><span>ⓘ</span> Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.</div>
-        <button class="profile-save-btn" data-save-profile>Opslaan</button>
+        <label>${profileT('profile.partnerName', 'Partner naam')}</label>
+        <div class="profile-input-row"><input data-partner-name value="${escapeAttribute(partner)}" placeholder="${profileT('profile.optional', 'Optioneel')}"><span>✎</span></div>
+        <div class="profile-info-note"><span>ⓘ</span> ${profileT('profile.avatar.info', 'Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.')}</div>
+        <button class="profile-save-btn" data-save-profile>${profileT('common.save', 'Opslaan')}</button>
       </section>
 
       <section class="profile-card profile-avatar-card">
-        <h2>Mijn avatar</h2>
+        <h2>${profileT('profile.avatar.mine', 'Mijn avatar')}</h2>
         <div class="profile-avatar-actions">
-          <button data-open-avatar-popup>▧ Kies uit de app</button>
-          <button data-upload-avatar>⇧ Upload foto</button>
+          <button data-open-avatar-popup>▧ ${profileT('profile.avatar.chooseApp', 'Kies uit de app')}</button>
+          <button data-upload-avatar>⇧ ${profileT('profile.avatar.upload', 'Upload foto')}</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
       </section>
@@ -398,8 +398,8 @@ export function renderProfileScreen(container, options = {}) {
       <section class="profile-card" style="padding:16px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
           <div>
-            <h2 style="margin:0 0 4px">UI schaal</h2>
-            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Vergroot of verklein de volledige app. De keuze blijft bewaard op dit apparaat.</p>
+            <h2 style="margin:0 0 4px">${profileT('profile.scale.title', 'UI schaal')}</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.scale.copy', 'Vergroot of verklein de volledige app. De keuze blijft bewaard op dit apparaat.')}</p>
           </div>
           <strong style="font-size:14px;color:var(--c-primary);white-space:nowrap">${uiScale}%</strong>
         </div>
@@ -409,10 +409,10 @@ export function renderProfileScreen(container, options = {}) {
       </section>
 
       <section class="profile-card profile-settings-card">
-        <button data-profile-row="Account instellingen"><span>♙</span><b>Account instellingen</b><em>›</em></button>
-        <button data-profile-row="Privacy"><span>▣</span><b>Privacy</b><em>›</em></button>
-        <button data-profile-row="Meldingen"><span>♧</span><b>Meldingen</b><em>›</em></button>
-        <button data-profile-logout style="color:#dc2626"><span>↪</span><b>Uitloggen</b><em>›</em></button>
+        <button data-profile-row="Account instellingen"><span>♙</span><b>${profileT('profile.settings.account', 'Account instellingen')}</b><em>›</em></button>
+        <button data-profile-row="Privacy"><span>▣</span><b>${profileT('profile.settings.privacy', 'Privacy')}</b><em>›</em></button>
+        <button data-profile-row="Meldingen"><span>♧</span><b>${profileT('profile.settings.notifications', 'Meldingen')}</b><em>›</em></button>
+        <button data-profile-logout style="color:#dc2626"><span>↪</span><b>${profileT('profile.settings.logout', 'Uitloggen')}</b><em>›</em></button>
       </section>
     </section>
     ${popupHtml}
