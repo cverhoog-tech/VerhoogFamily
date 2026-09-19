@@ -1,4 +1,5 @@
 'use strict';
+function addTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 // ============================================================
 // ADD SHEET
 // ============================================================
@@ -13,74 +14,94 @@ function persistTasksFromAddSheet(operation, id) {
 
 var SHEETS = {
   task: {
-    title: 'Taak toevoegen',
+    title: function(){return addTr('add.task.title','Taak toevoegen');},
     build: function() {
-      return '<div class="field"><label>Omschrijving</label><input id="f1" placeholder="bijv. Auto wassen"></div>'
-        +'<div class="field"><label>Type</label><div class="type-row">'
-        +'<button type="button" class="type-btn active" id="ttype-eenmalig" onclick="setTaskType(\'eenmalig\')">📅 Eenmalig</button>'
-        +'<button type="button" class="type-btn" id="ttype-herhalend" onclick="setTaskType(\'herhalend\')">🔁 Herhalend</button>'
+      var days=[
+        ['maandag','add.day.mon','ma'],['dinsdag','add.day.tue','di'],['woensdag','add.day.wed','wo'],
+        ['donderdag','add.day.thu','do'],['vrijdag','add.day.fri','vr'],['zaterdag','add.day.sat','za'],['zondag','add.day.sun','zo']
+      ];
+      var dayButtons=days.map(function(row){return '<button type="button" class="day-pill" data-day="'+row[0]+'" onclick="toggleDay(this)">'+addTr(row[1],row[2])+'</button>';}).join('');
+      var monthDayButtons=days.map(function(row){return '<button type="button" class="day-pill" data-day="'+row[0]+'" onclick="toggleMonthDay(this)">'+addTr(row[1],row[2])+'</button>';}).join('');
+      return '<div class="field"><label>'+addTr('add.description','Omschrijving')+'</label><input id="f1" placeholder="'+addTr('add.description.taskPlaceholder','bijv. Auto wassen')+'"></div>'
+        +'<div class="field"><label>'+addTr('add.type','Type')+'</label><div class="type-row">'
+        +'<button type="button" class="type-btn active" id="ttype-eenmalig" onclick="setTaskType(\'eenmalig\')">📅 '+addTr('add.oneTime','Eenmalig')+'</button>'
+        +'<button type="button" class="type-btn" id="ttype-herhalend" onclick="setTaskType(\'herhalend\')">🔁 '+addTr('add.recurring','Herhalend')+'</button>'
         +'</div></div>'
         +'<div id="fields-eenmalig">'
-        +'<div class="field"><label>Wie</label><div class="assignee-row">'
+        +'<div class="field"><label>'+addTr('add.who','Wie')+'</label><div class="assignee-row">'
         +'<button type="button" class="assignee-chip active" id="aw-shane" onclick="toggleWie(\'Shane\')">Shane</button>'
         +'<button type="button" class="assignee-chip" id="aw-esra" onclick="toggleWie(\'Esra\')">Esra</button>'
         +'</div></div>'
-        +'<div class="field"><label>Datum</label><input id="f3" type="date">'
+        +'<div class="field"><label>'+addTr('add.date','Datum')+'</label><input id="f3" type="date">'
         +'<div class="quick-dates">'
-        +'<button type="button" class="quick-date" onclick="setQDate(0)">Vandaag</button>'
-        +'<button type="button" class="quick-date" onclick="setQDate(1)">Morgen</button>'
-        +'<button type="button" class="quick-date" onclick="setQDate(7)">Volgende week</button>'
+        +'<button type="button" class="quick-date" onclick="setQDate(0)">'+addTr('common.today','Vandaag')+'</button>'
+        +'<button type="button" class="quick-date" onclick="setQDate(1)">'+addTr('common.tomorrow','Morgen')+'</button>'
+        +'<button type="button" class="quick-date" onclick="setQDate(7)">'+addTr('add.nextWeek','Volgende week')+'</button>'
         +'</div></div>'
-        +'<div class="field"><label>Prioriteit</label><select id="f4">'
-        +'<option value="high">🔴 Hoog</option>'
-        +'<option value="med" selected>🟠 Normaal</option>'
-        +'<option value="low">🟢 Laag</option>'
+        +'<div class="field"><label>'+addTr('add.priority','Prioriteit')+'</label><select id="f4">'
+        +'<option value="high">🔴 '+addTr('add.priority.high','Hoog')+'</option>'
+        +'<option value="med" selected>🟠 '+addTr('add.priority.normal','Normaal')+'</option>'
+        +'<option value="low">🟢 '+addTr('add.priority.low','Laag')+'</option>'
         +'</select></div>'
         +'</div>'
         +'<div id="fields-herhalend" style="display:none">'
-        +'<div class="field"><label>Wie</label><div class="assignee-row">'
+        +'<div class="field"><label>'+addTr('add.who','Wie')+'</label><div class="assignee-row">'
         +'<button type="button" class="assignee-chip active" id="aw-r-shane" onclick="toggleWieR(\'Shane\')">Shane</button>'
         +'<button type="button" class="assignee-chip" id="aw-r-esra" onclick="toggleWieR(\'Esra\')">Esra</button>'
         +'</div></div>'
-        +'<div class="field"><label>Frequentie</label><div class="type-row">'
-        +'<button type="button" class="type-btn active" id="freq-weekly" onclick="setFreq(\'weekly\')">Wekelijks</button>'
-        +'<button type="button" class="type-btn" id="freq-monthly1" onclick="setFreq(\'monthly1\')">1x/maand</button>'
-        +'<button type="button" class="type-btn" id="freq-monthly2" onclick="setFreq(\'monthly2\')">2x/maand</button>'
+        +'<div class="field"><label>'+addTr('add.frequency','Frequentie')+'</label><div class="type-row">'
+        +'<button type="button" class="type-btn active" id="freq-weekly" onclick="setFreq(\'weekly\')">'+addTr('add.weekly','Wekelijks')+'</button>'
+        +'<button type="button" class="type-btn" id="freq-monthly1" onclick="setFreq(\'monthly1\')">'+addTr('add.monthlyOnce','1x/maand')+'</button>'
+        +'<button type="button" class="type-btn" id="freq-monthly2" onclick="setFreq(\'monthly2\')">'+addTr('add.monthlyTwice','2x/maand')+'</button>'
         +'</div></div>'
-        +'<div id="freq-days-wrap" class="field"><label>Op welke dag(en)?</label>'
-        +'<div class="day-pills" id="freq-days">'
-        +'<button type="button" class="day-pill" data-day="maandag" onclick="toggleDay(this)">ma</button>'
-        +'<button type="button" class="day-pill" data-day="dinsdag" onclick="toggleDay(this)">di</button>'
-        +'<button type="button" class="day-pill" data-day="woensdag" onclick="toggleDay(this)">wo</button>'
-        +'<button type="button" class="day-pill" data-day="donderdag" onclick="toggleDay(this)">do</button>'
-        +'<button type="button" class="day-pill" data-day="vrijdag" onclick="toggleDay(this)">vr</button>'
-        +'<button type="button" class="day-pill" data-day="zaterdag" onclick="toggleDay(this)">za</button>'
-        +'<button type="button" class="day-pill" data-day="zondag" onclick="toggleDay(this)">zo</button>'
-        +'</div></div>'
-        +'<div id="freq-month-wrap" class="field" style="display:none"><label>Week van de maand</label>'
+        +'<div id="freq-days-wrap" class="field"><label>'+addTr('add.whichDays','Op welke dag(en)?')+'</label>'
+        +'<div class="day-pills" id="freq-days">'+dayButtons+'</div></div>'
+        +'<div id="freq-month-wrap" class="field" style="display:none"><label>'+addTr('add.weekOfMonth','Week van de maand')+'</label>'
         +'<div class="type-row">'
-        +'<button type="button" class="type-btn active" data-wk="1" onclick="setMonthWeek(this)">Week 1</button>'
-        +'<button type="button" class="type-btn" data-wk="2" onclick="setMonthWeek(this)">Week 2</button>'
-        +'<button type="button" class="type-btn" data-wk="3" onclick="setMonthWeek(this)">Week 3</button>'
-        +'<button type="button" class="type-btn" data-wk="4" onclick="setMonthWeek(this)">Week 4</button>'
+        +[1,2,3,4].map(function(n){return '<button type="button" class="type-btn '+(n===1?'active':'')+'" data-wk="'+n+'" onclick="setMonthWeek(this)">'+addTr('add.weekNumber','Week '+n,{count:n})+'</button>';}).join('')
         +'</div>'
-        +'<div class="field" style="margin-top:10px"><label>Op welke dag?</label>'
-        +'<div class="day-pills" id="freq-month-days">'
-        +'<button type="button" class="day-pill" data-day="maandag" onclick="toggleMonthDay(this)">ma</button>'
-        +'<button type="button" class="day-pill" data-day="dinsdag" onclick="toggleMonthDay(this)">di</button>'
-        +'<button type="button" class="day-pill" data-day="woensdag" onclick="toggleMonthDay(this)">wo</button>'
-        +'<button type="button" class="day-pill" data-day="donderdag" onclick="toggleMonthDay(this)">do</button>'
-        +'<button type="button" class="day-pill" data-day="vrijdag" onclick="toggleMonthDay(this)">vr</button>'
-        +'<button type="button" class="day-pill" data-day="zaterdag" onclick="toggleMonthDay(this)">za</button>'
-        +'<button type="button" class="day-pill" data-day="zondag" onclick="toggleMonthDay(this)">zo</button>'
-        +'</div></div></div>'
+        +'<div class="field" style="margin-top:10px"><label>'+addTr('add.whichDay','Op welke dag?')+'</label>'
+        +'<div class="day-pills" id="freq-month-days">'+monthDayButtons+'</div></div></div>'
         +'</div>';
     }
   },
-  cal: { title: 'Afspraak toevoegen', build: function() { return '<div class="field"><label>Titel</label><input id="f1" placeholder="bijv. Tandarts"></div>' +'<div class="field"><label>Datum</label><input id="f2" type="date"></div>' +'<div class="field"><label>Tijd</label><input id="f3" type="time" value="10:00"></div>'; } },
-  trans: { title: 'Transactie toevoegen', build: function() { return '<div class="field"><label>Omschrijving</label><input id="f1" placeholder="bijv. Albert Heijn"></div>' +'<div class="field"><label>Bedrag (€)</label><input id="f2" type="number" min="0" step="0.01" placeholder="0.00"></div>' +'<div class="field"><label>Type</label><div class="type-row">' +'<button type="button" class="type-btn active" id="trans-neg" data-tt="-1">💸 Uitgave</button>' +'<button type="button" class="type-btn" id="trans-pos" data-tt="1">💚 Inkomst</button>' +'</div></div>' +'<div class="field"><label>Categorie</label><select id="f3">' +'<option>Boodschappen</option><option>Uit eten</option><option>Transport</option>' +'<option>Gezondheid</option><option>Abonnementen</option><option>Kleding</option>' +'<option>Shopping</option><option>Overig</option></select></div>' +'<div class="field"><label>Wie</label><div class="assignee-row">' +'<button type="button" class="assignee-chip active" id="tw-shane" data-tw="Shane">Shane</button>' +'<button type="button" class="assignee-chip" id="tw-esra" data-tw="Esra">Esra</button>' +'</div></div>' +'<div class="field"><label>Datum</label><input id="f4" type="date"></div>'; } },
-  extraincome: { title: '🎁 Extra inkomen toevoegen', build: function() { return '<div class="field"><label>Omschrijving</label><input id="f1" placeholder="bijv. Vakantiegeld"></div>' +'<div class="field"><label>Bedrag (€)</label><input id="f2" type="number" min="0" step="0.01" placeholder="0.00"></div>' +'<div class="field"><label>Categorie</label><select id="f3">' +'<option>Vakantiegeld</option><option>Bonus</option><option>Belasting</option>' +'<option>Freelance</option><option>Cadeau</option><option>Overig</option>' +'</select></div>' +'<div class="field"><label>Wie</label><div class="assignee-row">' +'<button type="button" class="assignee-chip active" id="ew-shane" data-ew="Shane">Shane</button>' +'<button type="button" class="assignee-chip" id="ew-esra" data-ew="Esra">Esra</button>' +'</div></div>' +'<div class="field"><label>Datum</label><input id="f4" type="date"></div>'; } },
-  vastlast: { title: 'Vaste last toevoegen', build: function() { return '<div class="field"><label>Naam</label><input id="f1" placeholder="bijv. Huur"></div>' +'<div class="field"><label>Bedrag (€)</label><input id="f2" type="number" min="0" step="1" placeholder="0"></div>' +'<div class="field"><label>Dag van de maand</label><input id="f3" type="number" min="1" max="28" value="1"></div>' +'<div class="field"><label>Wie betaalt?</label><select id="f4">' +'<option value="Samen">Samen</option>' +'<option value="Shane">Shane</option>' +'<option value="Esra">Esra</option>' +'</select></div>'; } }
+  cal: {
+    title:function(){return addTr('add.calendar.title','Afspraak toevoegen');},
+    build:function(){return '<div class="field"><label>'+addTr('add.title','Titel')+'</label><input id="f1" placeholder="'+addTr('add.title.placeholder','bijv. Tandarts')+'"></div>'
+      +'<div class="field"><label>'+addTr('add.date','Datum')+'</label><input id="f2" type="date"></div>'
+      +'<div class="field"><label>'+addTr('add.time','Tijd')+'</label><input id="f3" type="time" value="10:00"></div>';}
+  },
+  trans: {
+    title:function(){return addTr('add.transaction.title','Transactie toevoegen');},
+    build:function(){return '<div class="field"><label>'+addTr('add.description','Omschrijving')+'</label><input id="f1" placeholder="'+addTr('add.transaction.placeholder','bijv. Albert Heijn')+'"></div>'
+      +'<div class="field"><label>'+addTr('add.amount','Bedrag (€)')+'</label><input id="f2" type="number" min="0" step="0.01" placeholder="0.00"></div>'
+      +'<div class="field"><label>'+addTr('add.type','Type')+'</label><div class="type-row">'
+      +'<button type="button" class="type-btn active" id="trans-neg" data-tt="-1">💸 '+addTr('add.expense','Uitgave')+'</button>'
+      +'<button type="button" class="type-btn" id="trans-pos" data-tt="1">💚 '+addTr('add.income','Inkomst')+'</button></div></div>'
+      +'<div class="field"><label>'+addTr('add.category','Categorie')+'</label><select id="f3">'
+      +'<option value="Boodschappen">'+addTr('add.cat.groceries','Boodschappen')+'</option><option value="Uit eten">'+addTr('add.cat.dining','Uit eten')+'</option><option value="Transport">'+addTr('add.cat.transport','Transport')+'</option>'
+      +'<option value="Gezondheid">'+addTr('add.cat.health','Gezondheid')+'</option><option value="Abonnementen">'+addTr('add.cat.subscriptions','Abonnementen')+'</option><option value="Kleding">'+addTr('add.cat.clothing','Kleding')+'</option>'
+      +'<option value="Shopping">'+addTr('add.cat.shopping','Shopping')+'</option><option value="Overig">'+addTr('add.cat.other','Overig')+'</option></select></div>'
+      +'<div class="field"><label>'+addTr('add.who','Wie')+'</label><div class="assignee-row"><button type="button" class="assignee-chip active" id="tw-shane" data-tw="Shane">Shane</button><button type="button" class="assignee-chip" id="tw-esra" data-tw="Esra">Esra</button></div></div>'
+      +'<div class="field"><label>'+addTr('add.date','Datum')+'</label><input id="f4" type="date"></div>';}
+  },
+  extraincome: {
+    title:function(){return addTr('add.extraIncome.title','🎁 Extra inkomen toevoegen');},
+    build:function(){return '<div class="field"><label>'+addTr('add.description','Omschrijving')+'</label><input id="f1" placeholder="'+addTr('add.extraIncome.placeholder','bijv. Vakantiegeld')+'"></div>'
+      +'<div class="field"><label>'+addTr('add.amount','Bedrag (€)')+'</label><input id="f2" type="number" min="0" step="0.01" placeholder="0.00"></div>'
+      +'<div class="field"><label>'+addTr('add.category','Categorie')+'</label><select id="f3">'
+      +'<option value="Vakantiegeld">'+addTr('add.cat.holidayPay','Vakantiegeld')+'</option><option value="Bonus">'+addTr('add.cat.bonus','Bonus')+'</option><option value="Belasting">'+addTr('add.cat.tax','Belasting')+'</option>'
+      +'<option value="Freelance">'+addTr('add.cat.freelance','Freelance')+'</option><option value="Cadeau">'+addTr('add.cat.gift','Cadeau')+'</option><option value="Overig">'+addTr('add.cat.other','Overig')+'</option></select></div>'
+      +'<div class="field"><label>'+addTr('add.who','Wie')+'</label><div class="assignee-row"><button type="button" class="assignee-chip active" id="ew-shane" data-ew="Shane">Shane</button><button type="button" class="assignee-chip" id="ew-esra" data-ew="Esra">Esra</button></div></div>'
+      +'<div class="field"><label>'+addTr('add.date','Datum')+'</label><input id="f4" type="date"></div>';}
+  },
+  vastlast: {
+    title:function(){return addTr('add.fixed.title','Vaste last toevoegen');},
+    build:function(){return '<div class="field"><label>'+addTr('add.name','Naam')+'</label><input id="f1" placeholder="'+addTr('add.rentPlaceholder','bijv. Huur')+'"></div>'
+      +'<div class="field"><label>'+addTr('add.amount','Bedrag (€)')+'</label><input id="f2" type="number" min="0" step="1" placeholder="0"></div>'
+      +'<div class="field"><label>'+addTr('add.dayOfMonth','Dag van de maand')+'</label><input id="f3" type="number" min="1" max="28" value="1"></div>'
+      +'<div class="field"><label>'+addTr('add.whoPays','Wie betaalt?')+'</label><select id="f4"><option value="Samen">'+addTr('add.together','Samen')+'</option><option value="Shane">Shane</option><option value="Esra">Esra</option></select></div>';}
+  }
 };
 
 function openAdd(type) {
@@ -89,13 +110,13 @@ function openAdd(type) {
   // generic raw sheet here would resurrect a second, competing add-item UI.
   if(type === 'shop') {
     if(window.GroceryAddSheet && typeof window.GroceryAddSheet.open === 'function') { window.GroceryAddSheet.open(); return; }
-    if(typeof window.showToast === 'function') window.showToast('Boodschappenlijst is nog niet beschikbaar. Probeer opnieuw.');
+    if(typeof window.showToast === 'function') window.showToast(addTr('add.shoppingUnavailable','Boodschappenlijst is nog niet beschikbaar. Probeer opnieuw.'));
     return;
   }
   var sheet = SHEETS[type];
   if(!sheet) return;
   currentAddType = type;
-  document.getElementById('sheet-title').textContent = sheet.title;
+  document.getElementById('sheet-title').textContent = typeof sheet.title==='function'?sheet.title():sheet.title;
   document.getElementById('sheet-fields').innerHTML = sheet.build();
   document.getElementById('add-overlay').classList.add('open');
   var addSheetEl = document.querySelector('#add-overlay .add-sheet');
@@ -148,7 +169,7 @@ function saveItem() {
       var createdTask = {id:taskNextId++,title:val,who:who,date:date,done:false,prio:prio};
       taskData.unshift(createdTask);
       persistTasksFromAddSheet('createTask', createdTask.id);
-      addActivity('📋','#f0ede8',myName+' maakte taak "'+val+'" aan');
+      addActivity('📋','#f0ede8',addTr('add.activity.task',myName+' maakte taak “'+val+'” aan',{name:myName,title:val}));
       renderTasks(); updateStats();
     } else {
       var who2 = [];
@@ -158,7 +179,7 @@ function saveItem() {
       var r = {id:'r'+recurNextId++,title:val,who:who2,freq:freqMode,days:[],streak:0,doneWeek:{},doneDates:{}};
       if(freqMode==='weekly') {
         document.querySelectorAll('#freq-days .day-pill.active').forEach(function(b){r.days.push(b.dataset.day);});
-        if(!r.days.length){showToast('Kies minimaal één dag');return;}
+        if(!r.days.length){showToast(addTr('add.chooseDay','Kies minimaal één dag'));return;}
         r.freqLabel = r.days.map(function(d){return d.slice(0,2);}).join(', ');
       } else {
         var wkBtn = document.querySelector('[data-wk].active');
@@ -170,13 +191,13 @@ function saveItem() {
       }
       recurData.push(r);
       persistTasksFromAddSheet('createRecurringTask', r.id);
-      addActivity('🔁','#e8f5e3',myName+' voegde vaste taak "'+val+'" toe');
+      addActivity('🔁','#e8f5e3',addTr('add.activity.recurring',myName+' voegde vaste taak “'+val+'” toe',{name:myName,title:val}));
       renderTasks();
     }
   }
-  else if(currentAddType==='cal') { var date2 = (document.getElementById('f2')||{}).value||''; var time  = (document.getElementById('f3')||{}).value||''; calData.push({id:calNextId++,title:val,date:date2,time:time,color:'#2d5a27'}); renderCal(); addActivity('📅','#dbeafe',myName+' voegde afspraak "'+val+'" toe'); }
-  else if(currentAddType==='trans') { var amount = parseFloat((document.getElementById('f2')||{}).value)||0; var cat  = (document.getElementById('f3')||{}).value||'Overig'; var date = (document.getElementById('f4')||{}).value||todayStr(); if(amount>0 && window.FinanceStore) { FinanceStore.addTransaction({name:val,cat:cat,amount:transTypeSign*amount,who:transWho,date:date}).then(function(){ addActivity('💸','#f0ede8',myName+' voegde transactie "'+val+'" toe'); }); } }
-  else if(currentAddType==='extraincome') { var amount2 = parseFloat((document.getElementById('f2')||{}).value)||0; var cat2  = (document.getElementById('f3')||{}).value||'Overig'; var date3 = (document.getElementById('f4')||{}).value||todayStr(); if(amount2>0 && window.FinanceStore) { FinanceStore.addExtraIncome({name:val,amount:amount2,who:extraWho,cat:cat2,date:date3}).then(function(){ addActivity('🎁','#e8f5e3',myName+' voegde extra inkomen "'+val+'" toe (€ '+amount2+')'); awardXP(3,'Extra inkomen'); }); } }
+  else if(currentAddType==='cal') { var date2 = (document.getElementById('f2')||{}).value||''; var time  = (document.getElementById('f3')||{}).value||''; calData.push({id:calNextId++,title:val,date:date2,time:time,color:'#2d5a27'}); renderCal(); addActivity('📅','#dbeafe',addTr('add.activity.appointment',myName+' voegde afspraak “'+val+'” toe',{name:myName,title:val})); }
+  else if(currentAddType==='trans') { var amount = parseFloat((document.getElementById('f2')||{}).value)||0; var cat  = (document.getElementById('f3')||{}).value||'Overig'; var date = (document.getElementById('f4')||{}).value||todayStr(); if(amount>0 && window.FinanceStore) { FinanceStore.addTransaction({name:val,cat:cat,amount:transTypeSign*amount,who:transWho,date:date}).then(function(){ addActivity('💸','#f0ede8',addTr('add.activity.transaction',myName+' voegde transactie “'+val+'” toe',{name:myName,title:val})); }); } }
+  else if(currentAddType==='extraincome') { var amount2 = parseFloat((document.getElementById('f2')||{}).value)||0; var cat2  = (document.getElementById('f3')||{}).value||'Overig'; var date3 = (document.getElementById('f4')||{}).value||todayStr(); if(amount2>0 && window.FinanceStore) { FinanceStore.addExtraIncome({name:val,amount:amount2,who:extraWho,cat:cat2,date:date3}).then(function(){ addActivity('🎁','#e8f5e3',addTr('add.activity.extraIncome',myName+' voegde extra inkomen “'+val+'” toe (€ '+amount2+')',{name:myName,title:val,amount:amount2})); awardXP(3,'Extra inkomen'); }); } }
   else if(currentAddType==='vastlast') { var amount3 = parseFloat((document.getElementById('f2')||{}).value)||0; var day    = parseInt((document.getElementById('f3')||{}).value)||1; var who3   = (document.getElementById('f4')||{}).value||'Samen'; if(window.FinanceStore) FinanceStore.addVasteLast({name:val,amount:amount3,cat:'Overig',day:day,who:who3}); }
 
   if(currentAddType==='trade'){submitTrade();return;}
@@ -188,3 +209,5 @@ function saveItem() {
   taskTypeMode='eenmalig'; wieShane=true; wieEsra=false;
   wieRShane=true; wieREsra=false; freqMode='weekly';
 }
+
+window.addEventListener('familyapp:language-changed',function(){try{if(document.getElementById('add-overlay')&&document.getElementById('add-overlay').classList.contains('open')&&currentAddType&&SHEETS[currentAddType]){var sheet=SHEETS[currentAddType];document.getElementById('sheet-title').textContent=typeof sheet.title==='function'?sheet.title():sheet.title;document.getElementById('sheet-fields').innerHTML=sheet.build();}}catch(error){}});
