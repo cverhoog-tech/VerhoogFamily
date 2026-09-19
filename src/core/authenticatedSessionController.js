@@ -13,6 +13,7 @@
   var bootstrapPromise=null;
   var bootstrapUid=null;
   var lifecycleBound=false;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function emit(){
     var snap=status();
@@ -22,14 +23,14 @@
   function updateStartupLoader(next){
     var loader=window.FamilyAppStartupLoader;
     if(!loader)return;
-    if(next==='initializing')loader.step(50,'Account controleren…');
-    else if(next==='authResolved')loader.step(62,'Account gevonden…');
-    else if(next==='resolvingHousehold')loader.step(76,'Je gezin wordt geladen…');
-    else if(next==='preparingApp')loader.step(91,'FamilyApp wordt klaargezet…');
-    else if(next==='ready')loader.finish('Klaar!');
-    else if(next==='signedOut')loader.finish('Klaar om in te loggen');
-    else if(next==='awaitingSetup')loader.finish('Nog één stap…');
-    else if(next==='recoverableError')loader.fail('Opstarten kon niet worden voltooid');
+    if(next==='initializing')loader.step(50,tr('session.checking','Account controleren…'));
+    else if(next==='authResolved')loader.step(62,tr('session.found','Account gevonden…'));
+    else if(next==='resolvingHousehold')loader.step(76,tr('session.loadingFamily','Je gezin wordt geladen…'));
+    else if(next==='preparingApp')loader.step(91,tr('session.preparing','FamilyApp wordt klaargezet…'));
+    else if(next==='ready')loader.finish(tr('session.ready','Klaar!'));
+    else if(next==='signedOut')loader.finish(tr('session.readyLogin','Klaar om in te loggen'));
+    else if(next==='awaitingSetup')loader.finish(tr('session.oneMore','Nog één stap…'));
+    else if(next==='recoverableError')loader.fail(tr('session.failedShort','Opstarten kon niet worden voltooid'));
   }
   function setState(next,error){state=next;lastError=error||null;updateStartupLoader(next);emit();}
   function status(){return{state:state,generation:generation,user:currentUser||null,uid:currentUser&&currentUser.uid||null,householdId:window.fbFamilyId||null,error:lastError||null,ready:state==='ready'};}
@@ -117,7 +118,7 @@
     if(typeof window.renderNav==='function')window.renderNav();
     if(typeof window.showScreen==='function')window.showScreen('home');
     else if(typeof window.renderHome==='function')window.renderHome();
-    if(window.FamilyAppStartupLoader)window.FamilyAppStartupLoader.step(97,'Home wordt geopend…');
+    if(window.FamilyAppStartupLoader)window.FamilyAppStartupLoader.step(97,tr('session.openingHome','Home wordt geopend…'));
     if(typeof window.startFirebaseSync==='function')window.startFirebaseSync();
     if(window.NotificationStore&&typeof window.NotificationStore.ensureSubscription==='function')window.NotificationStore.ensureSubscription();
     if(typeof window.setupPushNotifications==='function')window.setupPushNotifications();
@@ -129,7 +130,7 @@
     setState('recoverableError',error);
     loginScreen(true);
     var err=document.getElementById('auth-error');
-    if(err){err.textContent='Opstarten mislukt. Controleer je verbinding en probeer opnieuw.';err.style.display='block';}
+    if(err){err.textContent=tr('session.startFailed','Opstarten mislukt. Controleer je verbinding en probeer opnieuw.');err.style.display='block';}
   }
   function needsSetup(error){
     var code=String(error&&(error.code||error.name)||'');
@@ -162,7 +163,7 @@
 
     var work;
     if(typeof window.loadUserFamily!=='function'){
-      work=Promise.reject(new Error('Household resolver niet beschikbaar')).catch(function(err){showRecoverable(err,user,token);});
+      work=Promise.reject(new Error(tr('session.householdResolverMissing','Household resolver niet beschikbaar'))).catch(function(err){showRecoverable(err,user,token);});
     }else{
       work=Promise.resolve().then(function(){return window.loadUserFamily();}).then(function(){
         if(!isCurrent(token,user))return;
@@ -183,7 +184,7 @@
     return work;
   }
   function acceptAuthenticatedUser(user){
-    if(!user||!user.uid)return Promise.reject(new Error('Authenticated Firebase gebruiker ontbreekt'));
+    if(!user||!user.uid)return Promise.reject(new Error(tr('session.authUserMissing','Authenticated Firebase gebruiker ontbreekt')));
     return bootstrap(user);
   }
   function resume(){
@@ -195,7 +196,7 @@
   function subscribe(fn){if(typeof fn!=='function')return function(){};listeners.push(fn);try{fn(status());}catch(e){}return function(){var i=listeners.indexOf(fn);if(i>=0)listeners.splice(i,1);};}
   function whenAuthenticated(){
     if(currentUser&&currentUser.uid)return Promise.resolve(currentUser);
-    return new Promise(function(resolve,reject){var timer=setTimeout(function(){off();reject(new Error('Firebase gebruiker is nog niet beschikbaar'));},6000);var off=subscribe(function(s){if(s.user&&s.user.uid){clearTimeout(timer);off();resolve(s.user);}});});
+    return new Promise(function(resolve,reject){var timer=setTimeout(function(){off();reject(new Error(tr('session.firebaseUserMissing','Firebase gebruiker is nog niet beschikbaar')));},6000);var off=subscribe(function(s){if(s.user&&s.user.uid){clearTimeout(timer);off();resolve(s.user);}});});
   }
   function bindLifecycle(){
     if(lifecycleBound)return;lifecycleBound=true;
@@ -217,7 +218,7 @@
     bindLifecycle();
     var auth=window.fbAuth;
     if(!auth&&window.firebase&&firebase.auth){try{auth=firebase.auth();}catch(e){}}
-    if(!auth||typeof auth.onAuthStateChanged!=='function'){setState('recoverableError',new Error('Firebase Auth niet beschikbaar'));loginScreen(true);return;}
+    if(!auth||typeof auth.onAuthStateChanged!=='function'){setState('recoverableError',new Error(tr('session.firebaseAuthMissing','Firebase Auth niet beschikbaar')));loginScreen(true);return;}
     setState('initializing');
     authUnsubscribe=auth.onAuthStateChanged(function(user){bootstrap(user);},function(err){setState('recoverableError',err);loginScreen(true);});
   }
@@ -230,8 +231,9 @@
 
   window.AuthenticatedSessionController={start:start,stop:stop,retry:retry,resume:resume,status:status,subscribe:subscribe,whenAuthenticated:whenAuthenticated,addCleanup:addCleanup,acceptAuthenticatedUser:acceptAuthenticatedUser};
   window.onLoggedIn=function(){return resume();};
-  window.useOfflineMode=function(){if(typeof window.showAuthError==='function')window.showAuthError('Offline openen zonder ingelogd account is niet beschikbaar.');};
+  window.useOfflineMode=function(){if(typeof window.showAuthError==='function')window.showAuthError(tr('session.offlineNoAccount','Offline openen zonder ingelogd account is niet beschikbaar.'));};
 
+  window.addEventListener('familyapp:language-changed',function(){if(state!=='idle'&&state!=='stopped')updateStartupLoader(state);});
   claimStartupReveal();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
