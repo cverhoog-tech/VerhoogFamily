@@ -2262,7 +2262,18 @@
     ['search.noResultsFor','Geen resultaten voor “{{query}}”','No results for “{{query}}”','“{{query}}” için sonuç yok','Brak wyników dla „{{query}}”','Niciun rezultat pentru „{{query}}”'],
     ['session.logoutFailed','Uitloggen mislukt. Probeer opnieuw.','Sign out failed. Try again.','Çıkış başarısız. Tekrar dene.','Wylogowanie nie powiodło się. Spróbuj ponownie.','Deconectarea a eșuat. Încearcă din nou.'],
     ['session.logout','Uitloggen','Sign out','Çıkış yap','Wyloguj się','Deconectare'],
-    ['session.backLogin','Terug naar inloggen','Back to sign in','Girişe dön','Wróć do logowania','Înapoi la autentificare']
+    ['session.backLogin','Terug naar inloggen','Back to sign in','Girişe dön','Wróć do logowania','Înapoi la autentificare'],
+    ['notifications.from','Van {{name}}','From {{name}}','{{name}} tarafından','Od {{name}}','De la {{name}}'],
+    ['search.startTyping','Begin met typen...','Start typing...','Yazmaya başla...','Zacznij pisać...','Începe să scrii...'],
+    ['search.type.task','Taak','Task','Görev','Zadanie','Sarcină'],
+    ['search.type.recipe','Recept','Recipe','Tarif','Przepis','Rețetă'],
+    ['search.type.grocery','Boodschap','Grocery','Alışveriş','Zakup','Cumpărătură'],
+    ['search.type.note','Notitie','Note','Not','Notatka','Notiță'],
+    ['search.type.calendar','Agenda','Calendar','Takvim','Kalendarz','Calendar'],
+    ['search.done','Gedaan','Done','Tamamlandı','Zrobione','Făcut'],
+    ['search.open','Open','Open','Açık','Otwarte','Deschis'],
+    ['shop.familyList','Gezinslijst','Family list','Aile listesi','Lista rodzinna','Listă de familie']
+
 
 
 
