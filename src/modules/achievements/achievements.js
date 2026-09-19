@@ -129,7 +129,7 @@ var abilitiesUsed = 0;
 var unlockedBadges = {};
 var newBadges = {};
 var visitedScreens = new Set(['home']);
-var partnerXP = 95;
+var partnerXP = 0;
 
 // ── TASK TRADE SYSTEM ──
 var tradeOffers = []; // {id, from, toTask, offerTask, status:'pending'|'accepted'|'declined', msg}
@@ -254,6 +254,9 @@ function awardXP(amount, label) {
 // ── RENDER ACHIEVEMENTS ──
 function renderAch() {
   var el=document.getElementById('ach-content');if(!el)return;
+  var view=window.AchievementsViewData&&window.AchievementsViewData.get();
+  if(!view||!view.ready){el.textContent='Achievements worden geladen…';return;}
+  var myXP=view.xp,unlockedBadges=view.badges;
   var lv=getLevel(myXP);
   var titleData=LEVEL_TITLES[Math.min(lv-1,LEVEL_TITLES.length-1)];
   var prevXP=LEVEL_XP[lv-1]||0;
@@ -269,22 +272,19 @@ function renderAch() {
     +'</div>';
 
   // Stat pills
-  var maxStreak=recurData.reduce(function(m,r){return Math.max(m,r.streak||0);},0);
-  var doneTasks=taskData.filter(function(t){return t.done;}).length;
+  var maxStreak='—';
+  var doneTasks=view.doneTasks;
   var unlockedCount=Object.keys(unlockedBadges).length;
   html+='<div class="ach-section-title">📊 Statistieken</div>'
     +'<div class="streak-bar">'
     +'<div class="streak-card"><div class="streak-fire">🔥</div><div class="streak-num">'+maxStreak+'</div><div class="streak-lbl">Max streak</div></div>'
     +'<div class="streak-card"><div class="streak-fire">✅</div><div class="streak-num">'+doneTasks+'</div><div class="streak-lbl">Taken klaar</div></div>'
     +'<div class="streak-card"><div class="streak-fire">🏅</div><div class="streak-num">'+unlockedCount+'/'+BADGES.length+'</div><div class="streak-lbl">Badges</div></div>'
-    +'<div class="streak-card"><div class="streak-fire">🤝</div><div class="streak-num">'+tradesCount+'</div><div class="streak-lbl">Ruilen</div></div>'
+    +'<div class="streak-card"><div class="streak-fire">🤝</div><div class="streak-num">'+'—'+'</div><div class="streak-lbl">Ruilen</div></div>'
     +'</div>';
 
   // Leaderboard
-  var players=[
-    {name:myName,color:myColor,initials:myInitials,xp:myXP},
-    {name:partnerName,color:'#c0547a',initials:partnerName.substring(0,2).toUpperCase(),xp:partnerXP}
-  ].sort(function(a,b){return b.xp-a.xp;});
+  var players=view.players;
   html+='<div class="ach-section-title">🏆 Ranglijst</div>';
   players.forEach(function(p,i){
     var rankIcon=['🥇','🥈','🥉'][i]||''+(i+1);
@@ -292,8 +292,8 @@ function renderAch() {
     var ptitle=LEVEL_TITLES[Math.min(plv-1,LEVEL_TITLES.length-1)];
     html+='<div class="lb-item">'
       +'<div class="lb-rank '+(i===0?'gold':i===1?'silver':'bronze')+'">'+rankIcon+'</div>'
-      +'<div class="lb-avatar" style="background:'+p.color+'">'+p.initials+'</div>'
-      +'<div class="lb-info"><div class="lb-name">'+p.name+'</div>'
+      +'<div class="lb-avatar" style="background:'+achEscape(p.color)+'">'+achEscape(p.initials)+'</div>'
+      +'<div class="lb-info"><div class="lb-name">'+achEscape(p.name)+'</div>'
       +'<div class="lb-level">'+ptitle.title+'</div></div>'
       +'<div class="lb-xp-badge">'+p.xp+' XP</div>'
       +'</div>';
@@ -424,3 +424,5 @@ function updateHomeXP() {
 
 
 
+
+function achEscape(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
