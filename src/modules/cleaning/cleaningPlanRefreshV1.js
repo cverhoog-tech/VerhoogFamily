@@ -12,6 +12,7 @@
   var state={busy:false,subscribed:false,lastError:null};
   var DAY_MS=86400000;
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function text(v){return String(v==null?'':v).trim();}
   function clone(v){if(v===undefined)return undefined;try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function repo(){return window.CleaningHouseholdRepository||window.CleaningV2Repository||null;}
@@ -40,7 +41,7 @@
     if(reconciler&&typeof reconciler.reconcilePlan==='function'){
       return reconciler.reconcilePlan(plan.id).then(function(result){return{mode:'updated',result:result,owner:'reconciler-fallback'};});
     }
-    return Promise.reject(new Error('Werkplan synchronisatie is nog niet geladen.'));
+    return Promise.reject(new Error(tr('cleaning.refreshUnavailable','Werkplan synchronisatie is nog niet geladen.')));
   }
 
   function refreshWorkplan(){
@@ -49,17 +50,17 @@
     var r=repo(),s=snap(),data=s&&s.data||{},plan=currentPlan(data),work;
     if(plan&&refreshablePlan(plan))work=canonicalRefresh(plan);
     else if(r&&typeof r.generateWeekPlan==='function')work=r.generateWeekPlan().then(function(result){return{mode:'generated',result:result,owner:'repository'};});
-    else work=Promise.reject(new Error('Werkplan is nog niet beschikbaar.'));
+    else work=Promise.reject(new Error(tr('cleaning.workplanUnavailable','Werkplan is nog niet beschikbaar.')));
 
     return Promise.resolve(work).then(function(result){
       var empty=result&&result.result&&result.result.empty;
       state.lastError=null;
       forceRender();
-      toast(empty?'Er zijn nu geen routines om in te plannen.':(result&&result.mode==='updated'?'Werkplan opnieuw opgebouwd uit je huidige kamers en routines ✓':'Werkplan staat klaar ✓'));
+      toast(empty?tr('cleaning.noRoutinesToPlan','Er zijn nu geen routines om in te plannen.'):(result&&result.mode==='updated'?tr('cleaning.workplanRebuilt','Werkplan opnieuw opgebouwd uit je huidige kamers en routines ✓'):tr('cleaning.workplanReady','Werkplan staat klaar ✓')));
       return result;
     }).catch(function(error){
       state.lastError=text(error&&error.message)||String(error);
-      toast(state.lastError||'Werkplan kon niet worden bijgewerkt.');
+      toast(state.lastError||tr('cleaning.workplanUpdateFailed','Werkplan kon niet worden bijgewerkt.'));
       throw error;
     }).finally(function(){state.busy=false;forceRender();});
   }
@@ -74,8 +75,8 @@
     var s=snap(),plan=currentPlan(s&&s.data||{}),hasPlan=!!plan;
     document.querySelectorAll('[data-cv2-plan-generate]').forEach(function(button){
       button.disabled=!!state.busy;
-      button.textContent=state.busy?(hasPlan?'Werkplan bijwerken…':'Werkplan maken…'):(hasPlan?'Werkplan bijwerken':'Maak werkplan');
-      button.setAttribute('aria-label',hasPlan?'Werkplan opnieuw opbouwen uit de huidige kamers en routines':'Nieuw werkplan maken');
+      button.textContent=state.busy?(hasPlan?tr('cleaning.updatePlanBusy','Werkplan bijwerken…'):tr('cleaning.makePlanBusy','Werkplan maken…')):(hasPlan?tr('cleaning.updatePlan','Werkplan bijwerken'):tr('cleaning.makePlan','Maak werkplan'));
+      button.setAttribute('aria-label',hasPlan?tr('cleaning.workplanAriaRebuild','Werkplan opnieuw opbouwen uit de huidige kamers en routines'):tr('cleaning.workplanAriaNew','Nieuw werkplan maken'));
       button.setAttribute('data-cleaning-refresh-owner','current-sources');
     });
   }
@@ -87,11 +88,11 @@
       var existing=row.nextElementSibling;
       if(existing&&existing.getAttribute('data-clpr-actions')===id){updateActionCopy(existing,data.routines&&data.routines[id]);return;}
       var actions=document.createElement('div');actions.className='clpr-routine-actions';actions.setAttribute('data-clpr-actions',id);
-      actions.innerHTML='<button type="button" data-clpr-pause="'+id+'"></button><button type="button" class="danger" data-clpr-delete="'+id+'">Verwijderen</button>';
+      actions.innerHTML='<button type="button" data-clpr-pause="'+id+'"></button><button type="button" class="danger" data-clpr-delete="'+id+'">'+tr('common.delete','Verwijderen')+'</button>';
       row.insertAdjacentElement('afterend',actions);updateActionCopy(actions,data.routines&&data.routines[id]);
     });
   }
-  function updateActionCopy(actions,routine){var paused=!!(routine&&routine.paused===true),btn=actions&&actions.querySelector('[data-clpr-pause]');if(btn)btn.textContent=paused?'Hervatten':'Pauzeren';if(actions)actions.classList.toggle('is-paused',paused);}
+  function updateActionCopy(actions,routine){var paused=!!(routine&&routine.paused===true),btn=actions&&actions.querySelector('[data-clpr-pause]');if(btn)btn.textContent=paused?tr('common.resume','Hervatten'):tr('common.pause','Pauzeren');if(actions)actions.classList.toggle('is-paused',paused);}
 
   function ensureStyle(){
     if(document.getElementById('cleaning-plan-refresh-v1-style'))return;
@@ -108,12 +109,12 @@
     var paused=row.paused===true,timestamp=now();
     return database.ref('families/'+ctx.householdId+'/cleaning/routines/'+safe(id)).update({paused:!paused,updatedAt:timestamp,updatedByUid:ctx.uid}).then(function(){
       return new Promise(function(resolve){setTimeout(resolve,80);});
-    }).then(refreshCurrentPlanSilently).then(function(){toast(paused?'Routine hervat ✓':'Routine gepauzeerd ✓');schedulePatch();});
+    }).then(refreshCurrentPlanSilently).then(function(){toast(paused?tr('cleaning.routineResumeDone','Routine hervat ✓'):tr('cleaning.routinePauseDone','Routine gepauzeerd ✓'));schedulePatch();});
   }
 
   function deleteRoutine(id){
     var r=repo();if(!r||typeof r.removeRoutineItem!=='function')return Promise.reject(new Error('Routine verwijderen is niet beschikbaar.'));
-    return r.removeRoutineItem(id).then(function(){return new Promise(function(resolve){setTimeout(resolve,80);});}).then(refreshCurrentPlanSilently).then(function(){toast('Routine verwijderd en werkplan bijgewerkt');schedulePatch();});
+    return r.removeRoutineItem(id).then(function(){return new Promise(function(resolve){setTimeout(resolve,80);});}).then(refreshCurrentPlanSilently).then(function(){toast(tr('cleaning.routineRemovedPlanUpdated','Routine verwijderd en werkplan bijgewerkt'));schedulePatch();});
   }
 
   function schedulePatch(){ensureStyle();[0,40,120,260].forEach(function(delay){setTimeout(function(){patchPlanButton();routineRowActions();},delay);});}
@@ -124,7 +125,7 @@
     var pause=event.target&&event.target.closest?event.target.closest('[data-clpr-pause]'):null;
     if(pause){event.preventDefault();event.stopPropagation();pauseRoutine(text(pause.getAttribute('data-clpr-pause'))).catch(function(error){toast(text(error&&error.message)||'Pauzeren mislukt');});return;}
     var del=event.target&&event.target.closest?event.target.closest('[data-clpr-delete]'):null;
-    if(del){event.preventDefault();event.stopPropagation();if(!confirm('Deze routine verwijderen? Het huidige werkplan wordt meteen bijgewerkt.'))return;deleteRoutine(text(del.getAttribute('data-clpr-delete'))).catch(function(error){toast(text(error&&error.message)||'Verwijderen mislukt');});return;}
+    if(del){event.preventDefault();event.stopPropagation();if(!confirm(tr('cleaning.confirmRoutineDeleteRefresh','Deze routine verwijderen? Het huidige werkplan wordt meteen bijgewerkt.')))return;deleteRoutine(text(del.getAttribute('data-clpr-delete'))).catch(function(error){toast(text(error&&error.message)||'Verwijderen mislukt');});return;}
     if(event.target&&event.target.closest&&event.target.closest('[data-cv2-room],[data-cv2-room-edit],[data-cv2-routine-edit],[data-cv2-routine-new],[data-cv2-tab]'))schedulePatch();
   },true);
 
@@ -137,3 +138,5 @@
 
   window.CleaningPlanRefreshV1={version:VERSION,refresh:refreshWorkplan,reconcile:refreshCurrentPlanSilently,status:function(){return clone({version:VERSION,busy:state.busy,lastError:state.lastError});}};
 })();
+
+  window.addEventListener('familyapp:language-changed',schedulePatch);
