@@ -1287,6 +1287,8 @@
     ['tasks.normal','Normaal','Normal','Normal','Normalny','Normală'],
     ['tasks.high','Hoog','High','Yüksek','Wysoki','Ridicată'],
     ['tasks.subProgress','{{done}} van {{total}} voltooid','{{done}} of {{total}} completed','{{total}} içinden {{done}} tamamlandı','Ukończono {{done}} z {{total}}','{{done}} din {{total}} finalizate'],
+    ['tasks.cleanRoom','{{room}} schoonmaken','Clean {{room}}','{{room}} temizliği','Posprzątaj: {{room}}','Curăță: {{room}}']
+,
     ['tasks.askSomeone','Vraag iemand uit je gezin om mee te helpen.','Ask someone in your family to help.','Ailenden birinden yardım iste.','Poproś kogoś z rodziny o pomoc.','Roagă pe cineva din familie să ajute.'],
     ['tasks.joinHelp','Je kunt aansluiten bij deze taak.','You can join this task.','Bu göreve katılabilirsin.','Możesz dołączyć do tego zadania.','Te poți alătura acestei sarcini.'],
     ['tasks.withdrawHelp','Intrekken','Withdraw','Geri çek','Wycofaj','Retrage'],
