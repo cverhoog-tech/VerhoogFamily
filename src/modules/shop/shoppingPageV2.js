@@ -21,6 +21,7 @@
   var storeUnsubscribe=null;
   var pointerDown=null;
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function store(){return window.ShoppingListStore||null;}
   function repository(){return window.ShoppingListHouseholdRepository||null;}
   function clone(value){try{return JSON.parse(JSON.stringify(value));}catch(e){return value;}}
@@ -29,7 +30,7 @@
   function toast(message){if(typeof window.showToast==='function')window.showToast(message);}
   function icon(key,size){var r=window.FamilyAppIconRenderer;return r&&typeof r.render==='function'?r.render(key,{size:size||'sm',label:false,className:'fa-utility-icon'}):'';}
   function utilityIcon(item,size){var r=window.FamilyAppUtilityIconResolver;return r&&typeof r.render==='function'?r.render(item&&item.cat,item&&item.photo,{size:size||'lg',name:item&&item.name||''}):'';}
-  function category(item){var value=String(item&&item.cat||'').trim();return value||'Overig';}
+  function category(item){var value=String(item&&item.cat||'').trim();return value||tr('shop.other','Overig');}
   function qty(item){return String(item&&item.qty||((item&&item.amount!=null?item.amount:1)+' '+(item&&item.unit||'st')));}
   function allItems(){return Object.keys(localItems).map(function(key){var row=localItems[key];return row?Object.assign({},row,{_key:row._key||key}):null;}).filter(Boolean);}
   function sortedVisible(){var done=currentView==='done';return allItems().filter(function(item){return !!item.done===done;}).sort(function(a,b){return Number(b.createdAt||0)-Number(a.createdAt||0);});}
@@ -101,12 +102,12 @@
   }
 
   function markup(){return '<div class="shopv2-shell">'
-    +'<div class="shopv2-top"><h2>Boodschappen</h2><button type="button" class="shopv2-add" id="shopv2-add">+ Toevoegen</button></div>'
-    +'<button type="button" class="shopv2-picker" id="shopv2-picker"><span class="shopv2-picker-icon" id="shopv2-picker-icon"></span><span class="shopv2-picker-copy"><b id="shopv2-list-name">Winkellijst</b><small id="shopv2-list-meta">Gezin · live · 0 te kopen</small></span><span class="shopv2-chevron">⌄</span></button>'
-    +'<div class="shopv2-tabs" role="tablist" aria-label="Boodschappenstatus"><button type="button" class="shopv2-tab active" data-shop-view="open" role="tab" aria-selected="true"><span>Te kopen</span><strong id="shopv2-open-count">0</strong></button><button type="button" class="shopv2-tab" data-shop-view="done" role="tab" aria-selected="false"><span>Gekocht</span><strong id="shopv2-done-count">0</strong></button></div>'
+    +'<div class="shopv2-top"><h2>'+tr('shop.title','Boodschappen')+'</h2><button type="button" class="shopv2-add" id="shopv2-add">'+tr('shop.addPlus','+ Toevoegen')+'</button></div>'
+    +'<button type="button" class="shopv2-picker" id="shopv2-picker"><span class="shopv2-picker-icon" id="shopv2-picker-icon"></span><span class="shopv2-picker-copy"><b id="shopv2-list-name">'+tr('shop.list','Winkellijst')+'</b><small id="shopv2-list-meta">'+tr('shop.familyLive','Gezin · live')+' · '+tr('shop.toBuyMeta','0 te kopen',{count:0})+'</small></span><span class="shopv2-chevron">⌄</span></button>'
+    +'<div class="shopv2-tabs" role="tablist" aria-label="'+tr('shop.title','Boodschappen')+'"><button type="button" class="shopv2-tab active" data-shop-view="open" role="tab" aria-selected="true"><span>'+tr('shop.toBuy','Te kopen')+'</span><strong id="shopv2-open-count">0</strong></button><button type="button" class="shopv2-tab" data-shop-view="done" role="tab" aria-selected="false"><span>'+tr('shop.bought','Gekocht')+'</span><strong id="shopv2-done-count">0</strong></button></div>'
     +'<div class="shopv2-list" id="shopv2-list"></div>'
     +'<div class="shopv2-empty" id="shopv2-empty"><div class="shopv2-empty-icon" id="shopv2-empty-icon"></div><b id="shopv2-empty-title"></b><small id="shopv2-empty-copy"></small></div>'
-    +'<button type="button" class="shopv2-clear" id="shopv2-clear">Gekochte items verwijderen</button>'
+    +'<button type="button" class="shopv2-clear" id="shopv2-clear">'+tr('shop.clearBought','Gekochte items verwijderen')+'</button>'
     +'</div>';}
 
   function checkSvg(){return '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';}
@@ -128,16 +129,16 @@
 
   function updateListIdentity(row){
     var name=document.getElementById('shopv2-list-name');
-    if(name)name.textContent=row&&row.list&&row.list.name||'Winkellijst';
+    if(name)name.textContent=row&&row.list&&row.list.name||tr('shop.list','Winkellijst');
     updateListMeta(row);
   }
-  function updateListMeta(row){var meta=document.getElementById('shopv2-list-meta');if(!meta)return;row=row||(store()&&store().active?store().active():null);var c=counts();meta.textContent=(row&&row.scope==='private'?'Alleen ik':'Gezin · live')+' · '+c.open+' te kopen';}
+  function updateListMeta(row){var meta=document.getElementById('shopv2-list-meta');if(!meta)return;row=row||(store()&&store().active?store().active():null);var c=counts();meta.textContent=(row&&row.scope==='private'?tr('shop.onlyMe','Alleen ik'):tr('shop.familyLive','Gezin · live'))+' · '+tr('shop.toBuyMeta',c.open+' te kopen',{count:c.open});}
   function updateTabs(){
     var c=counts(),open=document.getElementById('shopv2-open-count'),done=document.getElementById('shopv2-done-count');if(open)open.textContent=c.open;if(done)done.textContent=c.done;
     document.querySelectorAll('#screen-shop [data-shop-view]').forEach(function(btn){var active=btn.getAttribute('data-shop-view')===currentView;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',active?'true':'false');});
     var clear=document.getElementById('shopv2-clear');if(clear)clear.classList.toggle('show',currentView==='done'&&c.done>0);updateListMeta();
   }
-  function updateEmpty(){var visible=sortedVisible(),empty=document.getElementById('shopv2-empty');if(!empty)return;var show=visible.length===0;empty.classList.toggle('show',show);if(show){var title=document.getElementById('shopv2-empty-title'),copy=document.getElementById('shopv2-empty-copy');if(currentView==='open'){title.textContent='Alles in huis';copy.textContent='Voeg een product toe wanneer je iets nodig hebt.';}else{title.textContent='Nog niets gekocht';copy.textContent='Afgevinkte producten verschijnen hier direct.';}}}
+  function updateEmpty(){var visible=sortedVisible(),empty=document.getElementById('shopv2-empty');if(!empty)return;var show=visible.length===0;empty.classList.toggle('show',show);if(show){var title=document.getElementById('shopv2-empty-title'),copy=document.getElementById('shopv2-empty-copy');if(currentView==='open'){title.textContent=tr('shop.allAtHome','Alles in huis');copy.textContent=tr('shop.emptyOpen','Voeg een product toe wanneer je iets nodig hebt.');}else{title.textContent=tr('shop.noneBought','Nog niets gekocht');copy.textContent=tr('shop.emptyBought','Afgevinkte producten verschijnen hier direct.');}}}
   function updateRow(el,item){if(!el)return;var name=el.querySelector('.shopv2-name'),meta=el.querySelector('.shopv2-meta'),product=el.querySelector('.shopv2-product'),check=el.querySelector('.shopv2-check');if(name&&name.textContent!==String(item.name||''))name.textContent=item.name||'';if(meta)meta.textContent=qty(item)+' · '+category(item);if(product)product.innerHTML=utilityIcon(item,'lg');if(check){check.classList.toggle('done',!!item.done);check.innerHTML=item.done?checkSvg():'';}}
   function reconcileVisible(){
     if(!mount())return;var list=document.getElementById('shopv2-list');if(!list)return;var visible=sortedVisible(),wanted={};visible.forEach(function(item){wanted[String(item._key)]=item;});
@@ -178,11 +179,11 @@
   function setView(view){currentView=view==='done'?'done':'open';reconcileVisible();}
 
   function openListPicker(){
-    var st=store();if(!st||!window.BottomSheet)return;var active=st.active();var html=st.all().map(function(row){return '<button type="button" class="shopping-list-option'+(active&&active.key===row.key?' active':'')+'" data-list-key="'+esc(row.key)+'"><span class="sl-icon">'+icon('utilityShopping','sm')+'</span><span style="flex:1;min-width:0"><b>'+esc(row.list.name)+'</b><small style="display:block;margin-top:2px;color:var(--c-text2)">'+(row.scope==='private'?'Alleen ik':'Gezin · live')+'</small></span>'+(active&&active.key===row.key?'<span style="color:var(--c-primary);font-weight:900">✓</span>':'')+'</button>';}).join('')+'<button type="button" class="shopping-list-create" id="shopv2-create-list">＋ Nieuwe lijst</button>';
-    window.BottomSheet.open({title:'Winkellijst kiezen',html:html,onOpen:function(ctx){ctx.modal.querySelectorAll('[data-list-key]').forEach(function(btn){btn.onclick=function(){flushAll();st.setActiveList(btn.getAttribute('data-list-key'));ctx.close();};});var create=ctx.modal.querySelector('#shopv2-create-list');if(create)create.onclick=function(){ctx.close();setTimeout(openCreateList,170);};},actions:[{label:'Sluiten'}]});
+    var st=store();if(!st||!window.BottomSheet)return;var active=st.active();var html=st.all().map(function(row){return '<button type="button" class="shopping-list-option'+(active&&active.key===row.key?' active':'')+'" data-list-key="'+esc(row.key)+'"><span class="sl-icon">'+icon('utilityShopping','sm')+'</span><span style="flex:1;min-width:0"><b>'+esc(row.list.name)+'</b><small style="display:block;margin-top:2px;color:var(--c-text2)">'+(row.scope==='private'?tr('shop.onlyMe','Alleen ik'):tr('shop.familyLive','Gezin · live'))+'</small></span>'+(active&&active.key===row.key?'<span style="color:var(--c-primary);font-weight:900">✓</span>':'')+'</button>';}).join('')+'<button type="button" class="shopping-list-create" id="shopv2-create-list">＋ '+tr('shop.newList','Nieuwe lijst')+'</button>';
+    window.BottomSheet.open({title:tr('shop.chooseList','Winkellijst kiezen'),html:html,onOpen:function(ctx){ctx.modal.querySelectorAll('[data-list-key]').forEach(function(btn){btn.onclick=function(){flushAll();st.setActiveList(btn.getAttribute('data-list-key'));ctx.close();};});var create=ctx.modal.querySelector('#shopv2-create-list');if(create)create.onclick=function(){ctx.close();setTimeout(openCreateList,170);};},actions:[{label:tr('common.close','Sluiten')}]});
   }
-  function openCreateList(){var st=store();if(!st||!window.BottomSheet)return;window.BottomSheet.open({title:'Nieuwe winkellijst',html:'<div class="fam-modal-field"><label>Naam</label><input id="shopv2-new-list-name" placeholder="bijv. Weekboodschappen"></div><div class="fam-modal-field"><label>Zichtbaarheid</label><select id="shopv2-new-list-privacy"><option value="household">Gezin</option><option value="private">Alleen ik</option></select></div>',actions:[{label:'Annuleren'},{label:'Lijst maken',primary:true,onClick:function(ctx){var name=ctx.modal.querySelector('#shopv2-new-list-name').value.trim();if(!name)return false;st.createList({name:name,visibility:ctx.modal.querySelector('#shopv2-new-list-privacy').value}).catch(function(){toast('Lijst kon niet worden aangemaakt');});}}]});}
-  function openAdd(){if(window.GroceryAddSheet&&typeof window.GroceryAddSheet.open==='function')window.GroceryAddSheet.open();else toast('Toevoegen wordt geladen…');}
+  function openCreateList(){var st=store();if(!st||!window.BottomSheet)return;window.BottomSheet.open({title:tr('shop.newShoppingList','Nieuwe winkellijst'),html:'<div class="fam-modal-field"><label>'+tr('shop.name','Naam')+'</label><input id="shopv2-new-list-name" placeholder="e.g. Weekly groceries"></div><div class="fam-modal-field"><label>'+tr('shop.visibility','Zichtbaarheid')+'</label><select id="shopv2-new-list-privacy"><option value="household">'+tr('nav.home','Gezin')+'</option><option value="private">'+tr('shop.onlyMe','Alleen ik')+'</option></select></div>',actions:[{label:tr('common.cancel','Annuleren')},{label:tr('shop.createList','Lijst maken'),primary:true,onClick:function(ctx){var name=ctx.modal.querySelector('#shopv2-new-list-name').value.trim();if(!name)return false;st.createList({name:name,visibility:ctx.modal.querySelector('#shopv2-new-list-privacy').value}).catch(function(){toast('Lijst kon niet worden aangemaakt');});}}]});}
+  function openAdd(){if(window.GroceryAddSheet&&typeof window.GroceryAddSheet.open==='function')window.GroceryAddSheet.open();else toast(tr('shop.add','Toevoegen')+'…');}
 
   function bindEvents(){
     var add=document.getElementById('shopv2-add'),picker=document.getElementById('shopv2-picker'),clear=document.getElementById('shopv2-clear');if(add)add.onclick=openAdd;if(picker)picker.onclick=openListPicker;if(clear)clear.onclick=clearDone;
@@ -202,3 +203,5 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
   window.addEventListener('pagehide',flushAll);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flushAll();});
 })();
+
+window.addEventListener('familyapp:language-changed',function(){try{mounted=false;screen=null;render();}catch(error){}});
