@@ -1239,7 +1239,21 @@
     ['ach.trade.swapped','“{{mine}}” en “{{theirs}}” zijn gewisseld','“{{mine}}” and “{{theirs}}” were swapped','“{{mine}}” ve “{{theirs}}” takas edildi','„{{mine}}” i „{{theirs}}” zostały zamienione','„{{mine}}” și „{{theirs}}” au fost schimbate'],
     ['ach.trade.closedToast','Deal gesloten! Taken zijn gewisseld 🎉','Deal closed! Tasks were swapped 🎉','Anlaşma tamam! Görevler takas edildi 🎉','Umowa zawarta! Zadania zamienione 🎉','Acord încheiat! Sarcinile au fost schimbate 🎉'],
     ['ach.trade.declinedActivity','{{name}} weigerde de taakruil','{{name}} declined the task trade','{{name}} görev takasını reddetti','{{name}} odrzucił(a) zamianę zadań','{{name}} a refuzat schimbul de sarcini'],
-    ['ach.trade.declined','Taakruil afgewezen 😬','Task trade declined 😬','Görev takası reddedildi 😬','Zamiana zadań odrzucona 😬','Schimbul de sarcini a fost refuzat 😬']
+    ['ach.trade.declined','Taakruil afgewezen 😬','Task trade declined 😬','Görev takası reddedildi 😬','Zamiana zadań odrzucona 😬','Schimbul de sarcini a fost refuzat 😬'],
+    ['ach.badge.shopName','{{count}} boodschappen','{{count}} groceries','{{count}} alışveriş ürünü','{{count}} zakupów','{{count}} cumpărături'],
+    ['ach.badge.shopDesc','{{count}} boodschappen gekocht','{{count}} grocery items bought','{{count}} alışveriş ürünü alındı','Kupiono {{count}} produktów','Au fost cumpărate {{count}} produse'],
+    ['ach.badge.calendarName','{{count}} afspraken','{{count}} appointments','{{count}} randevu','{{count}} wydarzeń','{{count}} programări'],
+    ['ach.badge.calendarDesc','{{count}} afspraken aangemaakt','{{count}} appointments created','{{count}} randevu oluşturuldu','Utworzono {{count}} wydarzeń','Au fost create {{count}} programări'],
+    ['ach.badge.firstAbilityName','Eerste spreuk','First ability','İlk yetenek','Pierwsza umiejętność','Prima abilitate'],
+    ['ach.badge.firstAbilityDesc','Eerste ability gebruikt','Used the first ability','İlk yetenek kullanıldı','Użyto pierwszej umiejętności','Prima abilitate folosită'],
+    ['ach.badge.heroName','Gezinsheld','Family hero','Aile kahramanı','Bohater rodziny','Eroul familiei'],
+    ['ach.badge.superstarName','Superster','Superstar','Süperstar','Supergwiazda','Superstar'],
+    ['ach.badge.legendName','Legendarisch','Legendary','Efsanevi','Legendarny','Legendar'],
+    ['ach.badge.godName','Huishoud-God','Household God','Ev İşleri Tanrısı','Bóg Domu','Zeul Casei'],
+    ['ach.toast.unlocked','🏆 Achievement ontgrendeld','🏆 Achievement unlocked','🏆 Başarım açıldı','🏆 Osiągnięcie odblokowane','🏆 Realizare deblocată'],
+    ['ach.toast.epicBadge','🏆 Epische badge!','🏆 Epic badge!','🏆 Epik rozet!','🏆 Epicka odznaka!','🏆 Insignă epică!'],
+    ['ach.toast.legendaryBadge','🏆 Legendarische badge!','🏆 Legendary badge!','🏆 Efsanevi rozet!','🏆 Legendarna odznaka!','🏆 Insignă legendară!']
+
 
 
 
