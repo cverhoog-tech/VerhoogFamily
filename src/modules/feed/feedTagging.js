@@ -112,16 +112,16 @@
     var title=type==='member'?tr('feed.tag.person','Persoon'):type==='recipe'?tr('feed.tag.recipe','Recept'):tr('feed.tag.task','Taak');
     var rows=filteredRows(type,'');
     var root=document.createElement('div');root.className='fs-tag-picker';
-    root.innerHTML='<div class="fs-tag-backdrop" onclick="closeFeedTagPicker()"></div><section class="fs-tag-sheet"><div class="fs-tag-sheet-head"><div><small>TAG TOEVOEGEN</small><h3>'+title+' selecteren</h3></div><button type="button" onclick="closeFeedTagPicker()">×</button></div>'+(type==='task'?'<div class="fs-tag-search-wrap"><span>⌕</span><input id="feed-task-tag-search" placeholder="Zoek een taak…" autocomplete="off"></div>':'')+'<div class="fs-tag-choices" id="feed-tag-choice-list">'+(rows.length?rows.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">Geen opties beschikbaar</div>')+'</div></section>';
+    root.innerHTML='<div class="fs-tag-backdrop" onclick="closeFeedTagPicker()"></div><section class="fs-tag-sheet"><div class="fs-tag-sheet-head"><div><small>'+esc(tr('feed.tag.add','TAG TOEVOEGEN'))+'</small><h3>'+esc(tr('feed.tag.select',title+' selecteren',{type:title}))+'</h3></div><button type="button" onclick="closeFeedTagPicker()">×</button></div>'+(type==='task'?'<div class="fs-tag-search-wrap"><span>⌕</span><input id="feed-task-tag-search" placeholder="'+esc(tr('feed.tag.searchTask','Zoek een taak…'))+'" autocomplete="off"></div>':'')+'<div class="fs-tag-choices" id="feed-tag-choice-list">'+(rows.length?rows.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">'+esc(tr('feed.tag.noneAvailable','Geen opties beschikbaar'))+'</div>')+'</div></section>';
     document.body.appendChild(root);picker=root;
     if(type==='task'){
       var input=document.getElementById('feed-task-tag-search'),list=document.getElementById('feed-tag-choice-list');
-      if(input&&list)input.addEventListener('input',function(){var next=filteredRows('task',input.value);list.innerHTML=next.length?next.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">Geen taken gevonden</div>';});
+      if(input&&list)input.addEventListener('input',function(){var next=filteredRows('task',input.value);list.innerHTML=next.length?next.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">'+esc(tr('feed.tag.noneTasks','Geen taken gevonden'))+'</div>';});
     }
   }
   function openInline(type,query){
     closeInline();var ca=document.getElementById('compose-area');if(!ca)return;var rows=filteredRows(type,query).slice(0,6),root=document.createElement('div');root.className='fs-tag-inline';
-    root.innerHTML='<div class="fs-tag-inline-head"><b>'+(type==='member'?'Persoon taggen':'Recept taggen')+'</b><small>'+(query?esc(query):'Kies een optie')+'</small></div><div class="fs-tag-inline-list">'+(rows.length?rows.map(function(r){return rowHtml(r,true);}).join(''):'<div class="fs-tag-empty">Geen resultaten</div>')+'</div>';
+    root.innerHTML='<div class="fs-tag-inline-head"><b>'+esc(type==='member'?tr('feed.tag.personTag','Persoon taggen'):tr('feed.tag.recipeTag','Recept taggen'))+'</b><small>'+(query?esc(query):esc(tr('feed.tag.choose','Kies een optie')))+'</small></div><div class="fs-tag-inline-list">'+(rows.length?rows.map(function(r){return rowHtml(r,true);}).join(''):'<div class="fs-tag-empty">'+esc(tr('feed.noResults','Geen resultaten'))+'</div>')+'</div>';
     document.body.appendChild(root);inlinePicker=root;positionInline(root,ca);
   }
   function positionInline(root,ca){var r=ca.getBoundingClientRect(),vv=window.visualViewport,viewportTop=vv?vv.offsetTop:0,viewportH=vv?vv.height:window.innerHeight,bottom=Math.max(12,window.innerHeight-(viewportTop+viewportH)+12);root.style.left=Math.max(12,r.left)+'px';root.style.width=Math.min(r.width,window.innerWidth-24)+'px';root.style.bottom=bottom+'px';}
@@ -164,8 +164,8 @@
         photo.dataset.feedPremiumIcon='1';
         photo.className='fs-compose-tool fs-compose-tool-photo';
         photo.innerHTML=iconSvg('photo',20);
-        photo.setAttribute('aria-label','Foto toevoegen');
-        photo.title='Foto toevoegen';
+        photo.setAttribute('aria-label',tr('feed.tag.photoAdd','Foto toevoegen'));
+        photo.title=tr('feed.tag.photoAdd','Foto toevoegen');
       }
       if(task&&task.dataset.feedPremiumIcon!=='1'){
         task.dataset.feedPremiumIcon='1';
@@ -173,14 +173,14 @@
         task.className='fs-compose-tool fs-compose-tool-task';
         task.innerHTML=iconSvg('task',20);
         task.setAttribute('onclick',"openFeedTagPicker('task')");
-        task.setAttribute('aria-label','Taak taggen');
-        task.title='Taak taggen';
+        task.setAttribute('aria-label',tr('feed.tag.taskTag','Taak taggen'));
+        task.title=tr('feed.tag.taskTag','Taak taggen');
       }
       if(!document.getElementById('feed-tag-member-btn')){
-        var memberBtn=document.createElement('button');memberBtn.type='button';memberBtn.id='feed-tag-member-btn';memberBtn.dataset.feedPremiumIcon='1';memberBtn.className='fs-compose-tool fs-compose-tool-member';memberBtn.setAttribute('aria-label','Persoon taggen');memberBtn.title='Persoon taggen';memberBtn.setAttribute('onclick',"openFeedTagPicker('member')");memberBtn.innerHTML=iconSvg('member',20);actions.insertBefore(memberBtn,post);
+        var memberBtn=document.createElement('button');memberBtn.type='button';memberBtn.id='feed-tag-member-btn';memberBtn.dataset.feedPremiumIcon='1';memberBtn.className='fs-compose-tool fs-compose-tool-member';memberBtn.setAttribute('aria-label',tr('feed.tag.personTag','Persoon taggen'));memberBtn.title=tr('feed.tag.personTag','Persoon taggen');memberBtn.setAttribute('onclick',"openFeedTagPicker('member')");memberBtn.innerHTML=iconSvg('member',20);actions.insertBefore(memberBtn,post);
       }
       if(!document.getElementById('feed-tag-recipe-btn')){
-        var recipeBtn=document.createElement('button');recipeBtn.type='button';recipeBtn.id='feed-tag-recipe-btn';recipeBtn.dataset.feedPremiumIcon='1';recipeBtn.className='fs-compose-tool fs-compose-tool-recipe';recipeBtn.setAttribute('aria-label','Recept taggen');recipeBtn.title='Recept taggen';recipeBtn.setAttribute('onclick',"openFeedTagPicker('recipe')");recipeBtn.innerHTML=iconSvg('recipe',20);actions.insertBefore(recipeBtn,post);
+        var recipeBtn=document.createElement('button');recipeBtn.type='button';recipeBtn.id='feed-tag-recipe-btn';recipeBtn.dataset.feedPremiumIcon='1';recipeBtn.className='fs-compose-tool fs-compose-tool-recipe';recipeBtn.setAttribute('aria-label',tr('feed.tag.recipeTag','Recept taggen'));recipeBtn.title=tr('feed.tag.recipeTag','Recept taggen');recipeBtn.setAttribute('onclick',"openFeedTagPicker('recipe')");recipeBtn.innerHTML=iconSvg('recipe',20);actions.insertBefore(recipeBtn,post);
       }
     }
     if(!document.getElementById('feed-tag-pending')){
@@ -224,7 +224,8 @@
     css();patchCreate();patchRender();decorateComposer();
     var obs=new MutationObserver(function(){patchCreate();patchRender();decorateComposer();});obs.observe(document.body,{childList:true,subtree:true});
     window.addEventListener('familyapp:feed-updated',function(){setTimeout(decorateComposer,0);});
-    window.addEventListener('familyapp:tasks-updated',function(){if(picker&&document.getElementById('feed-task-tag-search')){var input=document.getElementById('feed-task-tag-search'),list=document.getElementById('feed-tag-choice-list'),next=filteredRows('task',input?input.value:'');if(list)list.innerHTML=next.length?next.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">Geen taken gevonden</div>';}});
+    window.addEventListener('familyapp:language-changed',function(){closeAllPickers();setTimeout(function(){decorateComposer();renderPending();},0);});
+    window.addEventListener('familyapp:tasks-updated',function(){if(picker&&document.getElementById('feed-task-tag-search')){var input=document.getElementById('feed-task-tag-search'),list=document.getElementById('feed-tag-choice-list'),next=filteredRows('task',input?input.value:'');if(list)list.innerHTML=next.length?next.map(function(r){return rowHtml(r,false);}).join(''):'<div class="fs-tag-empty">'+esc(tr('feed.tag.noneTasks','Geen taken gevonden'))+'</div>';}});
     if(window.visualViewport)visualViewport.addEventListener('resize',function(){if(inlinePicker){var ca=document.getElementById('compose-area');if(ca)positionInline(inlinePicker,ca);}});
   }
 
