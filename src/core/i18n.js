@@ -882,7 +882,16 @@
     ['add.activity.recurring','{{name}} voegde vaste taak “{{title}}” toe','{{name}} added recurring task “{{title}}”','{{name}}, “{{title}}” tekrarlanan görevini ekledi','{{name}} dodał(a) cykliczne zadanie „{{title}}”','{{name}} a adăugat sarcina recurentă „{{title}}”'],
     ['add.activity.appointment','{{name}} voegde afspraak “{{title}}” toe','{{name}} added appointment “{{title}}”','{{name}}, “{{title}}” randevusunu ekledi','{{name}} dodał(a) wydarzenie „{{title}}”','{{name}} a adăugat programarea „{{title}}”'],
     ['add.activity.transaction','{{name}} voegde transactie “{{title}}” toe','{{name}} added transaction “{{title}}”','{{name}}, “{{title}}” işlemini ekledi','{{name}} dodał(a) transakcję „{{title}}”','{{name}} a adăugat tranzacția „{{title}}”'],
-    ['add.activity.extraIncome','{{name}} voegde extra inkomen “{{title}}” toe (€ {{amount}})','{{name}} added extra income “{{title}}” (€ {{amount}})','{{name}}, “{{title}}” ek gelirini ekledi (€ {{amount}})','{{name}} dodał(a) dodatkowy dochód „{{title}}” (€ {{amount}})','{{name}} a adăugat venitul suplimentar „{{title}}” (€ {{amount}})']
+    ['add.activity.extraIncome','{{name}} voegde extra inkomen “{{title}}” toe (€ {{amount}})','{{name}} added extra income “{{title}}” (€ {{amount}})','{{name}}, “{{title}}” ek gelirini ekledi (€ {{amount}})','{{name}} dodał(a) dodatkowy dochód „{{title}}” (€ {{amount}})','{{name}} a adăugat venitul suplimentar „{{title}}” (€ {{amount}})'],
+    ['add.weekNumber','Week {{count}}','Week {{count}}','Hafta {{count}}','Tydzień {{count}}','Săptămâna {{count}}'],
+    ['add.day.mon','ma','Mon','Pzt','pon.','lun.'],
+    ['add.day.tue','di','Tue','Sal','wt.','mar.'],
+    ['add.day.wed','wo','Wed','Çar','śr.','mie.'],
+    ['add.day.thu','do','Thu','Per','czw.','joi'],
+    ['add.day.fri','vr','Fri','Cum','pt.','vin.'],
+    ['add.day.sat','za','Sat','Cmt','sob.','sâm.'],
+    ['add.day.sun','zo','Sun','Paz','niedz.','dum.']
+
 
 ,
     ['recipes.search','Zoek recept, keuken...','Search recipe, cuisine...','Tarif veya mutfak ara...','Szukaj przepisu, kuchni...','Caută rețetă, bucătărie...'],
