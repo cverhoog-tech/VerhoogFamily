@@ -509,6 +509,8 @@
     Array.prototype.forEach.call(titleNodes, function (node) {
       node.setAttribute('title', t(node.getAttribute('data-i18n-title')));
     });
+
+    localizeLegacySubtree(scope);
   }
 
   function emitChange() {
@@ -543,6 +545,408 @@
     });
   }
 
+
+  // Legacy UI bridge: translates known FamilyApp system copy that is still
+  // rendered by older modules. It deliberately uses an allow-list of exact
+  // product strings so user-entered task/note/feed content is not generically
+  // machine-translated.
+  var legacyUiRows = [
+    ['Home','Home','Ana Sayfa','Strona główna','Acasă'],
+    ['Taken','Tasks','Görevler','Zadania','Sarcini'],
+    ['Notities','Notes','Notlar','Notatki','Notițe'],
+    ['Boodschappen','Groceries','Alışveriş','Zakupy','Cumpărături'],
+    ['Agenda','Calendar','Takvim','Kalendarz','Calendar'],
+    ['Financiën','Finances','Finans','Finanse','Finanțe'],
+    ['Achievements','Achievements','Başarımlar','Osiągnięcia','Realizări'],
+    ['Meldingen','Notifications','Bildirimler','Powiadomienia','Notificări'],
+    ['Profiel','Profile','Profil','Profil','Profil'],
+    ['Recepten','Recipes','Tarifler','Przepisy','Rețete'],
+    ['Skills','Skills','Beceriler','Umiejętności','Abilități'],
+    ['Maaltijden','Meals','Öğünler','Posiłki','Mese'],
+    ['Templates','Templates','Şablonlar','Szablony','Șabloane'],
+    ['Schoonmaken','Cleaning','Temizlik','Sprzątanie','Curățenie'],
+    ['Feed','Feed','Akış','Aktualności','Activitate'],
+    ['Meer','More','Daha fazla','Więcej','Mai multe'],
+    ['Aanpassen','Customise','Özelleştir','Dostosuj','Personalizează'],
+
+    ['Opslaan','Save','Kaydet','Zapisz','Salvează'],
+    ['Toevoegen','Add','Ekle','Dodaj','Adaugă'],
+    ['Verwijderen','Delete','Sil','Usuń','Șterge'],
+    ['Annuleren','Cancel','İptal','Anuluj','Anulează'],
+    ['Sluiten','Close','Kapat','Zamknij','Închide'],
+    ['Bewerken','Edit','Düzenle','Edytuj','Editează'],
+    ['Openen','Open','Aç','Otwórz','Deschide'],
+    ['Start','Start','Başlat','Start','Pornește'],
+    ['Starten','Start','Başlat','Uruchom','Pornește'],
+    ['Stop','Stop','Durdur','Stop','Oprește'],
+    ['Stoppen','Stop','Durdur','Zatrzymaj','Oprește'],
+    ['Pauzeren','Pause','Duraklat','Wstrzymaj','Pauză'],
+    ['Hervatten','Resume','Devam et','Wznów','Reia'],
+    ['Goedkeuren','Approve','Onayla','Zatwierdź','Aprobă'],
+    ['Afwijzen','Reject','Reddet','Odrzuć','Respinge'],
+    ['Accepteren','Accept','Kabul et','Akceptuj','Acceptă'],
+    ['Weigeren','Decline','Reddet','Odmów','Refuză'],
+    ['Bevestigen','Confirm','Onayla','Potwierdź','Confirmă'],
+    ['Terug','Back','Geri','Wstecz','Înapoi'],
+    ['Volgende','Next','Sonraki','Dalej','Următorul'],
+    ['Vorige','Previous','Önceki','Poprzedni','Anterior'],
+    ['Klaar','Done','Bitti','Gotowe','Gata'],
+    ['Begrepen','Got it','Anladım','Rozumiem','Am înțeles'],
+    ['Kies','Choose','Seç','Wybierz','Alege'],
+    ['Selecteer','Select','Seç','Wybierz','Selectează'],
+    ['Zoeken','Search','Ara','Szukaj','Caută'],
+    ['Zoek…','Search…','Ara…','Szukaj…','Caută…'],
+    ['Zoek...','Search...','Ara...','Szukaj...','Caută...'],
+    ['Filter','Filter','Filtrele','Filtruj','Filtrează'],
+    ['Delen','Share','Paylaş','Udostępnij','Distribuie'],
+    ['Plaatsen','Post','Yayınla','Opublikuj','Publică'],
+    ['Versturen','Send','Gönder','Wyślij','Trimite'],
+    ['Verzenden','Send','Gönder','Wyślij','Trimite'],
+    ['Opnieuw','Again','Tekrar','Ponownie','Din nou'],
+    ['Probeer opnieuw','Try again','Tekrar dene','Spróbuj ponownie','Încearcă din nou'],
+    ['Aanmelden','Sign up','Kaydol','Zapisz się','Înscrie-te'],
+    ['Koppelen','Link','Bağla','Połącz','Conectează'],
+    ['Ontkoppelen','Unlink','Bağlantıyı kaldır','Odłącz','Deconectează'],
+    ['Alles','All','Tümü','Wszystko','Toate'],
+    ['Geen','None','Yok','Brak','Niciunul'],
+
+    ['Vandaag','Today','Bugün','Dzisiaj','Astăzi'],
+    ['Morgen','Tomorrow','Yarın','Jutro','Mâine'],
+    ['Gisteren','Yesterday','Dün','Wczoraj','Ieri'],
+    ['Deze week','This week','Bu hafta','W tym tygodniu','Săptămâna aceasta'],
+    ['Volgende week','Next week','Gelecek hafta','W przyszłym tygodniu','Săptămâna viitoare'],
+    ['Deze maand','This month','Bu ay','W tym miesiącu','Luna aceasta'],
+    ['Actief','Active','Aktif','Aktywne','Activ'],
+    ['Inactief','Inactive','Pasif','Nieaktywne','Inactiv'],
+    ['Openstaand','Open','Açık','Otwarte','Deschis'],
+    ['Voltooid','Completed','Tamamlandı','Ukończone','Finalizat'],
+    ['Afgerond','Completed','Tamamlandı','Ukończone','Finalizat'],
+    ['Gepland','Scheduled','Planlandı','Zaplanowane','Planificat'],
+    ['Gepauzeerd','Paused','Duraklatıldı','Wstrzymane','În pauză'],
+    ['Beschikbaar','Available','Müsait','Dostępny','Disponibil'],
+    ['Niet beschikbaar','Unavailable','Müsait değil','Niedostępny','Indisponibil'],
+    ['Bezig...','Working...','İşleniyor...','Trwa...','Se procesează...'],
+    ['⏳ Bezig...','⏳ Working...','⏳ İşleniyor...','⏳ Trwa...','⏳ Se procesează...'],
+    ['Laden...','Loading...','Yükleniyor...','Ładowanie...','Se încarcă...'],
+    ['Klaar!','Done!','Bitti!','Gotowe!','Gata!'],
+    ['Mislukt','Failed','Başarısız','Niepowodzenie','Eșuat'],
+    ['Gelukt','Success','Başarılı','Sukces','Reușit'],
+
+    ['Inloggen','Sign in','Giriş yap','Zaloguj się','Autentificare'],
+    ['Account aanmaken','Create account','Hesap oluştur','Utwórz konto','Creează cont'],
+    ['E-mail inloggen','Email sign in','E-posta ile giriş','Logowanie e-mailem','Autentificare cu e-mail'],
+    ['Registreren','Register','Kayıt ol','Zarejestruj się','Înregistrare'],
+    ['Inloggen met Google','Sign in with Google','Google ile giriş yap','Zaloguj się przez Google','Autentifică-te cu Google'],
+    ['Doorgaan met Google','Continue with Google','Google ile devam et','Kontynuuj z Google','Continuă cu Google'],
+    ['Google openen…','Opening Google…','Google açılıyor…','Otwieranie Google…','Se deschide Google…'],
+    ['📱 Offline gebruiken','📱 Use offline','📱 Çevrimdışı kullan','📱 Użyj offline','📱 Folosește offline'],
+    ['E-mailadres','Email address','E-posta adresi','Adres e-mail','Adresă de e-mail'],
+    ['Wachtwoord','Password','Şifre','Hasło','Parolă'],
+    ['Jouw naam (bijv. Shane)','Your name (e.g. Shane)','Adın (örn. Shane)','Twoje imię (np. Shane)','Numele tău (ex. Shane)'],
+    ['Partner naam (bijv. Esra)','Partner name (e.g. Esra)','Partner adı (örn. Esra)','Imię partnera (np. Esra)','Numele partenerului (ex. Esra)'],
+    ['Voornaam (bijv. Shane)','First name (e.g. Shane)','Ad (örn. Shane)','Imię (np. Shane)','Prenume (ex. Shane)'],
+    ['Bijna klaar!','Almost done!','Neredeyse hazır!','Prawie gotowe!','Aproape gata!'],
+    ['Wat wil je gebruikt worden in de app?','What name should the app use for you?','Uygulamada hangi adı kullanmak istersin?','Jakiego imienia aplikacja ma używać?','Ce nume vrei să folosească aplicația?'],
+    ['🚀 App starten!','🚀 Start app!','🚀 Uygulamayı başlat!','🚀 Uruchom aplikację!','🚀 Pornește aplicația!'],
+    ['Vul e-mail en wachtwoord in','Enter your email and password','E-posta ve şifreni gir','Wpisz e-mail i hasło','Introdu e-mailul și parola'],
+    ['Vul ook jouw naam en partner naam in','Also enter your name and your partner’s name','Adını ve partnerinin adını da gir','Wpisz także swoje imię i imię partnera','Introdu și numele tău și al partenerului'],
+    ['E-mail al in gebruik','Email already in use','E-posta zaten kullanımda','E-mail jest już używany','E-mailul este deja folosit'],
+    ['Verkeerd wachtwoord','Incorrect password','Yanlış şifre','Nieprawidłowe hasło','Parolă incorectă'],
+    ['Geen account gevonden','No account found','Hesap bulunamadı','Nie znaleziono konta','Nu s-a găsit niciun cont'],
+    ['Wachtwoord te kort (min. 6 tekens)','Password too short (min. 6 characters)','Şifre çok kısa (en az 6 karakter)','Hasło za krótkie (min. 6 znaków)','Parola este prea scurtă (min. 6 caractere)'],
+    ['Ongeldig e-mailadres','Invalid email address','Geçersiz e-posta adresi','Nieprawidłowy adres e-mail','Adresă de e-mail invalidă'],
+
+    ['Overzicht','Overview','Genel bakış','Przegląd','Prezentare generală'],
+    ['Compact','Compact','Kompakt','Kompakt','Compact'],
+    ['Persoon','Person','Kişi','Osoba','Persoană'],
+    ['Nieuwe taak','New task','Yeni görev','Nowe zadanie','Sarcină nouă'],
+    ['Taak toevoegen','Add task','Görev ekle','Dodaj zadanie','Adaugă sarcină'],
+    ['Taak bewerken','Edit task','Görevi düzenle','Edytuj zadanie','Editează sarcina'],
+    ['Taak verwijderen','Delete task','Görevi sil','Usuń zadanie','Șterge sarcina'],
+    ['Datum','Date','Tarih','Data','Dată'],
+    ['Categorie','Category','Kategori','Kategoria','Categorie'],
+    ['Beschrijving','Description','Açıklama','Opis','Descriere'],
+    ['Prioriteit','Priority','Öncelik','Priorytet','Prioritate'],
+    ['Herhaling','Repeat','Tekrar','Powtarzanie','Repetare'],
+    ['Eenmalig','Once','Tek sefer','Jednorazowo','O singură dată'],
+    ['Dagelijks','Daily','Günlük','Codziennie','Zilnic'],
+    ['Wekelijks','Weekly','Haftalık','Co tydzień','Săptămânal'],
+    ['Maandelijks','Monthly','Aylık','Co miesiąc','Lunar'],
+    ['Geen taken','No tasks','Görev yok','Brak zadań','Nicio sarcină'],
+    ['Alles klaar! 🎉','All done! 🎉','Hepsi bitti! 🎉','Wszystko gotowe! 🎉','Totul este gata! 🎉'],
+    ['Goed bezig! 💪','Great job! 💪','Harika gidiyorsun! 💪','Świetnie Ci idzie! 💪','Te descurci grozav! 💪'],
+
+    ['Boodschappenlijst','Shopping list','Alışveriş listesi','Lista zakupów','Listă de cumpărături'],
+    ['Product toevoegen','Add product','Ürün ekle','Dodaj produkt','Adaugă produs'],
+    ['Item toevoegen','Add item','Öğe ekle','Dodaj pozycję','Adaugă articol'],
+    ['Aantal','Quantity','Miktar','Ilość','Cantitate'],
+    ['Eenheid','Unit','Birim','Jednostka','Unitate'],
+    ['Gekocht','Bought','Alındı','Kupione','Cumpărat'],
+    ['Nog te kopen','Still to buy','Alınacak','Do kupienia','De cumpărat'],
+    ['Geen boodschappen','No groceries','Alışveriş yok','Brak zakupów','Nicio cumpărătură'],
+
+    ['Kamers','Rooms','Odalar','Pokoje','Camere'],
+    ['Kamer toevoegen','Add room','Oda ekle','Dodaj pokój','Adaugă cameră'],
+    ['Kamer bewerken','Edit room','Odayı düzenle','Edytuj pokój','Editează camera'],
+    ['Kamer verwijderen','Delete room','Odayı sil','Usuń pokój','Șterge camera'],
+    ['Routines','Routines','Rutinler','Rutyny','Rutine'],
+    ['Routine toevoegen','Add routine','Rutin ekle','Dodaj rutynę','Adaugă rutină'],
+    ['Routine bewerken','Edit routine','Rutini düzenle','Edytuj rutynę','Editează rutina'],
+    ['Routine verwijderen','Delete routine','Rutini sil','Usuń rutynę','Șterge rutina'],
+    ['Werkplan','Work plan','Çalışma planı','Plan pracy','Plan de lucru'],
+    ['Werkplan berekenen','Calculate work plan','Çalışma planını hesapla','Oblicz plan pracy','Calculează planul de lucru'],
+    ['Taken synchroniseren','Sync tasks','Görevleri senkronize et','Synchronizuj zadania','Sincronizează sarcinile'],
+    ['Voorraad','Supplies','Malzemeler','Zapasy','Provizii'],
+    ['Schoonmaakmiddelen','Cleaning supplies','Temizlik malzemeleri','Środki czystości','Produse de curățenie'],
+    ['Geschiedenis','History','Geçmiş','Historia','Istoric'],
+    ['Beschikbaarheid','Availability','Uygunluk','Dostępność','Disponibilitate'],
+    ['Hulp vragen','Ask for help','Yardım iste','Poproś o pomoc','Cere ajutor'],
+    ['Plan goedkeuren','Approve plan','Planı onayla','Zatwierdź plan','Aprobă planul'],
+    ['Plan afwijzen','Reject plan','Planı reddet','Odrzuć plan','Respinge planul'],
+
+    ['Mijn naam','My name','Adım','Moje imię','Numele meu'],
+    ['Partner naam','Partner name','Partner adı','Imię partnera','Numele partenerului'],
+    ['Optioneel','Optional','İsteğe bağlı','Opcjonalne','Opțional'],
+    ['Actief account','Active account','Aktif hesap','Aktywne konto','Cont activ'],
+    ['E-mailadres niet beschikbaar','Email address unavailable','E-posta adresi kullanılamıyor','Adres e-mail niedostępny','Adresa de e-mail nu este disponibilă'],
+    ['Profiel opgeslagen','Profile saved','Profil kaydedildi','Profil zapisany','Profil salvat'],
+    ['Mijn avatar','My avatar','Avatarım','Mój awatar','Avatarul meu'],
+    ['Kies uit de app','Choose from app','Uygulamadan seç','Wybierz z aplikacji','Alege din aplicație'],
+    ['Upload foto','Upload photo','Fotoğraf yükle','Prześlij zdjęcie','Încarcă fotografie'],
+    ['Avatar wijzigen','Change avatar','Avatarı değiştir','Zmień awatar','Schimbă avatarul'],
+    ['Kies een avatar','Choose an avatar','Bir avatar seç','Wybierz awatar','Alege un avatar'],
+    ['Avatar bijgewerkt','Avatar updated','Avatar güncellendi','Awatar zaktualizowany','Avatar actualizat'],
+    ['Avatar gekozen','Avatar selected','Avatar seçildi','Wybrano awatar','Avatar ales'],
+    ['UI schaal','UI scale','Arayüz ölçeği','Skala interfejsu','Scală interfață'],
+    ['Account instellingen','Account settings','Hesap ayarları','Ustawienia konta','Setări cont'],
+    ['Privacy','Privacy','Gizlilik','Prywatność','Confidențialitate'],
+    ['Uitloggen','Sign out','Çıkış yap','Wyloguj się','Deconectare'],
+    ['Uitloggen is tijdelijk niet beschikbaar','Sign out is temporarily unavailable','Çıkış geçici olarak kullanılamıyor','Wylogowanie jest tymczasowo niedostępne','Deconectarea este temporar indisponibilă'],
+    ['FamilyApp geïnstalleerd','FamilyApp installed','FamilyApp yüklendi','FamilyApp zainstalowana','FamilyApp instalată'],
+    ['Installeer FamilyApp','Install FamilyApp','FamilyApp’i yükle','Zainstaluj FamilyApp','Instalează FamilyApp'],
+    ['Zet FamilyApp op je beginscherm','Add FamilyApp to your home screen','FamilyApp’i ana ekranına ekle','Dodaj FamilyApp do ekranu głównego','Adaugă FamilyApp pe ecranul principal'],
+
+    ['Deel iets met het gezin...','Share something with the family...','Ailenle bir şey paylaş...','Podziel się czymś z rodziną...','Împărtășește ceva cu familia...'],
+    ['Reactie plaatsen','Post comment','Yorum gönder','Dodaj komentarz','Publică comentariul'],
+    ['Vind ik leuk','Like','Beğen','Lubię to','Îmi place'],
+    ['Taak afgerond','Task completed','Görev tamamlandı','Zadanie ukończone','Sarcină finalizată'],
+
+    ['Nieuwe afspraak','New appointment','Yeni randevu','Nowe wydarzenie','Programare nouă'],
+    ['Afspraak toevoegen','Add appointment','Randevu ekle','Dodaj wydarzenie','Adaugă programare'],
+    ['Tik op een dag om afspraken te zien','Tap a day to see appointments','Randevuları görmek için bir güne dokun','Dotknij dnia, aby zobaczyć wydarzenia','Atinge o zi pentru a vedea programările'],
+    ['Geen afspraken','No appointments','Randevu yok','Brak wydarzeń','Nicio programare'],
+
+    ['Inkomsten','Income','Gelir','Przychody','Venituri'],
+    ['Uitgaven','Expenses','Giderler','Wydatki','Cheltuieli'],
+    ['Saldo','Balance','Bakiye','Saldo','Sold'],
+    ['Transacties','Transactions','İşlemler','Transakcje','Tranzacții'],
+    ['Spaardoelen','Savings goals','Tasarruf hedefleri','Cele oszczędnościowe','Obiective de economii'],
+    ['Nieuw spaardoel','New savings goal','Yeni tasarruf hedefi','Nowy cel oszczędnościowy','Obiectiv nou de economii'],
+    ['Bedrag','Amount','Tutar','Kwota','Sumă'],
+    ['Vrij besteedbaar deze maand','Available to spend this month','Bu ay harcanabilir','Do wydania w tym miesiącu','Disponibil de cheltuit luna aceasta'],
+    ['Nog geen transacties','No transactions yet','Henüz işlem yok','Brak transakcji','Încă nu există tranzacții'],
+    ['Nog geen spaardoelen. Voeg er een toe!','No savings goals yet. Add one!','Henüz tasarruf hedefi yok. Bir tane ekle!','Brak celów oszczędnościowych. Dodaj jeden!','Încă nu există obiective de economii. Adaugă unul!'],
+
+    ['Recept toevoegen','Add recipe','Tarif ekle','Dodaj przepis','Adaugă rețetă'],
+    ['Ingrediënten','Ingredients','Malzemeler','Składniki','Ingrediente'],
+    ['Bereiding','Method','Hazırlanış','Przygotowanie','Preparare'],
+    ['Porties','Servings','Porsiyon','Porcje','Porții'],
+    ['Week menu','Weekly menu','Haftalık menü','Menu tygodniowe','Meniu săptămânal'],
+    ['Tik op een slot om een recept te koppelen.','Tap a slot to link a recipe.','Bir tarif bağlamak için bir alana dokun.','Dotknij pola, aby przypisać przepis.','Atinge un interval pentru a asocia o rețetă.'],
+    ['Lunch kiezen...','Choose lunch...','Öğle yemeği seç...','Wybierz lunch...','Alege prânzul...'],
+    ['Diner kiezen...','Choose dinner...','Akşam yemeği seç...','Wybierz kolację...','Alege cina...'],
+    ['recepten naar boodschappenlijst','recipes to shopping list','tarifleri alışveriş listesine','przepisy do listy zakupów','rețete în lista de cumpărături'],
+
+    ['Geen notities','No notes','Not yok','Brak notatek','Nicio notiță'],
+    ['Nieuwe notitie','New note','Yeni not','Nowa notatka','Notiță nouă'],
+    ['Titel...','Title...','Başlık...','Tytuł...','Titlu...'],
+
+    ['Niveau','Level','Seviye','Poziom','Nivel'],
+    ['Beloning','Reward','Ödül','Nagroda','Recompensă'],
+    ['Ontgrendeld','Unlocked','Açıldı','Odblokowane','Deblocat'],
+    ['Vergrendeld','Locked','Kilitli','Zablokowane','Blocat'],
+    ['Behaald','Earned','Kazanıldı','Zdobyte','Obținut'],
+    ['Niet behaald','Not earned','Kazanılmadı','Nie zdobyte','Neobținut']
+  ];
+
+  var legacyUiMaps = { en: {}, tr: {}, pl: {}, ro: {} };
+  legacyUiRows.forEach(function (row) {
+    legacyUiMaps.en[row[0]] = row[1];
+    legacyUiMaps.tr[row[0]] = row[2];
+    legacyUiMaps.pl[row[0]] = row[3];
+    legacyUiMaps.ro[row[0]] = row[4];
+  });
+
+  function normalizeUiSource(value) {
+    return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+  }
+
+  function translateUiText(source) {
+    var normalized = normalizeUiSource(source);
+    if (!normalized) return source;
+    var language = getLanguage();
+    if (language === 'nl') return normalized;
+    var map = legacyUiMaps[language] || legacyUiMaps.en;
+    if (map[normalized] !== undefined) return map[normalized];
+
+    var countMatch = normalized.match(/^(\d+)\s+taken$/i);
+    if (countMatch) return t('tasks.count', { count: Number(countMatch[1]) });
+
+    var remainingTasks = normalized.match(/^Nog\s+(\d+)\s+taken$/i);
+    if (remainingTasks) {
+      var count = Number(remainingTasks[1]);
+      if (language === 'tr') return count + ' görev kaldı';
+      if (language === 'pl') return 'Pozostało ' + count + ' zadań';
+      if (language === 'ro') return 'Mai sunt ' + count + ' sarcini';
+      return count + ' tasks remaining';
+    }
+
+    return source;
+  }
+
+  var sourceTextByNode = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  var legacyObserver = null;
+  var legacyApplyScheduled = false;
+
+  function excludedUserContent(node) {
+    var parent = node && node.parentElement;
+    if (!parent || !parent.closest) return false;
+    return !!parent.closest(
+      '[contenteditable="true"],[data-user-content],.compose-input,.feed-post-text,.feed-comment-text,' +
+      '.task-user-title,.note-user-content,.recipe-user-title,.profile-input-row input'
+    );
+  }
+
+  function translateTextNode(node) {
+    if (!node || node.nodeType !== 3 || excludedUserContent(node)) return;
+    var raw = node.nodeValue || '';
+    var trimmed = normalizeUiSource(raw);
+    if (!trimmed) return;
+
+    var source = sourceTextByNode && sourceTextByNode.get(node);
+    var directKnown = legacyUiMaps.en[trimmed] !== undefined ||
+      legacyUiMaps.tr[trimmed] !== undefined ||
+      legacyUiMaps.pl[trimmed] !== undefined ||
+      legacyUiMaps.ro[trimmed] !== undefined ||
+      /^(?:Nog\s+)?\d+\s+taken$/i.test(trimmed);
+
+    if (!source && directKnown) {
+      source = trimmed;
+      if (sourceTextByNode) sourceTextByNode.set(node, source);
+    } else if (source) {
+      var expected = normalizeUiSource(translateUiText(source));
+      if (trimmed !== expected && directKnown) {
+        source = trimmed;
+        if (sourceTextByNode) sourceTextByNode.set(node, source);
+      }
+    }
+
+    if (!source) return;
+    var translated = translateUiText(source);
+    if (normalizeUiSource(translated) === trimmed) return;
+
+    var leading = raw.match(/^\s*/);
+    var trailing = raw.match(/\s*$/);
+    node.nodeValue = (leading ? leading[0] : '') + translated + (trailing ? trailing[0] : '');
+  }
+
+  function translateAttribute(el, name) {
+    if (!el || !el.getAttribute || !el.hasAttribute(name)) return;
+    var sourceAttr = 'data-familyapp-i18n-source-' + name.replace(/[^a-z0-9]/gi, '-');
+    var source = el.getAttribute(sourceAttr);
+    var current = el.getAttribute(name) || '';
+    var normalizedCurrent = normalizeUiSource(current);
+    var known = legacyUiMaps.en[normalizedCurrent] !== undefined ||
+      legacyUiMaps.tr[normalizedCurrent] !== undefined ||
+      legacyUiMaps.pl[normalizedCurrent] !== undefined ||
+      legacyUiMaps.ro[normalizedCurrent] !== undefined;
+
+    if (!source && known) {
+      source = normalizedCurrent;
+      el.setAttribute(sourceAttr, source);
+    } else if (source && known && normalizedCurrent !== normalizeUiSource(translateUiText(source))) {
+      source = normalizedCurrent;
+      el.setAttribute(sourceAttr, source);
+    }
+
+    if (!source) return;
+    var translated = translateUiText(source);
+    if (translated !== current) el.setAttribute(name, translated);
+  }
+
+  function localizeLegacySubtree(root) {
+    if (!root) return;
+    if (root.nodeType === 3) {
+      translateTextNode(root);
+      return;
+    }
+    if (root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
+
+    var elementRoot = root.nodeType === 1 ? root : null;
+    if (elementRoot) {
+      translateAttribute(elementRoot, 'placeholder');
+      translateAttribute(elementRoot, 'title');
+      translateAttribute(elementRoot, 'aria-label');
+    }
+
+    var scope = root.nodeType === 9 ? root.documentElement : root;
+    if (!scope || !scope.querySelectorAll) return;
+
+    var attrs = scope.querySelectorAll('[placeholder],[title],[aria-label]');
+    Array.prototype.forEach.call(attrs, function (el) {
+      translateAttribute(el, 'placeholder');
+      translateAttribute(el, 'title');
+      translateAttribute(el, 'aria-label');
+    });
+
+    if (document.createTreeWalker && typeof NodeFilter !== 'undefined') {
+      var walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+      var textNode;
+      while ((textNode = walker.nextNode())) translateTextNode(textNode);
+    }
+  }
+
+  function scheduleLegacyApply(root) {
+    if (legacyApplyScheduled) return;
+    legacyApplyScheduled = true;
+    var run = function () {
+      legacyApplyScheduled = false;
+      localizeLegacySubtree(root || document);
+    };
+    if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(run);
+    else setTimeout(run, 0);
+  }
+
+  function ensureLegacyObserver() {
+    if (legacyObserver || typeof MutationObserver === 'undefined' || !document.documentElement) return;
+    legacyObserver = new MutationObserver(function (mutations) {
+      var root = null;
+      for (var i = 0; i < mutations.length; i += 1) {
+        var mutation = mutations[i];
+        if (mutation.type === 'characterData') {
+          root = mutation.target.parentNode || document;
+          break;
+        }
+        if (mutation.addedNodes && mutation.addedNodes.length) {
+          root = mutation.target || document;
+          break;
+        }
+        if (mutation.type === 'attributes') {
+          root = mutation.target || document;
+          break;
+        }
+      }
+      if (root) scheduleLegacyApply(root);
+    });
+    legacyObserver.observe(document.documentElement, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['placeholder', 'title', 'aria-label']
+    });
+  }
+
   window.FamilyI18n = {
     storageKey: STORAGE_KEY,
     systemValue: SYSTEM_VALUE,
@@ -556,11 +960,14 @@
     formatDate: formatDate,
     formatNumber: formatNumber,
     apply: apply,
+    translateUiText: translateUiText,
+    localizeLegacySubtree: localizeLegacySubtree,
     dictionaries: dictionaries
   };
 
   function initialApply() {
     apply(document);
+    ensureLegacyObserver();
   }
 
   if (document.readyState === 'loading') {
