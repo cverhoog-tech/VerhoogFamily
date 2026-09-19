@@ -661,6 +661,11 @@
     ['common.edit','Bewerken','Edit','Düzenle','Edytuj','Editează'],
     ['common.delete','Verwijderen','Delete','Sil','Usuń','Șterge'],
     ['common.items','items','items','öğe','pozycje','articole'],
+    ['common.today','Vandaag','Today','Bugün','Dzisiaj','Astăzi'],
+    ['common.tomorrow','Morgen','Tomorrow','Yarın','Jutro','Mâine'],
+    ['common.later','Later','Later','Daha sonra','Później','Mai târziu'],
+    ['common.family','Gezin','Family','Aile','Rodzina','Familie']
+,
 
     ['tasks.brand','Samen rust en overzicht','Together: calm and clarity','Birlikte huzur ve düzen','Razem: spokój i porządek','Împreună: liniște și claritate'],
     ['tasks.new','Nieuwe taak','New task','Yeni görev','Nowe zadanie','Sarcină nouă'],
