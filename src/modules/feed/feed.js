@@ -237,7 +237,7 @@ function replyHTML(p){
 }
 
 function toggleLike(id){
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   window.FeedSharedData.toggleReaction(id).then(function(r){
     if(r&&r.liked&&typeof awardXP==='function')awardXP(1,'Like');
     // Realtime subscription re-renders on its own; nudge the UI immediately too
@@ -245,7 +245,7 @@ function toggleLike(id){
     renderFeed();
   }).catch(function(err){
     console.error('[Feed] like mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Like mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.likeFailed','Like mislukt, probeer opnieuw'));
   });
 }
 function toggleComments(id){var p=feedData.find(function(x){return x.id===id;});if(!p)return;p._showComments=!p._showComments;renderFeed();setTimeout(function(){var inp=document.getElementById('cmt-inp-'+id);if(inp)inp.focus();},80);}
@@ -260,7 +260,7 @@ function submitComment(id){
   if(!text && !gifUrl){ inp.focus(); return; }
   var p = feedData.find(function(x){ return String(x.id)===id; });
   if(!p) return;
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   inp.disabled = true;
   window.FeedSharedData.addComment(id,{text:text,gifUrl:gifUrl||null}).then(function(){
     inp.disabled = false;
@@ -272,18 +272,18 @@ function submitComment(id){
   }).catch(function(err){
     inp.disabled = false;
     console.error('[Feed] reactie plaatsen mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Reactie plaatsen mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.commentFailed','Reactie plaatsen mislukt, probeer opnieuw'));
   });
 }
 function deletePost(id){
-  if(!confirm('Post verwijderen?'))return;
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!confirm(tr('feed.deleteConfirm','Post verwijderen?')))return;
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   window.FeedSharedData.deletePost(id).then(function(){
     renderFeed();
     if(typeof updateStats==='function')updateStats();
   }).catch(function(err){
     console.error('[Feed] post verwijderen mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Verwijderen mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.deleteFailed','Verwijderen mislukt, probeer opnieuw'));
   });
 }
 function toggleReaction(){}function toggleReactionPicker(){}
@@ -292,12 +292,12 @@ function clearFeedStatus(){composeLinkedTask=null;var row=document.getElementByI
 function toggleStickerPicker(){var p=document.getElementById('sticker-picker');if(!p)return;var v=p.style.display==='flex';p.style.display=v?'none':'flex';if(!v)p.innerHTML=STICKERS.map(function(s){return '<button onclick="pickSticker(\''+s+'\')">'+s+'</button>';}).join('');}
 function pickSticker(s){composeMediaDataUrl=s;composeMediaType='sticker';var prev=document.getElementById('compose-media-preview');if(prev){prev.style.display='block';var ex=document.getElementById('sticker-preview-big');if(!ex){ex=document.createElement('div');ex.id='sticker-preview-big';ex.style.cssText='font-size:64px;text-align:center;padding:10px';prev.appendChild(ex);}ex.textContent=s;}var p=document.getElementById('sticker-picker');if(p)p.style.display='none';}
 function openGifPicker(){var u=prompt('Plak een GIF URL:');if(!u)return;composeMediaDataUrl=u;composeMediaType='gif';var prev=document.getElementById('compose-media-preview'),img=document.getElementById('compose-preview-img');if(prev&&img){img.src=u;img.style.display='block';prev.style.display='block';}}
-function openTaskStatusPicker(){if(typeof showToast==='function')showToast('Taak koppelen komt zo terug in Feed 2.0');}
+function openTaskStatusPicker(){if(typeof showToast==='function')showToast(tr('feed.linkTaskSoon','Taak koppelen komt zo terug in Feed 2.0'));}
 function publishPost(){
   var ca=document.getElementById('compose-area');
   var text=(ca?ca.innerText||ca.textContent:'').trim();
   if(!text&&!composeMediaDataUrl){if(typeof showToast==='function')showToast('Typ iets of voeg een foto toe');return;}
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   var sendBtn=document.getElementById('feed-send-btn');
   if(sendBtn){if(sendBtn.disabled)return;sendBtn.disabled=true;}
   var media=composeMediaDataUrl?(composeMediaType==='sticker'?composeMediaDataUrl:[composeMediaDataUrl]):null;
@@ -316,7 +316,7 @@ function publishPost(){
     if(typeof awardXP==='function')awardXP(3,'Post');
   }).catch(function(err){
     console.error('[Feed] post plaatsen mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Post plaatsen mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.postFailed','Post plaatsen mislukt, probeer opnieuw'));
   }).finally(function(){
     if(sendBtn)sendBtn.disabled=false;
   });
