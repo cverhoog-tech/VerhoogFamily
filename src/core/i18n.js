@@ -2052,7 +2052,45 @@
     ['tasks.readiness.noHousehold','Geen actief gezin gevonden','No active family found','Aktif aile bulunamadı','Nie znaleziono aktywnej rodziny','Nu s-a găsit nicio familie activă'],
     ['tasks.readiness.householdPlatform','Household platform is nog niet beschikbaar','Household platform is not available yet','Hane platformu henüz kullanılamıyor','Platforma gospodarstwa nie jest jeszcze dostępna','Platforma gospodăriei nu este încă disponibilă'],
     ['tasks.readiness.dataStore','FamilyDataStore is niet beschikbaar','FamilyDataStore is unavailable','FamilyDataStore kullanılamıyor','FamilyDataStore jest niedostępny','FamilyDataStore nu este disponibil'],
-    ['tasks.readiness.sharedStore','Shared task store is nog niet klaar','Shared task store is not ready yet','Paylaşılan görev deposu henüz hazır değil','Wspólny magazyn zadań nie jest jeszcze gotowy','Magazinul comun de sarcini nu este încă gata']
+    ['tasks.readiness.sharedStore','Shared task store is nog niet klaar','Shared task store is not ready yet','Paylaşılan görev deposu henüz hazır değil','Wspólny magazyn zadań nie jest jeszcze gotowy','Magazinul comun de sarcini nu este încă gata'],
+    ['tasks.swap.completedNoSwap','Een voltooide taak kan niet worden geruild','A completed task cannot be swapped','Tamamlanmış bir görev takas edilemez','Ukończonego zadania nie można zamienić','O sarcină finalizată nu poate fi schimbată'],
+    ['tasks.swap.onlyOwn','Je kunt alleen een taak ruilen die aan jou is toegewezen','You can only swap a task assigned to you','Yalnızca sana atanmış bir görevi takas edebilirsin','Możesz zamienić tylko zadanie przypisane do ciebie','Poți schimba doar o sarcină atribuită ție'],
+    ['tasks.swap.noTarget','Er is geen ander gezinslid beschikbaar voor deze ruil','No other family member is available for this swap','Bu takas için başka uygun aile üyesi yok','Brak innego członka rodziny dostępnego do tej zamiany','Nu este disponibil alt membru al familiei pentru acest schimb'],
+    ['tasks.swap.title','Taak ruilen','Swap task','Görevi takas et','Zamień zadanie','Schimbă sarcina'],
+    ['tasks.swap.askTakeOver','Vraag een ander partylid om deze taak van je over te nemen.','Ask another party member to take over this task.','Başka bir ekip üyesinden bu görevi devralmasını iste.','Poproś innego członka ekipy o przejęcie tego zadania.','Cere altui membru al echipei să preia această sarcină.'],
+    ['tasks.swap.sendRequest','Stuur ruilverzoek','Send swap request','Takas isteği gönder','Wyślij prośbę o zamianę','Trimite cerere de schimb'],
+    ['tasks.swap.login','Log in om taken te ruilen','Sign in to swap tasks','Görev takası için giriş yap','Zaloguj się, aby zamieniać zadania','Autentifică-te pentru a schimba sarcini'],
+    ['tasks.swap.noOpen','Je hebt geen open taken om te ruilen','You have no open tasks to swap','Takas edecek açık görevin yok','Nie masz otwartych zadań do zamiany','Nu ai sarcini deschise de schimbat'],
+    ['tasks.swap.chooseQuest','Kies welke quest je wilt overdragen aan een ander partylid.','Choose which quest you want to hand over to another party member.','Başka bir ekip üyesine devretmek istediğin görevi seç.','Wybierz quest, który chcesz przekazać innemu członkowi ekipy.','Alege questul pe care vrei să-l transferi altui membru al echipei.'],
+    ['tasks.swap.requesterAsks','{{name}} vraagt of jij deze taak wilt overnemen.','{{name}} asks if you want to take over this task.','{{name}} bu görevi devralmak isteyip istemediğini soruyor.','{{name}} pyta, czy chcesz przejąć to zadanie.','{{name}} te întreabă dacă vrei să preiei această sarcină.'],
+    ['tasks.swap.wantsSwap','Wil deze taak met jou ruilen','Wants to swap this task with you','Bu görevi seninle takas etmek istiyor','Chce zamienić z tobą to zadanie','Vrea să schimbe această sarcină cu tine'],
+    ['tasks.swap.recipient','Ontvanger van het verzoek','Request recipient','İstek alıcısı','Odbiorca prośby','Destinatarul cererii'],
+    ['tasks.swap.assignmentNote','De taak wordt pas opnieuw toegewezen nadat het verzoek is geaccepteerd.','The task is only reassigned after the request is accepted.','Görev yalnızca istek kabul edildikten sonra yeniden atanır.','Zadanie zostanie ponownie przypisane dopiero po zaakceptowaniu prośby.','Sarcina este realocată doar după acceptarea cererii.'],
+    ['tasks.swap.dataNotReady','Taakdata is nog niet klaar','Task data is not ready yet','Görev verileri henüz hazır değil','Dane zadań nie są jeszcze gotowe','Datele sarcinilor nu sunt încă gata'],
+    ['tasks.swap.takenOver','Taak overgenomen: {{title}}','Task taken over: {{title}}','Görev devralındı: {{title}}','Zadanie przejęte: {{title}}','Sarcină preluată: {{title}}'],
+    ['tasks.swap.failed','Taak ruilen mislukt','Task swap failed','Görev takası başarısız','Zamiana zadania nie powiodła się','Schimbul sarcinii a eșuat'],
+    ['tasks.swap.inactive','Ruilverzoek is niet meer actief','Swap request is no longer active','Takas isteği artık aktif değil','Prośba o zamianę nie jest już aktywna','Cererea de schimb nu mai este activă'],
+    ['tasks.swap.acceptedBy','{{name}} heeft “{{task}}” overgenomen','{{name}} took over “{{task}}”','{{name}}, “{{task}}” görevini devraldı','{{name}} przejął/przejęła „{{task}}”','{{name}} a preluat „{{task}}”'],
+    ['tasks.swap.declinedBy','{{name}} heeft het ruilverzoek geweigerd','{{name}} declined the swap request','{{name}} takas isteğini reddetti','{{name}} odrzucił(a) prośbę o zamianę','{{name}} a refuzat cererea de schimb'],
+    ['tasks.swap.taskFallback','de taak','the task','görev','zadanie','sarcina'],
+
+    ['tasks.shared.repoNotReady','Taakopslag is nog niet klaar','Task storage is not ready yet','Görev deposu henüz hazır değil','Magazyn zadań nie jest jeszcze gotowy','Stocarea sarcinilor nu este încă gata'],
+    ['tasks.shared.helpHouseholdOpen','Er staat al een hulpvraag open voor het hele gezin','A help request is already open for the whole family','Tüm aile için zaten açık bir yardım isteği var','Prośba o pomoc jest już otwarta dla całej rodziny','Există deja o cerere de ajutor deschisă pentru întreaga familie'],
+    ['tasks.shared.helpTargetOpen','Er staat al een hulpuitnodiging open voor {{name}}','A help invitation is already open for {{name}}','{{name}} için zaten açık bir yardım daveti var','Zaproszenie do pomocy jest już otwarte dla {{name}}','Există deja o invitație de ajutor deschisă pentru {{name}}'],
+    ['tasks.shared.helpOpen','Er staat al een hulpvraag open','A help request is already open','Zaten açık bir yardım isteği var','Prośba o pomoc jest już otwarta','Există deja o cerere de ajutor deschisă'],
+    ['tasks.shared.creatorHelpOnly','Alleen de maker kan hulp vragen voor deze taak','Only the creator can ask for help with this task','Bu görev için yalnızca oluşturucu yardım isteyebilir','Tylko twórca może prosić o pomoc przy tym zadaniu','Doar creatorul poate cere ajutor pentru această sarcină'],
+    ['tasks.shared.alreadyParticipates','Deze persoon neemt al deel aan de taak','This person is already participating in the task','Bu kişi zaten göreve katılıyor','Ta osoba już uczestniczy w zadaniu','Această persoană participă deja la sarcină'],
+    ['tasks.shared.alreadyHelping','Deze persoon helpt al mee','This person is already helping','Bu kişi zaten yardım ediyor','Ta osoba już pomaga','Această persoană ajută deja'],
+    ['tasks.shared.memberUnavailable','Dit gezinslid is niet meer beschikbaar','This family member is no longer available','Bu aile üyesi artık uygun değil','Ten członek rodziny nie jest już dostępny','Acest membru al familiei nu mai este disponibil'],
+    ['tasks.shared.helpInactive','De hulpvraag is niet meer actief','The help request is no longer active','Yardım isteği artık aktif değil','Prośba o pomoc nie jest już aktywna','Cererea de ajutor nu mai este activă'],
+    ['tasks.shared.wrongHelpRecipient','Deze hulpuitnodiging is voor een ander gezinslid','This help invitation is for another family member','Bu yardım daveti başka bir aile üyesi için','To zaproszenie do pomocy jest dla innego członka rodziny','Această invitație de ajutor este pentru alt membru al familiei'],
+    ['tasks.shared.alreadyParticipatingYou','Je neemt al deel aan deze taak','You are already participating in this task','Bu göreve zaten katılıyorsun','Już uczestniczysz w tym zadaniu','Participi deja la această sarcină'],
+    ['tasks.shared.inactiveMember','Je bent geen actief gezinslid meer','You are no longer an active family member','Artık aktif bir aile üyesi değilsin','Nie jesteś już aktywnym członkiem rodziny','Nu mai ești membru activ al familiei'],
+    ['tasks.shared.alreadyNotForMe','Je hebt deze hulpvraag al gemarkeerd als niet voor jou','You already marked this help request as not for you','Bu yardım isteğini zaten sana uygun değil olarak işaretledin','Ta prośba o pomoc została już oznaczona przez ciebie jako nie dla ciebie','Ai marcat deja această cerere de ajutor ca nefiind pentru tine'],
+    ['tasks.shared.creatorRetractOnly','Alleen de maker kan de hulpvraag intrekken','Only the creator can withdraw the help request','Yalnızca oluşturucu yardım isteğini geri çekebilir','Tylko twórca może wycofać prośbę o pomoc','Doar creatorul poate retrage cererea de ajutor'],
+
+    ['tasks.v3.noDate','Geen datum','No date','Tarih yok','Brak daty','Fără dată']
+
 
 
 
