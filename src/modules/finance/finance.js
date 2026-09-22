@@ -1,7 +1,9 @@
 'use strict';
 function financeTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 function financeLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
-function financeGoalName(name){return name==='Nieuwe bank'?financeTr('finance.seed.newBank','Nieuwe bank'):name;}
+function financeGoalName(name){var map={'Nieuwe bank':'finance.seed.newBank','Vakantie Italië':'finance.seed.italyTrip','Noodfonds':'finance.seed.emergencyFund'};return map[name]?financeTr(map[name],name):name;}
+function financeSeedNote(note){var map={'Eerste inleg':'finance.seed.note.firstDeposit','Maandelijkse bijdrage':'finance.seed.note.monthlyContribution','Extra bijdrage':'finance.seed.note.extraContribution','Start':'finance.seed.note.start','Bijdrage':'finance.seed.note.contribution','Start noodfonds':'finance.seed.note.startEmergency','Maandelijkse inleg':'finance.seed.note.monthlyDeposit','Autopech':'finance.seed.note.carTrouble'};return map[note]?financeTr(map[note],note):note;}
+function financeUiText(value){try{return window.FamilyI18n&&FamilyI18n.translateUiText?FamilyI18n.translateUiText(value):value;}catch(error){return value;}}
 // ============================================================
 // SPAARDOELEN
 // ============================================================
@@ -104,7 +106,7 @@ function renderSparenDetail(el, goalId) {
   if(!sortedLog.length)html+='<div style="text-align:center;padding:20px;color:var(--c-text2);font-size:13px">'+financeTr('finance.noTransactions','Nog geen transacties')+'</div>';
   else{
     html+='<div>';
-    sortedLog.forEach(function(l){var isDeposit=l.type==='deposit';var whoColor=l.who==='Shane'?'var(--c-primary)':'var(--c-partner)';html+='<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--c-border);background:var(--c-surface)"><div style="width:38px;height:38px;border-radius:50%;background:'+(isDeposit?'#dcfce7':'#fee2e2')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+(isDeposit?'💰':'📤')+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--c-text)">'+(l.note||(isDeposit?financeTr('finance.depositDefault','Storting'):financeTr('finance.withdrawalDefault','Opname')))+'</div><div style="font-size:11px;color:var(--c-text2);margin-top:2px">'+formatDate(l.date)+' · <span style="font-weight:700;color:'+whoColor+'">'+l.who+'</span></div></div><div style="font-size:15px;font-weight:800;color:'+(isDeposit?'#16a34a':'#dc2626')+'">'+(isDeposit?'+':'-')+'€ '+l.amount.toFixed(0)+'</div><button data-dellog="'+l.id+'" style="background:none;border:none;color:var(--c-text3);font-size:13px;padding:4px;cursor:pointer">✕</button></div>';});
+    sortedLog.forEach(function(l){var isDeposit=l.type==='deposit';var whoColor=l.who==='Shane'?'var(--c-primary)':'var(--c-partner)';html+='<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--c-border);background:var(--c-surface)"><div style="width:38px;height:38px;border-radius:50%;background:'+(isDeposit?'#dcfce7':'#fee2e2')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+(isDeposit?'💰':'📤')+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--c-text)">'+(l.note?financeSeedNote(l.note):(isDeposit?financeTr('finance.depositDefault','Storting'):financeTr('finance.withdrawalDefault','Opname')))+'</div><div style="font-size:11px;color:var(--c-text2);margin-top:2px">'+formatDate(l.date)+' · <span style="font-weight:700;color:'+whoColor+'">'+l.who+'</span></div></div><div style="font-size:15px;font-weight:800;color:'+(isDeposit?'#16a34a':'#dc2626')+'">'+(isDeposit?'+':'-')+'€ '+l.amount.toFixed(0)+'</div><button data-dellog="'+l.id+'" style="background:none;border:none;color:var(--c-text3);font-size:13px;padding:4px;cursor:pointer">✕</button></div>';});
     html+='</div>';
   }
   html+='<div style="height:30px"></div>';
@@ -206,15 +208,15 @@ function renderNotifs(){
   el.innerHTML=items.map(function(n){
     var read=me&&n.readBy&&n.readBy[me];
     var actor=n.actor&&n.actor.name?'<span style="font-weight:700">'+escapeNotifText(n.actor.name)+'</span> · ':'';
-    var time=n.createdAt?new Date(n.createdAt).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    var time=n.createdAt?new Date(n.createdAt).toLocaleString(financeLocale(),{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
     return '<button class="notif-item" data-notif-id="'+escapeNotifText(n.id)+'" style="width:100%;border:0;text-align:left;opacity:'+(read?'.72':'1')+'">'
       +'<div class="notif-icon" style="background:'+escapeNotifText(n.bg||'#ede9fe')+'">'+escapeNotifText(n.icon||'🔔')+'</div>'
-      +'<div style="flex:1;min-width:0"><div class="notif-title">'+escapeNotifText(n.title||'Melding')+'</div>'
-      +'<div class="notif-body">'+escapeNotifText(n.body||'')+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="notif-title">'+escapeNotifText(financeUiText(n.title||financeTr('notifications.default','Melding')))+'</div>'
+      +'<div class="notif-body">'+escapeNotifText(financeUiText(n.body||''))+'</div>'
       +'<div class="notif-time">'+actor+escapeNotifText(time)+'</div></div>'
       +(!read?'<span style="width:7px;height:7px;border-radius:50%;background:var(--c-primary);flex:0 0 auto"></span>':'')
       +'</button>';
-  }).join('')||'<div style="padding:30px;text-align:center;color:var(--c-text2)">Geen meldingen</div>';
+  }).join('')||'<div style="padding:30px;text-align:center;color:var(--c-text2)">'+financeTr('notifications.none','Geen meldingen')+'</div>';
 
   el.querySelectorAll('[data-notif-id]').forEach(function(row){
     row.onclick=function(){NotificationStore.markRead(row.dataset.notifId).then(renderNotifs);};
