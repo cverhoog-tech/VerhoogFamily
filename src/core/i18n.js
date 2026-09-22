@@ -1956,7 +1956,21 @@
     ['person.editHero','Hero-achtergrond aanpassen','Change hero background','Hero arka planını değiştir','Zmień tło hero','Schimbă fundalul hero'],
     ['person.helperRole','Helpt mee','Helping','Yardım ediyor','Pomaga','Ajută'],
     ['person.creatorRole','Maker','Creator','Oluşturan','Twórca','Creator'],
-    ['person.assignedRole','Toegewezen','Assigned','Atandı','Przypisane','Atribuit']
+    ['person.assignedRole','Toegewezen','Assigned','Atandı','Przypisane','Atribuit'],
+    ['party.helpRequestedSingle','Hulp gevraagd voor Party Quest','Help requested for Party Quest','Party Quest için yardım istendi','Poproszono o pomoc przy Party Quest','Ajutor cerut pentru Party Quest'],
+    ['party.helpRequestedMany','{{count}} Party Quest-hulpvragen','{{count}} Party Quest help requests','{{count}} Party Quest yardım isteği','{{count}} próśb o pomoc Party Quest','{{count}} cereri de ajutor Party Quest'],
+    ['party.manageHelp','Hulpvraag beheren','Manage help request','Yardım isteğini yönet','Zarządzaj prośbą o pomoc','Gestionează cererea de ajutor'],
+    ['party.creatorHelpOnly','Alleen de maker kan hulp vragen','Only the creator can ask for help','Yalnızca oluşturucu yardım isteyebilir','Tylko twórca może prosić o pomoc','Doar creatorul poate cere ajutor'],
+    ['party.directedAt','Gericht aan {{name}}','Directed to {{name}}','{{name}} kişisine yöneltildi','Skierowane do {{name}}','Adresată lui {{name}}'],
+    ['party.helpCounts','{{accepted}} geholpen · {{declined}} niet voor mij','{{accepted}} helped · {{declined}} not for me','{{accepted}} yardım etti · {{declined}} benim için değil','{{accepted}} pomogło · {{declined}} nie dla mnie','{{accepted}} au ajutat · {{declined}} nu pentru mine'],
+    ['party.retractHelp','Hulpvraag intrekken','Withdraw help request','Yardım isteğini geri çek','Wycofaj prośbę o pomoc','Retrage cererea de ajutor'],
+    ['party.retractFailed','Intrekken mislukt','Withdraw failed','Geri çekme başarısız','Wycofanie nie powiodło się','Retragerea a eșuat'],
+    ['party.noExtraMembers','Er is nu niemand extra beschikbaar om hulp te vragen.','No one else is available to ask for help right now.','Şu anda yardım istenecek başka kimse yok.','Nie ma teraz nikogo dodatkowego, kogo można poprosić o pomoc.','Nu este disponibil nimeni în plus pentru a cere ajutor acum.'],
+    ['party.extraHelp','Extra hulp vragen','Ask for extra help','Ek yardım iste','Poproś o dodatkową pomoc','Cere ajutor suplimentar'],
+    ['party.askMember','Vraag {{name}}','Ask {{name}}','{{name}} kişisine sor','Poproś {{name}}','Cere ajutor lui {{name}}'],
+    ['party.helpSent','Hulpvraag verstuurd 🤝','Help request sent 🤝','Yardım isteği gönderildi 🤝','Prośba o pomoc wysłana 🤝','Cererea de ajutor a fost trimisă 🤝'],
+    ['party.notForMeResult','Deze hulpvraag is niet voor jou','This help request is not for you','Bu yardım isteği senin için değil','Ta prośba o pomoc nie jest dla ciebie','Această cerere de ajutor nu este pentru tine']
+
 
 
 
