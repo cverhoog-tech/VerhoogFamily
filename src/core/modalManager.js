@@ -10,6 +10,7 @@
   var ROOT_ID = 'familyapp-modal-root';
   var STYLE_ID = 'familyapp-modal-manager-style';
   var activeModal = null;
+  function modalTr(key,fallback){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key);if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function ensureStyles(){
     if(document.getElementById(STYLE_ID)) return;
@@ -101,11 +102,11 @@
   function confirm(options){
     options = options || {};
     return open({
-      title: options.title || 'Weet je het zeker?',
+      title: options.title || modalTr('common.areYouSure','Weet je het zeker?'),
       text: options.text || '',
       actions: [
-        { label: options.cancelLabel || 'Annuleren' },
-        { label: options.confirmLabel || 'Bevestigen', primary: true, onClick: options.onConfirm }
+        { label: options.cancelLabel || modalTr('common.cancel','Annuleren') },
+        { label: options.confirmLabel || modalTr('common.confirm','Bevestigen'), primary: true, onClick: options.onConfirm }
       ]
     });
   }
