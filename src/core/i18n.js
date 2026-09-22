@@ -2101,7 +2101,37 @@
     ['tasks.shared.alreadyNotForMe','Je hebt deze hulpvraag al gemarkeerd als niet voor jou','You already marked this help request as not for you','Bu yardım isteğini zaten sana uygun değil olarak işaretledin','Ta prośba o pomoc została już oznaczona przez ciebie jako nie dla ciebie','Ai marcat deja această cerere de ajutor ca nefiind pentru tine'],
     ['tasks.shared.creatorRetractOnly','Alleen de maker kan de hulpvraag intrekken','Only the creator can withdraw the help request','Yalnızca oluşturucu yardım isteğini geri çekebilir','Tylko twórca może wycofać prośbę o pomoc','Doar creatorul poate retrage cererea de ajutor'],
 
-    ['tasks.v3.noDate','Geen datum','No date','Tarih yok','Brak daty','Fără dată']
+    ['tasks.v3.noDate','Geen datum','No date','Tarih yok','Brak daty','Fără dată'],
+    ['tasks.newTask','Nieuwe taak','New task','Yeni görev','Nowe zadanie','Sarcină nouă'],
+    ['tasks.helpingTask','Je helpt mee aan deze taak.','You are helping with this task.','Bu göreve yardım ediyorsun.','Pomagasz przy tym zadaniu.','Ajuți la această sarcină.'],
+    ['tasks.helpOther','{{name}} vraagt hulp{{target}} bij deze taak.','{{name}} asks for help{{target}} with this task.','{{name}} bu görev için{{target}} yardım istiyor.','{{name}} prosi{{target}} o pomoc przy tym zadaniu.','{{name}} cere ajutor{{target}} pentru această sarcină.'],
+    ['common.notNow','Niet nu','Not now','Şimdi değil','Nie teraz','Nu acum'],
+    ['tasks.helpManageAria','Open hulpvraag beheren','Open help request management','Yardım isteği yönetimini aç','Otwórz zarządzanie prośbą o pomoc','Deschide gestionarea cererii de ajutor'],
+    ['tasks.helpViewAria','Hulp gevraagd — bekijk','Help requested — view','Yardım istendi — görüntüle','Poproszono o pomoc — zobacz','Ajutor solicitat — vezi'],
+    ['tasks.helpTaskAria','Hulp gevraagd voor deze taak','Help requested for this task','Bu görev için yardım istendi','Poproszono o pomoc przy tym zadaniu','Ajutor solicitat pentru această sarcină'],
+    ['tasks.notReady','Nog niet klaar','Not ready yet','Henüz hazır değil','Jeszcze nie gotowe','Încă nu este gata'],
+
+    ['duo.questDesc','Samen 10 taken voltooien','Complete 10 tasks together','Birlikte 10 görev tamamla','Ukończcie razem 10 zadań','Finalizați împreună 10 sarcini'],
+    ['duo.completedTitle','👫 Duo Quest voltooid!','👫 Duo Quest completed!','👫 Duo Quest tamamlandı!','👫 Duo Quest ukończony!','👫 Duo Quest finalizat!'],
+    ['duo.completedDesc','Jullie hebben het samen gedaan! +30 XP','You did it together! +30 XP','Birlikte başardınız! +30 XP','Zrobiliście to razem! +30 XP','Ați reușit împreună! +30 XP'],
+    ['duo.rewardReason','Duo quest','Duo quest','Duo görevi','Duo quest','Quest duo'],
+    ['auth.initError','Init fout: {{message}}','Initialization error: {{message}}','Başlatma hatası: {{message}}','Błąd inicjalizacji: {{message}}','Eroare de inițializare: {{message}}'],
+    ['auth.enterEmailPassword','Vul e-mail en wachtwoord in','Enter email and password','E-posta ve şifreyi gir','Wpisz e-mail i hasło','Introdu e-mailul și parola'],
+    ['auth.firebaseDisconnected','Firebase niet verbonden','Firebase is not connected','Firebase bağlı değil','Firebase nie jest połączony','Firebase nu este conectat'],
+    ['auth.missingApiKey','apiKey ontbreekt','apiKey is missing','apiKey eksik','Brakuje apiKey','Lipsește apiKey'],
+    ['auth.connected','Verbonden!','Connected!','Bağlandı!','Połączono!','Conectat!'],
+    ['auth.failedShort','Mislukt','Failed','Başarısız','Niepowodzenie','Eșuat'],
+    ['auth.userNotFound','Geen account met dit e-mailadres','No account with this email address','Bu e-posta adresiyle hesap yok','Brak konta z tym adresem e-mail','Nu există cont cu această adresă de e-mail'],
+    ['auth.wrongPassword','Wachtwoord onjuist','Incorrect password','Şifre yanlış','Nieprawidłowe hasło','Parolă incorectă'],
+    ['auth.emailInUse','E-mail al in gebruik','Email already in use','E-posta zaten kullanımda','E-mail jest już używany','E-mail deja utilizat'],
+    ['auth.minPassword','Min. 6 tekens','Min. 6 characters','Min. 6 karakter','Min. 6 znaków','Min. 6 caractere'],
+    ['auth.invalidEmailShort','Ongeldig e-mailadres','Invalid email address','Geçersiz e-posta adresi','Nieprawidłowy adres e-mail','Adresă de e-mail invalidă'],
+    ['auth.noInternet','Geen internet','No internet','İnternet yok','Brak internetu','Fără internet'],
+    ['auth.noUser','Geen ingelogde gebruiker','No signed-in user','Giriş yapmış kullanıcı yok','Brak zalogowanego użytkownika','Niciun utilizator autentificat'],
+    ['household.notFound','Geen gezin gevonden','No family found','Aile bulunamadı','Nie znaleziono rodziny','Nu s-a găsit familia'],
+    ['common.user','Gebruiker','User','Kullanıcı','Użytkownik','Utilizator'],
+    ['common.partner','Partner','Partner','Partner','Partner','Partener']
+
 
 
 
