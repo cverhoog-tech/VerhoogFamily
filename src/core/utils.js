@@ -3,6 +3,8 @@
 // UTILS
 // ============================================================
 
+function utilTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+function utilLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
 // One shared icon vocabulary for shell, Home cards and notification UI.
 // SVGs inherit currentColor so each surface owns colour without duplicating icon art.
 (function(){
@@ -51,14 +53,14 @@ function formatDate(s) {
   if(!s) return '';
   var d=new Date(s+'T00:00:00');
   var t=new Date().toISOString().split('T')[0];
-  if(s===t) return 'Vandaag';
+  if(s===t) return utilTr('common.format.today','Vandaag');
   var y=new Date(); y.setDate(y.getDate()+1);
-  if(s===y.toISOString().split('T')[0]) return 'Morgen';
-  return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+  if(s===y.toISOString().split('T')[0]) return utilTr('common.format.tomorrow','Morgen');
+  return d.toLocaleDateString(utilLocale(),{day:'numeric',month:'short'});
 }
 
 function addActivity(icon, bg, text) {
-  activityData.unshift({id:actNextId++,icon:icon,bg:bg,text:text,time:'Zojuist'});
+  activityData.unshift({id:actNextId++,icon:icon,bg:bg,text:text,time:utilTr('common.justNow','Zojuist')});
   if(activityData.length>20) activityData.length=20;
   var el=document.getElementById('activity-list');
   if(el) renderActivityList();
@@ -73,10 +75,11 @@ function addNotif(icon, bg, title, body) {
 }
 
 function showToast(msg) {
-  if(msg==='Taak kon niet worden opgeslagen'){
+  var saveFailed=utilTr('tasks.saveTaskFailed','Taak kon niet worden opgeslagen');
+  if(msg==='Taak kon niet worden opgeslagen'||msg===saveFailed){
     var authUid=null;
     try{authUid=(window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){}
-    if(!authUid) msg='Log in om gedeelde taken op te slaan';
+    if(!authUid) msg=utilTr('tasks.loginToSaveShared','Log in om gedeelde taken op te slaan');
   }
   var t=document.createElement('div');
   t.className='toast';t.textContent=msg;
@@ -173,7 +176,7 @@ function updateStats() {
 
 function whoTag(who) {
   if(!who||!who.length) return '';
-  if(who.length>1) return '<span class="tag tag-both">Beiden</span>';
+  if(who.length>1) return '<span class="tag tag-both">'+utilTr('common.both','Beiden')+'</span>';
   if(who[0]==='Shane') return '<span class="tag tag-shane">Shane</span>';
   return '<span class="tag tag-esra">Esra</span>';
 }
