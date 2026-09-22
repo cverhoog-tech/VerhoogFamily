@@ -14,6 +14,54 @@
   if(window.PartyQuestService)return;
 
   var VERSION='1.3.0';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+  var PARTY_MESSAGE_KEYS={
+    'Party Quest household is not ready':'party.notReady',
+    'Party Quest repository is not ready':'party.serviceNotReady',
+    'Kies minstens een quest':'party.service.chooseQuest',
+    'Kies minstens een gezinslid':'party.service.chooseMember',
+    'Alleen de maker van een open quest kan deelnemers uitnodigen':'party.creatorOnly',
+    'De gekozen deelnemers doen al mee, zijn toegewezen of zijn niet beschikbaar':'party.allUnavailable',
+    'Ongeldige uitnodigingsreactie':'party.service.invalidInviteResponse',
+    'Uitnodiging ontbreekt':'party.service.inviteMissing',
+    'Deze uitnodiging is niet meer actief':'party.service.inviteInactive',
+    'Deze uitnodiging is voor een ander gezinslid':'party.service.wrongInviteRecipient',
+    'Deze uitnodiging is al afgehandeld':'party.service.inviteHandled',
+    'Party Quest ontbreekt':'party.service.questMissing',
+    'Deze Party Quest is niet meer actief':'party.service.questInactive',
+    'De maker kan de Party Quest niet verlaten; beeindig hem in plaats daarvan':'party.service.creatorCannotLeave',
+    'Je neemt niet deel aan deze Party Quest':'party.service.notParticipant',
+    'Je bent geen actieve deelnemer meer':'party.service.participantInactive',
+    'Kies iemand om hulp te vragen':'party.service.chooseHelpTarget',
+    'Je kunt alleen vanuit een actieve Party Quest hulp vragen':'party.service.helpRequiresActive',
+    'Alleen de maker kan extra hulp vragen':'party.service.creatorHelpOnly',
+    'De gekoppelde taak is niet meer open':'party.service.taskNotOpen',
+    'Er staat al een hulpvraag open voor deze Party Quest':'party.service.helpAlreadyOpen',
+    'Dit gezinslid doet al mee, is toegewezen of is niet beschikbaar':'party.service.memberUnavailable',
+    'Er is nu niemand extra beschikbaar om hulp te vragen':'party.service.noEligibleMembers',
+    'Ongeldige hulp-reactie':'party.service.invalidHelpResponse',
+    'Hulpvraag ontbreekt':'party.service.helpMissing',
+    'Deze hulpvraag is niet meer open':'party.service.helpNotOpen',
+    'Je kunt niet op je eigen hulpvraag reageren':'party.service.requesterCannotRespond',
+    'Deze hulpvraag is voor een ander gezinslid':'party.service.wrongHelpRecipient',
+    'Je hebt deze hulpvraag al afgehandeld':'party.service.helpHandled',
+    'Je kunt niet meer aan deze hulpvraag deelnemen':'party.service.helpIneligible',
+    'Alleen de maker kan deze hulpvraag intrekken':'party.service.creatorRetractOnly',
+    'Alleen de maker kan deze uitnodiging intrekken':'party.service.creatorRevokeOnly',
+    'Deze uitnodiging kan niet meer worden ingetrokken':'party.service.inviteCannotRevoke',
+    'Alleen de maker kan deze Party Quest beeindigen':'party.service.creatorEndOnly',
+    'Een voltooide Party Quest kan niet worden geannuleerd':'party.service.completedCannotCancel',
+    'Deze Party Quest is al beeindigd':'party.service.alreadyEnded',
+    'Alleen een actieve Party Quest kan worden voltooid':'party.service.onlyActiveComplete',
+    'Wacht tot de voltooide taak door het gezin is bevestigd':'party.service.waitTaskConfirmed',
+    'De gekoppelde taak is nog niet voltooid':'party.service.taskNotCompleted',
+    'Een Party Quest heeft minstens een actieve medespeler nodig':'party.service.needsParticipant',
+    'Reward settlement ontbreekt':'party.service.rewardSettlementMissing',
+    'Deze Party Quest is nog niet voltooid':'party.service.notCompleted',
+    'Reward occurrence komt niet overeen':'party.service.rewardMismatch',
+    'Er staat geen Party Quest-beloning voor deze gebruiker klaar':'party.service.rewardNotForUser',
+    'De XP-beloning is nog niet canoniek bevestigd':'party.service.rewardNotConfirmed'
+  };
 
   function now(){return Date.now();}
   function clone(value){try{return JSON.parse(JSON.stringify(value));}catch(e){return value;}}
@@ -43,9 +91,9 @@
   }
   function members(){try{return taskApi()&&typeof TaskSharedData.members==='function'?TaskSharedData.members()||[]:[];}catch(e){return[];}}
   function memberId(m){return m&&(m.uid||m.id)||null;}
-  function memberName(m){return String(m&&(m.displayName||m.name)||'Gezinslid');}
+  function memberName(m){return String(m&&(m.displayName||m.name)||tr('cleaning.familyMember','Gezinslid'));}
   function uniqueIds(values){var seen={};return (Array.isArray(values)?values:[]).map(function(v){return String(v||'');}).filter(function(v){if(!v||seen[v])return false;seen[v]=true;return true;});}
-  function error(code,message){var e=new Error(message||code);e.code=code;return e;}
+  function error(code,message){var fallback=message||code,key=PARTY_MESSAGE_KEYS[fallback]||'';var e=new Error(key?tr(key,fallback):fallback);e.code=code;return e;}
   function requireContext(){
     var ctx=context(),token=capture();
     if(!validContext(ctx)||!token||!isCurrent(token))throw error('ACTIVE_PARTY_QUEST_HOUSEHOLD_REQUIRED','Party Quest household is not ready');
@@ -98,7 +146,7 @@
     });
     return max+1;
   }
-  function creatorName(uid){var m=memberByUid(uid);return m?memberName(m):'Gezinslid';}
+  function creatorName(uid){var m=memberByUid(uid);return m?memberName(m):tr('cleaning.familyMember','Gezinslid');}
   function openHelpRequest(q){var map=helpRequests(q),keys=Object.keys(map);for(var i=0;i<keys.length;i++){var row=map[keys[i]];if(row&&row.status==='open')return row;}return null;}
   function helpResponded(request,uid){
     var id=String(uid||''),accepted=request&&request.acceptedByUids,declined=request&&request.declinedByUids;
@@ -151,7 +199,7 @@
         });
         var invited=Object.keys(newInvitees);if(!invited.length)return;
         var id=reserved[taskId];
-        next[id]={id:id,schemaVersion:2,title:'Party Quest',questId:String(task.id||task._key),questTitle:String(task.title||task.name||'Naamloze quest'),status:'pending',inviterUid:me,createdByUid:me,inviterName:creatorName(me),invitees:newInvitees,helpRequests:{},rewardSettlements:{},completion:null,createdAt:now(),updatedAt:now()};
+        next[id]={id:id,schemaVersion:2,title:'Party Quest',questId:String(task.id||task._key),questTitle:String(task.title||task.name||tr('party.unnamed','Naamloze quest')),status:'pending',inviterUid:me,createdByUid:me,inviterName:creatorName(me),invitees:newInvitees,helpRequests:{},rewardSettlements:{},completion:null,createdAt:now(),updatedAt:now()};
         created++;createdIds.push(id);
       });
       if(!created)throw error(denied?'PARTY_QUEST_NOT_TASK_OWNER':'PARTY_QUEST_NO_ELIGIBLE_INVITEES',denied?'Alleen de maker van een open quest kan deelnemers uitnodigen':'De gekozen deelnemers doen al mee, zijn toegewezen of zijn niet beschikbaar');
@@ -186,7 +234,7 @@
       var leftAt=now(),name=inv.name||creatorName(me),nextStatus;
       q.invitees=clone(invitees(q));q.invitees[me]=Object.assign({},inv,{status:'left',leftAt:leftAt});nextStatus=recomputeQuestStatus(q);q.status=nextStatus;
       if(nextStatus==='cancelled'&&!q.endedAt){q.endedAt=leftAt;q.endedByUid=me;q.endReason='no-active-or-pending-invitees';closeOpenHelpRequests(q,me,leftAt,'party-quest-no-participants');}
-      q.lastEvent={id:'leave:'+id+':'+me+':'+leftAt,type:'partyQuest.participant.left',actorUid:me,message:name+' heeft “'+String(q.questTitle||'Party Quest')+'” verlaten',time:leftAt};
+      q.lastEvent={id:'leave:'+id+':'+me+':'+leftAt,type:'partyQuest.participant.left',actorUid:me,message:tr('party.participantLeft',name+' heeft “'+String(q.questTitle||'Party Quest')+'” verlaten',{name:name,quest:String(q.questTitle||'Party Quest')}),time:leftAt};
       return q;
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
@@ -332,7 +380,7 @@
       q.endedAt=at;
       q.endedByUid=task.completedByUid?String(task.completedByUid):me;
       q.endReason='linked-task-completed';
-      q.lastEvent={id:occurrenceId,type:'partyQuest.completed',actorUid:q.endedByUid,message:'Party Quest voltooid: “'+String(q.questTitle||'Quest')+'”',time:at};
+      q.lastEvent={id:occurrenceId,type:'partyQuest.completed',actorUid:q.endedByUid,message:tr('party.completedActivity','Party Quest voltooid: “'+String(q.questTitle||'Quest')+'”',{quest:String(q.questTitle||'Quest')}),time:at};
       return q;
     }).then(function(saved){assertToken(auth.token);return saved;});
   }
