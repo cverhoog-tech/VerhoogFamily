@@ -2003,6 +2003,7 @@
     ['party.completedReason','Party Quest voltooid','Party Quest completed','Party Quest tamamlandı','Party Quest ukończony','Party Quest finalizat'],
     ['party.completedActivity','Party Quest voltooid: “{{quest}}”','Party Quest completed: “{{quest}}”','Party Quest tamamlandı: “{{quest}}”','Party Quest ukończony: „{{quest}}”','Party Quest finalizat: „{{quest}}”'],
     ['party.completedReward','Party Quest voltooid! +{{xp}} XP','Party Quest completed! +{{xp}} XP','Party Quest tamamlandı! +{{xp}} XP','Party Quest ukończony! +{{xp}} XP','Party Quest finalizat! +{{xp}} XP'],
+    ['party.participantLeft','{{name}} heeft “{{quest}}” verlaten','{{name}} left “{{quest}}”','{{name}}, “{{quest}}” görevinden ayrıldı','{{name}} opuścił(a) „{{quest}}”','{{name}} a părăsit „{{quest}}”'],
 
     ['party.service.chooseQuest','Kies minstens een quest','Choose at least one quest','En az bir görev seç','Wybierz co najmniej jeden quest','Alege cel puțin un quest'],
     ['party.service.chooseMember','Kies minstens een gezinslid','Choose at least one family member','En az bir aile üyesi seç','Wybierz co najmniej jednego członka rodziny','Alege cel puțin un membru al familiei'],
