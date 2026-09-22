@@ -18,6 +18,7 @@
   var PARTY_MESSAGE_KEYS={
     'Party Quest household is not ready':'party.notReady',
     'Party Quest repository is not ready':'party.serviceNotReady',
+    'STALE_PARTY_QUEST_CONTEXT':'party.service.staleContext',
     'Kies minstens een quest':'party.service.chooseQuest',
     'Kies minstens een gezinslid':'party.service.chooseMember',
     'Alleen de maker van een open quest kan deelnemers uitnodigen':'party.creatorOnly',
