@@ -2324,7 +2324,11 @@
     ['grocery.cat.bread','Brood','Bread','Ekmek','Pieczywo','Pâine'],
     ['grocery.cat.meat','Vlees','Meat','Et','Mięso','Carne'],
     ['grocery.cat.drinks','Dranken','Drinks','İçecekler','Napoje','Băuturi'],
-    ['grocery.cat.other','Overig','Other','Diğer','Inne','Altele']
+    ['grocery.cat.other','Overig','Other','Diğer','Inne','Altele'],
+    ['common.add','Toevoegen','Add','Ekle','Dodaj','Adaugă'],
+    ['shop.listCreateFailed','Lijst kon niet worden aangemaakt','Could not create list','Liste oluşturulamadı','Nie udało się utworzyć listy','Lista nu a putut fi creată'],
+    ['shop.boughtActivity','{{name}} kocht “{{item}}”','{{name}} bought “{{item}}”','{{name}}, “{{item}}” satın aldı','{{name}} kupił(a) „{{item}}”','{{name}} a cumpărat „{{item}}”']
+
 
 
 
