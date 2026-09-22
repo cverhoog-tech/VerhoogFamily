@@ -18,6 +18,7 @@
   window.__partyQuestCompletionRewardV4=true;
 
   var VERSION='4.0.0';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   var repoUnsubscribe=null;
   var contextUnsubscribe=null;
   var generation=0;
@@ -98,7 +99,7 @@
     return Promise.resolve().then(function(){
       if(myGeneration!==generation||!isCurrent(token))throw new Error('STALE_PARTY_QUEST_CONTEXT');
       return p.awardOnce(String(row.rewardKey),Math.max(0,Math.round(Number(row.amount)||0)),{
-        reason:'Party Quest voltooid',
+        reason:tr('party.completedReason','Party Quest voltooid'),
         source:'party-quest',
         sourceId:id
       });
@@ -112,8 +113,8 @@
       return s.markRewardSettled(id,String(row.occurrenceId)).then(function(){
         if(myGeneration!==generation||!isCurrent(token))return false;
         if(result&&result.awarded){
-          try{if(typeof window.addActivity==='function')window.addActivity('🏆','#efe9fb','Party Quest voltooid: “'+String(q.questTitle||'Quest')+'”');}catch(e){}
-          try{if(typeof window.showToast==='function')window.showToast('Party Quest voltooid! +'+Math.max(0,Math.round(Number(row.amount)||0))+' XP');}catch(e){}
+          try{if(typeof window.addActivity==='function')window.addActivity('🏆','#efe9fb',tr('party.completedActivity','Party Quest voltooid: “'+String(q.questTitle||'Quest')+'”',{quest:String(q.questTitle||'Quest')}));}catch(e){}
+          try{if(typeof window.showToast==='function')window.showToast(tr('party.completedReward','Party Quest voltooid! +'+Math.max(0,Math.round(Number(row.amount)||0))+' XP',{xp:Math.max(0,Math.round(Number(row.amount)||0))}));}catch(e){}
         }
         return true;
       });
