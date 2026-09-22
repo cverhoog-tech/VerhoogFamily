@@ -4,7 +4,7 @@ function skillName(def){return skillsTr('skills.def.'+def.id+'.name',def.name);}
 function skillDesc(def){return skillsTr('skills.def.'+def.id+'.desc',def.desc);}
 function abilityName(ability){return skillsTr('skills.ability.'+ability.id+'.name',ability.name);}
 function abilityDesc(ability){return skillsTr('skills.ability.'+ability.id+'.desc',ability.desc);}
-var QUEST_KEY_BY_ID={extra_2:'skills.quest.extra2',extra_3:'skills.quest.extra3',extra_5:'skills.quest.extra5',extra_8:'skills.quest.extra8',extra_10:'skills.quest.extra10',cat_house:'skills.quest.house',cat_cook:'skills.quest.cooking',cat_shop:'skills.quest.groceries',streak5:'skills.quest.streak',blitz4:'skills.quest.blitz'};
+var QUEST_KEY_BY_ID={extra_2:'skills.quest.extra2',extra_3:'skills.quest.extra3',extra_5:'skills.quest.extra5',extra_8:'skills.quest.extra8',extra_10:'skills.quest.extra10',extra_cat_huis:'skills.quest.house',extra_cat_koken:'skills.quest.cooking',extra_cat_bood:'skills.quest.groceries',extra_streak:'skills.quest.streak',extra_blitz:'skills.quest.blitz'};
 function questDesc(q){return skillsTr(QUEST_KEY_BY_ID[q&&q.id]||'',q&&q.desc||'');}
 function difficultyLabel(value){var map={Makkelijk:'skills.diff.easy',Normaal:'skills.diff.normal',Uitdagend:'skills.diff.challenging',Zwaar:'skills.diff.hard',Episch:'skills.diff.epic'};return skillsTr(map[value]||'',value||'');}
 // ============================================================
@@ -727,7 +727,7 @@ function useAbility(abilityId, taskId) {
   var ability = ABILITIES.find(function(a){return a.id===abilityId;});
   if(!ability) return;
   if(!myAbilities[abilityId] || myAbilities[abilityId] < 1) {
-    showToast('Je hebt deze ability niet (of niet genoeg)'); return;
+    showToast(skillsTr('skills.ability.notOwned','Je hebt deze ability niet (of niet genoeg)')); return;
   }
 
   var task = taskId ? taskData.find(function(t){return t.id===taskId;}) : null;
@@ -736,80 +736,80 @@ function useAbility(abilityId, taskId) {
     var d = task.date ? new Date(task.date+'T00:00:00') : new Date();
     d.setDate(d.getDate() + ability.days);
     task.date = d.toISOString().split('T')[0];
-    showToast(ability.icon+' "'+task.title+'" uitgesteld met '+ability.days+' dag(en)!');
-    addActivity('⏰','#ede9fe', myName+' stelde "'+task.title+'" uit ('+ability.name+')');
+    showToast(ability.icon+' '+skillsTr('skills.ability.postponed','“'+task.title+'” '+ability.days+' dag(en) uitgesteld!',{title:task.title,count:ability.days}));
+    addActivity('⏰','#ede9fe',skillsTr('skills.ability.postponedActivity',myName+' stelde “'+task.title+'” uit ('+abilityName(ability)+')',{name:myName,title:task.title,ability:abilityName(ability)}));
     renderTasks();
   } else if(ability.type === 'free_trade') {
-    showToast('🤝 Gratis Ruil actief! Volgende taakruil zonder tegenprestatie.');
+    showToast(skillsTr('skills.ability.freeTradeActive','🤝 Gratis Ruil actief! Volgende taakruil zonder tegenprestatie.'));
   } else if(ability.type === 'reassign' && task) {
     task.who = [partnerName];
-    showToast('🔄 Taak "'+task.title+'" overgedragen aan '+partnerName+'!');
-    addActivity('🔄','#ede9fe', myName+' droeg "'+task.title+'" over aan '+partnerName);
+    showToast(skillsTr('skills.ability.reassigned','🔄 Taak “'+task.title+'” overgedragen aan '+partnerName+'!',{title:task.title,name:partnerName}));
+    addActivity('🔄','#ede9fe',skillsTr('skills.ability.reassignedActivity',myName+' droeg “'+task.title+'” over aan '+partnerName,{name:myName,title:task.title,target:partnerName}));
     renderTasks();
   } else if(ability.type === 'split' && task) {
-    var copy = Object.assign({}, task, {id:taskNextId++, title:task.title+' (deel 2)'});
-    task.title = task.title+' (deel 1)';
+    var copy = Object.assign({}, task, {id:taskNextId++, title:task.title+' ('+skillsTr('skills.ability.part2','deel 2')+')'});
+    task.title = task.title+' ('+skillsTr('skills.ability.part1','deel 1')+')';
     taskData.push(copy);
-    showToast('✂️ Taak gesplitst in 2 kleinere taken!');
+    showToast(skillsTr('skills.ability.splitDone','✂️ Taak gesplitst in 2 kleinere taken!'));
     renderTasks(); updateStats();
   } else if(ability.type === 'shield' && task) {
     task._shielded = true;
-    showToast('🛡️ Taak "'+task.title+'" heeft een schild!');
+    showToast(skillsTr('skills.ability.shielded','🛡️ Taak “'+task.title+'” heeft een schild!',{title:task.title}));
     renderTasks();
   } else if(ability.type === 'freeze' && task) {
     frozenTasks[task.id] = true; task._frozen = true;
-    showToast('🧊 Taak "'+task.title+'" bevroren — verborgen!');
+    showToast(skillsTr('skills.ability.frozen','🧊 Taak “'+task.title+'” bevroren — verborgen!',{title:task.title}));
     renderTasks();
   } else if(ability.type === 'double_xp') {
     activeDoubleXP = true;
-    showToast('⚡ Dubbel-XP actief voor je volgende taak!');
+    showToast(skillsTr('skills.ability.doubleActive','⚡ Dubbel-XP actief voor je volgende taak!'));
   } else if(ability.type === 'triple_xp') {
     activeDoubleXP = true; myXP += 4; // extra bump
-    showToast('🔥 Triple-XP actief! Ga snel een taak doen!');
+    showToast(skillsTr('skills.ability.tripleActive','🔥 Triple-XP actief! Ga snel een taak doen!'));
   } else if(ability.type === 'xp_day_boost') {
-    showToast('💣 XP-bom actief! Alle taken vandaag +50% XP');
-    addActivity('💣','#fde68a', myName+' activeerde XP-bom!');
+    showToast(skillsTr('skills.ability.xpBombActive','💣 XP-bom actief! Alle taken vandaag +50% XP'));
+    addActivity('💣','#fde68a',skillsTr('skills.ability.xpBombActivity',myName+' activeerde XP-bom!',{name:myName}));
   } else if(ability.type === 'skill_boost') {
-    showToast('🌱 Skill-turbo actief! Volgende skill-taak = 3x XP');
-    addActivity('🌱','#d1fae5', myName+' activeerde Skill-turbo!');
+    showToast(skillsTr('skills.ability.skillBoostActive','🌱 Skill-turbo actief! Volgende skill-taak = 3x XP'));
+    addActivity('🌱','#d1fae5',skillsTr('skills.ability.skillBoostActivity',myName+' activeerde Skill-turbo!',{name:myName}));
   } else if(ability.type === 'pardonne' && task) {
     var pi = taskData.findIndex(function(t){return t.id===task.id;});
     if(pi>-1) taskData.splice(pi,1);
-    showToast('🎁 Taak "'+task.title+'" vergeven en vergeten!');
+    showToast(skillsTr('skills.ability.pardoned','🎁 Taak “'+task.title+'” vergeven en vergeten!',{title:task.title}));
     renderTasks(); updateStats();
   } else if(ability.type === 'multi_pardonne') {
     var myOpen = taskData.filter(function(t){return !t.done && t.who && t.who.indexOf(myName)>-1;}).slice(0,3);
     myOpen.forEach(function(t){ taskData = taskData.filter(function(x){return x.id!==t.id;}); });
-    showToast('🧹 '+myOpen.length+' taken weggepoetst — poof!');
+    showToast(skillsTr('skills.ability.amnesiaDone','🧹 '+myOpen.length+' taken weggepoetst — poof!',{count:myOpen.length}));
     renderTasks(); updateStats();
   } else if(ability.type === 'spy') {
     var frozen = Object.keys(frozenTasks).length;
-    showToast('🕵️ '+partnerName+' heeft '+frozen+' bevroren taken. Nu weet je het!');
+    showToast(skillsTr('skills.ability.spyResult','🕵️ '+partnerName+' heeft '+frozen+' bevroren taken. Nu weet je het!',{name:partnerName,count:frozen}));
   } else if(ability.type === 'copycat') {
     var doneTasks = taskData.filter(function(t){return t.done && t.who && t.who.indexOf(partnerName)>-1;});
     if(doneTasks.length){
-      taskData.unshift({id:taskNextId++,title:doneTasks[0].title+' (gekopieerd)',who:[myName],done:true,date:todayStr(),prio:'low'});
-      showToast('🐱 Gekopieerd: "'+doneTasks[0].title+'" staat op jouw naam!');
-      awardXP(4,'Kopieer-kat');
-    } else showToast('Geen voltooide taken van '+partnerName+' gevonden');
+      taskData.unshift({id:taskNextId++,title:doneTasks[0].title+' ('+skillsTr('skills.ability.copiedSuffix','gekopieerd')+')',who:[myName],done:true,date:todayStr(),prio:'low'});
+      showToast(skillsTr('skills.ability.copied','🐱 Gekopieerd: “'+doneTasks[0].title+'” staat op jouw naam!',{title:doneTasks[0].title}));
+      awardXP(4,abilityName(ability));
+    } else showToast(skillsTr('skills.ability.noCompletedPartner','Geen voltooide taken van '+partnerName+' gevonden',{name:partnerName}));
   } else if(ability.type === 'streak_save') {
-    showToast('🔥 Streak-redder opgeslagen! Wordt gebruikt als je een week mist.');
-    addActivity('🔥','#fff3dc', myName+' heeft een Streak-redder!');
+    showToast(skillsTr('skills.ability.streakSaved','🔥 Streak-redder opgeslagen! Wordt gebruikt als je een week mist.'));
+    addActivity('🔥','#fff3dc',skillsTr('skills.ability.streakActivity',myName+' heeft een Streak-redder!',{name:myName}));
   } else if(ability.type === 'auto_done' && task) {
     task.done = true;
     trackWeeklyProgress('tasks');
-    awardXP(4,'Auto-piloot');
-    showToast('✨ Taak "'+task.title+'" auto-afgevinkt!');
+    awardXP(4,abilityName(ability));
+    showToast(skillsTr('skills.ability.autoDone','✨ Taak “'+task.title+'” auto-afgevinkt!',{title:task.title}));
     renderTasks(); updateStats();
   } else if(ability.type === 'info') {
-    showToast('👁️ Budget-röntgen: '+partnerName+' gaf € '+
-      transData.filter(function(t){return t.who===partnerName&&t.amount<0;})
-        .reduce(function(s,t){return s+Math.abs(t.amount);},0).toFixed(0)+' uit deze maand');
+    var partnerSpend=transData.filter(function(t){return t.who===partnerName&&t.amount<0;})
+      .reduce(function(s,t){return s+Math.abs(t.amount);},0).toFixed(0);
+    showToast(skillsTr('skills.ability.budgetResult','👁️ Budget-röntgen: '+partnerName+' gaf € '+partnerSpend+' uit deze maand',{name:partnerName,amount:partnerSpend}));
   } else if(ability.type === 'savings_double') {
-    showToast('💎 Spaar-multiplier actief! Volgende storting telt dubbel.');
-    addActivity('💎','#dbeafe', myName+' activeerde Spaar-multiplier!');
+    showToast(skillsTr('skills.ability.savingsActive','💎 Spaar-multiplier actief! Volgende storting telt dubbel.'));
+    addActivity('💎','#dbeafe',skillsTr('skills.ability.savingsActivity',myName+' activeerde Spaar-multiplier!',{name:myName}));
   } else {
-    showToast('Kies eerst een taak om de ability op te gebruiken!');
+    showToast(skillsTr('skills.ability.chooseTaskInfo','Kies een taak om '+abilityName(ability)+' op in te zetten',{ability:abilityName(ability)}));
     openAbilityTaskPicker(abilityId);
     return;
   }
@@ -823,27 +823,30 @@ function openAbilityTaskPicker(abilityId) {
   var ability = ABILITIES.find(function(a){return a.id===abilityId;});
   if(!ability) return;
   var myTasks = taskData.filter(function(t){return !t.done && t.who && t.who.indexOf(myName)>-1;});
-  if(!myTasks.length){showToast('Geen open taken gevonden');return;}
+  if(!myTasks.length){showToast(skillsTr('skills.ability.noTasks','Geen actieve taken beschikbaar'));return;}
 
   currentAddType = 'ability_pick';
-  document.getElementById('sheet-title').textContent = ability.icon+' '+ability.name;
+  document.getElementById('sheet-title').textContent = ability.icon+' '+abilityName(ability);
   document.getElementById('sheet-fields').innerHTML =
-    '<div style="font-size:13px;color:var(--c-text2);margin-bottom:12px">'+ability.desc+'</div>'
-    +'<div class="field"><label>Kies een taak</label>'
+    '<div style="font-size:13px;color:var(--c-text2);margin-bottom:12px">'+abilityDesc(ability)+'</div>'
+    +'<div class="field"><label>'+skillsTr('skills.ability.chooseTaskButton','🎯 Kies taak').replace(/^🎯\s*/,'')+'</label>'
     +'<select id="ability-task-sel">'
     +myTasks.map(function(t){return '<option value="'+t.id+'">'+(t.title)+'</option>';}).join('')
     +'</select></div>';
   document.getElementById('add-overlay').classList.add('open');
   // Override save button
-  document.querySelector('.sheet-btn').textContent = ability.icon+' Gebruik ability';
-  document.querySelector('.sheet-btn').onclick = function(){
-    var sel = document.getElementById('ability-task-sel');
-    var tid = sel ? parseInt(sel.value) : null;
-    closeAdd();
-    useAbility(abilityId, tid);
-    document.querySelector('.sheet-btn').textContent = 'Toevoegen';
-    document.querySelector('.sheet-btn').onclick = saveItem;
-  };
+  var saveBtn=document.querySelector('.sheet-btn'),previousText=saveBtn?saveBtn.textContent:'',previousOnClick=saveBtn?saveBtn.onclick:null;
+  if(saveBtn){
+    saveBtn.textContent = skillsTr('skills.ability.useButton',ability.icon+' Gebruik ability',{icon:ability.icon});
+    saveBtn.onclick = function(){
+      var sel = document.getElementById('ability-task-sel');
+      var tid = sel ? parseInt(sel.value) : null;
+      closeAdd();
+      useAbility(abilityId, tid);
+      saveBtn.textContent = previousText;
+      saveBtn.onclick = previousOnClick || saveItem;
+    };
+  }
 }
 
 // Hook into existing functions to track weekly progress
@@ -867,7 +870,7 @@ toggleTask = function(id) {
       // If we've done more eenmalige tasks than the baseline → it's an extra
       if(weekDoneCount > baseline) {
         trackWeeklyProgress('extra', t.title);
-        showToast('⭐ Extra taak! +1 voortgang op je quest');
+        showToast(skillsTr('skills.weekly.extraProgress','⭐ Extra taak! +1 voortgang op je quest'));
       }
     }
 
