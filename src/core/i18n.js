@@ -1865,7 +1865,10 @@
     ['tasks.questBelongsTo','Deze quest is van {{name}}.','This quest belongs to {{name}}.','Bu görev {{name}} kişisine ait.','Ten quest należy do {{name}}.','Acest quest îi aparține lui {{name}}.'],
     ['tasks.helpStatusRequested','Hulp gevraagd','Help requested','Yardım istendi','Poproszono o pomoc','Ajutor solicitat'],
     ['tasks.helpStatusTogether','Samen op quest','Working together','Görevde birlikte','Razem w queście','Împreună la quest'],
-    ['tasks.helpStatusNeeded','Hulp nodig?','Need help?','Yardım lazım mı?','Potrzebujesz pomocy?','Ai nevoie de ajutor?']
+    ['tasks.helpStatusNeeded','Hulp nodig?','Need help?','Yardım lazım mı?','Potrzebujesz pomocy?','Ai nevoie de ajutor?'],
+    ['tasks.tabs.overview','Overzicht','Overview','Genel Bakış','Przegląd','Prezentare'],
+    ['tasks.tabs.person','Persoon','Person','Kişi','Osoba','Persoană'],
+    ['tasks.personDashboardLoading','Persoonsdashboard laden…','Loading personal dashboard…','Kişisel panel yükleniyor…','Ładowanie panelu osoby…','Se încarcă panoul personal…']
 
 ,
     ['tasks.cleanRoom','{{room}} schoonmaken','Clean {{room}}','{{room}} temizliği','Posprzątaj: {{room}}','Curăță: {{room}}']
