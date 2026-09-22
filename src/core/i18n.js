@@ -2130,7 +2130,27 @@
     ['auth.noUser','Geen ingelogde gebruiker','No signed-in user','Giriş yapmış kullanıcı yok','Brak zalogowanego użytkownika','Niciun utilizator autentificat'],
     ['household.notFound','Geen gezin gevonden','No family found','Aile bulunamadı','Nie znaleziono rodziny','Nu s-a găsit familia'],
     ['common.user','Gebruiker','User','Kullanıcı','Użytkownik','Utilizator'],
-    ['common.partner','Partner','Partner','Partner','Partner','Partener']
+    ['common.partner','Partner','Partner','Partner','Partner','Partener'],
+    ['theme.nature','🌿 Natuur','🌿 Nature','🌿 Doğa','🌿 Natura','🌿 Natură'],
+    ['theme.kawaii','🌸 Kawaii','🌸 Kawaii','🌸 Kawaii','🌸 Kawaii','🌸 Kawaii'],
+    ['theme.winter','❄️ Winter','❄️ Winter','❄️ Kış','❄️ Zima','❄️ Iarnă'],
+    ['theme.autumn','🍂 Herfst','🍂 Autumn','🍂 Sonbahar','🍂 Jesień','🍂 Toamnă'],
+    ['theme.modern','⚡ Modern','⚡ Modern','⚡ Modern','⚡ Nowoczesny','⚡ Modern'],
+    ['theme.summer','☀️ Zomer','☀️ Summer','☀️ Yaz','☀️ Lato','☀️ Vară'],
+    ['theme.photoLoaded','📸 Foto geladen — tik Opslaan om te bewaren','📸 Photo loaded — tap Save to keep it','📸 Fotoğraf yüklendi — kaydetmek için Kaydet’e dokun','📸 Zdjęcie wczytane — naciśnij Zapisz, aby zachować','📸 Fotografie încărcată — apasă Salvează pentru a o păstra'],
+    ['theme.uploadFirst','Upload eerst een foto','Upload a photo first','Önce bir fotoğraf yükle','Najpierw prześlij zdjęcie','Încarcă mai întâi o fotografie'],
+    ['theme.savedFor','✓ Opgeslagen voor thema {{theme}}','✓ Saved for theme {{theme}}','✓ {{theme}} teması için kaydedildi','✓ Zapisano dla motywu {{theme}}','✓ Salvat pentru tema {{theme}}'],
+    ['theme.backgroundSaved','Achtergrond opgeslagen ✓','Background saved ✓','Arka plan kaydedildi ✓','Tło zapisane ✓','Fundal salvat ✓'],
+    ['theme.backgroundRemoved','Achtergrond verwijderd','Background removed','Arka plan kaldırıldı','Tło usunięte','Fundal eliminat'],
+    ['theme.lightMode','Lichte modus','Light mode','Aydınlık mod','Tryb jasny','Mod luminos'],
+    ['theme.darkMode','Donkere modus','Dark mode','Karanlık mod','Tryb ciemny','Mod întunecat'],
+
+    ['common.justNow','Zojuist','Just now','Az önce','Przed chwilą','Chiar acum'],
+    ['common.both','Beiden','Both','İkisi de','Oboje','Amândoi'],
+    ['common.format.today','Vandaag','Today','Bugün','Dzisiaj','Astăzi'],
+    ['common.format.tomorrow','Morgen','Tomorrow','Yarın','Jutro','Mâine'],
+    ['tasks.loginToSaveShared','Log in om gedeelde taken op te slaan','Sign in to save shared tasks','Paylaşılan görevleri kaydetmek için giriş yap','Zaloguj się, aby zapisywać wspólne zadania','Autentifică-te pentru a salva sarcinile comune']
+
 
 
 
