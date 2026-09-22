@@ -48,7 +48,7 @@
   function dayDiff(task){var d=localDay(task&&task.date);if(!d)return null;return Math.round((d-today())/86400000);}
   function group(task){if(task&&task.done)return'Voltooid';var diff=dayDiff(task);if(diff===null)return'Later';if(diff<0)return'Verlopen';if(diff===0)return'Vandaag';if(diff===1)return'Morgen';return'Later';}
   function dateLabel(task){
-    if(!task||!task.date)return'Geen datum';var diff=dayDiff(task),d=localDay(task.date),label='';
+    if(!task||!task.date)return tr('tasks.v3.noDate','Geen datum');var diff=dayDiff(task),d=localDay(task.date),label='';
     if(diff===0)label=tr('common.today','Vandaag');else if(diff===1)label=tr('common.tomorrow','Morgen');else if(diff===-1)label=tr('cleaning.history.yesterday','Gisteren');else label=d.toLocaleDateString(locale(),{day:'numeric',month:'short'});
     return label+(task.time?' · '+task.time:'');
   }
