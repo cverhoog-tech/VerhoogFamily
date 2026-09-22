@@ -7,6 +7,8 @@
   if(window.__taskDetailPopupV1) return;
   window.__taskDetailPopupV1 = true;
 
+  function taskTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+  function taskLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
   var openId = null;
   var helpPickerOpen = false;
   var detailsOpen = false;
@@ -21,10 +23,10 @@
 
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
-  function currentName(){return localStorage.getItem('familyapp-profile-name-v1')||'Ik';}
+  function currentName(){return localStorage.getItem('familyapp-profile-name-v1')||taskTr('tasks.me','Ik');}
   function members(){try{if(window.TaskSharedData&&typeof window.TaskSharedData.members==='function')return window.TaskSharedData.members()||[];}catch(e){}return[];}
   function memberByUid(uidVal){var list=members();for(var i=0;i<list.length;i++){var m=list[i];if(String(m.uid||m.id)===String(uidVal))return m;}return null;}
-  function memberName(uidVal){var m=memberByUid(uidVal);if(m)return m.displayName||m.name||'Gezinslid';if(String(uidVal)===String(currentUid()))return currentName();return 'Gezinslid';}
+  function memberName(uidVal){var m=memberByUid(uidVal);if(m)return m.displayName||m.name||taskTr('cleaning.familyMember','Gezinslid');if(String(uidVal)===String(currentUid()))return currentName();return taskTr('cleaning.familyMember','Gezinslid');}
   function initials(name){return String(name||'G').trim().split(/\s+/).map(function(p){return p.charAt(0);}).join('').slice(0,2).toUpperCase()||'G';}
   function avatarUrlFor(m){if(!m)return'';var direct=m.avatar||m.avatarUrl||m.photoURL||m.profilePhoto||'';if(direct)return direct;var name=(m.displayName||m.name||'').toLowerCase();try{return localStorage.getItem('fam_avatar_'+name)||'';}catch(e){return'';}}
   function findTask(id){return (window.taskData||[]).find(function(t){return String(t.id)===String(id);})||null;}
@@ -38,9 +40,9 @@
   function participantAvatars(task){return participants(task).map(function(p){var u=p.member&&avatarUrlFor(p.member);return u?'<img class="tdp-party-avatar" src="'+esc(u)+'" alt="'+esc(p.name)+'">':'<span class="tdp-party-avatar">'+esc(initials(p.name))+'</span>';}).join('');}
   function xpLabel(task){if(task.xp)return task.xp;if(task.xpReward)return task.xpReward;var n=task.xpAmount||20;return '+'+n+' XP';}
   function xpNumber(task){var m=String(xpLabel(task)).match(/(\d+)/);return m?parseInt(m[1],10):20;}
-  function prioLabel(p){var m={hoog:'Hoge prioriteit',high:'Hoge prioriteit',normaal:'Normale prioriteit',medium:'Normale prioriteit',laag:'Lage prioriteit',low:'Lage prioriteit'};return m[String(p||'laag').toLowerCase()]||'Normale prioriteit';}
-  function frequencyLabel(task){var r=String(task.recurrence||'once').toLowerCase();var m={once:'Eenmalige taak',daily:'Dagelijkse taak',weekly:'Wekelijkse taak',monthly:'Maandelijkse taak'};return m[r]||'Eenmalige taak';}
-  function dateTimeLabel(task){if(!task.date)return'Geen datum';var d=new Date(task.date+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);var diff=Math.round((d-today)/86400000),label;if(diff===0)label='Vandaag';else if(diff===1)label='Morgen';else if(diff===-1)label='Gisteren';else label=d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});return label+(task.time?' '+task.time:'');}
+  function prioLabel(p){var key=String(p||'laag').toLowerCase();if(key==='hoog'||key==='high')return taskTr('tasks.priorityHigh','Hoge prioriteit');if(key==='laag'||key==='low')return taskTr('tasks.priorityLow','Lage prioriteit');return taskTr('tasks.priorityNormal','Normale prioriteit');}
+  function frequencyLabel(task){var r=String(task.recurrence||'once').toLowerCase();var keys={once:'tasks.frequency.once',daily:'tasks.frequency.daily',weekly:'tasks.frequency.weekly',monthly:'tasks.frequency.monthly'},fallback={once:'Eenmalige taak',daily:'Dagelijkse taak',weekly:'Wekelijkse taak',monthly:'Maandelijkse taak'};return taskTr(keys[r]||keys.once,fallback[r]||fallback.once);}
+  function dateTimeLabel(task){if(!task.date)return taskTr('tasks.noDate','Geen datum');var d=new Date(task.date+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);var diff=Math.round((d-today)/86400000),label;if(diff===0)label=taskTr('common.today','Vandaag');else if(diff===1)label=taskTr('common.tomorrow','Morgen');else if(diff===-1)label=taskTr('tasks.yesterday','Gisteren');else label=d.toLocaleDateString(taskLocale(),{day:'numeric',month:'short'});return label+(task.time?' '+task.time:'');}
 
   function iconCategory(task){var raw=String(task.category||task.type||task.title||'').toLowerCase();if(/was|laundry|kleding/.test(raw))return'laundry';if(/stof|schoon|clean|dweil|badkamer|toilet/.test(raw))return'cleaning';if(/vaat|keuken|kitchen|koken/.test(raw))return'kitchen';if(/bood|supermarkt|grocer/.test(raw))return'groceries';if(/admin|contract|rekening|factuur|bank/.test(raw))return'admin';if(/kind|speel|family|gezin/.test(raw))return'family';if(/tuin|garden|plant/.test(raw))return'garden';return'quest';}
   var CATEGORY_ACCENT={laundry:'#0284c7',cleaning:'#7c3aed',kitchen:'#0d9488',groceries:'#059669',admin:'#6366f1',family:'#db2777',garden:'#65a30d',quest:'#7c3aed'};
@@ -60,7 +62,7 @@
     return categorySvg(cat,20);
   }
   var CATEGORY_ORDER=['quest','laundry','cleaning','kitchen','groceries','admin','family','garden'];
-  var CATEGORY_LABEL={laundry:'Wasgoed',cleaning:'Schoonmaak',kitchen:'Keuken',groceries:'Boodschappen',admin:'Administratie',family:'Gezin',garden:'Tuin',quest:'Quest'};
+  var CATEGORY_LABEL_KEY={laundry:'tasks.cat.laundry',cleaning:'tasks.cat.cleaning',kitchen:'tasks.cat.kitchen',groceries:'tasks.cat.groceries',admin:'tasks.cat.admin',family:'tasks.cat.family',garden:'tasks.cat.garden',quest:'tasks.cat.quest'};var CATEGORY_LABEL_FALLBACK={laundry:'Wasgoed',cleaning:'Schoonmaak',kitchen:'Keuken',groceries:'Boodschappen',admin:'Administratie',family:'Gezin',garden:'Tuin',quest:'Quest'};function categoryLabel(cat){return taskTr(CATEGORY_LABEL_KEY[cat]||'tasks.cat.quest',CATEGORY_LABEL_FALLBACK[cat]||'Quest');}
   // ------------------------------------------------------------
   // Subtask icons: user-chosen emoji only. There is no automatic
   // keyword/content classification -- a subtask has an icon only
@@ -71,28 +73,28 @@
   // ------------------------------------------------------------
   function getSubIcon(s){var v=s&&s.icon;return (typeof v==='string'&&v)?v:null;}
   var SUBTASK_ICON_CATEGORIES=[
-    {label:'Favorieten',icons:['⭐','✅','📌','✨','🔥','⏰']},
-    {label:'Huis',icons:['🏠','🛏️','🚪','🪑','🪟','🗑️']},
-    {label:'Schoonmaken',icons:['🧹','🧽','🧴','🧼','🪣','🚿']},
-    {label:'Boodschappen',icons:['🛒','🛍️','🥦','🍎','🥛','🍞']},
-    {label:'Eten',icons:['🍳','🍽️','☕','🍲','🥗','🍕']},
-    {label:'Werk / school',icons:['💼','📚','🖊️','📅','🎒','📞']},
-    {label:'Buiten',icons:['🌱','🌳','🚲','🏡','🌤️','🐝']},
-    {label:'Verzorging',icons:['🪥','🛁','💊','🧑‍⚕️','🐾','🧴']},
-    {label:'Tech',icons:['💻','📱','🔌','🖨️','⌨️','🔋']},
-    {label:'Vervoer',icons:['🚗','🚌','✈️','⛽','🅿️','🚆']},
-    {label:'Overig',icons:['🎯','📦','🎁','🧩','❓','✏️']}
+    {key:'tasks.iconcat.favorites',label:'Favorieten',icons:['⭐','✅','📌','✨','🔥','⏰']},
+    {key:'tasks.iconcat.home',label:'Huis',icons:['🏠','🛏️','🚪','🪑','🪟','🗑️']},
+    {key:'tasks.iconcat.cleaning',label:'Schoonmaken',icons:['🧹','🧽','🧴','🧼','🪣','🚿']},
+    {key:'tasks.iconcat.groceries',label:'Boodschappen',icons:['🛒','🛍️','🥦','🍎','🥛','🍞']},
+    {key:'tasks.iconcat.food',label:'Eten',icons:['🍳','🍽️','☕','🍲','🥗','🍕']},
+    {key:'tasks.iconcat.workSchool',label:'Werk / school',icons:['💼','📚','🖊️','📅','🎒','📞']},
+    {key:'tasks.iconcat.outside',label:'Buiten',icons:['🌱','🌳','🚲','🏡','🌤️','🐝']},
+    {key:'tasks.iconcat.care',label:'Verzorging',icons:['🪥','🛁','💊','🧑‍⚕️','🐾','🧴']},
+    {key:'tasks.iconcat.tech',label:'Tech',icons:['💻','📱','🔌','🖨️','⌨️','🔋']},
+    {key:'tasks.iconcat.transport',label:'Vervoer',icons:['🚗','🚌','✈️','⛽','🅿️','🚆']},
+    {key:'tasks.iconcat.other',label:'Overig',icons:['🎯','📦','🎁','🧩','❓','✏️']}
   ];
   // SubtaskIconPicker: one small shared helper used by both the detail
   // view (bind) and the create-task view (bindCreate) so there is a
   // single picker implementation, not two parallel ones.
   function subtaskIconPickerHtml(subId,currentIcon){
     var groups=SUBTASK_ICON_CATEGORIES.map(function(cat){
-      return '<div class="tdp-icon-picker-cat">'+esc(cat.label)+'</div><div class="tdp-icon-picker-grid">'+cat.icons.map(function(ic){
+      return '<div class="tdp-icon-picker-cat">'+esc(taskTr(cat.key,cat.label))+'</div><div class="tdp-icon-picker-grid">'+cat.icons.map(function(ic){
         return '<button type="button" class="tdp-icon-chip'+(currentIcon===ic?' selected':'')+'" data-icon-pick="'+esc(subId)+'" data-icon-value="'+esc(ic)+'">'+esc(ic)+'</button>';
       }).join('')+'</div>';
     }).join('');
-    return '<div class="tdp-icon-picker">'+groups+'<button type="button" class="tdp-icon-clear-btn" data-icon-pick="'+esc(subId)+'" data-icon-value="">Geen icoon</button></div>';
+    return '<div class="tdp-icon-picker">'+groups+'<button type="button" class="tdp-icon-clear-btn" data-icon-pick="'+esc(subId)+'" data-icon-value="">'+esc(taskTr('tasks.noIcon','Geen icoon'))+'</button></div>';
   }
   function subtaskIconButtonHtml(s,accent,interactive){
     var icon=getSubIcon(s),body=icon?esc(icon):'<span class="tdp-sub-icon-empty">+</span>';
@@ -106,7 +108,7 @@
   function heroFallbackStyle(task){var cat=iconCategory(task),accent=CATEGORY_ACCENT[cat]||CATEGORY_ACCENT.quest;return 'background-image:radial-gradient(120% 140% at 85% -10%,'+accent+'55,transparent 60%),linear-gradient(150deg,'+accent+'d9,#241a3fdd 78%)';}
   function ready(){return !!(window.TaskSharedData&&typeof window.TaskSharedData.update==='function'&&window.TaskSharedData.status&&window.TaskSharedData.status().ready);}
   function persistLocal(task){try{var idx=(window.taskData||[]).findIndex(function(t){return String(t.id)===String(task.id);});if(idx>-1)window.taskData[idx]=task;if(window.AppState&&typeof window.AppState.save==='function')window.AppState.save();}catch(e){}}
-  function patch(id,patchObj,cb){var task=findTask(id);if(ready()){window.TaskSharedData.update(id,patchObj).then(function(saved){persistLocal(saved);if(typeof window.renderTasks==='function')window.renderTasks();if(typeof window.updateStats==='function')window.updateStats();if(cb)cb(saved);}).catch(function(err){console.warn('[TaskDetailPopup] shared update failed',err);if(typeof window.showToast==='function')window.showToast((err&&err.message)||'Kon niet opslaan — probeer opnieuw');});return;}if(!task)return;Object.keys(patchObj).forEach(function(k){task[k]=patchObj[k];});task.updatedAt=Date.now();persistLocal(task);if(typeof window.renderTasks==='function')window.renderTasks();if(typeof window.updateStats==='function')window.updateStats();if(cb)cb(task);}
+  function patch(id,patchObj,cb){var task=findTask(id);if(ready()){window.TaskSharedData.update(id,patchObj).then(function(saved){persistLocal(saved);if(typeof window.renderTasks==='function')window.renderTasks();if(typeof window.updateStats==='function')window.updateStats();if(cb)cb(saved);}).catch(function(err){console.warn('[TaskDetailPopup] shared update failed',err);if(typeof window.showToast==='function')window.showToast((err&&err.message)||taskTr('tasks.saveRetry','Kon niet opslaan — probeer opnieuw'));});return;}if(!task)return;Object.keys(patchObj).forEach(function(k){task[k]=patchObj[k];});task.updatedAt=Date.now();persistLocal(task);if(typeof window.renderTasks==='function')window.renderTasks();if(typeof window.updateStats==='function')window.updateStats();if(cb)cb(task);}
   function todayIso(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
   function makeDraftTask(){var assigned={},me=currentUid();if(me)assigned[me]=true;return {title:'',desc:'',category:null,date:todayIso(),time:'',prio:'laag',recurrence:'once',assignedToUids:assigned,subtasks:[]};}
 
