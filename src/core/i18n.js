@@ -1855,7 +1855,18 @@
     ['tasks.helpRetracted','Hulpvraag ingetrokken','Help request withdrawn','Yardım isteği geri çekildi','Prośba o pomoc wycofana','Cererea de ajutor a fost retrasă'],
     ['tasks.helpAskedTo','Hulp gevraagd aan {{name}}','Help requested from {{name}}','{{name}} kişisinden yardım istendi','Poproszono {{name}} o pomoc','S-a cerut ajutor de la {{name}}'],
     ['tasks.addSubtaskShort','+ Subtaak','+ Subtask','+ Alt görev','+ Podzadanie','+ Subsarcină'],
-    ['tasks.taskFallback','Taak','Task','Görev','Zadanie','Sarcină']
+    ['tasks.taskFallback','Taak','Task','Görev','Zadanie','Sarcină'],
+    ['tasks.leaveQuest','Quest verlaten','Leave quest','Görevden ayrıl','Opuść quest','Părăsește questul'],
+    ['tasks.helpingQuest','Je helpt mee aan deze quest. Tik om de quest te verlaten.','You are helping with this quest. Tap to leave it.','Bu göreve yardım ediyorsun. Ayrılmak için dokun.','Pomagasz przy tym queście. Dotknij, aby go opuścić.','Ajuți la acest quest. Atinge pentru a-l părăsi.'],
+    ['tasks.retractHelp','Hulpvraag intrekken','Withdraw help request','Yardım isteğini geri çek','Wycofaj prośbę o pomoc','Retrage cererea de ajutor'],
+    ['tasks.askPartyHelp','Vraag iemand uit je party om te helpen en deel de taak samen.','Ask someone in your party to help and share the task.','Ekibinden birinden yardım iste ve görevi birlikte paylaş.','Poproś kogoś z ekipy o pomoc i podzielcie się zadaniem.','Cere ajutorul cuiva din echipa ta și împărțiți sarcina.'],
+    ['tasks.giveHelp','Hulp geven','Help','Yardım et','Pomóż','Ajută'],
+    ['tasks.memberAsksHelp','{{name}} vraagt jouw hulp bij deze quest.','{{name}} asks for your help with this quest.','{{name}} bu görev için yardımını istiyor.','{{name}} prosi cię o pomoc przy tym queście.','{{name}} îți cere ajutorul pentru acest quest.'],
+    ['tasks.questBelongsTo','Deze quest is van {{name}}.','This quest belongs to {{name}}.','Bu görev {{name}} kişisine ait.','Ten quest należy do {{name}}.','Acest quest îi aparține lui {{name}}.'],
+    ['tasks.helpStatusRequested','Hulp gevraagd','Help requested','Yardım istendi','Poproszono o pomoc','Ajutor solicitat'],
+    ['tasks.helpStatusTogether','Samen op quest','Working together','Görevde birlikte','Razem w queście','Împreună la quest'],
+    ['tasks.helpStatusNeeded','Hulp nodig?','Need help?','Yardım lazım mı?','Potrzebujesz pomocy?','Ai nevoie de ajutor?']
+
 ,
     ['tasks.cleanRoom','{{room}} schoonmaken','Clean {{room}}','{{room}} temizliği','Posprzątaj: {{room}}','Curăță: {{room}}']
 ,
