@@ -2441,6 +2441,7 @@
     ['shop.receipt.finish','Afronden','Finish','Tamamla','Zakończ','Finalizează'],
     ['shop.receipt.noCategory','Geen categorie','No category','Kategori yok','Bez kategorii','Fără categorie'],
     ['shop.receipt.unavailable','Gekochte items kunnen nu niet worden verwerkt','Bought items cannot be processed right now','Alınan ürünler şu anda işlenemiyor','Kupione produkty nie mogą być teraz przetworzone','Articolele cumpărate nu pot fi procesate acum'],
+    ['shop.receipt.financeNote','Bon voor {{count}} gekochte items','Receipt for {{count}} purchased items','{{count}} satın alınan ürün için fiş','Paragon za {{count}} kupionych produktów','Bon pentru {{count}} articole cumpărate'],
     ['shop.receipt.none','Er zijn geen gekochte items om te verwerken','There are no bought items to process','İşlenecek alınmış ürün yok','Brak kupionych produktów do przetworzenia','Nu există articole cumpărate de procesat'],
     ['shop.receipt.transactionName','Naam transactie','Transaction name','İşlem adı','Nazwa transakcji','Numele tranzacției'],
     ['shop.receipt.category','Categorie','Category','Kategori','Kategoria','Categorie'],
