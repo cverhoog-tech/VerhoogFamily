@@ -2,6 +2,14 @@
 // ============================================================
 // TAKEN
 // ============================================================
+function legacyTaskTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+function legacyTaskLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
+var LEGACY_DAY_KEYS={maandag:'tasks.day.monday',dinsdag:'tasks.day.tuesday',woensdag:'tasks.day.wednesday',donderdag:'tasks.day.thursday',vrijdag:'tasks.day.friday',zaterdag:'tasks.day.saturday',zondag:'tasks.day.sunday'};
+var LEGACY_DAY_SHORT_KEYS={maandag:'tasks.day.mon.short',dinsdag:'tasks.day.tue.short',woensdag:'tasks.day.wed.short',donderdag:'tasks.day.thu.short',vrijdag:'tasks.day.fri.short',zaterdag:'tasks.day.sat.short',zondag:'tasks.day.sun.short'};
+function legacyDayLabel(day){return legacyTaskTr(LEGACY_DAY_KEYS[day]||'',day);}
+function legacyDayShort(day){return legacyTaskTr(LEGACY_DAY_SHORT_KEYS[day]||'',String(day||'').slice(0,2).toUpperCase());}
+function legacyRecurringViewLabel(value){if(value==='Maandelijks')return legacyTaskTr('tasks.recurring.monthlyTasks','Maandelijkse taken');if(value==='Jaarlijks')return legacyTaskTr('tasks.recurring.yearlyTasks','Jaarlijkse taken');return legacyTaskTr('tasks.recurring.weeklyTasks','Wekelijkse taken');}
+function legacyRecurringOptionLabel(value){if(value==='Maandelijks')return legacyTaskTr('tasks.monthly','Maandelijks');if(value==='Jaarlijks')return legacyTaskTr('tasks.recurring.yearly','Jaarlijks');return legacyTaskTr('tasks.weekly','Wekelijks');}
 
 function renderTasks() {
   var el=document.getElementById('task-content');if(!el)return;
@@ -34,8 +42,8 @@ function toggleTask(id) {
   AppState.save();
   setTimeout(function(){renderTasks();updateStats();},150);
   if(t.done) {
-    awardXP(4,'Taak');
-    addActivity('✅','#e8f5e3',myName+' voltooide "'+t.title+'"');
+    awardXP(4,legacyTaskTr('tasks.taskFallback','Taak'));
+    addActivity('✅','#e8f5e3',legacyTaskTr('tasks.activityCompleted',myName+' voltooide “'+t.title+'”',{name:myName,title:t.title}));
   }
 }
 
@@ -55,10 +63,9 @@ function renderTasksTerugkerend(el) {
   var weekStart = new Date(now);
   weekStart.setDate(now.getDate() - ((todayNum+6)%7));
   weekStart.setHours(0,0,0,0);
-  var months = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-  var ws = weekStart.getDate()+' '+months[weekStart.getMonth()];
   var weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
-  var we = weekEnd.getDate()+' '+months[weekEnd.getMonth()];
+  var ws=weekStart.toLocaleDateString(legacyTaskLocale(),{day:'numeric',month:'short'});
+  var we=weekEnd.toLocaleDateString(legacyTaskLocale(),{day:'numeric',month:'short'});
   var dateRange = ws+' \u2013 '+we;
   if(!window.fqRecurView) window.fqRecurView = 'Wekelijks';
   var weekTasks = taskData.filter(function(t){
@@ -69,29 +76,29 @@ function renderTasksTerugkerend(el) {
   var doneCnt = weekTasks.filter(function(t){return t.done;}).length;
   var totalCnt = weekTasks.length || 1;
   var pct = Math.round(doneCnt/totalCnt*100);
-  var motiv = doneCnt===0 ? 'Laten we beginnen! \uD83D\uDCAA' : doneCnt < totalCnt ? 'Goed bezig! \uD83D\uDCAA' : 'Alles klaar! \uD83C\uDF89';
+  var motiv = doneCnt===0 ? legacyTaskTr('tasks.motivation.start','Laten we beginnen! 💪') : doneCnt < totalCnt ? legacyTaskTr('tasks.motivation.going','Goed bezig! 💪') : legacyTaskTr('tasks.motivation.allDone','Alles klaar! 🎉');
   var circ = 201.06;
   var dash = circ*(1-pct/100);
   var h = '<div style="padding:14px 14px 100px;background:transparent;">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;position:relative;">';
-  h += '<div><div id="fqRecurTitle" onclick="fqToggleRecurView(this)" style="font-size:22px;font-weight:950;color:#111827;letter-spacing:-.4px;cursor:pointer;display:flex;align-items:center;gap:6px;">'+window.fqRecurView+'e taken <span style="font-size:16px;">&#8964;</span></div>';
+  h += '<div><div id="fqRecurTitle" onclick="fqToggleRecurView(this)" style="font-size:22px;font-weight:950;color:#111827;letter-spacing:-.4px;cursor:pointer;display:flex;align-items:center;gap:6px;">'+legacyRecurringViewLabel(window.fqRecurView)+' <span style="font-size:16px;">&#8964;</span></div>';
   h += '<div style="font-size:13px;color:#667085;font-weight:700;margin-top:2px;">'+dateRange+' &#8250;</div></div>';
-  h += '<button onclick="fqScrollToToday()" style="border:1.5px solid #111827;background:transparent;border-radius:99px;padding:8px 16px;font-size:13px;font-weight:850;cursor:pointer;color:#111827;white-space:nowrap;">Vandaag</button></div>';
+  h += '<button onclick="fqScrollToToday()" style="border:1.5px solid #111827;background:transparent;border-radius:99px;padding:8px 16px;font-size:13px;font-weight:850;cursor:pointer;color:#111827;white-space:nowrap;">'+legacyTaskTr('common.today','Vandaag')+'</button></div>';
   h += '<div id="fqRecurDropdown" style="display:none;position:absolute;z-index:50;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);border:1px solid #edf0ec;padding:6px;width:180px;margin-top:-8px;">';
   ['Wekelijks','Maandelijks','Jaarlijks'].forEach(function(m){
     var active = m===window.fqRecurView;
-    h += '<button onclick="fqSetRecurView(\''+m+'\')" style="display:block;width:100%;text-align:left;padding:10px 14px;border:none;border-radius:12px;font-size:14px;font-weight:'+(active?'900':'700')+';background:'+(active?'#edf8e9':'transparent')+';color:'+(active?'#2a7a28':'#111827')+';cursor:pointer;">'+m+'e taken</button>';
+    h += '<button onclick="fqSetRecurView(\''+m+'\')" style="display:block;width:100%;text-align:left;padding:10px 14px;border:none;border-radius:12px;font-size:14px;font-weight:'+(active?'900':'700')+';background:'+(active?'#edf8e9':'transparent')+';color:'+(active?'#2a7a28':'#111827')+';cursor:pointer;">'+legacyRecurringOptionLabel(m)+'</button>';
   });
   h += '</div>';
   h += '<div style="background:#fff;border:1px solid #edf0ec;border-radius:20px;padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 12px rgba(17,24,39,.05);">';
   h += '<div style="position:relative;width:72px;height:72px;flex-shrink:0;">';
   h += '<svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)"><circle cx="36" cy="36" r="32" fill="none" stroke="#e5e7eb" stroke-width="7"/><circle cx="36" cy="36" r="32" fill="none" stroke="#3f7f2f" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+dash+'"/></svg>';
-  h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"><span style="font-size:15px;font-weight:950;color:#111827;line-height:1;">'+doneCnt+'/'+totalCnt+'</span><span style="font-size:10px;color:#667085;font-weight:700;">voltooid</span></div></div>';
+  h += '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"><span style="font-size:15px;font-weight:950;color:#111827;line-height:1;">'+doneCnt+'/'+totalCnt+'</span><span style="font-size:10px;color:#667085;font-weight:700;">'+legacyTaskTr('tasks.completedLower','voltooid')+'</span></div></div>';
   h += '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:900;color:#111827;margin-bottom:6px;">'+motiv+'</div>';
   h += '<div style="height:6px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-bottom:5px;"><div style="height:100%;width:'+pct+'%;background:#3f7f2f;border-radius:99px;"></div></div>';
-  h += '<div style="font-size:12px;color:#667085;font-weight:700;">'+(totalCnt-doneCnt)+' taken te gaan</div></div>';
+  h += '<div style="font-size:12px;color:#667085;font-weight:700;">'+legacyTaskTr('tasks.remaining',(totalCnt-doneCnt)+' taken te gaan',{count:totalCnt-doneCnt})+'</div></div>';
   h += '<div style="font-size:38px;flex-shrink:0;">\uD83E\uDEB4</div></div>';
-  var dayAbbr=['MA','DI','WO','DO','VR','ZA','ZO'];
+  var dayCodes=['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];var dayAbbr=dayCodes.map(legacyDayShort);
   for(var i=0;i<7;i++){
     var dayDate = new Date(weekStart); dayDate.setDate(weekStart.getDate()+i);
     var isToday = dayDate.toDateString()===now.toDateString();
@@ -103,7 +110,7 @@ function renderTasksTerugkerend(el) {
     if(!dayTasks.length){
       h += '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;">';
       h += '<div style="width:36px;text-align:center;"><div style="font-size:11px;font-weight:900;color:'+(isToday?'#3f7f2f':'#9aa3af')+';letter-spacing:.3px;">'+dayAbbr[i]+'</div><div style="font-size:17px;font-weight:950;color:'+(isToday?'#3f7f2f':'#111827')+';">'+dayDate.getDate()+'</div></div>';
-      h += '<div style="flex:1;font-size:13px;color:#c5cbd3;font-style:italic;">Vrije dag</div></div>';
+      h += '<div style="flex:1;font-size:13px;color:#c5cbd3;font-style:italic;">'+legacyTaskTr('tasks.freeDay','Vrije dag')+'</div></div>';
     } else {
       var dI = i;
       dayTasks.forEach(function(t,ti){
@@ -118,7 +125,7 @@ function renderTasksTerugkerend(el) {
         h += '</div>';
         h += '<div style="flex:1;min-width:0;">';
         h += '<div style="font-size:15px;font-weight:'+(t.done?'700':'850')+';color:'+(t.done?'#9aa3af':'#111827')+';text-decoration:'+(t.done?'line-through':'none')+';display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+t.title;
-        if(isToday&&!t.done) h += '<span style="font-size:10px;font-weight:900;background:#f0fdf4;color:#3f7f2f;padding:2px 7px;border-radius:99px;">Vandaag</span>';
+        if(isToday&&!t.done) h += '<span style="font-size:10px;font-weight:900;background:#f0fdf4;color:#3f7f2f;padding:2px 7px;border-radius:99px;">'+legacyTaskTr('common.today','Vandaag')+'</span>';
         h += '</div>';
         if(t.assigned&&t.assigned.length>1){
           var avH='<div style="display:flex;margin-top:3px;">';
@@ -139,7 +146,7 @@ function renderTasksTerugkerend(el) {
     h += '</div>';
   }
   h += '<div style="display:flex;gap:10px;align-items:center;padding:4px 0 16px;">';
-  h += '<button onclick="openAdd(\'task\')" style="flex:1;border:none;border-radius:99px;padding:15px;font-size:15px;font-weight:900;background:#3f7f2f;color:#fff;box-shadow:0 7px 20px rgba(63,127,47,.26);cursor:pointer;">+ Taak toevoegen</button>';
+  h += '<button onclick="openAdd(\'task\')" style="flex:1;border:none;border-radius:99px;padding:15px;font-size:15px;font-weight:900;background:#3f7f2f;color:#fff;box-shadow:0 7px 20px rgba(63,127,47,.26);cursor:pointer;">'+legacyTaskTr('tasks.addTask','+ Taak toevoegen')+'</button>';
   h += '<button style="width:50px;height:50px;border-radius:50%;border:none;background:#6d28d9;color:#fff;font-size:20px;cursor:pointer;box-shadow:0 7px 18px rgba(109,40,217,.28);">&#10022;</button>';
   h += '</div></div>';
   el.innerHTML = h;
@@ -192,13 +199,13 @@ function renderTasksWeek(el) {
           +'</div>';
       });
     } else {
-      html+='<div style="font-size:11px;color:#ccc;text-align:center;padding:10px 0">Vrij</div>';
+      html+='<div style="font-size:11px;color:#ccc;text-align:center;padding:10px 0">'+legacyTaskTr('tasks.free','Vrij')+'</div>';
     }
     html+='</div>';
   });
   html+='</div>';
   html+='<div style="padding:0 16px 16px;text-align:center">'
-    +'<button onclick="openAdd(\'task\')" style="background:#2d5a27;color:#fff;border:none;border-radius:20px;padding:10px 24px;font-size:14px;font-weight:600">+ Taak toevoegen</button>'
+    +'<button onclick="openAdd(\'task\')" style="background:#2d5a27;color:#fff;border:none;border-radius:20px;padding:10px 24px;font-size:14px;font-weight:600">'+legacyTaskTr('tasks.addTask','+ Taak toevoegen')+'</button>'
     +'</div>';
   el.innerHTML=html;
 }
@@ -228,9 +235,9 @@ function renderTasksVast(el) {
     +'<div style="height:6px;background:#f0ede8;border-radius:3px;overflow:hidden;margin-bottom:6px">'
     +'<div style="height:100%;background:#2d5a27;border-radius:3px;width:'+pct+'%;transition:width .3s"></div>'
     +'</div>'
-    +'<div style="font-size:12px;color:#888">'+done+'/'+total+' gedaan deze week</div>'
+    +'<div style="font-size:12px;color:#888">'+legacyTaskTr('tasks.doneThisWeek',done+'/'+total+' gedaan deze week',{done:done,total:total})+'</div>'
     +'</div>'
-    +'<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:#2d5a27;text-transform:uppercase;letter-spacing:.5px">Wekelijks</div>';
+    +'<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:#2d5a27;text-transform:uppercase;letter-spacing:.5px">'+legacyTaskTr('tasks.weekly','Wekelijks')+'</div>';
 
   // Today's tasks first
   var todayRec=weekly.filter(function(r){return r.days.indexOf(today)>-1;});
@@ -271,24 +278,24 @@ function renderTasksVast(el) {
   }
 
   if(todayRec.length) {
-    html+='<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:#2d5a27;text-transform:uppercase">'+today+' · Vandaag</div>';
+    html+='<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:#2d5a27;text-transform:uppercase">'+legacyDayLabel(today)+' · '+legacyTaskTr('common.today','Vandaag')+'</div>';
     todayRec.forEach(function(r){html+=recCardHTML(r);});
   }
   ['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'].forEach(function(day){
     if(day===today)return;
     var dayRec=otherRec.filter(function(r){return r.days.indexOf(day)>-1;});
     if(!dayRec.length)return;
-    html+='<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase">'+day+'</div>';
+    html+='<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:#bbb;text-transform:uppercase">'+legacyDayLabel(day)+'</div>';
     dayRec.forEach(function(r){html+=recCardHTML(r);});
   });
   if(monthly.length) {
-    html+='<div style="padding:12px 16px 4px;font-size:11px;font-weight:700;color:#3a5fb0;text-transform:uppercase;letter-spacing:.5px">🗓 Maandelijks</div>';
+    html+='<div style="padding:12px 16px 4px;font-size:11px;font-weight:700;color:#3a5fb0;text-transform:uppercase;letter-spacing:.5px">🗓 '+legacyTaskTr('tasks.monthly','Maandelijks')+'</div>';
     monthly.forEach(function(r){html+=recCardHTML(r);});
   }
   html+='<div style="padding:16px">'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="openAdd(\'task\')" style="flex:1;background:#2d5a27;color:#fff;border:none;border-radius:20px;padding:10px;font-size:13px;font-weight:600">+ Vaste taak</button>'
-    +'<button onclick="resetRec()" style="background:#f7f5f0;color:#555;border:none;border-radius:20px;padding:10px 16px;font-size:13px;font-weight:600">↺ Reset</button>'
+    +'<button onclick="openAdd(\'task\')" style="flex:1;background:#2d5a27;color:#fff;border:none;border-radius:20px;padding:10px;font-size:13px;font-weight:600">'+legacyTaskTr('tasks.addRecurringTask','+ Vaste taak')+'</button>'
+    +'<button onclick="resetRec()" style="background:#f7f5f0;color:#555;border:none;border-radius:20px;padding:10px 16px;font-size:13px;font-weight:600">↺ '+legacyTaskTr('tasks.reset','Reset')+'</button>'
     +'</div></div>';
   el.innerHTML=html;
 }
@@ -301,12 +308,12 @@ function toggleRec(id) {
   if(isMonthly){
     if(!r.doneDates)r.doneDates={};
     if(r.doneDates[mk]){delete r.doneDates[mk];}
-    else{r.doneDates[mk]=true;r.streak=(r.streak||0)+1;awardXP(6,'Vaste taak');tryAwardTaskSkill(r.who&&r.who[0]?r.who[0]:myName,r.title);addActivity('✅','#e8f5e3',myName+' voltooide "'+r.title+'"');}
+    else{r.doneDates[mk]=true;r.streak=(r.streak||0)+1;awardXP(6,legacyTaskTr('tasks.recurringTask','Vaste taak'));tryAwardTaskSkill(r.who&&r.who[0]?r.who[0]:myName,r.title);addActivity('✅','#e8f5e3',legacyTaskTr('tasks.activityCompleted',myName+' voltooide “'+r.title+'”',{name:myName,title:r.title}));}
   } else {
     if(!r.doneWeek)r.doneWeek={};
     var allDone=r.days.every(function(d){return (r.doneWeek[wk]||[]).indexOf(d)>-1;});
     if(allDone){r.doneWeek[wk]=[];}
-    else{r.doneWeek[wk]=[...r.days];r.streak=(r.streak||0)+1;awardXP(6,'Vaste taak');tryAwardTaskSkill(r.who&&r.who[0]?r.who[0]:myName,r.title);addActivity('✅','#e8f5e3',myName+' voltooide "'+r.title+'"');}
+    else{r.doneWeek[wk]=[...r.days];r.streak=(r.streak||0)+1;awardXP(6,legacyTaskTr('tasks.recurringTask','Vaste taak'));tryAwardTaskSkill(r.who&&r.who[0]?r.who[0]:myName,r.title);addActivity('✅','#e8f5e3',legacyTaskTr('tasks.activityCompleted',myName+' voltooide “'+r.title+'”',{name:myName,title:r.title}));}
   }
   if(el) themeParticles(el);
   setTimeout(function(){renderTasks();},150);
@@ -322,7 +329,7 @@ function toggleRecDay(id, day) {
   else{r.doneWeek[wk].push(day);myXP+=2;}
   if(r.days.every(function(d){return r.doneWeek[wk].indexOf(d)>-1;})){
     r.streak=(r.streak||0)+1;
-    addActivity('✅','#e8f5e3',myName+' voltooide "'+r.title+'"');
+    addActivity('✅','#e8f5e3',legacyTaskTr('tasks.activityCompleted',myName+' voltooide “'+r.title+'”',{name:myName,title:r.title}));
   }
   renderTasks();
 }
@@ -331,12 +338,12 @@ function resetRec() {
   var wk=getWk();
   recurData.forEach(function(r){r.doneWeek[wk]=[];});
   renderTasks();
-  showToast('Week gereset ↺');
+  showToast(legacyTaskTr('tasks.weekReset','Week gereset ↺'));
 }
 
 function editRec(id) {
   var r=recurData.find(function(x){return x.id===id;});if(!r)return;
-  showToast('Bewerken: '+r.title+' (binnenkort beschikbaar)');
+  showToast(legacyTaskTr('tasks.editComingSoon','Bewerken: '+r.title+' (binnenkort beschikbaar)',{title:r.title}));
 }
 
 function renderTasksPersoon(el) {
@@ -404,7 +411,7 @@ function renderTasksPersoon(el) {
     // Naam + level
     html += '<div style="flex:1;">';
     html += '<div style="font-size:19px;font-weight:950;color:#111827;letter-spacing:-.3px;">'+person+'</div>';
-    html += '<div style="font-size:12px;color:'+color+';font-weight:800;margin-top:2px;">⚔️ Level '+s.level+' Avonturier</div>';
+    html += '<div style="font-size:12px;color:'+color+';font-weight:800;margin-top:2px;">⚔️ '+legacyTaskTr('ach.level','Level')+' '+s.level+' '+legacyTaskTr('tasks.adventurer','Avonturier')</div>';
     html += '</div>';
     // XP badge
     html += '<div style="background:'+color+';color:#fff;border-radius:12px;padding:8px 14px;text-align:center;flex-shrink:0;">';
@@ -421,10 +428,10 @@ function renderTasksPersoon(el) {
     // ── Stat cards ──
     html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">';
     var stats = [
-      {label:'Quests', val:s.tasks.length, icon:'📋'},
-      {label:'Voltooid', val:s.done.length, icon:'✅'},
-      {label:'Raids', val:s.raids, icon:'⚔️'},
-      {label:'Dungeons', val:s.dungeons, icon:'🏰'},
+      {label:legacyTaskTr('tasks.quests','Quests'), val:s.tasks.length, icon:'📋'},
+      {label:legacyTaskTr('tasks.completedWord','Voltooid'), val:s.done.length, icon:'✅'},
+      {label:legacyTaskTr('tasks.raids','Raids'), val:s.raids, icon:'⚔️'},
+      {label:legacyTaskTr('tasks.dungeons','Dungeons'), val:s.dungeons, icon:'🏰'},
     ];
     stats.forEach(function(st) {
       html += '<div style="background:#fff;border:1px solid #edf0ec;border-radius:14px;padding:10px 6px;text-align:center;box-shadow:0 2px 8px rgba(17,24,39,.04);">';
@@ -437,7 +444,7 @@ function renderTasksPersoon(el) {
 
     // ── Open quests ──
     if(s.open.length > 0) {
-      html += '<div style="font-size:13px;font-weight:900;color:#667085;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;">Open quests</div>';
+      html += '<div style="font-size:13px;font-weight:900;color:#667085;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;">'+legacyTaskTr('tasks.openQuests','Open quests')+'</div>';
       s.open.forEach(function(x) {
         var isRaid=x[1]&&x[1].indexOf('RAID')>-1;
         var isDung=x[1]&&x[1].indexOf('DUNGEON')>-1;
@@ -451,7 +458,7 @@ function renderTasksPersoon(el) {
         html += '</div><div class="fqArrow">›</div></div>';
       });
     } else {
-      html += '<div style="text-align:center;padding:16px;color:#9aa7bd;font-size:14px;font-weight:700;">🎉 Alle quests voltooid!</div>';
+      html += '<div style="text-align:center;padding:16px;color:#9aa7bd;font-size:14px;font-weight:700;">'+legacyTaskTr('tasks.allQuestsCompleted','🎉 Alle quests voltooid!')+'</div>';
     }
 
     html += '</div>';
@@ -461,3 +468,5 @@ function renderTasksPersoon(el) {
   html += '</div>';
   el.innerHTML = html;
 }
+
+window.addEventListener('familyapp:language-changed',function(){try{renderTasks();}catch(error){}});
