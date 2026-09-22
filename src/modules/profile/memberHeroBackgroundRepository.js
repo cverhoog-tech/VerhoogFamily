@@ -3,31 +3,32 @@
 (function(){
   if(window.MemberHeroBackgroundRepository)return;
   var VERSION='2.0.0',CLOUD_NAME='rg86slp4',CLOUDINARY_ORIGIN='https://res.cloudinary.com/'+CLOUD_NAME+'/image/upload/';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
   function db(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}
   function own(uid){var c=context();return !!(c&&c.ready&&c.uid&&c.householdId&&String(uid)===String(c.uid));}
-  function path(uid){var c=context();if(!c||!c.householdId)throw new Error('Geen actieve household-context.');return 'families/'+c.householdId+'/members/'+uid+'/heroBackground';}
+  function path(uid){var c=context();if(!c||!c.householdId)throw new Error(tr('profile.hero.noHouseholdContext','Geen actieve household-context.'));return 'families/'+c.householdId+'/members/'+uid+'/heroBackground';}
   function stamp(payload){var c=context();return Object.assign({},payload,{updatedAt:Date.now(),updatedByUid:c&&c.uid||''});}
   function number(v,f){var n=Number(v);return isFinite(n)?n:f;}
   function cleanText(v,max){return String(v==null?'':v).slice(0,max||500);}
   function validUrl(v){return String(v||'').indexOf(CLOUDINARY_ORIGIN)===0;}
 
   function setPreset(uid,presetId){
-    if(!own(uid))return Promise.reject(new Error('Je kunt alleen je eigen hero-achtergrond aanpassen.'));
+    if(!own(uid))return Promise.reject(new Error(tr('profile.hero.onlyOwn','Je kunt alleen je eigen hero-achtergrond aanpassen.')));
     var catalog=window.HeroBackdropCatalog,preset=catalog&&catalog.getPreset?catalog.getPreset(presetId):null;
-    if(!preset)return Promise.reject(new Error('Onbekende achtergrondpreset.'));
-    var d=db();if(!d)return Promise.reject(new Error('Firebase is niet beschikbaar.'));
+    if(!preset)return Promise.reject(new Error(tr('profile.hero.unknownPreset','Onbekende achtergrondpreset.')));
+    var d=db();if(!d)return Promise.reject(new Error(tr('profile.hero.firebaseUnavailable','Firebase is niet beschikbaar.')));
     return d.ref(path(uid)).set(stamp({type:'preset',presetId:preset.id}));
   }
 
   function setUpload(uid,upload){
-    if(!own(uid))return Promise.reject(new Error('Je kunt alleen je eigen hero-achtergrond aanpassen.'));
+    if(!own(uid))return Promise.reject(new Error(tr('profile.hero.onlyOwn','Je kunt alleen je eigen hero-achtergrond aanpassen.')));
     upload=upload&&typeof upload==='object'?upload:{};
-    if(upload.provider!=='cloudinary'||upload.cloudName!==CLOUD_NAME)return Promise.reject(new Error('Ongeldige afbeeldingsprovider.'));
-    if(!validUrl(upload.imageUrl))return Promise.reject(new Error('Ongeldige Cloudinary-afbeeldingsURL.'));
-    if(String(upload.contentType||'').indexOf('image/')!==0)return Promise.reject(new Error('Alleen afbeeldingen zijn toegestaan.'));
-    if(!upload.assetId||!upload.publicId)return Promise.reject(new Error('Onvolledige Cloudinary uploadmetadata.'));
-    var d=db();if(!d)return Promise.reject(new Error('Firebase is niet beschikbaar.'));
+    if(upload.provider!=='cloudinary'||upload.cloudName!==CLOUD_NAME)return Promise.reject(new Error(tr('profile.hero.invalidProvider','Ongeldige afbeeldingsprovider.')));
+    if(!validUrl(upload.imageUrl))return Promise.reject(new Error(tr('profile.hero.invalidUrl','Ongeldige Cloudinary-afbeeldingsURL.')));
+    if(String(upload.contentType||'').indexOf('image/')!==0)return Promise.reject(new Error(tr('profile.hero.imagesOnly','Alleen afbeeldingen zijn toegestaan.')));
+    if(!upload.assetId||!upload.publicId)return Promise.reject(new Error(tr('profile.hero.incompleteMetadata','Onvolledige Cloudinary uploadmetadata.')));
+    var d=db();if(!d)return Promise.reject(new Error(tr('profile.hero.firebaseUnavailable','Firebase is niet beschikbaar.')));
     var payload={
       type:'upload',provider:'cloudinary',cloudName:CLOUD_NAME,
       assetId:cleanText(upload.assetId,100),publicId:cleanText(upload.publicId,300),version:Math.max(0,Math.round(number(upload.version,0))),format:cleanText(upload.format,20),
@@ -41,8 +42,8 @@
   }
 
   function reset(uid){
-    if(!own(uid))return Promise.reject(new Error('Je kunt alleen je eigen hero-achtergrond aanpassen.'));
-    var d=db();if(!d)return Promise.reject(new Error('Firebase is niet beschikbaar.'));
+    if(!own(uid))return Promise.reject(new Error(tr('profile.hero.onlyOwn','Je kunt alleen je eigen hero-achtergrond aanpassen.')));
+    var d=db();if(!d)return Promise.reject(new Error(tr('profile.hero.firebaseUnavailable','Firebase is niet beschikbaar.')));
     return d.ref(path(uid)).remove();
   }
 
