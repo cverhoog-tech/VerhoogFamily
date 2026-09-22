@@ -2073,6 +2073,18 @@
     ['tasks.swap.acceptedBy','{{name}} heeft “{{task}}” overgenomen','{{name}} took over “{{task}}”','{{name}}, “{{task}}” görevini devraldı','{{name}} przejął/przejęła „{{task}}”','{{name}} a preluat „{{task}}”'],
     ['tasks.swap.declinedBy','{{name}} heeft het ruilverzoek geweigerd','{{name}} declined the swap request','{{name}} takas isteğini reddetti','{{name}} odrzucił(a) prośbę o zamianę','{{name}} a refuzat cererea de schimb'],
     ['tasks.swap.taskFallback','de taak','the task','görev','zadanie','sarcina'],
+    ['tasks.swap.requestSentTo','Ruilverzoek verstuurd naar {{name}}','Swap request sent to {{name}}','Takas isteği {{name}} kişisine gönderildi','Wysłano prośbę o zamianę do {{name}}','Cererea de schimb a fost trimisă lui {{name}}'],
+    ['tasks.swap.sendFailed','Ruilverzoek versturen mislukt','Could not send swap request','Takas isteği gönderilemedi','Nie udało się wysłać prośby o zamianę','Cererea de schimb nu a putut fi trimisă'],
+    ['tasks.swap.requestTitle','Ruilverzoek','Swap request','Takas isteği','Prośba o zamianę','Cerere de schimb'],
+    ['tasks.swap.requestSentTitle','Ruilverzoek verstuurd','Swap request sent','Takas isteği gönderildi','Prośba o zamianę wysłana','Cerere de schimb trimisă'],
+    ['tasks.swap.waitingFor','Wachten op antwoord van {{name}}.','Waiting for a response from {{name}}.','{{name}} kişisinin yanıtı bekleniyor.','Oczekiwanie na odpowiedź od {{name}}.','Se așteaptă răspunsul lui {{name}}.'],
+    ['tasks.swap.decline','Weigeren','Decline','Reddet','Odrzuć','Refuză'],
+    ['tasks.swap.retract','Intrekken','Withdraw','Geri çek','Wycofaj','Retrage'],
+    ['tasks.swap.declined','Ruilverzoek geweigerd','Swap request declined','Takas isteği reddedildi','Prośba o zamianę odrzucona','Cererea de schimb a fost refuzată'],
+    ['tasks.swap.retracted','Ruilverzoek ingetrokken','Swap request withdrawn','Takas isteği geri çekildi','Prośba o zamianę wycofana','Cererea de schimb a fost retrasă'],
+    ['tasks.swap.unavailable','Ruilverzoek niet beschikbaar','Swap request unavailable','Takas isteği kullanılamıyor','Prośba o zamianę jest niedostępna','Cererea de schimb nu este disponibilă'],
+    ['tasks.swap.notFound','Ruilverzoek niet gevonden','Swap request not found','Takas isteği bulunamadı','Nie znaleziono prośby o zamianę','Cererea de schimb nu a fost găsită']
+,
 
     ['tasks.shared.repoNotReady','Taakopslag is nog niet klaar','Task storage is not ready yet','Görev deposu henüz hazır değil','Magazyn zadań nie jest jeszcze gotowy','Stocarea sarcinilor nu este încă gata'],
     ['tasks.shared.helpHouseholdOpen','Er staat al een hulpvraag open voor het hele gezin','A help request is already open for the whole family','Tüm aile için zaten açık bir yardım isteği var','Prośba o pomoc jest już otwarta dla całej rodziny','Există deja o cerere de ajutor deschisă pentru întreaga familie'],
