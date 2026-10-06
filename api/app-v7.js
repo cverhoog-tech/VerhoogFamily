@@ -28,6 +28,7 @@ module.exports = async function handler(req, res) {
   }
 
   body = body
+    .replace('src/core/navigation.js"', 'src/core/navigation.js?v=cleaning-refresh-1"')
     .replace('<html lang="nl">', '<html lang="nl" class="familyapp-auth-prepaint">')
     .replaceAll('/api/brand-icon?variant=192&v=5', '/api/brand-icon?variant=192&v=9')
     .replaceAll('/api/brand-icon?variant=180&v=5', '/api/brand-icon?variant=180&v=9')
@@ -113,8 +114,8 @@ module.exports = async function handler(req, res) {
   if (!body.includes('calendarCleaningPresentationV1.js?v=1')) {
     body = body.replace('</body>', '  <script src="/src/modules/calendar/calendarCleaningPresentationV1.js?v=1"></script>\n</body>');
   }
-  if (!body.includes('cleaningPlanRefreshV1.js?v=2')) {
-    body = body.replace('</body>', '  <script src="/src/modules/cleaning/cleaningPlanRefreshV1.js?v=2"></script>\n</body>');
+  if (!body.includes('cleaningPlanRefreshV1.js?v=3')) {
+    body = body.replace('</body>', '  <script src="/src/modules/cleaning/cleaningPlanRefreshV1.js?v=3"></script>\n</body>');
   }
 
   // Feedback round 2 — keep these as small companions around existing canonical owners.

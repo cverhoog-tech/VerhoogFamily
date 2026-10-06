@@ -85,7 +85,7 @@
 
     // Use the canonical v=1 module identity already shared by navigation and
     // Round4. This does not create a second CleaningScreen module instance.
-    state.restorePromise=import('/src/modules/cleaning/cleaningScreen.js?v=1')
+    state.restorePromise=import('/src/modules/cleaning/cleaningScreen.js?v=2')
       .then(function(mod){
         if(window._currentScreen!=='cleaning'||!root.isConnected)return;
         var liveScreen=document.getElementById('screen-cleaning');
