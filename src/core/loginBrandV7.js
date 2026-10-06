@@ -8,6 +8,18 @@
   function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function providers(){return window.FamilyAppAuthProviders||{};}
   function q(sel){return screen?screen.querySelector(sel):null;}
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+  function languageMarkup(){
+    var i18n=window.FamilyI18n;
+    if(!i18n||typeof i18n.getOptions!=='function')return '';
+    var pref=typeof i18n.getPreference==='function'?i18n.getPreference():'nl';
+    var options=[{code:i18n.systemValue||'system',nativeName:tr('profile.language.system','Systeemstandaard')}].concat(i18n.getOptions());
+    return '<div class="flv7-language-row" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 10px">'
+      +'<label for="flv7-language" style="font-size:11px;font-weight:800;color:rgba(255,255,255,.78)">'+esc(tr('profile.language.title','Taal'))+'</label>'
+      +'<select id="flv7-language" aria-label="'+esc(tr('profile.language.title','Taal'))+'" style="min-height:34px;max-width:180px;border:1px solid rgba(255,255,255,.26);border-radius:10px;background:rgba(14,22,18,.72);color:#fff;padding:6px 28px 6px 9px;font:inherit;font-size:11px;font-weight:800">'
+      +options.map(function(item){return '<option value="'+esc(item.code)+'"'+(item.code===pref?' selected':'')+'>'+esc(item.nativeName)+'</option>';}).join('')
+      +'</select></div>';
+  }
   function setMessage(text){
     var el=q('#flv7-message');
     if(!el)return;
@@ -68,6 +80,7 @@
       +'<div class="flv7-tagline"><span>'+tr('auth.brandTagline','SAMEN RUST EN OVERZICHT')+'</span><i></i></div>'
       +'</section>'
       +'<section class="flv7-panel" aria-label="'+tr('auth.loginAria','Inloggen bij FamilyApp')+'">'
+      +languageMarkup()
       +'<div id="flv7-message" class="flv7-message" hidden></div>'
       +'<button type="button" id="flv7-login" class="flv7-btn flv7-primary"><span>'+tr('auth.login','Inloggen')+'</span><b aria-hidden="true">→</b></button>'
       +'<button type="button" id="flv7-register" class="flv7-btn flv7-secondary">'+tr('auth.register','Account maken')+'</button>'
@@ -107,10 +120,11 @@
     mode=next==='register'?'register':'login';
     if(typeof window.showLoginTab==='function')window.showLoginTab(mode);
     else window._loginTab=mode;
-    var title=q('#flv7-sheet-title'),copy=q('#flv7-sheet-copy'),pass=q('#auth-password');
+    var title=q('#flv7-sheet-title'),copy=q('#flv7-sheet-copy'),pass=q('#auth-password'),submitBtn=q('#auth-submit-btn');
     if(title)title.textContent=mode==='register'?tr('auth.register','Account maken'):tr('auth.login','Inloggen');
     if(copy)copy.textContent=mode==='register'?tr('auth.registerCopy','Maak je FamilyApp-account aan. Daarna stel je je huishouden in.'):tr('auth.loginCopy','Log in met je e-mailadres en wachtwoord.');
     if(pass)pass.setAttribute('autocomplete',mode==='register'?'new-password':'current-password');
+    if(submitBtn)submitBtn.textContent=mode==='register'?tr('auth.register','Account maken'):tr('auth.login','Inloggen');
     window.dispatchEvent(new CustomEvent('familyapp:auth-mode-change',{detail:{mode:mode}}));
   }
   function openSheet(next){
@@ -151,6 +165,10 @@
     q('#flv7-close').addEventListener('click',closeSheet);
     q('.flv7-sheet-backdrop').addEventListener('click',closeSheet);
     q('#auth-submit-btn').addEventListener('click',submit);
+    var language=q('#flv7-language');
+    if(language)language.addEventListener('change',function(){
+      if(window.FamilyI18n&&typeof window.FamilyI18n.setPreference==='function')window.FamilyI18n.setPreference(language.value);
+    });
     q('#login-form').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();submit();}});
     document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet();});
   }
