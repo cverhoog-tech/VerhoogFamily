@@ -9,18 +9,15 @@
   function levelCopy(row){try{if(typeof window.getLocalizedAchievementLevel==='function')return window.getLocalizedAchievementLevel(row);}catch(error){}return{title:row&&row.title||tr('ach.badge.genericName','Achievement'),desc:row&&row.desc||''};}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function safeNum(v){v=Number(v);return isFinite(v)?v:0;}
-  function currentXp(){
-    try{
-      if(window.ProgressionUidBridge&&typeof ProgressionUidBridge.getCurrentXp==='function')return safeNum(ProgressionUidBridge.getCurrentXp());
-    }catch(e){}
-    return safeNum(window.myXP);
-  }
+  var view={xp:0,badges:{},doneTasks:0};
+  function currentXp(){return safeNum(view.xp);}
   function levelFor(xp){try{return Math.max(1,safeNum(window.getLevel&&getLevel(xp))||1);}catch(e){return 1;}}
   function titleFor(level){var row=(window.LEVEL_TITLES||[])[Math.max(0,Math.min(level-1,(window.LEVEL_TITLES||[]).length-1))]||{};var copy=levelCopy(row);return{title:copy.title||tr('ach.badge.genericName','Achievement'),desc:copy.desc||tr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.')};}
   function bounds(level){var xs=window.LEVEL_XP||[];var prev=safeNum(xs[level-1]);var next=safeNum(xs[Math.min(level,xs.length-1)]);if(next<=prev)next=prev+200;return{prev:prev,next:next};}
-  function unlocked(id){return !!(window.unlockedBadges&&window.unlockedBadges[id]);}
-  function maxStreak(){try{return (window.recurData||[]).reduce(function(m,r){return Math.max(m,safeNum(r.streak));},0);}catch(e){return 0;}}
-  function doneTasks(){try{return (window.taskData||[]).filter(function(t){return t&&t.done;}).length;}catch(e){return 0;}}
+  function unlocked(id){return !!(view.badges&&view.badges[id]);}
+  function maxStreak(){return '—';}
+  function doneTasks(){return safeNum(view.doneTasks);}
+
   function category(b){var id=String(b.id||'');if(/task|quest|routine/.test(id))return'Quests';if(/streak/.test(id))return'Streaks';if(/skill/.test(id))return'Skills';if(/trade|accepted|helper|party/.test(id))return'Samen';if(/saving|finance|income|budget|million/.test(id))return'Financiën';return'Overig';}
   function rarityLabel(r){return{legendary:tr('ach.rarity.legendaryShort','Legendarisch'),epic:tr('ach.rarity.epicShort','Episch'),rare:tr('ach.rarity.rareShort','Zeldzaam'),common:tr('ach.rarity.commonShort','Gewoon')}[r]||tr('ach.badge.genericName','Achievement');}
 
@@ -37,6 +34,8 @@
   function render(){
     var el=document.getElementById('ach-content');if(!el)return;
     ensureCss();
+    view=window.AchievementsViewData&&window.AchievementsViewData.get?window.AchievementsViewData.get():null;
+    if(!view||!view.ready){el.textContent=tr('ach.loading','Achievements worden geladen…');return;}
     var xp=currentXp(),level=levelFor(xp),title=titleFor(level),b=bounds(level),progress=Math.max(0,Math.min(100,Math.round((xp-b.prev)/(b.next-b.prev)*100))),badges=Array.isArray(window.BADGES)?window.BADGES:[],unlockedCount=badges.filter(function(x){return unlocked(x.id);}).length;
     var cats=['Alle','Quests','Streaks','Samen','Skills','Financiën','Overig'];
     var catLabels={Alle:tr('ach.cat.all','Alle'),Quests:tr('ach.cat.quests','Quests'),Streaks:tr('ach.cat.streaks','Streaks'),Samen:tr('ach.cat.together','Samen'),Skills:tr('ach.cat.skills','Skills'),Financiën:tr('ach.cat.finance','Financiën'),Overig:tr('ach.cat.other','Overig')};
