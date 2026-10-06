@@ -11,6 +11,7 @@
   if(window.RecurringTaskRewardBridge)return;
 
   var VERSION='1.0.1';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   var installedToggle=false;
   var installedDay=false;
   var rawToggle=null;
@@ -48,7 +49,8 @@
     var currentAward=window.awardXP;
     if(typeof currentAward!=='function')return fn();
     var proxy=function(amount,reason,options){
-      if(String(reason||'').toLowerCase()==='vaste taak'){
+      var reasonText=String(reason||'').toLowerCase(),localizedRecurring=String(tr('tasks.recurringTask','Vaste taak')).toLowerCase();
+      if(reasonText==='vaste taak'||reasonText===localizedRecurring){
         options=options&&typeof options==='object'?Object.assign({},options):{};
         if(!options.key)Object.assign(options,rewardOptions(r,occurrence));
       }
@@ -99,7 +101,7 @@
       var afterDays=(r.doneWeek&&r.doneWeek[wk])||[];
       var nowDone=afterDays.indexOf(day)>-1;
       if(!wasDone&&nowDone&&typeof window.awardXP==='function'){
-        window.awardXP(2,'Vaste taak dag',rewardOptions(r,'week:'+wk+':day:'+String(day)));
+        window.awardXP(2,tr('tasks.recurringDayReward','Vaste taak dag'),rewardOptions(r,'week:'+wk+':day:'+String(day)));
       }
       return result;
     };

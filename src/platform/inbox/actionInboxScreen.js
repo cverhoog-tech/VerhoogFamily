@@ -16,14 +16,15 @@
   var cleaningHydratePromise=null;
 
   var DOMAIN_LABEL={
-    'task.help':{icon:'✅',label:'Taken'},
-    'task.swap':{icon:'✅',label:'Taken — ruilen'},
-    'partyQuest.invite':{icon:'⚔️',label:'Party Quest'},
-    'cleaning.help':{icon:'🧹',label:'Schoonmaken — hulp'},
-    'cleaning.occurrence.transfer':{icon:'🧹',label:'Schoonmaken — overdracht'},
-    'cleaning.occurrence.counter':{icon:'🧹',label:'Schoonmaken — tegenvoorstel'}
+    'task.help':{icon:'✅',key:'inbox.tasks',fallback:'Taken'},
+    'task.swap':{icon:'✅',key:'inbox.taskSwap',fallback:'Taken — ruilen'},
+    'partyQuest.invite':{icon:'⚔️',key:'inbox.partyQuest',fallback:'Party Quest'},
+    'cleaning.help':{icon:'🧹',key:'inbox.cleanHelp',fallback:'Schoonmaken — hulp'},
+    'cleaning.occurrence.transfer':{icon:'🧹',key:'inbox.cleanTransfer',fallback:'Schoonmaken — overdracht'},
+    'cleaning.occurrence.counter':{icon:'🧹',key:'inbox.cleanCounter',fallback:'Schoonmaken — tegenvoorstel'}
   };
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function context(){try{return window.HouseholdContext&&HouseholdContext.snapshot?HouseholdContext.snapshot():null;}catch(e){return null;}}
 
@@ -111,19 +112,19 @@
   }
 
   function cardHtml(item){
-    var meta=DOMAIN_LABEL[item.type]||{icon:'✉️',label:item.domain||''};
+    var meta=DOMAIN_LABEL[item.type]||{icon:'✉️',fallback:item.domain||''};var domainLabel=meta.key?tr(meta.key,meta.fallback):meta.fallback;
     var busy=busyId===item.id;
     var primary=(item.actions||[]).filter(function(a){return!a.secondary;});
     var secondary=(item.actions||[]).filter(function(a){return a.secondary;});
     var buttonsHtml=primary.map(function(a,index){
       var cls=index===0?'aib-btn-primary':'aib-btn-secondary';
-      return '<button type="button" class="aib-btn '+cls+'" data-aib-action="'+esc(item.id)+'|'+esc(a.id)+'"'+(busy?' disabled':'')+'>'+(busy?'Bezig…':esc(a.label))+'</button>';
+      return '<button type="button" class="aib-btn '+cls+'" data-aib-action="'+esc(item.id)+'|'+esc(a.id)+'"'+(busy?' disabled':'')+'>'+(busy?esc(tr('inbox.busy','Bezig…')):esc(a.label))+'</button>';
     }).join('');
     var detailHtml=secondary.map(function(a){
       return '<button type="button" class="aib-detail-link" data-aib-action="'+esc(item.id)+'|'+esc(a.id)+'"'+(busy?' disabled':'')+'>'+esc(a.label)+'</button>';
     }).join('');
     return '<section class="aib-card" data-aib-card="'+esc(item.id)+'">'
-      +'<div class="aib-domain">'+meta.icon+' '+esc(meta.label)+'</div>'
+      +'<div class="aib-domain">'+meta.icon+' '+esc(domainLabel)+'</div>'
       +'<p class="aib-title">'+esc(item.title)+'</p>'
       +'<p class="aib-body">'+esc(item.body)+'</p>'
       +'<div class="aib-actions">'+buttonsHtml+'</div>'
@@ -134,12 +135,12 @@
   function stateHtml(){
     var ctx=context();
     if(!ctx||!ctx.ready){
-      return '<div class="aib-state"><strong>Inbox wordt geladen…</strong><span>Even geduld terwijl je gezinsdata laadt.</span></div>';
+      return '<div class="aib-state"><strong>'+esc(tr('inbox.loading','Inbox wordt geladen…'))+'</strong><span>'+esc(tr('inbox.loadingHint','Even geduld terwijl je gezinsdata laadt.'))+'</span></div>';
     }
     if(errorMessage){
-      return '<div class="aib-state"><strong>Er ging iets mis</strong><span>'+esc(errorMessage)+'</span><br><button type="button" class="aib-retry" id="aib-retry-btn">Opnieuw proberen</button></div>';
+      return '<div class="aib-state"><strong>'+esc(tr('inbox.error','Er ging iets mis'))+'</strong><span>'+esc(errorMessage)+'</span><br><button type="button" class="aib-retry" id="aib-retry-btn">'+esc(tr('inbox.retry','Opnieuw proberen'))+'</button></div>';
     }
-    return '<div class="aib-state"><strong>Niets te beslissen ✓</strong><span>Nieuwe verzoeken verschijnen hier automatisch.</span></div>';
+    return '<div class="aib-state"><strong>'+esc(tr('inbox.empty','Niets te beslissen ✓'))+'</strong><span>'+esc(tr('inbox.emptyHint','Nieuwe verzoeken verschijnen hier automatisch.'))+'</span></div>';
   }
 
   function render(items){
@@ -156,11 +157,11 @@
   }
 
   function successMessage(actionId){
-    if(actionId==='decline'||actionId==='decline-help'||actionId==='decline-counter')return'Afgewezen';
-    if(actionId==='counter')return'Tegenvoorstel geopend';
-    if(actionId==='accept-help')return'Hulp geaccepteerd ✓';
-    if(actionId==='accept-counter')return'Tegenvoorstel geaccepteerd ✓';
-    return'Geaccepteerd ✓';
+    if(actionId==='decline'||actionId==='decline-help'||actionId==='decline-counter')return tr('inbox.declined','Afgewezen');
+    if(actionId==='counter')return tr('inbox.counterOpened','Tegenvoorstel geopend');
+    if(actionId==='accept-help')return tr('inbox.helpAccepted','Hulp geaccepteerd ✓');
+    if(actionId==='accept-counter')return tr('inbox.counterAccepted','Tegenvoorstel geaccepteerd ✓');
+    return tr('inbox.accepted','Geaccepteerd ✓');
   }
 
   function onClick(event){
@@ -181,12 +182,13 @@
       if(typeof window.showToast==='function')window.showToast(successMessage(actionId));
     }).catch(function(error){
       busyId=null;
-      errorMessage=(error&&error.message)||'Actie kon niet worden uitgevoerd.';
+      errorMessage=(error&&error.message)||tr('inbox.actionFailed','Actie kon niet worden uitgevoerd.');
       render();
     });
   }
 
   document.addEventListener('click',onClick,true);
+  window.addEventListener('familyapp:language-changed',function(){render();});
 
   window.ActionInboxScreen={version:VERSION,ensure:ensure,render:render,hydrateCleaningDecisions:hydrateCleaningDecisions};
 })();

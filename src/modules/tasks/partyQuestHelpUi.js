@@ -8,6 +8,7 @@
   if(window.PartyQuestHelpUi)return;
 
   var VERSION='1.0.1';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   var quests=[],incoming=[],repoUnsubscribe=null,boundRepo=null,generation=0,lastIdentity=null;
   var observer=null,startTimer=null,decorateTimer=null;
 
@@ -20,7 +21,7 @@
   function requests(q){return q&&q.helpRequests&&typeof q.helpRequests==='object'?q.helpRequests:{};}
   function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
   function memberId(m){return String(m&&(m.uid||m.id)||'');}
-  function memberName(id){var m=members().find(function(x){return memberId(x)===String(id||'');});return (m&&(m.displayName||m.name))||'Gezinslid';}
+  function memberName(id){var m=members().find(function(x){return memberId(x)===String(id||'');});return (m&&(m.displayName||m.name))||tr('cleaning.familyMember','Gezinslid');}
   function taskById(id){return (window.taskData||[]).find(function(t){return String(t&&(t.id||t._key)||'')===String(id||'');})||null;}
   function activeMember(m){return !!(m&&(!m.status||m.status==='active'));}
   function participant(q,id){var key=String(id||''),inv=invitees(q)[key];return String(q&&q.inviterUid||'')===key||!!(inv&&(inv.status==='active'||inv.status==='pending'));}
@@ -41,41 +42,41 @@
   }
 
   function decorateCard(){
-    if(decorateTimer)clearTimeout(decorateTimer);decorateTimer=setTimeout(function(){decorateTimer=null;var b=document.getElementById('tch-party-quest');if(!b||!incoming.length)return;var pending=window.PartyQuestInvites&&typeof PartyQuestInvites.pending==='function'?PartyQuestInvites.pending():[];if(pending&&pending.length)return;var h=b.querySelector('b'),s=b.querySelector('small'),x=incoming[0];if(h)h.textContent=incoming.length===1?'Hulp gevraagd voor Party Quest':incoming.length+' Party Quest-hulpvragen';if(s)s.textContent=(x.request.requesterName||'Gezinslid')+' · '+(x.quest.questTitle||'Party Quest');},0);
+    if(decorateTimer)clearTimeout(decorateTimer);decorateTimer=setTimeout(function(){decorateTimer=null;var b=document.getElementById('tch-party-quest');if(!b||!incoming.length)return;var pending=window.PartyQuestInvites&&typeof PartyQuestInvites.pending==='function'?PartyQuestInvites.pending():[];if(pending&&pending.length)return;var h=b.querySelector('b'),s=b.querySelector('small'),x=incoming[0];if(h)h.textContent=incoming.length===1?tr('party.helpRequestedSingle','Hulp gevraagd voor Party Quest'):tr('party.helpRequestedMany',incoming.length+' Party Quest-hulpvragen',{count:incoming.length});if(s)s.textContent=(x.request.requesterName||tr('cleaning.familyMember','Gezinslid'))+' · '+(x.quest.questTitle||'Party Quest');},0);
   }
 
   function patchActiveOverlay(){
     var root=document.getElementById('party-quest-active-view');if(!root)return;
     root.querySelectorAll('[data-action="end"]').forEach(function(endBtn){
-      var id=endBtn.getAttribute('data-id');if(!id||endBtn.parentNode.querySelector('[data-party-help-owner="'+id+'"]'))return;var q=quests.find(function(x){return String(x&&(x.id||x._key))===String(id);});if(!q)return;var help=document.createElement('button');help.type='button';help.setAttribute('data-party-help-owner',id);help.textContent=openRequest(q)?'Hulpvraag beheren':'Hulp vragen';help.style.cssText='width:100%;margin-top:10px;border:1px solid rgba(216,181,82,.35);border-radius:12px;padding:10px;background:#241b35;color:#f4ddb0;font-weight:850';help.onclick=function(e){e.preventDefault();e.stopPropagation();openOwner(id);};endBtn.parentNode.insertBefore(help,endBtn);
+      var id=endBtn.getAttribute('data-id');if(!id||endBtn.parentNode.querySelector('[data-party-help-owner="'+id+'"]'))return;var q=quests.find(function(x){return String(x&&(x.id||x._key))===String(id);});if(!q)return;var help=document.createElement('button');help.type='button';help.setAttribute('data-party-help-owner',id);help.textContent=openRequest(q)?tr('party.manageHelp','Hulpvraag beheren'):tr('tasks.askHelp','Hulp vragen');help.style.cssText='width:100%;margin-top:10px;border:1px solid rgba(216,181,82,.35);border-radius:12px;padding:10px;background:#241b35;color:#f4ddb0;font-weight:850';help.onclick=function(e){e.preventDefault();e.stopPropagation();openOwner(id);};endBtn.parentNode.insertBefore(help,endBtn);
     });
   }
 
   function openOwner(id){
-    var q=quests.find(function(x){return String(x&&(x.id||x._key))===String(id);})||(repo()&&repo().getById?repo().getById(id):null);if(!q)return false;var me=uid();if(!me||String(q.inviterUid||'')!==me){toast('Alleen de maker kan hulp vragen');return false;}
+    var q=quests.find(function(x){return String(x&&(x.id||x._key))===String(id);})||(repo()&&repo().getById?repo().getById(id):null);if(!q)return false;var me=uid();if(!me||String(q.inviterUid||'')!==me){toast(tr('party.creatorHelpOnly','Alleen de maker kan hulp vragen'));return false;}
     var existing=openRequest(q);
     if(existing){
-      var accepted=Object.keys(existing.acceptedByUids||{}).length,declined=Object.keys(existing.declinedByUids||{}).length;var audience=existing.audience==='household'?'Open voor het hele gezin':'Gericht aan '+(existing.targetName||memberName(existing.targetUid));
-      var e=modal('<h3 style="margin:0;font:800 20px Georgia,serif">Hulpvraag actief</h3><p style="color:#aaa1b4;font-size:12px;line-height:1.45">'+esc(q.questTitle||'Party Quest')+'<br>'+esc(audience)+(existing.audience==='household'?'<br>'+accepted+' geholpen · '+declined+' niet voor mij':'')+'</p>'+button('Hulpvraag intrekken','data-retract','')+button('Sluiten','data-close','1'));
-      e.querySelector('[data-close]').onclick=close;e.querySelector('[data-retract]').onclick=function(){var b=this;b.disabled=true;var s=service();Promise.resolve(s&&s.retractHelp?s.retractHelp(id,existing.occurrenceId||existing.id):Promise.reject(new Error('Service niet klaar'))).then(function(){toast('Hulpvraag ingetrokken');close();}).catch(function(err){b.disabled=false;toast((err&&err.message)||'Intrekken mislukt');});};return true;
+      var accepted=Object.keys(existing.acceptedByUids||{}).length,declined=Object.keys(existing.declinedByUids||{}).length;var targetName=existing.targetName||memberName(existing.targetUid);var audience=existing.audience==='household'?tr('party.helpHouseholdOpen','Open voor het hele gezin'):tr('party.directedAt','Gericht aan '+targetName,{name:targetName});
+      var e=modal('<h3 style="margin:0;font:800 20px Georgia,serif">'+esc(tr('party.helpActive','Hulpvraag actief'))+'</h3><p style="color:#aaa1b4;font-size:12px;line-height:1.45">'+esc(q.questTitle||'Party Quest')+'<br>'+esc(audience)+(existing.audience==='household'?'<br>'+esc(tr('party.helpCounts',accepted+' geholpen · '+declined+' niet voor mij',{accepted:accepted,declined:declined})):'')+'</p>'+button(esc(tr('party.retractHelp','Hulpvraag intrekken')),'data-retract','')+button(esc(tr('party.close','Sluiten')),'data-close','1'));
+      e.querySelector('[data-close]').onclick=close;e.querySelector('[data-retract]').onclick=function(){var b=this;b.disabled=true;var s=service();Promise.resolve(s&&s.retractHelp?s.retractHelp(id,existing.occurrenceId||existing.id):Promise.reject(new Error(tr('party.serviceNotReady','Party Quest service is nog niet klaar')))).then(function(){toast(tr('tasks.helpRetracted','Hulpvraag ingetrokken'));close();}).catch(function(err){b.disabled=false;toast((err&&err.message)||tr('party.retractFailed','Intrekken mislukt'));});};return true;
     }
     var candidates=members().filter(function(m){return eligible(q,memberId(m));});var choices='';
-    if(candidates.length)choices+=button('👨‍👩‍👧‍👦 Vraag het hele gezin','data-household','');
-    candidates.forEach(function(m){choices+=button('Vraag '+esc(m.displayName||m.name||'Gezinslid'),'data-target="'+esc(memberId(m))+'"','1');});
-    if(!choices)choices='<p style="color:#aaa1b4;font-size:12px">Er is nu niemand extra beschikbaar om hulp te vragen.</p>';
-    var e2=modal('<h3 style="margin:0;font:800 20px Georgia,serif">Extra hulp vragen</h3><p style="color:#aaa1b4;font-size:12px;line-height:1.45">'+esc(q.questTitle||'Party Quest')+'<br>Kies één gezinslid of zet de hulpvraag open voor iedereen.</p>'+choices+button('Sluiten','data-close','1'));
+    if(candidates.length)choices+=button(esc(tr('party.askWholeFamily','👨‍👩‍👧‍👦 Vraag het hele gezin')),'data-household','');
+    candidates.forEach(function(m){var nm=m.displayName||m.name||tr('cleaning.familyMember','Gezinslid');choices+=button(esc(tr('party.askMember','Vraag '+nm,{name:nm})),'data-target="'+esc(memberId(m))+'"','1');});
+    if(!choices)choices='<p style="color:#aaa1b4;font-size:12px">'+esc(tr('party.noExtraMembers','Er is nu niemand extra beschikbaar om hulp te vragen.'))+'</p>';
+    var e2=modal('<h3 style="margin:0;font:800 20px Georgia,serif">'+esc(tr('party.extraHelp','Extra hulp vragen'))+'</h3><p style="color:#aaa1b4;font-size:12px;line-height:1.45">'+esc(q.questTitle||'Party Quest')+'<br>'+esc(tr('party.chooseOneOrAll','Kies één gezinslid of zet de hulpvraag open voor iedereen.'))+'</p>'+choices+button(esc(tr('party.close','Sluiten')),'data-close','1'));
     e2.querySelector('[data-close]').onclick=close;var all=e2.querySelector('[data-household]');if(all)all.onclick=function(){sendHelp(this,id,null,true);};e2.querySelectorAll('[data-target]').forEach(function(b){b.onclick=function(){sendHelp(b,id,b.getAttribute('data-target'),false);};});return true;
   }
 
   function sendHelp(buttonEl,id,target,household){
-    buttonEl.disabled=true;var s=service(),p=household?(s&&s.requestHouseholdHelp?s.requestHouseholdHelp(id):null):(s&&s.requestHelp?s.requestHelp(id,target):null);if(!p){buttonEl.disabled=false;toast('Hulp vragen is nog niet klaar');return;}Promise.resolve(p).then(function(){toast(household?'Hulp gevraagd aan het hele gezin 🤝':'Hulpvraag verstuurd 🤝');close();}).catch(function(err){buttonEl.disabled=false;toast((err&&err.message)||'Hulp vragen mislukt');});
+    buttonEl.disabled=true;var s=service(),p=household?(s&&s.requestHouseholdHelp?s.requestHouseholdHelp(id):null):(s&&s.requestHelp?s.requestHelp(id,target):null);if(!p){buttonEl.disabled=false;toast(tr('help.notReady','Hulp vragen is nog niet klaar'));return;}Promise.resolve(p).then(function(){toast(household?tr('help.askedHousehold','Hulp gevraagd aan het hele gezin 🤝'):tr('party.helpSent','Hulpvraag verstuurd 🤝'));close();}).catch(function(err){buttonEl.disabled=false;toast((err&&err.message)||tr('help.askFailed','Hulp vragen mislukt'));});
   }
 
   function openIncoming(){
-    var x=incoming[0];if(!x)return false;var q=x.quest,r=x.request;var e=modal('<div style="font-size:30px">🤝</div><h3 style="margin:6px 0 0;font:800 20px Georgia,serif">Hulp gevraagd</h3><p style="color:#aaa1b4;font-size:12px;line-height:1.45">'+esc(r.requesterName||'Gezinslid')+' vraagt hulp bij <b style="color:#fff">'+esc(q.questTitle||'Party Quest')+'</b>.'+(r.audience==='household'?'<br>Deze vraag staat open voor het hele gezin.':'')+'</p>'+button('Hulp geven','data-accept','')+button('Niet voor mij','data-decline','1')+button('Sluiten','data-close','1'));
+    var x=incoming[0];if(!x)return false;var q=x.quest,r=x.request,requester=r.requesterName||tr('cleaning.familyMember','Gezinslid'),quest=q.questTitle||'Party Quest';var e=modal('<div style="font-size:30px">🤝</div><h3 style="margin:6px 0 0;font:800 20px Georgia,serif">'+esc(tr('tasks.helpRequested','Hulp gevraagd'))+'</h3><p style="color:#aaa1b4;font-size:12px;line-height:1.45">'+esc(tr('party.asksHelpAt',requester+' vraagt hulp bij '+quest,{name:requester,quest:quest}))+(r.audience==='household'?'<br>'+esc(tr('party.helpOpenForEveryone','Deze vraag staat open voor het hele gezin.')):'')+'</p>'+button(esc(tr('help.give','Hulp geven')),'data-accept','')+button(esc(tr('help.notForMe','Niet voor mij')),'data-decline','1')+button(esc(tr('party.close','Sluiten')),'data-close','1'));
     e.querySelector('[data-close]').onclick=close;e.querySelector('[data-accept]').onclick=function(){respondIncoming(this,q,r,'active');};e.querySelector('[data-decline]').onclick=function(){respondIncoming(this,q,r,'declined');};return true;
   }
-  function respondIncoming(btn,q,r,status){btn.disabled=true;var s=service();if(!s||typeof s.respondHelp!=='function'){btn.disabled=false;toast('Hulp reageren is nog niet klaar');return;}Promise.resolve(s.respondHelp(q.id||q._key,r.occurrenceId||r.id,status)).then(function(){toast(status==='active'?'Je helpt nu mee 🤝':'Deze hulpvraag is niet voor jou');close();setTimeout(function(){if(incoming.length)openIncoming();},60);}).catch(function(err){btn.disabled=false;toast((err&&err.message)||'Actie mislukt');});}
+  function respondIncoming(btn,q,r,status){btn.disabled=true;var s=service();if(!s||typeof s.respondHelp!=='function'){btn.disabled=false;toast(tr('party.helpRespondUnavailable','Hulp reageren is nog niet klaar'));return;}Promise.resolve(s.respondHelp(q.id||q._key,r.occurrenceId||r.id,status)).then(function(){toast(status==='active'?tr('help.helpingNow','Je helpt nu mee 🤝'):tr('party.notForMeResult','Deze hulpvraag is niet voor jou'));close();setTimeout(function(){if(incoming.length)openIncoming();},60);}).catch(function(err){btn.disabled=false;toast((err&&err.message)||tr('tasks.actionFailed','Actie mislukt'));});}
 
   function refresh(list,meta,gen){
     if(gen!==generation)return;var c=context(),key=identity(c);if(!key){quests=[];incoming=[];lastIdentity=null;close();decorateCard();return;}if(meta&&meta.ready&&((meta.uid&&String(meta.uid)!==String(c.uid))||(meta.householdId&&String(meta.householdId)!==String(c.householdId))||(meta.revision&&Number(meta.revision)!==Number(c.revision))))return;if(lastIdentity!==key){lastIdentity=key;close();}
@@ -86,6 +87,7 @@
 
   document.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('#tch-party-quest');if(!b||!incoming.length)return;var pending=window.PartyQuestInvites&&typeof PartyQuestInvites.pending==='function'?PartyQuestInvites.pending():[];if(pending&&pending.length)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();openIncoming();},true);
 
+  window.addEventListener('familyapp:language-changed',function(){decorateCard();patchActiveOverlay();var modalEl=document.getElementById('party-quest-help-modal');if(modalEl){modalEl.remove();if(incoming.length)openIncoming();}});
   window.PartyQuestHelpUi={version:VERSION,start:start,stop:stop,openOwner:openOwner,openIncoming:openIncoming,incoming:function(){return incoming.slice();},status:function(){var c=context();return{version:VERSION,ready:!!repoUnsubscribe,uid:c&&c.uid||null,householdId:c&&c.householdId||null,incoming:incoming.length};}};
   var tries=0;startTimer=setInterval(function(){tries++;if(start()||tries>120){clearInterval(startTimer);startTimer=null;}},100);
 })();

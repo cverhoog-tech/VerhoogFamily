@@ -14,6 +14,7 @@
   var installed=false;
   var rawShowScreen=null;
   var restoreTimer=0;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function current(){return String(window._currentScreen||'home');}
   function same(a,b){return String(a||'')===String(b||'');}
@@ -44,7 +45,7 @@
     var button=document.createElement('button');
     button.type='button';
     button.className=cls;
-    button.setAttribute('aria-label','Terug naar vorig scherm');
+    button.setAttribute('aria-label',tr('common.backPrevious','Terug naar vorig scherm'));
     button.setAttribute('data-familyapp-context-back','1');
     button.innerHTML=svg();
     button.onclick=function(event){event.preventDefault();event.stopPropagation();goBack();};
@@ -137,5 +138,6 @@
   };
   window.familyAppGoBack=goBack;
 
+  window.addEventListener('familyapp:language-changed',syncSoon);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

@@ -10,6 +10,7 @@
   var originalSubmitAuth=typeof window.submitAuth==='function'?window.submitAuth:null;
   var installed=false;
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function byId(id){return document.getElementById(id);}
   function clean(value){return String(value==null?'':value).trim();}
   function auth(){
@@ -30,16 +31,16 @@
     var btn=byId('auth-submit-btn');
     if(!btn)return;
     btn.disabled=!!busy;
-    btn.textContent=busy?'Account aanmaken…':'Account aanmaken';
+    btn.textContent=busy?tr('auth.register.busy','Account aanmaken…'):tr('auth.register','Account maken');
   }
   function friendlyError(error){
     var code=clean(error&&error.code);
-    if(code==='auth/email-already-in-use')return 'Dit e-mailadres heeft al een account. Kies “Al een account? Inloggen” of herstel je wachtwoord.';
-    if(code==='auth/weak-password')return 'Kies een wachtwoord van minimaal 6 tekens.';
-    if(code==='auth/invalid-email')return 'Controleer het e-mailadres en probeer opnieuw.';
-    if(code==='auth/network-request-failed')return 'Geen verbinding met de inlogservice. Controleer je internetverbinding en probeer opnieuw.';
-    if(code==='auth/too-many-requests')return 'Er zijn te veel pogingen gedaan. Wacht even en probeer het later opnieuw.';
-    return clean(error&&error.message)||'Account maken is niet gelukt. Probeer opnieuw.';
+    if(code==='auth/email-already-in-use')return tr('auth.error.accountExists','Dit e-mailadres heeft al een account. Kies “Al een account? Inloggen” of herstel je wachtwoord.');
+    if(code==='auth/weak-password')return tr('auth.error.weakPassword','Kies een wachtwoord van minimaal 6 tekens.');
+    if(code==='auth/invalid-email')return tr('auth.error.invalidEmail','Controleer het e-mailadres en probeer opnieuw.');
+    if(code==='auth/network-request-failed')return tr('auth.error.network','Geen verbinding met de inlogservice. Controleer je internetverbinding en probeer opnieuw.');
+    if(code==='auth/too-many-requests')return tr('auth.error.tooMany','Er zijn te veel pogingen gedaan. Wacht even en probeer het later opnieuw.');
+    return clean(error&&error.message)||tr('auth.error.registerFailed','Account maken is niet gelukt. Probeer opnieuw.');
   }
 
   function rememberName(user,name){
@@ -80,13 +81,13 @@
     var a=auth();
 
     setError('');
-    if(!name){setError('Vul jouw naam in.');var n=byId('auth-name');if(n)n.focus();return;}
-    if(!email){setError('Vul je e-mailadres in.');var e=byId('auth-email');if(e)e.focus();return;}
-    if(!/^\S+@\S+\.\S+$/.test(email)){setError('Controleer het e-mailadres en probeer opnieuw.');return;}
-    if(!pass){setError('Kies een wachtwoord.');var p=byId('auth-password');if(p)p.focus();return;}
-    if(pass.length<6){setError('Kies een wachtwoord van minimaal 6 tekens.');return;}
+    if(!name){setError(tr('auth.error.nameRequired','Vul jouw naam in.'));var n=byId('auth-name');if(n)n.focus();return;}
+    if(!email){setError(tr('auth.error.emailRequired','Vul je e-mailadres in.'));var e=byId('auth-email');if(e)e.focus();return;}
+    if(!/^\S+@\S+\.\S+$/.test(email)){setError(tr('auth.error.invalidEmail','Controleer het e-mailadres en probeer opnieuw.'));return;}
+    if(!pass){setError(tr('auth.error.passwordRequired','Kies een wachtwoord.'));var p=byId('auth-password');if(p)p.focus();return;}
+    if(pass.length<6){setError(tr('auth.error.weakPassword','Kies een wachtwoord van minimaal 6 tekens.'));return;}
     if(!a||typeof a.createUserWithEmailAndPassword!=='function'){
-      setError('Account maken is op dit moment niet beschikbaar. Probeer het later opnieuw.');
+      setError(tr('auth.error.registerUnavailable','Account maken is op dit moment niet beschikbaar. Probeer het later opnieuw.'));
       return;
     }
 
@@ -105,7 +106,7 @@
   function submit(){
     if(window._loginTab==='register')return register();
     if(originalSubmitAuth)return originalSubmitAuth();
-    setError('Inloggen is nog niet beschikbaar.');
+    setError(tr('auth.loginUnavailable','Inloggen is nog niet beschikbaar.'));
   }
 
   function polishRegisterFields(){
@@ -118,7 +119,7 @@
     if(!byId('flv7-register-household-note')){
       var note=document.createElement('p');
       note.id='flv7-register-household-note';
-      note.textContent='Na het aanmaken kies je je huishouden. Gezinsleden nodig je daarna veilig uit.';
+      note.textContent=tr('auth.householdAfter','Na het aanmaken kies je je huishouden. Gezinsleden nodig je daarna veilig uit.');
       note.style.cssText='margin:-1px 2px 12px;color:#cfc5ae;font-size:11px;line-height:1.45';
       extra.appendChild(note);
     }
@@ -138,6 +139,7 @@
   }
 
   window.addEventListener('familyapp:login-brand-ready',function(){window.setTimeout(install,0);});
+  window.addEventListener('familyapp:language-changed',function(){window.setTimeout(function(){polishRegisterFields();setBusy(false);},0);});
   window.FamilyAppManualRegistrationBetaV1=Object.freeze({version:VERSION,install:install,register:register,isInstalled:function(){return installed;}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

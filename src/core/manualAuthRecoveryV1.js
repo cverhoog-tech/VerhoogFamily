@@ -7,6 +7,7 @@
   var VERSION='1.0.0';
   var boundScreen=null;
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   function byId(id){return document.getElementById(id);}
   function clean(value){return String(value==null?'':value).trim();}
   function auth(){
@@ -50,7 +51,7 @@
     var existing=byId('flv7-existing-login');
     var forgot=byId('flv7-forgot-password');
     if(existing)existing.hidden=!isRegister();
-    if(forgot)forgot.textContent=isRegister()?'Wachtwoord herstellen':'Wachtwoord vergeten?';
+    if(forgot)forgot.textContent=isRegister()?tr('auth.recovery.title','Wachtwoord herstellen'):tr('auth.recovery.forgot','Wachtwoord vergeten?');
     clearStatus();
   }
 
@@ -62,39 +63,39 @@
 
     clearStatus();
     if(!email){
-      showStatus('Vul eerst het e-mailadres van je account in.','error');
+      showStatus(tr('auth.recovery.emailFirst','Vul eerst het e-mailadres van je account in.'),'error');
       if(emailInput)emailInput.focus();
       return;
     }
     if(!/^\S+@\S+\.\S+$/.test(email)){
-      showStatus('Controleer het e-mailadres en probeer opnieuw.','error');
+      showStatus(tr('auth.error.invalidEmail','Controleer het e-mailadres en probeer opnieuw.'),'error');
       if(emailInput)emailInput.focus();
       return;
     }
     if(!a||typeof a.sendPasswordResetEmail!=='function'){
-      showStatus('Wachtwoord herstellen is op dit moment niet beschikbaar. Probeer het later opnieuw.','error');
+      showStatus(tr('auth.recovery.unavailable','Wachtwoord herstellen is op dit moment niet beschikbaar. Probeer het later opnieuw.'),'error');
       return;
     }
 
-    if(forgot){forgot.disabled=true;forgot.textContent='Resetmail versturen…';}
+    if(forgot){forgot.disabled=true;forgot.textContent=tr('auth.recovery.sending','Resetmail versturen…');}
     Promise.resolve(a.sendPasswordResetEmail(email)).then(function(){
       // Deliberately generic: do not reveal whether an address exists.
-      showStatus('Als dit e-mailadres bij een FamilyApp-account hoort, ontvang je een resetmail. Controleer ook je spammap.','success');
+      showStatus(tr('auth.recovery.sent','Als dit e-mailadres bij een FamilyApp-account hoort, ontvang je een resetmail. Controleer ook je spammap.'),'success');
     }).catch(function(error){
       var code=clean(error&&error.code);
       if(code==='auth/user-not-found'){
-        showStatus('Als dit e-mailadres bij een FamilyApp-account hoort, ontvang je een resetmail. Controleer ook je spammap.','success');
+        showStatus(tr('auth.recovery.sent','Als dit e-mailadres bij een FamilyApp-account hoort, ontvang je een resetmail. Controleer ook je spammap.'),'success');
       }else if(code==='auth/invalid-email'){
-        showStatus('Controleer het e-mailadres en probeer opnieuw.','error');
+        showStatus(tr('auth.error.invalidEmail','Controleer het e-mailadres en probeer opnieuw.'),'error');
       }else if(code==='auth/too-many-requests'){
-        showStatus('Er zijn te veel herstelpogingen gedaan. Wacht even en probeer het later opnieuw.','error');
+        showStatus(tr('auth.recovery.tooMany','Er zijn te veel herstelpogingen gedaan. Wacht even en probeer het later opnieuw.'),'error');
       }else if(code==='auth/network-request-failed'){
-        showStatus('Geen verbinding met de inlogservice. Controleer je internetverbinding en probeer opnieuw.','error');
+        showStatus(tr('auth.error.network','Geen verbinding met de inlogservice. Controleer je internetverbinding en probeer opnieuw.'),'error');
       }else{
-        showStatus('De resetmail kon niet worden verstuurd. Probeer het later opnieuw.','error');
+        showStatus(tr('auth.recovery.failed','De resetmail kon niet worden verstuurd. Probeer het later opnieuw.'),'error');
       }
     }).finally(function(){
-      if(forgot){forgot.disabled=false;forgot.textContent=isRegister()?'Wachtwoord herstellen':'Wachtwoord vergeten?';}
+      if(forgot){forgot.disabled=false;forgot.textContent=isRegister()?tr('auth.recovery.title','Wachtwoord herstellen'):tr('auth.recovery.forgot','Wachtwoord vergeten?');}
     });
   }
 
@@ -115,9 +116,9 @@
     if(!error||error.style.display==='none')return;
     var value=clean(error.textContent);
     if(/E-mail al in gebruik/i.test(value)){
-      error.textContent='Dit e-mailadres heeft al een account. Log in met dat account of herstel je wachtwoord hieronder.';
+      error.textContent=tr('auth.recovery.accountExists','Dit e-mailadres heeft al een account. Log in met dat account of herstel je wachtwoord hieronder.');
     }else if(/Verkeerd wachtwoord/i.test(value)){
-      error.textContent='Dat wachtwoord klopt niet. Probeer opnieuw of herstel je wachtwoord hieronder.';
+      error.textContent=tr('auth.recovery.wrongPassword','Dat wachtwoord klopt niet. Probeer opnieuw of herstel je wachtwoord hieronder.');
     }
   }
 
@@ -137,7 +138,7 @@
       row=document.createElement('div');
       row.id='flv7-auth-recovery';
       row.className='flv7-auth-recovery';
-      row.innerHTML='<button type="button" id="flv7-existing-login" class="flv7-existing-login" hidden>Al een account? Inloggen</button><button type="button" id="flv7-forgot-password">Wachtwoord vergeten?</button>';
+      row.innerHTML='<button type="button" id="flv7-existing-login" class="flv7-existing-login" hidden>'+tr('auth.recovery.existing','Al een account? Inloggen')+'</button><button type="button" id="flv7-forgot-password">'+tr('auth.recovery.forgot','Wachtwoord vergeten?')+'</button>';
       form.insertBefore(row,error);
 
       var status=document.createElement('div');
@@ -174,6 +175,7 @@
   }
 
   window.addEventListener('familyapp:login-brand-ready',function(){window.setTimeout(install,0);});
+  window.addEventListener('familyapp:language-changed',function(){window.setTimeout(function(){install();syncMode();var existing=byId('flv7-existing-login');if(existing)existing.textContent=tr('auth.recovery.existing','Al een account? Inloggen');},0);});
   window.FamilyAppManualAuthRecoveryV1=Object.freeze({version:VERSION,install:install,requestReset:requestReset});
   boot();
 })();

@@ -13,6 +13,38 @@ import {
 
 const activeCategoryKey = 'familyapp-avatar-category-v1';
 
+function profileT(key, fallback, params) {
+  if (window.FamilyI18n && typeof window.FamilyI18n.t === 'function') {
+    const value = window.FamilyI18n.t(key, params || {});
+    if (value && value !== key) return value;
+  }
+  return fallback;
+}
+
+function languageCardMarkup() {
+  const i18n = window.FamilyI18n;
+  if (!i18n || typeof i18n.getOptions !== 'function') return '';
+
+  const preference = i18n.getPreference();
+  const options = [
+    { code: i18n.systemValue || 'system', nativeName: profileT('profile.language.system', 'Systeemstandaard') },
+    ...i18n.getOptions(),
+  ];
+
+  return `
+    <section class="profile-card" style="padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+        <div style="min-width:0;flex:1">
+          <h2 style="margin:0 0 4px">${profileT('profile.language.title', 'Taal')}</h2>
+          <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.language.subtitle', 'Kies de taal van FamilyApp op dit apparaat.')}</p>
+        </div>
+        <select data-language-select aria-label="${profileT('profile.language.title', 'Taal')}" style="min-width:132px;max-width:48%;min-height:42px;border:1.5px solid var(--c-border);border-radius:12px;background:var(--c-surface2);color:var(--c-text);font-size:12px;font-weight:800;padding:8px 30px 8px 10px">
+          ${options.map((item) => `<option value="${escapeAttribute(item.code)}" ${item.code === preference ? 'selected' : ''}>${escapeAttribute(item.nativeName)}</option>`).join('')}
+        </select>
+      </div>
+    </section>`;
+}
+
 function getActiveCategory() {
   return localStorage.getItem(activeCategoryKey) || 'Alle';
 }
@@ -74,8 +106,8 @@ function installCardMarkup(state) {
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:48px;height:48px;border-radius:12px;flex-shrink:0">
           <div style="flex:1;min-width:0">
-            <h2 style="margin:0 0 3px">FamilyApp geïnstalleerd</h2>
-            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">Je gebruikt FamilyApp al vanaf je beginscherm.</p>
+            <h2 style="margin:0 0 3px">${profileT('profile.install.installedTitle', 'FamilyApp geïnstalleerd')}</h2>
+            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.install.installedCopy', 'Je gebruikt FamilyApp al vanaf je beginscherm.')}</p>
           </div>
           <span style="font-size:18px;color:var(--c-primary);font-weight:900">✓</span>
         </div>
@@ -83,25 +115,25 @@ function installCardMarkup(state) {
   }
 
   const copy = state.ios
-    ? 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.'
-    : 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.';
+    ? profileT('profile.install.iosCopy', 'Zet FamilyApp op je beginscherm voor een app-achtige ervaring zonder browserbalk.')
+    : profileT('profile.install.browserCopy', 'Installeer FamilyApp op je telefoon en open hem voortaan direct vanaf je beginscherm.');
 
   return `
     <section class="profile-card" style="padding:16px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
         <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,.10)">
         <div style="min-width:0">
-          <h2 style="margin:0 0 4px">FamilyApp op beginscherm</h2>
+          <h2 style="margin:0 0 4px">${profileT('profile.install.homeTitle', 'FamilyApp op beginscherm')}</h2>
           <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${copy}</p>
         </div>
       </div>
-      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? 'Hoe zet ik hem op mijn beginscherm?' : 'Installeer FamilyApp'}</button>
+      <button type="button" data-install-familyapp style="width:100%;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:13px;font-weight:800;padding:11px 14px">${state.ios ? profileT('profile.install.how', 'Hoe zet ik hem op mijn beginscherm?') : profileT('profile.install.button', 'Installeer FamilyApp')}</button>
     </section>`;
 }
 
 function instructionModalMarkup(state) {
   const shareIcon = `
-    <span aria-label="iOS deelknop" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--c-border);background:var(--c-surface2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;vertical-align:middle">
+    <span aria-label="${profileT('profile.install.shareAria', 'iOS deelknop')}" style="width:34px;height:34px;border-radius:9px;border:1px solid var(--c-border);background:var(--c-surface2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:6px;vertical-align:middle">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 15V3M12 3L8.5 6.5M12 3l3.5 3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M8 9H6.5A2.5 2.5 0 0 0 4 11.5v7A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-7A2.5 2.5 0 0 0 17.5 9H16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
@@ -112,14 +144,14 @@ function instructionModalMarkup(state) {
     <div style="display:grid;gap:10px;margin-top:14px">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">1</strong>
-        <span style="line-height:1.5">Tik onderin Safari op de <b>deelknop</b> ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">Dit is het vierkantje met het pijltje omhoog.</small></span>
+        <span style="line-height:1.5">${profileT('profile.install.step1', 'Tik onderin Safari op de deelknop.')} ${shareIcon}<br><small style="color:var(--c-text2);font-size:11px">${profileT('profile.install.step1hint', 'Dit is het vierkantje met het pijltje omhoog.')}</small></span>
       </div>
-      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>Kies <b>Zet op beginscherm</b>.</span></div>
-      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>Tik op <b>Voeg toe</b>. Daarna opent FamilyApp als losse app.</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">2</strong><span>${profileT('profile.install.step2', 'Kies Zet op beginscherm.')}</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><strong style="width:24px;height:24px;border-radius:50%;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">3</strong><span>${profileT('profile.install.step3', 'Tik op Voeg toe. Daarna opent FamilyApp als losse app.')}</span></div>
     </div>`;
 
   const browserSteps = `
-    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies <b>App installeren</b> of <b>Toevoegen aan beginscherm</b>.</p>`;
+    <p style="margin:12px 0 0;color:var(--c-text2);font-size:13px;line-height:1.55">${profileT('profile.install.browserSteps', 'De automatische installatieprompt is in deze browser nog niet beschikbaar. Open het browsermenu en kies App installeren of Toevoegen aan beginscherm.')}</p>`;
 
   return `
     <div class="profile-install-overlay" data-install-overlay style="position:fixed;inset:0;z-index:10020;background:rgba(15,23,42,.42);display:flex;align-items:flex-end;justify-content:center;padding:0">
@@ -127,10 +159,10 @@ function instructionModalMarkup(state) {
         <div style="width:42px;height:4px;border-radius:999px;background:var(--c-border);margin:0 auto 16px"></div>
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/apple-touch-icon.png?v=hq2" alt="FamilyApp" style="width:52px;height:52px;border-radius:13px">
-          <div><h2 style="margin:0 0 3px;font-size:18px">Zet FamilyApp op je beginscherm</h2><p style="margin:0;color:var(--c-text2);font-size:12px">Eenmalig instellen, daarna open je hem als app.</p></div>
+          <div><h2 style="margin:0 0 3px;font-size:18px">${profileT('profile.install.modalTitle', 'Zet FamilyApp op je beginscherm')}</h2><p style="margin:0;color:var(--c-text2);font-size:12px">${profileT('profile.install.modalSubtitle', 'Eenmalig instellen, daarna open je hem als app.')}</p></div>
         </div>
         ${state.ios ? iosSteps : browserSteps}
-        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">Begrepen</button>
+        <button type="button" data-close-install-overlay style="width:100%;margin-top:18px;min-height:44px;border:0;border-radius:13px;background:var(--c-primary);color:#fff;font-size:14px;font-weight:800">${profileT('profile.install.gotIt', 'Begrepen')}</button>
       </div>
     </div>`;
 }
@@ -155,7 +187,7 @@ function bindProfileActions(container) {
     saveButton.onclick = () => {
       setProfileNames(nameInput.value.trim(), partnerInput.value.trim());
       renderProfileScreen(container);
-      toast('Profiel opgeslagen');
+      toast(profileT('profile.saved', 'Profiel opgeslagen'));
     };
   }
 
@@ -163,7 +195,7 @@ function bindProfileActions(container) {
   if (logoutButton) {
     logoutButton.onclick = async () => {
       if (!window.FamilySessionActions || typeof window.FamilySessionActions.signOut !== 'function') {
-        toast('Uitloggen is tijdelijk niet beschikbaar');
+        toast(profileT('profile.logoutUnavailable', 'Uitloggen is tijdelijk niet beschikbaar'));
         return;
       }
       logoutButton.disabled = true;
@@ -180,9 +212,19 @@ function bindProfileActions(container) {
       if (!window.FamilyUiScale) return;
       const scale = window.FamilyUiScale.set(button.dataset.uiScale);
       renderProfileScreen(container);
-      toast(`UI schaal ingesteld op ${scale}%`);
+      toast(profileT('profile.scaleChanged', 'UI schaal ingesteld op {{scale}}%', { scale }));
     };
   });
+
+  const languageSelect = container.querySelector('[data-language-select]');
+  if (languageSelect) {
+    languageSelect.onchange = () => {
+      if (!window.FamilyI18n || typeof window.FamilyI18n.setPreference !== 'function') return;
+      window.FamilyI18n.setPreference(languageSelect.value);
+      renderProfileScreen(container);
+      toast(profileT('profile.language.changed', 'Taal aangepast'));
+    };
+  }
 
   const installButton = container.querySelector('[data-install-familyapp]');
   if (installButton) {
@@ -194,8 +236,8 @@ function bindProfileActions(container) {
       }
       const result = await window.FamilyAppInstall.install();
       if (result.outcome === 'instructions') showInstallInstructions(getInstallState());
-      else if (result.outcome === 'accepted') toast('FamilyApp wordt geïnstalleerd');
-      else if (result.outcome === 'installed') toast('FamilyApp is al geïnstalleerd');
+      else if (result.outcome === 'accepted') toast(profileT('profile.install.installing', 'FamilyApp wordt geïnstalleerd'));
+      else if (result.outcome === 'installed') toast(profileT('profile.install.already', 'FamilyApp is al geïnstalleerd'));
     };
   }
 
@@ -229,7 +271,7 @@ function bindProfileActions(container) {
       reader.onload = () => {
         setUploadedAvatar(reader.result);
         renderProfileScreen(container);
-        toast('Avatar bijgewerkt');
+        toast(profileT('profile.avatar.updated', 'Avatar bijgewerkt'));
       };
       reader.readAsDataURL(file);
     };
@@ -250,7 +292,7 @@ function bindProfileActions(container) {
       event.stopPropagation();
       setPresetAvatar(button.dataset.avatarId);
       renderProfileScreen(container, { keepAvatarPopupOpen: true });
-      toast('Avatar gekozen');
+      toast(profileT('profile.avatar.chosen', 'Avatar gekozen'));
     };
   });
 
@@ -258,21 +300,22 @@ function bindProfileActions(container) {
     button.onclick = () => {
       if (button.dataset.profileRow === 'Meldingen') {
         if (typeof window.showScreen === 'function') window.showScreen('notif');
-        else toast('Meldingen openen is tijdelijk niet beschikbaar');
+        else toast(profileT('profile.notificationsUnavailable', 'Meldingen openen is tijdelijk niet beschikbaar'));
         return;
       }
-      toast(button.dataset.profileRow + ' openen');
+      const section = button.querySelector('b') ? button.querySelector('b').textContent : button.dataset.profileRow;
+      toast(profileT('profile.settings.open', section + ' openen', { section }));
     };
   });
 }
 
 function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
   return `
-    <div class="profile-avatar-popup-inner" role="dialog" aria-modal="true" aria-label="Kies een avatar">
-      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="Sluiten">✕</button>
-      <h3 class="profile-avatar-popup-title">Kies een avatar</h3>
+    <div class="profile-avatar-popup-inner" role="dialog" aria-modal="true" aria-label="${profileT('profile.avatar.choose', 'Kies een avatar')}">
+      <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="${profileT('common.close', 'Sluiten')}">✕</button>
+      <h3 class="profile-avatar-popup-title">${profileT('profile.avatar.choose', 'Kies een avatar')}</h3>
       <div class="profile-avatar-tabs">
-        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category}</button>`).join('')}
+        ${categories().map((category) => `<button type="button" class="${category === activeCategory ? 'active' : ''}" data-avatar-category="${category}">${category === 'Alle' ? profileT('profile.category.all', 'Alle') : category}</button>`).join('')}
       </div>
       <div class="profile-choice-grid profile-choice-grid-exact">
         ${visibleAvatars.map((item) => {
@@ -317,7 +360,7 @@ function profileProgress() {
   return {
     xp,
     level,
-    title: title || `Level ${level}`,
+    title: title || `${profileT('ach.level', 'Level')} ${level}`,
     progress,
     remaining,
   };
@@ -370,25 +413,25 @@ export function renderProfileScreen(container, options = {}) {
         <div class="profile-hero-top">
           <div class="profile-avatar-wrap">
             <img class="profile-main-avatar" src="${avatar}" alt="${escapeAttribute(name)}" style="object-position:${mainObjectPosition}">
-            <button class="profile-camera-btn" type="button" data-camera-avatar aria-label="Avatar wijzigen">📷</button>
+            <button class="profile-camera-btn" type="button" data-camera-avatar aria-label="${profileT('profile.avatar.change', 'Avatar wijzigen')}">📷</button>
           </div>
           <div class="profile-identity-copy">
-            <p class="profile-kicker">Jouw profiel</p>
+            <p class="profile-kicker">${profileT('profile.hero.kicker', 'Jouw profiel')}</p>
             <h1>${escapeAttribute(name)}</h1>
             <div class="profile-level-pill"><span class="profile-level-dot"></span> Level ${progress.level} · ${escapeAttribute(progress.title)}</div>
           </div>
         </div>
 
         <div class="profile-progress-panel">
-          <div class="profile-progress-head"><span>Voortgang</span><strong>${progress.xp} XP</strong></div>
-          <div class="profile-xp-bar" aria-label="${progress.progress}% naar volgend level"><span style="width:${progress.progress}%"></span></div>
-          <div class="profile-progress-foot"><span>${progress.progress}% naar level ${progress.level + 1}</span><strong>${progress.remaining} XP te gaan</strong></div>
+          <div class="profile-progress-head"><span>${profileT('profile.progress.title', 'Voortgang')}</span><strong>${progress.xp} XP</strong></div>
+          <div class="profile-xp-bar" aria-label="${profileT('profile.progress.toLevel', progress.progress + '% naar level ' + (progress.level + 1), { progress: progress.progress, level: progress.level + 1 })}"><span style="width:${progress.progress}%"></span></div>
+          <div class="profile-progress-foot"><span>${profileT('profile.progress.toLevel', progress.progress + '% naar level ' + (progress.level + 1), { progress: progress.progress, level: progress.level + 1 })}</span><strong>${profileT('profile.progress.remaining', progress.remaining + ' XP te gaan', { xp: progress.remaining })}</strong></div>
         </div>
 
         <div class="profile-stat-grid">
-          <div class="profile-stat-item"><span>✓</span><strong>${stats.tasks}</strong><small>Taken klaar</small></div>
-          <div class="profile-stat-item"><span>🔥</span><strong>${stats.streak}</strong><small>Max streak</small></div>
-          <div class="profile-stat-item"><span>🏅</span><strong>${stats.badges}</strong><small>Badges</small></div>
+          <div class="profile-stat-item"><span>✓</span><strong>${stats.tasks}</strong><small>${profileT('profile.stats.tasksDone', 'Taken klaar')}</small></div>
+          <div class="profile-stat-item"><span>🔥</span><strong>${stats.streak}</strong><small>${profileT('profile.stats.maxStreak', 'Max streak')}</small></div>
+          <div class="profile-stat-item"><span>🏅</span><strong>${stats.badges}</strong><small>${profileT('profile.stats.badges', 'Badges')}</small></div>
         </div>
       </section>
 
@@ -396,61 +439,63 @@ export function renderProfileScreen(container, options = {}) {
         <div class="profile-section-head">
           <span class="profile-section-icon">👤</span>
           <div class="profile-section-copy">
-            <h2>Persoonlijke gegevens</h2>
-            <p>Je naam en gezinsweergave in FamilyApp.</p>
+            <h2>${profileT('profile.personal.title', 'Persoonlijke gegevens')}</h2>
+            <p>${profileT('profile.personal.subtitle', 'Je naam en gezinsweergave in FamilyApp.')}</p>
           </div>
         </div>
 
         <div class="profile-account-row" data-active-auth-email>
           <span class="profile-account-icon" aria-hidden="true">@</span>
           <div class="profile-account-copy">
-            <small>Actief account</small>
-            <strong>${escapeAttribute(activeEmail || 'E-mailadres niet beschikbaar')}</strong>
+            <small>${profileT('profile.activeAccount', 'Actief account')}</small>
+            <strong>${escapeAttribute(activeEmail || profileT('profile.emailUnavailable', 'E-mailadres niet beschikbaar'))}</strong>
           </div>
         </div>
 
         <div class="profile-fields">
           <div class="profile-field-group">
-            <label for="profile-name-input">Mijn naam</label>
+            <label for="profile-name-input">${profileT('profile.myName', 'Mijn naam')}</label>
             <div class="profile-input-row"><input id="profile-name-input" data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
           </div>
           <div class="profile-field-group">
-            <label for="profile-partner-input">Partner naam</label>
-            <div class="profile-input-row"><input id="profile-partner-input" data-partner-name value="${escapeAttribute(partner)}" placeholder="Optioneel"><span>✎</span></div>
+            <label for="profile-partner-input">${profileT('profile.partnerName', 'Partner naam')}</label>
+            <div class="profile-input-row"><input id="profile-partner-input" data-partner-name value="${escapeAttribute(partner)}" placeholder="${profileT('profile.optional', 'Optioneel')}"><span>✎</span></div>
           </div>
         </div>
 
-        <div class="profile-info-note"><span>i</span><div>Je gekozen avatar en naam worden automatisch gebruikt op de plekken waar jij in de app verschijnt.</div></div>
-        <button class="profile-save-btn" type="button" data-save-profile>Wijzigingen opslaan</button>
+        <div class="profile-info-note"><span>i</span><div>${profileT('profile.personal.info', 'Je gekozen avatar en naam worden automatisch gebruikt op de plekken waar jij in de app verschijnt.')}</div></div>
+        <button class="profile-save-btn" type="button" data-save-profile>${profileT('profile.saveChanges', 'Wijzigingen opslaan')}</button>
       </section>
 
       <section class="profile-card profile-avatar-card">
         <div class="profile-section-head">
           <span class="profile-section-icon">✨</span>
           <div class="profile-section-copy">
-            <h2>Avatar</h2>
-            <p>Maak je profiel herkenbaar voor je gezin.</p>
+            <h2>${profileT('profile.avatar.sectionTitle', 'Avatar')}</h2>
+            <p>${profileT('profile.avatar.sectionSubtitle', 'Maak je profiel herkenbaar voor je gezin.')}</p>
           </div>
         </div>
         <div class="profile-avatar-current">
           <img src="${avatar}" alt="" style="object-position:${mainObjectPosition}">
-          <div><strong>Huidige avatar</strong><small>${escapeAttribute(avatarMeta.label || 'Eigen profielfoto')}</small></div>
+          <div><strong>${profileT('profile.avatar.current', 'Huidige avatar')}</strong><small>${escapeAttribute(avatarMeta.label || profileT('profile.avatar.customPhoto', 'Eigen profielfoto'))}</small></div>
         </div>
         <div class="profile-avatar-actions">
-          <button type="button" data-open-avatar-popup>✦ Kies avatar</button>
-          <button type="button" data-upload-avatar>↑ Upload foto</button>
+          <button type="button" data-open-avatar-popup>✦ ${profileT('profile.avatar.chooseShort', 'Kies avatar')}</button>
+          <button type="button" data-upload-avatar>↑ ${profileT('profile.avatar.upload', 'Upload foto')}</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
       </section>
 
       ${installCardMarkup(installState)}
 
+      ${languageCardMarkup()}
+
       <section class="profile-card">
         <div class="profile-section-head">
           <span class="profile-section-icon">Aa</span>
           <div class="profile-section-copy">
-            <h2>UI schaal</h2>
-            <p>Pas de grootte van de volledige app aan.</p>
+            <h2>${profileT('profile.scale.title', 'UI schaal')}</h2>
+            <p>${profileT('profile.scale.subtitle', 'Pas de grootte van de volledige app aan.')}</p>
           </div>
           <span class="profile-section-value">${uiScale}%</span>
         </div>
@@ -460,25 +505,25 @@ export function renderProfileScreen(container, options = {}) {
       </section>
 
       <section class="profile-card profile-settings-card">
-        <div class="profile-settings-label">Instellingen</div>
+        <div class="profile-settings-label">${profileT('profile.settings.label', 'Instellingen')}</div>
         <button type="button" data-profile-row="Account instellingen">
           <span class="profile-setting-icon">⚙</span>
-          <span class="profile-setting-copy"><b>Account instellingen</b><small>Account en aanmeldgegevens</small></span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.account', 'Account instellingen')}</b><small>${profileT('profile.settings.accountSubtitle', 'Account en aanmeldgegevens')}</small></span>
           <em>›</em>
         </button>
         <button type="button" data-profile-row="Privacy">
           <span class="profile-setting-icon">⌾</span>
-          <span class="profile-setting-copy"><b>Privacy</b><small>Beheer jouw gezinsgegevens</small></span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.privacy', 'Privacy')}</b><small>${profileT('profile.settings.privacySubtitle', 'Beheer jouw gezinsgegevens')}</small></span>
           <em>›</em>
         </button>
         <button type="button" data-profile-row="Meldingen">
           <span class="profile-setting-icon">♧</span>
-          <span class="profile-setting-copy"><b>Meldingen</b><small>Kies wat je wilt ontvangen</small></span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.notifications', 'Meldingen')}</b><small>${profileT('profile.settings.notificationsSubtitle', 'Kies wat je wilt ontvangen')}</small></span>
           <em>›</em>
         </button>
         <button type="button" class="profile-danger" data-profile-logout>
           <span class="profile-setting-icon">↪</span>
-          <span class="profile-setting-copy"><b>Uitloggen</b><small>Uitloggen op dit apparaat</small></span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.logout', 'Uitloggen')}</b><small>${profileT('profile.settings.logoutSubtitle', 'Uitloggen op dit apparaat')}</small></span>
           <em>›</em>
         </button>
       </section>
@@ -497,6 +542,11 @@ export function renderProfileScreen(container, options = {}) {
 }
 
 window.addEventListener('familyapp:pwa-install-state', () => {
+  const container = document.getElementById('screen-profile');
+  if (container && container.classList.contains('active')) renderProfileScreen(container);
+});
+
+window.addEventListener('familyapp:language-changed', () => {
   const container = document.getElementById('screen-profile');
   if (container && container.classList.contains('active')) renderProfileScreen(container);
 });

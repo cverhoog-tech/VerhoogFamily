@@ -7,21 +7,33 @@
 // NAV CONFIG & DYNAMIC NAV
 // ============================================================
 
+function navT(key, fallback) {
+  if (window.FamilyI18n && typeof window.FamilyI18n.t === 'function') {
+    var value = window.FamilyI18n.t(key);
+    if (value && value !== key) return value;
+  }
+  return fallback;
+}
+
+function navScreenLabel(screen) {
+  return navT(screen.labelKey, screen.label);
+}
+
 var ALL_SCREENS = [
-  {id:'home',         icon:'🏠', label:'Home'},
-  {id:'tasks',        icon:'✅', label:'Taken'},
-  {id:'notes',        icon:'📝', label:'Notities'},
-  {id:'shop',         icon:'🛒', label:'Boodschappen'},
-  {id:'cal',          icon:'📅', label:'Agenda'},
-  {id:'finance',      icon:'💰', label:'Financiën'},
-  {id:'achievements', icon:'🏆', label:'Achievements'},
-  {id:'notif',        icon:'🔔', label:'Meldingen'},
-  {id:'profile',      icon:'👤', label:'Profiel'},
-  {id:'recipes',      icon:'🍳', label:'Recepten'},
-  {id:'skills',       icon:'⚡', label:'Skills'},
-  {id:'meals',        icon:'🗓️', label:'Maaltijden'},
-  {id:'templates',    icon:'📋', label:'Templates'},
-  {id:'cleaning',     icon:'🧹', label:'Schoonmaken'},
+  {id:'home',         icon:'🏠', label:'Home',         labelKey:'nav.home'},
+  {id:'tasks',        icon:'✅', label:'Taken',        labelKey:'nav.tasks'},
+  {id:'notes',        icon:'📝', label:'Notities',     labelKey:'nav.notes'},
+  {id:'shop',         icon:'🛒', label:'Boodschappen', labelKey:'nav.shop'},
+  {id:'cal',          icon:'📅', label:'Agenda',       labelKey:'nav.calendar'},
+  {id:'finance',      icon:'💰', label:'Financiën',    labelKey:'nav.finance'},
+  {id:'achievements', icon:'🏆', label:'Achievements', labelKey:'nav.achievements'},
+  {id:'notif',        icon:'🔔', label:'Meldingen',    labelKey:'nav.notifications'},
+  {id:'profile',      icon:'👤', label:'Profiel',      labelKey:'nav.profile'},
+  {id:'recipes',      icon:'🍳', label:'Recepten',     labelKey:'nav.recipes'},
+  {id:'skills',       icon:'⚡', label:'Skills',       labelKey:'nav.skills'},
+  {id:'meals',        icon:'🗓️', label:'Maaltijden',  labelKey:'nav.meals'},
+  {id:'templates',    icon:'📋', label:'Templates',    labelKey:'nav.templates'},
+  {id:'cleaning',     icon:'🧹', label:'Schoonmaken',  labelKey:'nav.cleaning'},
 ];
 
 // Fixed primary mobile ribbon: Home · Boodschappen · Feed (+) · Taken · Meer
@@ -42,7 +54,7 @@ function renderNav() {
         +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4">'
         +'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
         +'</div>'
-        +'<span class="nav-label">Feed</span>'
+        +'<span class="nav-label">'+navT('nav.feed','Feed')+'</span>'
         +'</button>';
     } else {
       var si = i<2 ? i : i-1;
@@ -50,7 +62,7 @@ function renderNav() {
       if(slotId === 'more'){
         html += '<button class="nav-btn" id="nav-more-btn">'
           +'<span class="nav-icon">···</span>'
-          +'<span class="nav-label">Meer</span>'
+          +'<span class="nav-label">'+navT('nav.more','Meer')+'</span>'
           +'</button>';
       } else {
         var sc = ALL_SCREENS.find(function(s){return s.id===slotId;});
@@ -58,7 +70,7 @@ function renderNav() {
           var isActive = currentScreen===slotId;
           html += '<button class="nav-btn'+(isActive?' active':'')+'" data-goto="'+slotId+'">'
             +'<span class="nav-icon">'+sc.icon+'</span>'
-            +'<span class="nav-label">'+sc.label+'</span></button>';
+            +'<span class="nav-label">'+navScreenLabel(sc)+'</span></button>';
         }
       }
     }
@@ -82,10 +94,10 @@ function renderNav() {
     moreGrid.innerHTML = moreScreens.map(function(s){
       return '<button class="more-btn" data-goto-more="'+s.id+'">'
         +'<span style="font-size:22px">'+s.icon+'</span>'
-        +'<span>'+s.label+'</span></button>';
+        +'<span>'+navScreenLabel(s)+'</span></button>';
     }).join('')
     +'<button class="more-btn" id="nav-config-btn" style="border:1.5px dashed var(--c-border)">'
-      +'<span style="font-size:22px">⚙️</span><span>Aanpassen</span></button>';
+      +'<span style="font-size:22px">⚙️</span><span>'+navT('nav.customize','Aanpassen')+'</span></button>';
     moreGrid.querySelectorAll('[data-goto-more]').forEach(function(btn){
       btn.onclick = function(){ showScreenMore(btn.dataset.gotoMore); };
     });
@@ -125,16 +137,16 @@ function renderNavConfig() {
       var div=document.createElement('div');
       if(i===2){
         div.className='nav-slot center-slot';
-        div.innerHTML='<div style="font-size:22px">📸</div><div class="nav-slot-lbl" style="color:#fff;opacity:.8">Feed</div>';
+        div.innerHTML='<div style="font-size:22px">📸</div><div class="nav-slot-lbl" style="color:#fff;opacity:.8">'+navT('nav.feed','Feed')+'</div>';
       } else {
         var si2=i<2?i:i-1;
         var slotId2=navSlots[si2];
-        var sc2=slotId2==='more'?{icon:'···',label:'Meer'}:ALL_SCREENS.find(function(s){return s.id===slotId2;});
+        var sc2=slotId2==='more'?{icon:'···',label:'Meer',labelKey:'nav.more'}:ALL_SCREENS.find(function(s){return s.id===slotId2;});
         var isEdit=navConfigEditSlot===si2;
         div.className='nav-slot'+(sc2?' filled':'')+(isEdit?' filled':'');
         if(isEdit)div.style.borderColor='var(--c-accent)';
         div.innerHTML='<div class="nav-slot-icon">'+(sc2?sc2.icon:'+')+'</div>'
-          +'<div class="nav-slot-lbl">'+(sc2?sc2.label:'Leeg')+'</div>';
+          +'<div class="nav-slot-lbl">'+(sc2?navScreenLabel(sc2):navT('nav.empty','Leeg'))+'</div>';
         if(sc2&&slotId2!=='more')div.innerHTML+='<div class="nav-slot-rm" data-clearslot="'+si2+'">✕</div>';
         (function(x){div.onclick=function(e){if(!e.target.classList.contains('nav-slot-rm'))selectNavSlot(x);};})(si2);
       }
@@ -147,19 +159,24 @@ function renderNavConfig() {
     optEl.innerHTML=ALL_SCREENS.map(function(s){
       var used=usedIds.indexOf(s.id)>-1;
       return '<div class="nav-option'+(used?' used':'')+'" data-setslot="'+s.id+'">'
-        +'<div>'+s.icon+'</div><div class="nav-option-lbl">'+s.label+'</div></div>';
+        +'<div>'+s.icon+'</div><div class="nav-option-lbl">'+navScreenLabel(s)+'</div></div>';
     }).join('')
     +'<div class="nav-option" data-setslot="more">'
-      +'<div>···</div><div class="nav-option-lbl">Meer</div></div>';
+      +'<div>···</div><div class="nav-option-lbl">'+navT('nav.more','Meer')+'</div></div>';
   } else if(optEl){
-    optEl.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:14px;color:var(--c-text2);font-size:13px">👆 Tik op een vakje om te wijzigen</div>';
+    optEl.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:14px;color:var(--c-text2);font-size:13px">'+navT('nav.config.tapSlot','👆 Tik op een vakje om te wijzigen')+'</div>';
   }
 }
 function selectNavSlot(idx){navConfigEditSlot=idx;renderNavConfig();setTimeout(attachNavConfigDelegation,10);}
-function setNavSlot(screenId){if(navConfigEditSlot===null)return;navSlots[navConfigEditSlot]=screenId;navConfigEditSlot=null;renderNavConfig();renderNav();setTimeout(attachNavDelegation,10);setTimeout(attachNavConfigDelegation,10);showToast('Navigatie opgeslagen ✓');}
+function setNavSlot(screenId){if(navConfigEditSlot===null)return;navSlots[navConfigEditSlot]=screenId;navConfigEditSlot=null;renderNavConfig();renderNav();setTimeout(attachNavDelegation,10);setTimeout(attachNavConfigDelegation,10);showToast(navT('nav.config.saved','Navigatie opgeslagen ✓'));}
 function clearNavSlot(idx){navSlots[idx]='more';renderNavConfig();renderNav();}
 
 var screenTitles = {home:'FamilieApp 🌿',tasks:'Taken',feed:'Feed',notes:'Notities',shop:'Boodschappen',cal:'Agenda',finance:'Financiën',notif:'Meldingen',achievements:'🏆 Achievements',profile:'Profiel',recipes:'Recepten 🍳',skills:'⚡ Skills',meals:'🗓️ Maaltijdplanner',templates:'📋 Taak Templates',cleaning:'Schoonmaken'};
+var screenTitleKeys = {home:'screen.home',tasks:'screen.tasks',feed:'screen.feed',notes:'screen.notes',shop:'screen.shop',cal:'screen.calendar',finance:'screen.finance',notif:'screen.notifications',achievements:'screen.achievements',profile:'screen.profile',recipes:'screen.recipes',skills:'screen.skills',meals:'screen.meals',templates:'screen.templates',cleaning:'screen.cleaning'};
+
+function translatedScreenTitle(id) {
+  return navT(screenTitleKeys[id], screenTitles[id] || 'FamilieApp');
+}
 
 var _currentScreen = 'home';
 var _navBusy = false;
@@ -249,7 +266,7 @@ function showScreen(id) {
 
   if(previousScreenId==='cleaning'&&id!=='cleaning')stopCleaningModule();
 
-  document.getElementById('hdr-title').textContent = screenTitles[id]||'FamilieApp';
+  document.getElementById('hdr-title').textContent = translatedScreenTitle(id);
   closeMore();
   visitedScreens.add(id);
   _currentScreen = id;
@@ -330,3 +347,13 @@ function closeMore(){
   var menu=document.getElementById('more-menu');
   if(menu)menu.classList.remove('open');
 }
+
+
+window.addEventListener('familyapp:language-changed', function(){
+  renderNav();
+  if(document.getElementById('nav-config-overlay') && document.getElementById('nav-config-overlay').classList.contains('open')) {
+    renderNavConfig();
+  }
+  var title = document.getElementById('hdr-title');
+  if(title) title.textContent = translatedScreenTitle(_currentScreen);
+});

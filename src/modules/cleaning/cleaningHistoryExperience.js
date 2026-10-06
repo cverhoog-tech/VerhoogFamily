@@ -10,6 +10,9 @@
   var VERSION='0.1.0';
   var state={repository:null,observer:null,queued:false,lastSignature:null};
 
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+  function locale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
+  function uiText(value){try{return window.FamilyI18n&&FamilyI18n.translateUiText?FamilyI18n.translateUiText(value):value;}catch(error){return value;}}
   function text(value){return String(value==null?'':value).trim();}
   function esc(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   function at(log){return Number(log&&(log.completedAt||log.finalizedAt||log.reopenedAt||log.createdAt))||0;}
@@ -18,17 +21,17 @@
     if(!snap){try{var repo=window.CleaningHouseholdRepository;snap=repo&&repo.snapshot?repo.snapshot():null;}catch(e){}}
     return snap&&snap.data||{};
   }
-  function roomName(data,id){var room=data.rooms&&data.rooms[id];return text(room&&room.name)||'Verwijderde ruimte';}
-  function routineName(data,id,fallback){var row=data.routines&&data.routines[id];return text(row&&row.title)||text(fallback)||'Schoonmaakroutine';}
+  function roomName(data,id){var room=data.rooms&&data.rooms[id],raw=text(room&&room.name);return raw?uiText(raw):tr('cleaning.history.deletedRoom','Verwijderde ruimte');}
+  function routineName(data,id,fallback){var row=data.routines&&data.routines[id],raw=text(row&&row.title)||text(fallback);return raw?uiText(raw):tr('cleaning.history.cleaningRoutine','Schoonmaakroutine');}
   function relative(value){
-    var timestamp=Number(value)||0;if(!timestamp)return'Nog nooit';
+    var timestamp=Number(value)||0;if(!timestamp)return tr('cleaning.history.never','Nog nooit');
     var d=new Date(timestamp),today=new Date();today.setHours(0,0,0,0);var day=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();var diff=Math.round((day-today.getTime())/86400000);
-    if(diff===0)return'Vandaag';if(diff===-1)return'Gisteren';
-    try{return d.toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:d.getFullYear()!==today.getFullYear()?'numeric':undefined});}catch(e){return'';}
+    if(diff===0)return tr('cleaning.today','Vandaag');if(diff===-1)return tr('cleaning.history.yesterday','Gisteren');
+    try{return d.toLocaleDateString(locale(),{day:'numeric',month:'short',year:d.getFullYear()!==today.getFullYear()?'numeric':undefined});}catch(e){return'';}
   }
-  function outcomeLabel(value){var status=text(value).toUpperCase();if(status==='COMPLETED')return'Afgerond';if(status==='CARRY_FORWARD')return'Doorgeschoven';if(status==='SKIP'||status==='SKIPPED')return'Overgeslagen';if(status==='REOPENED')return'Heropend';if(status==='PARTIAL')return'Deels gedaan';return status||'Bijgewerkt';}
+  function outcomeLabel(value){var status=text(value).toUpperCase();if(status==='COMPLETED')return tr('cleaning.history.completed','Afgerond');if(status==='CARRY_FORWARD')return tr('cleaning.history.carried','Doorgeschoven');if(status==='SKIP'||status==='SKIPPED')return tr('cleaning.history.skipped','Overgeslagen');if(status==='REOPENED')return tr('cleaning.history.reopened','Heropend');if(status==='PARTIAL')return tr('cleaning.history.partial','Deels gedaan');return status||tr('cleaning.history.updated','Bijgewerkt');}
   function memberName(uid){
-    try{var bridge=window.HouseholdIdentityFirebaseBridge,rows=bridge&&bridge.getMembers?bridge.getMembers():[],row=(Array.isArray(rows)?rows:[]).find(function(member){return text(member&&(member.uid||member.id))===text(uid);});return text(row&&(row.displayName||row.name))||'Gezinslid';}catch(e){return'Gezinslid';}
+    try{var bridge=window.HouseholdIdentityFirebaseBridge,rows=bridge&&bridge.getMembers?bridge.getMembers():[],row=(Array.isArray(rows)?rows:[]).find(function(member){return text(member&&(member.uid||member.id))===text(uid);});return text(row&&(row.displayName||row.name))||tr('cleaning.familyMember','Gezinslid');}catch(e){return tr('cleaning.familyMember','Gezinslid');}
   }
   function logs(data){
     var rows=data.completionLogs||{};
@@ -67,11 +70,11 @@
   }
   function markup(data){
     var rooms=roomRows(data);
-    if(!rooms.length)return'<section class="cleaning-history-detail" data-cleaning-history-detail><div class="cleaning-history-detail-head"><strong>Geschiedenis per kamer</strong><span>uit completionLogs</span></div><div class="cleaning-overview-empty">Zodra schoonmaakbeurten zijn afgerond of overgeslagen zie je hier de geschiedenis per kamer en routine.</div></section>';
-    return'<section class="cleaning-history-detail" data-cleaning-history-detail><div class="cleaning-history-detail-head"><strong>Geschiedenis per kamer</strong><span>'+rooms.length+' '+(rooms.length===1?'kamer':'kamers')+'</span></div>'
+    if(!rooms.length)return'<section class="cleaning-history-detail" data-cleaning-history-detail><div class="cleaning-history-detail-head"><strong>'+esc(tr('cleaning.history.byRoom','Geschiedenis per kamer'))+'</strong><span>'+esc(tr('cleaning.history.source','uit completionLogs'))+'</span></div><div class="cleaning-overview-empty">'+esc(tr('cleaning.history.empty','Zodra schoonmaakbeurten zijn afgerond of overgeslagen zie je hier de geschiedenis per kamer en routine.'))+'</div></section>';
+    return'<section class="cleaning-history-detail" data-cleaning-history-detail><div class="cleaning-history-detail-head"><strong>'+esc(tr('cleaning.history.byRoom','Geschiedenis per kamer'))+'</strong><span>'+esc(tr('cleaning.history.roomsCount',rooms.length+' kamers',{count:rooms.length}))+'</span></div>'
       +rooms.map(function(room,index){
-        var routineHtml=room.routines.length?room.routines.slice(0,8).map(function(routine){return'<div class="cleaning-history-routine"><span></span><div class="cleaning-history-routine-copy"><strong>'+esc(routine.title)+'</strong><small>'+esc(relative(routine.at))+(routine.byUid?' · '+esc(memberName(routine.byUid)):'')+'</small></div><span class="cleaning-history-routine-status">'+esc(outcomeLabel(routine.status))+'</span></div>';}).join(''):'<div class="cleaning-overview-empty">Geen routine-details beschikbaar in deze oudere log.</div>';
-        return'<details class="cleaning-history-room"'+(index===0?' open':'')+'><summary><div class="cleaning-history-room-copy"><strong>'+esc(room.name)+'</strong><span>Laatst '+esc(relative(room.lastAt))+' · '+esc(outcomeLabel(room.lastOutcome))+'</span></div><span class="cleaning-history-room-count">'+room.activity30+'× in 30 dagen</span></summary><div class="cleaning-history-routines">'+routineHtml+'</div></details>';
+        var routineHtml=room.routines.length?room.routines.slice(0,8).map(function(routine){return'<div class="cleaning-history-routine"><span></span><div class="cleaning-history-routine-copy"><strong>'+esc(uiText(routine.title))+'</strong><small>'+esc(relative(routine.at))+(routine.byUid?' · '+esc(memberName(routine.byUid)):'')+'</small></div><span class="cleaning-history-routine-status">'+esc(outcomeLabel(routine.status))+'</span></div>';}).join(''):'<div class="cleaning-overview-empty">'+esc(tr('cleaning.history.noDetails','Geen routine-details beschikbaar in deze oudere log.'))+'</div>';
+        return'<details class="cleaning-history-room"'+(index===0?' open':'')+'><summary><div class="cleaning-history-room-copy"><strong>'+esc(uiText(room.name))+'</strong><span>'+esc(tr('cleaning.history.last','Laatst '+relative(room.lastAt),{date:relative(room.lastAt)}))+' · '+esc(outcomeLabel(room.lastOutcome))+'</span></div><span class="cleaning-history-room-count">'+esc(tr('cleaning.history.activity30',room.activity30+'× in 30 dagen',{count:room.activity30}))+'</span></summary><div class="cleaning-history-routines">'+routineHtml+'</div></details>';
       }).join('')+'</section>';
   }
   function signature(data){var rows=data.completionLogs||{};return Object.keys(rows).sort().map(function(id){var row=rows[id]||{};return id+':'+at(row)+':'+text(row.status)+':'+text(row.outcome);}).join('|');}
@@ -89,6 +92,7 @@
   function start(){
     if(window.__cleaningHistoryExperienceStarted)return;window.__cleaningHistoryExperienceStarted=true;
     window.addEventListener('familyapp:cleaning-repository',onRepository);
+    window.addEventListener('familyapp:language-changed',function(){state.lastSignature=null;queue();});
     var target=document.getElementById('screen-cleaning')||document.documentElement;
     if(typeof MutationObserver!=='undefined'&&target){state.observer=new MutationObserver(queue);state.observer.observe(target,{childList:true,subtree:true});}
     queue();

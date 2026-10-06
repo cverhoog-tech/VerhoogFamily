@@ -10,6 +10,7 @@
   var VERSION='1.2.0';
   var MICROSOFT_ID='flv7-microsoft';
   var LEGACY_APPLE_ID='flv7-apple';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function providers(){return window.FamilyAppAuthProviders||{};}
   function enabled(){return providers().microsoft===true;}
@@ -40,7 +41,7 @@
       return;
     }
     b.disabled=!!busy;
-    if(l)l.textContent=busy?'Microsoft openen…':'Doorgaan met Microsoft';
+    if(l)l.textContent=busy?tr('auth.microsoft.opening','Microsoft openen…'):tr('auth.microsoft.continue','Doorgaan met Microsoft');
   }
   function clearError(){
     var e=document.getElementById('auth-error');
@@ -49,13 +50,13 @@
   function showError(error){
     setBusy(false);
     var code=error&&error.code||'';
-    var message='Microsoft-login mislukt. Probeer opnieuw.';
-    if(code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request')message='Microsoft-login is geannuleerd. Probeer opnieuw.';
-    else if(code==='auth/popup-blocked')message='De browser kon het Microsoft-inlogvenster niet openen. Tik nogmaals op “Doorgaan met Microsoft”.';
-    else if(code==='auth/unauthorized-domain')message='Dit domein is nog niet toegestaan voor Firebase Authentication.';
-    else if(code==='auth/operation-not-allowed')message='Microsoft-login moet nog éénmalig worden geactiveerd in Firebase Authentication.';
-    else if(code==='auth/account-exists-with-different-credential')message='Er bestaat al een FamilyApp-account met hetzelfde e-mailadres. Log eerst in met je bestaande methode.';
-    else if(code==='auth/network-request-failed')message='Geen verbinding met Microsoft/Firebase. Controleer je internetverbinding en probeer opnieuw.';
+    var message=tr('auth.microsoft.failed','Microsoft-login mislukt. Probeer opnieuw.');
+    if(code==='auth/popup-closed-by-user'||code==='auth/cancelled-popup-request')message=tr('auth.microsoft.cancelled','Microsoft-login is geannuleerd. Probeer opnieuw.');
+    else if(code==='auth/popup-blocked')message=tr('auth.microsoft.popupBlocked','De browser kon het Microsoft-inlogvenster niet openen. Tik nogmaals op “Doorgaan met Microsoft”.');
+    else if(code==='auth/unauthorized-domain')message=tr('auth.domainUnauthorized','Dit domein is nog niet toegestaan voor Firebase Authentication.');
+    else if(code==='auth/operation-not-allowed')message=tr('auth.microsoft.notEnabled','Microsoft-login moet nog éénmalig worden geactiveerd in Firebase Authentication.');
+    else if(code==='auth/account-exists-with-different-credential')message=tr('auth.microsoft.accountExists','Er bestaat al een FamilyApp-account met hetzelfde e-mailadres. Log eerst in met je bestaande methode.');
+    else if(code==='auth/network-request-failed')message=tr('auth.microsoft.network','Geen verbinding met Microsoft/Firebase. Controleer je internetverbinding en probeer opnieuw.');
     else if(error&&error.message)message=error.message;
     if(window.FamilyAppLoginBrandV7&&typeof window.FamilyAppLoginBrandV7.showError==='function')window.FamilyAppLoginBrandV7.showError(message);
     else if(typeof window.showAuthError==='function')window.showAuthError(message+(code?' ['+code+']':''));
@@ -65,7 +66,7 @@
     }
   }
   function provider(){
-    if(!window.firebase||!firebase.auth||!firebase.auth.OAuthProvider)throw new Error('Firebase Microsoft OAuth provider is niet beschikbaar.');
+    if(!window.firebase||!firebase.auth||!firebase.auth.OAuthProvider)throw new Error(tr('auth.microsoft.providerUnavailable','Firebase Microsoft OAuth provider is niet beschikbaar.'));
     var p=new firebase.auth.OAuthProvider('microsoft.com');
     p.setCustomParameters({prompt:'select_account'});
     return p;
@@ -90,7 +91,7 @@
     // Disabled means intentionally inert: no error and no OAuth attempt.
     if(!enabled())return Promise.resolve(null);
     var a=auth();
-    if(!a){showError(new Error('Firebase is nog niet klaar. Probeer opnieuw.'));return Promise.resolve(null);}
+    if(!a){showError(new Error(tr('auth.firebaseNotReady','Firebase is nog niet klaar. Probeer opnieuw.')));return Promise.resolve(null);}
     clearError();setBusy(true);
     var p;
     try{
@@ -114,7 +115,7 @@
     var b=apple.cloneNode(true);
     b.id=MICROSOFT_ID;
     b.type='button';
-    b.setAttribute('aria-label',enabled()?'Doorgaan met Microsoft':'Microsoft-login — Coming soon');
+    b.setAttribute('aria-label',enabled()?tr('auth.microsoft.continue','Doorgaan met Microsoft'):tr('auth.microsoft.comingSoon','Microsoft-login — Coming soon'));
     var icon=b.querySelector('.flv7-provider-icon');
     if(icon){icon.classList.remove('flv7-apple-icon');icon.classList.add('flv7-microsoft-icon');icon.innerHTML=microsoftSvg();}
     var text=b.querySelector('.flv7-provider-label');
@@ -146,6 +147,7 @@
   function boot(){installButton();handleRedirectResult();}
 
   window.addEventListener('familyapp:login-brand-ready',function(){window.setTimeout(function(){installButton();handleRedirectResult();},0);});
+  window.addEventListener('familyapp:language-changed',function(){var b=button();if(b){b.setAttribute('aria-label',enabled()?tr('auth.microsoft.continue','Doorgaan met Microsoft'):tr('auth.microsoft.comingSoon','Microsoft-login — Coming soon'));setBusy(false);}});
   window.FamilyAppMicrosoftAuth=Object.freeze({version:VERSION,signIn:signIn,installButton:installButton,readiness:readiness,handleRedirectResult:handleRedirectResult});
   window.signInWithMicrosoft=signIn;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();

@@ -2,6 +2,8 @@
 (function(){
   if(window.PersonHeroBackgroundPicker)return;
   var VERSION='2.0.0',root=null,activeUid=null,currentConfig=null,busy=false,prepared=null,progress=0;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+  function presetLabel(p){var map={'fantasy-castle-night':'profile.hero.preset.castle','quest-adventure':'profile.hero.preset.adventure','enchanted-garden':'profile.hero.preset.garden','cozy-guild-home':'profile.hero.preset.guild'};return tr(map[p&&p.id]||'',p&&p.label||p&&p.id||'');}
   function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function clone(v){try{return JSON.parse(JSON.stringify(v||null));}catch(e){return v||null;}}
   function uploadService(){return window.HeroBackdropUploadService||null;}
@@ -11,36 +13,36 @@
   function currentPresetId(){return currentConfig&&currentConfig.type==='preset'&&currentConfig.presetId?currentConfig.presetId:(!currentConfig?defaultId():null);}
   function isCurrentUpload(){return !!(currentConfig&&currentConfig.type==='upload'&&currentConfig.provider==='cloudinary'&&currentConfig.imageUrl);}
   function formatBytes(bytes){var n=Number(bytes||0);if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(0)+' KB';return (n/(1024*1024)).toFixed(1)+' MB';}
-  function message(err,fallback){var text=err&&err.message||fallback||'Er ging iets mis.';try{if(typeof window.showToast==='function')window.showToast(text);else alert(text);}catch(e){alert(text);}}
+  function message(err,fallback){var text=err&&err.message||fallback||tr('profile.hero.genericError','Er ging iets mis.');try{if(typeof window.showToast==='function')window.showToast(text);else alert(text);}catch(e){alert(text);}}
 
   function ensureRoot(){
     if(root&&document.body.contains(root))return root;
     root=document.createElement('div');root.className='phbp-overlay';root.setAttribute('aria-hidden','true');
-    root.innerHTML='<div class="phbp-sheet" role="dialog" aria-modal="true" aria-label="Hero-achtergrond kiezen">'
-      +'<div class="phbp-handle"></div><div class="phbp-head"><div><h2>Achtergrond kiezen</h2><p>Kies een sfeer of gebruik je eigen foto.</p></div><button type="button" class="phbp-close" data-phbp-close aria-label="Sluiten">×</button></div>'
+    root.innerHTML='<div class="phbp-sheet" role="dialog" aria-modal="true" aria-label="'+esc(tr('profile.hero.dialogAria','Hero-achtergrond kiezen'))+'">'
+      +'<div class="phbp-handle"></div><div class="phbp-head"><div><h2>'+esc(tr('profile.hero.chooseTitle','Achtergrond kiezen'))+'</h2><p>'+esc(tr('profile.hero.chooseHint','Kies een sfeer of gebruik je eigen foto.'))+'</p></div><button type="button" class="phbp-close" data-phbp-close aria-label="'+esc(tr('common.close','Sluiten'))+'">×</button></div>'
       +'<div class="phbp-grid" data-phbp-grid></div>'
       +'<div class="phbp-upload" data-phbp-upload-wrap></div>'
       +'<input type="file" accept="image/*" data-phbp-file hidden>'
-      +'<div class="phbp-actions"><button type="button" class="phbp-reset" data-phbp-reset>Standaard herstellen</button></div>'
-      +'<div class="phbp-note">Alleen jij kunt jouw hero-achtergrond aanpassen.</div></div>';
+      +'<div class="phbp-actions"><button type="button" class="phbp-reset" data-phbp-reset>'+esc(tr('profile.hero.reset','Standaard herstellen'))+'</button></div>'
+      +'<div class="phbp-note">'+esc(tr('profile.hero.privateNote','Alleen jij kunt jouw hero-achtergrond aanpassen.'))+'</div></div>';
     document.body.appendChild(root);bind();return root;
   }
 
   function renderGrid(){
     var r=ensureRoot(),grid=r.querySelector('[data-phbp-grid]'),activeId=currentPresetId();if(!grid)return;
-    grid.innerHTML=catalog().map(function(p){var active=String(p.id)===String(activeId||'');return'<button type="button" class="phbp-card'+(active?' is-active':'')+'" data-phbp-preset="'+esc(p.id)+'"><span class="phbp-thumb"><img src="'+esc(p.thumbnailUrl||p.imageUrl)+'" alt=""><i>'+(active?'✓':'')+'</i></span><strong>'+esc(p.label||p.id)+'</strong></button>';}).join('');
+    grid.innerHTML=catalog().map(function(p){var active=String(p.id)===String(activeId||'');return'<button type="button" class="phbp-card'+(active?' is-active':'')+'" data-phbp-preset="'+esc(p.id)+'"><span class="phbp-thumb"><img src="'+esc(p.thumbnailUrl||p.imageUrl)+'" alt=""><i>'+(active?'✓':'')+'</i></span><strong>'+esc(presetLabel(p))+'</strong></button>';}).join('');
   }
 
   function renderUpload(){
     var r=ensureRoot(),wrap=r.querySelector('[data-phbp-upload-wrap]');if(!wrap)return;
     if(prepared){
-      wrap.innerHTML='<div class="phbp-preview-card"><div class="phbp-preview-image"><img src="'+esc(prepared.previewUrl)+'" alt="Voorbeeld eigen achtergrond"></div>'
-        +'<div class="phbp-preview-copy"><strong>Voorbeeld</strong><span>'+esc(prepared.width)+' × '+esc(prepared.height)+' · '+esc(formatBytes(prepared.blob&&prepared.blob.size))+'</span></div>'
+      wrap.innerHTML='<div class="phbp-preview-card"><div class="phbp-preview-image"><img src="'+esc(prepared.previewUrl)+'" alt="'+esc(tr('profile.hero.previewAlt','Voorbeeld eigen achtergrond'))+'"></div>'
+        +'<div class="phbp-preview-copy"><strong>'+esc(tr('profile.hero.preview','Voorbeeld'))+'</strong><span>'+esc(prepared.width)+' × '+esc(prepared.height)+' · '+esc(formatBytes(prepared.blob&&prepared.blob.size))+'</span></div>'
         +'<div class="phbp-progress"'+(busy?'':' hidden')+'><i style="width:'+Math.round(progress*100)+'%"></i></div>'
-        +'<div class="phbp-preview-actions"><button type="button" data-phbp-discard>Andere kiezen</button><button type="button" class="is-primary" data-phbp-confirm>'+(busy?'Bezig…':'Deze foto gebruiken')+'</button></div></div>';
+        +'<div class="phbp-preview-actions"><button type="button" data-phbp-discard>'+esc(tr('profile.hero.chooseOther','Andere kiezen'))+'</button><button type="button" class="is-primary" data-phbp-confirm>'+esc(busy?tr('profile.hero.busy','Bezig…'):tr('profile.hero.usePhoto','Deze foto gebruiken'))+'</button></div></div>';
       return;
     }
-    wrap.innerHTML='<button type="button" class="phbp-upload-button" data-phbp-upload><span class="phbp-upload-mark">＋</span><span><strong>'+(isCurrentUpload()?'Andere eigen foto kiezen':'Eigen foto gebruiken')+'</strong><small>Wordt automatisch verkleind en geoptimaliseerd</small></span></button>'+(isCurrentUpload()?'<div class="phbp-current-upload">✓ Eigen foto is nu actief</div>':'');
+    wrap.innerHTML='<button type="button" class="phbp-upload-button" data-phbp-upload><span class="phbp-upload-mark">＋</span><span><strong>'+esc(isCurrentUpload()?tr('profile.hero.chooseOwn','Andere eigen foto kiezen'):tr('profile.hero.useOwn','Eigen foto gebruiken'))+'</strong><small>'+esc(tr('profile.hero.optimized','Wordt automatisch verkleind en geoptimaliseerd'))+'</small></span></button>'+(isCurrentUpload()?'<div class="phbp-current-upload">'+esc(tr('profile.hero.ownActive','✓ Eigen foto is nu actief'))+'</div>':'');
   }
 
   function render(){renderGrid();renderUpload();}
@@ -59,20 +61,20 @@
   function savePreset(id){
     if(busy||!activeUid)return;var r=repo();if(!r||typeof r.setPreset!=='function')return;
     var old=clone(currentConfig);setBusy(true);
-    r.setPreset(activeUid,id).then(function(){currentConfig={type:'preset',presetId:id};return cleanupOldUpload(old,null);}).then(function(){setBusy(false);setTimeout(close,90);}).catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker]',err);message(err,'Achtergrond opslaan is niet gelukt.');});
+    r.setPreset(activeUid,id).then(function(){currentConfig={type:'preset',presetId:id};return cleanupOldUpload(old,null);}).then(function(){setBusy(false);setTimeout(close,90);}).catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker]',err);message(err,tr('profile.hero.saveFailed','Achtergrond opslaan is niet gelukt.'));});
   }
 
   function reset(){
     if(busy||!activeUid)return;var r=repo();if(!r||typeof r.reset!=='function')return;
     var old=clone(currentConfig);setBusy(true);
-    r.reset(activeUid).then(function(){currentConfig=null;return cleanupOldUpload(old,null);}).then(function(){setBusy(false);setTimeout(close,90);}).catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker]',err);message(err,'Achtergrond herstellen is niet gelukt.');});
+    r.reset(activeUid).then(function(){currentConfig=null;return cleanupOldUpload(old,null);}).then(function(){setBusy(false);setTimeout(close,90);}).catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker]',err);message(err,tr('profile.hero.resetFailed','Achtergrond herstellen is niet gelukt.'));});
   }
 
   function chooseFile(){if(busy||!activeUid)return;var input=ensureRoot().querySelector('[data-phbp-file]');if(input){input.value='';input.click();}}
   function prepareFile(file){
-    var s=uploadService();if(!s||typeof s.prepare!=='function'){message(null,'Foto-upload is niet beschikbaar.');return;}
+    var s=uploadService();if(!s||typeof s.prepare!=='function'){message(null,tr('profile.hero.uploadUnavailable','Foto-upload is niet beschikbaar.'));return;}
     disposePrepared();setBusy(true);
-    s.prepare(file).then(function(result){prepared=result;progress=0;setBusy(false);render();}).catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker] prepare failed',err);message(err,'De foto kon niet worden voorbereid.');});
+    s.prepare(file).then(function(result){prepared=result;progress=0;setBusy(false);render();}).catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker] prepare failed',err);message(err,tr('profile.hero.prepareFailed','De foto kon niet worden voorbereid.'));});
   }
 
   function confirmUpload(){
@@ -82,7 +84,7 @@
       .then(function(meta){newMeta=meta;progress=1;return r.setUpload(activeUid,meta).catch(function(err){var retire=typeof s.retireUpload==='function'?s.retireUpload(activeUid,meta):Promise.resolve();return retire.catch(function(){}).then(function(){throw err;});});})
       .then(function(){currentConfig=clone(newMeta);return cleanupOldUpload(old,newMeta.assetId);})
       .then(function(){disposePrepared();setBusy(false);setTimeout(close,90);})
-      .catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker] upload failed',err);message(err,'Uploaden is niet gelukt.');});
+      .catch(function(err){setBusy(false);console.warn('[HeroBackgroundPicker] upload failed',err);message(err,tr('profile.hero.uploadFailed','Uploaden is niet gelukt.'));});
   }
 
   function discardPrepared(){if(busy)return;disposePrepared();renderUpload();}
@@ -105,5 +107,6 @@
     var el=ensureRoot();el.classList.add('is-open');el.setAttribute('aria-hidden','false');return true;
   }
 
+  window.addEventListener('familyapp:language-changed',function(){try{if(root&&root.classList.contains('is-open')){var wasOpen=true;root.remove();root=null;ensureRoot();if(wasOpen){render();root.classList.add('is-open');root.setAttribute('aria-hidden','false');}}}catch(error){}});
   window.PersonHeroBackgroundPicker={version:VERSION,open:open,close:close};
 })();

@@ -9,12 +9,13 @@
   if(window.__taskCompactLifecycleV3)return;
   window.__taskCompactLifecycleV3=true;
   window.__taskCompactLifecycleV2=true;window.__taskCompactLifecycleV1=true;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function realTasks(){return Array.isArray(window.taskData)?window.taskData:[];}
   function currentUid(){try{return (window.fbUser||(window.firebase&&firebase.auth&&firebase.auth().currentUser)||{}).uid||null;}catch(e){return null;}}
   function members(){try{return window.TaskSharedData&&TaskSharedData.members?TaskSharedData.members()||[]:[];}catch(e){return[];}}
   function member(id){return members().find(function(m){return String(m.uid||m.id)===String(id);})||null;}
-  function memberName(id){var m=member(id);if(m)return m.displayName||m.name||'Gezinslid';return String(id||'')===String(currentUid())?(window.myName||'Jij'):'Gezinslid';}
+  function memberName(id){var m=member(id);if(m)return m.displayName||m.name||tr('cleaning.familyMember','Gezinslid');return String(id||'')===String(currentUid())?(window.myName||tr('tasks.me','Ik')):tr('cleaning.familyMember','Gezinslid');}
   function helperUid(h){return String(h&&(h.uid||h.memberId||h.id)||'');}
   // Help-request management belongs to the task creator, not every assignee.
   function isHelpOwner(task,id){return !!(window.TaskSharedData&&TaskSharedData.isTaskCreator&&TaskSharedData.isTaskCreator(task,id));}
@@ -64,7 +65,7 @@
   function openCollabPopover(task,content){
     var stale=document.getElementById('tch-collab-popover');if(stale&&stale.parentNode)stale.parentNode.removeChild(stale);
     var o=document.createElement('div');o.id='tch-collab-popover';o.className='tch-collab-overlay';
-    o.innerHTML='<div class="tch-collab-card" role="dialog" aria-modal="true"><div class="tch-collab-head"><div class="tch-collab-crest">!</div><div style="flex:1;min-width:0"><div class="tch-collab-title">'+esc(content.title)+'</div><div class="tch-collab-sub">'+esc(content.sub)+'</div></div><button type="button" class="tch-collab-close" data-collab-close="1" aria-label="Sluiten">✕</button></div>'+(content.actions&&content.actions.length?'<div class="tch-collab-actions">'+content.actions.map(collabButton).join('')+'</div>':'')+'</div>';
+    o.innerHTML='<div class="tch-collab-card" role="dialog" aria-modal="true"><div class="tch-collab-head"><div class="tch-collab-crest">!</div><div style="flex:1;min-width:0"><div class="tch-collab-title">'+esc(content.title)+'</div><div class="tch-collab-sub">'+esc(content.sub)+'</div></div><button type="button" class="tch-collab-close" data-collab-close="1" aria-label="'+esc(tr('common.close','Sluiten'))+'">✕</button></div>'+(content.actions&&content.actions.length?'<div class="tch-collab-actions">'+content.actions.map(collabButton).join('')+'</div>':'')+'</div>';
     document.body.appendChild(o);
     o.onclick=function(e){if(e.target===o)closeCollabPopover();};
     o.querySelector('[data-collab-close]').onclick=closeCollabPopover;
@@ -73,30 +74,31 @@
         var action=btn.getAttribute('data-collab-popover-action');
         if(action==='close'){closeCollabPopover();return;}
         Array.prototype.forEach.call(o.querySelectorAll('[data-collab-popover-action]'),function(b){b.disabled=true;});
-        runCollabAction(task,action).then(function(){closeCollabPopover();}).catch(function(err){Array.prototype.forEach.call(o.querySelectorAll('[data-collab-popover-action]'),function(b){b.disabled=false;});toast((err&&err.message)||'Actie mislukt');});
+        runCollabAction(task,action).then(function(){closeCollabPopover();}).catch(function(err){Array.prototype.forEach.call(o.querySelectorAll('[data-collab-popover-action]'),function(b){b.disabled=false;});toast((err&&err.message)||tr('tasks.actionFailed','Actie mislukt'));});
       };
     });
     requestAnimationFrame(function(){o.classList.add('open');});
     document.addEventListener('keydown',collabEscHandler,true);
   }
   function runCollabAction(task,action){
-    var service=window.TaskSharedData;if(!service)return Promise.reject(new Error('Nog niet klaar'));
+    var service=window.TaskSharedData;if(!service)return Promise.reject(new Error(tr('tasks.notReady','Nog niet klaar')));
     if(action==='join'){
       return service.joinHelp(task.id||task._key).then(function(saved){
         if(window.NotificationEvents&&NotificationEvents.taskHelpJoined)NotificationEvents.taskHelpJoined(saved||task,task.helpRequestedByUid||task.createdByUid||null).catch(function(){});
-        toast('Je helpt nu mee 🤝');
+        toast(tr('help.helpingNow','Je helpt nu mee 🤝'));
       });
     }
-    if(action==='retract')return service.retractHelp(task.id||task._key).then(function(){toast('Hulpvraag ingetrokken');});
-    if(action==='leave')return service.leaveHelp(task.id||task._key).then(function(){toast('Je hebt de quest verlaten');});
+    if(action==='retract')return service.retractHelp(task.id||task._key).then(function(){toast(tr('tasks.helpRetracted','Hulpvraag ingetrokken'));});
+    if(action==='leave')return service.leaveHelp(task.id||task._key).then(function(){toast(tr('tasks.questLeft','Je hebt de quest verlaten'));});
     return Promise.resolve();
   }
   function collabContentFor(task,role){
     var owner=memberName(task.helpRequestedByUid||task.createdByUid),target=memberName(task.helpRequestedForUid);
-    if(role==='owner-pending')return{title:'Hulp gevraagd',sub:'Uitnodiging staat open voor '+target+'.',actions:[{label:'Hulpvraag intrekken',action:'retract',cls:'is-danger'}]};
-    if(role==='invitee')return{title:'Hulp gevraagd',sub:owner+' vraagt jouw hulp bij deze taak.',actions:[{label:'Hulp geven',action:'join',cls:''},{label:'Niet nu',action:'close',cls:'is-muted'}]};
-    if(role==='helper')return{title:'Samen op quest',sub:'Je helpt mee aan deze taak.',actions:[{label:'Quest verlaten',action:'leave',cls:'is-danger'}]};
-    return{title:'Hulp gevraagd',sub:owner+' vraagt hulp'+(target&&target!==owner?' aan '+target:'')+' bij deze taak.',actions:[{label:'Sluiten',action:'close',cls:'is-muted'}]};
+    if(role==='owner-pending')return{title:tr('tasks.helpRequested','Hulp gevraagd'),sub:tr('tasks.inviteOpenFor','Uitnodiging staat open voor '+target,{name:target}),actions:[{label:tr('tasks.retractHelp','Hulpvraag intrekken'),action:'retract',cls:'is-danger'}]};
+    if(role==='invitee')return{title:tr('tasks.helpRequested','Hulp gevraagd'),sub:tr('tasks.memberAsksHelp',owner+' vraagt jouw hulp bij deze quest.',{name:owner}),actions:[{label:tr('help.give','Hulp geven'),action:'join',cls:''},{label:tr('common.notNow','Niet nu'),action:'close',cls:'is-muted'}]};
+    if(role==='helper')return{title:tr('tasks.helpStatusTogether','Samen op quest'),sub:tr('tasks.helpingTask','Je helpt mee aan deze taak.'),actions:[{label:tr('tasks.leaveQuest','Quest verlaten'),action:'leave',cls:'is-danger'}]};
+    var targetPart=target&&target!==owner?' aan '+target:'';
+    return{title:tr('tasks.helpRequested','Hulp gevraagd'),sub:tr('tasks.helpOther',owner+' vraagt hulp'+targetPart+' bij deze taak.',{name:owner,target:targetPart}),actions:[{label:tr('common.close','Sluiten'),action:'close',cls:'is-muted'}]};
   }
 
   function leaveAsHelper(task){openCollabPopover(task,collabContentFor(task,'helper'));}
@@ -106,7 +108,7 @@
       var id=helperUid(h);if(!id)return;
       var already=Array.prototype.some.call(wrap.querySelectorAll('[data-helper-uid]'),function(el){return el.getAttribute('data-helper-uid')===id;});if(already)return;
       var av=avatarFor(id),name=(h&&h.name)||(member(id)&&(member(id).displayName||member(id).name))||'Helper',holder=document.createElement('span'),el;
-      holder.className='tch-helper-avatar-wrap'+(String(id)===String(me)?' is-self-helper':'');holder.setAttribute('data-helper-uid',id);holder.title=String(id)===String(me)?'Quest verlaten':name;
+      holder.className='tch-helper-avatar-wrap'+(String(id)===String(me)?' is-self-helper':'');holder.setAttribute('data-helper-uid',id);holder.title=String(id)===String(me)?tr('tasks.leaveQuest','Quest verlaten'):name;
       if(av){el=document.createElement('img');el.src=av;el.alt=name;}else{el=document.createElement('span');el.textContent=initials(name);el.title=name;}
       el.className='tch-helper-avatar'+(String(id)===String(me)?' is-self-helper':'');holder.appendChild(el);wrap.appendChild(holder);
       if(String(id)===String(me))holder.onclick=function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();leaveAsHelper(task);};
@@ -119,7 +121,7 @@
     if(!task.helpRequested)return;
     var role=isHelpOwner(task,me)?'owner-pending':(String(task.helpRequestedForUid||'')===String(me)?'invitee':'other');
     var btn=document.createElement('button');btn.type='button';btn.className='tch-help-indicator'+(role!=='other'?' is-actionable':'');btn.dataset.collabAction=role;
-    btn.setAttribute('aria-label',role==='owner-pending'?'Open hulpvraag beheren':role==='invitee'?'Hulp gevraagd — bekijk':'Hulp gevraagd voor deze taak');
+    btn.setAttribute('aria-label',role==='owner-pending'?tr('tasks.helpManageAria','Open hulpvraag beheren'):role==='invitee'?tr('tasks.helpViewAria','Hulp gevraagd — bekijk'):tr('tasks.helpTaskAria','Hulp gevraagd voor deze taak'));
     btn.innerHTML='<span class="tch-help-indicator-dot">!</span>';
     btn.onclick=function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();openCollabPopover(task,collabContentFor(task,role));};
     var reward=row.querySelector('.tch-reward');if(reward)row.insertBefore(btn,reward);else row.appendChild(btn);
@@ -136,6 +138,6 @@
   }
   function schedule(){var stale=document.getElementById('tch-collab-popover');if(stale&&stale.parentNode)stale.parentNode.removeChild(stale);document.removeEventListener('keydown',collabEscHandler,true);Promise.resolve().then(function(){apply();});}
   document.addEventListener('click',function(e){var h=e.target&&e.target.closest&&e.target.closest('#task-content [data-group-toggle]');if(h)Promise.resolve().then(function(){Promise.resolve().then(apply);});},false);
-  window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);
+  window.addEventListener('familyapp:tasks-updated',schedule);window.addEventListener('familyapp:household-identity-synced',schedule);window.addEventListener('familyapp:language-changed',schedule);
   window.TaskCompactLifecycle={version:'3.1.0',apply:apply};
 })();

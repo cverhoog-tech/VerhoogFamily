@@ -3,6 +3,9 @@
 // THEMA & DARK MODE
 // ============================================================
 
+function themeTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+var THEME_LABEL_KEYS={nature:'theme.nature',kawaii:'theme.kawaii',winter:'theme.winter',autumn:'theme.autumn',modern:'theme.modern',summer:'theme.summer'};
+function themeLabel(t){return themeTr(THEME_LABEL_KEYS[t&&t.id]||'',t&&t.label||'');}
 var THEMES = [
   {id:'nature',  label:'🌿 Natuur',  base:'',       colors:['#2d5a27','#4a8a42','#e8f5e3']},
   {id:'kawaii',  label:'🌸 Kawaii',  base:'kawaii', colors:['#e05c9a','#f472b6','#fce4f1']},
@@ -159,7 +162,7 @@ function renderBgEditor() {
       +'background:'+(isActive?'var(--c-primary)':'var(--c-surface)')+';'
       +'color:'+(isActive?'#fff':'var(--c-text2)')+';'
       +'font-size:11px;font-weight:700;cursor:pointer;position:relative">'
-      + t.label.split(' ').slice(1).join(' ')
+      + themeLabel(t).split(' ').slice(1).join(' ')
       +(hasCustBg?'<span style="position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:var(--c-primary);border-radius:50%;border:1.5px solid var(--c-surface)"></span>':'')
       +'</button>';
   }).join('');
@@ -204,7 +207,7 @@ function renderBgEditor() {
         customBgs[bgEditTheme].opacity = parseInt(document.getElementById('bg-opacity').value)||20;
         renderBgEditor();
         if(bgEditTheme === currentTheme) renderHomeBg(currentTheme);
-        document.getElementById('bg-save-status').innerHTML = '<span style="color:#d97706">📸 Foto geladen — tik Opslaan om te bewaren</span>';
+        document.getElementById('bg-save-status').innerHTML = '<span style="color:#d97706">'+themeTr('theme.photoLoaded','📸 Foto geladen — tik Opslaan om te bewaren')+'</span>';
       };
       reader.readAsDataURL(file);
       fileInp.value = '';
@@ -231,7 +234,7 @@ function updateBgOpacity(val) {
 function saveBgPhoto() {
   var custom = customBgs[bgEditTheme];
   if(!custom || !custom.photo) {
-    document.getElementById('bg-save-status').innerHTML = '<span style="color:#dc2626">Upload eerst een foto</span>';
+    document.getElementById('bg-save-status').innerHTML = '<span style="color:#dc2626">'+themeTr('theme.uploadFirst','Upload eerst een foto')+'</span>';
     return;
   }
   custom.blur = parseInt(document.getElementById('bg-blur').value)||8;
@@ -240,8 +243,8 @@ function saveBgPhoto() {
   if(bgEditTheme === currentTheme) renderHomeBg(currentTheme);
   renderBgEditor();
   var t = THEMES.find(function(x){return x.id===bgEditTheme;});
-  document.getElementById('bg-save-status').innerHTML = '<span style="color:#16a34a">✓ Opgeslagen voor thema '+(t?t.label:bgEditTheme)+'</span>';
-  showToast('Achtergrond opgeslagen ✓');
+  var displayTheme=t?themeLabel(t):bgEditTheme;document.getElementById('bg-save-status').innerHTML = '<span style="color:#16a34a">'+themeTr('theme.savedFor','✓ Opgeslagen voor thema '+displayTheme,{theme:displayTheme})+'</span>';
+  showToast(themeTr('theme.backgroundSaved','Achtergrond opgeslagen ✓'));
 }
 function removeBgPhoto() {
   if(customBgs[bgEditTheme]) {
@@ -249,7 +252,7 @@ function removeBgPhoto() {
     saveCustomBgs();
     if(bgEditTheme === currentTheme) renderHomeBg(currentTheme);
     renderBgEditor();
-    document.getElementById('bg-save-status').innerHTML = '<span style="color:var(--c-text2)">Achtergrond verwijderd</span>';
+    document.getElementById('bg-save-status').innerHTML = '<span style="color:var(--c-text2)">'+themeTr('theme.backgroundRemoved','Achtergrond verwijderd')+'</span>';
   }
 }
 
@@ -269,7 +272,7 @@ function updateDarkToggleUI() {
   var homeBtn=document.getElementById('home-dark-toggle');
   if(homeBtn){
     homeBtn.setAttribute('aria-pressed',isDark?'true':'false');
-    homeBtn.setAttribute('title',isDark?'Lichte modus':'Donkere modus');
+    homeBtn.setAttribute('title',isDark?themeTr('theme.lightMode','Lichte modus'):themeTr('theme.darkMode','Donkere modus'));
     homeBtn.innerHTML=(window.FamilyIcons&&FamilyIcons.svg)?FamilyIcons.svg(isDark?'sun':'moon',18):(isDark?'☀️':'🌙');
   }
 }
@@ -287,7 +290,7 @@ function renderThemeGrid() {
       +'<div style="display:flex;gap:3px">'
       +t.colors.map(function(c){return '<div style="width:14px;height:14px;border-radius:50%;background:'+c+'"></div>';}).join('')
       +'</div>'
-      +'<div style="font-size:11px;font-weight:700;color:'+(active?'#fff':'var(--c-text2)')+'">'+t.label+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:'+(active?'#fff':'var(--c-text2)')+'">'+themeLabel(t)+'</div>'
       +'</button>';
   }).join('');
 }
@@ -323,3 +326,4 @@ window.addEventListener('familyapp:household-changed',syncThemePreference);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',syncThemePreference);else syncThemePreference();
 
 // Profiel logica → src/core/profile.legacy.js
+window.addEventListener('familyapp:language-changed',function(){try{renderBgEditor();updateDarkToggleUI();renderThemeGrid();}catch(error){}});

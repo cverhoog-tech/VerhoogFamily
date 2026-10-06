@@ -1,4 +1,6 @@
 'use strict';
+function searchTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+function searchUiText(value){try{return window.FamilyI18n&&FamilyI18n.translateUiText?FamilyI18n.translateUiText(value):value;}catch(error){return value;}}
 // ============================================================
 // GLOBAL SEARCH
 // ============================================================
@@ -17,24 +19,24 @@ function shoppingSearchItems(){
 }
 function runSearch(q){
   var el=document.getElementById('search-results');if(!el)return;
-  if(!q||q.length<2){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--c-text3);font-size:14px">Begin met typen...</div>';return;}
+  if(!q||q.length<2){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--c-text3);font-size:14px">'+searchTr('search.startTyping','Begin met typen...')+'</div>';return;}
   var results=[];
   taskData.filter(function(t){return t.title&&t.title.toLowerCase().indexOf(q)>-1;}).forEach(function(t){
-    results.push({type:'Taak',icon:'✅',label:t.title,sub:t.done?'Gedaan':'Open',action:function(){closeSearch();showScreen('tasks');}});
+    results.push({type:searchTr('search.type.task','Taak'),icon:'✅',label:t.title,sub:t.done?searchTr('search.done','Gedaan'):searchTr('search.open','Open'),action:function(){closeSearch();showScreen('tasks');}});
   });
   recipesData.filter(function(r){return r.name&&r.name.toLowerCase().indexOf(q)>-1;}).forEach(function(r){
-    results.push({type:'Recept',icon:'🍳',label:r.name,sub:r.cat,action:function(){closeSearch();showScreen('recipes');setTimeout(function(){openRecipeDetail(r.id);},200);}});
+    results.push({type:searchTr('search.type.recipe','Recept'),icon:'🍳',label:r.name,sub:searchUiText(r.cat),action:function(){closeSearch();showScreen('recipes');setTimeout(function(){openRecipeDetail(r.id);},200);}});
   });
   shoppingSearchItems().filter(function(s){return s.name&&s.name.toLowerCase().indexOf(q)>-1;}).forEach(function(s){
-    results.push({type:'Boodschap',icon:'🛒',label:s.name,sub:s.qty||s.cat||'',action:function(){closeSearch();showScreenMore('shop');}});
+    results.push({type:searchTr('search.type.grocery','Boodschap'),icon:'🛒',label:s.name,sub:s.qty||s.cat||'',action:function(){closeSearch();showScreenMore('shop');}});
   });
   (noteData||[]).filter(function(n){return n.title&&n.title.toLowerCase().indexOf(q)>-1;}).forEach(function(n){
-    results.push({type:'Notitie',icon:'📝',label:n.title,sub:'',action:function(){closeSearch();showScreen('notes');}});
+    results.push({type:searchTr('search.type.note','Notitie'),icon:'📝',label:n.title,sub:'',action:function(){closeSearch();showScreen('notes');}});
   });
   calData.filter(function(e){return e.title&&e.title.toLowerCase().indexOf(q)>-1;}).forEach(function(e){
-    results.push({type:'Agenda',icon:'📅',label:e.title,sub:formatDate(e.date),action:function(){closeSearch();showScreen('cal');}});
+    results.push({type:searchTr('search.type.calendar','Agenda'),icon:'📅',label:e.title,sub:formatDate(e.date),action:function(){closeSearch();showScreen('cal');}});
   });
-  if(!results.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--c-text3)">Geen resultaten voor "'+q+'"</div>';return;}
+  if(!results.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--c-text3)">'+searchTr('search.noResultsFor','Geen resultaten voor “'+q+'”',{query:q})+'</div>';return;}
   var grouped={};results.forEach(function(r){if(!grouped[r.type])grouped[r.type]=[];grouped[r.type].push(r);});
   var allR=[]; Object.values(grouped).forEach(function(a){a.forEach(function(r){allR.push(r);});});
   el.innerHTML=Object.keys(grouped).map(function(type){
@@ -50,3 +52,5 @@ function runSearch(q){
   }).join('');
   el.querySelectorAll('.search-result-item').forEach(function(item,i){item.onclick=allR[i].action;});
 }
+
+window.addEventListener('familyapp:language-changed',function(){try{var input=document.getElementById('search-inp');if(input&&document.getElementById('search-overlay')&&document.getElementById('search-overlay').style.display!=='none')runSearch((input.value||'').toLowerCase());}catch(error){}});

@@ -1,4 +1,6 @@
 'use strict';
+function notesTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+function notesLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
 // ============================================================
 // NOTITIES
 // ============================================================
@@ -18,13 +20,13 @@ function renderNoteGrid() {
   var grid=document.getElementById('notes-grid');if(!grid)return;
   var notes=noteData;
   if(nbFilter!=='all')notes=notes.filter(function(n){return n.nb===nbFilter;});
-  if(!notes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#ccc;font-size:14px">Geen notities</div>';return;}
+  if(!notes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#ccc;font-size:14px">'+notesTr('notes.none','Geen notities')+'</div>';return;}
   grid.innerHTML=notes.map(function(n){
     var preview=(n.blocks||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.content||'';}).join(' ').substring(0,80);
     return '<div class="note-card nc-'+n.color+'" onclick="openNoteEditor('+n.id+')">'
       +'<div class="note-card-title">'+n.title+'</div>'
-      +'<div class="note-card-preview">'+(preview||'<em style="color:#ccc">Leeg</em>')+'</div>'
-      +'<div class="note-card-foot"><span class="note-nb">'+(n.nb||'Gezin')+'</span><span>'+(n.time||'')+'</span></div>'
+      +'<div class="note-card-preview">'+(preview||'<em style="color:#ccc">'+notesTr('common.empty','Leeg')+'</em>')+'</div>'
+      +'<div class="note-card-foot"><span class="note-nb">'+(n.nb||notesTr('common.family','Gezin'))+'</span><span>'+(n.time||'')+'</span></div>'
       +'</div>';
   }).join('');
 }
@@ -39,7 +41,7 @@ function openNoteEditor(id) {
   neNoteColor=note?note.color||'yellow':'yellow';
 
   document.getElementById('ne-title').value=note?note.title||'':'';
-  var nb=document.getElementById('ne-nb');if(nb&&note)nb.value=note.nb||'Gezin';
+  var nb=document.getElementById('ne-nb');if(nb&&note)nb.value=note.nb||notesTr('common.family','Gezin');
   document.getElementById('ne-lastmod').textContent=note?(note.who||'')+' · '+(note.time||''):'';
   document.querySelectorAll('.ne-cdot').forEach(function(d){d.classList.toggle('active',d.dataset.c===neNoteColor);});
 
@@ -53,8 +55,8 @@ function openNoteEditor(id) {
   document.getElementById('ne-save-btn').onclick=function(){
     saveNote();
     var btn=document.getElementById('ne-save-btn');
-    btn.textContent='✓ Opgeslagen';btn.style.background='#16a34a';
-    setTimeout(function(){btn.textContent='Opslaan';btn.style.background='#2d5a27';},1500);
+    btn.textContent=notesTr('common.saved','✓ Opgeslagen');btn.style.background='#16a34a';
+    setTimeout(function(){btn.textContent=notesTr('common.save','Opslaan');btn.style.background='#2d5a27';},1500);
   };
   document.getElementById('ne-draw-color').oninput=function(e){neDrawColor=e.target.value;};
   document.getElementById('ne-draw-size').oninput=function(e){neDrawSize=parseInt(e.target.value);};
@@ -79,8 +81,8 @@ function closeNoteEditor(save) {
 }
 
 function saveNote() {
-  var title=document.getElementById('ne-title').value.trim()||'Naamloos';
-  var nb=(document.getElementById('ne-nb')||{}).value||'Gezin';
+  var title=document.getElementById('ne-title').value.trim()||notesTr('common.unnamed','Naamloos');
+  var nb=(document.getElementById('ne-nb')||{}).value||notesTr('common.family','Gezin');
   // Capture text from contenteditable blocks
   neBlocks.forEach(function(b){
     if(b.type==='text'){
@@ -89,15 +91,15 @@ function saveNote() {
     }
     if(b.type==='image'&&neImgHistory[b.id]){b.drawStrokes=neImgHistory[b.id];}
   });
-  var now=new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+  var now=new Date().toLocaleDateString(notesLocale(),{day:'numeric',month:'short'});
   if(activeNoteId){
     var n=noteData.find(function(x){return x.id===activeNoteId;});
     if(n){n.title=title;n.blocks=JSON.parse(JSON.stringify(neBlocks));n.color=neNoteColor;n.nb=nb;n.time=now;n.who=myName;}
   } else {
-    var newNote={id:noteNextId++,title:title,blocks:JSON.parse(JSON.stringify(neBlocks)),color:neNoteColor,nb:nb,who:myName,time:'Zojuist'};
+    var newNote={id:noteNextId++,title:title,blocks:JSON.parse(JSON.stringify(neBlocks)),color:neNoteColor,nb:nb,who:myName,time:notesTr('common.justNow','Zojuist')};
     noteData.unshift(newNote);
     activeNoteId=newNote.id;
-    awardXP(4,'Notitie');addActivity('📝','#f0ede8',myName+' maakte notitie "'+title+'" aan');
+    awardXP(4,notesTr('notes.note','Notitie'));addActivity('📝','#f0ede8',notesTr('notes.activityCreated',myName+' maakte notitie "'+title+'" aan',{name:myName,title:title}));
   }
 }
 
@@ -176,10 +178,10 @@ function renderNeBlocks() {
     b.w = bw;
     var inner = '';
     if(b.type === 'text') {
-      inner = '<div class="ne-block-drag-handle" data-bid="'+b.id+'">⠿ slepen</div>'
-        +'<div id="ne-txt-'+b.id+'" class="ne-text-area" contenteditable="true" data-ph="Typ hier..."></div>';
+      inner = '<div class="ne-block-drag-handle" data-bid="'+b.id+'">⠿ '+notesTr('common.drag','slepen')+'</div>'
+        +'<div id="ne-txt-'+b.id+'" class="ne-text-area" contenteditable="true" data-ph="'+notesTr('common.typeHere','Typ hier...')+'"></div>';
     } else if(b.type === 'image') {
-      inner = '<div class="ne-block-drag-handle" data-bid="'+b.id+'">⠿ slepen</div>'
+      inner = '<div class="ne-block-drag-handle" data-bid="'+b.id+'">⠿ '+notesTr('common.drag','slepen')+'</div>'
         +'<div style="position:relative">'
         +'<img src="'+b.src+'" style="width:100%;display:block;border-radius:8px;pointer-events:none" draggable="false">'
         +'<canvas id="ne-ic-'+b.id+'" style="position:absolute;top:0;left:0;width:100%;border-radius:8px;'
@@ -300,9 +302,9 @@ function startResize(e,id){
 
 function toggleDrawOnImg(){
   var btn=document.getElementById('ne-draw-on-img-btn');
-  if(!neSelected){showToast('Selecteer eerst een afbeelding');return;}
+  if(!neSelected){showToast(notesTr('notes.imageFirst','Selecteer eerst een afbeelding'));return;}
   var b=neBlocks.find(function(x){return x.id===neSelected;});
-  if(!b||b.type!=='image'){showToast('Selecteer een afbeelding blok');return;}
+  if(!b||b.type!=='image'){showToast(notesTr('notes.imageBlock','Selecteer een afbeelding blok'));return;}
   neDrawOnImg=neDrawOnImg===b.id?null:b.id;
   if(btn)btn.classList.toggle('active',neDrawOnImg===b.id);
   renderNeBlocks();
@@ -390,3 +392,5 @@ function redrawImgCanvas(id){
   strokes.forEach(function(s){drawStroke(ctx,s);});
 }
 
+
+window.addEventListener('familyapp:language-changed',function(){try{renderNotes();if(document.getElementById('ne-screen')&&document.getElementById('ne-screen').classList.contains('open'))renderNeBlocks();}catch(error){}});

@@ -32,6 +32,7 @@ var FEED_IMAGES = {
 // FeedSharedData's first real snapshot arrives, then real posts or an
 // empty state — never stale local content.
 var feedData = [];
+function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 function escHtml(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function myPhotoUrl(){try{return firebase.auth().currentUser && firebase.auth().currentUser.photoURL;}catch(e){return null;}}
 
@@ -125,15 +126,15 @@ function feedListBodyHTML(){
   if (!st || !st.hasSnapshot) {
     return '<div class="fs-feed-loading" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)">'
       + '<div style="font-size:28px;margin-bottom:8px">⏳</div>'
-      + '<div style="font-size:14px;font-weight:600">Feed wordt verbonden...</div>'
+      + '<div style="font-size:14px;font-weight:600">'+escHtml(tr('common.loading','Loading...'))+'</div>'
       + '</div>';
   }
   var posts = filteredFeed();
   if (!posts.length) {
     return '<div class="fs-feed-empty" style="text-align:center;padding:48px 20px;color:var(--c-text2,#6b7280)">'
       + '<div style="font-size:28px;margin-bottom:8px">💬</div>'
-      + '<div style="font-size:14px;font-weight:600">Nog geen berichten</div>'
-      + '<div style="font-size:12px;margin-top:4px">Deel iets met het gezin hierboven</div>'
+      + '<div style="font-size:14px;font-weight:600">'+escHtml(tr('feed.noPosts','Nog geen berichten'))+'</div>'
+      + '<div style="font-size:12px;margin-top:4px">'+escHtml(tr('feed.noPostsHint','Deel iets met het gezin hierboven'))+'</div>'
       + '</div>';
   }
   return posts.map(renderPostHTML).join('');
@@ -166,22 +167,22 @@ window.openFeedShortcut = function openFeedShortcut(type){
   }
 };
 
-function topHTML(){var t=feedData.filter(function(p){return p.type==='task';}).length+3;var a=feedData.filter(function(p){return p.type==='agenda';}).length+1;var s=3;var u=feedData.length+2;return '<div class="fs-top"><div class="fs-stats">'+stat('task','Taken',t+' afgerond')+stat('agenda','Afspraken',a+' gepland')+stat('shop','Boodschappen',s+' items')+stat('updates','Updates',u+' nieuw')+'</div><div class="fs-filters">'+filter('all','home','Alle updates')+filter('tasks','task','Taken')+filter('agenda','agenda','Agenda')+'</div></div>';}
+function topHTML(){var t=feedData.filter(function(p){return p.type==='task';}).length+3;var a=feedData.filter(function(p){return p.type==='agenda';}).length+1;var s=3;var u=feedData.length+2;return '<div class="fs-top"><div class="fs-stats">'+stat('task',tr('feed.tasks','Taken'),tr('feed.completedCount',t+' afgerond',{count:t}))+stat('agenda',tr('feed.appointments','Afspraken'),tr('feed.plannedCount',a+' gepland',{count:a}))+stat('shop',tr('feed.groceries','Boodschappen'),tr('feed.itemsCount',s+' items',{count:s}))+stat('updates',tr('feed.updates','Updates'),tr('feed.totalCount',u+' totaal',{count:u}))+'</div><div class="fs-filters">'+filter('all','home',tr('feed.allUpdates','Alle updates'))+filter('tasks','task',tr('feed.tasks','Taken'))+filter('agenda','agenda',tr('nav.calendar','Agenda'))+'</div></div>';}
 function stat(type,title,sub){return '<button type="button" class="fs-stat '+type+'" onclick="openFeedShortcut(\''+type+'\')" aria-label="Open '+escHtml(title)+'"><div class="fs-stat-ico">'+svgIcon(type)+'</div><div class="fs-stat-copy"><b>'+escHtml(title)+'</b><span>'+escHtml(sub)+'</span></div><span class="fs-stat-arr">›</span></button>'; }
 function filter(k,type,l){return '<button class="fs-filter '+(feedFilter===k?'active':'')+'" onclick="setFeedFilter(\''+k+'\')"><span>'+svgIcon(type)+'</span>'+l+'</button>';}
 function setFeedFilter(k){feedFilter=k;renderFeed();}
 
-function renderPostHTML(p){var likes=(p.likes||[]).length,comments=(p.comments||[]).length,liked=(p.likes||[]).indexOf(currentUid())>-1;var h='<article class="fs-card '+(p.type||'post')+'">';if(p.type==='post')h+=postHeader(p);else h+='<div class="fs-row"><div class="fs-left">'+icon(p.type)+'</div><div class="fs-body">'+eventHead(p);if(p.type==='task'){h+='<h3>'+escHtml(p.title||'Taak afgerond')+'</h3><div class="fs-reward">'+escHtml(p.reward||'+10 punten')+'</div>';}if(p.type==='agenda'){h+='<div class="fs-agenda"><b>'+svgIcon('agenda')+escHtml(p.title||'Afspraak')+'</b><span>'+escHtml(p.subtitle||'')+'</span></div>';}if(p.media)h+=mediaHTML(p.media,p.mediaType);h+=actionsHTML(p,likes,comments,liked);h+=commentsHTML(p)+replyHTML(p);if(p.type==='post')h+='';else h+='</div></div>';h+='</article>';return h;}
+function renderPostHTML(p){var likes=(p.likes||[]).length,comments=(p.comments||[]).length,liked=(p.likes||[]).indexOf(currentUid())>-1;var h='<article class="fs-card '+(p.type||'post')+'">';if(p.type==='post')h+=postHeader(p);else h+='<div class="fs-row"><div class="fs-left">'+icon(p.type)+'</div><div class="fs-body">'+eventHead(p);if(p.type==='task'){h+='<h3>'+escHtml(p.title||tr('feed.taskDone','Taak afgerond'))+'</h3><div class="fs-reward">'+escHtml(p.reward||tr('feed.points','+10 punten'))+'</div>';}if(p.type==='agenda'){h+='<div class="fs-agenda"><b>'+svgIcon('agenda')+escHtml(p.title||tr('feed.appointment','Afspraak'))+'</b><span>'+escHtml(p.subtitle||'')+'</span></div>';}if(p.media)h+=mediaHTML(p.media,p.mediaType);h+=actionsHTML(p,likes,comments,liked);h+=commentsHTML(p)+replyHTML(p);if(p.type==='post')h+='';else h+='</div></div>';h+='</article>';return h;}
 function deleteButtonHTML(p){return canDeleteFeedPost(p)?('<button onclick="deletePost(\''+escHtml(String(p.id))+'\')">•••</button>'):'';}
 function postHeader(p){return '<div class="fs-post-head">'+avatarHTML(p.author,p.initials,p.color,'fs-author-avatar')+'<div class="fs-post-meta"><b>'+escHtml(p.author)+'</b><span>'+escHtml(p.time||'nu')+' · 👥</span></div>'+deleteButtonHTML(p)+'</div><div class="fs-post-text">'+escHtml(p.text||'')+'</div>'+(p.media?mediaHTML(p.media,p.mediaType):'');}
 function eventHead(p){return '<div class="fs-head"><div class="fs-line"><strong>'+escHtml(p.author)+'</strong> <span>'+escHtml(p.text||'')+'</span></div><div class="fs-time">'+escHtml(p.time||'nu')+' '+deleteButtonHTML(p)+'</div></div>';}
-function actionsHTML(p,likes,comments,liked){return '<div class="fs-actions"><button class="fs-pill '+(liked?'liked':'')+'" onclick="toggleLike(\''+escHtml(String(p.id))+'\')"><span>♥</span>'+likes+'</button><button class="fs-pill" onclick="toggleComments(\''+escHtml(String(p.id))+'\')"><span>'+svgIcon('comment')+'</span>'+comments+'</button><button class="fs-bookmark" aria-label="Bewaren">'+svgIcon('bookmark')+'</button></div><div class="fs-sep"></div>';}
+function actionsHTML(p,likes,comments,liked){return '<div class="fs-actions"><button class="fs-pill '+(liked?'liked':'')+'" onclick="toggleLike(\''+escHtml(String(p.id))+'\')"><span>♥</span>'+likes+'</button><button class="fs-pill" onclick="toggleComments(\''+escHtml(String(p.id))+'\')"><span>'+svgIcon('comment')+'</span>'+comments+'</button><button class="fs-bookmark" aria-label="'+escHtml(tr('feed.bookmark','Bewaren'))+'">'+svgIcon('bookmark')+'</button></div><div class="fs-sep"></div>';}
 function mediaHTML(m,type){
   if(type==='sticker')return '<div class="fs-sticker">'+m+'</div>';
   var arr=Array.isArray(m)?m:[m];
   return '<div class="fs-media">'+arr.slice(0,3).map(function(u,i){
     var id='feed-photo-'+Math.random().toString(36).slice(2);
-    return '<button class="fs-media-tile" type="button" onclick="openFeedPhotoViewer(\''+encodeURIComponent(u)+'\')" aria-label="Foto openen"><img id="'+id+'" src="'+u+'" alt="foto"><span class="fs-media-hint">Bekijk</span></button>';
+    return '<button class="fs-media-tile" type="button" onclick="openFeedPhotoViewer(\''+encodeURIComponent(u)+'\')" aria-label="'+escHtml(tr('feed.photoOpen','Foto openen'))+'"><img id="'+id+'" src="'+u+'" alt="foto"><span class="fs-media-hint">'+escHtml(tr('feed.view','Bekijk'))+'</span></button>';
   }).join('')+'</div>';
 }
 function openFeedPhotoViewer(encodedUrl){
@@ -193,7 +194,7 @@ function openFeedPhotoViewer(encodedUrl){
   var overlay=document.createElement('div');
   overlay.id='feed-photo-viewer';
   overlay.className='fs-photo-viewer';
-  overlay.innerHTML='<div class="fs-photo-backdrop" onclick="closeFeedPhotoViewer()"></div><div class="fs-photo-sheet"><button class="fs-photo-close" onclick="closeFeedPhotoViewer()">×</button><img class="fs-photo-full" src="'+url+'" alt="Feed foto"><div class="fs-photo-actions"><button onclick="saveFeedPhoto(\''+encodedUrl+'\')">Opslaan</button><button onclick="openFeedPhotoInNewTab(\''+encodedUrl+'\')">Openen</button></div></div>';
+  overlay.innerHTML='<div class="fs-photo-backdrop" onclick="closeFeedPhotoViewer()"></div><div class="fs-photo-sheet"><button class="fs-photo-close" onclick="closeFeedPhotoViewer()">×</button><img class="fs-photo-full" src="'+url+'" alt="Feed foto"><div class="fs-photo-actions"><button onclick="saveFeedPhoto(\''+encodedUrl+'\')">'+escHtml(tr('feed.save','Opslaan'))+'</button><button onclick="openFeedPhotoInNewTab(\''+encodedUrl+'\')">'+escHtml(tr('feed.open','Openen'))+'</button></div></div>';
   document.body.appendChild(overlay);
 }
 function closeFeedPhotoViewer(){var el=document.getElementById('feed-photo-viewer');if(el)el.remove();}
@@ -236,7 +237,7 @@ function replyHTML(p){
 }
 
 function toggleLike(id){
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   window.FeedSharedData.toggleReaction(id).then(function(r){
     if(r&&r.liked&&typeof awardXP==='function')awardXP(1,'Like');
     // Realtime subscription re-renders on its own; nudge the UI immediately too
@@ -244,7 +245,7 @@ function toggleLike(id){
     renderFeed();
   }).catch(function(err){
     console.error('[Feed] like mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Like mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.likeFailed','Like mislukt, probeer opnieuw'));
   });
 }
 function toggleComments(id){var p=feedData.find(function(x){return x.id===id;});if(!p)return;p._showComments=!p._showComments;renderFeed();setTimeout(function(){var inp=document.getElementById('cmt-inp-'+id);if(inp)inp.focus();},80);}
@@ -259,7 +260,7 @@ function submitComment(id){
   if(!text && !gifUrl){ inp.focus(); return; }
   var p = feedData.find(function(x){ return String(x.id)===id; });
   if(!p) return;
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   inp.disabled = true;
   window.FeedSharedData.addComment(id,{text:text,gifUrl:gifUrl||null}).then(function(){
     inp.disabled = false;
@@ -271,18 +272,18 @@ function submitComment(id){
   }).catch(function(err){
     inp.disabled = false;
     console.error('[Feed] reactie plaatsen mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Reactie plaatsen mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.commentFailed','Reactie plaatsen mislukt, probeer opnieuw'));
   });
 }
 function deletePost(id){
-  if(!confirm('Post verwijderen?'))return;
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!confirm(tr('feed.deleteConfirm','Post verwijderen?')))return;
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   window.FeedSharedData.deletePost(id).then(function(){
     renderFeed();
     if(typeof updateStats==='function')updateStats();
   }).catch(function(err){
     console.error('[Feed] post verwijderen mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Verwijderen mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.deleteFailed','Verwijderen mislukt, probeer opnieuw'));
   });
 }
 function toggleReaction(){}function toggleReactionPicker(){}
@@ -291,12 +292,12 @@ function clearFeedStatus(){composeLinkedTask=null;var row=document.getElementByI
 function toggleStickerPicker(){var p=document.getElementById('sticker-picker');if(!p)return;var v=p.style.display==='flex';p.style.display=v?'none':'flex';if(!v)p.innerHTML=STICKERS.map(function(s){return '<button onclick="pickSticker(\''+s+'\')">'+s+'</button>';}).join('');}
 function pickSticker(s){composeMediaDataUrl=s;composeMediaType='sticker';var prev=document.getElementById('compose-media-preview');if(prev){prev.style.display='block';var ex=document.getElementById('sticker-preview-big');if(!ex){ex=document.createElement('div');ex.id='sticker-preview-big';ex.style.cssText='font-size:64px;text-align:center;padding:10px';prev.appendChild(ex);}ex.textContent=s;}var p=document.getElementById('sticker-picker');if(p)p.style.display='none';}
 function openGifPicker(){var u=prompt('Plak een GIF URL:');if(!u)return;composeMediaDataUrl=u;composeMediaType='gif';var prev=document.getElementById('compose-media-preview'),img=document.getElementById('compose-preview-img');if(prev&&img){img.src=u;img.style.display='block';prev.style.display='block';}}
-function openTaskStatusPicker(){if(typeof showToast==='function')showToast('Taak koppelen komt zo terug in Feed 2.0');}
+function openTaskStatusPicker(){if(typeof showToast==='function')showToast(tr('feed.linkTaskSoon','Taak koppelen komt zo terug in Feed 2.0'));}
 function publishPost(){
   var ca=document.getElementById('compose-area');
   var text=(ca?ca.innerText||ca.textContent:'').trim();
   if(!text&&!composeMediaDataUrl){if(typeof showToast==='function')showToast('Typ iets of voeg een foto toe');return;}
-  if(!window.FeedSharedData){if(typeof showToast==='function')showToast('Feed nog niet gereed, probeer zo weer');return;}
+  if(!window.FeedSharedData){if(typeof showToast==='function')showToast(tr('feed.notReady','Feed nog niet gereed, probeer zo weer'));return;}
   var sendBtn=document.getElementById('feed-send-btn');
   if(sendBtn){if(sendBtn.disabled)return;sendBtn.disabled=true;}
   var media=composeMediaDataUrl?(composeMediaType==='sticker'?composeMediaDataUrl:[composeMediaDataUrl]):null;
@@ -315,13 +316,13 @@ function publishPost(){
     if(typeof awardXP==='function')awardXP(3,'Post');
   }).catch(function(err){
     console.error('[Feed] post plaatsen mislukt',err);
-    if(typeof showToast==='function')showToast((err&&err.message)||'Post plaatsen mislukt, probeer opnieuw');
+    if(typeof showToast==='function')showToast((err&&err.message)||tr('feed.postFailed','Post plaatsen mislukt, probeer opnieuw'));
   }).finally(function(){
     if(sendBtn)sendBtn.disabled=false;
   });
 }
 function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-function wireCompose(){var ca=document.getElementById('compose-area');if(ca&&!ca._wired){ca._wired=true;ca.setAttribute('data-placeholder','Deel iets met het gezin...');ca.addEventListener('focus',function(){ca.setAttribute('data-placeholder','');});ca.addEventListener('blur',function(){if(!ca.textContent.trim())ca.setAttribute('data-placeholder','Deel iets met het gezin...');});}var ph=document.getElementById('feed-photo-inp');if(ph&&!ph._wired){ph._wired=true;ph.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){composeMediaDataUrl=ev.target.result;composeMediaType=f.type==='image/gif'?'gif':'image';var prev=document.getElementById('compose-media-preview'),img=document.getElementById('compose-preview-img');if(prev&&img){img.src=ev.target.result;img.style.display='block';prev.style.display='block';}};r.readAsDataURL(f);ph.value='';};}}
+function wireCompose(){var ca=document.getElementById('compose-area');if(ca&&!ca._wired){ca._wired=true;ca.setAttribute('data-placeholder',tr('feed.sharePlaceholder','Deel iets met het gezin...'));ca.addEventListener('focus',function(){ca.setAttribute('data-placeholder','');});ca.addEventListener('blur',function(){if(!ca.textContent.trim())ca.setAttribute('data-placeholder',tr('feed.sharePlaceholder','Deel iets met het gezin...'));});}var ph=document.getElementById('feed-photo-inp');if(ph&&!ph._wired){ph._wired=true;ph.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){composeMediaDataUrl=ev.target.result;composeMediaType=f.type==='image/gif'?'gif':'image';var prev=document.getElementById('compose-media-preview'),img=document.getElementById('compose-preview-img');if(prev&&img){img.src=ev.target.result;img.style.display='block';prev.style.display='block';}};r.readAsDataURL(f);ph.value='';};}}
 function wireCommentInputs(){feedData.forEach(function(p){var inp=document.getElementById('cmt-inp-'+p.id);if(inp)inp.onkeydown=function(e){if(e.key==='Enter')submitComment(p.id);};});}
 function decorateCompose(){var c=document.getElementById('feed-compose-card');if(c)c.classList.add('fs-compose');}
 
@@ -382,7 +383,7 @@ function searchGifs(query) {
   var results = document.getElementById('gif-results');
   if(!results) return;
   if(!query || query.length < 2) return;
-  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Zoeken...</div>';
+  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">'+escHtml(tr('feed.searching','Zoeken...'))+'</div>';
 
   var apiKey = 'AIzaSyBBmLEAFBJNJLbRiTnhCVfXWCRGQMhAjMI';
   var url = 'https://tenor.googleapis.com/v2/search?q='+encodeURIComponent(query)+'&key='+apiKey+'&limit=18&media_filter=gif';
@@ -403,12 +404,12 @@ function searchGifs(query) {
         results.appendChild(img);
       });
       if(!data.results||!data.results.length){
-        results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Geen resultaten</div>';
+        results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">'+escHtml(tr('feed.noResults','Geen resultaten'))+'</div>';
       }
     })
     .catch(function(){
       results = document.getElementById('gif-results');
-      if(results) results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">Fout bij laden</div>';
+      if(results) results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:#9ca3af;font-size:13px;">'+escHtml(tr('feed.loadError','Fout bij laden'))+'</div>';
     });
 }
 
@@ -427,3 +428,7 @@ function selectGif(gifUrl) {
     '</div>';
   }
 }
+
+window.addEventListener('familyapp:language-changed',function(){try{renderFeed();var send=document.getElementById('feed-send-btn');if(send)send.textContent=tr('feed.post','Posten');}catch(error){}});
+
+window.addEventListener('familyapp:language-changed',function(){try{if(typeof renderFeed==='function')renderFeed();if(typeof wireCompose==='function')wireCompose();}catch(error){}});

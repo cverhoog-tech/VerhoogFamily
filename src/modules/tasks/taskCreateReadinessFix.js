@@ -10,6 +10,7 @@
   window.__taskCreateReadinessV2=true;
 
   var householdResolvePromise=null;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
 
   function installLayoutGuard(){
     if(document.getElementById('task-create-mobile-guard-style'))return;
@@ -51,7 +52,7 @@
     if(window.AuthenticatedSessionController&&typeof window.AuthenticatedSessionController.whenAuthenticated==='function'){
       return window.AuthenticatedSessionController.whenAuthenticated();
     }
-    return Promise.reject(new Error('Canonical sessie is nog niet beschikbaar'));
+    return Promise.reject(new Error(tr('tasks.readiness.session','Canonical sessie is nog niet beschikbaar')));
   }
 
   function resolveHouseholdContext(){
@@ -62,7 +63,7 @@
       if(window.FamilyHousehold&&typeof window.FamilyHousehold.resolve==='function'){
         return Promise.resolve(window.FamilyHousehold.resolve()).then(function(result){
           var hid=window.fbFamilyId||(result&&result.id)||null;
-          if(!hid)throw new Error('Geen actief gezin gevonden');
+          if(!hid)throw new Error(tr('tasks.readiness.noHousehold','Geen actief gezin gevonden'));
           window.fbFamilyId=hid;
           return hid;
         });
@@ -80,7 +81,7 @@
         }
         window.addEventListener('familyapp:household-changed',finish);
         window.addEventListener('familyapp:household-identity-synced',finish);
-        timer=setTimeout(function(){if(!settled){settled=true;cleanup();reject(new Error('Household platform is nog niet beschikbaar'));}},6000);
+        timer=setTimeout(function(){if(!settled){settled=true;cleanup();reject(new Error(tr('tasks.readiness.householdPlatform','Household platform is nog niet beschikbaar')));}},6000);
         finish();
       });
     }).finally(function(){householdResolvePromise=null;});
@@ -88,12 +89,12 @@
   }
 
   function prepareSharedTaskStore(shared){
-    if(!window.FamilyDataStore)return Promise.reject(new Error('FamilyDataStore is niet beschikbaar'));
+    if(!window.FamilyDataStore)return Promise.reject(new Error(tr('tasks.readiness.dataStore','FamilyDataStore is niet beschikbaar')));
     return resolveHouseholdContext().then(function(){
       if(typeof shared.start==='function')shared.start();
       var status=typeof shared.status==='function'?shared.status():null;
       if(status&&status.ready)return status;
-      throw new Error('Shared task store niet ready na household resolve');
+      throw new Error(tr('tasks.readiness.sharedStore','Shared task store is nog niet klaar'));
     });
   }
 

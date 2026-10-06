@@ -20,6 +20,7 @@
   var MAX_EDGE=1800;
   var MAX_OUTPUT_BYTES=1400*1024;
   var CLOUDINARY_ORIGIN='https://res.cloudinary.com/'+CLOUD_NAME+'/image/upload/';
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   var COMPRESSION_STEPS=[
     {edge:1800,quality:.82},
     {edge:1600,quality:.76},
@@ -39,9 +40,9 @@
   function validCloudinaryUrl(value){return String(value||'').indexOf(CLOUDINARY_ORIGIN)===0;}
 
   function validate(file){
-    if(!file)throw error('NO_FILE','Kies eerst een afbeelding.');
-    if(!String(file.type||'').toLowerCase().startsWith('image/'))throw error('INVALID_TYPE','Kies een geldig afbeeldingsbestand.');
-    if(Number(file.size||0)>MAX_SOURCE_BYTES)throw error('SOURCE_TOO_LARGE','De afbeelding is te groot. Kies een foto kleiner dan 15 MB.');
+    if(!file)throw error('NO_FILE',tr('profile.hero.noFile','Kies eerst een afbeelding.'));
+    if(!String(file.type||'').toLowerCase().startsWith('image/'))throw error('INVALID_TYPE',tr('profile.hero.invalidType','Kies een geldig afbeeldingsbestand.'));
+    if(Number(file.size||0)>MAX_SOURCE_BYTES)throw error('SOURCE_TOO_LARGE',tr('profile.hero.sourceTooLarge','De afbeelding is te groot. Kies een foto kleiner dan 15 MB.'));
     return true;
   }
 
@@ -49,7 +50,7 @@
     return new Promise(function(resolve,reject){
       var url=URL.createObjectURL(file),img=new Image();
       img.onload=function(){URL.revokeObjectURL(url);resolve(img);};
-      img.onerror=function(){URL.revokeObjectURL(url);reject(error('DECODE_FAILED','Deze afbeelding kon niet worden gelezen.'));};
+      img.onerror=function(){URL.revokeObjectURL(url);reject(error('DECODE_FAILED',tr('profile.hero.decodeFailed','Deze afbeelding kon niet worden gelezen.')));};
       img.src=url;
     });
   }
@@ -62,7 +63,7 @@
     var outW=Math.max(1,Math.round(w*scale)),outH=Math.max(1,Math.round(h*scale));
     var canvas=document.createElement('canvas');canvas.width=outW;canvas.height=outH;
     var ctx=canvas.getContext('2d',{alpha:false});
-    if(!ctx)throw error('CANVAS_UNAVAILABLE','Afbeelding verwerken is niet beschikbaar op dit toestel.');
+    if(!ctx)throw error('CANVAS_UNAVAILABLE',tr('profile.hero.canvasUnavailable','Afbeelding verwerken is niet beschikbaar op dit toestel.'));
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,outW,outH);
     return{canvas:canvas,width:outW,height:outH};
   }
@@ -78,7 +79,7 @@
         if(jpeg&&webp){chosen=jpeg.size<=webp.size?jpeg:webp;type=chosen===jpeg?'image/jpeg':'image/webp';}
         else if(jpeg){chosen=jpeg;type='image/jpeg';}
         else if(webp){chosen=webp;type='image/webp';}
-        if(!chosen)throw error('ENCODE_FAILED','Afbeelding comprimeren is niet gelukt.');
+        if(!chosen)throw error('ENCODE_FAILED',tr('profile.hero.encodeFailed','Afbeelding comprimeren is niet gelukt.'));
         return{blob:chosen,width:rendered.width,height:rendered.height,contentType:type};
       });
     });
@@ -93,7 +94,7 @@
         if(candidate.blob.size<=MAX_OUTPUT_BYTES)return candidate;
         index++;
         if(index<COMPRESSION_STEPS.length)return next();
-        throw error('OUTPUT_TOO_LARGE','Deze foto blijft uitzonderlijk groot na optimaliseren. Probeer een andere foto of een screenshot ervan.');
+        throw error('OUTPUT_TOO_LARGE',tr('profile.hero.outputTooLarge','Deze foto blijft uitzonderlijk groot na optimaliseren. Probeer een andere foto of een screenshot ervan.'));
       });
     }
     return next();
@@ -103,7 +104,7 @@
     try{validate(file);}catch(e){return Promise.reject(e);}
     return loadImage(file).then(function(img){return compressToLimit(img);}).then(function(prepared){
       prepared.previewUrl=URL.createObjectURL(prepared.blob);
-      prepared.sourceName=String(file.name||'achtergrond');
+      prepared.sourceName=String(file.name||tr('profile.hero.chooseTitle','Achtergrond kiezen'));
       prepared.sourceBytes=Number(file.size||0);
       return prepared;
     });
@@ -119,11 +120,11 @@
       var xhr=new XMLHttpRequest();
       xhr.open('POST','https://api.cloudinary.com/v1_1/'+CLOUD_NAME+'/image/upload',true);
       xhr.upload.onprogress=function(evt){if(evt.lengthComputable&&typeof onProgress==='function'){try{onProgress(Math.max(0,Math.min(.94,evt.loaded/evt.total*.94)));}catch(e){}}};
-      xhr.onerror=function(){reject(error('UPLOAD_NETWORK','Uploaden naar de afbeeldingsdienst is niet gelukt.'));};
+      xhr.onerror=function(){reject(error('UPLOAD_NETWORK',tr('profile.hero.uploadNetwork','Uploaden naar de afbeeldingsdienst is niet gelukt.')));};
       xhr.onload=function(){
         var data={};try{data=JSON.parse(xhr.responseText||'{}');}catch(e){}
-        if(xhr.status<200||xhr.status>=300){var msg=data&&data.error&&data.error.message||'Cloudinary upload mislukt.';reject(error('UPLOAD_FAILED',msg));return;}
-        if(!data.secure_url||!validCloudinaryUrl(data.secure_url)){reject(error('INVALID_UPLOAD_RESPONSE','De afbeeldingsdienst gaf geen geldige URL terug.'));return;}
+        if(xhr.status<200||xhr.status>=300){var msg=data&&data.error&&data.error.message||tr('profile.hero.uploadCloudFailed','Cloudinary upload mislukt.');reject(error('UPLOAD_FAILED',msg));return;}
+        if(!data.secure_url||!validCloudinaryUrl(data.secure_url)){reject(error('INVALID_UPLOAD_RESPONSE',tr('profile.hero.invalidUploadResponse','De afbeeldingsdienst gaf geen geldige URL terug.')));return;}
         if(typeof onProgress==='function'){try{onProgress(1);}catch(e){}}resolve(data);
       };
       xhr.send(form);
@@ -131,14 +132,14 @@
   }
 
   function upload(uid,prepared,onProgress){
-    if(!own(uid))return Promise.reject(error('NOT_OWN_PROFILE','Je kunt alleen je eigen hero-achtergrond aanpassen.'));
-    if(!prepared||!prepared.blob)return Promise.reject(error('NOT_PREPARED','De afbeelding is nog niet voorbereid.'));
+    if(!own(uid))return Promise.reject(error('NOT_OWN_PROFILE',tr('profile.hero.onlyOwn','Je kunt alleen je eigen hero-achtergrond aanpassen.')));
+    if(!prepared||!prepared.blob)return Promise.reject(error('NOT_PREPARED',tr('profile.hero.notPrepared','De afbeelding is nog niet voorbereid.')));
     var c=context(),token=capture();
-    if(!c||!c.householdId||!token)return Promise.reject(error('NO_CONTEXT','Geen actieve gezinscontext.'));
+    if(!c||!c.householdId||!token)return Promise.reject(error('NO_CONTEXT',tr('profile.hero.noContext','Geen actieve gezinscontext.')));
     return cloudinaryUpload(prepared,onProgress).then(function(data){
       if(!isCurrent(token)){
         queueRetirement(uid,{provider:'cloudinary',assetId:data.asset_id||'',publicId:data.public_id||''});
-        throw error('STALE_CONTEXT','De gezinscontext veranderde tijdens het uploaden. Probeer opnieuw.');
+        throw error('STALE_CONTEXT',tr('profile.hero.staleContext','De gezinscontext veranderde tijdens het uploaden. Probeer opnieuw.'));
       }
       return{
         type:'upload',provider:'cloudinary',cloudName:CLOUD_NAME,assetId:String(data.asset_id||''),publicId:String(data.public_id||''),version:Number(data.version||0),format:String(data.format||''),
@@ -154,7 +155,7 @@
     if(config.type!=='upload')return Promise.resolve(config);
     if(config.provider==='cloudinary'&&validCloudinaryUrl(config.imageUrl))return Promise.resolve(config);
     if(config.imageUrl&&validCloudinaryUrl(config.imageUrl))return Promise.resolve(Object.assign({},config,{provider:'cloudinary'}));
-    return Promise.reject(error('UPLOAD_URL_MISSING','Deze uploadachtergrond heeft geen geldige Cloudinary-URL.'));
+    return Promise.reject(error('UPLOAD_URL_MISSING',tr('profile.hero.invalidStoredUrl','Deze uploadachtergrond heeft geen geldige Cloudinary-URL.')));
   }
 
   function cleanupDb(){try{return window.fbDb||(window.firebase&&firebase.database&&firebase.database())||null;}catch(e){return null;}}

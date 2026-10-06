@@ -1,4 +1,69 @@
 'use strict';
+function achTr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
+function achLanguage(){try{return window.FamilyI18n&&FamilyI18n.getLanguage?FamilyI18n.getLanguage():'nl';}catch(error){return'nl';}}
+function achLocale(){try{return window.FamilyI18n&&FamilyI18n.getLocale?FamilyI18n.getLocale():'nl-NL';}catch(error){return'nl-NL';}}
+function achievementLevelCopy(row){
+  row=row||{};var lv=Number(row.lv)||1;
+  return{title:achTr('ach.level.'+lv+'.title',row.title||achTr('ach.level','Level')+' '+lv),desc:achTr('ach.level.'+lv+'.desc',row.desc||'')};
+}
+var ACH_BADGE_SPECIAL={
+  first_task:['ach.badge.firstTaskName','ach.badge.firstTaskDesc'],
+  shopper:['ach.badge.shopperName','ach.badge.shopperDesc'],
+  noter:['ach.badge.noterName','ach.badge.noterDesc'],
+  poster:['ach.badge.posterName','ach.badge.posterDesc'],
+  liker:['ach.badge.likerName','ach.badge.likerDesc'],
+  theme:['ach.badge.themeName','ach.badge.themeDesc'],
+  darkmode:['ach.badge.darkmodeName','ach.badge.darkmodeDesc'],
+  first_recipe:['ach.badge.firstRecipeName','ach.badge.firstRecipeDesc'],
+  first_skill:['ach.badge.firstSkillName','ach.badge.firstSkillDesc'],
+  income_edit:['ach.badge.incomeName','ach.badge.incomeDesc'],
+  first_quest:['ach.badge.firstQuestName','ach.badge.firstQuestDesc'],
+  routine:['ach.badge.routineName','ach.badge.routineDesc'],
+  budget:['ach.badge.budgetName','ach.badge.budgetDesc'],
+  negotiator:['ach.badge.negotiatorName','ach.badge.negotiatorDesc'],
+  accepted:['ach.badge.acceptedName','ach.badge.acceptedDesc'],
+  finance_king:['ach.badge.financeName','ach.badge.financeDesc'],
+  ability_used:['ach.badge.firstAbilityName','ach.badge.firstAbilityDesc'],
+  allscreens:['ach.badge.allScreensName','ach.badge.allScreensDesc'],
+  perfectionist:['ach.badge.perfectionistName','ach.badge.perfectionistDesc'],
+  millionaire:['ach.badge.millionaireName','ach.badge.millionaireDesc'],
+  landscape:['ach.badge.landscapeName','ach.badge.landscapeDesc'],
+  darkswitch:['ach.badge.darkSwitchName','ach.badge.darkSwitchDesc'],
+  goal_reached:['ach.badge.goalReachedName','ach.badge.goalReachedDesc'],
+  savings_1:['ach.badge.savingsFirstName','ach.badge.savingsFirstDesc'],
+  savings_5k:['ach.badge.savings5kName','ach.badge.savings5kDesc'],
+  savings_all:['ach.badge.savingsAllName','ach.badge.savingsAllDesc'],
+  skill_all:['ach.badge.skillAllName','ach.badge.skillAllDesc'],
+  skill_max:['ach.badge.skillMaxName','ach.badge.skillMaxDesc']
+};
+function achievementBadgeCopy(badge){
+  badge=badge||{};var id=String(badge.id||''),lang=achLanguage(),name=badge.name||achTr('ach.badge.genericName','Achievement'),desc=badge.desc||achTr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.');
+  if(lang==='nl')return{name:name,desc:desc,funny:badge.funny||desc};
+  var special=ACH_BADGE_SPECIAL[id];
+  if(special)return{name:achTr(special[0],name),desc:achTr(special[1],desc),funny:achTr(special[1],desc)};
+  var m;
+  if((m=id.match(/^task_(\d+)$/)))return{name:achTr('ach.badge.tasksName',m[1]+' taken',{count:m[1]}),desc:achTr('ach.badge.tasksDesc',m[1]+' taken afgevinkt',{count:m[1]}),funny:achTr('ach.badge.tasksDesc',desc,{count:m[1]})};
+  if((m=id.match(/^notes_(\d+)$/)))return{name:achTr('ach.badge.notesName',m[1]+' notities',{count:m[1]}),desc:achTr('ach.badge.notesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.notesDesc',desc,{count:m[1]})};
+  if((m=id.match(/^recipe_(\d+)$/)))return{name:achTr('ach.badge.recipesName',m[1]+' recepten',{count:m[1]}),desc:achTr('ach.badge.recipesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.recipesDesc',desc,{count:m[1]})};
+  if((m=id.match(/^feed_(\d+)$/)))return{name:achTr('ach.badge.postsName',m[1]+' posts',{count:m[1]}),desc:achTr('ach.badge.postsDesc',desc,{count:m[1]}),funny:achTr('ach.badge.postsDesc',desc,{count:m[1]})};
+  if((m=id.match(/^shop_(\d+)$/)))return{name:achTr('ach.badge.shopName',m[1]+' boodschappen',{count:m[1]}),desc:achTr('ach.badge.shopDesc',desc,{count:m[1]}),funny:achTr('ach.badge.shopDesc',desc,{count:m[1]})};
+  if((m=id.match(/^cal_(\d+)$/)))return{name:achTr('ach.badge.calendarName',m[1]+' afspraken',{count:m[1]}),desc:achTr('ach.badge.calendarDesc',desc,{count:m[1]}),funny:achTr('ach.badge.calendarDesc',desc,{count:m[1]})};
+  if((m=id.match(/^trade_(\d+)$/)))return{name:achTr('ach.badge.tradesName',m[1]+' taakruilen',{count:m[1]}),desc:achTr('ach.badge.tradesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.tradesDesc',desc,{count:m[1]})};
+  if(id==='master_trader')return{name:achTr('ach.badge.tradesName','10 taakruilen',{count:10}),desc:achTr('ach.badge.tradesDesc',desc,{count:10}),funny:achTr('ach.badge.tradesDesc',desc,{count:10})};
+  if((m=id.match(/^quests?_(\d+)$/)))return{name:achTr('ach.badge.questsName',m[1]+' quests',{count:m[1]}),desc:achTr('ach.badge.questsDesc',desc,{count:m[1]}),funny:achTr('ach.badge.questsDesc',desc,{count:m[1]})};
+  if((m=id.match(/^abilities?_(\d+)$/)))return{name:achTr('ach.badge.abilitiesName',m[1]+' abilities',{count:m[1]}),desc:achTr('ach.badge.abilitiesDesc',desc,{count:m[1]}),funny:achTr('ach.badge.abilitiesDesc',desc,{count:m[1]})};
+  if((m=id.match(/^streak_(\d+)$/)))return{name:achTr('ach.badge.streakName','Streak '+m[1],{count:m[1]}),desc:achTr('ach.badge.streakDesc',desc,{count:m[1]}),funny:achTr('ach.badge.streakDesc',desc,{count:m[1]})};
+  if((m=id.match(/^level(\d+)/)))return{name:achTr('ach.badge.levelName','Level '+m[1],{count:m[1]}),desc:achTr('ach.badge.levelDesc',desc,{count:m[1]}),funny:achTr('ach.badge.levelDesc',desc,{count:m[1]})};
+  if(id==='hero')return{name:achTr('ach.badge.heroName',name),desc:achTr('ach.badge.levelDesc',desc,{count:10}),funny:achTr('ach.badge.levelDesc',desc,{count:10})};
+  if(id==='superstar')return{name:achTr('ach.badge.superstarName',name),desc:achTr('ach.badge.levelDesc',desc,{count:15}),funny:achTr('ach.badge.levelDesc',desc,{count:15})};
+  if(id==='legend')return{name:achTr('ach.badge.legendName',name),desc:achTr('ach.badge.levelDesc',desc,{count:20}),funny:achTr('ach.badge.levelDesc',desc,{count:20})};
+  if(id==='godmode')return{name:achTr('ach.badge.godName',name),desc:achTr('ach.badge.levelDesc',desc,{count:25}),funny:achTr('ach.badge.levelDesc',desc,{count:25})};
+  if((m=id.match(/^skill_lv(\d+)$/)))return{name:achTr('ach.badge.skillLevelName','Skill level '+m[1],{count:m[1]}),desc:achTr('ach.badge.skillLevelDesc',desc,{count:m[1]}),funny:achTr('ach.badge.skillLevelDesc',desc,{count:m[1]})};
+  if((m=id.match(/^skill_(\d+)_(?:lv)?(\d+)$/)))return{name:achTr('ach.badge.multiSkillName',m[1]+' skills op level '+m[2],{skills:m[1],level:m[2]}),desc:achTr('ach.badge.multiSkillDesc',desc,{skills:m[1],level:m[2]}),funny:achTr('ach.badge.multiSkillDesc',desc,{skills:m[1],level:m[2]})};
+  return{name:achTr('ach.badge.genericName','Achievement'),desc:achTr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.'),funny:achTr('ach.badge.genericDesc','Blijf FamilyApp gebruiken om meer vrij te spelen.')};
+}
+window.getLocalizedBadgeCopy=achievementBadgeCopy;
+window.getLocalizedAchievementLevel=achievementLevelCopy;
 // ============================================================
 // ACHIEVEMENTS
 // ============================================================
@@ -139,22 +204,22 @@ var tradesCount = 0;
 function openTradeSheet() {
   var myTasks = taskData.filter(function(t){return !t.done && t.who && t.who.indexOf(myName)>-1;});
   var partnerTasks = taskData.filter(function(t){return !t.done && t.who && t.who.indexOf(partnerName)>-1;});
-  if(!myTasks.length){showToast('Je hebt geen open taken om aan te bieden');return;}
-  if(!partnerTasks.length){showToast(partnerName+' heeft geen taken die je kunt overnemen');return;}
+  if(!myTasks.length){showToast(achTr('ach.trade.noMine','Je hebt geen open taken om aan te bieden'));return;}
+  if(!partnerTasks.length){showToast(achTr('ach.trade.noPartner',partnerName+' heeft geen taken die je kunt overnemen',{name:partnerName}));return;}
 
   currentAddType='trade';
-  document.getElementById('sheet-title').textContent='🤝 Taak ruilen';
+  document.getElementById('sheet-title').textContent=achTr('ach.trade.title','🤝 Taak ruilen');
   document.getElementById('sheet-fields').innerHTML=
-    '<div class="field"><label>Jouw taak (aanbieden)</label>'
+    '<div class="field"><label>'+achTr('ach.trade.myTask','Jouw taak (aanbieden)')+'</label>'
     +'<select id="trade-my-task">'
     +myTasks.map(function(t){return '<option value="'+t.id+'">'+t.title+'</option>';}).join('')
     +'</select></div>'
-    +'<div class="field"><label>Taak die je wil overnemen (van '+partnerName+')</label>'
+    +'<div class="field"><label>'+achTr('ach.trade.theirTask','Taak die je wil overnemen (van '+partnerName+')',{name:partnerName})+'</label>'
     +'<select id="trade-their-task">'
     +partnerTasks.map(function(t){return '<option value="'+t.id+'">'+t.title+'</option>';}).join('')
     +'</select></div>'
-    +'<div class="field"><label>Berichtje erbij (optioneel)</label>'
-    +'<input id="trade-msg" placeholder="bijv. Ik haat stofzuigen 😅">'
+    +'<div class="field"><label>'+achTr('ach.trade.message','Berichtje erbij (optioneel)')+'</label>'
+    +'<input id="trade-msg" placeholder="'+achTr('ach.trade.messagePlaceholder','bijv. Ik haat stofzuigen 😅')+'">'
     +'</div>';
   document.getElementById('add-overlay').classList.add('open');
   setTimeout(function(){var f=document.getElementById('trade-my-task');if(f)f.focus();},200);
@@ -175,15 +240,15 @@ function submitTrade() {
     theirTask: theirTask,
     msg: msg,
     status: 'pending',
-    time: 'Zojuist'
+    time: achTr('ach.trade.justNow','Zojuist')
   });
   tradesCount++;
-  addActivity('🤝','#fff3dc',myName+' stelt taakruil voor: "'+myTask.title+'" ↔ "'+theirTask.title+'"');
-  addNotif('🤝','#fff3dc','Taakruil aangeboden!','"'+myTask.title+'" ↔ "'+theirTask.title+'"');
-  awardXP(8,'Taakruil aangeboden');
+  addActivity('🤝','#fff3dc',achTr('ach.trade.proposedActivity',myName+' stelt taakruil voor: “'+myTask.title+'” ↔ “'+theirTask.title+'”',{name:myName,mine:myTask.title,theirs:theirTask.title}));
+  addNotif('🤝','#fff3dc',achTr('ach.trade.offered','Taakruil aangeboden!'),'“'+myTask.title+'” ↔ “'+theirTask.title+'”');
+  awardXP(8,achTr('ach.badge.negotiatorDesc','Taakruil aangeboden'));
   checkAchievements();
   closeAdd();
-  showToast('Taakruil aangeboden! 🤝');
+  showToast(achTr('ach.trade.offered','Taakruil aangeboden!')+' 🤝');
   // Show trades in tasks screen
   if(document.getElementById('screen-tasks').classList.contains('active')) renderTasks();
 }
@@ -197,20 +262,20 @@ function acceptTrade(id) {
   if(myT) myT.who = [partnerName];
   if(theirT) theirT.who = [myName];
   tradesCount++;
-  addActivity('🎯','#e8f5e3',partnerName+' accepteerde taakruil!');
-  addNotif('🎯','#e8f5e3','Deal gesloten! 🎉','"'+trade.myTask.title+'" en "'+trade.theirTask.title+'" zijn gewisseld');
-  awardXP(10,'Taakruil geaccepteerd');
+  addActivity('🎯','#e8f5e3',achTr('ach.trade.acceptedActivity',partnerName+' accepteerde taakruil!',{name:partnerName}));
+  addNotif('🎯','#e8f5e3',achTr('ach.trade.closed','Deal gesloten! 🎉'),achTr('ach.trade.swapped','“'+trade.myTask.title+'” en “'+trade.theirTask.title+'” zijn gewisseld',{mine:trade.myTask.title,theirs:trade.theirTask.title}));
+  awardXP(10,achTr('ach.badge.acceptedDesc','Taakruil geaccepteerd'));
   checkAchievements();
   renderTasks();
-  showToast('Deal gesloten! Taken zijn gewisseld 🎉');
+  showToast(achTr('ach.trade.closedToast','Deal gesloten! Taken zijn gewisseld 🎉'));
 }
 
 function declineTrade(id) {
   var trade = tradeOffers.find(function(t){return t.id===id;});if(!trade)return;
   trade.status='declined';
-  addActivity('❌','#fee2e2',partnerName+' weigerde de taakruil');
+  addActivity('❌','#fee2e2',achTr('ach.trade.declinedActivity',partnerName+' weigerde de taakruil',{name:partnerName}));
   renderTasks();
-  showToast('Taakruil afgewezen 😬');
+  showToast(achTr('ach.trade.declined','Taakruil afgewezen 😬'));
 }
 
 // ── ACHIEVEMENTS ──
@@ -254,42 +319,42 @@ function awardXP(amount, label) {
 // ── RENDER ACHIEVEMENTS ──
 function renderAch() {
   var el=document.getElementById('ach-content');if(!el)return;
-  var view=window.AchievementsViewData&&window.AchievementsViewData.get();
-  if(!view||!view.ready){el.textContent='Achievements worden geladen…';return;}
-  var myXP=view.xp,unlockedBadges=view.badges;
-  var lv=getLevel(myXP);
-  var titleData=LEVEL_TITLES[Math.min(lv-1,LEVEL_TITLES.length-1)];
+  var view=window.AchievementsViewData&&window.AchievementsViewData.get?window.AchievementsViewData.get():null;
+  if(!view||!view.ready){el.textContent=achTr('ach.loading','Achievements worden geladen…');return;}
+  var viewXp=Number(view.xp)||0,viewBadges=view.badges||{};
+  var lv=getLevel(viewXp);
+  var titleData=achievementLevelCopy(LEVEL_TITLES[Math.min(lv-1,LEVEL_TITLES.length-1)]);
   var prevXP=LEVEL_XP[lv-1]||0;
   var nextXP=LEVEL_XP[Math.min(lv,LEVEL_XP.length-1)]||LEVEL_XP[LEVEL_XP.length-1];
-  var pct=nextXP>prevXP?Math.round((myXP-prevXP)/(nextXP-prevXP)*100):100;
+  var pct=nextXP>prevXP?Math.round((viewXp-prevXP)/(nextXP-prevXP)*100):100;
 
   var html='<div class="ach-banner">'
-    +'<div class="ach-level-ring"><div class="ach-level-num">'+lv+'</div><div class="ach-level-lbl">Level</div></div>'
+    +'<div class="ach-level-ring"><div class="ach-level-num">'+lv+'</div><div class="ach-level-lbl">'+achTr('ach.level','Level')+'</div></div>'
     +'<div class="ach-title">'+titleData.title+'</div>'
     +'<div class="ach-subtitle" style="font-style:italic;opacity:.65">'+titleData.desc+'</div>'
     +'<div class="ach-xp-bar"><div class="ach-xp-fill" style="width:'+pct+'%"></div></div>'
-    +'<div class="ach-xp-txt">'+myXP+' XP · Nog '+(nextXP-myXP)+' XP tot level '+(lv+1)+'</div>'
+    +'<div class="ach-xp-txt">'+viewXp+' XP · '+achTr('ach.xpToLevel','Nog '+(nextXP-viewXp)+' XP tot level '+(lv+1),{xp:nextXP-viewXp,level:lv+1})+'</div>'
     +'</div>';
 
   // Stat pills
   var maxStreak='—';
-  var doneTasks=view.doneTasks;
-  var unlockedCount=Object.keys(unlockedBadges).length;
-  html+='<div class="ach-section-title">📊 Statistieken</div>'
+  var doneTasks=Number(view.doneTasks)||0;
+  var unlockedCount=Object.keys(viewBadges).filter(function(id){return !!viewBadges[id];}).length;
+  html+='<div class="ach-section-title">'+achTr('ach.stats','📊 Statistieken')+'</div>'
     +'<div class="streak-bar">'
-    +'<div class="streak-card"><div class="streak-fire">🔥</div><div class="streak-num">'+maxStreak+'</div><div class="streak-lbl">Max streak</div></div>'
-    +'<div class="streak-card"><div class="streak-fire">✅</div><div class="streak-num">'+doneTasks+'</div><div class="streak-lbl">Taken klaar</div></div>'
+    +'<div class="streak-card"><div class="streak-fire">🔥</div><div class="streak-num">'+maxStreak+'</div><div class="streak-lbl">'+achTr('ach.maxStreak','Max streak')+'</div></div>'
+    +'<div class="streak-card"><div class="streak-fire">✅</div><div class="streak-num">'+doneTasks+'</div><div class="streak-lbl">'+achTr('ach.tasksDone','Taken klaar')+'</div></div>'
     +'<div class="streak-card"><div class="streak-fire">🏅</div><div class="streak-num">'+unlockedCount+'/'+BADGES.length+'</div><div class="streak-lbl">Badges</div></div>'
-    +'<div class="streak-card"><div class="streak-fire">🤝</div><div class="streak-num">'+'—'+'</div><div class="streak-lbl">Ruilen</div></div>'
+    +'<div class="streak-card"><div class="streak-fire">🤝</div><div class="streak-num">—</div><div class="streak-lbl">'+achTr('ach.trades','Ruilen')+'</div></div>'
     +'</div>';
 
   // Leaderboard
-  var players=view.players;
-  html+='<div class="ach-section-title">🏆 Ranglijst</div>';
+  var players=Array.isArray(view.players)?view.players:[];
+  html+='<div class="ach-section-title">'+achTr('ach.leaderboard','🏆 Ranglijst')+'</div>';
   players.forEach(function(p,i){
     var rankIcon=['🥇','🥈','🥉'][i]||''+(i+1);
     var plv=getLevel(p.xp);
-    var ptitle=LEVEL_TITLES[Math.min(plv-1,LEVEL_TITLES.length-1)];
+    var ptitle=achievementLevelCopy(LEVEL_TITLES[Math.min(plv-1,LEVEL_TITLES.length-1)]);
     html+='<div class="lb-item">'
       +'<div class="lb-rank '+(i===0?'gold':i===1?'silver':'bronze')+'">'+rankIcon+'</div>'
       +'<div class="lb-avatar" style="background:'+achEscape(p.color)+'">'+achEscape(p.initials)+'</div>'
@@ -300,14 +365,14 @@ function renderAch() {
   });
 
   // Level roadmap — next 3 titles
-  html+='<div class="ach-section-title">🗺️ Titels vooruitblik</div>'
+  html+='<div class="ach-section-title">'+achTr('ach.titlesPreview','🗺️ Titels vooruitblik')+'</div>'
     +'<div style="padding:0 16px 12px">';
   for(var i=lv;i<Math.min(lv+3,LEVEL_TITLES.length);i++){
-    var lt=LEVEL_TITLES[i];
+    var lt=LEVEL_TITLES[i],ltCopy=achievementLevelCopy(lt);
     html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--c-border)">'
       +'<div style="width:28px;height:28px;border-radius:50%;background:var(--c-surface2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--c-text2);flex-shrink:0">'+lt.lv+'</div>'
-      +'<div><div style="font-size:13px;font-weight:700;color:var(--c-text)">'+lt.title+'</div>'
-      +'<div style="font-size:11px;color:var(--c-text2)">'+lt.desc+'</div></div>'
+      +'<div><div style="font-size:13px;font-weight:700;color:var(--c-text)">'+ltCopy.title+'</div>'
+      +'<div style="font-size:11px;color:var(--c-text2)">'+ltCopy.desc+'</div></div>'
       +'<div style="margin-left:auto;font-size:11px;color:var(--c-primary);font-weight:600">'+LEVEL_XP[i]+' XP</div>'
       +'</div>';
   }
@@ -315,18 +380,18 @@ function renderAch() {
 
   // Badges per rarity
   var rarityOrder=['legendary','epic','rare','common'];
-  var rarityLabel={legendary:'👑 Legendarisch',epic:'💜 Episch',rare:'💙 Zeldzaam',common:'⚪ Gewoon'};
+  var rarityLabel={legendary:achTr('ach.rarity.legendary','👑 Legendarisch'),epic:achTr('ach.rarity.epic','💜 Episch'),rare:achTr('ach.rarity.rare','💙 Zeldzaam'),common:achTr('ach.rarity.common','⚪ Gewoon')};
   rarityOrder.forEach(function(rarity){
     var group=BADGES.filter(function(b){return b.rarity===rarity;});
     html+='<div class="ach-section-title">'+rarityLabel[rarity]+'</div>'
       +'<div class="badge-grid">';
     group.forEach(function(b){
-      var unlocked=!!unlockedBadges[b.id];
-      var isNew=!!newBadges[b.id];
+      var unlocked=!!viewBadges[b.id];
+      var isNew=!!newBadges[b.id],copy=achievementBadgeCopy(b);
       html+='<div class="badge-card '+(unlocked?'unlocked':'locked')+' rarity-'+b.rarity+'" onclick="'+(unlocked?'showBadgeDetail(\''+b.id+'\')':'')+'">'
         +(isNew?'<div class="badge-new-dot"></div>':'')
         +'<div class="badge-icon-wrap">'+b.icon+'</div>'
-        +'<div class="badge-name">'+b.name+'</div>'
+        +'<div class="badge-name">'+copy.name+'</div>'
         +'<div class="badge-rarity '+b.rarity+'">'+(unlocked?'+'+b.xp+' XP':'???')+'</div>'
         +'</div>';
     });
@@ -343,7 +408,7 @@ function renderAch() {
 
 function showBadgeDetail(id) {
   var badge=BADGES.find(function(b){return b.id===id;});if(!badge)return;
-  showToast(badge.icon+' '+badge.name+' — '+badge.funny);
+  var copy=achievementBadgeCopy(badge);showToast(badge.icon+' '+copy.name+' — '+copy.funny);
 }
 
 
@@ -414,7 +479,7 @@ function updateHomeXP() {
   var el;
   // home screen elements
   el=document.getElementById('home-xp-avatar'); if(el) el.textContent=myInitials;
-  el=document.getElementById('home-xp-level');  if(el) el.textContent='Level '+lv+' · '+getLevelName(lv);
+  el=document.getElementById('home-xp-level');  if(el){var row=achievementLevelCopy(LEVEL_TITLES[Math.min(lv-1,LEVEL_TITLES.length-1)]);el.textContent=achTr('ach.level','Level')+' '+lv+' · '+row.title;}
   el=document.getElementById('home-xp-fill');   if(el) el.style.width=pct+'%';
   el=document.getElementById('home-xp-pts');    if(el) el.textContent=myXP+' XP';
   // profile screen elements
@@ -425,4 +490,6 @@ function updateHomeXP() {
 
 
 
-function achEscape(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+window.addEventListener('familyapp:language-changed',function(){try{renderAch();updateHomeXP();}catch(error){}});
+
+function achEscape(value){return String(value==null?'':value).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}

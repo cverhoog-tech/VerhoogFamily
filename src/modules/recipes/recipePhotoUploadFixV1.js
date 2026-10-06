@@ -3,6 +3,7 @@
   if(window.RecipePhotoUploadFixV1)return;
 
   var TARGET_BYTES=112000;
+  function tr(key,fallback,params){try{if(window.FamilyI18n&&typeof window.FamilyI18n.t==='function'){var value=window.FamilyI18n.t(key,params||{});if(value&&value!==key)return value;}}catch(error){}return fallback;}
   var MAX_EDGE=1100;
   var MIN_EDGE=560;
   var INPUTS=Object.freeze({'rep-photo-file':'editor','rp-file':'detail'});
@@ -37,7 +38,7 @@
     if(!img){
       img=document.createElement('img');
       img.className='rp-upload-preview-v1';
-      img.alt='Gekozen receptfoto';
+      img.alt=tr('recipes.photo.chosenAlt','Gekozen receptfoto');
       img.style.cssText='display:block;width:100%;height:112px;object-fit:cover;border-radius:12px;margin-top:9px;border:1px solid var(--c-border,#e5e7eb)';
       host.appendChild(img);
     }
@@ -117,7 +118,7 @@
 
     var previewUrl=showImmediatePreview(file,input);
     var button=buttonFor(input);
-    if(button){button.disabled=true;button.dataset.oldText=button.textContent||'';button.textContent='Foto verwerken…';}
+    if(button){button.disabled=true;button.dataset.oldText=button.textContent||'';button.textContent=tr('recipes.photo.processing','Foto verwerken…');}
 
     compress(file).then(function(blob){
       if(!blob||blob.size>TARGET_BYTES*1.12)throw new Error('too-large');
@@ -129,8 +130,8 @@
       if(file.size<=TARGET_BYTES&&/^image\/(?:jpeg|jpg|png|webp)$/i.test(String(file.type||''))){
         try{invokeOriginal(input,original,file);return;}catch(e){}
       }
-      if(button){button.disabled=false;button.textContent=button.dataset.oldText||(INPUTS[input.id]==='detail'?'Upload eigen foto':'Eigen foto toevoegen');}
-      toast('Deze foto kon niet worden verwerkt. Kies een andere foto.');
+      if(button){button.disabled=false;button.textContent=button.dataset.oldText||(INPUTS[input.id]==='detail'?tr('recipes.uploadPhoto','Upload eigen foto'):tr('recipes.addOwnPhoto','Eigen foto toevoegen'));}
+      toast(tr('recipes.photo.failed','Deze foto kon niet worden verwerkt. Kies een andere foto.'));
     });
   },true);
 
