@@ -13,9 +13,9 @@ import {
 
 const activeCategoryKey = 'familyapp-avatar-category-v1';
 
-function profileT(key, fallback) {
+function profileT(key, fallback, params) {
   if (window.FamilyI18n && typeof window.FamilyI18n.t === 'function') {
-    const value = window.FamilyI18n.t(key);
+    const value = window.FamilyI18n.t(key, params || {});
     if (value && value !== key) return value;
   }
   return fallback;
@@ -303,14 +303,15 @@ function bindProfileActions(container) {
         else toast(profileT('profile.notificationsUnavailable', 'Meldingen openen is tijdelijk niet beschikbaar'));
         return;
       }
-      toast(button.dataset.profileRow + ' openen');
+      const section = button.querySelector('b') ? button.querySelector('b').textContent : button.dataset.profileRow;
+      toast(profileT('profile.settings.open', section + ' openen', { section }));
     };
   });
 }
 
 function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
   return `
-    <div class="profile-avatar-popup-inner">
+    <div class="profile-avatar-popup-inner" role="dialog" aria-modal="true" aria-label="${profileT('profile.avatar.choose', 'Kies een avatar')}">
       <button class="profile-avatar-popup-close" data-close-avatar-popup aria-label="${profileT('common.close', 'Sluiten')}">✕</button>
       <h3 class="profile-avatar-popup-title">${profileT('profile.avatar.choose', 'Kies een avatar')}</h3>
       <div class="profile-avatar-tabs">
@@ -321,7 +322,7 @@ function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
           const src = avatarUrlForId(item.id);
           const selected = item.id === currentAvatarId ? 'selected' : '';
           const pos = item.objectPosition || '50% 36%';
-          return `<button type="button" class="profile-choice profile-choice-exact profile-rarity-${item.rarity} ${selected}" data-avatar-id="${item.id}">
+          return `<button type="button" class="profile-choice profile-choice-exact profile-rarity-${item.rarity} ${selected}" data-avatar-id="${item.id}" aria-pressed="${item.id === currentAvatarId}">
             <img src="${src}" alt="${item.label}" style="object-position:${pos}">
             <span>✓</span>
             <small>${item.label}</small>
@@ -330,6 +331,57 @@ function renderAvatarPopup(activeCategory, visibleAvatars, currentAvatarId) {
       </div>
     </div>
   `;
+}
+
+function numberOr(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function profileProgress() {
+  const xp = numberOr(window.myXP, numberOr(localStorage.getItem('fam_myxp_v1'), 120));
+  let level = 1;
+  try {
+    if (typeof window.getLevel === 'function') level = numberOr(window.getLevel(xp), 1);
+  } catch (error) {}
+
+  let title = '';
+  try {
+    if (typeof window.getLevelName === 'function') title = String(window.getLevelName(level) || '');
+  } catch (error) {}
+
+  const thresholds = Array.isArray(window.LEVEL_XP) ? window.LEVEL_XP : [];
+  const previousXp = thresholds.length ? numberOr(thresholds[level - 1], 0) : 0;
+  const nextXp = thresholds.length ? numberOr(thresholds[Math.min(level, thresholds.length - 1)], xp + 100) : xp + 100;
+  const range = Math.max(1, nextXp - previousXp);
+  const progress = Math.max(0, Math.min(100, Math.round(((xp - previousXp) / range) * 100)));
+  const remaining = Math.max(0, nextXp - xp);
+
+  return {
+    xp,
+    level,
+    title: title || `${profileT('ach.level', 'Level')} ${level}`,
+    progress,
+    remaining,
+  };
+}
+
+function profileStats() {
+  const tasks = Array.isArray(window.taskData)
+    ? window.taskData.filter((task) => task && task.done).length
+    : null;
+  const streak = Array.isArray(window.recurData)
+    ? window.recurData.reduce((max, row) => Math.max(max, numberOr(row && row.streak, 0)), 0)
+    : null;
+  const badges = window.unlockedBadges && typeof window.unlockedBadges === 'object'
+    ? Object.keys(window.unlockedBadges).filter((key) => window.unlockedBadges[key]).length
+    : null;
+
+  return {
+    tasks: tasks == null ? '–' : tasks,
+    streak: streak == null ? '–' : streak,
+    badges: badges == null ? '–' : badges,
+  };
 }
 
 export function renderProfileScreen(container, options = {}) {
@@ -346,9 +398,11 @@ export function renderProfileScreen(container, options = {}) {
   const mainObjectPosition = avatarMeta.objectPosition || '50% 36%';
   const uiScale = getUiScale();
   const installState = getInstallState();
+  const progress = profileProgress();
+  const stats = profileStats();
 
   const popupHtml = `
-    <div class="profile-avatar-popup ${options.keepAvatarPopupOpen ? 'show' : ''}">
+    <div class="profile-avatar-popup ${options.keepAvatarPopupOpen ? 'show' : ''}" data-avatar-popup>
       ${renderAvatarPopup(activeCategory, visibleAvatars, avatarId)}
     </div>
   `;
@@ -356,37 +410,78 @@ export function renderProfileScreen(container, options = {}) {
   container.innerHTML = `
     <section class="profile-target">
       <section class="profile-hero-card">
-        <div class="profile-avatar-wrap">
-          <img class="profile-main-avatar" src="${avatar}" alt="${escapeAttribute(name)}" style="object-position:${mainObjectPosition}">
-          <button class="profile-camera-btn" data-camera-avatar aria-label="${profileT('profile.avatar.change', 'Avatar wijzigen')}">📷</button>
+        <div class="profile-hero-top">
+          <div class="profile-avatar-wrap">
+            <img class="profile-main-avatar" src="${avatar}" alt="${escapeAttribute(name)}" style="object-position:${mainObjectPosition}">
+            <button class="profile-camera-btn" type="button" data-camera-avatar aria-label="${profileT('profile.avatar.change', 'Avatar wijzigen')}">📷</button>
+          </div>
+          <div class="profile-identity-copy">
+            <p class="profile-kicker">${profileT('profile.hero.kicker', 'Jouw profiel')}</p>
+            <h1>${escapeAttribute(name)}</h1>
+            <div class="profile-level-pill"><span class="profile-level-dot"></span> Level ${progress.level} · ${escapeAttribute(progress.title)}</div>
+          </div>
         </div>
-        <h1>${escapeAttribute(name)}</h1>
-        <div class="profile-level-pill">Level 2 · Uitgebroed</div>
-        <div class="profile-xp-bar"><span></span></div>
-        <p>143 XP</p>
+
+        <div class="profile-progress-panel">
+          <div class="profile-progress-head"><span>${profileT('profile.progress.title', 'Voortgang')}</span><strong>${progress.xp} XP</strong></div>
+          <div class="profile-xp-bar" aria-label="${profileT('profile.progress.toLevel', progress.progress + '% naar level ' + (progress.level + 1), { progress: progress.progress, level: progress.level + 1 })}"><span style="width:${progress.progress}%"></span></div>
+          <div class="profile-progress-foot"><span>${profileT('profile.progress.toLevel', progress.progress + '% naar level ' + (progress.level + 1), { progress: progress.progress, level: progress.level + 1 })}</span><strong>${profileT('profile.progress.remaining', progress.remaining + ' XP te gaan', { xp: progress.remaining })}</strong></div>
+        </div>
+
+        <div class="profile-stat-grid">
+          <div class="profile-stat-item"><span>✓</span><strong>${stats.tasks}</strong><small>${profileT('profile.stats.tasksDone', 'Taken klaar')}</small></div>
+          <div class="profile-stat-item"><span>🔥</span><strong>${stats.streak}</strong><small>${profileT('profile.stats.maxStreak', 'Max streak')}</small></div>
+          <div class="profile-stat-item"><span>🏅</span><strong>${stats.badges}</strong><small>${profileT('profile.stats.badges', 'Badges')}</small></div>
+        </div>
       </section>
 
       <section class="profile-card profile-names-card">
-        <div data-active-auth-email style="display:flex;align-items:center;gap:11px;padding:11px 12px;margin-bottom:14px;border:1px solid var(--c-border);border-radius:13px;background:var(--c-surface2)">
-          <span aria-hidden="true" style="width:34px;height:34px;border-radius:10px;background:var(--c-primary-light);color:var(--c-primary);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">@</span>
-          <div style="min-width:0;flex:1">
-            <small style="display:block;color:var(--c-text2);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px">${profileT('profile.activeAccount', 'Actief account')}</small>
-            <strong style="display:block;color:var(--c-text);font-size:13px;line-height:1.35;overflow-wrap:anywhere">${escapeAttribute(activeEmail || profileT('profile.emailUnavailable', 'E-mailadres niet beschikbaar'))}</strong>
+        <div class="profile-section-head">
+          <span class="profile-section-icon">👤</span>
+          <div class="profile-section-copy">
+            <h2>${profileT('profile.personal.title', 'Persoonlijke gegevens')}</h2>
+            <p>${profileT('profile.personal.subtitle', 'Je naam en gezinsweergave in FamilyApp.')}</p>
           </div>
         </div>
-        <label>${profileT('profile.myName', 'Mijn naam')}</label>
-        <div class="profile-input-row"><input data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
-        <label>${profileT('profile.partnerName', 'Partner naam')}</label>
-        <div class="profile-input-row"><input data-partner-name value="${escapeAttribute(partner)}" placeholder="${profileT('profile.optional', 'Optioneel')}"><span>✎</span></div>
-        <div class="profile-info-note"><span>ⓘ</span> ${profileT('profile.avatar.info', 'Je gekozen avatar wordt direct gebruikt in feed, reacties en profiel.')}</div>
-        <button class="profile-save-btn" data-save-profile>${profileT('common.save', 'Opslaan')}</button>
+
+        <div class="profile-account-row" data-active-auth-email>
+          <span class="profile-account-icon" aria-hidden="true">@</span>
+          <div class="profile-account-copy">
+            <small>${profileT('profile.activeAccount', 'Actief account')}</small>
+            <strong>${escapeAttribute(activeEmail || profileT('profile.emailUnavailable', 'E-mailadres niet beschikbaar'))}</strong>
+          </div>
+        </div>
+
+        <div class="profile-fields">
+          <div class="profile-field-group">
+            <label for="profile-name-input">${profileT('profile.myName', 'Mijn naam')}</label>
+            <div class="profile-input-row"><input id="profile-name-input" data-profile-name value="${escapeAttribute(name)}"><span>✎</span></div>
+          </div>
+          <div class="profile-field-group">
+            <label for="profile-partner-input">${profileT('profile.partnerName', 'Partner naam')}</label>
+            <div class="profile-input-row"><input id="profile-partner-input" data-partner-name value="${escapeAttribute(partner)}" placeholder="${profileT('profile.optional', 'Optioneel')}"><span>✎</span></div>
+          </div>
+        </div>
+
+        <div class="profile-info-note"><span>i</span><div>${profileT('profile.personal.info', 'Je gekozen avatar en naam worden automatisch gebruikt op de plekken waar jij in de app verschijnt.')}</div></div>
+        <button class="profile-save-btn" type="button" data-save-profile>${profileT('profile.saveChanges', 'Wijzigingen opslaan')}</button>
       </section>
 
       <section class="profile-card profile-avatar-card">
-        <h2>${profileT('profile.avatar.mine', 'Mijn avatar')}</h2>
+        <div class="profile-section-head">
+          <span class="profile-section-icon">✨</span>
+          <div class="profile-section-copy">
+            <h2>${profileT('profile.avatar.sectionTitle', 'Avatar')}</h2>
+            <p>${profileT('profile.avatar.sectionSubtitle', 'Maak je profiel herkenbaar voor je gezin.')}</p>
+          </div>
+        </div>
+        <div class="profile-avatar-current">
+          <img src="${avatar}" alt="" style="object-position:${mainObjectPosition}">
+          <div><strong>${profileT('profile.avatar.current', 'Huidige avatar')}</strong><small>${escapeAttribute(avatarMeta.label || profileT('profile.avatar.customPhoto', 'Eigen profielfoto'))}</small></div>
+        </div>
         <div class="profile-avatar-actions">
-          <button data-open-avatar-popup>▧ ${profileT('profile.avatar.chooseApp', 'Kies uit de app')}</button>
-          <button data-upload-avatar>⇧ ${profileT('profile.avatar.upload', 'Upload foto')}</button>
+          <button type="button" data-open-avatar-popup>✦ ${profileT('profile.avatar.chooseShort', 'Kies avatar')}</button>
+          <button type="button" data-upload-avatar>↑ ${profileT('profile.avatar.upload', 'Upload foto')}</button>
         </div>
         <input class="profile-upload-input" type="file" accept="image/*" hidden>
       </section>
@@ -395,32 +490,63 @@ export function renderProfileScreen(container, options = {}) {
 
       ${languageCardMarkup()}
 
-      <section class="profile-card" style="padding:16px">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">
-          <div>
-            <h2 style="margin:0 0 4px">${profileT('profile.scale.title', 'UI schaal')}</h2>
-            <p style="margin:0;color:var(--c-text2);font-size:12px;line-height:1.45">${profileT('profile.scale.copy', 'Vergroot of verklein de volledige app. De keuze blijft bewaard op dit apparaat.')}</p>
+      <section class="profile-card">
+        <div class="profile-section-head">
+          <span class="profile-section-icon">Aa</span>
+          <div class="profile-section-copy">
+            <h2>${profileT('profile.scale.title', 'UI schaal')}</h2>
+            <p>${profileT('profile.scale.subtitle', 'Pas de grootte van de volledige app aan.')}</p>
           </div>
-          <strong style="font-size:14px;color:var(--c-primary);white-space:nowrap">${uiScale}%</strong>
+          <span class="profile-section-value">${uiScale}%</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
-          ${[90,100,110,120].map((scale) => `<button type="button" data-ui-scale="${scale}" style="min-height:42px;border-radius:12px;border:1.5px solid ${scale === uiScale ? 'var(--c-primary)' : 'var(--c-border)'};background:${scale === uiScale ? 'var(--c-primary-light)' : 'var(--c-surface2)'};color:${scale === uiScale ? 'var(--c-primary)' : 'var(--c-text2)'};font-size:12px;font-weight:800">${scale}%</button>`).join('')}
+        <div class="profile-scale-grid">
+          ${[90,100,110,120].map((scale) => `<button type="button" data-ui-scale="${scale}" class="profile-scale-btn ${scale === uiScale ? 'active' : ''}" aria-pressed="${scale === uiScale}">${scale}%</button>`).join('')}
         </div>
       </section>
 
       <section class="profile-card profile-settings-card">
-        <button data-profile-row="Account instellingen"><span>♙</span><b>${profileT('profile.settings.account', 'Account instellingen')}</b><em>›</em></button>
-        <button data-profile-row="Privacy"><span>▣</span><b>${profileT('profile.settings.privacy', 'Privacy')}</b><em>›</em></button>
-        <button data-profile-row="Meldingen"><span>♧</span><b>${profileT('profile.settings.notifications', 'Meldingen')}</b><em>›</em></button>
-        <button data-profile-logout style="color:#dc2626"><span>↪</span><b>${profileT('profile.settings.logout', 'Uitloggen')}</b><em>›</em></button>
+        <div class="profile-settings-label">${profileT('profile.settings.label', 'Instellingen')}</div>
+        <button type="button" data-profile-row="Account instellingen">
+          <span class="profile-setting-icon">⚙</span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.account', 'Account instellingen')}</b><small>${profileT('profile.settings.accountSubtitle', 'Account en aanmeldgegevens')}</small></span>
+          <em>›</em>
+        </button>
+        <button type="button" data-profile-row="Privacy">
+          <span class="profile-setting-icon">⌾</span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.privacy', 'Privacy')}</b><small>${profileT('profile.settings.privacySubtitle', 'Beheer jouw gezinsgegevens')}</small></span>
+          <em>›</em>
+        </button>
+        <button type="button" data-profile-row="Meldingen">
+          <span class="profile-setting-icon">♧</span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.notifications', 'Meldingen')}</b><small>${profileT('profile.settings.notificationsSubtitle', 'Kies wat je wilt ontvangen')}</small></span>
+          <em>›</em>
+        </button>
+        <button type="button" class="profile-danger" data-profile-logout>
+          <span class="profile-setting-icon">↪</span>
+          <span class="profile-setting-copy"><b>${profileT('profile.settings.logout', 'Uitloggen')}</b><small>${profileT('profile.settings.logoutSubtitle', 'Uitloggen op dit apparaat')}</small></span>
+          <em>›</em>
+        </button>
       </section>
     </section>
     ${popupHtml}
   `;
+
+  const popup = container.querySelector('[data-avatar-popup]');
+  if (popup) {
+    popup.onclick = (event) => {
+      if (event.target === popup) popup.classList.remove('show');
+    };
+  }
+
   bindProfileActions(container);
 }
 
 window.addEventListener('familyapp:pwa-install-state', () => {
+  const container = document.getElementById('screen-profile');
+  if (container && container.classList.contains('active')) renderProfileScreen(container);
+});
+
+window.addEventListener('familyapp:language-changed', () => {
   const container = document.getElementById('screen-profile');
   if (container && container.classList.contains('active')) renderProfileScreen(container);
 });
